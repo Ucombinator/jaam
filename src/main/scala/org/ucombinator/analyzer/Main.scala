@@ -1,0 +1,106 @@
+// vim: set ts=2 sw=2 et:
+
+package org.ucombinator.analyzer
+
+import org.ucombinator.SootWrapper
+import scala.collection.JavaConversions._
+import soot.util.Chain
+import soot.SootClass
+import soot.SootMethod
+import soot.{Unit => SootUnit}
+import soot.jimple._
+import soot.Local
+import soot.jimple.ParameterRef
+import soot.jimple.IdentityStmt
+
+abstract class FramePointer
+
+class ConcreteFramePointer() extends FramePointer
+
+object InvariantFramePointer extends FramePointer
+
+abstract class Kont
+
+case class ConcreteKont(val fp : FramePointer, val stmt : Stmt)
+
+object HaltKont extends Kont
+
+abstract class D {
+  def join(otherd : D) : D
+}
+
+case object AnyValue extends D {
+  override def join(otherd : D) : D = AnyValue
+}
+
+abstract class Addr
+
+abstract class FrameAddr extends Addr
+
+case class Store(private val map : Map[Addr, D]) {
+  def update(addr : Addr, d : D) : Store= {
+    map.get(addr) match {
+      case Some(oldd) => Store(map + (addr -> oldd.join(d)))
+      case None => Store(map + (addr -> d))
+    }
+  }
+
+  def apply(addr : Addr) : D = map(addr)
+  def get(addr : Addr) : Option[D] = map.get(addr)
+}
+
+case class LocalFrameAddr(val fp : FramePointer, val register : Local) extends FrameAddr
+
+case class ParameterFrameAddr(val fp : FramePointer, val parameter : Int) extends FrameAddr
+
+case class Stmt(unit : SootUnit, method : SootMethod, program : Map[String, SootClass]) {
+  def next_syntactic() : Stmt = {
+    Stmt(method.getActiveBody().getUnits().getSuccOf(unit), method, program)
+  }
+}
+
+case class State(stmt : Stmt, fp : FramePointer, store : Store, kont : Kont) {
+  def next() : Set[State]= {
+    stmt.unit match {
+      case unit : IdentityStmt => {
+        val lhs_addr = LocalFrameAddr(fp, unit.getLeftOp().asInstanceOf[Local])
+        val rhs_addr = ParameterFrameAddr(fp, unit.getRightOp().asInstanceOf[ParameterRef].getIndex())
+        val new_store = (store(lhs_addr) = store(rhs_addr))
+        Set(State(stmt.next_syntactic(), fp, new_store, kont))
+      }
+    }
+  }
+}
+
+object State {
+    def inject(stmt : Stmt) : State = {
+      val initial_map : Map[Addr, D] = Map((ParameterFrameAddr(InvariantFramePointer, 0) -> AnyValue))
+      State(stmt, InvariantFramePointer, Store(initial_map), HaltKont)
+    }
+}
+
+object Main {
+  def main(args : Array[String]) {
+    println("Hello world")
+
+    val source = SootWrapper.fromClasses("/Users/michaelb/Desktop/Documents/School/Grad School/research/hackathon/analyzer-project/to-analyze", "")
+    val classes = getClassMap(source.getShimple())
+
+    val mainMainMethod = classes("Hello").getMethodByName("main");
+    val units = mainMainMethod.getActiveBody().getUnits();
+
+    val first = units.getFirst()
+
+    val initialState = State.inject(Stmt(first, mainMainMethod, classes))
+    println(initialState.next());
+  }
+
+  def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass]= {
+    var map : Map[String, SootClass] = Map()
+    for (c <- classes) {
+      map = map + ((c.getName(), c))
+    }
+
+    map
+  }
+}
