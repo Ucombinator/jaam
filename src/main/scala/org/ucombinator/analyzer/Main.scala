@@ -4,6 +4,7 @@ package org.ucombinator.analyzer
 
 import org.ucombinator.SootWrapper
 import scala.collection.JavaConversions._
+import scala.language.postfixOps
 import soot.util.Chain
 import soot.SootClass
 import soot.SootMethod
@@ -12,6 +13,8 @@ import soot.jimple._
 import soot.Local
 import soot.jimple.ParameterRef
 import soot.jimple.IdentityStmt
+import soot.jimple.StaticInvokeExpr
+import soot.jimple.internal.JInvokeStmt
 
 abstract class FramePointer
 
@@ -53,7 +56,7 @@ case class LocalFrameAddr(val fp : FramePointer, val register : Local) extends F
 
 case class ParameterFrameAddr(val fp : FramePointer, val parameter : Int) extends FrameAddr
 
-case class Stmt(unit : SootUnit, method : SootMethod, program : Map[String, SootClass]) {
+case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[String, SootClass]) {
   def next_syntactic() : Stmt = {
     Stmt(method.getActiveBody().getUnits().getSuccOf(unit), method, program)
   }
@@ -67,6 +70,26 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kont : Kont) {
         val rhs_addr = ParameterFrameAddr(fp, unit.getRightOp().asInstanceOf[ParameterRef].getIndex())
         val new_store = (store(lhs_addr) = store(rhs_addr))
         Set(State(stmt.next_syntactic(), fp, new_store, kont))
+      }
+      case unit : StaticInvokeExpr => {
+        throw new Exception("Static Invoke")
+      }
+      case unit : InvokeStmt => {
+        unit.getInvokeExpr match {
+          case inv : StaticInvokeExpr => {
+            val args = inv.getArgs
+            val methRef = inv.getMethodRef
+            val cls = methRef.declaringClass
+            val meth = cls.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
+            val statements = meth.getActiveBody().getUnits()
+            val newStmt = Stmt(statements.getFirst, meth, stmt.program)
+            println(args)
+          }
+        }
+        throw new Exception("Invoke Statement")
+      }
+      case _ => {
+        throw new Exception("No match for " + stmt.unit.getClass + " : " + stmt.unit)
       }
     }
   }
@@ -83,16 +106,25 @@ object Main {
   def main(args : Array[String]) {
     println("Hello world")
 
-    val source = SootWrapper.fromClasses("/Users/michaelb/Desktop/Documents/School/Grad School/research/hackathon/analyzer-project/to-analyze", "")
+    val source = SootWrapper.fromClasses("/home/lucas/heap/projects/shimple-analyzer/to-analyze", "")
     val classes = getClassMap(source.getShimple())
 
-    val mainMainMethod = classes("Hello").getMethodByName("main");
+    val mainMainMethod = classes("Factorial").getMethodByName("main");
     val units = mainMainMethod.getActiveBody().getUnits();
 
     val first = units.getFirst()
 
     val initialState = State.inject(Stmt(first, mainMainMethod, classes))
-    println(initialState.next());
+    var todo : List [State] = List(initialState)
+    var seen : Set [State] = Set()
+    while (todo nonEmpty) {
+      val current = todo.head
+      println(current);
+      val nexts = current.next
+      // TODO: Fix optimization bug here
+      todo = nexts.toList.filter(!seen.contains(_)) ++ todo.tail
+      seen = seen ++ nexts
+    }
   }
 
   def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass]= {
