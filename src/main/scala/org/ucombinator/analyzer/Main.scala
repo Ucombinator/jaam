@@ -11,8 +11,10 @@ import soot.SootMethod
 import soot.{Unit => SootUnit}
 import soot.jimple._
 import soot.Local
+import soot.Value    
 import soot.jimple.ParameterRef
 import soot.jimple.IdentityStmt
+import soot.jimple.NumericConstant
 import soot.jimple.StaticInvokeExpr
 import soot.jimple.internal.JInvokeStmt
 
@@ -22,9 +24,37 @@ class ConcreteFramePointer() extends FramePointer
 
 object InvariantFramePointer extends FramePointer
 
+case class KontStack(store : KontStore, k : Kont) {
+    def push(stmt : Stmt, fp : FramePointer) : KontStack = {
+      // TODO replace InvariantKontAddr with call to parameterized function
+      val kAddr = InvariantKontAddr
+      val newKontStore = store.update(kAddr, Set(k))
+      KontStack(newKontStore, RetKont(stmt, fp, kAddr))
+    }
+}
+
+abstract class KontAddr
+
+case object InvariantKontAddr extends KontAddr
+
+// TODO Michael B: refactor KontStore and Store, since they only
+// differ in their types
+case class KontStore(private val map : Map[KontAddr, Set[Kont]]) {
+  def update(addr : KontAddr, konts : Set[Kont]) : KontStore = {
+    map.get(addr) match {
+      case Some(oldd) => KontStore(map + (addr -> (oldd ++ konts)))
+      case None => KontStore(map + (addr -> konts))
+    }
+  }
+
+  def apply(addr : KontAddr) : Set[Kont] = map(addr)
+  def get(addr : KontAddr) : Option[Set[Kont]] = map.get(addr)
+}
+
+    
 abstract class Kont
 
-case class ConcreteKont(val fp : FramePointer, val stmt : Stmt)
+case class RetKont(val stmt : Stmt, val fp : FramePointer, val k : KontAddr) extends Kont
 
 object HaltKont extends Kont
 
@@ -62,14 +92,23 @@ case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[
   }
 }
 
-case class State(stmt : Stmt, fp : FramePointer, store : Store, kont : Kont) {
-  def next() : Set[State]= {
+case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : KontStack) {
+  def alloca() : FramePointer = InvariantFramePointer
+  def eval(v: Value, fp : FramePointer, store : Store) : D = {
+    v match {
+      case n : NumericConstant => AnyValue
+      case _ => {
+        throw new Exception("No match for " + v.getClass + " : " + v)
+      }
+    }
+  }
+  def next() : Set[State] = {
     stmt.unit match {
       case unit : IdentityStmt => {
         val lhs_addr = LocalFrameAddr(fp, unit.getLeftOp().asInstanceOf[Local])
         val rhs_addr = ParameterFrameAddr(fp, unit.getRightOp().asInstanceOf[ParameterRef].getIndex())
         val new_store = (store(lhs_addr) = store(rhs_addr))
-        Set(State(stmt.next_syntactic(), fp, new_store, kont))
+        Set(State(stmt.next_syntactic(), fp, new_store, kontStack))
       }
       case unit : StaticInvokeExpr => {
         throw new Exception("Static Invoke")
@@ -83,10 +122,18 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kont : Kont) {
             val meth = cls.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
             val statements = meth.getActiveBody().getUnits()
             val newStmt = Stmt(statements.getFirst, meth, stmt.program)
-            println(args)
+	    val newFP = alloca()
+	    var i = 0
+	    var newStore = store
+	    for (a <- args) {
+	      val addr = ParameterFrameAddr(newFP, i)
+	      val d = eval(a, fp, store)
+	      newStore = newStore.update(addr, d)
+	    }
+	    val newKontStack = kontStack.push(stmt.next_syntactic, newFP)
+            Set(State(newStmt, newFP, newStore, newKontStack))
           }
         }
-        throw new Exception("Invoke Statement")
       }
       case _ => {
         throw new Exception("No match for " + stmt.unit.getClass + " : " + stmt.unit)
@@ -98,7 +145,7 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kont : Kont) {
 object State {
     def inject(stmt : Stmt) : State = {
       val initial_map : Map[Addr, D] = Map((ParameterFrameAddr(InvariantFramePointer, 0) -> AnyValue))
-      State(stmt, InvariantFramePointer, Store(initial_map), HaltKont)
+      State(stmt, InvariantFramePointer, Store(initial_map), KontStack(KontStore(Map()), HaltKont))
     }
 }
 
