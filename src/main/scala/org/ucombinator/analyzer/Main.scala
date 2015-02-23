@@ -110,9 +110,6 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
         val new_store = (store(lhs_addr) = store(rhs_addr))
         Set(State(stmt.next_syntactic(), fp, new_store, kontStack))
       }
-      case unit : StaticInvokeExpr => {
-        throw new Exception("Static Invoke")
-      }
       case unit : InvokeStmt => {
         unit.getInvokeExpr match {
           case inv : StaticInvokeExpr => {
