@@ -106,7 +106,7 @@ object Main {
   def main(args : Array[String]) {
     println("Hello world")
 
-    val source = SootWrapper.fromClasses("/home/lucas/heap/projects/shimple-analyzer/to-analyze", "")
+    val source = SootWrapper.fromClasses("to-analyze", "")
     val classes = getClassMap(source.getShimple())
 
     val mainMainMethod = classes("Factorial").getMethodByName("main");
