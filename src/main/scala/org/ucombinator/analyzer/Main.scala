@@ -10,7 +10,7 @@ import soot.SootClass
 import soot.SootMethod
 import soot.{Unit => SootUnit}
 import soot.Local
-import soot.Value
+import soot.{Value => SootValue}
 import soot.IntType
 import soot.jimple._
 
@@ -32,7 +32,8 @@ case class KontStack(store : KontStore, k : Kont) {
     k match {
       case RetKont(frame, kontAddr) => {
         for (topk <- store(kontAddr)) yield (frame, KontStack(store, topk))
-      }
+        }
+      case HaltKont => Set()
     }
   }
 }
@@ -73,13 +74,21 @@ case class RetKont(
 
 object HaltKont extends Kont
 
-abstract class D {
-  def join(otherd : D) : D
+case class D(val values: Set[Value]) {
+  def join(otherd : D) : D = {
+    D(values ++ otherd.values)
+  }
 }
 
-case object AnyValue extends D {
-  override def join(otherd : D) : D = AnyValue
+object D {
+  val atomicTop = D(Set(AnyAtomicValue))
 }
+
+abstract class Value
+
+abstract class AtomicValue extends Value
+
+case object AnyAtomicValue extends AtomicValue
 
 abstract class Addr
 
@@ -110,17 +119,25 @@ case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[
 case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : KontStack) {
   def alloca() : FramePointer = InvariantFramePointer
 
-  def eval(v: Value, fp : FramePointer, store : Store) : D = {
+  def eval(v: SootValue, fp : FramePointer, store : Store) : D = {
     v match {
-      case n : NumericConstant => AnyValue
+      case n : NumericConstant => D.atomicTop
       case subexpr : SubExpr => {
         assert(subexpr.getOp1().getType().isInstanceOf[IntType])
         assert(subexpr.getOp2().getType().isInstanceOf[IntType])
 
-        AnyValue
+        D.atomicTop
+      }
+
+      case subexpr : MulExpr => {
+        assert(subexpr.getOp1().getType().isInstanceOf[IntType])
+        assert(subexpr.getOp2().getType().isInstanceOf[IntType])
+
+        D.atomicTop
       }
 
       case local : Local => store(LocalFrameAddr(fp, local))
+
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
   }
@@ -142,7 +159,7 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
           val d = eval(a, fp, store)
           newStore = newStore.update(addr, d)
         }
-        val newKontStack = kontStack.push(Frame(stmt.next_syntactic, newFP, None))
+        val newKontStack = kontStack.push(Frame(stmt.next_syntactic, newFP, destAddr))
         Set(State(newStmt, newFP, newStore, newKontStack))
       }
     }
@@ -182,12 +199,20 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
 
       case unit : ReturnStmt => {
         val evaled = eval(unit.getOp(), fp, store)
-        for ((frame, newStack) <- kontStack.pop if frame.acceptsReturnValue())
-          yield State(frame.stmt, frame.fp, store.update(frame.destAddr.get, evaled), newStack)
+        for ((frame, newStack) <- kontStack.pop) yield {
+          val newStore = if (frame.acceptsReturnValue()) {
+            store.update(frame.destAddr.get, evaled)
+          } else {
+            store
+          }
+
+          State(frame.stmt, frame.fp, newStore, newStack)
+        }
       }
 
       case unit : ReturnVoidStmt => {
-        throw new Exception("Not yet implemented")
+        for ((frame, newStack) <- kontStack.pop if !(frame.acceptsReturnValue()))
+            yield State(frame.stmt, frame.fp, store, newStack)
       }
 
       case _ => {
@@ -199,7 +224,7 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
 
 object State {
   def inject(stmt : Stmt) : State = {
-    val initial_map : Map[Addr, D] = Map((ParameterFrameAddr(InvariantFramePointer, 0) -> AnyValue))
+    val initial_map : Map[Addr, D] = Map((ParameterFrameAddr(InvariantFramePointer, 0) -> D.atomicTop))
     State(stmt, InvariantFramePointer, Store(initial_map), KontStack(KontStore(Map()), HaltKont))
   }
 }
