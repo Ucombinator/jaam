@@ -9,14 +9,10 @@ import soot.util.Chain
 import soot.SootClass
 import soot.SootMethod
 import soot.{Unit => SootUnit}
-import soot.jimple._
 import soot.Local
-import soot.Value    
-import soot.jimple.ParameterRef
-import soot.jimple.IdentityStmt
-import soot.jimple.NumericConstant
-import soot.jimple.StaticInvokeExpr
-import soot.jimple.internal.JInvokeStmt
+import soot.Value
+import soot.IntType
+import soot.jimple._
 
 abstract class FramePointer
 
@@ -25,12 +21,12 @@ class ConcreteFramePointer() extends FramePointer
 object InvariantFramePointer extends FramePointer
 
 case class KontStack(store : KontStore, k : Kont) {
-    def push(stmt : Stmt, fp : FramePointer) : KontStack = {
-      // TODO replace InvariantKontAddr with call to parameterized function
-      val kAddr = InvariantKontAddr
-      val newKontStore = store.update(kAddr, Set(k))
-      KontStack(newKontStore, RetKont(stmt, fp, kAddr))
-    }
+  def push(stmt : Stmt, fp : FramePointer, destAddr : Option[Addr]) : KontStack = {
+    // TODO replace InvariantKontAddr with call to parameterized function
+    val kAddr = InvariantKontAddr
+    val newKontStore = store.update(kAddr, Set(k))
+    KontStack(newKontStore, RetKont(stmt, fp, destAddr, kAddr))
+  }
 }
 
 abstract class KontAddr
@@ -51,10 +47,15 @@ case class KontStore(private val map : Map[KontAddr, Set[Kont]]) {
   def get(addr : KontAddr) : Option[Set[Kont]] = map.get(addr)
 }
 
-    
+
 abstract class Kont
 
-case class RetKont(val stmt : Stmt, val fp : FramePointer, val k : KontAddr) extends Kont
+case class RetKont(
+  val stmt : Stmt,
+  val fp : FramePointer,
+  val destAddr : Option[Addr],
+  val k : KontAddr
+) extends Kont
 
 object HaltKont extends Kont
 
@@ -94,44 +95,81 @@ case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[
 
 case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : KontStack) {
   def alloca() : FramePointer = InvariantFramePointer
+
   def eval(v: Value, fp : FramePointer, store : Store) : D = {
     v match {
       case n : NumericConstant => AnyValue
-      case _ => {
-        throw new Exception("No match for " + v.getClass + " : " + v)
+      case subexpr : SubExpr => {
+        assert(subexpr.getOp1().getType().isInstanceOf[IntType])
+        assert(subexpr.getOp2().getType().isInstanceOf[IntType])
+
+        AnyValue
+      }
+
+      case local : Local => store(LocalFrameAddr(fp, local))
+      case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
+    }
+  }
+
+  def handleInvoke(expr : InvokeExpr, destAddr : Option[Addr]) : Set[State] = {
+    expr match {
+      case inv : StaticInvokeExpr => {
+        val args = inv.getArgs
+        val methRef = inv.getMethodRef
+        val cls = methRef.declaringClass
+        val meth = cls.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
+        val statements = meth.getActiveBody().getUnits()
+        val newStmt = Stmt(statements.getFirst, meth, stmt.program)
+        val newFP = alloca()
+        var i = 0
+        var newStore = store
+        for (a <- args) {
+          val addr = ParameterFrameAddr(newFP, i)
+          val d = eval(a, fp, store)
+          newStore = newStore.update(addr, d)
+        }
+        val newKontStack = kontStack.push(stmt.next_syntactic, newFP, None)
+        Set(State(newStmt, newFP, newStore, newKontStack))
       }
     }
   }
+
   def next() : Set[State] = {
     stmt.unit match {
       case unit : IdentityStmt => {
         val lhs_addr = LocalFrameAddr(fp, unit.getLeftOp().asInstanceOf[Local])
         val rhs_addr = ParameterFrameAddr(fp, unit.getRightOp().asInstanceOf[ParameterRef].getIndex())
-        val new_store = (store(lhs_addr) = store(rhs_addr))
+        val new_store = store.update(lhs_addr, store(rhs_addr))
         Set(State(stmt.next_syntactic(), fp, new_store, kontStack))
       }
       case unit : InvokeStmt => {
-        unit.getInvokeExpr match {
-          case inv : StaticInvokeExpr => {
-            val args = inv.getArgs
-            val methRef = inv.getMethodRef
-            val cls = methRef.declaringClass
-            val meth = cls.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
-            val statements = meth.getActiveBody().getUnits()
-            val newStmt = Stmt(statements.getFirst, meth, stmt.program)
-	    val newFP = alloca()
-	    var i = 0
-	    var newStore = store
-	    for (a <- args) {
-	      val addr = ParameterFrameAddr(newFP, i)
-	      val d = eval(a, fp, store)
-	      newStore = newStore.update(addr, d)
-	    }
-	    val newKontStack = kontStack.push(stmt.next_syntactic, newFP)
-            Set(State(newStmt, newFP, newStore, newKontStack))
+        handleInvoke(unit.getInvokeExpr, None)
+      }
+
+      case unit : IfStmt => {
+        val trueState = State(Stmt(unit.getTarget(), stmt.method, stmt.program),
+                              fp, store, kontStack)
+        val falseState = State(stmt.next_syntactic(), fp, store, kontStack)
+        Set(trueState, falseState)
+      }
+
+      case unit : AssignStmt => {
+        val lhs_addr = LocalFrameAddr(fp, unit.getLeftOp().asInstanceOf[Local])
+
+        unit.getRightOp() match {
+          case expr : InvokeExpr => handleInvoke(expr, Some(lhs_addr))
+          case _ => {
+            val evaled_rhs = eval(unit.getRightOp(), fp, store)
+            val newStore = store.update(lhs_addr, evaled_rhs)
+            Set(State(stmt.next_syntactic(), fp, newStore, kontStack))
           }
         }
       }
+
+      case unit : ReturnStmt => {
+        throw new Exception("Not yet implemented")
+      }
+
       case _ => {
         throw new Exception("No match for " + stmt.unit.getClass + " : " + stmt.unit)
       }
@@ -140,10 +178,10 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
 }
 
 object State {
-    def inject(stmt : Stmt) : State = {
-      val initial_map : Map[Addr, D] = Map((ParameterFrameAddr(InvariantFramePointer, 0) -> AnyValue))
-      State(stmt, InvariantFramePointer, Store(initial_map), KontStack(KontStore(Map()), HaltKont))
-    }
+  def inject(stmt : Stmt) : State = {
+    val initial_map : Map[Addr, D] = Map((ParameterFrameAddr(InvariantFramePointer, 0) -> AnyValue))
+    State(stmt, InvariantFramePointer, Store(initial_map), KontStack(KontStore(Map()), HaltKont))
+  }
 }
 
 object Main {
