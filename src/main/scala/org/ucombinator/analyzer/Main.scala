@@ -21,11 +21,19 @@ class ConcreteFramePointer() extends FramePointer
 object InvariantFramePointer extends FramePointer
 
 case class KontStack(store : KontStore, k : Kont) {
-  def push(stmt : Stmt, fp : FramePointer, destAddr : Option[Addr]) : KontStack = {
+  def push(frame : Frame) : KontStack = {
     // TODO replace InvariantKontAddr with call to parameterized function
     val kAddr = InvariantKontAddr
     val newKontStore = store.update(kAddr, Set(k))
-    KontStack(newKontStore, RetKont(stmt, fp, destAddr, kAddr))
+    KontStack(newKontStore, RetKont(frame, kAddr))
+  }
+
+  def pop() : Set[(Frame, KontStack)] = {
+    k match {
+      case RetKont(frame, kontAddr) => {
+        for (topk <- store(kontAddr)) yield (frame, KontStack(store, topk))
+      }
+    }
   }
 }
 
@@ -48,12 +56,18 @@ case class KontStore(private val map : Map[KontAddr, Set[Kont]]) {
 }
 
 
+case class Frame(
+  val stmt : Stmt,
+  val fp : FramePointer,
+  val destAddr : Option[Addr]) {
+
+  def acceptsReturnValue() : Boolean = !(destAddr.isEmpty)
+}
+
 abstract class Kont
 
 case class RetKont(
-  val stmt : Stmt,
-  val fp : FramePointer,
-  val destAddr : Option[Addr],
+  val frame : Frame,
   val k : KontAddr
 ) extends Kont
 
@@ -128,7 +142,7 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
           val d = eval(a, fp, store)
           newStore = newStore.update(addr, d)
         }
-        val newKontStack = kontStack.push(stmt.next_syntactic, newFP, None)
+        val newKontStack = kontStack.push(Frame(stmt.next_syntactic, newFP, None))
         Set(State(newStmt, newFP, newStore, newKontStack))
       }
     }
@@ -167,6 +181,12 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
       }
 
       case unit : ReturnStmt => {
+        val evaled = eval(unit.getOp(), fp, store)
+        for ((frame, newStack) <- kontStack.pop if frame.acceptsReturnValue())
+          yield State(frame.stmt, frame.fp, store.update(frame.destAddr.get, evaled), newStack)
+      }
+
+      case unit : ReturnVoidStmt => {
         throw new Exception("Not yet implemented")
       }
 
