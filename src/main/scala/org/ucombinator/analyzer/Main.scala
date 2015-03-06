@@ -8,7 +8,12 @@ import scala.language.postfixOps
 import soot.util.Chain
 import soot.SootClass
 import soot.SootMethod
+
+// We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
+// are built around using Unit so we stick with that.
 import soot.{Unit => SootUnit}
+
+
 import soot.Local
 import soot.{Value => SootValue}
 import soot.IntType
@@ -215,6 +220,12 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
             yield State(frame.stmt, frame.fp, store, newStack)
       }
 
+      case unit : NopStmt => Set(State(stmt.next_syntactic, fp, store, kontStack))
+
+      case unit : GotoStmt => Set(State(Stmt(unit.getTarget(), stmt.method, stmt.program), fp, store, kontStack))
+
+      // We're missing DefinitionStmt and SwitchStmt.
+
       case _ => {
         throw new Exception("No match for " + stmt.unit.getClass + " : " + stmt.unit)
       }
@@ -236,7 +247,7 @@ object Main {
     val source = SootWrapper.fromClasses("to-analyze", "")
     val classes = getClassMap(source.getShimple())
 
-    val mainMainMethod = classes("Factorial").getMethodByName("main");
+    val mainMainMethod = classes("Goto").getMethodByName("main");
     val units = mainMainMethod.getActiveBody().getUnits();
 
     val first = units.getFirst()
