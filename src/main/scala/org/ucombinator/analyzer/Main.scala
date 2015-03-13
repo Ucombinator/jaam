@@ -1,5 +1,3 @@
-// vim: set ts=2 sw=2 et:
-
 package org.ucombinator.analyzer
 
 import org.ucombinator.SootWrapper
@@ -10,9 +8,10 @@ import soot.SootClass
 import soot.SootMethod
 
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
-// are built around using Unit so we stick with that.
+// are built around using Unit so we stick with that.  (We may want to
+// fix this when we build the Scala wrapper for Soot.)
 import soot.{Unit => SootUnit}
-
+import soot.jimple.{Stmt => SootStmt}
 
 import soot.Local
 import soot.{Value => SootValue}
@@ -116,16 +115,25 @@ case class LocalFrameAddr(val fp : FramePointer, val register : Local) extends F
 case class ParameterFrameAddr(val fp : FramePointer, val parameter : Int) extends FrameAddr
 
 case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[String, SootClass]) {
-  def next_syntactic() : Stmt = {
-    Stmt(method.getActiveBody().getUnits().getSuccOf(unit), method, program)
-  }
+  assert(unit.isInstanceOf[SootStmt])
+  def nextTarget(unit : SootUnit) : Stmt = Stmt(unit, method, program)
+  def nextSyntactic() : Stmt = nextTarget(method.getActiveBody().getUnits().getSuccOf(unit))
 }
 
 case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : KontStack) {
   def alloca() : FramePointer = InvariantFramePointer
 
+  def evalAddr(v : SootValue, fp : FramePointer, store : Store) : Addr = {
+    v match {
+      case local : Local => LocalFrameAddr(fp, local)
+      case v : ParameterRef => ParameterFrameAddr(fp, v.getIndex())
+    }
+  }
+
   def eval(v: SootValue, fp : FramePointer, store : Store) : D = {
     v match {
+      case (_ : Local) | (_ : Ref) => store(evalAddr(v, fp, store))
+
       case n : NumericConstant => D.atomicTop
       case subexpr : SubExpr => {
         assert(subexpr.getOp1().getType().isInstanceOf[IntType])
@@ -141,8 +149,6 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
         D.atomicTop
       }
 
-      case local : Local => store(LocalFrameAddr(fp, local))
-
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
   }
@@ -150,57 +156,46 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
   def handleInvoke(expr : InvokeExpr, destAddr : Option[Addr]) : Set[State] = {
     expr match {
       case inv : StaticInvokeExpr => {
-        val args = inv.getArgs
         val methRef = inv.getMethodRef
-        val cls = methRef.declaringClass
-        val meth = cls.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
-        val statements = meth.getActiveBody().getUnits()
-        val newStmt = Stmt(statements.getFirst, meth, stmt.program)
+        val meth = methRef.declaringClass.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
         val newFP = alloca()
-        var i = 0
         var newStore = store
-        for (a <- args) {
-          val addr = ParameterFrameAddr(newFP, i)
-          val d = eval(a, fp, store)
-          newStore = newStore.update(addr, d)
-        }
-        val newKontStack = kontStack.push(Frame(stmt.next_syntactic, newFP, destAddr))
-        Set(State(newStmt, newFP, newStore, newKontStack))
+        for (i <- 0 until inv.getArgCount())
+          newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i), fp, store))
+        Set(State(Stmt(meth.getActiveBody().getUnits().getFirst, meth, stmt.program),
+                  newFP,
+                  newStore,
+                  kontStack.push(Frame(stmt.nextSyntactic(), newFP, destAddr))))
       }
     }
   }
 
   def next() : Set[State] = {
     stmt.unit match {
-      case unit : IdentityStmt => {
-        val lhs_addr = LocalFrameAddr(fp, unit.getLeftOp().asInstanceOf[Local])
-        val rhs_addr = ParameterFrameAddr(fp, unit.getRightOp().asInstanceOf[ParameterRef].getIndex())
-        val new_store = store.update(lhs_addr, store(rhs_addr))
-        Set(State(stmt.next_syntactic(), fp, new_store, kontStack))
-      }
-      case unit : InvokeStmt => {
-        handleInvoke(unit.getInvokeExpr, None)
-      }
+      case unit : InvokeStmt => handleInvoke(unit.getInvokeExpr, None)
 
-      case unit : IfStmt => {
-        val trueState = State(Stmt(unit.getTarget(), stmt.method, stmt.program),
-                              fp, store, kontStack)
-        val falseState = State(stmt.next_syntactic(), fp, store, kontStack)
-        Set(trueState, falseState)
-      }
-
-      case unit : AssignStmt => {
-        val lhs_addr = LocalFrameAddr(fp, unit.getLeftOp().asInstanceOf[Local])
+      case unit : DefinitionStmt => {
+        val lhsAddr = evalAddr(unit.getLeftOp(), fp, store)
 
         unit.getRightOp() match {
-          case expr : InvokeExpr => handleInvoke(expr, Some(lhs_addr))
-          case _ => {
-            val evaled_rhs = eval(unit.getRightOp(), fp, store)
-            val newStore = store.update(lhs_addr, evaled_rhs)
-            Set(State(stmt.next_syntactic(), fp, newStore, kontStack))
+          case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
+          case rhs => {
+            val evaledRhs = eval(rhs, fp, store)
+            val newStore = store.update(lhsAddr, evaledRhs)
+            Set(State(stmt.nextSyntactic(), fp, newStore, kontStack))
           }
         }
       }
+
+      case unit : IfStmt => {
+        val trueState = State(stmt.nextTarget(unit.getTarget()), fp, store, kontStack)
+        val falseState = State(stmt.nextSyntactic(), fp, store, kontStack)
+        Set(trueState, falseState)
+      }
+
+      // TODO: needs testing
+      case unit : SwitchStmt =>
+        unit.getTargets().map(t => State(stmt.nextTarget(t), fp, store, kontStack)).toSet
 
       case unit : ReturnStmt => {
         val evaled = eval(unit.getOp(), fp, store)
@@ -220,11 +215,18 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
             yield State(frame.stmt, frame.fp, store, newStack)
       }
 
-      case unit : NopStmt => Set(State(stmt.next_syntactic, fp, store, kontStack))
+      // Since Soot's NopEliminator run before us, no "nop" should be
+      // left in the code and this case isn't needed (and also is
+      // untested).  The one place a "nop" could occur is as the last
+      // instruction of a method that is also the instruction after
+      // the end of a "try" clause. (See NopEliminator for the exact
+      // conditions.) However, that would not be an executable
+      // instruction, so we still wouldn't need this case.
+      case unit : NopStmt => Set(State(stmt.nextSyntactic(), fp, store, kontStack))
 
-      case unit : GotoStmt => Set(State(Stmt(unit.getTarget(), stmt.method, stmt.program), fp, store, kontStack))
+      case unit : GotoStmt => Set(State(stmt.nextTarget(unit.getTarget()), fp, store, kontStack))
 
-      // We're missing DefinitionStmt and SwitchStmt.
+      // We're missing BreakPointStmt, MonitorStmt, RetStmt, and ThrowStmt.
 
       case _ => {
         throw new Exception("No match for " + stmt.unit.getClass + " : " + stmt.unit)
@@ -242,12 +244,16 @@ object State {
 
 object Main {
   def main(args : Array[String]) {
-    println("Hello world")
+    // TODO: proper option parsing
+    if (args.length != 3) println("Expected arguments: [classDirectory] [className] [methodName]")
+    val classDirectory = args(0)
+    val className = args(1)
+    val methodName = args(2)
 
-    val source = SootWrapper.fromClasses("to-analyze", "")
+    val source = SootWrapper.fromClasses(classDirectory, "")
     val classes = getClassMap(source.getShimple())
 
-    val mainMainMethod = classes("Goto").getMethodByName("main");
+    val mainMainMethod = classes(className).getMethodByName(methodName);
     val units = mainMainMethod.getActiveBody().getUnits();
 
     val first = units.getFirst()
@@ -265,12 +271,6 @@ object Main {
     }
   }
 
-  def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass]= {
-    var map : Map[String, SootClass] = Map()
-    for (c <- classes) {
-      map = map + ((c.getName(), c))
-    }
-
-    map
-  }
+  def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] = 
+    classes.map{c => (c.getName() -> c)}.toMap
 }
