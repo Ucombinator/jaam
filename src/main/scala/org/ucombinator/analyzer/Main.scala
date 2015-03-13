@@ -5,7 +5,8 @@ import scala.collection.JavaConversions._
 import scala.language.postfixOps
 import soot.util.Chain
 import soot.SootClass
-import soot.SootMethod
+import soot.SootField
+import soot.SootMethod    
 
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
@@ -70,7 +71,7 @@ case class KontStore(private val map : Map[KontAddr, Set[Kont]]) {
 case class Frame(
   val stmt : Stmt,
   val fp : FramePointer,
-  val destAddr : Option[Addr]) {
+  val destAddr : Option[Set[Addr]]) {
 
   def acceptsReturnValue() : Boolean = !(destAddr.isEmpty)
 }
@@ -113,8 +114,20 @@ case class Store(private val map : Map[Addr, D]) {
       case None => Store(map + (addr -> d))
     }
   }
+  def update(addrs : Set[Addr], d : D) : Store= {
+     var newStore = this
+     for (a <- addrs) {
+       newStore = newStore.update(a, d)
+     }
+     newStore
+  }
 
   def apply(addr : Addr) : D = map(addr)
+  def apply(addrs : Set[Addr]) : D = {
+    val ds = for (a <- addrs)
+               yield map(a)
+    ds.fold (D(Set()))(_ join _)
+  }
   def get(addr : Addr) : Option[D] = map.get(addr)
 }
 
@@ -123,6 +136,8 @@ case class LocalFrameAddr(val fp : FramePointer, val register : Local) extends F
 case class ParameterFrameAddr(val fp : FramePointer, val parameter : Int) extends FrameAddr
 
 case class ThisFrameAddr(val fp : FramePointer) extends FrameAddr
+
+case class FieldAddr(val bp : BasePointer, val sf : SootField) extends Addr
 
 case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[String, SootClass]) {
   assert(unit.isInstanceOf[SootStmt])
@@ -142,8 +157,21 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
     }
   }
 
+  def addrsOf(sv : SootValue, fp : FramePointer, store : Store) : Set[Addr] = {
+    sv match {
+      case sv : InstanceFieldRef => {
+	val b = sv.getBase()
+	val d = eval(b, fp, store)
+	for (v <- d.values if v.isInstanceOf[ObjectValue])
+	 yield FieldAddr(v.asInstanceOf[ObjectValue].bp, sv.getField())      
+      }
+      case _ => Set(addrOf(sv, fp, store))
+    }    
+  }
+
   def eval(v: SootValue, fp : FramePointer, store : Store) : D = {
     v match {
+      case i : InstanceFieldRef => store(addrsOf(v, fp, store))
       case (_ : Local) | (_ : Ref) => store(addrOf(v, fp, store))
 
       case n : NumericConstant => D.atomicTop
@@ -165,7 +193,7 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
     }
   }
 
-  def handleInvoke(expr : InvokeExpr, destAddr : Option[Addr]) : Set[State] = {
+  def handleInvoke(expr : InvokeExpr, destAddr : Option[Set[Addr]]) : Set[State] = {
     expr match {
       case inv : SpecialInvokeExpr => {
 	val methRef = inv.getMethodRef
@@ -209,7 +237,7 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
       case unit : InvokeStmt => handleInvoke(unit.getInvokeExpr, None)
 
       case unit : DefinitionStmt => {
-        val lhsAddr = addrOf(unit.getLeftOp(), fp, store)
+        val lhsAddr = addrsOf(unit.getLeftOp(), fp, store)
 
         unit.getRightOp() match {
           case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))	  
