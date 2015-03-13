@@ -11,7 +11,6 @@ import soot.SootMethod
 // are built around using Unit so we stick with that.
 import soot.{Unit => SootUnit}
 
-
 import soot.Local
 import soot.{Value => SootValue}
 import soot.IntType
@@ -122,8 +121,17 @@ case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[
 case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : KontStack) {
   def alloca() : FramePointer = InvariantFramePointer
 
+  def evalAddr(v : SootValue, fp : FramePointer, store : Store) : Addr = {
+    v match {
+      case local : Local => LocalFrameAddr(fp, local)
+      case v : ParameterRef => ParameterFrameAddr(fp, v.getIndex())
+    }
+  }
+
   def eval(v: SootValue, fp : FramePointer, store : Store) : D = {
     v match {
+      case (_ : Local) | (_ : Ref) => store(evalAddr(v, fp, store))
+
       case n : NumericConstant => D.atomicTop
       case subexpr : SubExpr => {
         assert(subexpr.getOp1().getType().isInstanceOf[IntType])
@@ -138,8 +146,6 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
 
         D.atomicTop
       }
-
-      case local : Local => store(LocalFrameAddr(fp, local))
 
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
@@ -164,14 +170,19 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
 
   def next() : Set[State] = {
     stmt.unit match {
-      case unit : IdentityStmt => {
-        val lhs_addr = LocalFrameAddr(fp, unit.getLeftOp().asInstanceOf[Local])
-        val rhs_addr = ParameterFrameAddr(fp, unit.getRightOp().asInstanceOf[ParameterRef].getIndex())
-        val new_store = store.update(lhs_addr, store(rhs_addr))
-        Set(State(stmt.next_syntactic(), fp, new_store, kontStack))
-      }
-      case unit : InvokeStmt => {
-        handleInvoke(unit.getInvokeExpr, None)
+      case unit : InvokeStmt => handleInvoke(unit.getInvokeExpr, None)
+
+      case unit : DefinitionStmt => {
+        val lhsAddr = evalAddr(unit.getLeftOp(), fp, store)
+
+        unit.getRightOp() match {
+          case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
+          case rhs => {
+            val evaledRhs = eval(rhs, fp, store)
+            val newStore = store.update(lhsAddr, evaledRhs)
+            Set(State(stmt.next_syntactic(), fp, newStore, kontStack))
+          }
+        }
       }
 
       case unit : IfStmt => {
@@ -179,19 +190,6 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
                               fp, store, kontStack)
         val falseState = State(stmt.next_syntactic(), fp, store, kontStack)
         Set(trueState, falseState)
-      }
-
-      case unit : AssignStmt => {
-        val lhs_addr = LocalFrameAddr(fp, unit.getLeftOp().asInstanceOf[Local])
-
-        unit.getRightOp() match {
-          case expr : InvokeExpr => handleInvoke(expr, Some(lhs_addr))
-          case _ => {
-            val evaled_rhs = eval(unit.getRightOp(), fp, store)
-            val newStore = store.update(lhs_addr, evaled_rhs)
-            Set(State(stmt.next_syntactic(), fp, newStore, kontStack))
-          }
-        }
       }
 
       case unit : ReturnStmt => {
@@ -223,7 +221,7 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
 
       case unit : GotoStmt => Set(State(Stmt(unit.getTarget(), stmt.method, stmt.program), fp, store, kontStack))
 
-      // We're missing DefinitionStmt and SwitchStmt.
+      // We're missing BreakPointStmt, MonitorStmt, RetStmt, SwitchStmt, and ThrowStmt.
 
       case _ => {
         throw new Exception("No match for " + stmt.unit.getClass + " : " + stmt.unit)
