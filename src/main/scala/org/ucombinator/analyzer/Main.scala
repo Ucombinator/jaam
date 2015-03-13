@@ -249,12 +249,16 @@ object State {
 
 object Main {
   def main(args : Array[String]) {
-    println("Hello world")
+    // TODO: proper option parsing
+    if (args.length != 3) println("Expected arguments: [classDirectory] [className] [methodName]")
+    val classDirectory = args(0)
+    val className = args(1)
+    val methodName = args(2)
 
-    val source = SootWrapper.fromClasses("to-analyze", "")
+    val source = SootWrapper.fromClasses(classDirectory, "")
     val classes = getClassMap(source.getShimple())
 
-    val mainMainMethod = classes("Goto").getMethodByName("main");
+    val mainMainMethod = classes(className).getMethodByName(methodName);
     val units = mainMainMethod.getActiveBody().getUnits();
 
     val first = units.getFirst()
