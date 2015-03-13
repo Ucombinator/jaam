@@ -20,9 +20,15 @@ import soot.jimple._
 
 abstract class FramePointer
 
+abstract class BasePointer
+
 class ConcreteFramePointer() extends FramePointer
 
+class ConcreteBasePointer() extends BasePointer
+
 object InvariantFramePointer extends FramePointer
+
+object InvariantBasePointer extends BasePointer
 
 case class KontStack(store : KontStore, k : Kont) {
   def push(frame : Frame) : KontStack = {
@@ -93,6 +99,8 @@ abstract class Value
 abstract class AtomicValue extends Value
 
 case object AnyAtomicValue extends AtomicValue
+
+case class ObjectValue(val sootClass : SootClass,  val bp : BasePointer) extends Value
 
 abstract class Addr
 
@@ -180,6 +188,15 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
 
         unit.getRightOp() match {
           case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
+	  case rhs : NewExpr => {
+	    val baseType = rhs.getBaseType()
+	    val sootClass = baseType.getSootClass()
+	    val bp = InvariantBasePointer // TODO turn this into malloc
+	    val obj = ObjectValue(sootClass, bp)
+	    val d = D(Set(obj))
+            val newStore = store.update(lhsAddr, d)
+	    Set(State(stmt.nextSyntactic(), fp, newStore, kontStack))
+	  }
           case rhs => {
             val evaledRhs = eval(rhs, fp, store)
             val newStore = store.update(lhsAddr, evaledRhs)
