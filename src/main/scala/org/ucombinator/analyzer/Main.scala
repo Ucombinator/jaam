@@ -190,6 +190,10 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
         Set(trueState, falseState)
       }
 
+      // TODO: needs testing
+      case unit : SwitchStmt =>
+        unit.getTargets().map(t => State(stmt.nextTarget(t), fp, store, kontStack)).toSet
+
       case unit : ReturnStmt => {
         val evaled = eval(unit.getOp(), fp, store)
         for ((frame, newStack) <- kontStack.pop) yield {
@@ -219,7 +223,7 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
 
       case unit : GotoStmt => Set(State(stmt.nextTarget(unit.getTarget()), fp, store, kontStack))
 
-      // We're missing BreakPointStmt, MonitorStmt, RetStmt, SwitchStmt, and ThrowStmt.
+      // We're missing BreakPointStmt, MonitorStmt, RetStmt, and ThrowStmt.
 
       case _ => {
         throw new Exception("No match for " + stmt.unit.getClass + " : " + stmt.unit)
