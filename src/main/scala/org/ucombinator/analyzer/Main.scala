@@ -14,7 +14,7 @@ import scala.language.postfixOps
 import soot.util.Chain
 import soot.SootClass
 import soot.SootField
-import soot.SootMethod    
+import soot.SootMethod
 
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
@@ -26,6 +26,8 @@ import soot.Local
 import soot.{Value => SootValue}
 import soot.IntType
 import soot.jimple._
+
+case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
 
 abstract class FramePointer
 
@@ -147,6 +149,8 @@ case class ThisFrameAddr(val fp : FramePointer) extends FrameAddr
 
 case class FieldAddr(val bp : BasePointer, val sf : SootField) extends Addr
 
+case class StaticFieldAddr(val sf : SootField) extends Addr
+
 case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[String, SootClass]) {
   assert(unit.isInstanceOf[SootStmt])
   def nextTarget(unit : SootUnit) : Stmt = Stmt(unit, method, program)
@@ -154,11 +158,25 @@ case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[
   override def toString() : String = unit.toString()
 }
 
-case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : KontStack) {
+case class State(stmt : Stmt,
+		 fp : FramePointer,
+		 store : Store,
+		 kontStack : KontStack,
+		 initializedClasses : Set[SootClass]) {
   def alloca() : FramePointer = InvariantFramePointer
 
+  // TODO/simplify: can we remove fp and store as arguments?
   def addrOf(v : SootValue, fp : FramePointer, store : Store) : Addr = {
     v match {
+      case s : StaticFieldRef => {
+	val f = s.getField()
+	val c = f.getDeclaringClass()
+	if (initializedClasses.contains(c)) {
+	  StaticFieldAddr(f)
+	} else {
+	  throw new UninitializedClassException(c)
+	}
+      }
       case local : Local => LocalFrameAddr(fp, local)
       case v : ParameterRef => ParameterFrameAddr(fp, v.getIndex())
       case v : ThisRef => ThisFrameAddr(fp)
@@ -226,7 +244,7 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
             case _ => {}
 	  }
         val newKontStack = kontStack.push(Frame(stmt.nextSyntactic(), newFP, destAddr))
-        Set(State(newStmt, newFP, newStore, newKontStack))
+        Set(State(newStmt, newFP, newStore, newKontStack, initializedClasses))
       }
       case inv : StaticInvokeExpr => {
         val methRef = inv.getMethodRef
@@ -239,12 +257,23 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
         for (i <- 0 until inv.getArgCount())
           newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i), fp, store))
         val newKontStack = kontStack.push(Frame(stmt.nextSyntactic(), newFP, destAddr))
-        Set(State(newStmt, newFP, newStore, newKontStack))
+	Set(State(newStmt, newFP, newStore, newKontStack, initializedClasses))
       }
     }
   }
 
   def next() : Set[State] = {
+    try {
+      true_next()
+    } catch {
+      case uce : UninitializedClassException => {
+        println("Uninitialized Class : " + uce)
+	throw new Exception("rethrowing exception due to uninitialized class")
+      }
+    }
+  }
+	
+  def true_next() : Set[State] = {
     stmt.unit match {
       case unit : InvokeStmt => handleInvoke(unit.getInvokeExpr, None)
 
@@ -260,25 +289,25 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
 	    val obj = ObjectValue(sootClass, bp)
 	    val d = D(Set(obj))
             val newStore = store.update(lhsAddr, d)
-	    Set(State(stmt.nextSyntactic(), fp, newStore, kontStack))
+	    Set(State(stmt.nextSyntactic(), fp, newStore, kontStack, initializedClasses))
 	  }
           case rhs => {
             val evaledRhs = eval(rhs, fp, store)
             val newStore = store.update(lhsAddr, evaledRhs)
-            Set(State(stmt.nextSyntactic(), fp, newStore, kontStack))
+            Set(State(stmt.nextSyntactic(), fp, newStore, kontStack, initializedClasses))
           }
         }
       }
 
       case unit : IfStmt => {
-        val trueState = State(stmt.nextTarget(unit.getTarget()), fp, store, kontStack)
-        val falseState = State(stmt.nextSyntactic(), fp, store, kontStack)
+	    val trueState = State(stmt.nextTarget(unit.getTarget()), fp, store, kontStack, initializedClasses)
+	    val falseState = State(stmt.nextSyntactic(), fp, store, kontStack, initializedClasses)
         Set(trueState, falseState)
       }
 
       // TODO: needs testing
       case unit : SwitchStmt =>
-        unit.getTargets().map(t => State(stmt.nextTarget(t), fp, store, kontStack)).toSet
+      unit.getTargets().map(t => State(stmt.nextTarget(t), fp, store, kontStack, initializedClasses)).toSet
 
       case unit : ReturnStmt => {
         val evaled = eval(unit.getOp(), fp, store)
@@ -289,13 +318,13 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
             store
           }
 
-          State(frame.stmt, frame.fp, newStore, newStack)
+          State(frame.stmt, frame.fp, newStore, newStack, initializedClasses)
         }
       }
 
       case unit : ReturnVoidStmt => {
         for ((frame, newStack) <- kontStack.pop if !(frame.acceptsReturnValue()))
-            yield State(frame.stmt, frame.fp, store, newStack)
+            yield State(frame.stmt, frame.fp, store, newStack, initializedClasses)
       }
 
       // Since Soot's NopEliminator run before us, no "nop" should be
@@ -307,10 +336,10 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
       // instruction, so we still wouldn't need this case.
       //
       // If we ever need the code for this, it would probably be:
-      //   Set(State(stmt.nextSyntactic(), fp, store, kontStack))
+      //   Set(State(stmt.nextSyntactic(), fp, store, kontStack, initializedClasses))
       case unit : NopStmt => throw new Exception("Impossible statement: " + unit)
 
-      case unit : GotoStmt => Set(State(stmt.nextTarget(unit.getTarget()), fp, store, kontStack))
+    case unit : GotoStmt => Set(State(stmt.nextTarget(unit.getTarget()), fp, store, kontStack, initializedClasses))
 
       // We're missing BreakPointStmt, MonitorStmt, RetStmt, and ThrowStmt.
 
@@ -324,7 +353,7 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
 object State {
   def inject(stmt : Stmt) : State = {
     val initial_map : Map[Addr, D] = Map((ParameterFrameAddr(InvariantFramePointer, 0) -> D.atomicTop))
-    State(stmt, InvariantFramePointer, Store(initial_map), KontStack(KontStore(Map()), HaltKont))
+    State(stmt, InvariantFramePointer, Store(initial_map), KontStack(KontStore(Map()), HaltKont), Set())
   }
 }
 
