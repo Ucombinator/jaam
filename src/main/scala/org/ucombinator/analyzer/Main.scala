@@ -123,7 +123,7 @@ case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[
 case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : KontStack) {
   def alloca() : FramePointer = InvariantFramePointer
 
-  def evalAddr(v : SootValue, fp : FramePointer, store : Store) : Addr = {
+  def addrOf(v : SootValue, fp : FramePointer, store : Store) : Addr = {
     v match {
       case local : Local => LocalFrameAddr(fp, local)
       case v : ParameterRef => ParameterFrameAddr(fp, v.getIndex())
@@ -132,7 +132,7 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
 
   def eval(v: SootValue, fp : FramePointer, store : Store) : D = {
     v match {
-      case (_ : Local) | (_ : Ref) => store(evalAddr(v, fp, store))
+      case (_ : Local) | (_ : Ref) => store(addrOf(v, fp, store))
 
       case n : NumericConstant => D.atomicTop
       case subexpr : SubExpr => {
@@ -157,15 +157,16 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
     expr match {
       case inv : StaticInvokeExpr => {
         val methRef = inv.getMethodRef
-        val meth = methRef.declaringClass.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
+        val cls = methRef.declaringClass
+        val meth = cls.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
+        val statements = meth.getActiveBody().getUnits()
+        val newStmt = Stmt(statements.getFirst, meth, stmt.program)
         val newFP = alloca()
         var newStore = store
         for (i <- 0 until inv.getArgCount())
           newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i), fp, store))
-        Set(State(Stmt(meth.getActiveBody().getUnits().getFirst, meth, stmt.program),
-                  newFP,
-                  newStore,
-                  kontStack.push(Frame(stmt.nextSyntactic(), newFP, destAddr))))
+        val newKontStack = kontStack.push(Frame(stmt.nextSyntactic(), newFP, destAddr))
+        Set(State(newStmt, newFP, newStore, newKontStack))
       }
     }
   }
@@ -175,7 +176,7 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
       case unit : InvokeStmt => handleInvoke(unit.getInvokeExpr, None)
 
       case unit : DefinitionStmt => {
-        val lhsAddr = evalAddr(unit.getLeftOp(), fp, store)
+        val lhsAddr = addrOf(unit.getLeftOp(), fp, store)
 
         unit.getRightOp() match {
           case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
@@ -222,7 +223,10 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
       // the end of a "try" clause. (See NopEliminator for the exact
       // conditions.) However, that would not be an executable
       // instruction, so we still wouldn't need this case.
-      case unit : NopStmt => Set(State(stmt.nextSyntactic(), fp, store, kontStack))
+      //
+      // If we ever need the code for this, it would probably be:
+      //   Set(State(stmt.nextSyntactic(), fp, store, kontStack))
+      case unit : NopStmt => throw new Exception("Impossible statement: " + unit)
 
       case unit : GotoStmt => Set(State(stmt.nextTarget(unit.getTarget()), fp, store, kontStack))
 
@@ -272,5 +276,5 @@ object Main {
   }
 
   def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] = 
-    classes.map{c => (c.getName() -> c)}.toMap
+    (for (c <- classes) yield c.getName() -> c).toMap
 }
