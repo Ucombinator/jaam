@@ -149,16 +149,15 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
     expr match {
       case inv : StaticInvokeExpr => {
         val methRef = inv.getMethodRef
-        val cls = methRef.declaringClass
-        val meth = cls.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
-        val statements = meth.getActiveBody().getUnits()
-        val newStmt = Stmt(statements.getFirst, meth, stmt.program)
+        val meth = methRef.declaringClass.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
         val newFP = alloca()
         var newStore = store
         for (i <- 0 until inv.getArgCount())
           newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i), fp, store))
-        val newKontStack = kontStack.push(Frame(stmt.next_syntactic, newFP, destAddr))
-        Set(State(newStmt, newFP, newStore, newKontStack))
+        Set(State(Stmt(meth.getActiveBody().getUnits().getFirst, meth, stmt.program),
+                  newFP,
+                  newStore,
+                  kontStack.push(Frame(stmt.next_syntactic, newFP, destAddr))))
       }
     }
   }
