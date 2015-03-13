@@ -122,7 +122,7 @@ case class LocalFrameAddr(val fp : FramePointer, val register : Local) extends F
 
 case class ParameterFrameAddr(val fp : FramePointer, val parameter : Int) extends FrameAddr
 
-case class ThisParameterFrameAddr(val fp : FramePointer) extends FrameAddr
+case class ThisFrameAddr(val fp : FramePointer) extends FrameAddr
 
 case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[String, SootClass]) {
   assert(unit.isInstanceOf[SootStmt])
@@ -137,6 +137,7 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
     v match {
       case local : Local => LocalFrameAddr(fp, local)
       case v : ParameterRef => ParameterFrameAddr(fp, v.getIndex())
+      case v : ThisRef => ThisFrameAddr(fp)
     }
   }
 
@@ -175,7 +176,7 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
         var newStore = store
         for (i <- 0 until inv.getArgCount())
           newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i), fp, store))
-	val th = ThisParameterFrameAddr(newFP)
+	val th = ThisFrameAddr(newFP)
 	val sootValue = inv.getBase()
 	val d = eval(sootValue, fp, store)
 	for (v <- d.values)
