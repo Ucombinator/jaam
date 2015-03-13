@@ -1,5 +1,3 @@
-// vim: set ts=2 sw=2 et:
-
 package org.ucombinator.analyzer
 
 import org.ucombinator.SootWrapper
