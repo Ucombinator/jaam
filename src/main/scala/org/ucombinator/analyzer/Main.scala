@@ -113,9 +113,8 @@ case class LocalFrameAddr(val fp : FramePointer, val register : Local) extends F
 case class ParameterFrameAddr(val fp : FramePointer, val parameter : Int) extends FrameAddr
 
 case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[String, SootClass]) {
-  def next_syntactic() : Stmt = {
-    Stmt(method.getActiveBody().getUnits().getSuccOf(unit), method, program)
-  }
+  def nextTarget(unit : SootUnit) : Stmt = Stmt(unit, method, program)
+  def nextSyntactic() : Stmt = nextTarget(method.getActiveBody().getUnits().getSuccOf(unit))
 }
 
 case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : KontStack) {
@@ -163,7 +162,7 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
         Set(State(Stmt(meth.getActiveBody().getUnits().getFirst, meth, stmt.program),
                   newFP,
                   newStore,
-                  kontStack.push(Frame(stmt.next_syntactic, newFP, destAddr))))
+                  kontStack.push(Frame(stmt.nextSyntactic(), newFP, destAddr))))
       }
     }
   }
@@ -180,15 +179,14 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
           case rhs => {
             val evaledRhs = eval(rhs, fp, store)
             val newStore = store.update(lhsAddr, evaledRhs)
-            Set(State(stmt.next_syntactic(), fp, newStore, kontStack))
+            Set(State(stmt.nextSyntactic(), fp, newStore, kontStack))
           }
         }
       }
 
       case unit : IfStmt => {
-        val trueState = State(Stmt(unit.getTarget(), stmt.method, stmt.program),
-                              fp, store, kontStack)
-        val falseState = State(stmt.next_syntactic(), fp, store, kontStack)
+        val trueState = State(stmt.nextTarget(unit.getTarget()), fp, store, kontStack)
+        val falseState = State(stmt.nextSyntactic(), fp, store, kontStack)
         Set(trueState, falseState)
       }
 
@@ -217,9 +215,9 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
       // the end of a "try" clause. (See NopEliminator for the exact
       // conditions.) However, that would not be an executable
       // instruction, so we still wouldn't need this case.
-      case unit : NopStmt => Set(State(stmt.next_syntactic, fp, store, kontStack))
+      case unit : NopStmt => Set(State(stmt.nextSyntactic(), fp, store, kontStack))
 
-      case unit : GotoStmt => Set(State(Stmt(unit.getTarget(), stmt.method, stmt.program), fp, store, kontStack))
+      case unit : GotoStmt => Set(State(stmt.nextTarget(unit.getTarget()), fp, store, kontStack))
 
       // We're missing BreakPointStmt, MonitorStmt, RetStmt, SwitchStmt, and ThrowStmt.
 
