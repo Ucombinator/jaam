@@ -128,6 +128,7 @@ case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[
   assert(unit.isInstanceOf[SootStmt])
   def nextTarget(unit : SootUnit) : Stmt = Stmt(unit, method, program)
   def nextSyntactic() : Stmt = nextTarget(method.getActiveBody().getUnits().getSuccOf(unit))
+  override def toString() : String = unit.toString()
 }
 
 case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : KontStack) {
