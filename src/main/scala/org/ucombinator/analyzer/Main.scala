@@ -8,8 +8,10 @@ import soot.SootClass
 import soot.SootMethod
 
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
-// are built around using Unit so we stick with that.
+// are built around using Unit so we stick with that.  (We may want to
+// fix this when we build the Scala wrapper for Soot.)
 import soot.{Unit => SootUnit}
+import soot.jimple.{Stmt => SootStmt}
 
 import soot.Local
 import soot.{Value => SootValue}
@@ -113,6 +115,7 @@ case class LocalFrameAddr(val fp : FramePointer, val register : Local) extends F
 case class ParameterFrameAddr(val fp : FramePointer, val parameter : Int) extends FrameAddr
 
 case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[String, SootClass]) {
+  assert(unit.isInstanceOf[SootStmt])
   def nextTarget(unit : SootUnit) : Stmt = Stmt(unit, method, program)
   def nextSyntactic() : Stmt = nextTarget(method.getActiveBody().getUnits().getSuccOf(unit))
 }
