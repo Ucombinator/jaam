@@ -274,12 +274,6 @@ object Main {
     }
   }
 
-  def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass]= {
-    var map : Map[String, SootClass] = Map()
-    for (c <- classes) {
-      map = map + ((c.getName(), c))
-    }
-
-    map
-  }
+  def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] = 
+    classes.map{c => (c.getName() -> c)}.toMap
 }
