@@ -122,6 +122,8 @@ case class LocalFrameAddr(val fp : FramePointer, val register : Local) extends F
 
 case class ParameterFrameAddr(val fp : FramePointer, val parameter : Int) extends FrameAddr
 
+case class ThisParameterFrameAddr(val fp : FramePointer) extends FrameAddr
+
 case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[String, SootClass]) {
   assert(unit.isInstanceOf[SootStmt])
   def nextTarget(unit : SootUnit) : Stmt = Stmt(unit, method, program)
@@ -163,6 +165,27 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
 
   def handleInvoke(expr : InvokeExpr, destAddr : Option[Addr]) : Set[State] = {
     expr match {
+      case inv : SpecialInvokeExpr => {
+	val methRef = inv.getMethodRef
+	val cls = methRef.declaringClass
+        val meth = cls.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
+        val statements = meth.getActiveBody().getUnits()
+        val newStmt = Stmt(statements.getFirst, meth, stmt.program)
+        val newFP = alloca()
+        var newStore = store
+        for (i <- 0 until inv.getArgCount())
+          newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i), fp, store))
+	val th = ThisParameterFrameAddr(newFP)
+	val sootValue = inv.getBase()
+	val d = eval(sootValue, fp, store)
+	for (v <- d.values)
+	  v match {
+            case ObjectValue(sootClass, _) => newStore = newStore.update(th, D(Set(v)))
+            case _ => {}
+	  }
+        val newKontStack = kontStack.push(Frame(stmt.nextSyntactic(), newFP, destAddr))
+        Set(State(newStmt, newFP, newStore, newKontStack))
+      }
       case inv : StaticInvokeExpr => {
         val methRef = inv.getMethodRef
         val cls = methRef.declaringClass
@@ -187,7 +210,7 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
         val lhsAddr = addrOf(unit.getLeftOp(), fp, store)
 
         unit.getRightOp() match {
-          case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
+          case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))	  
 	  case rhs : NewExpr => {
 	    val baseType = rhs.getBaseType()
 	    val sootClass = baseType.getSootClass()
