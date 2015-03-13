@@ -1,5 +1,13 @@
 package org.ucombinator.analyzer
 
+/*
+  Warning:
+
+  1. Don't cross the streams.  It would be bad.
+
+  2. Don't order addresses.  Dogs and cats, living together.  Mass hysteria.
+*/
+
 import org.ucombinator.SootWrapper
 import scala.collection.JavaConversions._
 import scala.language.postfixOps
@@ -158,10 +166,12 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
   }
 
   def addrsOf(sv : SootValue, fp : FramePointer, store : Store) : Set[Addr] = {
-    sv match {
+    sv match {       
       case sv : InstanceFieldRef => {
 	val b = sv.getBase()
 	val d = eval(b, fp, store)
+	// TODO/optimize
+	// filter out incorrect class types
 	for (v <- d.values if v.isInstanceOf[ObjectValue])
 	 yield FieldAddr(v.asInstanceOf[ObjectValue].bp, sv.getField())      
       }
@@ -208,6 +218,8 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
 	val th = ThisFrameAddr(newFP)
 	val sootValue = inv.getBase()
 	val d = eval(sootValue, fp, store)
+	// TODO/optimize
+	// filter out incorrect class types	      
 	for (v <- d.values)
 	  v match {
             case ObjectValue(sootClass, _) => newStore = newStore.update(th, D(Set(v)))
