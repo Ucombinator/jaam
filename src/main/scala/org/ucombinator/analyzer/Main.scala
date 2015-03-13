@@ -220,6 +220,13 @@ case class State(stmt : Stmt, fp : FramePointer, store : Store, kontStack : Kont
             yield State(frame.stmt, frame.fp, store, newStack)
       }
 
+      // Since Soot's NopEliminator run before us, no "nop" should be
+      // left in the code and this case isn't needed (and also is
+      // untested).  The one place a "nop" could occur is as the last
+      // instruction of a method that is also the instruction after
+      // the end of a "try" clause. (See NopEliminator for the exact
+      // conditions.) However, that would not be an executable
+      // instruction, so we still wouldn't need this case.
       case unit : NopStmt => Set(State(stmt.next_syntactic, fp, store, kontStack))
 
       case unit : GotoStmt => Set(State(Stmt(unit.getTarget(), stmt.method, stmt.program), fp, store, kontStack))
