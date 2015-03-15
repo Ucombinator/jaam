@@ -378,7 +378,8 @@ object Main {
     var seen : Set [State] = Set()
     while (todo nonEmpty) {
       val current = todo.head
-      println(current);
+      println(current)
+      println()
       val nexts = current.next
       // TODO: Fix optimization bug here
       todo = nexts.toList.filter(!seen.contains(_)) ++ todo.tail
