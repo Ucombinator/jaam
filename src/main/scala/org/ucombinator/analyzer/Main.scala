@@ -165,8 +165,7 @@ case class State(stmt : Stmt,
                  initializedClasses : Set[SootClass]) {
   def alloca() : FramePointer = InvariantFramePointer
 
-  // TODO/simplify: can we remove fp and store as arguments?
-  def addrOf(v : SootValue, fp : FramePointer, store : Store) : Addr = {
+  def addrOf(v : SootValue) : Addr = {
     v match {
       case s : StaticFieldRef => {
         val f = s.getField()
@@ -183,24 +182,24 @@ case class State(stmt : Stmt,
     }
   }
 
-  def addrsOf(sv : SootValue, fp : FramePointer, store : Store) : Set[Addr] = {
+  def addrsOf(sv : SootValue) : Set[Addr] = {
     sv match {
       case sv : InstanceFieldRef => {
         val b = sv.getBase()
-        val d = eval(b, fp, store)
+        val d = eval(b)
         // TODO/optimize
         // filter out incorrect class types
         for (v <- d.values if v.isInstanceOf[ObjectValue])
          yield FieldAddr(v.asInstanceOf[ObjectValue].bp, sv.getField())
       }
-      case _ => Set(addrOf(sv, fp, store))
+      case _ => Set(addrOf(sv))
     }
   }
 
-  def eval(v: SootValue, fp : FramePointer, store : Store) : D = {
+  def eval(v: SootValue) : D = {
     v match {
-      case i : InstanceFieldRef => store(addrsOf(v, fp, store))
-      case (_ : Local) | (_ : Ref) => store(addrOf(v, fp, store))
+      case i : InstanceFieldRef => store(addrsOf(v))
+      case (_ : Local) | (_ : Ref) => store(addrOf(v))
 
       case n : NumericConstant => D.atomicTop
       case subexpr : SubExpr => {
@@ -232,10 +231,10 @@ case class State(stmt : Stmt,
         val newFP = alloca()
         var newStore = store
         for (i <- 0 until inv.getArgCount())
-          newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i), fp, store))
+          newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i)))
         val th = ThisFrameAddr(newFP)
         val sootValue = inv.getBase()
-        val d = eval(sootValue, fp, store)
+        val d = eval(sootValue)
         // TODO/optimize
         // filter out incorrect class types
         for (v <- d.values)
@@ -255,7 +254,7 @@ case class State(stmt : Stmt,
         val newFP = alloca()
         var newStore = store
         for (i <- 0 until inv.getArgCount())
-          newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i), fp, store))
+          newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i)))
         val newKontStack = kontStack.push(Frame(stmt.nextSyntactic(), newFP, destAddr))
         Set(State(newStmt, newFP, newStore, newKontStack, initializedClasses))
       }
@@ -278,7 +277,7 @@ case class State(stmt : Stmt,
       case unit : InvokeStmt => handleInvoke(unit.getInvokeExpr, None)
 
       case unit : DefinitionStmt => {
-        val lhsAddr = addrsOf(unit.getLeftOp(), fp, store)
+        val lhsAddr = addrsOf(unit.getLeftOp())
 
         unit.getRightOp() match {
           case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
@@ -292,7 +291,7 @@ case class State(stmt : Stmt,
             Set(State(stmt.nextSyntactic(), fp, newStore, kontStack, initializedClasses))
           }
           case rhs => {
-            val evaledRhs = eval(rhs, fp, store)
+            val evaledRhs = eval(rhs)
             val newStore = store.update(lhsAddr, evaledRhs)
             Set(State(stmt.nextSyntactic(), fp, newStore, kontStack, initializedClasses))
           }
@@ -310,7 +309,7 @@ case class State(stmt : Stmt,
       unit.getTargets().map(t => State(stmt.nextTarget(t), fp, store, kontStack, initializedClasses)).toSet
 
       case unit : ReturnStmt => {
-        val evaled = eval(unit.getOp(), fp, store)
+        val evaled = eval(unit.getOp())
         for ((frame, newStack) <- kontStack.pop) yield {
           val newStore = if (frame.acceptsReturnValue()) {
             store.update(frame.destAddr.get, evaled)
