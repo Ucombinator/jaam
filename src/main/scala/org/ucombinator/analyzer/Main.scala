@@ -159,23 +159,23 @@ case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[
 }
 
 case class State(stmt : Stmt,
-		 fp : FramePointer,
-		 store : Store,
-		 kontStack : KontStack,
-		 initializedClasses : Set[SootClass]) {
+                 fp : FramePointer,
+                 store : Store,
+                 kontStack : KontStack,
+                 initializedClasses : Set[SootClass]) {
   def alloca() : FramePointer = InvariantFramePointer
 
   // TODO/simplify: can we remove fp and store as arguments?
   def addrOf(v : SootValue, fp : FramePointer, store : Store) : Addr = {
     v match {
       case s : StaticFieldRef => {
-	val f = s.getField()
-	val c = f.getDeclaringClass()
-	if (initializedClasses.contains(c)) {
-	  StaticFieldAddr(f)
-	} else {
-	  throw new UninitializedClassException(c)
-	}
+        val f = s.getField()
+        val c = f.getDeclaringClass()
+        if (initializedClasses.contains(c)) {
+          StaticFieldAddr(f)
+        } else {
+          throw new UninitializedClassException(c)
+        }
       }
       case local : Local => LocalFrameAddr(fp, local)
       case v : ParameterRef => ParameterFrameAddr(fp, v.getIndex())
@@ -184,17 +184,17 @@ case class State(stmt : Stmt,
   }
 
   def addrsOf(sv : SootValue, fp : FramePointer, store : Store) : Set[Addr] = {
-    sv match {       
+    sv match {
       case sv : InstanceFieldRef => {
-	val b = sv.getBase()
-	val d = eval(b, fp, store)
-	// TODO/optimize
-	// filter out incorrect class types
-	for (v <- d.values if v.isInstanceOf[ObjectValue])
-	 yield FieldAddr(v.asInstanceOf[ObjectValue].bp, sv.getField())      
+        val b = sv.getBase()
+        val d = eval(b, fp, store)
+        // TODO/optimize
+        // filter out incorrect class types
+        for (v <- d.values if v.isInstanceOf[ObjectValue])
+         yield FieldAddr(v.asInstanceOf[ObjectValue].bp, sv.getField())
       }
       case _ => Set(addrOf(sv, fp, store))
-    }    
+    }
   }
 
   def eval(v: SootValue, fp : FramePointer, store : Store) : D = {
@@ -224,8 +224,8 @@ case class State(stmt : Stmt,
   def handleInvoke(expr : InvokeExpr, destAddr : Option[Set[Addr]]) : Set[State] = {
     expr match {
       case inv : SpecialInvokeExpr => {
-	val methRef = inv.getMethodRef
-	val cls = methRef.declaringClass
+        val methRef = inv.getMethodRef
+        val cls = methRef.declaringClass
         val meth = cls.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
         val statements = meth.getActiveBody().getUnits()
         val newStmt = Stmt(statements.getFirst, meth, stmt.program)
@@ -233,16 +233,16 @@ case class State(stmt : Stmt,
         var newStore = store
         for (i <- 0 until inv.getArgCount())
           newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i), fp, store))
-	val th = ThisFrameAddr(newFP)
-	val sootValue = inv.getBase()
-	val d = eval(sootValue, fp, store)
-	// TODO/optimize
-	// filter out incorrect class types	      
-	for (v <- d.values)
-	  v match {
+        val th = ThisFrameAddr(newFP)
+        val sootValue = inv.getBase()
+        val d = eval(sootValue, fp, store)
+        // TODO/optimize
+        // filter out incorrect class types
+        for (v <- d.values)
+          v match {
             case ObjectValue(sootClass, _) => newStore = newStore.update(th, D(Set(v)))
             case _ => {}
-	  }
+          }
         val newKontStack = kontStack.push(Frame(stmt.nextSyntactic(), newFP, destAddr))
         Set(State(newStmt, newFP, newStore, newKontStack, initializedClasses))
       }
@@ -257,7 +257,7 @@ case class State(stmt : Stmt,
         for (i <- 0 until inv.getArgCount())
           newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i), fp, store))
         val newKontStack = kontStack.push(Frame(stmt.nextSyntactic(), newFP, destAddr))
-	Set(State(newStmt, newFP, newStore, newKontStack, initializedClasses))
+        Set(State(newStmt, newFP, newStore, newKontStack, initializedClasses))
       }
     }
   }
@@ -268,11 +268,11 @@ case class State(stmt : Stmt,
     } catch {
       case uce : UninitializedClassException => {
         println("Uninitialized Class : " + uce)
-	throw new Exception("rethrowing exception due to uninitialized class")
+        throw new Exception("rethrowing exception due to uninitialized class")
       }
     }
   }
-	
+
   def true_next() : Set[State] = {
     stmt.unit match {
       case unit : InvokeStmt => handleInvoke(unit.getInvokeExpr, None)
@@ -281,16 +281,16 @@ case class State(stmt : Stmt,
         val lhsAddr = addrsOf(unit.getLeftOp(), fp, store)
 
         unit.getRightOp() match {
-          case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))	  
-	  case rhs : NewExpr => {
-	    val baseType = rhs.getBaseType()
-	    val sootClass = baseType.getSootClass()
-	    val bp = InvariantBasePointer // TODO turn this into malloc
-	    val obj = ObjectValue(sootClass, bp)
-	    val d = D(Set(obj))
+          case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
+          case rhs : NewExpr => {
+            val baseType = rhs.getBaseType()
+            val sootClass = baseType.getSootClass()
+            val bp = InvariantBasePointer // TODO turn this into malloc
+            val obj = ObjectValue(sootClass, bp)
+            val d = D(Set(obj))
             val newStore = store.update(lhsAddr, d)
-	    Set(State(stmt.nextSyntactic(), fp, newStore, kontStack, initializedClasses))
-	  }
+            Set(State(stmt.nextSyntactic(), fp, newStore, kontStack, initializedClasses))
+          }
           case rhs => {
             val evaledRhs = eval(rhs, fp, store)
             val newStore = store.update(lhsAddr, evaledRhs)
@@ -300,8 +300,8 @@ case class State(stmt : Stmt,
       }
 
       case unit : IfStmt => {
-	    val trueState = State(stmt.nextTarget(unit.getTarget()), fp, store, kontStack, initializedClasses)
-	    val falseState = State(stmt.nextSyntactic(), fp, store, kontStack, initializedClasses)
+            val trueState = State(stmt.nextTarget(unit.getTarget()), fp, store, kontStack, initializedClasses)
+            val falseState = State(stmt.nextSyntactic(), fp, store, kontStack, initializedClasses)
         Set(trueState, falseState)
       }
 
@@ -386,6 +386,6 @@ object Main {
     }
   }
 
-  def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] = 
+  def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] =
     (for (c <- classes) yield c.getName() -> c).toMap
 }
