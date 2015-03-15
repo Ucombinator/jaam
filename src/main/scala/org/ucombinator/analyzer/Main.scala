@@ -153,8 +153,7 @@ case class StaticFieldAddr(val sf : SootField) extends Addr
 
 case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[String, SootClass]) {
   assert(unit.isInstanceOf[SootStmt])
-  def nextTarget(unit : SootUnit) : Stmt = Stmt(unit, method, program)
-  def nextSyntactic() : Stmt = nextTarget(method.getActiveBody().getUnits().getSuccOf(unit))
+  def nextSyntactic() : Stmt = copy(unit = method.getActiveBody().getUnits().getSuccOf(unit))
   override def toString() : String = unit.toString()
 }
 
@@ -298,14 +297,14 @@ case class State(stmt : Stmt,
       }
 
       case unit : IfStmt => {
-            val trueState = State(stmt.nextTarget(unit.getTarget()), fp, store, kontStack, initializedClasses)
+            val trueState = State(stmt.copy(unit = unit.getTarget()), fp, store, kontStack, initializedClasses)
             val falseState = State(stmt.nextSyntactic(), fp, store, kontStack, initializedClasses)
         Set(trueState, falseState)
       }
 
       // TODO: needs testing
       case unit : SwitchStmt =>
-      unit.getTargets().map(t => State(stmt.nextTarget(t), fp, store, kontStack, initializedClasses)).toSet
+      unit.getTargets().map(t => State(stmt.copy(unit = t), fp, store, kontStack, initializedClasses)).toSet
 
       case unit : ReturnStmt => {
         val evaled = eval(unit.getOp())
@@ -337,7 +336,7 @@ case class State(stmt : Stmt,
       //   Set(State(stmt.nextSyntactic(), fp, store, kontStack, initializedClasses))
       case unit : NopStmt => throw new Exception("Impossible statement: " + unit)
 
-    case unit : GotoStmt => Set(State(stmt.nextTarget(unit.getTarget()), fp, store, kontStack, initializedClasses))
+    case unit : GotoStmt => Set(State(stmt.copy(unit = unit.getTarget()), fp, store, kontStack, initializedClasses))
 
       // We're missing BreakPointStmt, MonitorStmt, RetStmt, and ThrowStmt.
 
