@@ -198,8 +198,7 @@ case class State(stmt : Stmt,
 
   def eval(v: SootValue) : D = {
     v match {
-      case i : InstanceFieldRef => store(addrsOf(v))
-      case (_ : Local) | (_ : Ref) => store(addrOf(v))
+      case (_ : Local) | (_ : Ref) => store(addrsOf(v))
 
       case n : NumericConstant => D.atomicTop
       case subexpr : SubExpr => {
