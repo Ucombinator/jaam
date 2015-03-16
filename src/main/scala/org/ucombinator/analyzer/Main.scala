@@ -297,14 +297,14 @@ case class State(stmt : Stmt,
       }
 
       case unit : IfStmt => {
-            val trueState = State(stmt.copy(unit = unit.getTarget()), fp, store, kontStack, initializedClasses)
-            val falseState = State(stmt.nextSyntactic(), fp, store, kontStack, initializedClasses)
+            val trueState = this.copy(stmt = stmt.copy(unit = unit.getTarget()))
+            val falseState = this.copy(stmt = stmt.nextSyntactic())
         Set(trueState, falseState)
       }
 
       // TODO: needs testing
       case unit : SwitchStmt =>
-      unit.getTargets().map(t => State(stmt.copy(unit = t), fp, store, kontStack, initializedClasses)).toSet
+      unit.getTargets().map(t => this.copy(stmt = stmt.copy(unit = t))).toSet
 
       case unit : ReturnStmt => {
         val evaled = eval(unit.getOp())
@@ -336,7 +336,7 @@ case class State(stmt : Stmt,
       //   Set(State(stmt.nextSyntactic(), fp, store, kontStack, initializedClasses))
       case unit : NopStmt => throw new Exception("Impossible statement: " + unit)
 
-    case unit : GotoStmt => Set(State(stmt.copy(unit = unit.getTarget()), fp, store, kontStack, initializedClasses))
+    case unit : GotoStmt => Set(this.copy(stmt = stmt.copy(unit = unit.getTarget())))
 
       // We're missing BreakPointStmt, MonitorStmt, RetStmt, and ThrowStmt.
 
