@@ -249,14 +249,27 @@ case class State(stmt : Stmt,
         val methRef = inv.getMethodRef
         val cls = methRef.declaringClass
         val meth = cls.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
-        val statements = meth.getActiveBody().getUnits()
-        val newStmt = Stmt(statements.getFirst, meth, stmt.program)
         val newFP = alloca()
         var newStore = store
         for (i <- 0 until inv.getArgCount())
           newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i)))
         val newKontStack = kontStack.push(Frame(stmt.nextSyntactic(), newFP, destAddr))
-        Set(State(newStmt, newFP, newStore, newKontStack, initializedClasses))
+        val methodDesc = MethodDescription(cls.getName,
+                                           methRef.name,
+                                           methRef.parameterTypes.toList.map(_.toString()),
+                                           methRef.returnType.toString())
+        println(methodDesc)
+        Snowflakes.get(methodDesc) match {
+          case Some(h) => h(this,
+                            nextStmt,
+                            newFP,
+                            newStore,
+                            newKontStack)
+          case None =>
+            val statements = meth.getActiveBody().getUnits()
+            val newStmt = Stmt(statements.getFirst, meth, stmt.program)
+            Set(State(newStmt, newFP, newStore, newKontStack, initializedClasses))
+        }
       }
     }
   }
@@ -265,12 +278,11 @@ case class State(stmt : Stmt,
     try {
       true_next()
     } catch {
-      case UninitializedClassException(sootClass) => {
+      case UninitializedClassException(sootClass) =>
         // TODO: exception needs to be called on *all* class accesses (including instance fields and methods)
         this.copy(initializedClasses = initializedClasses + sootClass)
           .handleInvoke(new JStaticInvokeExpr(sootClass.getMethodByName("<clinit>").makeRef(),
                                               java.util.Collections.emptyList()), None, stmt)
-      }
     }
   }
 
@@ -358,6 +370,34 @@ object State {
   }
 }
 
+case class MethodDescription(val className : String,
+                             val methodName : String,
+                             val parameterTypes : List[String],
+                             val returnType : String)
+
+abstract class SnowflakeHandler {
+  def apply(state : State,
+            nextStmt : Stmt,
+            newFP : FramePointer,
+            newStore : Store,
+            newKontStack : KontStack) : Set[State]
+}
+
+object Snowflakes {
+  val table = scala.collection.mutable.Map.empty[MethodDescription, SnowflakeHandler]
+  def get(md : MethodDescription) : Option[SnowflakeHandler] = table.get(md)
+  def put(md : MethodDescription, handler : SnowflakeHandler) : Unit = table.put(md, handler)
+}
+
+object NoOpSnowflake extends SnowflakeHandler {
+  override def apply(state : State,
+                     nextStmt : Stmt,
+                     newFP : FramePointer,
+                     newStore : Store,
+                     newKontStack : KontStack) : Set[State] =
+    Set(state.copy(stmt = nextStmt))
+}
+
 object Main {
   def main(args : Array[String]) {
     // TODO: proper option parsing
@@ -369,6 +409,8 @@ object Main {
     val source = SootWrapper.fromClasses(classDirectory, "")
     val classes = getClassMap(source.getShimple())
 
+    Snowflakes.put(MethodDescription("java.lang.System","registerNatives",List(),"void"),
+                   NoOpSnowflake)
     val mainMainMethod = classes(className).getMethodByName(methodName);
     val units = mainMainMethod.getActiveBody().getUnits();
 
