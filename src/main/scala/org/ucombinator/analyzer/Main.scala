@@ -198,7 +198,7 @@ case class State(stmt : Stmt,
   def eval(v: SootValue) : D = {
     v match {
       case (_ : Local) | (_ : Ref) => store(addrsOf(v))
-
+      case _ : NullConstant => D.atomicTop
       case n : NumericConstant => D.atomicTop
       case subexpr : SubExpr => {
         assert(subexpr.getOp1().getType().isInstanceOf[IntType])
