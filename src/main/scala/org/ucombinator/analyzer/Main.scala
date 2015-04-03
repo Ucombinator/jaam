@@ -27,6 +27,8 @@ import soot.{Value => SootValue}
 import soot.IntType
 import soot.jimple._
 
+import soot.jimple.internal.JStaticInvokeExpr
+
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
 
 abstract class FramePointer
@@ -218,7 +220,7 @@ case class State(stmt : Stmt,
     }
   }
 
-  def handleInvoke(expr : InvokeExpr, destAddr : Option[Set[Addr]]) : Set[State] = {
+  def handleInvoke(expr : InvokeExpr, destAddr : Option[Set[Addr]], nextStmt : Stmt = stmt.nextSyntactic()) : Set[State] = {
     expr match {
       case inv : SpecialInvokeExpr => {
         val methRef = inv.getMethodRef
@@ -263,9 +265,11 @@ case class State(stmt : Stmt,
     try {
       true_next()
     } catch {
-      case uce : UninitializedClassException => {
-        println("Uninitialized Class : " + uce)
-        throw new Exception("rethrowing exception due to uninitialized class")
+      case UninitializedClassException(sootClass) => {
+        // TODO: exception needs to be called on *all* class accesses (including instance fields and methods)
+        this.copy(initializedClasses = initializedClasses + sootClass)
+          .handleInvoke(new JStaticInvokeExpr(sootClass.getMethodByName("<clinit>").makeRef(),
+                                              java.util.Collections.emptyList()), None, stmt)
       }
     }
   }
