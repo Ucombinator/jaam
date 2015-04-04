@@ -166,34 +166,28 @@ case class State(stmt : Stmt,
                  initializedClasses : Set[SootClass]) {
   def alloca() : FramePointer = InvariantFramePointer
 
-  def addrOf(v : SootValue) : Addr = {
+  def addrsOf(v : SootValue) : Set[Addr] = {
     v match {
-      case s : StaticFieldRef => {
-        val f = s.getField()
+      case v : InstanceFieldRef => {
+        val b = v.getBase()
+        val d = eval(b)
+        // TODO/optimize
+        // filter out incorrect class types
+        for (x <- d.values if x.isInstanceOf[ObjectValue])
+         yield FieldAddr(x.asInstanceOf[ObjectValue].bp, v.getField())
+      }
+      case v : StaticFieldRef => {
+        val f = v.getField()
         val c = f.getDeclaringClass()
         if (initializedClasses.contains(c)) {
-          StaticFieldAddr(f)
+          Set(StaticFieldAddr(f))
         } else {
           throw new UninitializedClassException(c)
         }
       }
-      case local : Local => LocalFrameAddr(fp, local)
-      case v : ParameterRef => ParameterFrameAddr(fp, v.getIndex())
-      case v : ThisRef => ThisFrameAddr(fp)
-    }
-  }
-
-  def addrsOf(sv : SootValue) : Set[Addr] = {
-    sv match {
-      case sv : InstanceFieldRef => {
-        val b = sv.getBase()
-        val d = eval(b)
-        // TODO/optimize
-        // filter out incorrect class types
-        for (v <- d.values if v.isInstanceOf[ObjectValue])
-         yield FieldAddr(v.asInstanceOf[ObjectValue].bp, sv.getField())
-      }
-      case _ => Set(addrOf(sv))
+      case v : Local => Set(LocalFrameAddr(fp, v))
+      case v : ParameterRef => Set(ParameterFrameAddr(fp, v.getIndex()))
+      case v : ThisRef => Set(ThisFrameAddr(fp))
     }
   }
 
