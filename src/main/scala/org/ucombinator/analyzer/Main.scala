@@ -151,7 +151,7 @@ case class ParameterFrameAddr(val fp : FramePointer, val parameter : Int) extend
 
 case class ThisFrameAddr(val fp : FramePointer) extends FrameAddr
 
-case class FieldAddr(val bp : BasePointer, val sf : SootField) extends Addr
+case class InstanceFieldAddr(val bp : BasePointer, val sf : SootField) extends Addr
 
 case class StaticFieldAddr(val sf : SootField) extends Addr
 
@@ -178,7 +178,7 @@ case class State(stmt : Stmt,
         // TODO/optimize
         // filter out incorrect class types
         for (x <- d.values if x.isInstanceOf[ObjectValue])
-         yield FieldAddr(x.asInstanceOf[ObjectValue].bp, v.getField())
+         yield InstanceFieldAddr(x.asInstanceOf[ObjectValue].bp, v.getField())
       }
       case v : StaticFieldRef => {
         val f = v.getField()
