@@ -155,7 +155,7 @@ case class StaticFieldAddr(val sf : SootField) extends Addr
 
 case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[String, SootClass]) {
   assert(unit.isInstanceOf[SootStmt])
-  def nextSyntactic() : Stmt = copy(unit = method.getActiveBody().getUnits().getSuccOf(unit))
+  def nextSyntactic() : Stmt = this.copy(unit = method.getActiveBody().getUnits().getSuccOf(unit))
   override def toString() : String = unit.toString()
 }
 
