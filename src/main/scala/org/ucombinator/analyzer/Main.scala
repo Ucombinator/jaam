@@ -346,7 +346,7 @@ case class State(stmt : Stmt,
       //   Set(State(stmt.nextSyntactic(), fp, store, kontStack, initializedClasses))
       case unit : NopStmt => throw new Exception("Impossible statement: " + unit)
 
-    case unit : GotoStmt => Set(this.copy(stmt = stmt.copy(unit = unit.getTarget())))
+      case unit : GotoStmt => Set(this.copy(stmt = stmt.copy(unit = unit.getTarget())))
 
       // We're missing BreakPointStmt, MonitorStmt, RetStmt, and ThrowStmt.
 
