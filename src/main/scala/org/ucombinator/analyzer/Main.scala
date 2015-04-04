@@ -15,6 +15,7 @@ import soot.util.Chain
 import soot.SootClass
 import soot.SootField
 import soot.SootMethod
+import soot.SootMethodRef
 
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
@@ -28,6 +29,7 @@ import soot.IntType
 import soot.jimple._
 
 import soot.jimple.internal.JStaticInvokeExpr
+import soot.jimple.toolkits.invoke.AccessManager
 
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
 
@@ -217,56 +219,50 @@ case class State(stmt : Stmt,
   }
 
   def handleInvoke(expr : InvokeExpr, destAddr : Option[Set[Addr]], nextStmt : Stmt = stmt.nextSyntactic()) : Set[State] = {
-    expr match {
-      case inv : SpecialInvokeExpr => {
-        val methRef = inv.getMethodRef
-        val cls = methRef.declaringClass
-        val meth = cls.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
-        val statements = meth.getActiveBody().getUnits()
-        val newStmt = Stmt(statements.getFirst, meth, stmt.program)
-        val newFP = alloca()
-        var newStore = store
-        for (i <- 0 until inv.getArgCount())
-          newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i)))
-        val th = ThisFrameAddr(newFP)
-        val sootValue = inv.getBase()
-        val d = eval(sootValue)
-        // TODO/optimize
-        // filter out incorrect class types
-        for (v <- d.values)
-          v match {
-            case ObjectValue(sootClass, _) => newStore = newStore.update(th, D(Set(v)))
-            case _ => {}
-          }
-        val newKontStack = kontStack.push(Frame(stmt.nextSyntactic(), newFP, destAddr))
-        Set(State(newStmt, newFP, newStore, newKontStack, initializedClasses))
-      }
-      case inv : StaticInvokeExpr => {
-        val methRef = inv.getMethodRef
-        val cls = methRef.declaringClass
-        val meth = cls.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
-        val newFP = alloca()
-        var newStore = store
-        for (i <- 0 until inv.getArgCount())
-          newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i)))
-        val newKontStack = kontStack.push(Frame(stmt.nextSyntactic(), newFP, destAddr))
-        val methodDesc = MethodDescription(cls.getName,
-                                           methRef.name,
-                                           methRef.parameterTypes.toList.map(_.toString()),
-                                           methRef.returnType.toString())
-        println(methodDesc)
-        Snowflakes.get(methodDesc) match {
-          case Some(h) => h(this,
-                            nextStmt,
-                            newFP,
-                            newStore,
-                            newKontStack)
-          case None =>
-            val statements = meth.getActiveBody().getUnits()
-            val newStmt = Stmt(statements.getFirst, meth, stmt.program)
-            Set(State(newStmt, newFP, newStore, newKontStack, initializedClasses))
+    val methRef = expr.getMethodRef
+    val newFP = alloca()
+    var newStore = store
+    for (i <- 0 until expr.getArgCount())
+      newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(expr.getArg(i)))
+    val newKontStack = kontStack.push(Frame(nextStmt, newFP, destAddr))
+
+    def dispatch(c : SootClass, ref : SootMethodRef) : Set[State] = {
+      def overloads(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
+        val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
+        if (curr_m == null) { overloads(curr.getSuperclass(), root_m) }
+        else if (AccessManager.isAccessLegal(curr_m, root_m)) { List(curr_m) }
+        else {
+          val o = overloads(curr.getSuperclass(), root_m)
+          (if (o.exists(m => AccessManager.isAccessLegal(curr_m, m))) List(curr_m) else List()) ++ o
         }
       }
+
+      val meth = if (c != null) overloads(c, ref.resolve()).head
+                 else ref.declaringClass.getMethod(ref.name, ref.parameterTypes, ref.returnType)
+      Snowflakes.get(meth) match {
+        case Some(h) => h(this, nextStmt, newFP, newStore, newKontStack)
+        case None =>
+          Set(State(Stmt(meth.getActiveBody().getUnits().getFirst, meth, stmt.program),
+            newFP, newStore, newKontStack, initializedClasses))
+      }
+    }
+
+    expr match {
+      case expr : DynamicInvokeExpr => ??? // TODO: Could only come from non-Java sources
+      case expr : StaticInvokeExpr => dispatch(null, methRef)
+      case expr : InstanceInvokeExpr =>
+        val th = ThisFrameAddr(newFP)
+        val d = eval(expr.getBase())
+        // TODO/optimize: filter out incorrect class types
+        for (v@ObjectValue(sootClass, _) <- d.values)
+          newStore = newStore.update(th, D(Set(v)))
+        expr match {
+          case expr : SpecialInvokeExpr => dispatch(null, methRef)
+          case expr : VirtualInvokeExpr =>
+            ((for (ObjectValue(sootClass, _) <- d.values) yield
+              dispatch(sootClass, methRef)) :\ Set[State]())(_ ++ _) // TODO: better way to do this?
+          case expr : InstanceInvokeExpr => ??? // TODO
+        }
     }
   }
 
@@ -382,7 +378,12 @@ abstract class SnowflakeHandler {
 
 object Snowflakes {
   val table = scala.collection.mutable.Map.empty[MethodDescription, SnowflakeHandler]
-  def get(md : MethodDescription) : Option[SnowflakeHandler] = table.get(md)
+  def get(meth : SootMethod) : Option[SnowflakeHandler] =
+    table.get(MethodDescription(
+      meth.getDeclaringClass.getName,
+      meth.getName,
+      meth.getParameterTypes.toList.map(_.toString()),
+      meth.getReturnType.toString()))
   def put(md : MethodDescription, handler : SnowflakeHandler) : Unit = table.put(md, handler)
 }
 
