@@ -8,6 +8,9 @@ package org.ucombinator.analyzer
   2. Don't order addresses.  Dogs and cats, living together.  Mass hysteria.
 */
 
+// TODO: why haven't we seen phi nodes?
+// TODO: need to track exceptions that derefing a Null could cause
+
 import org.ucombinator.SootWrapper
 import scala.collection.JavaConversions._
 import scala.language.postfixOps
