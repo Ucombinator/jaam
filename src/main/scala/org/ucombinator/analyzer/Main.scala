@@ -221,6 +221,10 @@ case class State(stmt : Stmt,
     }
   }
 
+  // The last parameter of handleInvoke allows us to override what
+  // Stmt to execute after returning from this call.  We need this for
+  // static class initialization because in that case we want to
+  // return to the current statement instead of the next statement.
   def handleInvoke(expr : InvokeExpr, destAddr : Option[Set[Addr]], nextStmt : Stmt = stmt.nextSyntactic()) : Set[State] = {
     val methRef = expr.getMethodRef
     val newFP = alloca()
