@@ -167,7 +167,9 @@ case class State(stmt : Stmt,
   def alloca() : FramePointer = InvariantFramePointer
 
   def addrsOf(v : SootValue) : Set[Addr] = {
+    // TODO missing: ArrayRef, CaughtExceptionRef
     v match {
+      case v : Local => Set(LocalFrameAddr(fp, v))
       case v : InstanceFieldRef => {
         val b = v.getBase()
         val d = eval(b)
@@ -185,7 +187,6 @@ case class State(stmt : Stmt,
           throw new UninitializedClassException(c)
         }
       }
-      case v : Local => Set(LocalFrameAddr(fp, v))
       case v : ParameterRef => Set(ParameterFrameAddr(fp, v.getIndex()))
       case v : ThisRef => Set(ThisFrameAddr(fp))
     }
@@ -193,6 +194,7 @@ case class State(stmt : Stmt,
 
   def eval(v: SootValue) : D = {
     v match {
+      // TODO missing: BinopExpr(...), UnopExpr(...), Immediate(...), CastExpr, InstanceOfExpr
       case (_ : Local) | (_ : Ref) => store(addrsOf(v))
       case _ : NullConstant => D.atomicTop
       case n : NumericConstant => D.atomicTop
@@ -288,6 +290,7 @@ case class State(stmt : Stmt,
         val lhsAddr = addrsOf(unit.getLeftOp())
 
         unit.getRightOp() match {
+          // TODO missing: NewArrayExpr, NewMultiArrayExpr
           case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
           case rhs : NewExpr => {
             val baseType = rhs.getBaseType()
