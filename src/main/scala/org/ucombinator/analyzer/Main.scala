@@ -120,13 +120,13 @@ abstract class Addr
 abstract class FrameAddr extends Addr
 
 case class Store(private val map : Map[Addr, D]) {
-  def update(addr : Addr, d : D) : Store= {
+  def update(addr : Addr, d : D) : Store = {
     map.get(addr) match {
       case Some(oldd) => Store(map + (addr -> oldd.join(d)))
       case None => Store(map + (addr -> d))
     }
   }
-  def update(addrs : Set[Addr], d : D) : Store= {
+  def update(addrs : Set[Addr], d : D) : Store = {
      var newStore = this
      for (a <- addrs) {
        newStore = newStore.update(a, d)
