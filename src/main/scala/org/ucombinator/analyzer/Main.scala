@@ -10,6 +10,7 @@ package org.ucombinator.analyzer
 
 // TODO: why haven't we seen phi nodes?
 // TODO: need to track exceptions that derefing a Null could cause
+// TODO: optimize <clinit> by saying that all the empty <clinit> are always initialized
 
 import org.ucombinator.SootWrapper
 import scala.collection.JavaConversions._
