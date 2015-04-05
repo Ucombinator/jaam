@@ -23,6 +23,14 @@ import soot.SootField
 import soot.SootMethod
 import soot.SootMethodRef
 
+// Imports to support Main.getShrimple.  Remove these once we no longer need that method.
+import soot.Scene
+import soot.Modifier
+import soot.options.Options
+import soot.G
+import soot.{Main => SootMain}
+import soot.PackManager
+
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
 // fix this when we build the Scala wrapper for Soot.)
@@ -247,8 +255,7 @@ case class State(stmt : Stmt,
         }
       }
 
-      val meth = if (c != null) overloads(c, ref.resolve()).head
-                 else ref.declaringClass.getMethod(ref.name, ref.parameterTypes, ref.returnType)
+      val meth = if (c == null) ref.resolve() else overloads(c, ref.resolve()).head
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, newFP, newStore, newKontStack)
         case None =>
@@ -414,8 +421,9 @@ object Main {
     val className = args(1)
     val methodName = args(2)
 
-    val source = SootWrapper.fromClasses(classDirectory, "")
-    val classes = getClassMap(source.getShimple())
+    //val source = SootWrapper.fromClasses(classDirectory, "")
+    //val classes = getClassMap(source.getShimple())
+    val classes = getClassMap(getShimple(classDirectory, ""))
 
     Snowflakes.put(MethodDescription("java.lang.System","registerNatives",List(),"void"),
                    NoOpSnowflake)
@@ -440,4 +448,34 @@ object Main {
 
   def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] =
     (for (c <- classes) yield c.getName() -> c).toMap
+
+  // Temporary implementation until we fix SootWrapper
+  def getShimple(classesDir : String, classPath : String) = {
+    G.reset();
+    Options.v().set_output_format(Options.output_format_shimple);
+    Options.v().set_verbose(false);
+    Options.v().set_include_all(true);
+    // we need to link instructions to source line for display
+    Options.v().set_keep_line_number(true);
+    // Called methods without jar files or source are considered phantom
+    Options.v().set_allow_phantom_refs(true);
+    // Include the default classpath, which should include the Java SDK rt.jar.
+    Options.v().set_prepend_classpath(true);
+    Options.v().set_process_dir(List(classesDir));
+    // Include the classesDir on the class path.
+    Options.v().set_soot_classpath(classesDir + ":" + classPath);
+    // Prefer definitions from class files over source files
+    Options.v().set_src_prec(Options.src_prec_class);
+    // Compute dependent options
+    SootMain.v().autoSetOptions();
+    // Load classes according to the configured options
+    Scene.v().loadNecessaryClasses();
+    // Run transformations and analyses according to the configured options.
+    // Transformation could include jimple, shimple, and CFG generation
+    PackManager.v().runPacks();
+    val result = Scene.v().getApplicationClasses();
+    // Make sure we don't leave soot state around
+    //G.reset();
+    result
+  }
 }
