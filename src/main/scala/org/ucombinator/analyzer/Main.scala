@@ -11,6 +11,8 @@ package org.ucombinator.analyzer
 // TODO: why haven't we seen phi nodes?
 // TODO: need to track exceptions that derefing a Null could cause
 // TODO: optimize <clinit> by saying that all the empty <clinit> are always initialized
+// TODO: invoke main method instead of jumping to first instr so static init is done correctly
+// TODO: invoke main method so we can initialize the parameters to main
 
 import org.ucombinator.SootWrapper
 import scala.collection.JavaConversions._
