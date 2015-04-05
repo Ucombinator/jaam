@@ -248,7 +248,7 @@ case class State(stmt : Stmt,
       def overloads(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
         val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
         if (curr_m == null) { overloads(curr.getSuperclass(), root_m) }
-        else if (AccessManager.isAccessLegal(curr_m, root_m)) { List(curr_m) }
+        else if (root_m.getDeclaringClass.isInterface || AccessManager.isAccessLegal(curr_m, root_m)) { List(curr_m) }
         else {
           val o = overloads(curr.getSuperclass(), root_m)
           (if (o.exists(m => AccessManager.isAccessLegal(curr_m, m))) List(curr_m) else List()) ++ o
@@ -274,11 +274,10 @@ case class State(stmt : Stmt,
         for (v@ObjectValue(sootClass, _) <- d.values)
           newStore = newStore.update(th, D(Set(v)))
         expr match {
-          case expr : SpecialInvokeExpr => dispatch(null, methRef)
-          case expr : VirtualInvokeExpr =>
+          case _ : SpecialInvokeExpr => dispatch(null, methRef)
+          case (_ : VirtualInvokeExpr) | (_ : InterfaceInvokeExpr) =>
             ((for (ObjectValue(sootClass, _) <- d.values) yield
               dispatch(sootClass, methRef)) :\ Set[State]())(_ ++ _) // TODO: better way to do this?
-          case expr : InstanceInvokeExpr => ??? // TODO
         }
     }
   }
