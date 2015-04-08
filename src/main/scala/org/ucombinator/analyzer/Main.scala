@@ -21,7 +21,6 @@ import soot.util.Chain
 import soot.SootClass
 import soot.SootField
 import soot.SootMethod
-import soot.SootMethodRef
 
 // Imports to support Main.getShrimple.  Remove these once we no longer need that method.
 import soot.Scene
@@ -237,14 +236,13 @@ case class State(stmt : Stmt,
   // static class initialization because in that case we want to
   // return to the current statement instead of the next statement.
   def handleInvoke(expr : InvokeExpr, destAddr : Option[Set[Addr]], nextStmt : Stmt = stmt.nextSyntactic()) : Set[State] = {
-    val methRef = expr.getMethodRef
     val newFP = alloca()
     var newStore = store
     for (i <- 0 until expr.getArgCount())
       newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(expr.getArg(i)))
     val newKontStack = kontStack.push(Frame(nextStmt, newFP, destAddr))
 
-    def dispatch(c : SootClass, ref : SootMethodRef) : Set[State] = {
+    def dispatch(c : SootClass, m : SootMethod) : Set[State] = {
       def overloads(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
         val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
         if (curr_m == null) { overloads(curr.getSuperclass(), root_m) }
@@ -255,7 +253,7 @@ case class State(stmt : Stmt,
         }
       }
 
-      val meth = if (c == null) ref.resolve() else overloads(c, ref.resolve()).head
+      val meth = if (c == null) m else overloads(c, m).head
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, newFP, newStore, newKontStack)
         case None =>
@@ -266,7 +264,7 @@ case class State(stmt : Stmt,
 
     expr match {
       case expr : DynamicInvokeExpr => ??? // TODO: Could only come from non-Java sources
-      case expr : StaticInvokeExpr => dispatch(null, methRef)
+      case expr : StaticInvokeExpr => dispatch(null, expr.getMethod())
       case expr : InstanceInvokeExpr =>
         val th = ThisFrameAddr(newFP)
         val d = eval(expr.getBase())
@@ -274,10 +272,10 @@ case class State(stmt : Stmt,
         for (v@ObjectValue(sootClass, _) <- d.values)
           newStore = newStore.update(th, D(Set(v)))
         expr match {
-          case _ : SpecialInvokeExpr => dispatch(null, methRef)
+          case _ : SpecialInvokeExpr => dispatch(null, expr.getMethod())
           case (_ : VirtualInvokeExpr) | (_ : InterfaceInvokeExpr) =>
             ((for (ObjectValue(sootClass, _) <- d.values) yield
-              dispatch(sootClass, methRef)) :\ Set[State]())(_ ++ _) // TODO: better way to do this?
+              dispatch(sootClass, expr.getMethod())) :\ Set[State]())(_ ++ _) // TODO: better way to do this?
         }
     }
   }
