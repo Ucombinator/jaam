@@ -14,7 +14,6 @@ package org.ucombinator.analyzer
 // TODO: invoke main method instead of jumping to first instr so static init is done correctly
 // TODO: invoke main method so we can initialize the parameters to main
 
-import org.ucombinator.SootWrapper
 import scala.collection.JavaConversions._
 import scala.language.postfixOps
 import soot.util.Chain
@@ -418,8 +417,6 @@ object Main {
     val className = args(1)
     val methodName = args(2)
 
-    //val source = SootWrapper.fromClasses(classDirectory, "")
-    //val classes = getClassMap(source.getShimple())
     val classes = getClassMap(getShimple(classDirectory, ""))
 
     Snowflakes.put(MethodDescription("java.lang.System","registerNatives",List(),"void"),
