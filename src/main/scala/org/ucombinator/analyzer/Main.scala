@@ -8,13 +8,26 @@ package org.ucombinator.analyzer
   2. Don't order addresses.  Dogs and cats, living together.  Mass hysteria.
 */
 
-import org.ucombinator.SootWrapper
+// TODO: why haven't we seen phi nodes?
+// TODO: need to track exceptions that derefing a Null could cause
+// TODO: optimize <clinit> by saying that all the empty <clinit> are always initialized
+// TODO: invoke main method instead of jumping to first instr so static init is done correctly
+// TODO: invoke main method so we can initialize the parameters to main
+
 import scala.collection.JavaConversions._
 import scala.language.postfixOps
 import soot.util.Chain
 import soot.SootClass
 import soot.SootField
 import soot.SootMethod
+
+// Imports to support Main.getShrimple.  Remove these once we no longer need that method.
+import soot.Scene
+import soot.Modifier
+import soot.options.Options
+import soot.G
+import soot.{Main => SootMain}
+import soot.PackManager
 
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
@@ -28,6 +41,7 @@ import soot.IntType
 import soot.jimple._
 
 import soot.jimple.internal.JStaticInvokeExpr
+import soot.jimple.toolkits.invoke.AccessManager
 
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
 
@@ -120,13 +134,13 @@ abstract class Addr
 abstract class FrameAddr extends Addr
 
 case class Store(private val map : Map[Addr, D]) {
-  def update(addr : Addr, d : D) : Store= {
+  def update(addr : Addr, d : D) : Store = {
     map.get(addr) match {
       case Some(oldd) => Store(map + (addr -> oldd.join(d)))
       case None => Store(map + (addr -> d))
     }
   }
-  def update(addrs : Set[Addr], d : D) : Store= {
+  def update(addrs : Set[Addr], d : D) : Store = {
      var newStore = this
      for (a <- addrs) {
        newStore = newStore.update(a, d)
@@ -149,13 +163,13 @@ case class ParameterFrameAddr(val fp : FramePointer, val parameter : Int) extend
 
 case class ThisFrameAddr(val fp : FramePointer) extends FrameAddr
 
-case class FieldAddr(val bp : BasePointer, val sf : SootField) extends Addr
+case class InstanceFieldAddr(val bp : BasePointer, val sf : SootField) extends Addr
 
 case class StaticFieldAddr(val sf : SootField) extends Addr
 
 case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[String, SootClass]) {
   assert(unit.isInstanceOf[SootStmt])
-  def nextSyntactic() : Stmt = copy(unit = method.getActiveBody().getUnits().getSuccOf(unit))
+  def nextSyntactic() : Stmt = this.copy(unit = method.getActiveBody().getUnits().getSuccOf(unit))
   override def toString() : String = unit.toString()
 }
 
@@ -166,39 +180,35 @@ case class State(stmt : Stmt,
                  initializedClasses : Set[SootClass]) {
   def alloca() : FramePointer = InvariantFramePointer
 
-  def addrOf(v : SootValue) : Addr = {
+  def addrsOf(v : SootValue) : Set[Addr] = {
+    // TODO missing: ArrayRef, CaughtExceptionRef
     v match {
-      case s : StaticFieldRef => {
-        val f = s.getField()
+      case v : Local => Set(LocalFrameAddr(fp, v))
+      case v : InstanceFieldRef => {
+        val b = v.getBase()
+        val d = eval(b)
+        // TODO/optimize
+        // filter out incorrect class types
+        for (x <- d.values if x.isInstanceOf[ObjectValue])
+         yield InstanceFieldAddr(x.asInstanceOf[ObjectValue].bp, v.getField())
+      }
+      case v : StaticFieldRef => {
+        val f = v.getField()
         val c = f.getDeclaringClass()
         if (initializedClasses.contains(c)) {
-          StaticFieldAddr(f)
+          Set(StaticFieldAddr(f))
         } else {
           throw new UninitializedClassException(c)
         }
       }
-      case local : Local => LocalFrameAddr(fp, local)
-      case v : ParameterRef => ParameterFrameAddr(fp, v.getIndex())
-      case v : ThisRef => ThisFrameAddr(fp)
-    }
-  }
-
-  def addrsOf(sv : SootValue) : Set[Addr] = {
-    sv match {
-      case sv : InstanceFieldRef => {
-        val b = sv.getBase()
-        val d = eval(b)
-        // TODO/optimize
-        // filter out incorrect class types
-        for (v <- d.values if v.isInstanceOf[ObjectValue])
-         yield FieldAddr(v.asInstanceOf[ObjectValue].bp, sv.getField())
-      }
-      case _ => Set(addrOf(sv))
+      case v : ParameterRef => Set(ParameterFrameAddr(fp, v.getIndex()))
+      case v : ThisRef => Set(ThisFrameAddr(fp))
     }
   }
 
   def eval(v: SootValue) : D = {
     v match {
+      // TODO missing: BinopExpr(...), UnopExpr(...), Immediate(...), CastExpr, InstanceOfExpr
       case (_ : Local) | (_ : Ref) => store(addrsOf(v))
       case _ : NullConstant => D.atomicTop
       case n : NumericConstant => D.atomicTop
@@ -220,57 +230,52 @@ case class State(stmt : Stmt,
     }
   }
 
+  // The last parameter of handleInvoke allows us to override what
+  // Stmt to execute after returning from this call.  We need this for
+  // static class initialization because in that case we want to
+  // return to the current statement instead of the next statement.
   def handleInvoke(expr : InvokeExpr, destAddr : Option[Set[Addr]], nextStmt : Stmt = stmt.nextSyntactic()) : Set[State] = {
-    expr match {
-      case inv : SpecialInvokeExpr => {
-        val methRef = inv.getMethodRef
-        val cls = methRef.declaringClass
-        val meth = cls.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
-        val statements = meth.getActiveBody().getUnits()
-        val newStmt = Stmt(statements.getFirst, meth, stmt.program)
-        val newFP = alloca()
-        var newStore = store
-        for (i <- 0 until inv.getArgCount())
-          newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i)))
-        val th = ThisFrameAddr(newFP)
-        val sootValue = inv.getBase()
-        val d = eval(sootValue)
-        // TODO/optimize
-        // filter out incorrect class types
-        for (v <- d.values)
-          v match {
-            case ObjectValue(sootClass, _) => newStore = newStore.update(th, D(Set(v)))
-            case _ => {}
-          }
-        val newKontStack = kontStack.push(Frame(stmt.nextSyntactic(), newFP, destAddr))
-        Set(State(newStmt, newFP, newStore, newKontStack, initializedClasses))
-      }
-      case inv : StaticInvokeExpr => {
-        val methRef = inv.getMethodRef
-        val cls = methRef.declaringClass
-        val meth = cls.getMethod(methRef.name, methRef.parameterTypes, methRef.returnType)
-        val newFP = alloca()
-        var newStore = store
-        for (i <- 0 until inv.getArgCount())
-          newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(inv.getArg(i)))
-        val newKontStack = kontStack.push(Frame(stmt.nextSyntactic(), newFP, destAddr))
-        val methodDesc = MethodDescription(cls.getName,
-                                           methRef.name,
-                                           methRef.parameterTypes.toList.map(_.toString()),
-                                           methRef.returnType.toString())
-        println(methodDesc)
-        Snowflakes.get(methodDesc) match {
-          case Some(h) => h(this,
-                            nextStmt,
-                            newFP,
-                            newStore,
-                            newKontStack)
-          case None =>
-            val statements = meth.getActiveBody().getUnits()
-            val newStmt = Stmt(statements.getFirst, meth, stmt.program)
-            Set(State(newStmt, newFP, newStore, newKontStack, initializedClasses))
+    val newFP = alloca()
+    var newStore = store
+    for (i <- 0 until expr.getArgCount())
+      newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(expr.getArg(i)))
+    val newKontStack = kontStack.push(Frame(nextStmt, newFP, destAddr))
+
+    def dispatch(c : SootClass, m : SootMethod) : Set[State] = {
+      def overloads(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
+        val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
+        if (curr_m == null) { overloads(curr.getSuperclass(), root_m) }
+        else if (root_m.getDeclaringClass.isInterface || AccessManager.isAccessLegal(curr_m, root_m)) { List(curr_m) }
+        else {
+          val o = overloads(curr.getSuperclass(), root_m)
+          (if (o.exists(m => AccessManager.isAccessLegal(curr_m, m))) List(curr_m) else List()) ++ o
         }
       }
+
+      val meth = if (c == null) m else overloads(c, m).head
+      Snowflakes.get(meth) match {
+        case Some(h) => h(this, nextStmt, newFP, newStore, newKontStack)
+        case None =>
+          Set(State(Stmt(meth.getActiveBody().getUnits().getFirst, meth, stmt.program),
+            newFP, newStore, newKontStack, initializedClasses))
+      }
+    }
+
+    expr match {
+      case expr : DynamicInvokeExpr => ??? // TODO: Could only come from non-Java sources
+      case expr : StaticInvokeExpr => dispatch(null, expr.getMethod())
+      case expr : InstanceInvokeExpr =>
+        val th = ThisFrameAddr(newFP)
+        val d = eval(expr.getBase())
+        // TODO/optimize: filter out incorrect class types
+        for (v@ObjectValue(sootClass, _) <- d.values)
+          newStore = newStore.update(th, D(Set(v)))
+        expr match {
+          case _ : SpecialInvokeExpr => dispatch(null, expr.getMethod())
+          case (_ : VirtualInvokeExpr) | (_ : InterfaceInvokeExpr) =>
+            ((for (ObjectValue(sootClass, _) <- d.values) yield
+              dispatch(sootClass, expr.getMethod())) :\ Set[State]())(_ ++ _) // TODO: better way to do this?
+        }
     }
   }
 
@@ -294,6 +299,7 @@ case class State(stmt : Stmt,
         val lhsAddr = addrsOf(unit.getLeftOp())
 
         unit.getRightOp() match {
+          // TODO missing: NewArrayExpr, NewMultiArrayExpr
           case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
           case rhs : NewExpr => {
             val baseType = rhs.getBaseType()
@@ -352,7 +358,7 @@ case class State(stmt : Stmt,
       //   Set(State(stmt.nextSyntactic(), fp, store, kontStack, initializedClasses))
       case unit : NopStmt => throw new Exception("Impossible statement: " + unit)
 
-    case unit : GotoStmt => Set(this.copy(stmt = stmt.copy(unit = unit.getTarget())))
+      case unit : GotoStmt => Set(this.copy(stmt = stmt.copy(unit = unit.getTarget())))
 
       // We're missing BreakPointStmt, MonitorStmt, RetStmt, and ThrowStmt.
 
@@ -385,7 +391,12 @@ abstract class SnowflakeHandler {
 
 object Snowflakes {
   val table = scala.collection.mutable.Map.empty[MethodDescription, SnowflakeHandler]
-  def get(md : MethodDescription) : Option[SnowflakeHandler] = table.get(md)
+  def get(meth : SootMethod) : Option[SnowflakeHandler] =
+    table.get(MethodDescription(
+      meth.getDeclaringClass.getName,
+      meth.getName,
+      meth.getParameterTypes.toList.map(_.toString()),
+      meth.getReturnType.toString()))
   def put(md : MethodDescription, handler : SnowflakeHandler) : Unit = table.put(md, handler)
 }
 
@@ -406,8 +417,7 @@ object Main {
     val className = args(1)
     val methodName = args(2)
 
-    val source = SootWrapper.fromClasses(classDirectory, "")
-    val classes = getClassMap(source.getShimple())
+    val classes = getClassMap(getShimple(classDirectory, ""))
 
     Snowflakes.put(MethodDescription("java.lang.System","registerNatives",List(),"void"),
                    NoOpSnowflake)
@@ -432,4 +442,34 @@ object Main {
 
   def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] =
     (for (c <- classes) yield c.getName() -> c).toMap
+
+  // Temporary implementation until we fix SootWrapper
+  def getShimple(classesDir : String, classPath : String) = {
+    G.reset();
+    Options.v().set_output_format(Options.output_format_shimple);
+    Options.v().set_verbose(false);
+    Options.v().set_include_all(true);
+    // we need to link instructions to source line for display
+    Options.v().set_keep_line_number(true);
+    // Called methods without jar files or source are considered phantom
+    Options.v().set_allow_phantom_refs(true);
+    // Include the default classpath, which should include the Java SDK rt.jar.
+    Options.v().set_prepend_classpath(true);
+    Options.v().set_process_dir(List(classesDir));
+    // Include the classesDir on the class path.
+    Options.v().set_soot_classpath(classesDir + ":" + classPath);
+    // Prefer definitions from class files over source files
+    Options.v().set_src_prec(Options.src_prec_class);
+    // Compute dependent options
+    SootMain.v().autoSetOptions();
+    // Load classes according to the configured options
+    Scene.v().loadNecessaryClasses();
+    // Run transformations and analyses according to the configured options.
+    // Transformation could include jimple, shimple, and CFG generation
+    PackManager.v().runPacks();
+    val result = Scene.v().getApplicationClasses();
+    // Make sure we don't leave soot state around
+    //G.reset();
+    result
+  }
 }
