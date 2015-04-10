@@ -57,6 +57,8 @@ object InvariantFramePointer extends FramePointer
 
 object InvariantBasePointer extends BasePointer
 
+case class SnowflakeBasePointer(clas : String) extends BasePointer
+
 case class KontStack(store : KontStore, k : Kont) {
   def push(frame : Frame) : KontStack = {
     // TODO replace InvariantKontAddr with call to parameterized function
@@ -419,8 +421,44 @@ object Main {
 
     val classes = getClassMap(getShimple(classDirectory, ""))
 
-    Snowflakes.put(MethodDescription("java.lang.System","registerNatives",List(),"void"),
-                   NoOpSnowflake)
+    Snowflakes.put(MethodDescription("java.io.PrintStream", "println", List("int"), "void"),
+      new SnowflakeHandler {
+        override def apply(state : State,
+                     nextStmt : Stmt,
+                     newFP : FramePointer,
+                     newStore : Store,
+                     newKontStack : KontStack) = {
+          System.err.println("Skipping call to java.io.OutputStream.println(int) : void")
+          Set(state.copy(stmt = nextStmt))
+        }
+      })
+    Snowflakes.put(MethodDescription("java.lang.System","<clinit>", List(), "void"),
+      new SnowflakeHandler {
+        override def apply(state : State,
+                     nextStmt : Stmt,
+                     newFP : FramePointer,
+                     newStore : Store,
+                     newKontStack : KontStack) = {
+          def updateStore(oldStore : Store, clas : String, field : String, typ : String) =
+            oldStore.update(StaticFieldAddr(classes(clas).getFieldByName(field)),
+              D(Set(ObjectValue(classes(typ),
+                  SnowflakeBasePointer(clas + "." + field)))))
+          var newNewStore = newStore
+          newNewStore = updateStore(newNewStore,
+              "java.lang.System", "in", "java.io.InputStream")
+          newNewStore = updateStore(newNewStore,
+              "java.lang.System", "out", "java.io.PrintStream")
+          newNewStore = updateStore(newNewStore,
+              "java.lang.System", "err", "java.io.PrintStream")
+          newNewStore = updateStore(newNewStore,
+              "java.lang.System", "security", "java.lang.SecurityManager")
+          newNewStore = updateStore(newNewStore,
+              "java.lang.System", "cons", "java.io.Console")
+
+          Set(state.copy(stmt = nextStmt,
+            store = newNewStore))
+        }
+      })
     val mainMainMethod = classes(className).getMethodByName(methodName);
     val units = mainMainMethod.getActiveBody().getUnits();
 
