@@ -328,7 +328,7 @@ case class State(stmt : Stmt,
 
       // TODO: needs testing
       case unit : SwitchStmt =>
-      unit.getTargets().map(t => this.copy(stmt = stmt.copy(unit = t))).toSet
+        unit.getTargets().map(t => this.copy(stmt = stmt.copy(unit = t))).toSet
 
       case unit : ReturnStmt => {
         val evaled = eval(unit.getOp())
