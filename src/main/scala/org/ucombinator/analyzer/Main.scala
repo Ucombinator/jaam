@@ -362,7 +362,11 @@ case class State(stmt : Stmt,
 
       case unit : GotoStmt => Set(this.copy(stmt = stmt.copy(unit = unit.getTarget())))
 
-      // We're missing BreakPointStmt, MonitorStmt, RetStmt, and ThrowStmt.
+      // For now we don't model monitor statements, so we just skip over them
+      case unit : EnterMonitorStmt => Set(this.copy(stmt = stmt.nextSyntatic()))
+      case unit : ExitMonitorStmt => Set(this.copy(stmt = stmt.nextSyntatic()))
+
+      // TODO: We're missing BreakPointStmt, RetStmt, and ThrowStmt.
 
       case _ => {
         throw new Exception("No match for " + stmt.unit.getClass + " : " + stmt.unit)
