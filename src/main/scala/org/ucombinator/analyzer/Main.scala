@@ -296,6 +296,28 @@ case class State(stmt : Stmt,
     }
   }
 
+  def defaultInitialValue(t : SootType) = {
+    t match {
+      case t : RefLikeType => eval(NullConstant.v())
+      case t : PrimType => D.atomicTop // TODO: should eval based on specific type
+    }
+  }
+
+  // Returns a Store containing the possibly nested arrays described
+  // by the SootType t with dimension sizes 'sizes'
+  def createArray(t : SootType, sizes : List[D], addrs : Set[Addr]) : Store = sizes match {
+    case Nil => store.update(addrs, defaultInitialValue(t))
+    case (s :: ss) => {
+      val bp = InvariantBasePointer // TODO: turn this into malloc
+      // TODO: exception for a negative length
+      // TODO: stop allocating if a zero length
+      // TODO: separately allocate each array element
+      createArray(t.asInstanceOf[ArrayType].getElementType(), ss, Set(ArrayRefAddr(bp)))
+        .update(addrs, D(Set(ArrayValue(t, bp))))
+        .update(ArrayLengthAddr(bp), s)
+    }
+  }
+
   def next() : Set[State] = {
     try {
       true_next()
@@ -328,11 +350,11 @@ case class State(stmt : Stmt,
             Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
           }
           case rhs : NewArrayExpr => {
-            val bp = InvariantBasePointer // TODO: turn this into malloc
-            val newStore = store
-              .update(lhsAddr, D(Set(ArrayValue(rhs.getBaseType(), bp))))
-              .update(ArrayRefAddr(bp), eval(NullConstant.v()))
-              .update(ArrayLengthAddr(bp), eval(rhs.getSize()))
+            val newStore = createArray(rhs.getType(), List(eval(rhs.getSize())), lhsAddr)
+            Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
+          }
+          case rhs : NewMultiArrayExpr => {
+            val newStore = createArray(rhs.getType(), rhs.getSizes().toList map eval, lhsAddr)
             Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
           }
           case rhs => {
