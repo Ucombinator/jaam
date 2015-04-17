@@ -23,6 +23,8 @@ import scala.language.postfixOps
 import soot._
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, Type => SootType}
 
+import soot.shimple._
+
 import soot.jimple._
 import soot.jimple.{Stmt => SootStmt}
 
@@ -214,7 +216,7 @@ case class State(stmt : Stmt,
 
   def eval(v: SootValue) : D = {
     v match {
-      // TODO missing: BinopExpr(...), Immediate(...), NegExpr, CastExpr, InstanceOfExpr
+      // TODO missing: BinopExpr(...), Immediate(...), NegExpr, CastExpr
       case (_ : Local) | (_ : Ref) => store(addrsOf(v))
       case _ : NullConstant => D.atomicTop
       case n : NumericConstant => D.atomicTop
@@ -236,6 +238,13 @@ case class State(stmt : Stmt,
         val addrs : Set[Addr] = for (ArrayValue(_, bp) <- eval(v.getOp()).values) yield ArrayLengthAddr(bp)
         store(addrs)
       }
+
+      // TODO: implement the actual check
+      case v : InstanceOfExpr => D.atomicTop
+
+      // TODO: take advantage of knowledge in v.getPreds() (though we may be getting that knowledge from partial definedness of the store)
+      case v : PhiExpr =>
+        D((for (x <- v.getValues(); if store.contains(addrsOf(x))) yield eval(x).values).toSet.flatten)
 
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
@@ -347,6 +356,11 @@ case class State(stmt : Stmt,
             val obj = ObjectValue(sootClass, bp)
             val d = D(Set(obj))
             val newStore = store.update(lhsAddr, d)
+            Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
+          }
+          case rhs : ClassConstant => { // TODO: frustratingly similar to NewExpr
+            val bp = InvariantBasePointer // TODO: turn this into malloc?  Or should it be interned?
+            val newStore = store.update(lhsAddr, D(Set(ObjectValue(stmt.program("java.lang.Class"), bp))))
             Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
           }
           case rhs : NewArrayExpr => {
