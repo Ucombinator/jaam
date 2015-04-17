@@ -69,6 +69,34 @@ case class KontStack(store : KontStore, k : Kont) {
       case HaltKont => Set()
     }
   }
+
+  def handleException(exception : Value, stmt : Stmt, fp : FramePointer, store : Store, initializedClasses : Set[SootClass]) : Set[State] = {
+    if (!exception.isInstanceOf[ObjectValue]) return Set()
+
+    var visited = Set[(Stmt, FramePointer, KontStack)]()
+
+    def f(stmt : Stmt, fp : FramePointer, kontStack : KontStack) : Set[State] = {
+      if (visited.contains((stmt, fp, kontStack))) return Set()
+
+      // TODO: Why does this give an error if we don't use "Tuple3"?
+      visited = visited + Tuple3(stmt, fp, kontStack) // TODO: do we really need all of these in here?
+
+      for (trap <- TrapManager.getTrapsAt(stmt.unit, stmt.method.getActiveBody())) {
+        val caughtType = trap.getException()
+        val newStore = store.update(CaughtExceptionFrameAddr(fp), D(Set(exception)))
+
+        // TODO: Hierarchy or FastHierarchy?
+        if (State.isSubclass(exception.asInstanceOf[ObjectValue].sootClass, caughtType))
+          return Set(State(stmt.copy(unit = trap.getHandlerUnit()), fp, newStore, this, initializedClasses))
+      }
+
+      (for ((frame, kontStack) <- this.pop()) yield { f(frame.stmt, frame.fp, kontStack) }).flatten
+    }
+
+    f(stmt, fp, this)
+
+    // TODO: deal with unhandled exceptions
+  }
 }
 
 abstract class KontAddr
@@ -137,6 +165,8 @@ case class ParameterFrameAddr(val fp : FramePointer, val parameter : Int) extend
 
 case class ThisFrameAddr(val fp : FramePointer) extends FrameAddr
 
+case class CaughtExceptionFrameAddr(val fp : FramePointer) extends FrameAddr
+
 case class InstanceFieldAddr(val bp : BasePointer, val sf : SootField) extends Addr
 
 case class ArrayRefAddr(val bp : BasePointer) extends Addr
@@ -180,6 +210,8 @@ case class State(stmt : Stmt,
                  store : Store,
                  kontStack : KontStack,
                  initializedClasses : Set[SootClass]) {
+  var exceptions = D(Set())
+
   def alloca() : FramePointer = InvariantFramePointer
 
   def checkInitializedClasses(c : SootClass) {
@@ -208,6 +240,7 @@ case class State(stmt : Stmt,
       }
       case v : ParameterRef => Set(ParameterFrameAddr(fp, v.getIndex()))
       case v : ThisRef => Set(ThisFrameAddr(fp))
+      case v : CaughtExceptionRef => Set(CaughtExceptionFrameAddr(fp)) // TODO: have multiple addresses per "catch" clause?
       case v : ArrayRef => {
         val b = eval(v.getBase())
         // TODO: array ref out of bounds exception
@@ -337,7 +370,9 @@ case class State(stmt : Stmt,
 
   def next() : Set[State] = {
     try {
-      true_next()
+      val nexts = true_next()
+      val exceptionStates = (exceptions.values map { kontStack.handleException(_, stmt, fp, store, initializedClasses) }).flatten
+      nexts ++ exceptionStates
     } catch {
       case UninitializedClassException(sootClass) =>
         // TODO: exception needs to be called on *all* class accesses (including instance fields and methods)
@@ -437,7 +472,10 @@ case class State(stmt : Stmt,
       case unit : EnterMonitorStmt => Set(this.copy(stmt = stmt.nextSyntactic()))
       case unit : ExitMonitorStmt => Set(this.copy(stmt = stmt.nextSyntactic()))
 
-      // TODO: We're missing BreakPointStmt, RetStmt, and ThrowStmt.
+      // TODO: needs testing
+      case unit : ThrowStmt => { exceptions = exceptions.join(eval(unit.getOp())); Set() }
+
+      // TODO: We're missing BreakPointStmt and RetStmt (but these might not be used)
 
       case _ => {
         throw new Exception("No match for " + stmt.unit.getClass + " : " + stmt.unit)
@@ -489,6 +527,16 @@ object NoOpSnowflake extends SnowflakeHandler {
     Set(state.copy(stmt = nextStmt))
 }
 
+case class ConstSnowflake(value : D) extends SnowflakeHandler {
+  override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
+    val newNewStore = state.stmt.unit match {
+      case unit : DefinitionStmt => state.store.update(state.addrsOf(unit.getLeftOp()), value)
+      case unit : InvokeStmt => state.store
+    }
+    Set(state.copy(stmt = nextStmt, store = newNewStore))
+  }
+}
+
 object Main {
   def main(args : Array[String]) {
     // TODO: proper option parsing
@@ -537,6 +585,14 @@ object Main {
             store = newNewStore))
         }
       })
+    // TODO: use something other than D.atomicTop
+    Snowflakes.put(MethodDescription("java.lang.Class", "desiredAssertionStatus", List(), "boolean"), ConstSnowflake(D.atomicTop))
+    Snowflakes.put(MethodDescription("java.lang.Throwable", "<init>", List(), "void"), NoOpSnowflake)
+    Snowflakes.put(MethodDescription("java.lang.Throwable", "<clinit>", List(), "void"), NoOpSnowflake)
+    Snowflakes.put(MethodDescription("java.util.ArrayList", "<init>", List("int"), "void"), NoOpSnowflake)
+    Snowflakes.put(MethodDescription("java.lang.Throwable", "fillInStackTrace", List("int"), "java.lang.Throwable"),
+      ConstSnowflake(D(Set(ObjectValue(classes("java.lang.Throwable"),  InvariantBasePointer)))))
+
     val mainMainMethod = classes(className).getMethodByName(methodName);
     val units = mainMainMethod.getActiveBody().getUnits();
 
