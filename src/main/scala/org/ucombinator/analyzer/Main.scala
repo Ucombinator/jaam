@@ -16,31 +16,21 @@ package org.ucombinator.analyzer
 
 import scala.collection.JavaConversions._
 import scala.language.postfixOps
-import soot.util.Chain
-import soot.SootClass
-import soot.SootField
-import soot.SootMethod
-
-// Imports to support Main.getShrimple.  Remove these once we no longer need that method.
-import soot.Scene
-import soot.Modifier
-import soot.options.Options
-import soot.G
-import soot.{Main => SootMain}
-import soot.PackManager
 
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
 // fix this when we build the Scala wrapper for Soot.)
-import soot.{Unit => SootUnit}
+import soot._
+import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, Type => SootType}
+
+import soot.jimple._
 import soot.jimple.{Stmt => SootStmt}
 
-import soot.Local
-import soot.{Value => SootValue}
-import soot.IntType
-import soot.jimple._
-
 import soot.jimple.internal.JStaticInvokeExpr
+import soot.jimple.internal.JArrayRef
+
+import soot.util.Chain
+import soot.options.Options
 import soot.jimple.toolkits.invoke.AccessManager
 
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
