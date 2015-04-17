@@ -375,10 +375,15 @@ case class State(stmt : Stmt,
       nexts ++ exceptionStates
     } catch {
       case UninitializedClassException(sootClass) =>
-        // TODO: exception needs to be called on *all* class accesses (including instance fields and methods)
-        this.copy(initializedClasses = initializedClasses + sootClass)
-          .handleInvoke(new JStaticInvokeExpr(sootClass.getMethodByName("<clinit>").makeRef(),
-                                              java.util.Collections.emptyList()), None, stmt)
+        // TODO: needs to also initialize parent classes
+        // TODO: Per JVM 5.5, set "final static" fields before "<clinit>"
+        exceptions = D(Set()) // TODO: is this really valid? good?
+        val meth = sootClass.getMethodByNameUnsafe("<clinit>")
+        if (meth != null)
+          this.copy(initializedClasses = initializedClasses + sootClass)
+            .handleInvoke(new JStaticInvokeExpr(meth.makeRef(), java.util.Collections.emptyList()), None, stmt)
+        else
+          Set(this.copy(initializedClasses = initializedClasses + sootClass))
 
       // TODO: this may hide some errors
       case UndefinedAddrsException(addrs) => Set()
