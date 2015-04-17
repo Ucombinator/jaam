@@ -363,8 +363,8 @@ case class State(stmt : Stmt,
       case unit : GotoStmt => Set(this.copy(stmt = stmt.copy(unit = unit.getTarget())))
 
       // For now we don't model monitor statements, so we just skip over them
-      case unit : EnterMonitorStmt => Set(this.copy(stmt = stmt.nextSyntatic()))
-      case unit : ExitMonitorStmt => Set(this.copy(stmt = stmt.nextSyntatic()))
+      case unit : EnterMonitorStmt => Set(this.copy(stmt = stmt.nextSyntactic()))
+      case unit : ExitMonitorStmt => Set(this.copy(stmt = stmt.nextSyntactic()))
 
       // TODO: We're missing BreakPointStmt, RetStmt, and ThrowStmt.
 
@@ -403,7 +403,7 @@ object Snowflakes {
       meth.getName,
       meth.getParameterTypes.toList.map(_.toString()),
       meth.getReturnType.toString()))
-  def put(md : MethodDescription, handler : SnowflakeHandler) : Unit = table.put(md, handler)
+  def put(md : MethodDescription, handler : SnowflakeHandler) { table.put(md, handler) }
 }
 
 object NoOpSnowflake extends SnowflakeHandler {
