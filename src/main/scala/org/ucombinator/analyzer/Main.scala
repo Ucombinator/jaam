@@ -125,6 +125,16 @@ abstract class Addr
 
 abstract class FrameAddr extends Addr
 
+case class LocalFrameAddr(val fp : FramePointer, val register : Local) extends FrameAddr
+
+case class ParameterFrameAddr(val fp : FramePointer, val parameter : Int) extends FrameAddr
+
+case class ThisFrameAddr(val fp : FramePointer) extends FrameAddr
+
+case class InstanceFieldAddr(val bp : BasePointer, val sf : SootField) extends Addr
+
+case class StaticFieldAddr(val sf : SootField) extends Addr
+
 case class Store(private val map : Map[Addr, D]) {
   def update(addr : Addr, d : D) : Store = {
     map.get(addr) match {
@@ -148,16 +158,6 @@ case class Store(private val map : Map[Addr, D]) {
   }
   def get(addr : Addr) : Option[D] = map.get(addr)
 }
-
-case class LocalFrameAddr(val fp : FramePointer, val register : Local) extends FrameAddr
-
-case class ParameterFrameAddr(val fp : FramePointer, val parameter : Int) extends FrameAddr
-
-case class ThisFrameAddr(val fp : FramePointer) extends FrameAddr
-
-case class InstanceFieldAddr(val bp : BasePointer, val sf : SootField) extends Addr
-
-case class StaticFieldAddr(val sf : SootField) extends Addr
 
 case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[String, SootClass]) {
   assert(unit.isInstanceOf[SootStmt])
