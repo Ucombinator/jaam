@@ -37,6 +37,8 @@ import soot.jimple.toolkits.invoke.AccessManager
 
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
 
+case class UndefinedAddrsException(addrs : Set[Addr]) extends RuntimeException
+
 abstract class FramePointer
 
 abstract class BasePointer
@@ -150,6 +152,7 @@ case class Store(private val map : Map[Addr, D]) {
       case None => Store(map + (addr -> d))
     }
   }
+
   def update(addrs : Set[Addr], d : D) : Store = {
      var newStore = this
      for (a <- addrs) {
@@ -158,13 +161,12 @@ case class Store(private val map : Map[Addr, D]) {
      newStore
   }
 
-  def apply(addr : Addr) : D = map(addr)
+  // TODO: this is silently ignoring some errors
   def apply(addrs : Set[Addr]) : D = {
-    val ds = for (a <- addrs)
-               yield map(a)
-    ds.fold (D(Set()))(_ join _)
+    val ds = for (a <- addrs; if map.contains(a)) yield map(a)
+    val res = ds.fold (D(Set()))(_ join _)
+    if (res != D(Set())) res else throw UndefinedAddrsException(addrs)
   }
-  def get(addr : Addr) : Option[D] = map.get(addr)
 }
 
 case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[String, SootClass]) {
@@ -179,6 +181,12 @@ case class State(stmt : Stmt,
                  kontStack : KontStack,
                  initializedClasses : Set[SootClass]) {
   def alloca() : FramePointer = InvariantFramePointer
+
+  def checkInitializedClasses(c : SootClass) {
+    if (!initializedClasses.contains(c)) {
+      throw new UninitializedClassException(c)
+    }
+  }
 
   def addrsOf(v : SootValue) : Set[Addr] = {
     // TODO missing: CaughtExceptionRef
@@ -195,11 +203,8 @@ case class State(stmt : Stmt,
       case v : StaticFieldRef => {
         val f = v.getField()
         val c = f.getDeclaringClass()
-        if (initializedClasses.contains(c)) {
-          Set(StaticFieldAddr(f))
-        } else {
-          throw new UninitializedClassException(c)
-        }
+        checkInitializedClasses(c)
+        Set(StaticFieldAddr(f))
       }
       case v : ParameterRef => Set(ParameterFrameAddr(fp, v.getIndex()))
       case v : ThisRef => Set(ThisFrameAddr(fp))
@@ -243,8 +248,8 @@ case class State(stmt : Stmt,
       case v : InstanceOfExpr => D.atomicTop
 
       // TODO: take advantage of knowledge in v.getPreds() (though we may be getting that knowledge from partial definedness of the store)
-      case v : PhiExpr =>
-        D((for (x <- v.getValues(); if store.contains(addrsOf(x))) yield eval(x).values).toSet.flatten)
+      // This code assumes that getValues returns only Local or Ref
+      case v : PhiExpr => store((v.getValues map addrsOf).toSet.flatten)
 
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
@@ -289,7 +294,9 @@ case class State(stmt : Stmt,
 
     expr match {
       case expr : DynamicInvokeExpr => ??? // TODO: Could only come from non-Java sources
-      case expr : StaticInvokeExpr => dispatch(null, expr.getMethod())
+      case expr : StaticInvokeExpr =>
+        checkInitializedClasses(expr.getMethod().getDeclaringClass())
+        dispatch(null, expr.getMethod())
       case expr : InstanceInvokeExpr =>
         val th = ThisFrameAddr(newFP)
         val d = eval(expr.getBase())
@@ -336,6 +343,9 @@ case class State(stmt : Stmt,
         this.copy(initializedClasses = initializedClasses + sootClass)
           .handleInvoke(new JStaticInvokeExpr(sootClass.getMethodByName("<clinit>").makeRef(),
                                               java.util.Collections.emptyList()), None, stmt)
+
+      // TODO: this may hide some errors
+      case UndefinedAddrsException(addrs) => Set()
     }
   }
 
@@ -356,6 +366,8 @@ case class State(stmt : Stmt,
             val obj = ObjectValue(sootClass, bp)
             val d = D(Set(obj))
             val newStore = store.update(lhsAddr, d)
+            checkInitializedClasses(sootClass)
+            // TODO: initialize instance fields to default values for their type
             Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
           }
           case rhs : ClassConstant => { // TODO: frustratingly similar to NewExpr
