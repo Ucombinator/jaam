@@ -121,6 +121,8 @@ case object AnyAtomicValue extends AtomicValue
 
 case class ObjectValue(val sootClass : SootClass,  val bp : BasePointer) extends Value
 
+case class ArrayValue(val sootType : SootType, val bp : BasePointer) extends Value
+
 abstract class Addr
 
 abstract class FrameAddr extends Addr
@@ -132,6 +134,10 @@ case class ParameterFrameAddr(val fp : FramePointer, val parameter : Int) extend
 case class ThisFrameAddr(val fp : FramePointer) extends FrameAddr
 
 case class InstanceFieldAddr(val bp : BasePointer, val sf : SootField) extends Addr
+
+case class ArrayRefAddr(val bp : BasePointer) extends Addr
+
+case class ArrayLengthAddr(val bp : BasePointer) extends Addr
 
 case class StaticFieldAddr(val sf : SootField) extends Addr
 
@@ -173,7 +179,7 @@ case class State(stmt : Stmt,
   def alloca() : FramePointer = InvariantFramePointer
 
   def addrsOf(v : SootValue) : Set[Addr] = {
-    // TODO missing: ArrayRef, CaughtExceptionRef
+    // TODO missing: CaughtExceptionRef
     v match {
       case v : Local => Set(LocalFrameAddr(fp, v))
       case v : InstanceFieldRef => {
@@ -195,12 +201,20 @@ case class State(stmt : Stmt,
       }
       case v : ParameterRef => Set(ParameterFrameAddr(fp, v.getIndex()))
       case v : ThisRef => Set(ThisFrameAddr(fp))
+      case v : ArrayRef => {
+        val b = eval(v.getBase())
+        // TODO: array ref out of bounds exception
+        val i = eval(v.getIndex()) // Unused but evaled in case we trigger a <clinit> or exception
+        // TODO: filter out incorrect types
+        for (ArrayValue(_, bp) <- b.values) yield
+          ArrayRefAddr(bp)
+      }
     }
   }
 
   def eval(v: SootValue) : D = {
     v match {
-      // TODO missing: BinopExpr(...), UnopExpr(...), Immediate(...), CastExpr, InstanceOfExpr
+      // TODO missing: BinopExpr(...), Immediate(...), NegExpr, CastExpr, InstanceOfExpr
       case (_ : Local) | (_ : Ref) => store(addrsOf(v))
       case _ : NullConstant => D.atomicTop
       case n : NumericConstant => D.atomicTop
@@ -216,6 +230,11 @@ case class State(stmt : Stmt,
         assert(subexpr.getOp2().getType().isInstanceOf[IntType])
 
         D.atomicTop
+      }
+
+      case v : LengthExpr => {
+        val addrs : Set[Addr] = for (ArrayValue(_, bp) <- eval(v.getOp()).values) yield ArrayLengthAddr(bp)
+        store(addrs)
       }
 
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
@@ -297,7 +316,7 @@ case class State(stmt : Stmt,
         val lhsAddr = addrsOf(unit.getLeftOp())
 
         unit.getRightOp() match {
-          // TODO missing: NewArrayExpr, NewMultiArrayExpr
+          // TODO missing: NewMultiArrayExpr
           case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
           case rhs : NewExpr => {
             val baseType = rhs.getBaseType()
@@ -306,6 +325,14 @@ case class State(stmt : Stmt,
             val obj = ObjectValue(sootClass, bp)
             val d = D(Set(obj))
             val newStore = store.update(lhsAddr, d)
+            Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
+          }
+          case rhs : NewArrayExpr => {
+            val bp = InvariantBasePointer // TODO: turn this into malloc
+            val newStore = store
+              .update(lhsAddr, D(Set(ArrayValue(rhs.getBaseType(), bp))))
+              .update(ArrayRefAddr(bp), eval(NullConstant.v()))
+              .update(ArrayLengthAddr(bp), eval(rhs.getSize()))
             Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
           }
           case rhs => {
