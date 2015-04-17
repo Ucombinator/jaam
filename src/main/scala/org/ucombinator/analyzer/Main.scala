@@ -300,13 +300,14 @@ case class State(stmt : Stmt,
       case expr : InstanceInvokeExpr =>
         val th = ThisFrameAddr(newFP)
         val d = eval(expr.getBase())
+        val vs = d.values filter { case ObjectValue(sootClass, _) => State.isSubclass(sootClass, expr.getMethod().getDeclaringClass) }
         // TODO/optimize: filter out incorrect class types
-        for (v@ObjectValue(sootClass, _) <- d.values)
+        for (v <- vs)
           newStore = newStore.update(th, D(Set(v)))
         expr match {
           case _ : SpecialInvokeExpr => dispatch(null, expr.getMethod())
           case (_ : VirtualInvokeExpr) | (_ : InterfaceInvokeExpr) =>
-            ((for (ObjectValue(sootClass, _) <- d.values) yield
+            ((for (ObjectValue(sootClass, _) <- vs) yield
               dispatch(sootClass, expr.getMethod())) :\ Set[State]())(_ ++ _) // TODO: better way to do this?
         }
     }
@@ -450,6 +451,9 @@ object State {
     val initial_map : Map[Addr, D] = Map((ParameterFrameAddr(InvariantFramePointer, 0) -> D.atomicTop))
     State(stmt, InvariantFramePointer, Store(initial_map), KontStack(KontStore(Map()), HaltKont), Set())
   }
+
+  def isSubclass(sub : SootClass, sup : SootClass) : Boolean =
+    Scene.v().getActiveHierarchy().isClassSubclassOfIncluding(sub, sup)
 }
 
 case class MethodDescription(val className : String,
