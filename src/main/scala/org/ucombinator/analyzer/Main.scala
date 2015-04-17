@@ -181,8 +181,8 @@ case class State(stmt : Stmt,
         val d = eval(b)
         // TODO/optimize
         // filter out incorrect class types
-        for (x <- d.values if x.isInstanceOf[ObjectValue])
-         yield InstanceFieldAddr(x.asInstanceOf[ObjectValue].bp, v.getField())
+        for (ObjectValue(_, bp) <- d.values)
+         yield InstanceFieldAddr(bp, v.getField())
       }
       case v : StaticFieldRef => {
         val f = v.getField()
@@ -234,6 +234,12 @@ case class State(stmt : Stmt,
     val newKontStack = kontStack.push(Frame(nextStmt, newFP, destAddr))
 
     def dispatch(c : SootClass, m : SootMethod) : Set[State] = {
+      // This function finds all methods that could override root_m.
+      // These methods are returned with the root-most at the end of
+      // the list and the leaf-most at the head.  Thus the caller
+      // should use the head of the returned list.  The reason a list
+      // is returned is so this function can recursively compute the
+      // transitivity rule in Java's method override definition.
       def overloads(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
         val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
         if (curr_m == null) { overloads(curr.getSuperclass(), root_m) }
@@ -300,12 +306,11 @@ case class State(stmt : Stmt,
             val obj = ObjectValue(sootClass, bp)
             val d = D(Set(obj))
             val newStore = store.update(lhsAddr, d)
-            Set(State(stmt.nextSyntactic(), fp, newStore, kontStack, initializedClasses))
+            Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
           }
           case rhs => {
-            val evaledRhs = eval(rhs)
-            val newStore = store.update(lhsAddr, evaledRhs)
-            Set(State(stmt.nextSyntactic(), fp, newStore, kontStack, initializedClasses))
+            val newStore = store.update(lhsAddr, eval(rhs))
+            Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
           }
         }
       }
@@ -353,6 +358,7 @@ case class State(stmt : Stmt,
       case unit : GotoStmt => Set(this.copy(stmt = stmt.copy(unit = unit.getTarget())))
 
       // For now we don't model monitor statements, so we just skip over them
+      // TODO: needs testing
       case unit : EnterMonitorStmt => Set(this.copy(stmt = stmt.nextSyntactic()))
       case unit : ExitMonitorStmt => Set(this.copy(stmt = stmt.nextSyntactic()))
 
