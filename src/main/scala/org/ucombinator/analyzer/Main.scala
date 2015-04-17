@@ -189,7 +189,7 @@ case class State(stmt : Stmt,
   }
 
   def addrsOf(v : SootValue) : Set[Addr] = {
-    // TODO missing: CaughtExceptionRef
+    // TODO: check coverage of possible SootValue
     v match {
       case v : Local => Set(LocalFrameAddr(fp, v))
       case v : InstanceFieldRef => {
@@ -357,7 +357,6 @@ case class State(stmt : Stmt,
         val lhsAddr = addrsOf(unit.getLeftOp())
 
         unit.getRightOp() match {
-          // TODO missing: NewMultiArrayExpr
           case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
           case rhs : NewExpr => {
             val baseType = rhs.getBaseType()
