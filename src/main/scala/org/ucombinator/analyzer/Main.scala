@@ -8,9 +8,7 @@ package org.ucombinator.analyzer
   2. Don't order addresses.  Dogs and cats, living together.  Mass hysteria.
 */
 
-// TODO: why haven't we seen phi nodes?
 // TODO: need to track exceptions that derefing a Null could cause
-// TODO: optimize <clinit> by saying that all the empty <clinit> are always initialized
 // TODO: invoke main method instead of jumping to first instr so static init is done correctly
 // TODO: invoke main method so we can initialize the parameters to main
 
@@ -85,7 +83,7 @@ case class KontStack(store : KontStore, k : Kont) {
         val caughtType = trap.getException()
         val newStore = store.update(CaughtExceptionFrameAddr(fp), D(Set(exception)))
 
-        // TODO: Hierarchy or FastHierarchy?
+        // TODO: use Hierarchy or FastHierarchy?
         if (State.isSubclass(exception.asInstanceOf[ObjectValue].sootClass, caughtType))
           return Set(State(stmt.copy(unit = trap.getHandlerUnit()), fp, newStore, this, initializedClasses))
       }
@@ -306,6 +304,8 @@ case class State(stmt : Stmt,
       // should use the head of the returned list.  The reason a list
       // is returned is so this function can recursively compute the
       // transitivity rule in Java's method override definition.
+      //
+      // Note that Hierarchy.resolveConcreteDispath should be able to do this, but seems to be implemented wrong
       def overloads(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
         val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
         if (curr_m == null) { overloads(curr.getSuperclass(), root_m) }
@@ -317,6 +317,7 @@ case class State(stmt : Stmt,
       }
 
       val meth = if (c == null) m else overloads(c, m).head
+      // TODO: put a better message when there is no getActiveBody due to it being a native method
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, newFP, newStore, newKontStack)
         case None =>
