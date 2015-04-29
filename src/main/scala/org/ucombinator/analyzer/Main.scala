@@ -255,10 +255,18 @@ case class State(stmt : Stmt,
       // TODO missing: BinopExpr(...), Immediate(...), NegExpr, CastExpr
       case (_ : Local) | (_ : Ref) => store(addrsOf(v))
       case _ : NullConstant => D.atomicTop
-      case n : NumericConstant => D.atomicTop
+      case _ : NumericConstant => D.atomicTop
+      case _ : StringConstant => D(Set(ObjectValue(stmt.program("java.lang.String"), InvariantBasePointer)))
       case subexpr : SubExpr => {
         assert(subexpr.getOp1().getType().isInstanceOf[IntType])
         assert(subexpr.getOp2().getType().isInstanceOf[IntType])
+
+        D.atomicTop
+      }
+
+      case v : AddExpr => {
+        assert(v.getOp1().getType().isInstanceOf[IntType])
+        assert(v.getOp2().getType().isInstanceOf[IntType])
 
         D.atomicTop
       }
