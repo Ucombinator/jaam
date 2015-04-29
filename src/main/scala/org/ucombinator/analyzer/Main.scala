@@ -643,13 +643,10 @@ object Main {
             store = newNewStore))
         }
       })
-    // TODO: use something other than D.atomicTop
     Snowflakes.put(MethodDescription("java.lang.Class", "desiredAssertionStatus", List(), "boolean"), ConstSnowflake(D.atomicTop))
     Snowflakes.put(MethodDescription("java.lang.Throwable", "<init>", List(), "void"), NoOpSnowflake)
     Snowflakes.put(MethodDescription("java.lang.Throwable", "<clinit>", List(), "void"), NoOpSnowflake)
     Snowflakes.put(MethodDescription("java.util.ArrayList", "<init>", List("int"), "void"), NoOpSnowflake)
-    Snowflakes.put(MethodDescription("java.lang.Throwable", "fillInStackTrace", List("int"), "java.lang.Throwable"),
-      ConstSnowflake(D(Set(ObjectValue(classes("java.lang.Throwable"),  InvariantBasePointer)))))
 
     val mainMainMethod = classes(className).getMethodByName(methodName);
     val units = mainMainMethod.getActiveBody().getUnits();
@@ -668,6 +665,8 @@ object Main {
       todo = nexts.toList.filter(!seen.contains(_)) ++ todo.tail
       seen = seen ++ nexts
     }
+
+    println("Done!")
   }
 
   def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] =
