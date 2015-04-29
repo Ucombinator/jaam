@@ -29,6 +29,8 @@ import soot.jimple.{Stmt => SootStmt}
 import soot.jimple.internal.JStaticInvokeExpr
 import soot.jimple.internal.JArrayRef
 
+import soot.tagkit._
+
 import soot.util.Chain
 import soot.options.Options
 import soot.jimple.toolkits.invoke.AccessManager
@@ -189,6 +191,14 @@ case class Store(private val map : Map[Addr, D]) {
      newStore
   }
 
+  def update(m : Map[Addr, D]) : Store = {
+    var newStore = this
+    for ((a, d) <- m) {
+      newStore = newStore.update(a, d)
+    }
+    newStore
+  }
+
   def apply(addrs : Set[Addr]) : D = {
     val ds = for (a <- addrs; if map.contains(a)) yield map(a)
     val res = ds.fold (D(Set()))(_ join _)
@@ -342,7 +352,7 @@ case class State(stmt : Stmt,
       case expr : InstanceInvokeExpr =>
         val th = ThisFrameAddr(newFP)
         val d = eval(expr.getBase())
-        val vs = d.values filter { case ObjectValue(sootClass, _) => State.isSubclass(sootClass, expr.getMethod().getDeclaringClass) }
+        val vs = d.values filter { case ObjectValue(sootClass, _) => State.isSubclass(sootClass, expr.getMethod().getDeclaringClass); case _ => false }
         // TODO/optimize: filter out incorrect class types
         for (v <- vs)
           newStore = newStore.update(th, D(Set(v)))
@@ -360,6 +370,19 @@ case class State(stmt : Stmt,
       case t : RefLikeType => eval(NullConstant.v())
       case t : PrimType => D.atomicTop // TODO: should eval based on specific type
     }
+  }
+
+  def staticInitialValue(f : SootField) : D = {
+    for (t <- f.getTags)
+      t match {
+        case t : DoubleConstantValueTag => return D.atomicTop
+        case t : FloatConstantValueTag => return D.atomicTop
+        case t : IntegerConstantValueTag => return D.atomicTop
+        case t : LongConstantValueTag => return D.atomicTop
+        case t : StringConstantValueTag => return D(Set(ObjectValue(stmt.program("java.lang.Class"), InvariantBasePointer)))
+        case _ => ()
+      }
+    return defaultInitialValue(f.getType)
   }
 
   // Returns a Store containing the possibly nested arrays described
@@ -385,14 +408,16 @@ case class State(stmt : Stmt,
     } catch {
       case UninitializedClassException(sootClass) =>
         // TODO: needs to also initialize parent classes
-        // TODO: Per JVM 5.5, set "final static" fields before "<clinit>"
         exceptions = D(Set()) // TODO: is this really valid? good?
         val meth = sootClass.getMethodByNameUnsafe("<clinit>")
-        if (meth != null)
-          this.copy(initializedClasses = initializedClasses + sootClass)
+        if (meth != null) {
+          // Initialize all static fields per JVM 5.4.2 and 5.5
+          var newStore = store.update((for (f <- sootClass.getFields(); if f.isStatic) yield (StaticFieldAddr(f) -> staticInitialValue(f))).toMap)
+          this.copy(store = newStore, initializedClasses = initializedClasses + sootClass)
             .handleInvoke(new JStaticInvokeExpr(meth.makeRef(), java.util.Collections.emptyList()), None, stmt)
-        else
+        } else {
           Set(this.copy(initializedClasses = initializedClasses + sootClass))
+        }
 
       case UndefinedAddrsException(addrs) => {
         println()
@@ -419,9 +444,18 @@ case class State(stmt : Stmt,
             val bp = InvariantBasePointer // TODO turn this into malloc
             val obj = ObjectValue(sootClass, bp)
             val d = D(Set(obj))
-            val newStore = store.update(lhsAddr, d)
+            var newStore = store.update(lhsAddr, d)
             checkInitializedClasses(sootClass)
-            // TODO: initialize instance fields to default values for their type
+            // initialize instance fields to default values for their type
+            def initInstanceFields(c : SootClass) {
+              for (f <- c.getFields) {
+                val bp = InvariantBasePointer
+                newStore = newStore.update(InstanceFieldAddr(bp, f), defaultInitialValue(f.getType))
+              }
+
+              if(c.hasSuperclass) initInstanceFields(c.getSuperclass)
+            }
+            initInstanceFields(sootClass)
             Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
           }
           case rhs : ClassConstant => { // TODO: frustratingly similar to NewExpr
@@ -505,7 +539,12 @@ case class State(stmt : Stmt,
 
 object State {
   def inject(stmt : Stmt) : State = {
-    val initial_map : Map[Addr, D] = Map((ParameterFrameAddr(InvariantFramePointer, 0) -> D.atomicTop))
+    val bp = InvariantBasePointer
+    val stringClass = stmt.program("java.lang.String")
+    val initial_map : Map[Addr, D] = Map(
+      (ParameterFrameAddr(InvariantFramePointer, 0) -> D(Set(ArrayValue(stringClass.getType(), bp)))),
+      (ArrayRefAddr(bp) -> D(Set(ObjectValue(stringClass, InvariantBasePointer)))),
+      (ArrayLengthAddr(bp) -> D.atomicTop))
     State(stmt, InvariantFramePointer, Store(initial_map), KontStack(KontStore(Map()), HaltKont), Set())
   }
 
