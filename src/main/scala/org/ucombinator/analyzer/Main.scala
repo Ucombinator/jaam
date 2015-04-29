@@ -621,9 +621,7 @@ object Main {
   def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] =
     (for (c <- classes) yield c.getName() -> c).toMap
 
-  // Temporary implementation until we fix SootWrapper
   def getShimple(classesDir : String, classPath : String) = {
-    G.reset();
     Options.v().set_output_format(Options.output_format_shimple);
     Options.v().set_verbose(false);
     Options.v().set_include_all(true);
@@ -645,9 +643,6 @@ object Main {
     // Run transformations and analyses according to the configured options.
     // Transformation could include jimple, shimple, and CFG generation
     PackManager.v().runPacks();
-    val result = Scene.v().getApplicationClasses();
-    // Make sure we don't leave soot state around
-    //G.reset();
-    result
+    Scene.v().getApplicationClasses();
   }
 }
