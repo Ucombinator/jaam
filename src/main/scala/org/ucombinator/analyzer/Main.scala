@@ -35,6 +35,16 @@ import soot.util.Chain
 import soot.options.Options
 import soot.jimple.toolkits.invoke.AccessManager
 
+// JGraphX
+
+import javax.swing.JFrame
+import javax.swing.SwingUtilities
+import javax.swing.ToolTipManager
+
+import com.mxgraph.swing.mxGraphComponent
+import com.mxgraph.view.mxGraph
+import com.mxgraph.layout.mxCompactTreeLayout
+
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
 
 case class UndefinedAddrsException(addrs : Set[Addr]) extends RuntimeException
@@ -115,6 +125,9 @@ case class KontStore(private val map : Map[KontAddr, Set[Kont]]) {
 
   def apply(addr : KontAddr) : Set[Kont] = map(addr)
   def get(addr : KontAddr) : Option[Set[Kont]] = map.get(addr)
+
+  def prettyString() : List[String] =
+    (for ((a, d) <- map) yield { a + " -> " + d }).toList
 }
 
 
@@ -205,6 +218,9 @@ case class Store(private val map : Map[Addr, D]) {
     if (res == D(Set())) throw UndefinedAddrsException(addrs)
     res
   }
+
+  def prettyString() : List[String] =
+    (for ((a, d) <- map) yield { a + " -> " + d }).toList
 }
 
 case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[String, SootClass]) {
@@ -653,14 +669,19 @@ object Main {
 
     val first = units.getFirst()
 
+    val window = new Window
     val initialState = State.inject(Stmt(first, mainMainMethod, classes))
+    window.addState(initialState)
+
     var todo : List [State] = List(initialState)
     var seen : Set [State] = Set()
     while (todo nonEmpty) {
       val current = todo.head
       println(current)
       println()
-      val nexts = current.next
+      val nexts = current.next()
+      for (n <- nexts) window.addNext(current, n)
+
       // TODO: Fix optimization bug here
       todo = nexts.toList.filter(!seen.contains(_)) ++ todo.tail
       seen = seen ++ nexts
@@ -695,5 +716,72 @@ object Main {
     // Transformation could include jimple, shimple, and CFG generation
     PackManager.v().runPacks();
     Scene.v().getApplicationClasses();
+  }
+}
+
+class Window extends JFrame ("Shimple Analyzer") {
+  // TODO: make exiting window go back to repl
+  // TODO: disable graph editing in the gui
+  val graph = new mxGraph() {
+    override def getToolTipForCell(cell : Object) : String = {
+      vertexToState.get(cell) match {
+        case None => super.getToolTipForCell(cell)
+        case Some(state) =>
+          var tip = "<html>"
+          tip += "FP: " + state.fp.toString + "<br><br>"
+          tip += "Kont: " + state.kontStack.k + "<br><br>"
+          tip += "Store:<br>" + state.store.prettyString.foldLeft("")(_ + "&nbsp;&nbsp;" + _ + "<br>") + "<br>"
+          tip += "KontStore:<br>" + state.kontStack.store.prettyString.foldLeft("")(_ + "&nbsp;&nbsp;" + _ + "<br>")
+          //tip += "InitializedClasses: " + state.initializedClasses.toString + "<br>"
+          tip += "</html>"
+          tip
+      }
+    }
+  }
+
+  private val layoutX = new mxCompactTreeLayout(graph, false)
+  private val parentX = graph.getDefaultParent()
+  private val graphComponent = new mxGraphComponent(graph)
+  private var stateToVertex = Map[State,Object]()
+  private var vertexToState = Map[Object,State]()
+
+  graphComponent.setToolTips(true)
+  getContentPane().add(graphComponent)
+  ToolTipManager.sharedInstance().setInitialDelay(0)
+  ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE)
+  setSize(400, 320)
+  setExtendedState(java.awt.Frame.MAXIMIZED_BOTH)
+  setVisible(true)
+
+  private def stateString(state : State) : String = state.stmt.method.toString() + "\n" + state.stmt.unit.toString()
+
+  def addState(state : State) {
+    val vertex = graph.insertVertex(parentX, null, stateString(state), 100, 100, 20, 20)
+    graph.updateCellSize(vertex)
+    stateToVertex += (state -> vertex)
+    vertexToState += (vertex -> state)
+  }
+
+  def addNext(start : State, end : State) {
+    graph.getModel().beginUpdate()
+    try {
+      stateToVertex.get(end) match {
+        case None =>
+          val tag = stateString(end)
+          val v = graph.insertVertex(parentX, null, tag, 240, 150, 80, 30)
+          graph.updateCellSize(v)
+          graph.insertEdge(parentX, null, null, stateToVertex(start), v)
+          stateToVertex += (end -> v)
+          vertexToState += (v -> end)
+        case Some(v) =>
+          graph.insertEdge(parentX, null, null, stateToVertex(start), v)
+      }
+      // TODO: layout basic blocks together
+      layoutX.execute(parentX)
+    }
+    finally
+    {
+      graph.getModel().endUpdate()
+    }
   }
 }

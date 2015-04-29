@@ -9,7 +9,8 @@ resolvers += "Ucombinator maven repository on github" at "https://ucombinator.gi
 libraryDependencies ++= Seq(
         "org.ucombinator.soot" % "soot-all-in-one" % "nightly.20150205",
         "org.scalacheck" %% "scalacheck" % "1.12.2" % "test",
-        "org.scalatest" % "scalatest_2.10" % "2.0" % "test"
+        "org.scalatest" % "scalatest_2.10" % "2.0" % "test",
+        "org.ucombinator.jgraphx" % "jgraphx" % "3.2.0.0"
 )
 
 mainClass in Compile := Some("org.ucombinator.analyzer.Main")
