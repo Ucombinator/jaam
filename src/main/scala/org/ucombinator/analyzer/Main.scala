@@ -189,11 +189,11 @@ case class Store(private val map : Map[Addr, D]) {
      newStore
   }
 
-  // TODO: this is silently ignoring some errors
   def apply(addrs : Set[Addr]) : D = {
     val ds = for (a <- addrs; if map.contains(a)) yield map(a)
     val res = ds.fold (D(Set()))(_ join _)
-    if (res != D(Set())) res else throw UndefinedAddrsException(addrs)
+    if (res == D(Set())) throw UndefinedAddrsException(addrs)
+    res
   }
 }
 
@@ -394,8 +394,13 @@ case class State(stmt : Stmt,
         else
           Set(this.copy(initializedClasses = initializedClasses + sootClass))
 
-      // TODO: this may hide some errors
-      case UndefinedAddrsException(addrs) => Set()
+      case UndefinedAddrsException(addrs) => {
+        println()
+        println(Console.RED + "!!!!! ERROR: Undefined Addrs !!!!!")
+        println("!!!!! stmt = " + stmt + " !!!!!")
+        println("!!!!! addrs = " + addrs + " !!!!!" + Console.RESET)
+        Set()
+      }
     }
   }
 
