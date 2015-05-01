@@ -46,27 +46,29 @@ import com.mxgraph.view.mxGraph
 import com.mxgraph.layout.mxCompactTreeLayout
 
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
-
 case class UndefinedAddrsException(addrs : Set[Addr]) extends RuntimeException
 
 abstract class FramePointer
+case object InvariantFramePointer extends FramePointer
+case object InitialFramePointer extends FramePointer
 
 abstract class BasePointer
+case object InvariantBasePointer extends BasePointer
+case object InitialBasePointer extends BasePointer
+// Note that due to interning, strings and classes may share base pointers with each other
+// Oh, and class loaders are a headache(!)
+case class StringBasePointer(val string : String) extends BasePointer
+case class ClassBasePointer(val name : String) extends BasePointer
+case class SnowflakeBasePointer(val clas : String) extends BasePointer
 
-class ConcreteFramePointer() extends FramePointer
-
-class ConcreteBasePointer() extends BasePointer
-
-object InvariantFramePointer extends FramePointer
-
-object InvariantBasePointer extends BasePointer
-
-case class SnowflakeBasePointer(clas : String) extends BasePointer
+abstract class KontAddr
+case object InvariantKontAddr extends KontAddr
 
 case class KontStack(store : KontStore, k : Kont) {
+  def kalloca() = InvariantKontAddr
+
   def push(frame : Frame) : KontStack = {
-    // TODO replace InvariantKontAddr with call to parameterized function
-    val kAddr = InvariantKontAddr
+    val kAddr = kalloca()
     val newKontStore = store.update(kAddr, Set(k))
     KontStack(newKontStore, RetKont(frame, kAddr))
   }
@@ -108,10 +110,6 @@ case class KontStack(store : KontStore, k : Kont) {
     // TODO: deal with unhandled exceptions
   }
 }
-
-abstract class KontAddr
-
-case object InvariantKontAddr extends KontAddr
 
 // TODO Michael B: refactor KontStore and Store, since they only
 // differ in their types
@@ -237,6 +235,7 @@ case class State(stmt : Stmt,
   var exceptions = D(Set())
 
   def alloca() : FramePointer = InvariantFramePointer
+  def malloc() : BasePointer = InvariantBasePointer
 
   def checkInitializedClasses(c : SootClass) {
     if (!initializedClasses.contains(c)) {
@@ -282,7 +281,7 @@ case class State(stmt : Stmt,
       case (_ : Local) | (_ : Ref) => store(addrsOf(v))
       case _ : NullConstant => D.atomicTop
       case _ : NumericConstant => D.atomicTop
-      case _ : StringConstant => D(Set(ObjectValue(stmt.program("java.lang.String"), InvariantBasePointer)))
+      case v : StringConstant => D(Set(ObjectValue(stmt.program("java.lang.String"), StringBasePointer(v.value))))
       case subexpr : SubExpr => {
         assert(subexpr.getOp1().getType().isInstanceOf[IntType])
         assert(subexpr.getOp2().getType().isInstanceOf[IntType])
@@ -395,7 +394,7 @@ case class State(stmt : Stmt,
         case t : FloatConstantValueTag => return D.atomicTop
         case t : IntegerConstantValueTag => return D.atomicTop
         case t : LongConstantValueTag => return D.atomicTop
-        case t : StringConstantValueTag => return D(Set(ObjectValue(stmt.program("java.lang.Class"), InvariantBasePointer)))
+        case t : StringConstantValueTag => return D(Set(ObjectValue(stmt.program("java.lang.String"), StringBasePointer(t.getStringValue()))))
         case _ => ()
       }
     return defaultInitialValue(f.getType)
@@ -406,7 +405,7 @@ case class State(stmt : Stmt,
   def createArray(t : SootType, sizes : List[D], addrs : Set[Addr]) : Store = sizes match {
     case Nil => store.update(addrs, defaultInitialValue(t))
     case (s :: ss) => {
-      val bp = InvariantBasePointer // TODO: turn this into malloc
+      val bp = malloc()
       // TODO: exception for a negative length
       // TODO: stop allocating if a zero length
       // TODO: separately allocate each array element
@@ -457,7 +456,7 @@ case class State(stmt : Stmt,
           case rhs : NewExpr => {
             val baseType = rhs.getBaseType()
             val sootClass = baseType.getSootClass()
-            val bp = InvariantBasePointer // TODO turn this into malloc
+            val bp = malloc()
             val obj = ObjectValue(sootClass, bp)
             val d = D(Set(obj))
             var newStore = store.update(lhsAddr, d)
@@ -465,7 +464,6 @@ case class State(stmt : Stmt,
             // initialize instance fields to default values for their type
             def initInstanceFields(c : SootClass) {
               for (f <- c.getFields) {
-                val bp = InvariantBasePointer
                 newStore = newStore.update(InstanceFieldAddr(bp, f), defaultInitialValue(f.getType))
               }
 
@@ -475,8 +473,7 @@ case class State(stmt : Stmt,
             Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
           }
           case rhs : ClassConstant => { // TODO: frustratingly similar to NewExpr
-            val bp = InvariantBasePointer // TODO: turn this into malloc?  Or should it be interned?
-            val newStore = store.update(lhsAddr, D(Set(ObjectValue(stmt.program("java.lang.Class"), bp))))
+            val newStore = store.update(lhsAddr, D(Set(ObjectValue(stmt.program("java.lang.Class"), ClassBasePointer(rhs.value)))))
             Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
           }
           case rhs : NewArrayExpr => {
@@ -554,14 +551,15 @@ case class State(stmt : Stmt,
 }
 
 object State {
+  val initialFramePointer = InitialFramePointer
+  val initialBasePointer = InitialBasePointer
   def inject(stmt : Stmt) : State = {
-    val bp = InvariantBasePointer
     val stringClass = stmt.program("java.lang.String")
     val initial_map : Map[Addr, D] = Map(
-      (ParameterFrameAddr(InvariantFramePointer, 0) -> D(Set(ArrayValue(stringClass.getType(), bp)))),
-      (ArrayRefAddr(bp) -> D(Set(ObjectValue(stringClass, InvariantBasePointer)))),
-      (ArrayLengthAddr(bp) -> D.atomicTop))
-    State(stmt, InvariantFramePointer, Store(initial_map), KontStack(KontStore(Map()), HaltKont), Set())
+      (ParameterFrameAddr(initialFramePointer, 0) -> D(Set(ArrayValue(stringClass.getType(), initialBasePointer)))),
+      (ArrayRefAddr(initialBasePointer) -> D(Set(ObjectValue(stringClass, initialBasePointer)))),
+      (ArrayLengthAddr(initialBasePointer) -> D.atomicTop))
+    State(stmt, initialFramePointer, Store(initial_map), KontStack(KontStore(Map()), HaltKont), Set())
   }
 
   def isSubclass(sub : SootClass, sup : SootClass) : Boolean =
