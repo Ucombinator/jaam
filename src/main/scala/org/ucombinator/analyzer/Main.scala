@@ -14,6 +14,7 @@ package org.ucombinator.analyzer
 
 import scala.collection.JavaConversions._
 import scala.language.postfixOps
+import xml.Utility
 
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
@@ -50,10 +51,11 @@ case class UndefinedAddrsException(addrs : Set[Addr]) extends RuntimeException
 
 abstract class FramePointer
 case object InvariantFramePointer extends FramePointer
+case class OneCFAFramePointer(val method : SootMethod, val nextStmt : Stmt) extends FramePointer
 case object InitialFramePointer extends FramePointer
 
 abstract class BasePointer
-case object InvariantBasePointer extends BasePointer
+case class OneCFABasePointer(stmt : Stmt, fp : FramePointer) extends BasePointer
 case object InitialBasePointer extends BasePointer
 // Note that due to interning, strings and classes may share base pointers with each other
 // Oh, and class loaders are a headache(!)
@@ -62,13 +64,13 @@ case class ClassBasePointer(val name : String) extends BasePointer
 case class SnowflakeBasePointer(val clas : String) extends BasePointer
 
 abstract class KontAddr
-case object InvariantKontAddr extends KontAddr
+case class OneCFAKontAddr(val fr : FramePointer) extends KontAddr
 
 case class KontStack(store : KontStore, k : Kont) {
-  def kalloca() = InvariantKontAddr
+  def kalloca(frame : Frame) = OneCFAKontAddr(frame.fp)
 
   def push(frame : Frame) : KontStack = {
-    val kAddr = kalloca()
+    val kAddr = kalloca(frame)
     val newKontStore = store.update(kAddr, Set(k))
     KontStack(newKontStore, RetKont(frame, kAddr))
   }
@@ -234,8 +236,8 @@ case class State(stmt : Stmt,
                  initializedClasses : Set[SootClass]) {
   var exceptions = D(Set())
 
-  def alloca() : FramePointer = InvariantFramePointer
-  def malloc() : BasePointer = InvariantBasePointer
+  def alloca(expr : InvokeExpr, nextStmt : Stmt) : FramePointer = OneCFAFramePointer(expr.getMethod(), nextStmt)
+  def malloc() : BasePointer = OneCFABasePointer(stmt, fp)
 
   def checkInitializedClasses(c : SootClass) {
     if (!initializedClasses.contains(c)) {
@@ -324,13 +326,7 @@ case class State(stmt : Stmt,
   // static class initialization because in that case we want to
   // return to the current statement instead of the next statement.
   def handleInvoke(expr : InvokeExpr, destAddr : Option[Set[Addr]], nextStmt : Stmt = stmt.nextSyntactic()) : Set[State] = {
-    val newFP = alloca()
-    var newStore = store
-    for (i <- 0 until expr.getArgCount())
-      newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(expr.getArg(i)))
-    val newKontStack = kontStack.push(Frame(nextStmt, newFP, destAddr))
-
-    def dispatch(c : SootClass, m : SootMethod) : Set[State] = {
+    def dispatch(c : SootClass, m : SootMethod, receivers : Set[Value]) : Set[State] = {
       // This function finds all methods that could override root_m.
       // These methods are returned with the root-most at the end of
       // the list and the leaf-most at the head.  Thus the caller
@@ -351,6 +347,16 @@ case class State(stmt : Stmt,
 
       val meth = if (c == null) m else overloads(c, m).head
       // TODO: put a better message when there is no getActiveBody due to it being a native method
+      val newFP = alloca(expr, nextStmt)
+      var newStore = store
+      for (i <- 0 until expr.getArgCount())
+        newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(expr.getArg(i)))
+      val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
+      // TODO/optimize: filter out incorrect class types
+      val th = ThisFrameAddr(newFP)
+      for (r <- receivers)
+        newStore = newStore.update(th, D(Set(r)))
+
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, newFP, newStore, newKontStack)
         case None =>
@@ -363,20 +369,14 @@ case class State(stmt : Stmt,
       case expr : DynamicInvokeExpr => ??? // TODO: Could only come from non-Java sources
       case expr : StaticInvokeExpr =>
         checkInitializedClasses(expr.getMethod().getDeclaringClass())
-        dispatch(null, expr.getMethod())
+        dispatch(null, expr.getMethod(), Set())
       case expr : InstanceInvokeExpr =>
-        val th = ThisFrameAddr(newFP)
         val d = eval(expr.getBase())
         val vs = d.values filter { case ObjectValue(sootClass, _) => State.isSubclass(sootClass, expr.getMethod().getDeclaringClass); case _ => false }
-        // TODO/optimize: filter out incorrect class types
-        for (v <- vs)
-          newStore = newStore.update(th, D(Set(v)))
-        expr match {
-          case _ : SpecialInvokeExpr => dispatch(null, expr.getMethod())
-          case (_ : VirtualInvokeExpr) | (_ : InterfaceInvokeExpr) =>
-            ((for (ObjectValue(sootClass, _) <- vs) yield
-              dispatch(sootClass, expr.getMethod())) :\ Set[State]())(_ ++ _) // TODO: better way to do this?
-        }
+        ((for (ObjectValue(sootClass, _) <- vs) yield {
+          val objectClass = if (expr.isInstanceOf[SpecialInvokeExpr]) null else sootClass
+          dispatch(objectClass, expr.getMethod(), vs)
+        }) :\ Set[State]())(_ ++ _) // TODO: better way to do this?
     }
   }
 
@@ -515,8 +515,8 @@ case class State(stmt : Stmt,
       }
 
       case unit : ReturnVoidStmt => {
-        for ((frame, newStack) <- kontStack.pop if !(frame.acceptsReturnValue()))
-            yield State(frame.stmt, frame.fp, store, newStack, initializedClasses)
+        for ((frame, newStack) <- kontStack.pop if !(frame.acceptsReturnValue())) yield
+          State(frame.stmt, frame.fp, store, newStack, initializedClasses)
       }
 
       // Since Soot's NopEliminator run before us, no "nop" should be
@@ -726,10 +726,10 @@ class Window extends JFrame ("Shimple Analyzer") {
         case None => super.getToolTipForCell(cell)
         case Some(state) =>
           var tip = "<html>"
-          tip += "FP: " + state.fp.toString + "<br><br>"
-          tip += "Kont: " + state.kontStack.k + "<br><br>"
-          tip += "Store:<br>" + state.store.prettyString.foldLeft("")(_ + "&nbsp;&nbsp;" + _ + "<br>") + "<br>"
-          tip += "KontStore:<br>" + state.kontStack.store.prettyString.foldLeft("")(_ + "&nbsp;&nbsp;" + _ + "<br>")
+          tip += "FP: " + Utility.escape(state.fp.toString) + "<br><br>"
+          tip += "Kont: " + Utility.escape(state.kontStack.k.toString) + "<br><br>"
+          tip += "Store:<br>" + state.store.prettyString.foldLeft("")(_ + "&nbsp;&nbsp;" + Utility.escape(_) + "<br>") + "<br>"
+          tip += "KontStore:<br>" + state.kontStack.store.prettyString.foldLeft("")(_ + "&nbsp;&nbsp;" + Utility.escape(_) + "<br>")
           //tip += "InitializedClasses: " + state.initializedClasses.toString + "<br>"
           tip += "</html>"
           tip
