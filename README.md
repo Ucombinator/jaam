@@ -20,3 +20,11 @@ ObjectPointer = ClassName + BasePointer
 Kont = KontStore x KontAddr
 KontStore = Map[KontAddr, Set[Kont]]
 ```
+
+## Getting Shimple
+
+An example:
+
+```
+sbt 'runMain soot.main -cp to-analyze -pp -f S BubbleSort'
+```
