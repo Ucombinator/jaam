@@ -36,6 +36,10 @@ import soot.util.Chain
 import soot.options.Options
 import soot.jimple.toolkits.invoke.AccessManager
 
+//ICFG
+import soot.toolkits.graph._
+import soot.jimple.toolkits.ide.icfg._
+
 // JGraphX
 
 import javax.swing.JFrame
@@ -152,6 +156,7 @@ case class D(val values: Set[Value]) {
   def join(otherd : D) : D = {
     D(values ++ otherd.values)
   }
+  def maybeZero() : Boolean = values.exists(_.isInstanceOf[AtomicValue])
 }
 
 object D {
@@ -278,37 +283,54 @@ case class State(stmt : Stmt,
   }
 
   def eval(v: SootValue) : D = {
+
+    def assertNumeric(op : SootValue) {
+      assert(op.getType().isInstanceOf[PrimType] && !op.getType().isInstanceOf[BooleanType])
+    }
+    def assertIntegral(op : SootValue) {
+      assert(op.getType().isInstanceOf[PrimType] &&
+        !op.getType().isInstanceOf[BooleanType] &&
+        !op.getType().isInstanceOf[FloatType] &&
+        !op.getType().isInstanceOf[DoubleType])
+    }
+
     v match {
-      // TODO missing: BinopExpr(...), Immediate(...), NegExpr, CastExpr
+      //TODO CastExpr
+      //TODO missing: CmplExpr, CmpgExpr, ConditionExpr, MethodHandle
       case (_ : Local) | (_ : Ref) => store(addrsOf(v))
       case _ : NullConstant => D.atomicTop
       case _ : NumericConstant => D.atomicTop
       case v : StringConstant => D(Set(ObjectValue(stmt.program("java.lang.String"), StringBasePointer(v.value))))
-      case subexpr : SubExpr => {
-        assert(subexpr.getOp1().getType().isInstanceOf[IntType])
-        assert(subexpr.getOp2().getType().isInstanceOf[IntType])
+      case v : NegExpr => D.atomicTop
+      case v : BinopExpr =>
+        v match {
+          case (_ : EqExpr) | (_ : NeExpr) | (_ : GeExpr) | (_ : GtExpr) | (_ : LeExpr) | (_ : LtExpr) =>
+            assert(v.getOp1().getType.isInstanceOf[PrimType])
+            assert(v.getOp2().getType.isInstanceOf[PrimType])
+            eval(v.getOp1())
+            eval(v.getOp2())
+            D.atomicTop
+          case (_ : ShrExpr) | (_ : ShlExpr) | (_ : UshExpr) | (_ : RemExpr) | (_ : XorExpr) | (_ : OrExpr) | (_ : AndExpr) =>
+            assertIntegral(v.getOp1())
+            assertIntegral(v.getOp2())
+            eval(v.getOp1())
+            eval(v.getOp2())
+            D.atomicTop
+          case (_ : AddExpr) | (_ : SubExpr) | (_ : MulExpr) | (_ : DivExpr) =>
+            assertNumeric(v.getOp1())
+            assertNumeric(v.getOp2())
+            eval(v.getOp1())
+            val zCheck = eval(v.getOp2())
+            if(v.isInstanceOf[DivExpr] && zCheck.maybeZero()){
+              exceptions = exceptions.join(D(Set(ObjectValue(stmt.program("java.lang.ArithmeticException"), malloc()))))
+            }
+            D.atomicTop
+        }
 
-        D.atomicTop
-      }
-
-      case v : AddExpr => {
-        assert(v.getOp1().getType().isInstanceOf[IntType])
-        assert(v.getOp2().getType().isInstanceOf[IntType])
-
-        D.atomicTop
-      }
-
-      case subexpr : MulExpr => {
-        assert(subexpr.getOp1().getType().isInstanceOf[IntType])
-        assert(subexpr.getOp2().getType().isInstanceOf[IntType])
-
-        D.atomicTop
-      }
-
-      case v : LengthExpr => {
+      case v : LengthExpr =>
         val addrs : Set[Addr] = for (ArrayValue(_, bp) <- eval(v.getOp()).values) yield ArrayLengthAddr(bp)
         store(addrs)
-      }
+
 
       // TODO: implement the actual check
       case v : InstanceOfExpr => D.atomicTop
@@ -497,7 +519,6 @@ case class State(stmt : Stmt,
         Set(trueState, falseState)
       }
 
-      // TODO: needs testing
       case unit : SwitchStmt =>
         unit.getTargets().map(t => this.copy(stmt = stmt.copy(unit = t))).toSet
 
@@ -673,7 +694,11 @@ object Main {
 
     var todo : List [State] = List(initialState)
     var seen : Set [State] = Set()
+    var test = 0
+
     while (todo nonEmpty) {
+      if(test == 100)
+        throw new Exception("REACHED FIFTY")
       val current = todo.head
       println(current)
       println()
@@ -683,12 +708,15 @@ object Main {
       // TODO: Fix optimization bug here
       todo = nexts.toList.filter(!seen.contains(_)) ++ todo.tail
       seen = seen ++ nexts
+      test = test + 1
     }
 
     println("Done!")
+
+
   }
 
-  def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] =
+   def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] =
     (for (c <- classes) yield c.getName() -> c).toMap
 
   def getShimple(classesDir : String, classPath : String) = {
@@ -719,7 +747,7 @@ object Main {
 
 class Window extends JFrame ("Shimple Analyzer") {
   // TODO: make exiting window go back to repl
-  // TODO: disable graph editing in the gui
+  // TODO: save graph files to review later
   val graph = new mxGraph() {
     override def getToolTipForCell(cell : Object) : String = {
       vertexToState.get(cell) match {
@@ -737,12 +765,15 @@ class Window extends JFrame ("Shimple Analyzer") {
     }
   }
 
+
   private val layoutX = new mxCompactTreeLayout(graph, false)
   private val parentX = graph.getDefaultParent()
   private val graphComponent = new mxGraphComponent(graph)
   private var stateToVertex = Map[State,Object]()
   private var vertexToState = Map[Object,State]()
 
+
+  graphComponent.setEnabled(false)
   graphComponent.setToolTips(true)
   getContentPane().add(graphComponent)
   ToolTipManager.sharedInstance().setInitialDelay(0)
@@ -754,7 +785,7 @@ class Window extends JFrame ("Shimple Analyzer") {
   private def stateString(state : State) : String = state.stmt.method.toString() + "\n" + state.stmt.unit.toString()
 
   def addState(state : State) {
-    val vertex = graph.insertVertex(parentX, null, stateString(state), 100, 100, 20, 20)
+    val vertex = graph.insertVertex(parentX, null, stateString(state), 100, 100, 20, 20, "ROUNDED")
     graph.updateCellSize(vertex)
     stateToVertex += (state -> vertex)
     vertexToState += (vertex -> state)
@@ -766,7 +797,7 @@ class Window extends JFrame ("Shimple Analyzer") {
       stateToVertex.get(end) match {
         case None =>
           val tag = stateString(end)
-          val v = graph.insertVertex(parentX, null, tag, 240, 150, 80, 30)
+          val v = graph.insertVertex(parentX, null, tag, 240, 150, 80, 30, "ROUNDED")
           graph.updateCellSize(v)
           graph.insertEdge(parentX, null, null, stateToVertex(start), v)
           stateToVertex += (end -> v)
@@ -783,3 +814,57 @@ class Window extends JFrame ("Shimple Analyzer") {
     }
   }
 }
+
+//future rendering of control flow graphs
+class CFG extends JFrame ("Control Flow Graph") {
+
+  val graph = new mxGraph()
+
+  private val layoutX = new mxCompactTreeLayout(graph, false)
+  private val parentX = graph.getDefaultParent()
+  private val graphComponent = new mxGraphComponent(graph)
+  private var stateToVertex = Map[Block,Object]()
+  private var vertexToState = Map[Object,Block]()
+
+
+  graphComponent.setEnabled(false)
+  graphComponent.setToolTips(true)
+  getContentPane().add(graphComponent)
+  ToolTipManager.sharedInstance().setInitialDelay(0)
+  ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE)
+  setSize(400, 320)
+  setExtendedState(java.awt.Frame.MAXIMIZED_BOTH)
+  setVisible(true)
+
+
+   def addState(unit : Block) {
+    val vertex = graph.insertVertex(parentX, null, unit, 100, 100, 20, 20, "ROUNDED")
+    graph.updateCellSize(vertex)
+    stateToVertex += (unit -> vertex)
+    vertexToState += (vertex -> unit)
+  }
+
+   def addNext(start : Block, end : Block) {
+    graph.getModel().beginUpdate()
+    try {
+      stateToVertex.get(end) match {
+        case None =>
+          //val tag = stateString(end)
+          val v = graph.insertVertex(parentX, null, end, 240, 150, 80, 30, "ROUNDED")
+          graph.updateCellSize(v)
+          graph.insertEdge(parentX, null, null, stateToVertex(start), v)
+          stateToVertex += (end -> v)
+          vertexToState += (v -> end)
+        case Some(v) =>
+          graph.insertEdge(parentX, null, null, stateToVertex(start), v)
+      }
+      layoutX.execute(parentX)
+    }
+    finally
+    {
+      graph.getModel().endUpdate()
+    }
+  }
+
+}
+

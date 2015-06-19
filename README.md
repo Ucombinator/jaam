@@ -28,3 +28,15 @@ An example:
 ```
 sbt 'runMain soot.main -cp to-analyze -pp -f S BubbleSort'
 ```
+
+## Running Analyzer
+
+Example:
+
+```
+sbt
+```
+
+```
+run classDirectory className methodName
+```
