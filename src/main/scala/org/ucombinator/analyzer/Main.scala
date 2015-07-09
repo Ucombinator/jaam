@@ -310,7 +310,7 @@ case class State(stmt : Stmt,
             eval(v.getOp1())
             eval(v.getOp2())
             D.atomicTop
-          case (_ : ShrExpr) | (_ : ShlExpr) | (_ : UshExpr) | (_ : RemExpr) | (_ : XorExpr) | (_ : OrExpr) | (_ : AndExpr) =>
+          case (_ : ShrExpr) | (_ : ShlExpr) | (_ : UshrExpr) | (_ : RemExpr) | (_ : XorExpr) | (_ : OrExpr) | (_ : AndExpr) =>
             assertIntegral(v.getOp1())
             assertIntegral(v.getOp2())
             eval(v.getOp1())
@@ -698,7 +698,7 @@ object Main {
 
     while (todo nonEmpty) {
       if(test == 100)
-        throw new Exception("REACHED FIFTY")
+        throw new Exception("REACHED 100")
       val current = todo.head
       println(current)
       println()
