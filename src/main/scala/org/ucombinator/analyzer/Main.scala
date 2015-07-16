@@ -694,11 +694,9 @@ object Main {
 
     var todo : List [State] = List(initialState)
     var seen : Set [State] = Set()
-    var test = 0
+
 
     while (todo nonEmpty) {
-      if(test == 100)
-        throw new Exception("REACHED 100")
       val current = todo.head
       println(current)
       println()
@@ -708,11 +706,11 @@ object Main {
       // TODO: Fix optimization bug here
       todo = nexts.toList.filter(!seen.contains(_)) ++ todo.tail
       seen = seen ++ nexts
-      test = test + 1
+      //println("SIZE: " + seen.size)
+
     }
 
     println("Done!")
-
 
   }
 
