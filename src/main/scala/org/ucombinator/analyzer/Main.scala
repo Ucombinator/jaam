@@ -341,7 +341,6 @@ case class State(stmt : Stmt,
     }
 
     v match {
-      //TODO CastExpr
       //TODO missing: CmplExpr, CmpgExpr, ConditionExpr, MethodHandle
       case (_ : Local) | (_ : Ref) => store(addrsOf(v))
       case _ : NullConstant => D.atomicTop
@@ -368,7 +367,8 @@ case class State(stmt : Stmt,
             eval(v.getOp1())
             val zCheck = eval(v.getOp2())
             if(v.isInstanceOf[DivExpr] && zCheck.maybeZero()){
-              exceptions = exceptions.join(D(Set(ObjectValue(stmt.classmap("java.lang.ArithmeticException"), malloc()))))
+              // TODO/soundness: No malloc!
+              exceptions = ??? // exceptions.join(D(Set(ObjectValue(stmt.classmap("java.lang.ArithmeticException"), malloc()))))
             }
             D.atomicTop
         }
@@ -387,6 +387,25 @@ case class State(stmt : Stmt,
       // (though we may be getting that knowledge from partial definedness of the store)
       // This code assumes that getValues returns only Local or Ref
       case v : PhiExpr => store((v.getValues map addrsOf).toSet.flatten)
+
+      case v : CastExpr => {
+        val castedExpr : SootValue = v.getOp()
+        val castedType : SootType = v.getType()
+        val d = eval(castedExpr)
+        // TODO/soundness: Throw an exception if necessary.
+          /*
+        for (vl <- d.values) {
+          vl match {
+            case ObjectValue(objectType, _) => if (!State.isSubclass(objectType, castedType)) {
+              val classCastException = ???
+              exceptions = exceptions.join(classCastException)
+            }
+            case _ => throw new Exception ("Unknown value type " + vl)
+          }
+        }
+        */
+        d
+      }
 
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
