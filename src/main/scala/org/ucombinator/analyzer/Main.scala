@@ -50,14 +50,17 @@ import com.mxgraph.swing.mxGraphComponent
 import com.mxgraph.view.mxGraph
 import com.mxgraph.layout.mxCompactTreeLayout
 
+// Possibly thrown during transition between states.
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
 case class UndefinedAddrsException(addrs : Set[Addr]) extends RuntimeException
 
+// FramePointers, when paired with variable names, yield the addresses of variables.
 abstract class FramePointer
 case object InvariantFramePointer extends FramePointer
 case class OneCFAFramePointer(val method : SootMethod, val nextStmt : Stmt) extends FramePointer
 case object InitialFramePointer extends FramePointer
 
+// BasePointers, when paired with field names, yield the addresses of fields.
 abstract class BasePointer
 case class OneCFABasePointer(stmt : Stmt, fp : FramePointer) extends BasePointer
 case object InitialBasePointer extends BasePointer
@@ -67,18 +70,25 @@ case class StringBasePointer(val string : String) extends BasePointer
 case class ClassBasePointer(val name : String) extends BasePointer
 case class SnowflakeBasePointer(val clas : String) extends BasePointer
 
+// Addresses of continuations on the stack
 abstract class KontAddr
 case class OneCFAKontAddr(val fr : FramePointer) extends KontAddr
 
+// A continuation store paired with a continuation
 case class KontStack(store : KontStore, k : Kont) {
+  // TODO/generalize: Add widening in push and pop (to support PDCFA)
+
+  // TODO/generalize: We need the control pointer of the target state to HANDLE PDCFA.
   def kalloca(frame : Frame) = OneCFAKontAddr(frame.fp)
 
+  // TODO/generalize: Handle PDCFA
   def push(frame : Frame) : KontStack = {
     val kAddr = kalloca(frame)
     val newKontStore = store.update(kAddr, Set(k))
     KontStack(newKontStore, RetKont(frame, kAddr))
   }
 
+  // Pop returns all possible frames beneath the current one.
   def pop() : Set[(Frame, KontStack)] = {
     k match {
       case RetKont(frame, kontAddr) => {
@@ -88,8 +98,12 @@ case class KontStack(store : KontStore, k : Kont) {
     }
   }
 
-  def handleException(exception : Value, stmt : Stmt, fp : FramePointer, store : Store, initializedClasses : Set[SootClass]) : Set[State] = {
-    if (!exception.isInstanceOf[ObjectValue]) return Set()
+  def handleException(exception : Value,
+                      stmt : Stmt,
+                      fp : FramePointer,
+                      store : Store,
+                      initializedClasses : Set[SootClass]) : Set[State] = {
+    if (!exception.isInstanceOf[ObjectValue]) throw new Exception("Impossible throw: stmt = " + stmt + "; value = " + exception)
 
     var visited = Set[(Stmt, FramePointer, KontStack)]()
 
