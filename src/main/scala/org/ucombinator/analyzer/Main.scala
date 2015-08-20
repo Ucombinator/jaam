@@ -99,13 +99,13 @@ case class KontStack(store : KontStore, k : Kont) {
       // TODO: Why does this give an error if we don't use "Tuple3"?
       visited = visited + Tuple3(stmt, fp, kontStack) // TODO: do we really need all of these in here?
 
-      for (trap <- TrapManager.getTrapsAt(stmt.unit, stmt.method.getActiveBody())) {
+      for (trap <- TrapManager.getTrapsAt(stmt.inst, stmt.method.getActiveBody())) {
         val caughtType = trap.getException()
         val newStore = store.update(CaughtExceptionFrameAddr(fp), D(Set(exception)))
 
         // TODO: use Hierarchy or FastHierarchy?
         if (State.isSubclass(exception.asInstanceOf[ObjectValue].sootClass, caughtType))
-          return Set(State(stmt.copy(unit = trap.getHandlerUnit()), fp, newStore, this, initializedClasses))
+          return Set(State(stmt.copy(inst = trap.getHandlerUnit()), fp, newStore, this, initializedClasses))
       }
 
       (for ((frame, kontStack) <- this.pop()) yield { f(frame.stmt, frame.fp, kontStack) }).flatten
@@ -228,53 +228,71 @@ case class Store(private val map : Map[Addr, D]) {
     (for ((a, d) <- map) yield { a + " -> " + d }).toList
 }
 
-case class Stmt(val unit : SootUnit, val method : SootMethod, val program : Map[String, SootClass]) {
-  assert(unit.isInstanceOf[SootStmt])
-  def nextSyntactic() : Stmt = this.copy(unit = method.getActiveBody().getUnits().getSuccOf(unit))
-  override def toString() : String = unit.toString()
+case class Stmt(val inst : SootUnit, val method : SootMethod, val classmap : Map[String, SootClass]) {
+  assert(inst.isInstanceOf[SootStmt])
+  def nextSyntactic() : Stmt = this.copy(inst = method.getActiveBody().getUnits().getSuccOf(inst))
+  override def toString() : String = inst.toString()
 }
 
+// State abstracts a collection of concrete states of execution.
 case class State(stmt : Stmt,
                  fp : FramePointer,
                  store : Store,
                  kontStack : KontStack,
                  initializedClasses : Set[SootClass]) {
+
+  // When you call next, you may realize you are going to end up throwing some exceptions
+  // TODO/refactor: Consider turning this into a list of exceptions.
   var exceptions = D(Set())
 
+  // Allocates a new frame pointer (currently uses 1CFA)
   def alloca(expr : InvokeExpr, nextStmt : Stmt) : FramePointer = OneCFAFramePointer(expr.getMethod(), nextStmt)
+  // Allocates objects
   def malloc() : BasePointer = OneCFABasePointer(stmt, fp)
 
+  // Any time you reference a class, you have to run this to make sure it's initialized.
+  // If it isn't, the exception should be caught so the class can be initialized.
   def checkInitializedClasses(c : SootClass) {
     if (!initializedClasses.contains(c)) {
       throw new UninitializedClassException(c)
     }
   }
 
-  def addrsOf(v : SootValue) : Set[Addr] = {
-    // TODO: check coverage of possible SootValue
-    v match {
-      case v : Local => Set(LocalFrameAddr(fp, v))
-      case v : InstanceFieldRef => {
-        val b = v.getBase()
-        val d = eval(b)
+  // Returns all possible addresses of an assignable expression.
+  // x = 3; // Should only return 1 address.
+  // x[2] = 3; // May return more than one address because x might be multiple arrays.
+  // x.y = 3; // May return multiple addresses ""
+  // x[y] = 3; // May return multiple addresses even if x is a single value. (not currently relevant)
+  // Right now, we model arrays as having only a single storage location, so the last example produces multiple addresses only based on there being more than one location for x.
+  def addrsOf(lhs : SootValue) : Set[Addr] = {
+    lhs match {
+      case lhs : Local => Set(LocalFrameAddr(fp, lhs))
+      case lhs : InstanceFieldRef => {
+        val b : SootValue = lhs.getBase() // the x in x.y
+        val d : D = eval(b)
         // TODO/optimize
         // filter out incorrect class types
+        // TODO/bug
+        // Suppose a number flows to x in x.y = 3;
         for (ObjectValue(_, bp) <- d.values)
-         yield InstanceFieldAddr(bp, v.getField())
+         yield InstanceFieldAddr(bp, lhs.getField())
       }
-      case v : StaticFieldRef => {
-        val f = v.getField()
-        val c = f.getDeclaringClass()
+      case lhs : StaticFieldRef => {
+        val f : SootField = lhs.getField()
+        val c : SootClass = f.getDeclaringClass()
         checkInitializedClasses(c)
         Set(StaticFieldAddr(f))
       }
-      case v : ParameterRef => Set(ParameterFrameAddr(fp, v.getIndex()))
-      case v : ThisRef => Set(ThisFrameAddr(fp))
-      case v : CaughtExceptionRef => Set(CaughtExceptionFrameAddr(fp)) // TODO: have multiple addresses per "catch" clause?
-      case v : ArrayRef => {
-        val b = eval(v.getBase())
-        // TODO: array ref out of bounds exception
-        val i = eval(v.getIndex()) // Unused but evaled in case we trigger a <clinit> or exception
+      case lhs : ParameterRef => Set(ParameterFrameAddr(fp, lhs.getIndex()))
+      case lhs : ThisRef => Set(ThisFrameAddr(fp))
+        // TODO/precision: have multiple addresses per "catch" clause?
+        // Perhaps mix left-hand side into address?
+      case lhs : CaughtExceptionRef => Set(CaughtExceptionFrameAddr(fp))
+      case lhs : ArrayRef => {
+        // TODO/precision: Use more than a single address for each Array.
+        val b = eval(lhs.getBase())
+        // TODO/soundness: array ref out of bounds exception
+        val i = eval(lhs.getIndex()) // Unused but evaled in case we trigger a <clinit> or exception
         // TODO: filter out incorrect types
         for (ArrayValue(_, bp) <- b.values) yield
           ArrayRefAddr(bp)
@@ -282,6 +300,12 @@ case class State(stmt : Stmt,
     }
   }
 
+  // Abstractly evaluate a Soot expression.
+  // x.f
+  // 3
+  // a + b
+  // We cheat slightly here, by using side-effects to install exceptions that need to be thrown.
+  // This does not evaluate complex expressions like method-calls.
   def eval(v: SootValue) : D = {
 
     def assertNumeric(op : SootValue) {
@@ -300,7 +324,7 @@ case class State(stmt : Stmt,
       case (_ : Local) | (_ : Ref) => store(addrsOf(v))
       case _ : NullConstant => D.atomicTop
       case _ : NumericConstant => D.atomicTop
-      case v : StringConstant => D(Set(ObjectValue(stmt.program("java.lang.String"), StringBasePointer(v.value))))
+      case v : StringConstant => D(Set(ObjectValue(stmt.classmap("java.lang.String"), StringBasePointer(v.value))))
       case v : NegExpr => D.atomicTop
       case v : BinopExpr =>
         v match {
@@ -322,20 +346,23 @@ case class State(stmt : Stmt,
             eval(v.getOp1())
             val zCheck = eval(v.getOp2())
             if(v.isInstanceOf[DivExpr] && zCheck.maybeZero()){
-              exceptions = exceptions.join(D(Set(ObjectValue(stmt.program("java.lang.ArithmeticException"), malloc()))))
+              exceptions = exceptions.join(D(Set(ObjectValue(stmt.classmap("java.lang.ArithmeticException"), malloc()))))
             }
             D.atomicTop
         }
 
-      case v : LengthExpr =>
+      // Every array has a distinguished field for its address.
+      case v : LengthExpr => {
         val addrs : Set[Addr] = for (ArrayValue(_, bp) <- eval(v.getOp()).values) yield ArrayLengthAddr(bp)
         store(addrs)
+      }
 
 
-      // TODO: implement the actual check
+      // TODO/precision: implement the actual check
       case v : InstanceOfExpr => D.atomicTop
 
-      // TODO: take advantage of knowledge in v.getPreds() (though we may be getting that knowledge from partial definedness of the store)
+      // TODO/precision: take advantage of knowledge in v.getPreds()
+      // (though we may be getting that knowledge from partial definedness of the store)
       // This code assumes that getValues returns only Local or Ref
       case v : PhiExpr => store((v.getValues map addrsOf).toSet.flatten)
 
@@ -347,7 +374,12 @@ case class State(stmt : Stmt,
   // Stmt to execute after returning from this call.  We need this for
   // static class initialization because in that case we want to
   // return to the current statement instead of the next statement.
-  def handleInvoke(expr : InvokeExpr, destAddr : Option[Set[Addr]], nextStmt : Stmt = stmt.nextSyntactic()) : Set[State] = {
+  def handleInvoke(expr : InvokeExpr,
+                   destAddr : Option[Set[Addr]],
+                   nextStmt : Stmt = stmt.nextSyntactic()) : Set[State] = {
+
+    // o.f(3); // In this case, c is the type of o. m is f. receivers is the result of eval(o).
+    // TODO/dragons. Here they be.
     def dispatch(c : SootClass, m : SootMethod, receivers : Set[Value]) : Set[State] = {
       // This function finds all methods that could override root_m.
       // These methods are returned with the root-most at the end of
@@ -382,7 +414,7 @@ case class State(stmt : Stmt,
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, newFP, newStore, newKontStack)
         case None =>
-          Set(State(Stmt(meth.getActiveBody().getUnits().getFirst, meth, stmt.program),
+          Set(State(Stmt(meth.getActiveBody().getUnits().getFirst, meth, stmt.classmap),
             newFP, newStore, newKontStack, initializedClasses))
       }
     }
@@ -402,13 +434,15 @@ case class State(stmt : Stmt,
     }
   }
 
-  def defaultInitialValue(t : SootType) = {
+  // If you reference an unititialized field, what should it be?
+  def defaultInitialValue(t : SootType) : D = {
     t match {
       case t : RefLikeType => eval(NullConstant.v())
-      case t : PrimType => D.atomicTop // TODO: should eval based on specific type
+      case t : PrimType => D.atomicTop // TODO/precision: should eval based on specific type
     }
   }
 
+  // If you reference an unititialized static field, what should it be?
   def staticInitialValue(f : SootField) : D = {
     for (t <- f.getTags)
       t match {
@@ -416,7 +450,7 @@ case class State(stmt : Stmt,
         case t : FloatConstantValueTag => return D.atomicTop
         case t : IntegerConstantValueTag => return D.atomicTop
         case t : LongConstantValueTag => return D.atomicTop
-        case t : StringConstantValueTag => return D(Set(ObjectValue(stmt.program("java.lang.String"), StringBasePointer(t.getStringValue()))))
+        case t : StringConstantValueTag => return D(Set(ObjectValue(stmt.classmap("java.lang.String"), StringBasePointer(t.getStringValue()))))
         case _ => ()
       }
     return defaultInitialValue(f.getType)
@@ -425,18 +459,20 @@ case class State(stmt : Stmt,
   // Returns a Store containing the possibly nested arrays described
   // by the SootType t with dimension sizes 'sizes'
   def createArray(t : SootType, sizes : List[D], addrs : Set[Addr]) : Store = sizes match {
+    // Should only happen on recursive calls. (createArray should never be called by a user with an empty list of sizes).
     case Nil => store.update(addrs, defaultInitialValue(t))
     case (s :: ss) => {
-      val bp = malloc()
-      // TODO: exception for a negative length
-      // TODO: stop allocating if a zero length
-      // TODO: separately allocate each array element
+      val bp : BasePointer = malloc()
+      // TODO/soundness: exception for a negative length
+      // TODO/precision: stop allocating if a zero length
+      // TODO/precision: separately allocate each array element
       createArray(t.asInstanceOf[ArrayType].getElementType(), ss, Set(ArrayRefAddr(bp)))
         .update(addrs, D(Set(ArrayValue(t, bp))))
         .update(ArrayLengthAddr(bp), s)
     }
   }
 
+  // Returns the set of successor states to this state.
   def next() : Set[State] = {
     try {
       val nexts = true_next()
@@ -444,8 +480,8 @@ case class State(stmt : Stmt,
       nexts ++ exceptionStates
     } catch {
       case UninitializedClassException(sootClass) =>
-        // TODO: needs to also initialize parent classes
-        exceptions = D(Set()) // TODO: is this really valid? good?
+        // TODO/soundness: needs to also initialize parent classes
+        exceptions = D(Set())
         val meth = sootClass.getMethodByNameUnsafe("<clinit>")
         if (meth != null) {
           // Initialize all static fields per JVM 5.4.2 and 5.5
@@ -467,19 +503,19 @@ case class State(stmt : Stmt,
   }
 
   def true_next() : Set[State] = {
-    stmt.unit match {
-      case unit : InvokeStmt => handleInvoke(unit.getInvokeExpr, None)
+    stmt.inst match {
+      case inst : InvokeStmt => handleInvoke(inst.getInvokeExpr, None)
 
-      case unit : DefinitionStmt => {
-        val lhsAddr = addrsOf(unit.getLeftOp())
+      case inst : DefinitionStmt => {
+        val lhsAddr = addrsOf(inst.getLeftOp())
 
-        unit.getRightOp() match {
+        inst.getRightOp() match {
           case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
           case rhs : NewExpr => {
-            val baseType = rhs.getBaseType()
+            val baseType : RefType = rhs.getBaseType()
             val sootClass = baseType.getSootClass()
-            val bp = malloc()
-            val obj = ObjectValue(sootClass, bp)
+            val bp : BasePointer = malloc()
+            val obj : Value = ObjectValue(sootClass, bp)
             val d = D(Set(obj))
             var newStore = store.update(lhsAddr, d)
             checkInitializedClasses(sootClass)
@@ -494,15 +530,18 @@ case class State(stmt : Stmt,
             initInstanceFields(sootClass)
             Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
           }
+          // TODO/clarity: Add an example of Java code that can trigger this.
           case rhs : ClassConstant => { // TODO: frustratingly similar to NewExpr
-            val newStore = store.update(lhsAddr, D(Set(ObjectValue(stmt.program("java.lang.Class"), ClassBasePointer(rhs.value)))))
+            val newStore = store.update(lhsAddr, D(Set(ObjectValue(stmt.classmap("java.lang.Class"), ClassBasePointer(rhs.value)))))
             Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
           }
           case rhs : NewArrayExpr => {
+            // Value of lhsAddr will be set to a pointer to the array. (as opposed to the array itself)
             val newStore = createArray(rhs.getType(), List(eval(rhs.getSize())), lhsAddr)
             Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
           }
           case rhs : NewMultiArrayExpr => {
+            //see comment above about lhs addr
             val newStore = createArray(rhs.getType(), rhs.getSizes().toList map eval, lhsAddr)
             Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
           }
@@ -513,17 +552,19 @@ case class State(stmt : Stmt,
         }
       }
 
-      case unit : IfStmt => {
-            val trueState = this.copy(stmt = stmt.copy(unit = unit.getTarget()))
+      case inst : IfStmt => {
+            eval(inst.getCondition()) //in case of side effects //TODO/precision evaluate the condition
+            val trueState = this.copy(stmt = stmt.copy(inst = inst.getTarget()))
             val falseState = this.copy(stmt = stmt.nextSyntactic())
         Set(trueState, falseState)
       }
 
-      case unit : SwitchStmt =>
-        unit.getTargets().map(t => this.copy(stmt = stmt.copy(unit = t))).toSet
+      case inst : SwitchStmt =>
+        //TODO/prrecision dont take all the switches
+        inst.getTargets().map(t => this.copy(stmt = stmt.copy(inst = t))).toSet
 
-      case unit : ReturnStmt => {
-        val evaled = eval(unit.getOp())
+      case inst : ReturnStmt => {
+        val evaled = eval(inst.getOp())
         for ((frame, newStack) <- kontStack.pop) yield {
           val newStore = if (frame.acceptsReturnValue()) {
             store.update(frame.destAddr.get, evaled)
@@ -535,7 +576,7 @@ case class State(stmt : Stmt,
         }
       }
 
-      case unit : ReturnVoidStmt => {
+      case inst : ReturnVoidStmt => {
         for ((frame, newStack) <- kontStack.pop if !(frame.acceptsReturnValue())) yield
           State(frame.stmt, frame.fp, store, newStack, initializedClasses)
       }
@@ -550,32 +591,33 @@ case class State(stmt : Stmt,
       //
       // If we ever need the code for this, it would probably be:
       //   Set(State(stmt.nextSyntactic(), fp, store, kontStack, initializedClasses))
-      case unit : NopStmt => throw new Exception("Impossible statement: " + unit)
+      case inst : NopStmt => throw new Exception("Impossible statement: " + inst)
 
-      case unit : GotoStmt => Set(this.copy(stmt = stmt.copy(unit = unit.getTarget())))
+      case inst : GotoStmt => Set(this.copy(stmt = stmt.copy(inst = inst.getTarget())))
 
       // For now we don't model monitor statements, so we just skip over them
-      // TODO: needs testing
-      case unit : EnterMonitorStmt => Set(this.copy(stmt = stmt.nextSyntactic()))
-      case unit : ExitMonitorStmt => Set(this.copy(stmt = stmt.nextSyntactic()))
+      // TODO/soundness: In the event of multi-threaded code with precise interleaving, this is not sound.
+      case inst : EnterMonitorStmt => Set(this.copy(stmt = stmt.nextSyntactic()))
+      case inst : ExitMonitorStmt => Set(this.copy(stmt = stmt.nextSyntactic()))
 
       // TODO: needs testing
-      case unit : ThrowStmt => { exceptions = exceptions.join(eval(unit.getOp())); Set() }
+      case inst : ThrowStmt => { exceptions = exceptions.join(eval(inst.getOp())); Set() }
 
       // TODO: We're missing BreakPointStmt and RetStmt (but these might not be used)
 
       case _ => {
-        throw new Exception("No match for " + stmt.unit.getClass + " : " + stmt.unit)
+        throw new Exception("No match for " + stmt.inst.getClass + " : " + stmt.inst)
       }
     }
   }
 }
 
+// TODO/refactor: Maybe allow user-specified arguments.
 object State {
   val initialFramePointer = InitialFramePointer
   val initialBasePointer = InitialBasePointer
   def inject(stmt : Stmt) : State = {
-    val stringClass = stmt.program("java.lang.String")
+    val stringClass : SootClass = stmt.classmap("java.lang.String")
     val initial_map : Map[Addr, D] = Map(
       (ParameterFrameAddr(initialFramePointer, 0) -> D(Set(ArrayValue(stringClass.getType(), initialBasePointer)))),
       (ArrayRefAddr(initialBasePointer) -> D(Set(ObjectValue(stringClass, initialBasePointer)))),
@@ -587,11 +629,13 @@ object State {
     Scene.v().getActiveHierarchy().isClassSubclassOfIncluding(sub, sup)
 }
 
+// Uniquely identifies a particular method somewhere in the program.
 case class MethodDescription(val className : String,
                              val methodName : String,
                              val parameterTypes : List[String],
                              val returnType : String)
 
+// Snowflakes are special-cased methods
 abstract class SnowflakeHandler {
   def apply(state : State,
             nextStmt : Stmt,
@@ -620,11 +664,13 @@ object NoOpSnowflake extends SnowflakeHandler {
     Set(state.copy(stmt = nextStmt))
 }
 
+// TODO/soundness: Add JohnSnowflake for black-holes. Not everything becomes top, but an awful lot will.
+
 case class ConstSnowflake(value : D) extends SnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
-    val newNewStore = state.stmt.unit match {
-      case unit : DefinitionStmt => state.store.update(state.addrsOf(unit.getLeftOp()), value)
-      case unit : InvokeStmt => state.store
+    val newNewStore = state.stmt.inst match {
+      case inst : DefinitionStmt => state.store.update(state.addrsOf(inst.getLeftOp()), value)
+      case inst : InvokeStmt => state.store
     }
     Set(state.copy(stmt = nextStmt, store = newNewStore))
   }
@@ -638,8 +684,10 @@ object Main {
     val className = args(1)
     val methodName = args(2)
 
-    val classes = getClassMap(getShimple(classDirectory, ""))
+    val classes : Map[String, SootClass] = getClassMap(getShimple(classDirectory, ""))
 
+      // Snowflakes are special Java procedures whose behavior we know and special-case.
+      // For example, native methods (that would be difficult to analyze) are snowflakes.
     Snowflakes.put(MethodDescription("java.io.PrintStream", "println", List("int"), "void"),
       new SnowflakeHandler {
         override def apply(state : State,
@@ -683,30 +731,32 @@ object Main {
     Snowflakes.put(MethodDescription("java.lang.Throwable", "<clinit>", List(), "void"), NoOpSnowflake)
     Snowflakes.put(MethodDescription("java.util.ArrayList", "<init>", List("int"), "void"), NoOpSnowflake)
 
-    val mainMainMethod = classes(className).getMethodByName(methodName);
-    val units = mainMainMethod.getActiveBody().getUnits();
+    val mainMainMethod : SootMethod = classes(className).getMethodByName(methodName);
+    val insts : Chain[SootUnit] = mainMainMethod.getActiveBody().getUnits();
 
-    val first = units.getFirst()
+    val first : SootUnit = insts.getFirst()
 
+      // Setting up the GUI
     val window = new Window
     val initialState = State.inject(Stmt(first, mainMainMethod, classes))
     window.addState(initialState)
+
 
     var todo : List [State] = List(initialState)
     var seen : Set [State] = Set()
 
 
+      // Explore the state graph
     while (todo nonEmpty) {
       val current = todo.head
       println(current)
       println()
-      val nexts = current.next()
+      val nexts : Set[State] = current.next()
       for (n <- nexts) window.addNext(current, n)
 
       // TODO: Fix optimization bug here
       todo = nexts.toList.filter(!seen.contains(_)) ++ todo.tail
       seen = seen ++ nexts
-      //println("SIZE: " + seen.size)
 
     }
 
@@ -780,7 +830,7 @@ class Window extends JFrame ("Shimple Analyzer") {
   setExtendedState(java.awt.Frame.MAXIMIZED_BOTH)
   setVisible(true)
 
-  private def stateString(state : State) : String = state.stmt.method.toString() + "\n" + state.stmt.unit.toString()
+  private def stateString(state : State) : String = state.stmt.method.toString() + "\n" + state.stmt.inst.toString()
 
   def addState(state : State) {
     val vertex = graph.insertVertex(parentX, null, stateString(state), 100, 100, 20, 20, "ROUNDED")
@@ -835,11 +885,11 @@ class CFG extends JFrame ("Control Flow Graph") {
   setVisible(true)
 
 
-   def addState(unit : Block) {
-    val vertex = graph.insertVertex(parentX, null, unit, 100, 100, 20, 20, "ROUNDED")
+   def addState(inst : Block) {
+    val vertex = graph.insertVertex(parentX, null, inst, 100, 100, 20, 20, "ROUNDED")
     graph.updateCellSize(vertex)
-    stateToVertex += (unit -> vertex)
-    vertexToState += (vertex -> unit)
+    stateToVertex += (inst -> vertex)
+    vertexToState += (vertex -> inst)
   }
 
    def addNext(start : Block, end : Block) {
