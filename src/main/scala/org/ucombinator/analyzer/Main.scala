@@ -103,36 +103,38 @@ case class KontStack(store : KontStore, k : Kont) {
                       fp : FramePointer,
                       store : Store,
                       initializedClasses : Set[SootClass]) : Set[State] = {
-    if (!exception.isInstanceOf[ObjectValue]) throw new Exception("Impossible throw: stmt = " + stmt + "; value = " + exception)
+    if (!exception.isInstanceOf[ObjectValue])
+      throw new Exception("Impossible throw: stmt = " + stmt + "; value = " + exception)
 
     var visited = Set[(Stmt, FramePointer, KontStack)]()
 
-    def f(stmt : Stmt, fp : FramePointer, kontStack : KontStack) : Set[State] = {
+    // TODO/performance: Make iterative.
+    def stackWalk(stmt : Stmt, fp : FramePointer, kontStack : KontStack) : Set[State] = {
       if (visited.contains((stmt, fp, kontStack))) return Set()
 
-      // TODO: Why does this give an error if we don't use "Tuple3"?
-      visited = visited + Tuple3(stmt, fp, kontStack) // TODO: do we really need all of these in here?
+      visited = visited + ((stmt, fp, kontStack)) // TODO: do we really need all of these in here?
 
       for (trap <- TrapManager.getTrapsAt(stmt.inst, stmt.method.getActiveBody())) {
         val caughtType = trap.getException()
+        // The handler will expect the exception to be waiting at CaughtExceptionFrameAddr(fp).
+        // It'll be referenced through CaughtExceptionRef.
         val newStore = store.update(CaughtExceptionFrameAddr(fp), D(Set(exception)))
 
-        // TODO: use Hierarchy or FastHierarchy?
+        // TODO/soundness or performance?: use Hierarchy or FastHierarchy?
         if (State.isSubclass(exception.asInstanceOf[ObjectValue].sootClass, caughtType))
           return Set(State(stmt.copy(inst = trap.getHandlerUnit()), fp, newStore, this, initializedClasses))
       }
 
-      (for ((frame, kontStack) <- this.pop()) yield { f(frame.stmt, frame.fp, kontStack) }).flatten
+      (for ((frame, kontStack) <- this.pop()) yield { stackWalk(frame.stmt, frame.fp, kontStack) }).flatten
     }
 
-    f(stmt, fp, this)
+    stackWalk(stmt, fp, this)
 
-    // TODO: deal with unhandled exceptions
+    // TODO/soundness: deal with unhandled exceptions
   }
 }
 
-// TODO Michael B: refactor KontStore and Store, since they only
-// differ in their types
+// Probably don't refactor. Might only want to widen on KontStore.
 case class KontStore(private val map : Map[KontAddr, Set[Kont]]) {
   def update(addr : KontAddr, konts : Set[Kont]) : KontStore = {
     map.get(addr) match {
@@ -166,6 +168,8 @@ case class RetKont(
 
 object HaltKont extends Kont
 
+//----------- ABSTRACT VALUES -----------------
+
 case class D(val values: Set[Value]) {
   def join(otherd : D) : D = {
     D(values ++ otherd.values)
@@ -187,16 +191,20 @@ case class ObjectValue(val sootClass : SootClass,  val bp : BasePointer) extends
 
 case class ArrayValue(val sootType : SootType, val bp : BasePointer) extends Value
 
+//----------------- ADDRESSES ------------------
+
 abstract class Addr
 
 abstract class FrameAddr extends Addr
 
+// For local variables
 case class LocalFrameAddr(val fp : FramePointer, val register : Local) extends FrameAddr
 
 case class ParameterFrameAddr(val fp : FramePointer, val parameter : Int) extends FrameAddr
 
 case class ThisFrameAddr(val fp : FramePointer) extends FrameAddr
 
+// Holds the most recently caught exception in this frame
 case class CaughtExceptionFrameAddr(val fp : FramePointer) extends FrameAddr
 
 case class InstanceFieldAddr(val bp : BasePointer, val sf : SootField) extends Addr
