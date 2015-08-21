@@ -3,3 +3,5 @@ project
 target
 javacache
 .DS_Store
+sootOutput
+.*.sw?
