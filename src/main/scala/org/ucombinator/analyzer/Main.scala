@@ -102,14 +102,14 @@ case class KontStack(store : KontStore, k : Kont) {
                       stmt : Stmt,
                       fp : FramePointer,
                       store : Store,
-                      initializedClasses : Set[SootClass]) : Set[State] = {
+                      initializedClasses : Set[SootClass]) : Set[AbstractState] = {
     if (!exception.isInstanceOf[ObjectValue])
       throw new Exception("Impossible throw: stmt = " + stmt + "; value = " + exception)
 
     var visited = Set[(Stmt, FramePointer, KontStack)]()
 
     // TODO/performance: Make iterative.
-    def stackWalk(stmt : Stmt, fp : FramePointer, kontStack : KontStack) : Set[State] = {
+    def stackWalk(stmt : Stmt, fp : FramePointer, kontStack : KontStack) : Set[AbstractState] = {
       if (visited.contains((stmt, fp, kontStack))) return Set()
 
       visited = visited + ((stmt, fp, kontStack)) // TODO: do we really need all of these in here?
@@ -125,7 +125,12 @@ case class KontStack(store : KontStore, k : Kont) {
           return Set(State(stmt.copy(inst = trap.getHandlerUnit()), fp, newStore, this, initializedClasses))
       }
 
-      (for ((frame, kontStack) <- this.pop()) yield { stackWalk(frame.stmt, frame.fp, kontStack) }).flatten
+      // TODO/interface we should log this sort of thing
+      val nextFrames = this.pop()
+      if (nextFrames isEmpty) {
+        return Set(ErrorState)
+      }
+      (for ((frame, kontStack) <- nextFrames) yield { stackWalk(frame.stmt, frame.fp, kontStack) }).flatten
     }
 
     stackWalk(stmt, fp, this)
@@ -256,12 +261,18 @@ case class Stmt(val inst : SootUnit, val method : SootMethod, val classmap : Map
   override def toString() : String = inst.toString()
 }
 
+abstract sealed class AbstractState {
+  def next() : Set[AbstractState]
+}
+case object ErrorState extends AbstractState {
+  override def next() : Set[AbstractState] = Set.empty
+}
 // State abstracts a collection of concrete states of execution.
-case class State(stmt : Stmt,
-                 fp : FramePointer,
-                 store : Store,
-                 kontStack : KontStack,
-                 initializedClasses : Set[SootClass]) {
+case class State(val stmt : Stmt,
+                 val fp : FramePointer,
+                 val store : Store,
+                 val kontStack : KontStack,
+                 val initializedClasses : Set[SootClass]) extends AbstractState {
 
   // When you call next, you may realize you are going to end up throwing some exceptions
   // TODO/refactor: Consider turning this into a list of exceptions.
@@ -277,6 +288,13 @@ case class State(stmt : Stmt,
   def checkInitializedClasses(c : SootClass) {
     if (!initializedClasses.contains(c)) {
       throw new UninitializedClassException(c)
+    }
+  }
+  def checkInitializedClasses(t : SootType) {
+    t match {
+      case at : ArrayType => checkInitializedClasses(at.baseType)
+      case pt : PrimType => {}
+      case rt : RefType => checkInitializedClasses(rt.getSootClass)
     }
   }
 
@@ -328,6 +346,7 @@ case class State(stmt : Stmt,
   // a + b
   // We cheat slightly here, by using side-effects to install exceptions that need to be thrown.
   // This does not evaluate complex expressions like method-calls.
+  // TODO/soundness: properly initialize exceptions
   def eval(v: SootValue) : D = {
 
     def assertNumeric(op : SootValue) {
@@ -368,14 +387,16 @@ case class State(stmt : Stmt,
             val zCheck = eval(v.getOp2())
             if(v.isInstanceOf[DivExpr] && zCheck.maybeZero()){
               // TODO/soundness: No malloc!
-              exceptions = ??? // exceptions.join(D(Set(ObjectValue(stmt.classmap("java.lang.ArithmeticException"), malloc()))))
+              exceptions = exceptions.join(D(Set(ObjectValue(stmt.classmap("java.lang.ArithmeticException"), malloc()))))
             }
             D.atomicTop
         }
 
       // Every array has a distinguished field for its address.
       case v : LengthExpr => {
-        val addrs : Set[Addr] = for (ArrayValue(_, bp) <- eval(v.getOp()).values) yield ArrayLengthAddr(bp)
+        val addrs : Set[Addr] = for {
+          ArrayValue(_, bp) <- eval(v.getOp()).values
+        } yield ArrayLengthAddr(bp)
         store(addrs)
       }
 
@@ -391,19 +412,28 @@ case class State(stmt : Stmt,
       case v : CastExpr => {
         val castedExpr : SootValue = v.getOp()
         val castedType : SootType = v.getType()
+        checkInitializedClasses(castedType)
         val d = eval(castedExpr)
+        if (castedType.isInstanceOf[PrimType]) {
+          return D.atomicTop
+        }
         // TODO/soundness: Throw an exception if necessary.
-          /*
         for (vl <- d.values) {
           vl match {
-            case ObjectValue(objectType, _) => if (!State.isSubclass(objectType, castedType)) {
-              val classCastException = ???
-              exceptions = exceptions.join(classCastException)
-            }
+            case ObjectValue(objectType, _) =>
+              if (!SootHelper.isSubType(objectType.getType, castedType)) {
+                println("throwing a class cast exception")
+                val classCastException = D(Set(ObjectValue(stmt.classmap("java.lang.ClassCastException"), malloc())))
+                exceptions = exceptions.join(classCastException)
+              }
+            case ArrayValue(arrayType, basePointer) =>
+              if (!SootHelper.isSubType(arrayType, castedType)) {
+                val classCastException = D(Set(ObjectValue(stmt.classmap("java.lang.ClassCastException"), malloc())))
+                exceptions = exceptions.join(classCastException)
+              }
             case _ => throw new Exception ("Unknown value type " + vl)
           }
         }
-        */
         d
       }
 
@@ -417,11 +447,11 @@ case class State(stmt : Stmt,
   // return to the current statement instead of the next statement.
   def handleInvoke(expr : InvokeExpr,
                    destAddr : Option[Set[Addr]],
-                   nextStmt : Stmt = stmt.nextSyntactic()) : Set[State] = {
+                   nextStmt : Stmt = stmt.nextSyntactic()) : Set[AbstractState] = {
 
     // o.f(3); // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
-    def dispatch(c : SootClass, m : SootMethod, receivers : Set[Value]) : Set[State] = {
+    def dispatch(c : SootClass, m : SootMethod, receivers : Set[Value]) : Set[AbstractState] = {
       // This function finds all methods that could override root_m.
       // These methods are returned with the root-most at the end of
       // the list and the leaf-most at the head.  Thus the caller
@@ -471,7 +501,7 @@ case class State(stmt : Stmt,
         ((for (ObjectValue(sootClass, _) <- vs) yield {
           val objectClass = if (expr.isInstanceOf[SpecialInvokeExpr]) null else sootClass
           dispatch(objectClass, expr.getMethod(), vs)
-        }) :\ Set[State]())(_ ++ _) // TODO: better way to do this?
+        }) :\ Set[AbstractState]())(_ ++ _) // TODO: better way to do this?
     }
   }
 
@@ -514,7 +544,7 @@ case class State(stmt : Stmt,
   }
 
   // Returns the set of successor states to this state.
-  def next() : Set[State] = {
+  override def next() : Set[AbstractState] = {
     try {
       val nexts = true_next()
       val exceptionStates = (exceptions.values map { kontStack.handleException(_, stmt, fp, store, initializedClasses) }).flatten
@@ -526,9 +556,14 @@ case class State(stmt : Stmt,
         val meth = sootClass.getMethodByNameUnsafe("<clinit>")
         if (meth != null) {
           // Initialize all static fields per JVM 5.4.2 and 5.5
-          var newStore = store.update((for (f <- sootClass.getFields(); if f.isStatic) yield (StaticFieldAddr(f) -> staticInitialValue(f))).toMap)
-          this.copy(store = newStore, initializedClasses = initializedClasses + sootClass)
-            .handleInvoke(new JStaticInvokeExpr(meth.makeRef(), java.util.Collections.emptyList()), None, stmt)
+          val staticUpdates = for {
+            f <- sootClass.getFields(); if f.isStatic
+          } yield (StaticFieldAddr(f) -> staticInitialValue(f))
+          var newStore = store.update(staticUpdates.toMap)
+          this.copy(store = newStore,
+                    initializedClasses = initializedClasses + sootClass)
+            .handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
+                          java.util.Collections.emptyList()), None, stmt)
         } else {
           Set(this.copy(initializedClasses = initializedClasses + sootClass))
         }
@@ -543,7 +578,7 @@ case class State(stmt : Stmt,
     }
   }
 
-  def true_next() : Set[State] = {
+  def true_next() : Set[AbstractState] = {
     stmt.inst match {
       case inst : InvokeStmt => handleInvoke(inst.getInvokeExpr, None)
 
@@ -660,7 +695,8 @@ object State {
   def inject(stmt : Stmt) : State = {
     val stringClass : SootClass = stmt.classmap("java.lang.String")
     val initial_map : Map[Addr, D] = Map(
-      (ParameterFrameAddr(initialFramePointer, 0) -> D(Set(ArrayValue(stringClass.getType(), initialBasePointer)))),
+      (ParameterFrameAddr(initialFramePointer, 0) ->
+       D(Set(ArrayValue(stringClass.getType(), initialBasePointer)))),
       (ArrayRefAddr(initialBasePointer) -> D(Set(ObjectValue(stringClass, initialBasePointer)))),
       (ArrayLengthAddr(initialBasePointer) -> D.atomicTop))
     State(stmt, initialFramePointer, Store(initial_map), KontStack(KontStore(Map()), HaltKont), Set())
@@ -682,7 +718,7 @@ abstract class SnowflakeHandler {
             nextStmt : Stmt,
             newFP : FramePointer,
             newStore : Store,
-            newKontStack : KontStack) : Set[State]
+            newKontStack : KontStack) : Set[AbstractState]
 }
 
 object Snowflakes {
@@ -701,7 +737,7 @@ object NoOpSnowflake extends SnowflakeHandler {
                      nextStmt : Stmt,
                      newFP : FramePointer,
                      newStore : Store,
-                     newKontStack : KontStack) : Set[State] =
+                     newKontStack : KontStack) : Set[AbstractState] =
     Set(state.copy(stmt = nextStmt))
 }
 
@@ -726,6 +762,7 @@ object Main {
     val methodName = args(2)
 
     val classes : Map[String, SootClass] = getClassMap(getShimple(classDirectory, ""))
+    SootHelper.classes = classes
 
       // Snowflakes are special Java procedures whose behavior we know and special-case.
       // For example, native methods (that would be difficult to analyze) are snowflakes.
@@ -783,8 +820,8 @@ object Main {
     window.addState(initialState)
 
 
-    var todo : List [State] = List(initialState)
-    var seen : Set [State] = Set()
+    var todo : List [AbstractState] = List(initialState)
+    var seen : Set [AbstractState] = Set()
 
 
       // Explore the state graph
@@ -792,7 +829,7 @@ object Main {
       val current = todo.head
       println(current)
       println()
-      val nexts : Set[State] = current.next()
+      val nexts : Set[AbstractState] = current.next()
       for (n <- nexts) window.addNext(current, n)
 
       // TODO: Fix optimization bug here
@@ -841,7 +878,7 @@ class Window extends JFrame ("Shimple Analyzer") {
     override def getToolTipForCell(cell : Object) : String = {
       vertexToState.get(cell) match {
         case None => super.getToolTipForCell(cell)
-        case Some(state) =>
+        case Some(state : State) =>
           var tip = "<html>"
           tip += "FP: " + Utility.escape(state.fp.toString) + "<br><br>"
           tip += "Kont: " + Utility.escape(state.kontStack.k.toString) + "<br><br>"
@@ -850,6 +887,7 @@ class Window extends JFrame ("Shimple Analyzer") {
           //tip += "InitializedClasses: " + state.initializedClasses.toString + "<br>"
           tip += "</html>"
           tip
+        case Some(ErrorState) => "ERROR"
       }
     }
   }
@@ -858,8 +896,8 @@ class Window extends JFrame ("Shimple Analyzer") {
   private val layoutX = new mxCompactTreeLayout(graph, false)
   private val parentX = graph.getDefaultParent()
   private val graphComponent = new mxGraphComponent(graph)
-  private var stateToVertex = Map[State,Object]()
-  private var vertexToState = Map[Object,State]()
+  private var stateToVertex = Map[AbstractState,Object]()
+  private var vertexToState = Map[Object,AbstractState]()
 
 
   graphComponent.setEnabled(false)
@@ -871,7 +909,12 @@ class Window extends JFrame ("Shimple Analyzer") {
   setExtendedState(java.awt.Frame.MAXIMIZED_BOTH)
   setVisible(true)
 
-  private def stateString(state : State) : String = state.stmt.method.toString() + "\n" + state.stmt.inst.toString()
+  private def stateString(state : AbstractState) : String = state match {
+    // TODO/interface more information
+    case ErrorState => "ErrorState"
+    case state: State =>
+      state.stmt.method.toString() + "\n" + state.stmt.inst.toString()
+  }
 
   def addState(state : State) {
     val vertex = graph.insertVertex(parentX, null, stateString(state), 100, 100, 20, 20, "ROUNDED")
@@ -880,7 +923,7 @@ class Window extends JFrame ("Shimple Analyzer") {
     vertexToState += (vertex -> state)
   }
 
-  def addNext(start : State, end : State) {
+  def addNext(start : AbstractState, end : AbstractState) {
     graph.getModel().beginUpdate()
     try {
       stateToVertex.get(end) match {
@@ -905,6 +948,7 @@ class Window extends JFrame ("Shimple Analyzer") {
 }
 
 //future rendering of control flow graphs
+/*
 class CFG extends JFrame ("Control Flow Graph") {
 
   val graph = new mxGraph()
@@ -956,4 +1000,57 @@ class CFG extends JFrame ("Control Flow Graph") {
   }
 
 }
+*/
 
+object SootHelper {
+  // TODO/refactor move this someplace more appropriate
+  def isPrimitive(t : SootType) : Boolean = {
+    t match {
+      case _: RefType => false
+      case _: RefLikeType => false
+      case _ => true
+    }
+  }
+  var classes : Map[String, SootClass] = null
+  lazy val objectType : SootType = classes("java.lang.Object").getType
+  lazy val clonableType : SootType = classes("java.lang.Clonable").getType
+  lazy val serializableType : SootType = classes("java.io.Serializable").getType
+  // is a of type b?
+  def isSubType(a : SootType, b : SootType) : Boolean = {
+    println("checking if " + a + " is a subtype of " + b)
+    if (a equals b) {
+      println("They're equal")
+      return true
+    } else {
+      if (isPrimitive(a) || isPrimitive(b)) {
+        println("they're both primitive (but not equal)")
+        return false
+      } else {
+        (a, b) match {
+          case (at : ArrayType, bt : ArrayType) => {
+            println("they're both array types")
+            (at.numDimensions == bt.numDimensions) &&
+              isSubType(at.baseType, bt.baseType)
+          }
+          case (ot : SootType, at : ArrayType) => {
+            println(b + " is an array type")
+            ot.equals(objectType) ||
+            ot.equals(clonableType) ||
+            ot.equals(serializableType)
+          }
+          case (at : ArrayType, ot : SootType) => {
+            println("Warning: checking if a non-array type is an array")
+            false // maybe
+          }
+          case _ => {
+            println("Neither is an array type")
+            val lub: SootType = a.merge(b, Scene.v)
+            println("least upper bound: " + lub)
+            val result = (lub != null) && !lub.equals(a)
+            return result
+          }
+        }
+      }
+    }
+  }
+}
