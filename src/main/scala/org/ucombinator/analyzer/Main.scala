@@ -175,6 +175,7 @@ object HaltKont extends Kont
 
 //----------- ABSTRACT VALUES -----------------
 
+// TODO/precision D needs to have an interface that allows eval to use it
 case class D(val values: Set[Value]) {
   def join(otherd : D) : D = {
     D(values ++ otherd.values)
@@ -360,7 +361,8 @@ case class State(val stmt : Stmt,
     }
 
     v match {
-      //TODO missing: CmplExpr, CmpgExpr, ConditionExpr, MethodHandle
+      //TODO missing: CmplExpr, CmpgExpr, MethodHandle
+      //TODO/precision actually do the calculations
       case (_ : Local) | (_ : Ref) => store(addrsOf(v))
       case _ : NullConstant => D.atomicTop
       case _ : NumericConstant => D.atomicTop
