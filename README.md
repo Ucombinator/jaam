@@ -67,8 +67,8 @@ You can try this with most of the class files in `to-analyze/`, but some
 of them trigger bugs that we have yet to fix.  The following are known
 to work:
 
-  Arrays, BoolTest, Casting, CFGTest, Exceptions, Factorial, Fib, Goto,
-  InnerClassCasting, Objects, ObjectsNewStmt, Statics, SwitchTest
+    Arrays, BoolTest, Casting, CFGTest, Exceptions, Factorial, Fib, Goto,
+    InnerClassCasting, Objects, ObjectsNewStmt, Statics, SwitchTest
 
 You may occasionally see exceptions at the terminal that are coming
 from the Java GUI system (i.e. AWT or Swing).  These are harmless and
