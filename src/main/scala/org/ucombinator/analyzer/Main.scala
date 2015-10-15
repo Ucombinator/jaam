@@ -54,26 +54,6 @@ import com.mxgraph.layout.mxCompactTreeLayout
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
 case class UndefinedAddrsException(addrs : Set[Addr]) extends RuntimeException
 
-// FramePointers, when paired with variable names, yield the addresses of variables.
-abstract class FramePointer
-case object InvariantFramePointer extends FramePointer
-case class OneCFAFramePointer(val method : SootMethod, val nextStmt : Stmt) extends FramePointer
-case object InitialFramePointer extends FramePointer
-
-// BasePointers, when paired with field names, yield the addresses of fields.
-abstract class BasePointer
-case class OneCFABasePointer(stmt : Stmt, fp : FramePointer) extends BasePointer
-case object InitialBasePointer extends BasePointer
-// Note that due to interning, strings and classes may share base pointers with each other
-// Oh, and class loaders are a headache(!)
-case class StringBasePointer(val string : String) extends BasePointer
-case class ClassBasePointer(val name : String) extends BasePointer
-case class SnowflakeBasePointer(val clas : String) extends BasePointer
-
-// Addresses of continuations on the stack
-abstract class KontAddr
-case class OneCFAKontAddr(val fr : FramePointer) extends KontAddr
-
 // A continuation store paired with a continuation
 case class KontStack(store : KontStore, k : Kont) {
   // TODO/generalize: Add widening in push and pop (to support PDCFA)
@@ -197,7 +177,29 @@ case class ObjectValue(val sootClass : SootClass,  val bp : BasePointer) extends
 
 case class ArrayValue(val sootType : SootType, val bp : BasePointer) extends Value
 
+//----------------- POINTERS ------------------
+
+// FramePointers, when paired with variable names, yield the addresses of variables.
+abstract class FramePointer
+case object InvariantFramePointer extends FramePointer // TODO: delete this?  Is seems unused
+case class OneCFAFramePointer(val method : SootMethod, val nextStmt : Stmt) extends FramePointer
+case object InitialFramePointer extends FramePointer
+
+// BasePointers, when paired with field names, yield the addresses of fields.
+abstract class BasePointer
+case class OneCFABasePointer(stmt : Stmt, fp : FramePointer) extends BasePointer
+case object InitialBasePointer extends BasePointer
+// Note that due to interning, strings and classes may share base pointers with each other
+// Oh, and class loaders are a headache(!)
+case class StringBasePointer(val string : String) extends BasePointer
+case class ClassBasePointer(val name : String) extends BasePointer
+case class SnowflakeBasePointer(val clas : String) extends BasePointer
+
 //----------------- ADDRESSES ------------------
+
+// Addresses of continuations on the stack
+abstract class KontAddr
+case class OneCFAKontAddr(val fr : FramePointer) extends KontAddr
 
 abstract class Addr
 
@@ -215,7 +217,7 @@ case class CaughtExceptionFrameAddr(val fp : FramePointer) extends FrameAddr
 
 case class InstanceFieldAddr(val bp : BasePointer, val sf : SootField) extends Addr
 
-case class ArrayRefAddr(val bp : BasePointer) extends Addr
+case class ArrayRefAddr(val bp : BasePointer) extends Addr // TODO: add index (it is all AtomicValue anyway)
 
 case class ArrayLengthAddr(val bp : BasePointer) extends Addr
 
@@ -264,6 +266,7 @@ case class Stmt(val inst : SootUnit, val method : SootMethod, val classmap : Map
 
 abstract sealed class AbstractState {
   def next() : Set[AbstractState]
+  val id : Int = State.nextId()
 }
 case object ErrorState extends AbstractState {
   override def next() : Set[AbstractState] = Set.empty
@@ -359,6 +362,11 @@ case class State(val stmt : Stmt,
         !op.getType().isInstanceOf[FloatType] &&
         !op.getType().isInstanceOf[DoubleType])
     }
+    def assertLogical(op : SootValue) {
+      assert(op.getType().isInstanceOf[PrimType] &&
+        !op.getType().isInstanceOf[FloatType] &&
+        !op.getType().isInstanceOf[DoubleType])
+    }
 
     v match {
       //TODO missing: CmplExpr, CmpgExpr, MethodHandle
@@ -371,14 +379,18 @@ case class State(val stmt : Stmt,
       case v : BinopExpr =>
         v match {
           case (_ : EqExpr) | (_ : NeExpr) | (_ : GeExpr) | (_ : GtExpr) | (_ : LeExpr) | (_ : LtExpr) =>
-            assert(v.getOp1().getType.isInstanceOf[PrimType])
-            assert(v.getOp2().getType.isInstanceOf[PrimType])
             eval(v.getOp1())
             eval(v.getOp2())
             D.atomicTop
-          case (_ : ShrExpr) | (_ : ShlExpr) | (_ : UshrExpr) | (_ : RemExpr) | (_ : XorExpr) | (_ : OrExpr) | (_ : AndExpr) =>
+          case (_ : ShrExpr) | (_ : ShlExpr) | (_ : UshrExpr) | (_ : RemExpr) =>
             assertIntegral(v.getOp1())
             assertIntegral(v.getOp2())
+            eval(v.getOp1())
+            eval(v.getOp2())
+            D.atomicTop
+          case (_ : XorExpr) | (_ : OrExpr) | (_ : AndExpr) =>
+            assertLogical(v.getOp1())
+            assertLogical(v.getOp2())
             eval(v.getOp1())
             eval(v.getOp2())
             D.atomicTop
@@ -462,17 +474,17 @@ case class State(val stmt : Stmt,
       // transitivity rule in Java's method override definition.
       //
       // Note that Hierarchy.resolveConcreteDispath should be able to do this, but seems to be implemented wrong
-      def overloads(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
+      def overrides(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
         val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
-        if (curr_m == null) { overloads(curr.getSuperclass(), root_m) }
+        if (curr_m == null) { overrides(curr.getSuperclass(), root_m) }
         else if (root_m.getDeclaringClass.isInterface || AccessManager.isAccessLegal(curr_m, root_m)) { List(curr_m) }
         else {
-          val o = overloads(curr.getSuperclass(), root_m)
+          val o = overrides(curr.getSuperclass(), root_m)
           (if (o.exists(m => AccessManager.isAccessLegal(curr_m, m))) List(curr_m) else List()) ++ o
         }
       }
 
-      val meth = if (c == null) m else overloads(c, m).head
+      val meth = if (c == null) m else overrides(c, m).head
       // TODO: put a better message when there is no getActiveBody due to it being a native method
       val newFP = alloca(expr, nextStmt)
       var newStore = store
@@ -567,6 +579,7 @@ case class State(val stmt : Stmt,
             .handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
                           java.util.Collections.emptyList()), None, stmt)
         } else {
+          // TODO: Do we need to do newStore for static fields?
           Set(this.copy(initializedClasses = initializedClasses + sootClass))
         }
 
@@ -602,7 +615,7 @@ case class State(val stmt : Stmt,
               for (f <- c.getFields) {
                 newStore = newStore.update(InstanceFieldAddr(bp, f), defaultInitialValue(f.getType))
               }
-
+              // TODO: swap these lines?
               if(c.hasSuperclass) initInstanceFields(c.getSuperclass)
             }
             initInstanceFields(sootClass)
@@ -706,6 +719,9 @@ object State {
 
   def isSubclass(sub : SootClass, sup : SootClass) : Boolean =
     Scene.v().getActiveHierarchy().isClassSubclassOfIncluding(sub, sup)
+
+  var nextId_ = 0
+  def nextId() : Int = { nextId_ += 1; nextId_ }
 }
 
 // Uniquely identifies a particular method somewhere in the program.
@@ -829,10 +845,15 @@ object Main {
       // Explore the state graph
     while (todo nonEmpty) {
       val current = todo.head
+      print(current.id + ": ")
       println(current)
       println()
       val nexts : Set[AbstractState] = current.next()
-      for (n <- nexts) window.addNext(current, n)
+      for (n <- nexts) {
+        println(current.id + " -> " + n.id)
+        window.addNext(current, n)
+      }
+      println()
 
       // TODO: Fix optimization bug here
       todo = nexts.toList.filter(!seen.contains(_)) ++ todo.tail
@@ -915,7 +936,7 @@ class Window extends JFrame ("Shimple Analyzer") {
     // TODO/interface more information
     case ErrorState => "ErrorState"
     case state: State =>
-      state.stmt.method.toString() + "\n" + state.stmt.inst.toString()
+      state.id + "\n" + state.stmt.method.toString() + "\n" + state.stmt.inst.toString()
   }
 
   def addState(state : State) {
