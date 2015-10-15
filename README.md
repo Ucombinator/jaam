@@ -20,7 +20,7 @@ Before running the analyzer for the first time, you must run:
 
     ./classGrabber.sh
 
-This will populate javacache with class files from your Java
+This will populate `javacache/` with class files from your Java
 installation.  For copyright reasons, we cannot distribute these with
 the code.
 
