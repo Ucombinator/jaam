@@ -12,37 +12,48 @@ SBT (http://www.scala-sbt.org/)
 
 Scala (http://www.scala-lang.org/)
 
+A Java 1.7 installation.  (Java 1.8 may not work.)
+
 ## Initialization
 
 Before running the analyzer for the first time, you must run:
 
-  ./classGrabber.sh
+    ./classGrabber.sh
 
 This will populate javacache with class files from your Java
 installation.  For copyright reasons, we cannot distribute these with
 the code.
 
+Note that if you get an error like the following is is likely
+that `./classGrabber.sh` pulled the class files from a Java 1.8
+installation instead of Java 1.7.
+
+    [error] (run-main-0) java.lang.RuntimeException: Assertion failed.
+
+If this happens, ensure that only Java 1.7 is visible, then
+delete the contents of `javacache/` and rerun `./classGrabber.sh`.
+
 ## Usage
 
 Simply run:
 
-  sbt 'run <class-directory> <class> <main>'
+    sbt 'run <class-directory> <class> <main>'
 
- - '<class-directory>' is the directory containing the class files to
+ - `<class-directory>` is the directory containing the class files to
    analyze.  For the examples included with the source, this should be
-   'to-analyze'.
+   `to-analyze`.
 
- - '<class>' is the name of the class containing the 'main' function
+ - `<class>` is the name of the class containing the `main` function
    from which to start the analysis.
 
- - '<main>' is the name of the 'main' function from which to start the
+ - `<main>` is the name of the `main` function from which to start the
    analysis.
 
 For example, you could run:
 
-  sbt 'run to-analyze Factorial main'
+    sbt 'run to-analyze Factorial main'
 
-The first time you run this 'sbt' will download a number of packages
+The first time you run this `sbt` will download a number of packages
 on which our tool depends.  This may take a while, but these are
 cached and will not need to be downloaded on successive runs.
 
@@ -52,7 +63,7 @@ print out graph data to stdout.
 To exit the program press Ctrl-C at the terminal.  (Closing the GUI
 window is not enough.)
 
-You can try this with most of the class files in to-analyze/, but some
+You can try this with most of the class files in `to-analyze/`, but some
 of them trigger bugs that we have yet to fix.  The following are known
 to work:
 
