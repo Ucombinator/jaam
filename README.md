@@ -33,6 +33,10 @@ installation instead of Java 1.7.
 If this happens, ensure that only Java 1.7 is visible, then
 delete the contents of `javacache/` and rerun `./classGrabber.sh`.
 
+For example, on OS X this command may look like:
+
+JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/ ./classGrabber.sh
+
 ## Usage
 
 Simply run:
