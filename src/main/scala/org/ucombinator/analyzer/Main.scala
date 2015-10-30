@@ -771,7 +771,15 @@ case class ConstSnowflake(value : D) extends SnowflakeHandler {
   }
 }
 
+
 object Main {
+
+  val idTable = new scala.collection.mutable.HashMap[AnyRef, Int]
+
+  def getUniqueId(key: AnyRef) : Integer = {
+    return 5
+  }
+
   def main(args : Array[String]) {
     // TODO: proper option parsing
     if (args.length != 3) println("Expected arguments: [classDirectory] [className] [methodName]")
@@ -779,8 +787,109 @@ object Main {
     val className = args(1)
     val methodName = args(2)
 
-    val classes : Map[String, SootClass] = getClassMap(getShimple(classDirectory, ""))
+    val classes : Map[String, SootClass] = getClassMap(getShimple(classDirectory, "", className))
     SootHelper.classes = classes
+
+    val cg = Scene.v().getCallGraph();
+
+    var callGraph : Map [SootStmt, Set[SootMethod]] = Map()
+
+    for (edge <- cg.listener()) {
+
+      callGraph = callGraph.get(edge.srcStmt) match {
+        case Some(tgtSet) => {
+          callGraph + ((edge.srcStmt, tgtSet + edge.tgt))
+        }
+
+        case None => callGraph + ((edge.srcStmt, Set(edge.tgt)))
+      }
+
+      println("--------- sources")
+      println(s"edge: ${edge.src}")
+      println(s"srcCtxt: ${edge.srcCtxt}")
+      println(s"srcStmt: ${edge.srcStmt}")
+      println(s"srcUnit: ${edge.srcUnit}")
+
+      println(" targets")
+
+      println(s"tgt: ${edge.tgt}")
+      println(s"tgtCtxt: ${edge.tgtCtxt}")
+    }
+
+    for ((_, cls) <- classes) {
+      for (meth <- cls.getMethods()) {
+        for (unit <- meth.getActiveBody().getUnits()) {
+          unit match {
+            case inst : InvokeStmt => callGraph.get(inst) match {
+              case Some(tgtSet) => {
+                print(getUniqueId(inst))
+                print(": ")
+                print("{")
+                print(s"inst: ${inst.toString()},")
+                val targetIds = tgtSet.map(getUniqueId).mkString(", ")
+                print(s"""targets: [${targetIds}],""")
+                val succ = getUniqueId(meth.getActiveBody().getUnits().getSuccOf(inst))
+                print(s"""succs: [${succ}],""")
+                println("}")
+              }
+              case None => {
+                print(getUniqueId(inst))
+                print(": ")
+                print("{")
+                print(s"inst: ${inst.toString()},")
+                print(s"""targets: [/* special : todo */],""")
+                val succ = getUniqueId(meth.getActiveBody().getUnits().getSuccOf(inst))
+                print(s"""succs: [${succ}],""")
+                println("}")
+              }
+            }
+
+            case inst : DefinitionStmt => {
+
+              inst.getRightOp() match {
+                case rhs : InvokeExpr => ???
+                case rhs : NewExpr => ???
+                case rhs => {
+                  print(getUniqueId(inst))
+                  print(": ")
+                  print("{")
+                  print(s"inst: ${inst.toString()},")
+                  val succ = getUniqueId(meth.getActiveBody().getUnits().getSuccOf(inst))
+                  print(s"""succs: [${succ}],""")
+                  println("}")
+                }
+              }
+            }
+
+            case inst : IfStmt => ???
+
+            case inst : SwitchStmt => ???
+
+            case inst : ReturnStmt => ???
+
+            case inst : ReturnVoidStmt => ???
+
+            case inst : NopStmt => ???
+
+            case inst : GotoStmt => ???
+
+            case inst : ThrowStmt => ???
+
+            case inst : EnterMonitorStmt => ???
+
+            case inst : ExitMonitorStmt => ???
+
+            case _ => {
+              throw new Exception("No match for " + unit)
+            }
+
+          }
+        }
+      }
+    }
+
+
+    return
 
       // Snowflakes are special Java procedures whose behavior we know and special-case.
       // For example, native methods (that would be difficult to analyze) are snowflakes.
@@ -868,16 +977,17 @@ object Main {
    def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] =
     (for (c <- classes) yield c.getName() -> c).toMap
 
-  def getShimple(classesDir : String, classPath : String) = {
+  def getShimple(classesDir : String, classPath : String, className : String) = {
     Options.v().set_output_format(Options.output_format_shimple);
-    Options.v().set_verbose(false);
+    Options.v().set_verbose(true);
+    Options.v().set_whole_program(true);
     Options.v().set_include_all(true);
     // we need to link instructions to source line for display
     Options.v().set_keep_line_number(true);
     // Called methods without jar files or source are considered phantom
     Options.v().set_allow_phantom_refs(true);
     // Include the default classpath, which should include the Java SDK rt.jar.
-    Options.v().set_prepend_classpath(true);
+    Options.v().set_prepend_classpath(false);
     Options.v().set_process_dir(List(classesDir));
     // Include the classesDir on the class path.
     Options.v().set_soot_classpath(classesDir + ":" + classPath);
@@ -887,6 +997,9 @@ object Main {
     SootMain.v().autoSetOptions();
     // Load classes according to the configured options
     Scene.v().loadNecessaryClasses();
+
+    Scene.v().setMainClass(Scene.v().getSootClass(className));
+
     // Run transformations and analyses according to the configured options.
     // Transformation could include jimple, shimple, and CFG generation
     PackManager.v().runPacks();
