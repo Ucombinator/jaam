@@ -854,11 +854,13 @@ object Main {
           }
           case None => {
             val targetIds = cg.edgesOutOf(meth).map(e => {
+              /*
               if (e.isClinit) {
                 for (u <- e.getTgt.method.getActiveBody.getUnits) {
                   result ++= unitToJSONStr(e.getTgt.method, u)
                 }
               }
+              */
               getUniqueId(e.getTgt.method.getActiveBody.getUnits.getFirst)
             }).toList
             val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
@@ -933,28 +935,22 @@ object Main {
       Map[String, Any](id -> obj) ++ result
     }
 
-    classes.get(className) match {
-      case Some(cls) => {
-        implicit val formats = Serialization.formats(NoTypeHints)
+    val jsonArr = (for ((_, cls) <- classes)
+      yield (for (meth <- cls.getMethods)
+        yield meth.getActiveBody.getUnits.map(u => {
+          unitToJSONStr(meth, u)
+        })
+      ).flatten.toList
+    ).flatten.toList
 
-        val jsonArr = (for (meth <- cls.getMethods)
-          yield meth.getActiveBody.getUnits.map(u => {
-            unitToJSONStr(meth, u)
-          })
-        ).flatten.toList
-
-        val cgJsonStr = writePretty(jsonArr)
-        println(cgJsonStr)
-        val filepath = classDirectory + "/" + className + ".json"
-        val out = new PrintWriter(filepath)
-        out.print(cgJsonStr)
-        out.close()
-        println("The JSON call graph file was dumped to " + filepath)
-      }
-      case None => {
-        throw new RuntimeException("cann't find class " + className)
-      }
-    }
+    implicit val formats = Serialization.formats(NoTypeHints)
+    val cgJsonStr = writePretty(jsonArr)
+    println(cgJsonStr)
+    val filepath = classDirectory + "/" + className + ".json"
+    val out = new PrintWriter(filepath)
+    out.print(cgJsonStr)
+    out.close()
+    println("The JSON call graph file was dumped to " + filepath)
 
     return
 
