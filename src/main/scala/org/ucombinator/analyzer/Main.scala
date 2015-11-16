@@ -50,6 +50,13 @@ import com.mxgraph.swing.mxGraphComponent
 import com.mxgraph.view.mxGraph
 import com.mxgraph.layout.mxCompactTreeLayout
 
+// JSON4s
+import org.json4s._
+import org.json4s.native.Serialization
+import org.json4s.native.Serialization.writePretty
+
+import java.io.PrintWriter
+
 // Possibly thrown during transition between states.
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
 case class UndefinedAddrsException(addrs : Set[Addr]) extends RuntimeException
@@ -773,11 +780,18 @@ case class ConstSnowflake(value : D) extends SnowflakeHandler {
 
 
 object Main {
+  val idTable = scala.collection.mutable.Map[SootUnit, Int]()
+  var currentId = 0
 
-  val idTable = new scala.collection.mutable.HashMap[AnyRef, Int]
-
-  def getUniqueId(key: AnyRef) : Integer = {
-    return 5
+  def getUniqueId(key: SootUnit) : Integer = {
+    idTable get key match {
+      case Some(i) => i
+      case None => {
+        idTable(key) = currentId
+        currentId += 1
+        idTable(key)
+      }
+    }
   }
 
   def main(args : Array[String]) {
@@ -795,7 +809,6 @@ object Main {
     var callGraph : Map [SootStmt, Set[SootMethod]] = Map()
 
     for (edge <- cg.listener()) {
-
       callGraph = callGraph.get(edge.srcStmt) match {
         case Some(tgtSet) => {
           callGraph + ((edge.srcStmt, tgtSet + edge.tgt))
@@ -810,84 +823,138 @@ object Main {
       println(s"srcStmt: ${edge.srcStmt}")
       println(s"srcUnit: ${edge.srcUnit}")
 
-      println(" targets")
+      println("--------- targets")
 
       println(s"tgt: ${edge.tgt}")
       println(s"tgtCtxt: ${edge.tgtCtxt}")
     }
 
-    for ((_, cls) <- classes) {
-      for (meth <- cls.getMethods()) {
-        for (unit <- meth.getActiveBody().getUnits()) {
-          unit match {
-            case inst : InvokeStmt => callGraph.get(inst) match {
-              case Some(tgtSet) => {
-                print(getUniqueId(inst))
-                print(": ")
-                print("{")
-                print(s"inst: ${inst.toString()},")
-                val targetIds = tgtSet.map(getUniqueId).mkString(", ")
-                print(s"""targets: [${targetIds}],""")
-                val succ = getUniqueId(meth.getActiveBody().getUnits().getSuccOf(inst))
-                print(s"""succs: [${succ}],""")
-                println("}")
-              }
-              case None => {
-                print(getUniqueId(inst))
-                print(": ")
-                print("{")
-                print(s"inst: ${inst.toString()},")
-                print(s"""targets: [/* special : todo */],""")
-                val succ = getUniqueId(meth.getActiveBody().getUnits().getSuccOf(inst))
-                print(s"""succs: [${succ}],""")
-                println("}")
-              }
-            }
+    def unitToJSONStr(meth: SootMethod, unit : SootUnit) : Map[String, Any] = {
+      def auxFindSrcUnit(meth : SootMethod, target : SootUnit): SootUnit = {
+        for (u <- meth.getActiveBody.getUnits()) {
+          if (target.toString().equals(u.toString()))
+            return u
+        }
+        throw new RuntimeException("can not find caller statement for " + target.toString())
+      }
 
-            case inst : DefinitionStmt => {
+      val id = getUniqueId(unit).toString
+      var result : Map[String, Any] = Map()
+      var obj : Map[String, Any] = Map("method" -> meth.getSignature, "inst" -> unit.toString())
 
-              inst.getRightOp() match {
-                case rhs : InvokeExpr => ???
-                case rhs : NewExpr => ???
-                case rhs => {
-                  print(getUniqueId(inst))
-                  print(": ")
-                  print("{")
-                  print(s"inst: ${inst.toString()},")
-                  val succ = getUniqueId(meth.getActiveBody().getUnits().getSuccOf(inst))
-                  print(s"""succs: [${succ}],""")
-                  println("}")
+      unit match {
+        case inst: InvokeStmt => callGraph.get(inst) match {
+          case Some(tgtSet) => {
+            val targetIds = tgtSet.map(m => {
+              getUniqueId(m.getActiveBody.getUnits.getFirst)
+            }).toList
+            val succ = getUniqueId(meth.getActiveBody().getUnits().getSuccOf(inst))
+
+            obj += ("targets" -> targetIds, "succ" -> List(succ))
+          }
+          case None => {
+            val targetIds = cg.edgesOutOf(meth).map(e => {
+              if (e.isClinit) {
+                for (u <- e.getTgt.method.getActiveBody.getUnits) {
+                  result ++= unitToJSONStr(e.getTgt.method, u)
                 }
               }
-            }
+              getUniqueId(e.getTgt.method.getActiveBody.getUnits.getFirst)
+            }).toList
+            val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
 
-            case inst : IfStmt => ???
-
-            case inst : SwitchStmt => ???
-
-            case inst : ReturnStmt => ???
-
-            case inst : ReturnVoidStmt => ???
-
-            case inst : NopStmt => ???
-
-            case inst : GotoStmt => ???
-
-            case inst : ThrowStmt => ???
-
-            case inst : EnterMonitorStmt => ???
-
-            case inst : ExitMonitorStmt => ???
-
-            case _ => {
-              throw new Exception("No match for " + unit)
-            }
-
+            obj += ("targets" -> targetIds, "succ" -> List(succ))
           }
         }
+
+        case inst: DefinitionStmt => {
+          inst.getRightOp match {
+            case rhs: InvokeExpr => {
+              val targetIds = cg.edgesOutOf(meth).map(e => {
+                getUniqueId(e.getTgt.method.getActiveBody.getUnits.getFirst)
+              }).toList
+              val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+
+              obj += ("targets" -> targetIds, "succ" -> List(succ))
+            }
+            case rhs: NewExpr => {
+              val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+              obj += ("targets" -> List(), "succ" -> List(succ))
+            }
+            case rhs => {
+              val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+              obj += ("targets" -> List(), "succ" -> List(succ))
+            }
+          }
+        }
+
+        case inst: IfStmt => {
+          val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+          obj += ("targets" -> List(), "succ" -> List(succ, getUniqueId(inst.getTarget)))
+        }
+
+        case inst: ReturnStmt => {
+          val targetIds = cg.edgesInto(meth).map(e => {
+            getUniqueId(auxFindSrcUnit(e.getSrc.method(), e.srcUnit()))
+          }).toList
+          obj += ("targets" -> targetIds, "succ" -> List())
+        }
+
+        case inst: ReturnVoidStmt => {
+          val targetIds = cg.edgesInto(meth).map(e => {
+            getUniqueId(auxFindSrcUnit(e.getSrc.method(), e.srcUnit()))
+          }).toList
+          obj += ("targets" -> targetIds, "succ" -> List())
+        }
+
+        case inst: SwitchStmt => {
+          obj += ("targets" -> List(), "succ" -> inst.getTargets.map(getUniqueId))
+        }
+
+        case inst: GotoStmt => {
+          obj += ("targets" -> List(), "succ" -> List(getUniqueId(inst.getTarget)))
+        }
+
+        case inst: ThrowStmt => {
+          //TODO
+        }
+
+        case inst: NopStmt => ???
+
+        case inst: EnterMonitorStmt => ???
+
+        case inst: ExitMonitorStmt => ???
+
+        case _ => {
+          throw new Exception("No match for " + unit)
+        }
       }
+
+      Map[String, Any](id -> obj) ++ result
     }
 
+    classes.get(className) match {
+      case Some(cls) => {
+        implicit val formats = Serialization.formats(NoTypeHints)
+
+        val jsonArr = (for (meth <- cls.getMethods)
+          yield meth.getActiveBody.getUnits.map(u => {
+            unitToJSONStr(meth, u)
+          })
+        ).flatten.toList
+
+        val cgJsonStr = writePretty(jsonArr)
+        println(cgJsonStr)
+        val filepath = classDirectory + "/" + className + ".json"
+        val out = new PrintWriter(filepath)
+        out.print(cgJsonStr)
+        out.close()
+        println("The JSON call graph file was dumped to " + filepath)
+      }
+      case None => {
+        throw new RuntimeException("cann't find class " + className)
+      }
+    }
 
     return
 
