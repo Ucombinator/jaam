@@ -102,12 +102,12 @@ For example, you can run:
 The JSON output is an array, and each object in the array represent a statement
 int the program with an unqiue `id`, the object also has following items:
 
- - `method`, the signature of method.
+ - `method` is the signature of method.
 
- - `inst`, the statement.
+ - `inst` is the statement.
 
- - `targets`, the target statements in an array. If the target is a function,
+ - `targets` is an array contains the target statements. If the target is a function,
     it points to the first statement of callee. If the target is the caller, then it
     will point back to the statement which invokes to here.
 
- - `succ`, the successor statements of current statement.
+ - `succ` is an array contains the successor statements of current statement.
