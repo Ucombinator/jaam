@@ -883,7 +883,8 @@ object Main {
                       for (u <- units) {
                         result ++= unitToMap(e.getTgt.method, u)
                       }
-                    }*/
+                    }
+                    */
                     if (e.getTgt.method().hasActiveBody) {
                       getUniqueId(e.getTgt.method.getActiveBody.getUnits.getFirst)
                     }
