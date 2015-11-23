@@ -39,9 +39,11 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/ ./cla
 
 ## Usage
 
+### Default Mode
+
 Simply run:
 
-    sbt 'run <class-directory> <class> <main>'
+    sbt 'run -d <class-directory> -c <class> -m <main>'
 
  - `<class-directory>` is the directory containing the class files to
    analyze.  For the examples included with the source, this should be
@@ -77,3 +79,35 @@ to work:
 You may occasionally see exceptions at the terminal that are coming
 from the Java GUI system (i.e. AWT or Swing).  These are harmless and
 can safely be ignored.
+
+### CFG Mode
+
+Run:
+    
+    sbt 'run --cfg -d <class-directory> -c <class>'
+
+ - `<class-directory>` is the directory containing the class files to
+   analyze.  For the examples included with the source, this should be
+   `to-analyze`.
+
+ - `<class>` is the name of the class containing the `main` function
+   from which to start the analysis.
+
+The call graph in JSON format will be dump to `<class-directory>`.
+
+For example, you can run:
+
+    sbt 'run --cfg -d to-cfg -c Factorial'
+
+The JSON output is an array, and each object in the array represent a statement
+int the program with an unqiue `id`, the object also has following items:
+
+ - `method`, the signature of method.
+
+ - `inst`, the statement.
+
+ - `targets`, the target statements in an array. If the target is a function,
+    it points to the first statement of callee. If the target is the caller, then it
+    will point back to the statement which invokes to here.
+
+ - `succ`, the successor statements of current statement.
