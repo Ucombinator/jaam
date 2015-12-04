@@ -22,8 +22,6 @@ import xml.Utility
 import soot._
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, Type => SootType}
 
-import soot.shimple._
-
 import soot.jimple._
 import soot.jimple.{Stmt => SootStmt}
 
@@ -425,11 +423,6 @@ case class State(val stmt : Stmt,
       // TODO/precision: implement the actual check
       case v : InstanceOfExpr => D.atomicTop
 
-      // TODO/precision: take advantage of knowledge in v.getPreds()
-      // (though we may be getting that knowledge from partial definedness of the store)
-      // This code assumes that getValues returns only Local or Ref
-      case v : PhiExpr => store((v.getValues map addrsOf).toSet.flatten)
-
       case v : CastExpr => {
         val castedExpr : SootValue = v.getOp()
         val castedType : SootType = v.getType()
@@ -827,7 +820,7 @@ object Main {
         val classDirectory = config.classDirectory
         val className = config.className
         val methodName = config.methodName
-        val classes : Map[String, SootClass] = getClassMap(getShimple(classDirectory, "", className))
+        val classes : Map[String, SootClass] = getClassMap(getClasses(classDirectory, "", className))
         SootHelper.classes = classes
 
         if (config.cfg) {
@@ -1087,8 +1080,8 @@ object Main {
   def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] =
     (for (c <- classes) yield c.getName() -> c).toMap
 
-  def getShimple(classesDir : String, classPath : String, className : String) = {
-    Options.v().set_output_format(Options.output_format_shimple);
+  def getClasses(classesDir : String, classPath : String, className : String) = {
+    Options.v().set_output_format(Options.output_format_jimple);
     Options.v().set_verbose(false);
     Options.v().set_whole_program(true);
     Options.v().set_include_all(true);
@@ -1097,7 +1090,7 @@ object Main {
     // Called methods without jar files or source are considered phantom
     Options.v().set_allow_phantom_refs(true);
     // Include the default classpath, which should include the Java SDK rt.jar.
-    Options.v().set_prepend_classpath(false);
+    Options.v().set_prepend_classpath(true);
     Options.v().set_process_dir(List(classesDir));
     // Include the classesDir on the class path.
     Options.v().set_soot_classpath(classesDir + ":" + classPath);

@@ -4,6 +4,8 @@ organization := "org.ucombinator"
 
 version := "0-SNAPSHOT"
 
+scalaVersion := "2.10.6"
+
 resolvers += "Ucombinator maven repository on github" at "https://ucombinator.github.io/maven-repo"
 resolvers += Resolver.sonatypeRepo("public")
 

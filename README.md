@@ -12,11 +12,54 @@ SBT (http://www.scala-sbt.org/)
 
 Scala (http://www.scala-lang.org/)
 
-A Java 1.7 installation.  (Java 1.8 may not work.)
+A Java 1.7 installation.  (Java 1.8 is unsupported.)
 
 ## Initialization
 
-Before running the analyzer for the first time, you must run:
+### Setting JAVA_HOME to point to Java 1.7
+
+The command
+
+    java -version
+
+will display which version of Java is pointed to by JAVA_HOME.  For example:
+
+    java version "1.7.0_79"
+    Java(TM) SE Runtime Environment (build 1.7.0_79-b15)
+    Java HotSpot(TM) 64-Bit Server VM (build 24.79-b02, mixed mode)
+
+If the Java version is not 1.7, then go download 1.7.  If your computer has both Java 1.7 and Java 8, it is necessary to change JAVA_HOME to point to 1.7 while running analyzer-related commands.
+
+To find the value of JAVA_HOME for 1.7:
+
+* On OS X, run the command
+
+    /usr/libexec/java_home -v 1.7
+
+which may return, for example
+
+    /Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home
+
+* On Linux, the path might look like
+
+    /usr/lib/jvm/java-7-oracle
+
+or
+
+    /usr/lib/jvm/java-7-openjdk-amd64
+
+Then, to set the JAVA_HOME to 1.7, run this command in the terminal:
+
+    export JAVA_HOME=<the JAVA_HOME path described above>
+
+You will need to run this command whenever you start a new terminal session.
+
+
+### Running the classGrabber script
+
+Before running the analyzer for the first time, you must run the classGrabber script, ensuring that only Java 1.7 is visible.
+
+If your JAVA_HOME is already set to point to Java 1.7, you can just run classGrabber directly:
 
     ./classGrabber.sh
 
@@ -30,16 +73,14 @@ installation instead of Java 1.7.
 
     [error] (run-main-0) java.lang.RuntimeException: Assertion failed.
 
-If this happens, ensure that only Java 1.7 is visible, then
-delete the contents of `javacache/` and rerun `./classGrabber.sh`.
+If you see this error, delete the contents of `javacache/` and rerun `./classGrabber.sh`, ensuring that you are running classGrabber with only Java 1.7 visible (see the discussion of JAVA_HOME above).
 
-For example, on OS X this command may look like:
-
-JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/ ./classGrabber.sh
 
 ## Usage
 
 ### Default Mode
+
+It is important to make sure that the sbt command below is run with JAVA_HOME set to Java 1.7 (see discussion above related to JAVA_HOME).
 
 Simply run:
 
@@ -57,7 +98,7 @@ Simply run:
 
 For example, you could run:
 
-    sbt 'run to-analyze Factorial main'
+    sbt 'run -d to-analyze -c Factorial -m main'
 
 The first time you run this `sbt` will download a number of packages
 on which our tool depends.  This may take a while, but these are
@@ -68,6 +109,12 @@ print out graph data to stdout.
 
 To exit the program press Ctrl-C at the terminal.  (Closing the GUI
 window is not enough.)
+
+You may get an out of memory error--if so, you can run sbt with extra heap memory.  For example,
+
+    JAVA_OPTS="-Xmx8g" sbt 'run -d to-analyze -c Factorial -m main'
+
+You can change '8g' to whatever amount of memory you need.  You can also add other Java options for controlling stack size, etc.
 
 You can try this with most of the class files in `to-analyze/`, but some
 of them trigger bugs that we have yet to fix.  The following are known
