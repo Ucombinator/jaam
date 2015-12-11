@@ -379,6 +379,8 @@ case class State(val stmt : Stmt,
       case (_ : Local) | (_ : Ref) => store(addrsOf(v))
       case _ : NullConstant => D.atomicTop
       case _ : NumericConstant => D.atomicTop
+      // TODO FIXME !!!
+      // case v : ClassConstant => D(Set(ObjectValue(stmt.classmap("java.lang.Class"), StringBasePointer(v.value))))
       case v : StringConstant => D(Set(ObjectValue(stmt.classmap("java.lang.String"), StringBasePointer(v.value))))
       case v : NegExpr => D.atomicTop
       case v : BinopExpr =>
@@ -436,7 +438,6 @@ case class State(val stmt : Stmt,
           vl match {
             case ObjectValue(objectType, _) =>
               if (!SootHelper.isSubType(objectType.getType, castedType)) {
-                println("throwing a class cast exception")
                 val classCastException = D(Set(ObjectValue(stmt.classmap("java.lang.ClassCastException"), malloc())))
                 exceptions = exceptions.join(classCastException)
               }
@@ -1032,6 +1033,9 @@ object Main {
               }
             })
           Snowflakes.put(MethodDescription("java.lang.Class", "desiredAssertionStatus", List(), "boolean"), ConstSnowflake(D.atomicTop))
+          Snowflakes.put(MethodDescription("java.lang.System", "nanoTime", List(), "long"), ConstSnowflake(D.atomicTop))
+          Snowflakes.put(MethodDescription("java.lang.System", "currentTimeMillis", List(), "long"), ConstSnowflake(D.atomicTop))
+          Snowflakes.put(MethodDescription("java.lang.System", "identityHashCode", List("int"), "java.lang.Object"), ConstSnowflake(D.atomicTop))
           Snowflakes.put(MethodDescription("java.lang.Throwable", "<init>", List(), "void"), NoOpSnowflake)
           Snowflakes.put(MethodDescription("java.lang.Throwable", "<clinit>", List(), "void"), NoOpSnowflake)
           Snowflakes.put(MethodDescription("java.util.ArrayList", "<init>", List("int"), "void"), NoOpSnowflake)
@@ -1256,23 +1260,18 @@ object SootHelper {
   lazy val serializableType : SootType = classes("java.io.Serializable").getType
   // is a of type b?
   def isSubType(a : SootType, b : SootType) : Boolean = {
-    println("checking if " + a + " is a subtype of " + b)
     if (a equals b) {
-      println("They're equal")
       return true
     } else {
       if (isPrimitive(a) || isPrimitive(b)) {
-        println("they're both primitive (but not equal)")
         return false
       } else {
         (a, b) match {
           case (at : ArrayType, bt : ArrayType) => {
-            println("they're both array types")
             (at.numDimensions == bt.numDimensions) &&
               isSubType(at.baseType, bt.baseType)
           }
           case (ot : SootType, at : ArrayType) => {
-            println(b + " is an array type")
             ot.equals(objectType) ||
             ot.equals(clonableType) ||
             ot.equals(serializableType)
@@ -1282,9 +1281,7 @@ object SootHelper {
             false // maybe
           }
           case _ => {
-            println("Neither is an array type")
             val lub: SootType = a.merge(b, Scene.v)
-            println("least upper bound: " + lub)
             val result = (lub != null) && !lub.equals(a)
             return result
           }
