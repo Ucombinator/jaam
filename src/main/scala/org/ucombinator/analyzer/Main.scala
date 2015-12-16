@@ -23,8 +23,6 @@ import xml.Utility
 import soot._
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, Type => SootType}
 
-import soot.shimple._
-
 import soot.jimple._
 import soot.jimple.{Stmt => SootStmt}
 
@@ -50,6 +48,13 @@ import javax.swing.ToolTipManager
 import com.mxgraph.swing.mxGraphComponent
 import com.mxgraph.view.mxGraph
 import com.mxgraph.layout.mxCompactTreeLayout
+
+// JSON4s
+import org.json4s._
+import org.json4s.native.Serialization
+import org.json4s.native.Serialization.writePretty
+
+import java.io.PrintWriter
 
 // Possibly thrown during transition between states.
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
@@ -372,6 +377,8 @@ case class State(val stmt : Stmt,
       case (_ : Local) | (_ : Ref) => store(addrsOf(v))
       case _ : NullConstant => D.atomicTop
       case _ : NumericConstant => D.atomicTop
+      // TODO FIXME !!!
+      // case v : ClassConstant => D(Set(ObjectValue(stmt.classmap("java.lang.Class"), StringBasePointer(v.value))))
       case v : StringConstant => D(Set(ObjectValue(stmt.classmap("java.lang.String"), StringBasePointer(v.value))))
       case v : NegExpr => D.atomicTop
       case v : BinopExpr =>
@@ -415,11 +422,6 @@ case class State(val stmt : Stmt,
       // TODO/precision: implement the actual check
       case v : InstanceOfExpr => D.atomicTop
 
-      // TODO/precision: take advantage of knowledge in v.getPreds()
-      // (though we may be getting that knowledge from partial definedness of the store)
-      // This code assumes that getValues returns only Local or Ref
-      case v : PhiExpr => store((v.getValues map addrsOf).toSet.flatten)
-
       case v : CastExpr => {
         val castedExpr : SootValue = v.getOp
         val castedType : SootType = v.getType
@@ -433,7 +435,6 @@ case class State(val stmt : Stmt,
           vl match {
             case ObjectValue(objectType, _) =>
               if (!SootHelper.isSubType(objectType.getType, castedType)) {
-                println("throwing a class cast exception")
                 val classCastException = D(Set(ObjectValue(stmt.classmap("java.lang.ClassCastException"), malloc())))
                 exceptions = exceptions.join(classCastException)
               }
@@ -767,106 +768,322 @@ case class ConstSnowflake(value : D) extends SnowflakeHandler {
   }
 }
 
+// Command option config
+case class CmdConfig(cfg: Boolean = false,
+                    classDirectory: String = null,
+                    className: String = null,
+                    methodName: String = null)
+
 object Main {
-  def main(args : Array[String]) {
-    // TODO: proper option parsing
-    if (args.length != 3) println("Expected arguments: [classDirectory] [className] [methodName]")
-    val classDirectory = args(0)
-    val className = args(1)
-    val methodName = args(2)
+  val idTable = scala.collection.mutable.Map[SootUnit, Int]()
+  var currentId = 0
 
-    val classes : Map[String, SootClass] = getClassMap(getShimple(classDirectory, ""))
-    SootHelper.classes = classes
-
-      // Snowflakes are special Java procedures whose behavior we know and special-case.
-      // For example, native methods (that would be difficult to analyze) are snowflakes.
-    Snowflakes.put(MethodDescription("java.io.PrintStream", "println", List("int"), "void"),
-      new SnowflakeHandler {
-        override def apply(state : State,
-                     nextStmt : Stmt,
-                     newFP : FramePointer,
-                     newStore : Store,
-                     newKontStack : KontStack) = {
-          System.err.println("Skipping call to java.io.OutputStream.println(int) : void")
-          Set(state.copy(stmt = nextStmt))
-        }
-      })
-    Snowflakes.put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
-      new SnowflakeHandler {
-        override def apply(state : State,
-                     nextStmt : Stmt,
-                     newFP : FramePointer,
-                     newStore : Store,
-                     newKontStack : KontStack) = {
-          def updateStore(oldStore : Store, clas : String, field : String, typ : String) =
-            oldStore.update(StaticFieldAddr(classes(clas).getFieldByName(field)),
-              D(Set(ObjectValue(classes(typ),
-                  SnowflakeBasePointer(clas + "." + field)))))
-          var newNewStore = newStore
-          newNewStore = updateStore(newNewStore,
-              "java.lang.System", "in", "java.io.InputStream")
-          newNewStore = updateStore(newNewStore,
-              "java.lang.System", "out", "java.io.PrintStream")
-          newNewStore = updateStore(newNewStore,
-              "java.lang.System", "err", "java.io.PrintStream")
-          newNewStore = updateStore(newNewStore,
-              "java.lang.System", "security", "java.lang.SecurityManager")
-          newNewStore = updateStore(newNewStore,
-              "java.lang.System", "cons", "java.io.Console")
-
-          Set(state.copy(stmt = nextStmt,
-            store = newNewStore))
-        }
-      })
-    Snowflakes.put(MethodDescription("java.lang.Class", "desiredAssertionStatus", List(), "boolean"), ConstSnowflake(D.atomicTop))
-    Snowflakes.put(MethodDescription("java.lang.Throwable", SootMethod.constructorName, List(), "void"), NoOpSnowflake)
-    Snowflakes.put(MethodDescription("java.lang.Throwable", SootMethod.staticInitializerName, List(), "void"), NoOpSnowflake)
-    Snowflakes.put(MethodDescription("java.util.ArrayList", SootMethod.constructorName, List("int"), "void"), NoOpSnowflake)
-
-    val mainMainMethod : SootMethod = classes(className).getMethodByName(methodName);
-    val insts : Chain[SootUnit] = mainMainMethod.getActiveBody().getUnits();
-
-    val first : SootUnit = insts.getFirst()
-
-      // Setting up the GUI
-    val window = new Window
-    val initialState = State.inject(Stmt(first, mainMainMethod, classes))
-    window.addState(initialState)
-
-
-    var todo : List [AbstractState] = List(initialState)
-    var seen : Set [AbstractState] = Set()
-
-
-      // Explore the state graph
-    while (todo nonEmpty) {
-      val current = todo.head
-      print(current.id + ": ")
-      println(current)
-      println()
-      val nexts : Set[AbstractState] = current.next()
-      for (n <- nexts) {
-        println(current.id + " -> " + n.id)
-        window.addNext(current, n)
+  def getUniqueId(key: SootUnit) : Integer = {
+    idTable get key match {
+      case Some(i) => i
+      case None => {
+        idTable(key) = currentId
+        currentId += 1
+        idTable(key)
       }
-      println()
-
-      // TODO: Fix optimization bug here
-      todo = nexts.toList.filter(!seen.contains(_)) ++ todo.tail
-      seen = seen ++ nexts
-
     }
-
-    println("Done!")
-
   }
 
-   def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] =
+  def main(args : Array[String]) {
+    val parser = new scopt.OptionParser[CmdConfig]("shimple-analyzer") {
+      head("shimple-analyzer")
+      opt[scala.Unit]("cfg") action {
+        (_, c) => c.copy(cfg = true)
+      } text("output control flow graph")
+
+      opt[String]('d', "directory") action {
+        (x, c) => c.copy(classDirectory = x)
+      } text("the class directory")
+
+      opt[String]('c', "class") action {
+        (x, c) => c.copy(className = x)
+      } text("the main class")
+
+      opt[String]('m', "method") action {
+        (x, c) => c.copy(methodName = x)
+      } text("the main method")
+
+      override def showUsageOnError = true
+    }
+
+    // parser.parse returns Option[C]
+    parser.parse(args, CmdConfig()) match {
+      case Some(config) =>{
+        val classDirectory = config.classDirectory
+        val className = config.className
+        val methodName = config.methodName
+        val classes : Map[String, SootClass] = getClassMap(getClasses(classDirectory, "", className))
+        SootHelper.classes = classes
+
+        if (config.cfg) {
+          val cg = Scene.v().getCallGraph();
+          var callGraph : Map [SootStmt, Set[SootMethod]] = Map()
+          for (edge <- cg.listener()) {
+            callGraph = callGraph.get(edge.srcStmt) match {
+              case Some(tgtSet) => {
+                callGraph + ((edge.srcStmt, tgtSet + edge.tgt))
+              }
+              case None => callGraph + ((edge.srcStmt, Set(edge.tgt)))
+            }
+            /*
+            println("--------- sources")
+            println(s"edge: ${edge.src}")
+            println(s"srcCtxt: ${edge.srcCtxt}")
+            println(s"srcStmt: ${edge.srcStmt}")
+            println(s"srcUnit: ${edge.srcUnit}")
+            println("--------- targets")
+            println(s"tgt: ${edge.tgt}")
+            println(s"tgtCtxt: ${edge.tgtCtxt}")
+            */
+          }
+
+          def unitToMap(meth: SootMethod, unit : SootUnit) : Map[String, Any] = {
+            def auxFindSrcUnit(meth : SootMethod, target : SootUnit): SootUnit = {
+              for (u <- meth.getActiveBody.getUnits()) {
+                if (target.toString().equals(u.toString()))
+                  return u
+              }
+              throw new RuntimeException("can not find caller statement for " + target.toString())
+            }
+
+            val id = getUniqueId(unit).toString
+            val result : Map[String, Any] = Map()
+            var obj : Map[String, Any] = Map("method" -> meth.getSignature, "inst" -> unit.toString())
+
+            unit match {
+              case inst: InvokeStmt => callGraph.get(inst) match {
+                case Some(tgtSet) => {
+                  val targetIds = tgtSet.map(m => {
+                    getUniqueId(m.getActiveBody.getUnits.getFirst)
+                  }).toList
+                  val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+
+                  obj += ("targets" -> targetIds, "succ" -> List(succ))
+                }
+                case None => {
+                  val targetIds = cg.edgesOutOf(meth).map(e => {
+                    /*
+                    val units = e.getTgt.method.getActiveBody.getUnits
+                    if (e.isClinit) {
+                      for (u <- units) {
+                        result ++= unitToMap(e.getTgt.method, u)
+                      }
+                    }
+                    */
+                    if (e.getTgt.method().hasActiveBody) {
+                      getUniqueId(e.getTgt.method.getActiveBody.getUnits.getFirst)
+                    }
+                    else {
+                      println("Warning: no active body of " + e.getTgt.method().getSignature)
+                    }
+                  }).filter(_ != ()).toList
+                  val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+
+                  obj += ("targets" -> targetIds, "succ" -> List(succ))
+                }
+              }
+
+              case inst: DefinitionStmt => {
+                inst.getRightOp match {
+                  case rhs: InvokeExpr => {
+                    val targetIds = cg.edgesOutOf(meth).map(e => {
+                      if (e.getTgt.method().hasActiveBody) {
+                        getUniqueId(e.getTgt.method.getActiveBody.getUnits.getFirst)
+                      }
+                      else {
+                        println("Warning: no active body of " + e.getTgt.method().getSignature)
+                      }
+                    }).filter(_ != ()).toList
+                    val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+
+                    obj += ("targets" -> targetIds, "succ" -> List(succ))
+                  }
+                  case rhs: NewExpr => {
+                    val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+                    obj += ("targets" -> List(), "succ" -> List(succ))
+                  }
+                  case rhs => {
+                    val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+                    obj += ("targets" -> List(), "succ" -> List(succ))
+                  }
+                }
+              }
+
+              case inst: IfStmt => {
+                val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+                obj += ("targets" -> List(), "succ" -> List(succ, getUniqueId(inst.getTarget)))
+              }
+
+              case inst: ReturnStmt => {
+                val targetIds = cg.edgesInto(meth).map(e => {
+                  getUniqueId(auxFindSrcUnit(e.getSrc.method(), e.srcUnit()))
+                }).toList
+                obj += ("targets" -> targetIds, "succ" -> List())
+              }
+
+              case inst: ReturnVoidStmt => {
+                val targetIds = cg.edgesInto(meth).map(e => {
+                  getUniqueId(auxFindSrcUnit(e.getSrc.method(), e.srcUnit()))
+                }).toList
+                obj += ("targets" -> targetIds, "succ" -> List())
+              }
+
+              case inst: SwitchStmt => {
+                obj += ("targets" -> List(), "succ" -> inst.getTargets.map(getUniqueId))
+              }
+
+              case inst: GotoStmt => {
+                obj += ("targets" -> List(), "succ" -> List(getUniqueId(inst.getTarget)))
+              }
+
+              case inst: ThrowStmt => {
+                //TODO
+                val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+                obj += ("targets" -> List(), "succ" -> List(succ))
+              }
+
+              case inst: EnterMonitorStmt => {
+                val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+                obj += ("targets" -> List(), "succ" -> List(succ))
+              }
+
+              case inst: ExitMonitorStmt => {
+                val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+                obj += ("targets" -> List(), "succ" -> List(succ))
+              }
+
+              case inst: NopStmt => {}
+
+              case _ => {
+                throw new Exception("No match for " + unit)
+              }
+            }
+
+            Map[String, Any](id -> obj) ++ result
+          }
+
+          val jsonArr = (for ((_, cls) <- classes)
+            yield (for (meth <- cls.getMethods)
+              yield meth.getActiveBody.getUnits.map(u => {
+                unitToMap(meth, u)
+              })
+            ).flatten.toList
+          ).flatten.toList
+
+          implicit val formats = Serialization.formats(NoTypeHints)
+          val cgJsonStr = writePretty(jsonArr)
+          println(cgJsonStr)
+          val filepath = classDirectory + "/" + className + ".json"
+          val out = new PrintWriter(filepath)
+          out.print(cgJsonStr)
+          out.close()
+          println("The JSON call graph file was dumped to " + filepath)
+        }
+        else {
+          // Snowflakes are special Java procedures whose behavior we know and special-case.
+          // For example, native methods (that would be difficult to analyze) are snowflakes.
+          Snowflakes.put(MethodDescription("java.io.PrintStream", "println", List("java.lang.String"), "void"),
+                          NoOpSnowflake)
+          Snowflakes.put(MethodDescription("java.io.PrintStream", "println", List("int"), "void"),
+            new SnowflakeHandler {
+              override def apply(state : State,
+                           nextStmt : Stmt,
+                           newFP : FramePointer,
+                           newStore : Store,
+                           newKontStack : KontStack) = {
+                System.err.println("Skipping call to java.io.OutputStream.println(int) : void")
+                Set(state.copy(stmt = nextStmt))
+              }
+            })
+
+          Snowflakes.put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
+            new SnowflakeHandler {
+              override def apply(state : State,
+                           nextStmt : Stmt,
+                           newFP : FramePointer,
+                           newStore : Store,
+                           newKontStack : KontStack) = {
+                def updateStore(oldStore : Store, clas : String, field : String, typ : String) =
+                  oldStore.update(StaticFieldAddr(classes(clas).getFieldByName(field)),
+                    D(Set(ObjectValue(classes(typ),
+                        SnowflakeBasePointer(clas + "." + field)))))
+                var newNewStore = newStore
+                newNewStore = updateStore(newNewStore,
+                    "java.lang.System", "in", "java.io.InputStream")
+                newNewStore = updateStore(newNewStore,
+                    "java.lang.System", "out", "java.io.PrintStream")
+                newNewStore = updateStore(newNewStore,
+                    "java.lang.System", "err", "java.io.PrintStream")
+                newNewStore = updateStore(newNewStore,
+                    "java.lang.System", "security", "java.lang.SecurityManager")
+                newNewStore = updateStore(newNewStore,
+                    "java.lang.System", "cons", "java.io.Console")
+
+                Set(state.copy(stmt = nextStmt,
+                  store = newNewStore))
+              }
+            })
+          Snowflakes.put(MethodDescription("java.lang.Class", "desiredAssertionStatus", List(), "boolean"), ConstSnowflake(D.atomicTop))
+          Snowflakes.put(MethodDescription("java.lang.System", "nanoTime", List(), "long"), ConstSnowflake(D.atomicTop))
+          Snowflakes.put(MethodDescription("java.lang.System", "currentTimeMillis", List(), "long"), ConstSnowflake(D.atomicTop))
+          Snowflakes.put(MethodDescription("java.lang.System", "identityHashCode", List("int"), "java.lang.Object"), ConstSnowflake(D.atomicTop))
+          Snowflakes.put(MethodDescription("java.lang.Throwable", SootMethod.constructorName, List(), "void"), NoOpSnowflake)
+          Snowflakes.put(MethodDescription("java.lang.Throwable", SootMethod.staticInitializerName, List(), "void"), NoOpSnowflake)
+          Snowflakes.put(MethodDescription("java.util.ArrayList", SootMethod.constructorName, List("int"), "void"), NoOpSnowflake)
+
+          val mainMainMethod : SootMethod = classes(className).getMethodByName(methodName);
+          val insts : Chain[SootUnit] = mainMainMethod.getActiveBody().getUnits();
+
+          val first : SootUnit = insts.getFirst()
+
+          // Setting up the GUI
+          val window = new Window
+          val initialState = State.inject(Stmt(first, mainMainMethod, classes))
+          window.addState(initialState)
+
+          var todo : List [AbstractState] = List(initialState)
+          var seen : Set [AbstractState] = Set()
+
+          // Explore the state graph
+          while (todo nonEmpty) {
+            val current = todo.head
+            print(current.id + ": ")
+            println(current)
+            println()
+            val nexts : Set[AbstractState] = current.next()
+            for (n <- nexts) {
+              println(current.id + " -> " + n.id)
+              window.addNext(current, n)
+            }
+            println()
+
+            // TODO: Fix optimization bug here
+            todo = nexts.toList.filter(!seen.contains(_)) ++ todo.tail
+            seen = seen ++ nexts
+
+          }
+          println("Done!")
+        }
+      }
+
+      case None =>{
+        println("Wrong arguments")
+      }
+    }
+  }
+
+  def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] =
     (for (c <- classes) yield c.getName() -> c).toMap
 
-  def getShimple(classesDir : String, classPath : String) = {
-    Options.v().set_output_format(Options.output_format_shimple);
+  def getClasses(classesDir : String, classPath : String, className : String) = {
+    Options.v().set_output_format(Options.output_format_jimple);
     Options.v().set_verbose(false);
+    Options.v().set_whole_program(true);
     Options.v().set_include_all(true);
     // we need to link instructions to source line for display
     Options.v().set_keep_line_number(true);
@@ -883,6 +1100,9 @@ object Main {
     SootMain.v().autoSetOptions();
     // Load classes according to the configured options
     Scene.v().loadNecessaryClasses();
+
+    Scene.v().setMainClass(Scene.v().getSootClass(className));
+
     // Run transformations and analyses according to the configured options.
     // Transformation could include jimple, shimple, and CFG generation
     PackManager.v().runPacks();
@@ -1036,23 +1256,18 @@ object SootHelper {
   lazy val serializableType : SootType = classes("java.io.Serializable").getType
   // is a of type b?
   def isSubType(a : SootType, b : SootType) : Boolean = {
-    println("checking if " + a + " is a subtype of " + b)
     if (a equals b) {
-      println("They're equal")
       return true
     } else {
       if (isPrimitive(a) || isPrimitive(b)) {
-        println("they're both primitive (but not equal)")
         return false
       } else {
         (a, b) match {
           case (at : ArrayType, bt : ArrayType) => {
-            println("they're both array types")
             (at.numDimensions == bt.numDimensions) &&
               isSubType(at.baseType, bt.baseType)
           }
           case (ot : SootType, at : ArrayType) => {
-            println(b + " is an array type")
             ot.equals(objectType) ||
             ot.equals(clonableType) ||
             ot.equals(serializableType)
@@ -1062,9 +1277,7 @@ object SootHelper {
             false // maybe
           }
           case _ => {
-            println("Neither is an array type")
             val lub: SootType = a.merge(b, Scene.v)
-            println("least upper bound: " + lub)
             val result = (lub != null) && !lub.equals(a)
             return result
           }
