@@ -13,6 +13,7 @@ package org.ucombinator.analyzer
 // TODO: invoke main method so we can initialize the parameters to main
 
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.language.postfixOps
 import xml.Utility
 
@@ -261,7 +262,7 @@ case class Store(private val map : Map[Addr, D]) {
 case class Stmt(val inst : SootUnit, val method : SootMethod, val classmap : Map[String, SootClass]) {
   assert(inst.isInstanceOf[SootStmt])
   def nextSyntactic() : Stmt = this.copy(inst = method.getActiveBody().getUnits().getSuccOf(inst))
-  override def toString() : String = inst.toString()
+  override def toString : String = inst.toString()
 }
 
 abstract sealed class AbstractState {
@@ -283,7 +284,7 @@ case class State(val stmt : Stmt,
   var exceptions = D(Set())
 
   // Allocates a new frame pointer (currently uses 1CFA)
-  def alloca(expr : InvokeExpr, nextStmt : Stmt) : FramePointer = OneCFAFramePointer(expr.getMethod(), nextStmt)
+  def alloca(expr : InvokeExpr, nextStmt : Stmt) : FramePointer = OneCFAFramePointer(expr.getMethod, nextStmt)
   // Allocates objects
   def malloc() : BasePointer = OneCFABasePointer(stmt, fp)
 
@@ -311,36 +312,33 @@ case class State(val stmt : Stmt,
   def addrsOf(lhs : SootValue) : Set[Addr] = {
     lhs match {
       case lhs : Local => Set(LocalFrameAddr(fp, lhs))
-      case lhs : InstanceFieldRef => {
-        val b : SootValue = lhs.getBase() // the x in x.y
+      case lhs : InstanceFieldRef =>
+        val b : SootValue = lhs.getBase // the x in x.y
         val d : D = eval(b)
         // TODO/optimize
         // filter out incorrect class types
         // TODO/bug
         // Suppose a number flows to x in x.y = 3;
         for (ObjectValue(_, bp) <- d.values)
-         yield InstanceFieldAddr(bp, lhs.getField())
-      }
-      case lhs : StaticFieldRef => {
-        val f : SootField = lhs.getField()
-        val c : SootClass = f.getDeclaringClass()
+         yield InstanceFieldAddr(bp, lhs.getField)
+      case lhs : StaticFieldRef =>
+        val f : SootField = lhs.getField
+        val c : SootClass = f.getDeclaringClass
         checkInitializedClasses(c)
         Set(StaticFieldAddr(f))
-      }
-      case lhs : ParameterRef => Set(ParameterFrameAddr(fp, lhs.getIndex()))
+      case lhs : ParameterRef => Set(ParameterFrameAddr(fp, lhs.getIndex))
       case lhs : ThisRef => Set(ThisFrameAddr(fp))
         // TODO/precision: have multiple addresses per "catch" clause?
         // Perhaps mix left-hand side into address?
       case lhs : CaughtExceptionRef => Set(CaughtExceptionFrameAddr(fp))
-      case lhs : ArrayRef => {
+      case lhs : ArrayRef =>
         // TODO/precision: Use more than a single address for each Array.
-        val b = eval(lhs.getBase())
+        val b = eval(lhs.getBase)
         // TODO/soundness: array ref out of bounds exception
-        val i = eval(lhs.getIndex()) // Unused but evaled in case we trigger a <clinit> or exception
+        val i = eval(lhs.getIndex) // Unused but evaled in case we trigger a <clinit> or exception
         // TODO: filter out incorrect types
         for (ArrayValue(_, bp) <- b.values) yield
           ArrayRefAddr(bp)
-      }
     }
   }
 
@@ -354,18 +352,18 @@ case class State(val stmt : Stmt,
   def eval(v: SootValue) : D = {
 
     def assertNumeric(op : SootValue) {
-      assert(op.getType().isInstanceOf[PrimType] && !op.getType().isInstanceOf[BooleanType])
+      assert(op.getType.isInstanceOf[PrimType] && !op.getType.isInstanceOf[BooleanType])
     }
     def assertIntegral(op : SootValue) {
-      assert(op.getType().isInstanceOf[PrimType] &&
-        !op.getType().isInstanceOf[BooleanType] &&
-        !op.getType().isInstanceOf[FloatType] &&
-        !op.getType().isInstanceOf[DoubleType])
+      assert(op.getType.isInstanceOf[PrimType] &&
+        !op.getType.isInstanceOf[BooleanType] &&
+        !op.getType.isInstanceOf[FloatType] &&
+        !op.getType.isInstanceOf[DoubleType])
     }
     def assertLogical(op : SootValue) {
-      assert(op.getType().isInstanceOf[PrimType] &&
-        !op.getType().isInstanceOf[FloatType] &&
-        !op.getType().isInstanceOf[DoubleType])
+      assert(op.getType.isInstanceOf[PrimType] &&
+        !op.getType.isInstanceOf[FloatType] &&
+        !op.getType.isInstanceOf[DoubleType])
     }
 
     v match {
@@ -379,26 +377,26 @@ case class State(val stmt : Stmt,
       case v : BinopExpr =>
         v match {
           case (_ : EqExpr) | (_ : NeExpr) | (_ : GeExpr) | (_ : GtExpr) | (_ : LeExpr) | (_ : LtExpr) =>
-            eval(v.getOp1())
-            eval(v.getOp2())
+            eval(v.getOp1)
+            eval(v.getOp2)
             D.atomicTop
           case (_ : ShrExpr) | (_ : ShlExpr) | (_ : UshrExpr) | (_ : RemExpr) =>
-            assertIntegral(v.getOp1())
-            assertIntegral(v.getOp2())
-            eval(v.getOp1())
-            eval(v.getOp2())
+            assertIntegral(v.getOp1)
+            assertIntegral(v.getOp2)
+            eval(v.getOp1)
+            eval(v.getOp2)
             D.atomicTop
           case (_ : XorExpr) | (_ : OrExpr) | (_ : AndExpr) =>
-            assertLogical(v.getOp1())
-            assertLogical(v.getOp2())
-            eval(v.getOp1())
-            eval(v.getOp2())
+            assertLogical(v.getOp1)
+            assertLogical(v.getOp2)
+            eval(v.getOp1)
+            eval(v.getOp2)
             D.atomicTop
           case (_ : AddExpr) | (_ : SubExpr) | (_ : MulExpr) | (_ : DivExpr) =>
-            assertNumeric(v.getOp1())
-            assertNumeric(v.getOp2())
-            eval(v.getOp1())
-            val zCheck = eval(v.getOp2())
+            assertNumeric(v.getOp1)
+            assertNumeric(v.getOp2)
+            eval(v.getOp1)
+            val zCheck = eval(v.getOp2)
             if(v.isInstanceOf[DivExpr] && zCheck.maybeZero()){
               // TODO/soundness: No malloc!
               exceptions = exceptions.join(D(Set(ObjectValue(stmt.classmap("java.lang.ArithmeticException"), malloc()))))
@@ -407,12 +405,11 @@ case class State(val stmt : Stmt,
         }
 
       // Every array has a distinguished field for its address.
-      case v : LengthExpr => {
+      case v : LengthExpr =>
         val addrs : Set[Addr] = for {
-          ArrayValue(_, bp) <- eval(v.getOp()).values
+          ArrayValue(_, bp) <- eval(v.getOp).values
         } yield ArrayLengthAddr(bp)
         store(addrs)
-      }
 
 
       // TODO/precision: implement the actual check
@@ -424,8 +421,8 @@ case class State(val stmt : Stmt,
       case v : PhiExpr => store((v.getValues map addrsOf).toSet.flatten)
 
       case v : CastExpr => {
-        val castedExpr : SootValue = v.getOp()
-        val castedType : SootType = v.getType()
+        val castedExpr : SootValue = v.getOp
+        val castedType : SootType = v.getType
         checkInitializedClasses(castedType)
         val d = eval(castedExpr)
         if (castedType.isInstanceOf[PrimType]) {
@@ -567,7 +564,7 @@ case class State(val stmt : Stmt,
       case UninitializedClassException(sootClass) =>
         // TODO/soundness: needs to also initialize parent classes
         exceptions = D(Set())
-        val meth = sootClass.getMethodByNameUnsafe("<clinit>")
+        val meth = sootClass.getMethodByNameUnsafe(SootMethod.staticInitializerName)
         if (meth != null) {
           // Initialize all static fields per JVM 5.4.2 and 5.5
           val staticUpdates = for {
@@ -667,10 +664,9 @@ case class State(val stmt : Stmt,
         }
       }
 
-      case inst : ReturnVoidStmt => {
-        for ((frame, newStack) <- kontStack.pop if !(frame.acceptsReturnValue())) yield
-          State(frame.stmt, frame.fp, store, newStack, initializedClasses)
-      }
+      case inst : ReturnVoidStmt =>
+        for ((frame, newStack) <- kontStack.pop() if !frame.acceptsReturnValue()) yield
+          State(frame.stmt, frame.fp, store, newStack, initializedClasses).asInstanceOf[AbstractState]
 
       // Since Soot's NopEliminator run before us, no "nop" should be
       // left in the code and this case isn't needed (and also is
@@ -710,15 +706,15 @@ object State {
   def inject(stmt : Stmt) : State = {
     val stringClass : SootClass = stmt.classmap("java.lang.String")
     val initial_map : Map[Addr, D] = Map(
-      (ParameterFrameAddr(initialFramePointer, 0) ->
-       D(Set(ArrayValue(stringClass.getType(), initialBasePointer)))),
-      (ArrayRefAddr(initialBasePointer) -> D(Set(ObjectValue(stringClass, initialBasePointer)))),
-      (ArrayLengthAddr(initialBasePointer) -> D.atomicTop))
+      ParameterFrameAddr(initialFramePointer, 0) ->
+       D(Set(ArrayValue(stringClass.getType(), initialBasePointer))),
+      ArrayRefAddr(initialBasePointer) -> D(Set(ObjectValue(stringClass, initialBasePointer))),
+      ArrayLengthAddr(initialBasePointer) -> D.atomicTop)
     State(stmt, initialFramePointer, Store(initial_map), KontStack(KontStore(Map()), HaltKont), Set())
   }
 
   def isSubclass(sub : SootClass, sup : SootClass) : Boolean =
-    Scene.v().getActiveHierarchy().isClassSubclassOfIncluding(sub, sup)
+    Scene.v().getActiveHierarchy.isClassSubclassOfIncluding(sub, sup)
 
   var nextId_ = 0
   def nextId() : Int = { nextId_ += 1; nextId_ }
@@ -795,7 +791,7 @@ object Main {
           Set(state.copy(stmt = nextStmt))
         }
       })
-    Snowflakes.put(MethodDescription("java.lang.System","<clinit>", List(), "void"),
+    Snowflakes.put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
       new SnowflakeHandler {
         override def apply(state : State,
                      nextStmt : Stmt,
@@ -823,9 +819,9 @@ object Main {
         }
       })
     Snowflakes.put(MethodDescription("java.lang.Class", "desiredAssertionStatus", List(), "boolean"), ConstSnowflake(D.atomicTop))
-    Snowflakes.put(MethodDescription("java.lang.Throwable", "<init>", List(), "void"), NoOpSnowflake)
-    Snowflakes.put(MethodDescription("java.lang.Throwable", "<clinit>", List(), "void"), NoOpSnowflake)
-    Snowflakes.put(MethodDescription("java.util.ArrayList", "<init>", List("int"), "void"), NoOpSnowflake)
+    Snowflakes.put(MethodDescription("java.lang.Throwable", SootMethod.constructorName, List(), "void"), NoOpSnowflake)
+    Snowflakes.put(MethodDescription("java.lang.Throwable", SootMethod.staticInitializerName, List(), "void"), NoOpSnowflake)
+    Snowflakes.put(MethodDescription("java.util.ArrayList", SootMethod.constructorName, List("int"), "void"), NoOpSnowflake)
 
     val mainMainMethod : SootMethod = classes(className).getMethodByName(methodName);
     val insts : Chain[SootUnit] = mainMainMethod.getActiveBody().getUnits();
