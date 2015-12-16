@@ -814,10 +814,7 @@ object Main {
     // parser.parse returns Option[C]
     parser.parse(args, CmdConfig()) match {
       case Some(config) =>{
-        val classDirectory = config.classDirectory
-        val className = config.className
-        val methodName = config.methodName
-        val classes : Map[String, SootClass] = getClassMap(getClasses(classDirectory, "", className))
+        val classes : Map[String, SootClass] = getClassMap(getClasses(config))
         SootHelper.classes = classes
 
         if (config.cfg) {
@@ -978,7 +975,7 @@ object Main {
           implicit val formats = Serialization.formats(NoTypeHints)
           val cgJsonStr = writePretty(jsonArr)
           println(cgJsonStr)
-          val filepath = classDirectory + "/" + className + ".json"
+          val filepath = config.classDirectory + "/" + config.className + ".json"
           val out = new PrintWriter(filepath)
           out.print(cgJsonStr)
           out.close()
@@ -1036,7 +1033,7 @@ object Main {
           Snowflakes.put(MethodDescription("java.lang.Throwable", SootMethod.staticInitializerName, List(), "void"), NoOpSnowflake)
           Snowflakes.put(MethodDescription("java.util.ArrayList", SootMethod.constructorName, List("int"), "void"), NoOpSnowflake)
 
-          val mainMainMethod : SootMethod = classes(className).getMethodByName(methodName);
+          val mainMainMethod : SootMethod = classes(config.className).getMethodByName(config.methodName);
           val insts : Chain[SootUnit] = mainMainMethod.getActiveBody().getUnits();
 
           val first : SootUnit = insts.getFirst()
@@ -1080,10 +1077,11 @@ object Main {
   def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] =
     (for (c <- classes) yield c.getName() -> c).toMap
 
-  def getClasses(classesDir : String, classPath : String, className : String) = {
+  def getClasses(config : CmdConfig) = {
     Options.v().set_output_format(Options.output_format_jimple);
     Options.v().set_verbose(false);
-    Options.v().set_whole_program(true);
+    // Whole program mode is slow but needed when we are in CFG mode
+    Options.v().set_whole_program(config.cfg);
     Options.v().set_include_all(true);
     // we need to link instructions to source line for display
     Options.v().set_keep_line_number(true);
@@ -1091,9 +1089,10 @@ object Main {
     Options.v().set_allow_phantom_refs(true);
     // Include the default classpath, which should include the Java SDK rt.jar.
     Options.v().set_prepend_classpath(true);
-    Options.v().set_process_dir(List(classesDir));
+    Options.v().set_process_dir(List(config.classDirectory));
     // Include the classesDir on the class path.
-    Options.v().set_soot_classpath(classesDir + ":" + classPath);
+    // TODO: remove ":"?
+    Options.v().set_soot_classpath(config.classDirectory + ":");
     // Prefer definitions from class files over source files
     Options.v().set_src_prec(Options.src_prec_class);
     // Compute dependent options
@@ -1101,7 +1100,7 @@ object Main {
     // Load classes according to the configured options
     Scene.v().loadNecessaryClasses();
 
-    Scene.v().setMainClass(Scene.v().getSootClass(className));
+    Scene.v().setMainClass(Scene.v().getSootClass(config.className));
 
     // Run transformations and analyses according to the configured options.
     // Transformation could include jimple, shimple, and CFG generation
