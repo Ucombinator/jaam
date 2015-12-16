@@ -377,9 +377,11 @@ case class State(val stmt : Stmt,
       case (_ : Local) | (_ : Ref) => store(addrsOf(v))
       case _ : NullConstant => D.atomicTop
       case _ : NumericConstant => D.atomicTop
-      // TODO FIXME !!!
-      // case v : ClassConstant => D(Set(ObjectValue(stmt.classmap("java.lang.Class"), StringBasePointer(v.value))))
-      case v : StringConstant => D(Set(ObjectValue(stmt.classmap("java.lang.String"), StringBasePointer(v.value))))
+      // TODO: Class and String objects are objects and so need their fields initialized
+      case v : ClassConstant => throw new Exception("Unimplemented: ClassConstant: " + v)
+        //D(Set(ObjectValue(stmt.classmap("java.lang.Class"), StringBasePointer(v.value))))
+      case v : StringConstant => throw new Exception("Unimplemented: StringConstant: " + v)
+        //D(Set(ObjectValue(stmt.classmap("java.lang.String"), StringBasePointer(v.value))))
       case v : NegExpr => D.atomicTop
       case v : BinopExpr =>
         v match {
