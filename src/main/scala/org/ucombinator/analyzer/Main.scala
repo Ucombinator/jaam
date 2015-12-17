@@ -1076,36 +1076,45 @@ object Main {
   }
 
   def getBody(m : SootMethod) = {
-    if (!m.hasActiveBody()) { m.retrieveActiveBody() }
+    if (!m.hasActiveBody()) {
+      SootResolver.v().resolveClass(m.getDeclaringClass.getName, SootClass.BODIES)
+      m.retrieveActiveBody()
+    }
     m.getActiveBody
   }
 
   def getClass(s : String) = Scene.v().loadClass(s, SootClass.SIGNATURES)
 
   def initializeSoot(config : CmdConfig) {
-    Options.v().set_output_format(Options.output_format_jimple);
-    Options.v().set_verbose(false);
-    // Whole program mode is slow but needed when we are in CFG mode
-    Options.v().set_whole_program(config.cfg);
-    Options.v().set_include_all(true);
+    Options.v().set_verbose(false)
+    // Put class bodies in Jimple format
+    Options.v().set_output_format(Options.output_format_jimple)
+    // Process all packages and do not exclude packages like java.*
+    Options.v().set_include_all(true)
     // we need to link instructions to source line for display
-    Options.v().set_keep_line_number(true);
+    Options.v().set_keep_line_number(true)
     // Called methods without jar files or source are considered phantom
-    Options.v().set_allow_phantom_refs(true);
-    // Include the default classpath, which should include the Java SDK rt.jar.
-    Options.v().set_prepend_classpath(true);
-    Options.v().set_process_dir(List(config.classDirectory));
+    Options.v().set_allow_phantom_refs(true)
+    // Only use the class path from the command line
+    Options.v().set_prepend_classpath(false)
     // Include the classesDir on the class path.
     // TODO: remove ":"?
     //Options.v().set_soot_classpath(config.classDirectory + ":");
+    //Options.v().set_soot_classpath(config.classPath)
     Options.v().set_soot_classpath(config.classDirectory + ":javacache") // /usr/lib/jvm/java-7-openjdk-amd64/jre/lib/rt.jar:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/jce.jar")
-    Options.v().set_full_resolver(true)
-    // Prefer definitions from class files over source files
-    Options.v().set_src_prec(Options.src_prec_only_class);
+    // Take definitions only from class files
+    Options.v().set_src_prec(Options.src_prec_only_class)
+    if (config.cfg) {
+      // Whole program mode is slow but needed when we are in CFG mode
+      Options.v().set_whole_program(config.cfg)
+      Options.v().set_process_dir(List(config.classDirectory))
+    }
+
     // Compute dependent options
     SootMain.v().autoSetOptions();
-    // Load classes according to the configured options
+
     if (config.cfg) {
+      // Load classes according to the configured options
       Scene.v().loadNecessaryClasses()
       Scene.v().setMainClass(Scene.v().getSootClass(config.className))
     }
