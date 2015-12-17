@@ -100,7 +100,7 @@ case class KontStack(store : KontStore, k : Kont) {
 
       visited = visited + ((stmt, fp, kontStack)) // TODO: do we really need all of these in here?
 
-      for (trap <- TrapManager.getTrapsAt(stmt.inst, stmt.method.getActiveBody())) {
+      for (trap <- TrapManager.getTrapsAt(stmt.inst, Main.getBody(stmt.method))) {
         val caughtType = trap.getException()
         // The handler will expect the exception to be waiting at CaughtExceptionFrameAddr(fp).
         // It'll be referenced through CaughtExceptionRef.
@@ -264,9 +264,9 @@ case class Store(private val map : Map[Addr, D]) {
     (for ((a, d) <- map) yield { a + " -> " + d }).toList
 }
 
-case class Stmt(val inst : SootUnit, val method : SootMethod, val classmap : Map[String, SootClass]) {
+case class Stmt(val inst : SootUnit, val method : SootMethod) {
   assert(inst.isInstanceOf[SootStmt])
-  def nextSyntactic() : Stmt = this.copy(inst = method.getActiveBody().getUnits().getSuccOf(inst))
+  def nextSyntactic() : Stmt = this.copy(inst = Main.getBody(method).getUnits().getSuccOf(inst))
   override def toString : String = inst.toString()
 }
 
@@ -408,7 +408,7 @@ case class State(val stmt : Stmt,
             val zCheck = eval(v.getOp2)
             if(v.isInstanceOf[DivExpr] && zCheck.maybeZero()){
               // TODO/soundness: No malloc!
-              exceptions = exceptions.join(D(Set(ObjectValue(stmt.classmap("java.lang.ArithmeticException"), malloc()))))
+              exceptions = exceptions.join(D(Set(ObjectValue(SootHelper.classes.ArithmeticException, malloc()))))
             }
             D.atomicTop
         }
@@ -437,12 +437,12 @@ case class State(val stmt : Stmt,
           vl match {
             case ObjectValue(objectType, _) =>
               if (!SootHelper.isSubType(objectType.getType, castedType)) {
-                val classCastException = D(Set(ObjectValue(stmt.classmap("java.lang.ClassCastException"), malloc())))
+                val classCastException = D(Set(ObjectValue(SootHelper.classes.ClassCastException, malloc())))
                 exceptions = exceptions.join(classCastException)
               }
             case ArrayValue(arrayType, basePointer) =>
               if (!SootHelper.isSubType(arrayType, castedType)) {
-                val classCastException = D(Set(ObjectValue(stmt.classmap("java.lang.ClassCastException"), malloc())))
+                val classCastException = D(Set(ObjectValue(SootHelper.classes.ClassCastException, malloc())))
                 exceptions = exceptions.join(classCastException)
               }
             case _ => throw new Exception ("Unknown value type " + vl)
@@ -499,7 +499,7 @@ case class State(val stmt : Stmt,
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, newFP, newStore, newKontStack)
         case None =>
-          Set(State(Stmt(meth.getActiveBody().getUnits().getFirst, meth, stmt.classmap),
+          Set(State(Stmt(Main.getBody(meth).getUnits().getFirst, meth),
             newFP, newStore, newKontStack, initializedClasses))
       }
     }
@@ -535,7 +535,7 @@ case class State(val stmt : Stmt,
         case t : FloatConstantValueTag => return D.atomicTop
         case t : IntegerConstantValueTag => return D.atomicTop
         case t : LongConstantValueTag => return D.atomicTop
-        case t : StringConstantValueTag => return D(Set(ObjectValue(stmt.classmap("java.lang.String"), StringBasePointer(t.getStringValue()))))
+        case t : StringConstantValueTag => return D(Set(ObjectValue(SootHelper.classes.String, StringBasePointer(t.getStringValue()))))
         case _ => ()
       }
     return defaultInitialValue(f.getType)
@@ -623,7 +623,7 @@ case class State(val stmt : Stmt,
           }
           // TODO/clarity: Add an example of Java code that can trigger this.
           case rhs : ClassConstant => { // TODO: frustratingly similar to NewExpr
-            val newStore = store.update(lhsAddr, D(Set(ObjectValue(stmt.classmap("java.lang.Class"), ClassBasePointer(rhs.value)))))
+            val newStore = store.update(lhsAddr, D(Set(ObjectValue(SootHelper.classes.Class, ClassBasePointer(rhs.value)))))
             Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
           }
           case rhs : NewArrayExpr => {
@@ -707,7 +707,7 @@ object State {
   val initialFramePointer = InitialFramePointer
   val initialBasePointer = InitialBasePointer
   def inject(stmt : Stmt) : State = {
-    val stringClass : SootClass = stmt.classmap("java.lang.String")
+    val stringClass : SootClass = SootHelper.classes.String
     val initial_map : Map[Addr, D] = Map(
       ParameterFrameAddr(initialFramePointer, 0) ->
        D(Set(ArrayValue(stringClass.getType(), initialBasePointer))),
@@ -816,8 +816,7 @@ object Main {
     // parser.parse returns Option[C]
     parser.parse(args, CmdConfig()) match {
       case Some(config) =>{
-        val classes : Map[String, SootClass] = getClassMap(getClasses(config))
-        SootHelper.classes = classes
+        initializeSoot(config)
 
         if (config.cfg) {
           val cg = Scene.v().getCallGraph();
@@ -843,7 +842,7 @@ object Main {
 
           def unitToMap(meth: SootMethod, unit : SootUnit) : Map[String, Any] = {
             def auxFindSrcUnit(meth : SootMethod, target : SootUnit): SootUnit = {
-              for (u <- meth.getActiveBody.getUnits()) {
+              for (u <- getBody(meth).getUnits()) {
                 if (target.toString().equals(u.toString()))
                   return u
               }
@@ -858,16 +857,16 @@ object Main {
               case inst: InvokeStmt => callGraph.get(inst) match {
                 case Some(tgtSet) => {
                   val targetIds = tgtSet.map(m => {
-                    getUniqueId(m.getActiveBody.getUnits.getFirst)
+                    getUniqueId(getBody(m).getUnits.getFirst)
                   }).toList
-                  val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+                  val succ = getUniqueId(getBody(meth).getUnits.getSuccOf(inst))
 
                   obj += ("targets" -> targetIds, "succ" -> List(succ))
                 }
                 case None => {
                   val targetIds = cg.edgesOutOf(meth).map(e => {
                     /*
-                    val units = e.getTgt.method.getActiveBody.getUnits
+                    val units = getBody(e.getTgt.method).getUnits
                     if (e.isClinit) {
                       for (u <- units) {
                         result ++= unitToMap(e.getTgt.method, u)
@@ -875,13 +874,13 @@ object Main {
                     }
                     */
                     if (e.getTgt.method().hasActiveBody) {
-                      getUniqueId(e.getTgt.method.getActiveBody.getUnits.getFirst)
+                      getUniqueId(getBody(e.getTgt.method).getUnits.getFirst)
                     }
                     else {
                       println("Warning: no active body of " + e.getTgt.method().getSignature)
                     }
                   }).filter(_ != ()).toList
-                  val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+                  val succ = getUniqueId(getBody(meth).getUnits.getSuccOf(inst))
 
                   obj += ("targets" -> targetIds, "succ" -> List(succ))
                 }
@@ -966,9 +965,9 @@ object Main {
             Map[String, Any](id -> obj) ++ result
           }
 
-          val jsonArr = (for ((_, cls) <- classes)
+          val jsonArr = (for (cls <- Scene.v().getApplicationClasses())
             yield (for (meth <- cls.getMethods)
-              yield meth.getActiveBody.getUnits.map(u => {
+              yield getBody(meth).getUnits.map(u => {
                 unitToMap(meth, u)
               })
             ).flatten.toList
@@ -1008,8 +1007,8 @@ object Main {
                            newStore : Store,
                            newKontStack : KontStack) = {
                 def updateStore(oldStore : Store, clas : String, field : String, typ : String) =
-                  oldStore.update(StaticFieldAddr(classes(clas).getFieldByName(field)),
-                    D(Set(ObjectValue(classes(typ),
+                  oldStore.update(StaticFieldAddr(Main.getClass(clas).getFieldByName(field)),
+                    D(Set(ObjectValue(Main.getClass(typ),
                         SnowflakeBasePointer(clas + "." + field)))))
                 var newNewStore = newStore
                 newNewStore = updateStore(newNewStore,
@@ -1035,14 +1034,14 @@ object Main {
           Snowflakes.put(MethodDescription("java.lang.Throwable", SootMethod.staticInitializerName, List(), "void"), NoOpSnowflake)
           Snowflakes.put(MethodDescription("java.util.ArrayList", SootMethod.constructorName, List("int"), "void"), NoOpSnowflake)
 
-          val mainMainMethod : SootMethod = classes(config.className).getMethodByName(config.methodName);
-          val insts : Chain[SootUnit] = mainMainMethod.getActiveBody().getUnits();
+          val mainMainMethod : SootMethod = getClass(config.className).getMethodByName(config.methodName)
+          val insts : Chain[SootUnit] = getBody(mainMainMethod).getUnits()
 
           val first : SootUnit = insts.getFirst()
 
           // Setting up the GUI
           val window = new Window
-          val initialState = State.inject(Stmt(first, mainMainMethod, classes))
+          val initialState = State.inject(Stmt(first, mainMainMethod))
           window.addState(initialState)
 
           var todo : List [AbstractState] = List(initialState)
@@ -1076,10 +1075,14 @@ object Main {
     }
   }
 
-  def getClassMap(classes : Chain[SootClass]) : Map[String, SootClass] =
-    (for (c <- classes) yield c.getName() -> c).toMap
+  def getBody(m : SootMethod) = {
+    if (!m.hasActiveBody()) { m.retrieveActiveBody() }
+    m.getActiveBody
+  }
 
-  def getClasses(config : CmdConfig) = {
+  def getClass(s : String) = Scene.v().loadClass(s, SootClass.SIGNATURES)
+
+  def initializeSoot(config : CmdConfig) {
     Options.v().set_output_format(Options.output_format_jimple);
     Options.v().set_verbose(false);
     // Whole program mode is slow but needed when we are in CFG mode
@@ -1094,20 +1097,23 @@ object Main {
     Options.v().set_process_dir(List(config.classDirectory));
     // Include the classesDir on the class path.
     // TODO: remove ":"?
-    Options.v().set_soot_classpath(config.classDirectory + ":");
+    //Options.v().set_soot_classpath(config.classDirectory + ":");
+    Options.v().set_soot_classpath(config.classDirectory + ":javacache") // /usr/lib/jvm/java-7-openjdk-amd64/jre/lib/rt.jar:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/jce.jar")
+    Options.v().set_full_resolver(true)
     // Prefer definitions from class files over source files
-    Options.v().set_src_prec(Options.src_prec_class);
+    Options.v().set_src_prec(Options.src_prec_only_class);
     // Compute dependent options
     SootMain.v().autoSetOptions();
     // Load classes according to the configured options
-    Scene.v().loadNecessaryClasses();
-
-    Scene.v().setMainClass(Scene.v().getSootClass(config.className));
+    if (config.cfg) {
+      Scene.v().loadNecessaryClasses()
+      Scene.v().setMainClass(Scene.v().getSootClass(config.className))
+    }
 
     // Run transformations and analyses according to the configured options.
     // Transformation could include jimple, shimple, and CFG generation
     PackManager.v().runPacks();
-    Scene.v().getApplicationClasses();
+    Scene.v().loadBasicClasses()
   }
 }
 
@@ -1251,10 +1257,20 @@ object SootHelper {
       case _ => true
     }
   }
-  var classes : Map[String, SootClass] = null
-  lazy val objectType : SootType = classes("java.lang.Object").getType
-  lazy val clonableType : SootType = classes("java.lang.Clonable").getType
-  lazy val serializableType : SootType = classes("java.io.Serializable").getType
+
+  object classes {
+    lazy val Object = Main.getClass("java.lang.Object")
+    lazy val Class = Main.getClass("java.lang.Class")
+    lazy val String = Main.getClass("java.lang.String")
+    lazy val Clonable = Main.getClass("java.lang.Clonable")
+    lazy val ClassCastException = Main.getClass("java.lang.ClassCastException")
+    lazy val ArithmeticException = Main.getClass("java.lang.ArithmeticException")
+    lazy val Serializable = Main.getClass("java.io.Serializable")
+  }
+
+  lazy val objectType : SootType = classes.Object.getType
+  lazy val clonableType : SootType = classes.Clonable.getType
+  lazy val serializableType : SootType = classes.Serializable.getType
   // is a of type b?
   def isSubType(a : SootType, b : SootType) : Boolean = {
     if (a equals b) {
