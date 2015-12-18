@@ -248,6 +248,13 @@ case class Store(private val map : Map[Addr, D]) {
      newStore
   }
 
+  def update(addrs : Option[Set[Addr]], d : D) : Store = {
+    addrs match {
+      case None => this
+      case Some(a) => update(a, d)
+    }
+  }
+
   def update(m : Map[Addr, D]) : Store = {
     var newStore = this
     for ((a, d) <- m) {
@@ -509,8 +516,22 @@ case class State(val stmt : Stmt,
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, newFP, newStore, newKontStack)
         case None =>
-          Set(State(Stmt(Soot.getBody(meth).getUnits().getFirst, meth),
-            newFP, newStore, newKontStack, initializedClasses))
+          if (meth.isNative) {
+            println()
+            println(Console.YELLOW + "!!!!! WARNING: Native method without a snowflake. May be unsound. !!!!!")
+            println("!!!!! stmt = " + stmt + " !!!!!")
+            println("!!!!! method = " + meth + " !!!!!" + Console.RESET)
+            meth.getReturnType match {
+              case _ : VoidType => Set(this.copy(stmt = nextStmt))
+              case _ : PrimType => Set(this.copy(stmt = nextStmt, store = store.update(destAddr, D.atomicTop)))
+              case _ =>
+                println(Console.RED + "!!!!! Native method returns an object.  Aborting. !!!!!" + Console.RESET)
+                Set()
+            }
+          } else {
+            Set(State(Stmt(Soot.getBody(meth).getUnits().getFirst, meth),
+              newFP, newStore, newKontStack, initializedClasses))
+          }
       }
     }
 
