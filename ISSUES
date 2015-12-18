@@ -1,0 +1,44 @@
+Possible error (18 Dec 2015)
+
+Result of running JAVA_OPTS="-Xmx8g" sbt 'run --cfg to-analyze --classpath /Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/jre/lib/rt.jar:to-analyze -c Factorial' on OS 10.11.1:
+
+[error] (run-main-0) java.lang.RuntimeException: No method source set for method <Interfaces$I: int f()>
+java.lang.RuntimeException: No method source set for method <Interfaces$I: int f()>
+	at soot.SootMethod.getBodyFromMethodSource(SootMethod.java:90)
+	at soot.SootMethod.retrieveActiveBody(SootMethod.java:324)
+	at org.ucombinator.analyzer.Soot$.getBody(Main.scala:1288)
+	at org.ucombinator.analyzer.Main$$anonfun$22$$anonfun$apply$1.apply(Main.scala:1102)
+	at org.ucombinator.analyzer.Main$$anonfun$22$$anonfun$apply$1.apply(Main.scala:1101)
+	at scala.collection.TraversableLike$$anonfun$map$1.apply(TraversableLike.scala:244)
+	at scala.collection.TraversableLike$$anonfun$map$1.apply(TraversableLike.scala:244)
+	at scala.collection.Iterator$class.foreach(Iterator.scala:727)
+	at scala.collection.AbstractIterator.foreach(Iterator.scala:1157)
+	at scala.collection.IterableLike$class.foreach(IterableLike.scala:72)
+	at scala.collection.AbstractIterable.foreach(Iterable.scala:54)
+	at scala.collection.TraversableLike$class.map(TraversableLike.scala:244)
+	at scala.collection.AbstractTraversable.map(Traversable.scala:105)
+	at org.ucombinator.analyzer.Main$$anonfun$22.apply(Main.scala:1101)
+	at org.ucombinator.analyzer.Main$$anonfun$22.apply(Main.scala:1100)
+	at scala.collection.TraversableLike$$anonfun$map$1.apply(TraversableLike.scala:244)
+	at scala.collection.TraversableLike$$anonfun$map$1.apply(TraversableLike.scala:244)
+	at scala.collection.Iterator$class.foreach(Iterator.scala:727)
+	at scala.collection.AbstractIterator.foreach(Iterator.scala:1157)
+	at scala.collection.IterableLike$class.foreach(IterableLike.scala:72)
+	at scala.collection.AbstractIterable.foreach(Iterable.scala:54)
+	at scala.collection.TraversableLike$class.map(TraversableLike.scala:244)
+	at scala.collection.AbstractTraversable.map(Traversable.scala:105)
+	at org.ucombinator.analyzer.Main$.cfgMode(Main.scala:1100)
+	at org.ucombinator.analyzer.Main$.main(Main.scala:862)
+	at org.ucombinator.analyzer.Main.main(Main.scala)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:483)
+[trace] Stack trace suppressed: run last compile:run for the full output.
+java.lang.RuntimeException: Nonzero exit code: 1
+	at scala.sys.package$.error(package.scala:27)
+[trace] Stack trace suppressed: run last compile:run for the full output.
+[error] (compile:run) Nonzero exit code: 1
+[error] Total time: 65 s, completed Dec 18, 2015 12:03:36 PM
+
+--------------------------
