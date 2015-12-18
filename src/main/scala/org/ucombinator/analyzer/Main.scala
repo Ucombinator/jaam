@@ -58,6 +58,7 @@ import java.io.PrintWriter
 
 // Possibly thrown during transition between states.
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
+case class StringConstantException(string : String) extends RuntimeException
 case class UndefinedAddrsException(addrs : Set[Addr]) extends RuntimeException
 
 // A continuation store paired with a continuation
@@ -230,6 +231,8 @@ case class ArrayLengthAddr(val bp : BasePointer) extends Addr
 case class StaticFieldAddr(val sf : SootField) extends Addr
 
 case class Store(private val map : Map[Addr, D]) {
+  def contains(addr : Addr) = map.contains(addr)
+
   def update(addr : Addr, d : D) : Store = {
     map.get(addr) match {
       case Some(oldd) => Store(map + (addr -> oldd.join(d)))
@@ -311,7 +314,7 @@ case class State(val stmt : Stmt,
   // Returns all possible addresses of an assignable expression.
   // x = 3; // Should only return 1 address.
   // x[2] = 3; // May return more than one address because x might be multiple arrays.
-  // x.y = 3; // May return multiple addresses ""
+  // x.y = 3; // May return multiple addresses
   // x[y] = 3; // May return multiple addresses even if x is a single value. (not currently relevant)
   // Right now, we model arrays as having only a single storage location, so the last example produces multiple addresses only based on there being more than one location for x.
   def addrsOf(lhs : SootValue) : Set[Addr] = {
@@ -378,9 +381,16 @@ case class State(val stmt : Stmt,
       case _ : NullConstant => D.atomicTop
       case _ : NumericConstant => D.atomicTop
       // TODO: Class and String objects are objects and so need their fields initialized
-      case v : ClassConstant => throw new Exception("Unimplemented: ClassConstant: " + v)
+      // TODO/clarity: Add an example of Java code that can trigger this.
+      case v : ClassConstant => D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer(v.value))))
         //D(Set(ObjectValue(stmt.classmap("java.lang.Class"), StringBasePointer(v.value))))
-      case v : StringConstant => throw new Exception("Unimplemented: StringConstant: " + v)
+      case v : StringConstant =>
+        val bp = StringBasePointer(v.value)
+        if (store.contains(InstanceFieldAddr(bp, Soot.classes.String.getFieldByName("value")))) {
+          D(Set(ObjectValue(Soot.classes.String, bp)))
+        } else {
+          throw StringConstantException(v.value)
+        }
         //D(Set(ObjectValue(stmt.classmap("java.lang.String"), StringBasePointer(v.value))))
       case v : NegExpr => D.atomicTop
       case v : BinopExpr =>
@@ -583,13 +593,22 @@ case class State(val stmt : Stmt,
           Set(this.copy(initializedClasses = initializedClasses + sootClass))
         }
 
-      case UndefinedAddrsException(addrs) => {
+      case StringConstantException(string) =>
+        val value = Soot.classes.String.getFieldByName("value")
+        val hash = Soot.classes.String.getFieldByName("hash")
+        val hash32 = Soot.classes.String.getFieldByName("hash32")
+        val bp = StringBasePointer(string)
+        Set(this.copy(store =
+          createArray(ArrayType.v(CharType.v,1), List(D.atomicTop/*string.length*/), Set(InstanceFieldAddr(bp, value)))
+            .update(InstanceFieldAddr(bp, hash), D.atomicTop)
+            .update(InstanceFieldAddr(bp, hash32), D.atomicTop)))
+
+      case UndefinedAddrsException(addrs) =>
         println()
         println(Console.RED + "!!!!! ERROR: Undefined Addrs !!!!!")
         println("!!!!! stmt = " + stmt + " !!!!!")
         println("!!!!! addrs = " + addrs + " !!!!!" + Console.RESET)
         Set()
-      }
     }
   }
 
@@ -619,11 +638,6 @@ case class State(val stmt : Stmt,
               if(c.hasSuperclass) initInstanceFields(c.getSuperclass)
             }
             initInstanceFields(sootClass)
-            Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
-          }
-          // TODO/clarity: Add an example of Java code that can trigger this.
-          case rhs : ClassConstant => { // TODO: frustratingly similar to NewExpr
-            val newStore = store.update(lhsAddr, D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer(rhs.value)))))
             Set(this.copy(stmt = stmt.nextSyntactic(), store = newStore))
           }
           case rhs : NewArrayExpr => {
@@ -876,7 +890,7 @@ object Main {
     Snowflakes.put(MethodDescription("java.lang.Class", "desiredAssertionStatus", List(), "boolean"), ConstSnowflake(D.atomicTop))
     Snowflakes.put(MethodDescription("java.lang.System", "nanoTime", List(), "long"), ConstSnowflake(D.atomicTop))
     Snowflakes.put(MethodDescription("java.lang.System", "currentTimeMillis", List(), "long"), ConstSnowflake(D.atomicTop))
-    Snowflakes.put(MethodDescription("java.lang.System", "identityHashCode", List("int"), "java.lang.Object"), ConstSnowflake(D.atomicTop))
+    Snowflakes.put(MethodDescription("java.lang.System", "identityHashCode", List("java.lang.Object"), "int"), ConstSnowflake(D.atomicTop))
     Snowflakes.put(MethodDescription("java.lang.Throwable", SootMethod.constructorName, List(), "void"), NoOpSnowflake)
     Snowflakes.put(MethodDescription("java.lang.Throwable", SootMethod.staticInitializerName, List(), "void"), NoOpSnowflake)
     Snowflakes.put(MethodDescription("java.util.ArrayList", SootMethod.constructorName, List("int"), "void"), NoOpSnowflake)
@@ -1247,6 +1261,7 @@ object Soot {
   }
 
   def getBody(m : SootMethod) = {
+    if (m.isNative) { throw new Exception("Unimplemented native method: " + m) }
     if (!m.hasActiveBody()) {
       SootResolver.v().resolveClass(m.getDeclaringClass.getName, SootClass.BODIES)
       m.retrieveActiveBody()
