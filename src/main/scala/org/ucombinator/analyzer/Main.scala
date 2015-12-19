@@ -108,7 +108,7 @@ case class KontStack(store : KontStore, k : Kont) {
         val newStore = store.update(CaughtExceptionFrameAddr(fp), D(Set(exception)))
 
         // TODO/soundness or performance?: use Hierarchy or FastHierarchy?
-        if (State.isSubclass(exception.asInstanceOf[ObjectValue].sootClass, caughtType))
+        if (Soot.isSubclass(exception.asInstanceOf[ObjectValue].sootClass, caughtType))
           return Set(State(stmt.copy(inst = trap.getHandlerUnit()), fp, newStore, this, initializedClasses))
       }
 
@@ -542,7 +542,7 @@ case class State(val stmt : Stmt,
         dispatch(null, expr.getMethod(), Set())
       case expr : InstanceInvokeExpr =>
         val d = eval(expr.getBase())
-        val vs = d.values filter { case ObjectValue(sootClass, _) => State.isSubclass(sootClass, expr.getMethod().getDeclaringClass); case _ => false }
+        val vs = d.values filter { case ObjectValue(sootClass, _) => Soot.isSubclass(sootClass, expr.getMethod().getDeclaringClass); case _ => false }
         ((for (ObjectValue(sootClass, _) <- vs) yield {
           val objectClass = if (expr.isInstanceOf[SpecialInvokeExpr]) null else sootClass
           dispatch(objectClass, expr.getMethod(), vs)
@@ -750,9 +750,6 @@ object State {
       ArrayLengthAddr(initialBasePointer) -> D.atomicTop)
     State(stmt, initialFramePointer, Store(initial_map), KontStack(KontStore(Map()), HaltKont), Set())
   }
-
-  def isSubclass(sub : SootClass, sup : SootClass) : Boolean =
-    Scene.v().getActiveHierarchy.isClassSubclassOfIncluding(sub, sup)
 
   var nextId_ = 0
   def nextId() : Int = { nextId_ += 1; nextId_ }
@@ -1292,13 +1289,10 @@ object Soot {
 
   def getSootClass(s : String) = Scene.v().loadClass(s, SootClass.SIGNATURES)
 
-  def isPrimitive(t : SootType) : Boolean = {
-    t match {
-      case _: RefType => false
-      case _: RefLikeType => false
-      case _ => true
-    }
-  }
+  def isPrimitive(t : SootType) : Boolean = !t.isInstanceOf[RefLikeType]
+
+  def isSubclass(sub : SootClass, sup : SootClass) : Boolean =
+    Scene.v().getActiveHierarchy.isClassSubclassOfIncluding(sub, sup)
 
   object classes {
     lazy val Object = getSootClass("java.lang.Object")
