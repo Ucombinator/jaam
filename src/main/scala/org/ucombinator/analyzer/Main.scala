@@ -847,7 +847,7 @@ object Main {
   }
 
   def cfgMode() {
-    val cg = Scene.v().getCallGraph();
+    val cg = Scene.v().getCallGraph()
     var callGraph : Map [SootStmt, Set[SootMethod]] = Map()
     for (edge <- cg.listener()) {
       callGraph = callGraph.get(edge.srcStmt) match {
@@ -856,16 +856,6 @@ object Main {
         }
         case None => callGraph + ((edge.srcStmt, Set(edge.tgt)))
       }
-      /*
-       println("--------- sources")
-       println(s"edge: ${edge.src}")
-       println(s"srcCtxt: ${edge.srcCtxt}")
-       println(s"srcStmt: ${edge.srcStmt}")
-       println(s"srcUnit: ${edge.srcUnit}")
-       println("--------- targets")
-       println(s"tgt: ${edge.tgt}")
-       println(s"tgtCtxt: ${edge.tgtCtxt}")
-       */
     }
 
     def unitToMap(meth: SootMethod, unit : SootUnit) : Map[String, Any] = {
