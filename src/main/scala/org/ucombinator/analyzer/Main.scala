@@ -279,7 +279,12 @@ case class Stmt(val inst : SootUnit, val method : SootMethod) {
 
 abstract sealed class AbstractState {
   def next() : Set[AbstractState]
-  val id : Int = State.nextId()
+  val id = AbstractState.idMap.getOrElseUpdate(this, AbstractState.nextId)
+}
+object AbstractState {
+  val idMap = scala.collection.mutable.Map[AbstractState, Int]()
+  var nextId_ = 0
+  def nextId() : Int = { nextId_ += 1; nextId_ }
 }
 case object ErrorState extends AbstractState {
   override def next() : Set[AbstractState] = Set.empty
@@ -747,9 +752,6 @@ object State {
       ArrayLengthAddr(initialBasePointer) -> D.atomicTop)
     State(stmt, initialFramePointer, Store(initial_map), KontStack(KontStore(Map()), HaltKont), Set())
   }
-
-  var nextId_ = 0
-  def nextId() : Int = { nextId_ += 1; nextId_ }
 }
 
 // Command option config
@@ -822,8 +824,8 @@ object Main {
     val initialState = State.inject(Stmt(first, mainMainMethod))
     window.addState(initialState)
 
-    var todo : List [AbstractState] = List(initialState)
-    var seen : Set [AbstractState] = Set()
+    var todo : List[AbstractState] = List(initialState)
+    var seen : Set[AbstractState] = Set()
 
     // Explore the state graph
     while (todo nonEmpty) {
