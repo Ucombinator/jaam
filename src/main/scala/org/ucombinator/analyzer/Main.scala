@@ -789,20 +789,6 @@ case class Config(
   methodName: String = null)
 
 object Main {
-  val idTable = scala.collection.mutable.Map[SootUnit, Int]()
-  var currentId = 0
-
-  def getUniqueId(key: SootUnit) : Integer = {
-    idTable get key match {
-      case Some(i) => i
-      case None => {
-        idTable(key) = currentId
-        currentId += 1
-        idTable(key)
-      }
-    }
-  }
-
   def main(args : Array[String]) {
     val parser = new scopt.OptionParser[Config]("shimple-analyzer") {
       head("shimple-analyzer")
@@ -900,8 +886,24 @@ object Main {
   }
 
   def cfgMode() {
+    val idTable = scala.collection.mutable.Map[SootUnit, Int]()
+    var currentId = 0
+
+    def getUniqueId(key: SootUnit) : Integer = {
+      idTable get key match {
+        case Some(i) => i
+        case None => {
+          idTable(key) = currentId
+          currentId += 1
+          idTable(key)
+        }
+      }
+    }
+
     val cg = Scene.v().getCallGraph()
-    var callGraph : Map [SootStmt, Set[SootMethod]] = Map()
+    var callGraph : Map[SootStmt, Set[SootMethod]] = Map()
+
+    // callGraph = map from srcStmt to sets of Methods
     for (edge <- cg.listener()) {
       callGraph = callGraph.get(edge.srcStmt) match {
         case Some(tgtSet) => {
@@ -924,6 +926,52 @@ object Main {
       val result : Map[String, Any] = Map()
       var obj : Map[String, Any] = Map("method" -> meth.getSignature, "inst" -> unit.toString())
 
+      def getSucc(sootStmt : SootStmt) : List[SootUnit] =
+        sootStmt match {
+          case sootStmt : ReturnStmt => List()
+          case sootStmt : ReturnVoidStmt => List ()
+          case sootStmt : GotoStmt => List(sootStmt.getTarget)
+          case sootStmt : SwitchStmt => sootStmt.getTargets.asScala.toList
+          case sootStmt : IfStmt => List(meth.getActiveBody.getUnits.getSuccOf(sootStmt), sootStmt.getTarget)
+          case _ => List(Soot.getBody(meth).getUnits.getSuccOf(sootStmt))
+        }
+
+      // TODO: target for throw
+      def getTargets(sootStmt : SootStmt) : List[SootUnit] =
+        sootStmt match {
+          case sootStmt: InvokeStmt => callGraph.get(sootStmt) match {
+            case Some(tgtSet) =>
+              tgtSet.map(m => Soot.getBody(m).getUnits.getFirst).toList
+            case None =>
+              for (e <- cg.edgesOutOf(meth); if !e.getTgt.method().hasActiveBody) {
+                println("Warning: no active body of " + e.getTgt.method().getSignature)
+              }
+              cg.edgesOutOf(meth).filter(_.getTgt.method().hasActiveBody).map(e => Soot.getBody(e.getTgt.method).getUnits.getFirst).toList
+          }
+
+          case sootStmt: DefinitionStmt => sootStmt.getRightOp match {
+            case rhs: InvokeExpr => {
+              for (e <- cg.edgesOutOf(meth); if !e.getTgt.method().hasActiveBody) {
+                println("Warning: no active body of " + e.getTgt.method().getSignature)
+              }
+              cg.edgesOutOf(meth).filter(_.getTgt.method().hasActiveBody).map(e => Soot.getBody(e.getTgt.method).getUnits.getFirst).toList
+            }
+            case rhs => List()
+          }
+
+          case sootStmt: ReturnStmt =>
+            cg.edgesInto(meth).map(e => auxFindSrcUnit(e.getSrc.method(), e.srcUnit())).toList
+
+          case sootStmt: ReturnVoidStmt =>
+            cg.edgesInto(meth).map(e => auxFindSrcUnit(e.getSrc.method(), e.srcUnit())).toList
+
+          case _ => List()
+        }
+
+      obj += ("targets" -> getTargets(unit).map(getUniqueId), "succ" -> getSucc(unit).map(getUniqueId))
+      Map[String, Any](id -> obj) ++ result
+    }
+/*
       unit match {
         case sootStmt: InvokeStmt => callGraph.get(sootStmt) match {
           case Some(tgtSet) => {
@@ -1013,6 +1061,9 @@ object Main {
         case sootStmt: ThrowStmt => {
           //TODO
           val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(sootStmt))
+          println("Throw")
+          println(meth.getActiveBody.getUnits.getSuccOf(sootStmt))
+          println(sootStmt.getTarget)
           obj += ("targets" -> List(), "succ" -> List(succ))
         }
 
@@ -1026,7 +1077,7 @@ object Main {
           obj += ("targets" -> List(), "succ" -> List(succ))
         }
 
-        case sootStmt: NopStmt => {}
+        case sootStmt: NopStmt => ??? // These should not exist in Jimple
 
         case _ => {
           throw new Exception("No match for " + unit)
@@ -1035,10 +1086,12 @@ object Main {
 
       Map[String, Any](id -> obj) ++ result
     }
+ */
 
     val jsonArr =
       for (cls <- Scene.v().getApplicationClasses();
         meth <- cls.getMethods;
+        if meth.isConcrete;
         unit <- Soot.getBody(meth).getUnits) yield
         unitToMap(meth, unit)
 
