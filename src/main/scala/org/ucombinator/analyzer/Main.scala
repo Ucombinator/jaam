@@ -17,6 +17,8 @@ import scala.collection.JavaConverters._
 import scala.language.postfixOps
 import xml.Utility
 
+import org.ucombinator.analyzer.Stmt.unitToStmt
+
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
 // fix this when we build the Scala wrapper for Soot.)
@@ -51,8 +53,8 @@ import com.mxgraph.layout.mxCompactTreeLayout
 
 // JSON4s
 import org.json4s._
-import org.json4s.native.Serialization
-import org.json4s.native.Serialization.writePretty
+import org.json4s.native._
+import org.json4s.reflect.Reflector
 
 // Possibly thrown during transition between states.
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
@@ -99,7 +101,7 @@ case class KontStack(store : KontStore, k : Kont) {
 
       visited = visited + ((stmt, fp, kontStack)) // TODO: do we really need all of these in here?
 
-      for (trap <- TrapManager.getTrapsAt(stmt.inst, Soot.getBody(stmt.method))) {
+      for (trap <- TrapManager.getTrapsAt(stmt.sootStmt, Soot.getBody(stmt.method))) {
         val caughtType = trap.getException()
         // The handler will expect the exception to be waiting at CaughtExceptionFrameAddr(fp).
         // It'll be referenced through CaughtExceptionRef.
@@ -107,7 +109,7 @@ case class KontStack(store : KontStore, k : Kont) {
 
         // TODO/soundness or performance?: use Hierarchy or FastHierarchy?
         if (Soot.isSubclass(exception.asInstanceOf[ObjectValue].sootClass, caughtType))
-          return Set(State(stmt.copy(inst = trap.getHandlerUnit()), fp, newStore, this, initializedClasses))
+          return Set(State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, newStore, this, initializedClasses))
       }
 
       // TODO/interface we should log this sort of thing
@@ -122,6 +124,14 @@ case class KontStack(store : KontStore, k : Kont) {
 
     // TODO/soundness: deal with unhandled exceptions
   }
+}
+
+object KontStore {
+  val serializer = new CustomSerializer[KontStore](implicit format => (
+    { case s => ??? },
+    { case KontStore(m) =>
+      JArray(m.keys.toList.map({case k => JArray(List(Extraction.decompose(k), Extraction.decompose(m(k))))})) }
+  ))
 }
 
 // Probably don't refactor. Might only want to widen on KontStore.
@@ -146,7 +156,7 @@ case class Frame(
   val fp : FramePointer,
   val destAddr : Option[Set[Addr]]) {
 
-  def acceptsReturnValue() : Boolean = !(destAddr.isEmpty)
+  def acceptsReturnValue() : Boolean = !destAddr.isEmpty
 }
 
 abstract class Kont
@@ -170,6 +180,10 @@ case class D(val values: Set[Value]) {
 
 object D {
   val atomicTop = D(Set(AnyAtomicValue))
+  val serializer = new CustomSerializer[D](implicit format => (
+    { case s => ??? },
+    { case D(values) => Extraction.decompose(values) }
+  ))
 }
 
 abstract class Value
@@ -203,7 +217,7 @@ case class ClassBasePointer(val name : String) extends BasePointer
 
 // Addresses of continuations on the stack
 abstract class KontAddr
-case class OneCFAKontAddr(val fr : FramePointer) extends KontAddr
+case class OneCFAKontAddr(val fp : FramePointer) extends KontAddr
 
 abstract class Addr
 
@@ -219,13 +233,21 @@ case class ThisFrameAddr(val fp : FramePointer) extends FrameAddr
 // Holds the most recently caught exception in this frame
 case class CaughtExceptionFrameAddr(val fp : FramePointer) extends FrameAddr
 
-case class InstanceFieldAddr(val bp : BasePointer, val sf : SootField) extends Addr
+case class InstanceFieldAddr(val bp : BasePointer, val field : SootField) extends Addr
 
 case class ArrayRefAddr(val bp : BasePointer) extends Addr // TODO: add index (it is all AtomicValue anyway)
 
 case class ArrayLengthAddr(val bp : BasePointer) extends Addr
 
-case class StaticFieldAddr(val sf : SootField) extends Addr
+case class StaticFieldAddr(val field : SootField) extends Addr
+
+object Store {
+  val serializer = new CustomSerializer[Store](implicit format => (
+    { case s => ??? },
+    { case Store(m) =>
+      JArray(m.keys.toList.map({case k => JArray(List(Extraction.decompose(k), Extraction.decompose(m(k))))})) }
+  ))
+}
 
 case class Store(private val map : Map[Addr, D]) {
   def contains(addr : Addr) = map.contains(addr)
@@ -271,10 +293,15 @@ case class Store(private val map : Map[Addr, D]) {
     (for ((a, d) <- map) yield { a + " -> " + d }).toList
 }
 
-case class Stmt(val inst : SootUnit, val method : SootMethod) {
-  assert(inst.isInstanceOf[SootStmt])
-  def nextSyntactic() : Stmt = this.copy(inst = Soot.getBody(method).getUnits().getSuccOf(inst))
-  override def toString : String = inst.toString()
+// Due to a bug in json4s we have to use "Int" instead of "AbstractState.Id" for the keys of this map
+// Once the following pull request is accepted we can use "AbstractState.Id":
+//   https://github.com/json4s/json4s/pull/324
+case class UpdatePacket(states : Map[Int,AbstractState], edges : Set[(AbstractState.Id, AbstractState.Id)])
+object UpdatePacket {
+  val serializer = new CustomSerializer[UpdatePacket](implicit format => (
+    { case s => ??? },
+    { case (i : AbstractState.Id, j : AbstractState.Id) => Extraction.decompose(List(i,j)) }
+  ))
 }
 
 abstract sealed class AbstractState {
@@ -282,9 +309,10 @@ abstract sealed class AbstractState {
   val id = AbstractState.idMap.getOrElseUpdate(this, AbstractState.nextId)
 }
 object AbstractState {
-  val idMap = scala.collection.mutable.Map[AbstractState, Int]()
+  type Id = Int
+  val idMap = scala.collection.mutable.Map[AbstractState, Id]()
   var nextId_ = 0
-  def nextId() : Int = { nextId_ += 1; nextId_ }
+  def nextId() : Id = { nextId_ += 1; nextId_ }
 }
 case object ErrorState extends AbstractState {
   override def next() : Set[AbstractState] = Set.empty
@@ -400,7 +428,6 @@ case class State(val stmt : Stmt,
         } else {
           throw StringConstantException(v.value)
         }
-        //D(Set(ObjectValue(stmt.classmap("java.lang.String"), StringBasePointer(v.value))))
       case v : NegExpr => D.atomicTop
       case v : BinopExpr =>
         v match {
@@ -636,13 +663,13 @@ case class State(val stmt : Stmt,
   }
 
   def true_next() : Set[AbstractState] = {
-    stmt.inst match {
-      case inst : InvokeStmt => handleInvoke(inst.getInvokeExpr, None)
+    stmt.sootStmt match {
+      case sootStmt : InvokeStmt => handleInvoke(sootStmt.getInvokeExpr, None)
 
-      case inst : DefinitionStmt => {
-        val lhsAddr = addrsOf(inst.getLeftOp())
+      case sootStmt : DefinitionStmt => {
+        val lhsAddr = addrsOf(sootStmt.getLeftOp())
 
-        inst.getRightOp() match {
+        sootStmt.getRightOp() match {
           case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
           case rhs : NewExpr => {
             val baseType : RefType = rhs.getBaseType()
@@ -680,19 +707,19 @@ case class State(val stmt : Stmt,
         }
       }
 
-      case inst : IfStmt => {
-            eval(inst.getCondition()) //in case of side effects //TODO/precision evaluate the condition
-            val trueState = this.copy(stmt = stmt.copy(inst = inst.getTarget()))
+      case sootStmt : IfStmt => {
+            eval(sootStmt.getCondition()) //in case of side effects //TODO/precision evaluate the condition
+            val trueState = this.copy(stmt = stmt.copy(sootStmt = sootStmt.getTarget()))
             val falseState = this.copy(stmt = stmt.nextSyntactic())
         Set(trueState, falseState)
       }
 
-      case inst : SwitchStmt =>
+      case sootStmt : SwitchStmt =>
         //TODO/prrecision dont take all the switches
-        inst.getTargets().map(t => this.copy(stmt = stmt.copy(inst = t))).toSet
+        sootStmt.getTargets().map(t => this.copy(stmt = stmt.copy(sootStmt = t))).toSet
 
-      case inst : ReturnStmt => {
-        val evaled = eval(inst.getOp())
+      case sootStmt : ReturnStmt => {
+        val evaled = eval(sootStmt.getOp())
         for ((frame, newStack) <- kontStack.pop) yield {
           val newStore = if (frame.acceptsReturnValue()) {
             store.update(frame.destAddr.get, evaled)
@@ -704,7 +731,7 @@ case class State(val stmt : Stmt,
         }
       }
 
-      case inst : ReturnVoidStmt =>
+      case sootStmt : ReturnVoidStmt =>
         for ((frame, newStack) <- kontStack.pop() if !frame.acceptsReturnValue()) yield
           State(frame.stmt, frame.fp, store, newStack, initializedClasses).asInstanceOf[AbstractState]
 
@@ -718,22 +745,22 @@ case class State(val stmt : Stmt,
       //
       // If we ever need the code for this, it would probably be:
       //   Set(State(stmt.nextSyntactic(), fp, store, kontStack, initializedClasses))
-      case inst : NopStmt => throw new Exception("Impossible statement: " + inst)
+      case sootStmt : NopStmt => throw new Exception("Impossible statement: " + sootStmt)
 
-      case inst : GotoStmt => Set(this.copy(stmt = stmt.copy(inst = inst.getTarget())))
+      case sootStmt : GotoStmt => Set(this.copy(stmt = stmt.copy(sootStmt = sootStmt.getTarget())))
 
       // For now we don't model monitor statements, so we just skip over them
       // TODO/soundness: In the event of multi-threaded code with precise interleaving, this is not sound.
-      case inst : EnterMonitorStmt => Set(this.copy(stmt = stmt.nextSyntactic()))
-      case inst : ExitMonitorStmt => Set(this.copy(stmt = stmt.nextSyntactic()))
+      case sootStmt : EnterMonitorStmt => Set(this.copy(stmt = stmt.nextSyntactic()))
+      case sootStmt : ExitMonitorStmt => Set(this.copy(stmt = stmt.nextSyntactic()))
 
       // TODO: needs testing
-      case inst : ThrowStmt => { exceptions = exceptions.join(eval(inst.getOp())); Set() }
+      case sootStmt : ThrowStmt => { exceptions = exceptions.join(eval(sootStmt.getOp())); Set() }
 
       // TODO: We're missing BreakPointStmt and RetStmt (but these might not be used)
 
       case _ => {
-        throw new Exception("No match for " + stmt.inst.getClass + " : " + stmt.inst)
+        throw new Exception("No match for " + stmt.sootStmt.getClass + " : " + stmt.sootStmt)
       }
     }
   }
@@ -798,7 +825,6 @@ object Main {
       override def showUsageOnError = true
     }
 
-    // parser.parse returns Option[C]
     parser.parse(args, Config()) match {
       case None =>
         println("Wrong arguments")
@@ -815,9 +841,9 @@ object Main {
 
   def defaultMode(config : Config) {
     val mainMainMethod : SootMethod = Soot.getSootClass(config.className).getMethodByName(config.methodName)
-    val insts : Chain[SootUnit] = Soot.getBody(mainMainMethod).getUnits()
+    val sootStmts : Chain[SootUnit] = Soot.getBody(mainMainMethod).getUnits()
 
-    val first : SootUnit = insts.getFirst()
+    val first : SootUnit = sootStmts.getFirst()
 
     // Setting up the GUI
     val window = new Window
@@ -830,18 +856,43 @@ object Main {
     // Explore the state graph
     while (todo nonEmpty) {
       val current = todo.head
-      print(current.id + ": ")
-      println(current)
-      println()
+      println("!!! Processing " + current.id + " !!!")
       val nexts : Set[AbstractState] = current.next()
       for (n <- nexts) {
-        println(current.id + " -> " + n.id)
         window.addNext(current, n)
       }
+      val newTodo = nexts.toList.filter(!seen.contains(_))
+      val packet = UpdatePacket(
+        (for (n <- newTodo) yield { (n.id -> n) }).toMap,
+        for (n <- nexts) yield { (current.id -> n.id) })
+
+      val typeHints = new TypeHints() {
+          val hints = List() // this is a hack
+          override def containsHint(clazz: Class[_]): Boolean = true
+          override def + (hints: TypeHints): TypeHints = ???
+          def hintFor(clazz: Class[_]) = clazz.getName
+          def classFor(hint: String) = Reflector.scalaTypeOf(hint).map(_.erasure)
+        }
+
+      implicit val formats =
+        Serialization.formats(typeHints).withTypeHintFieldName("$type") +
+        UpdatePacket.serializer +
+        D.serializer +
+        Store.serializer +
+        KontStore.serializer +
+        Stmt.serializer +
+        Soot.methodSerializer +
+        Soot.toStringSerializer[Type] +
+        Soot.toStringSerializer[Unit] +
+        Soot.toStringSerializer[SootField] +
+        Soot.toStringSerializer[Local] +
+        Soot.toStringSerializer[SootClass]
+      println(Serialization.writePretty(packet))
+
       println()
 
       // TODO: Fix optimization bug here
-      todo = nexts.toList.filter(!seen.contains(_)) ++ todo.tail
+      todo = newTodo ++ todo.tail
       seen = seen ++ nexts
 
     }
@@ -874,12 +925,12 @@ object Main {
       var obj : Map[String, Any] = Map("method" -> meth.getSignature, "inst" -> unit.toString())
 
       unit match {
-        case inst: InvokeStmt => callGraph.get(inst) match {
+        case sootStmt: InvokeStmt => callGraph.get(sootStmt) match {
           case Some(tgtSet) => {
             val targetIds = tgtSet.map(m => {
               getUniqueId(Soot.getBody(m).getUnits.getFirst)
             }).toList
-            val succ = getUniqueId(Soot.getBody(meth).getUnits.getSuccOf(inst))
+            val succ = getUniqueId(Soot.getBody(meth).getUnits.getSuccOf(sootStmt))
 
             obj += ("targets" -> targetIds, "succ" -> List(succ))
           }
@@ -900,14 +951,14 @@ object Main {
                 println("Warning: no active body of " + e.getTgt.method().getSignature)
               }
             }).filter(_ != ()).toList
-            val succ = getUniqueId(Soot.getBody(meth).getUnits.getSuccOf(inst))
+            val succ = getUniqueId(Soot.getBody(meth).getUnits.getSuccOf(sootStmt))
 
             obj += ("targets" -> targetIds, "succ" -> List(succ))
           }
         }
 
-        case inst: DefinitionStmt => {
-          inst.getRightOp match {
+        case sootStmt: DefinitionStmt => {
+          sootStmt.getRightOp match {
             case rhs: InvokeExpr => {
               val targetIds = cg.edgesOutOf(meth).map(e => {
                 if (e.getTgt.method().hasActiveBody) {
@@ -917,65 +968,65 @@ object Main {
                   println("Warning: no active body of " + e.getTgt.method().getSignature)
                 }
               }).filter(_ != ()).toList
-              val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+              val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(sootStmt))
 
               obj += ("targets" -> targetIds, "succ" -> List(succ))
             }
             case rhs: NewExpr => {
-              val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+              val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(sootStmt))
               obj += ("targets" -> List(), "succ" -> List(succ))
             }
             case rhs => {
-              val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+              val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(sootStmt))
               obj += ("targets" -> List(), "succ" -> List(succ))
             }
           }
         }
 
-        case inst: IfStmt => {
-          val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
-          obj += ("targets" -> List(), "succ" -> List(succ, getUniqueId(inst.getTarget)))
+        case sootStmt: IfStmt => {
+          val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(sootStmt))
+          obj += ("targets" -> List(), "succ" -> List(succ, getUniqueId(sootStmt.getTarget)))
         }
 
-        case inst: ReturnStmt => {
+        case sootStmt: ReturnStmt => {
           val targetIds = cg.edgesInto(meth).map(e => {
             getUniqueId(auxFindSrcUnit(e.getSrc.method(), e.srcUnit()))
           }).toList
           obj += ("targets" -> targetIds, "succ" -> List())
         }
 
-        case inst: ReturnVoidStmt => {
+        case sootStmt: ReturnVoidStmt => {
           val targetIds = cg.edgesInto(meth).map(e => {
             getUniqueId(auxFindSrcUnit(e.getSrc.method(), e.srcUnit()))
           }).toList
           obj += ("targets" -> targetIds, "succ" -> List())
         }
 
-        case inst: SwitchStmt => {
-          obj += ("targets" -> List(), "succ" -> inst.getTargets.map(getUniqueId))
+        case sootStmt: SwitchStmt => {
+          obj += ("targets" -> List(), "succ" -> sootStmt.getTargets.map(getUniqueId))
         }
 
-        case inst: GotoStmt => {
-          obj += ("targets" -> List(), "succ" -> List(getUniqueId(inst.getTarget)))
+        case sootStmt: GotoStmt => {
+          obj += ("targets" -> List(), "succ" -> List(getUniqueId(sootStmt.getTarget)))
         }
 
-        case inst: ThrowStmt => {
+        case sootStmt: ThrowStmt => {
           //TODO
-          val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+          val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(sootStmt))
           obj += ("targets" -> List(), "succ" -> List(succ))
         }
 
-        case inst: EnterMonitorStmt => {
-          val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+        case sootStmt: EnterMonitorStmt => {
+          val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(sootStmt))
           obj += ("targets" -> List(), "succ" -> List(succ))
         }
 
-        case inst: ExitMonitorStmt => {
-          val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(inst))
+        case sootStmt: ExitMonitorStmt => {
+          val succ = getUniqueId(meth.getActiveBody.getUnits.getSuccOf(sootStmt))
           obj += ("targets" -> List(), "succ" -> List(succ))
         }
 
-        case inst: NopStmt => {}
+        case sootStmt: NopStmt => {}
 
         case _ => {
           throw new Exception("No match for " + unit)
@@ -985,14 +1036,14 @@ object Main {
       Map[String, Any](id -> obj) ++ result
     }
 
-    val jsonArr = (for (cls <- Scene.v().getApplicationClasses()) yield
-      (for (meth <- cls.getMethods) yield
-        Soot.getBody(meth).getUnits.map(unitToMap(meth, _))
-      ).flatten.toList
-    ).flatten.toList
+    val jsonArr =
+      for (cls <- Scene.v().getApplicationClasses();
+        meth <- cls.getMethods;
+        unit <- Soot.getBody(meth).getUnits) yield
+        unitToMap(meth, unit)
 
     implicit val formats = Serialization.formats(NoTypeHints)
-    println(writePretty(jsonArr))
+    println(Serialization.writePretty(jsonArr))
   }
 }
 
@@ -1038,7 +1089,7 @@ class Window extends JFrame ("Shimple Analyzer") {
     // TODO/interface more information
     case ErrorState => "ErrorState"
     case state: State =>
-      state.id + "\n" + state.stmt.method.toString() + "\n" + state.stmt.inst.toString()
+      state.id + "\n" + state.stmt.method.toString() + "\n" + state.stmt.sootStmt.toString()
   }
 
   def addState(state : State) {

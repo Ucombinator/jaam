@@ -8,7 +8,7 @@ import soot.jimple._
 // Snowflakes are special Java procedures whose behavior we know and special-case.
 // For example, native methods (that would be difficult to analyze) are snowflakes.
 
-case class SnowflakeBasePointer(val clas : String) extends BasePointer
+case class SnowflakeBasePointer(val name : String) extends BasePointer
 
 // Uniquely identifies a particular method somewhere in the program.
 case class MethodDescription(val className : String,
@@ -39,9 +39,9 @@ object NoOpSnowflake extends SnowflakeHandler {
 
 case class ReturnSnowflake(value : D) extends SnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
-    val newNewStore = state.stmt.inst match {
-      case inst : DefinitionStmt => state.store.update(state.addrsOf(inst.getLeftOp()), value)
-      case inst : InvokeStmt => state.store
+    val newNewStore = state.stmt.sootStmt match {
+      case sootStmt : DefinitionStmt => state.store.update(state.addrsOf(sootStmt.getLeftOp()), value)
+      case sootStmt : InvokeStmt => state.store
     }
     Set(state.copy(stmt = nextStmt, store = newNewStore))
   }
@@ -146,9 +146,9 @@ object Snowflakes {
 
 /*
 
-******************
-* Native methods *
-******************
+****************************
+* Native methods in rt.jar *
+****************************
 
 com/sun/demo/jvmti/hprof/Tracker.class: private static native void nativeCallSite(java.lang.Object, int, int);
 com/sun/demo/jvmti/hprof/Tracker.class: private static native void nativeNewArray(java.lang.Object, java.lang.Object);

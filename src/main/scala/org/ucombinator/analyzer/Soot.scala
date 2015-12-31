@@ -1,14 +1,71 @@
 package org.ucombinator.analyzer
 
 import scala.collection.JavaConversions._
+import scala.math.BigInt
+
+import org.ucombinator.analyzer.Stmt.unitToStmt
 
 import soot._
 import soot.options._
+import soot.jimple.{Stmt => SootStmt}
+import soot.tagkit.GenericAttribute
+
+import org.json4s._
+import org.json4s.native._
 
 // Helpers for working with Soot.
 // Note that these methods relate to Soot only
 
+object Stmt {
+  val indexTag = "org.ucombinator.analyzer.Stmt.indexTag"
+  val serializer = FieldSerializer[Stmt]()
+
+  import scala.language.implicitConversions
+  implicit def unitToStmt(unit : Unit) : SootStmt = {
+    assert(unit.isInstanceOf[SootStmt])
+    unit.asInstanceOf[SootStmt]
+  }
+}
+
+case class Stmt(val sootStmt : SootStmt, val method : SootMethod) {
+  val javaSourceLineNumber = sootStmt.getJavaSourceStartLineNumber
+  val index : Int =
+    if (sootStmt.hasTag(Stmt.indexTag)) {
+      BigInt(sootStmt.getTag(Stmt.indexTag).getValue).intValue
+    } else {
+      val x = Soot.getBody(method).getUnits().toList.indexOf(sootStmt)
+      if (x == -1) {
+        println("Not found:"+sootStmt+" in " +Soot.getBody(method).getUnits())
+      }
+      sootStmt.addTag(new GenericAttribute(Stmt.indexTag, BigInt(x).toByteArray))
+      x
+    }
+  def nextSyntactic() : Stmt = this.copy(sootStmt = Soot.getBody(method).getUnits().getSuccOf(sootStmt))
+  override def toString : String = method + ":" + index + ":" + sootStmt
+}
+
 object Soot {
+  def toStringSerializer[T](implicit mf: Manifest[T]) = {
+    val cls = mf.runtimeClass
+    new CustomSerializer[T](format => (
+      { case s => ??? },
+      { case x if cls.isAssignableFrom(x.getClass) => JString(x.toString) }
+    ))
+  }
+
+  val methodSerializer = new CustomSerializer[SootMethod](implicit format => (
+    { case s => ??? },
+    { case m:SootMethod =>
+      JObject(List(
+        (format.typeHintFieldName, JString(format.typeHints.hintFor(m.getClass))),
+        ("declaringClass", Extraction.decompose(m.getDeclaringClass)),
+        ("name", Extraction.decompose(m.getName)),
+        ("parameterTypes", Extraction.decompose(m.getParameterTypes)),
+        ("returnType", Extraction.decompose(m.getReturnType)),
+        ("modifiers", Extraction.decompose(m.getModifiers)),
+        ("exceptions", Extraction.decompose(m.getExceptions)))) }
+  ))
+
   def initialize(config : Config) {
     Options.v().set_verbose(false)
     // Put class bodies in Jimple format
