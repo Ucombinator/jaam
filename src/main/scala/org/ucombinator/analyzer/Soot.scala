@@ -7,14 +7,18 @@ import org.ucombinator.analyzer.Stmt.unitToStmt
 
 import soot._
 import soot.options._
+import soot.jimple._
 import soot.jimple.{Stmt => SootStmt}
 import soot.tagkit.GenericAttribute
 
 import org.json4s._
 import org.json4s.native._
+import org.json4s.reflect.Reflector
 
 // Helpers for working with Soot.
-// Note that these methods relate to Soot only
+//
+// Note that these methods relate to Soot only and do not include any
+// classes or logic for the analyzer
 
 object Stmt {
   val indexTag = "org.ucombinator.analyzer.Stmt.indexTag"
@@ -22,34 +26,67 @@ object Stmt {
 
   import scala.language.implicitConversions
   implicit def unitToStmt(unit : Unit) : SootStmt = {
-    assert(unit.isInstanceOf[SootStmt])
+    assert(unit ne null, "unit is null")
+    assert(unit.isInstanceOf[SootStmt], "unit not instance of Stmt. Unit is of class: " + unit.getClass)
     unit.asInstanceOf[SootStmt]
   }
-}
 
-case class Stmt(val sootStmt : SootStmt, val method : SootMethod) {
-  val javaSourceLineNumber = sootStmt.getJavaSourceStartLineNumber
-  val index : Int =
+  def getIndex(sootStmt : SootStmt, sootMethod : SootMethod) : Int = {
     if (sootStmt.hasTag(Stmt.indexTag)) {
       BigInt(sootStmt.getTag(Stmt.indexTag).getValue).intValue
     } else {
-      val x = Soot.getBody(method).getUnits().toList.indexOf(sootStmt)
-      if (x == -1) {
-        println("Not found:"+sootStmt+" in " +Soot.getBody(method).getUnits())
+      // label everything in the sootMethod so the amortized work is linear
+      for ((u, i) <- Soot.getBody(sootMethod).getUnits().toList.zipWithIndex) {
+        u.addTag(new GenericAttribute(Stmt.indexTag, BigInt(i).toByteArray))
       }
-      sootStmt.addTag(new GenericAttribute(Stmt.indexTag, BigInt(x).toByteArray))
-      x
+
+      assert(sootStmt.hasTag(Stmt.indexTag), "SootStmt "+sootStmt+" not found in SootMethod " + sootMethod)
+      BigInt(sootStmt.getTag(Stmt.indexTag).getValue).intValue
     }
-  def nextSyntactic() : Stmt = this.copy(sootStmt = Soot.getBody(method).getUnits().getSuccOf(sootStmt))
-  override def toString : String = method + ":" + index + ":" + sootStmt
+  }
+
+  def methodEntry(sootMethod : SootMethod) = Stmt(Soot.getBody(sootMethod).getUnits.getFirst, sootMethod)
+
+  def toString(sootStmt : SootStmt, sootMethod : SootMethod) : String = sootMethod + ":" + getIndex(sootStmt, sootMethod) + ":" + sootStmt
+}
+
+case class Stmt(val sootStmt : SootStmt, val sootMethod : SootMethod) {
+  Stmt.getIndex(sootStmt, sootMethod) // Force an early failure if sootStmt is not in sootMethod
+  def nextSyntactic : Stmt = this.copy(sootStmt = Soot.getBody(sootMethod).getUnits().getSuccOf(sootStmt))
+  def nextSemantic : List[Stmt] =
+      sootStmt match {
+        case sootStmt : ReturnStmt => List()
+        case sootStmt : ReturnVoidStmt => List ()
+        case sootStmt : ThrowStmt => List ()
+        case sootStmt : GotoStmt => List(this.copy(sootStmt = sootStmt.getTarget))
+        case sootStmt : SwitchStmt => sootStmt.getTargets.toList.map(u => this.copy(sootStmt = u))
+        case sootStmt : IfStmt => List(this.nextSyntactic, this.copy(sootStmt = sootStmt.getTarget))
+        case sootStmt => List(this.nextSyntactic)
+      }
+
+  override def toString : String = Stmt.toString(sootStmt, sootMethod)
 }
 
 object Soot {
   def toStringSerializer[T](implicit mf: Manifest[T]) = {
     val cls = mf.runtimeClass
-    new CustomSerializer[T](format => (
+    new CustomSerializer[T](implicit format => (
       { case s => ??? },
       { case x if cls.isAssignableFrom(x.getClass) => JString(x.toString) }
+    ))
+  }
+
+  def mapSerializer[T,K,V](implicit mfT: Manifest[T], mfMap: Manifest[Map[K,V]]) = {
+    val runtimeClass = mfT.runtimeClass
+    val fields = runtimeClass.getDeclaredFields
+    assert(fields.length == 1)
+    val f = fields(0)
+    f.setAccessible(true)
+    new CustomSerializer[Map[K,V]](implicit format => (
+      { case s => ??? },
+      { case x if runtimeClass.isAssignableFrom(x.getClass) =>
+        val m = f.get(x).asInstanceOf[Map[K, V]]
+        JArray(m.keys.toList.map({case k => JArray(List(Extraction.decompose(k), Extraction.decompose(m(k))))})) }
     ))
   }
 
@@ -65,6 +102,24 @@ object Soot {
         ("modifiers", Extraction.decompose(m.getModifiers)),
         ("exceptions", Extraction.decompose(m.getExceptions)))) }
   ))
+
+  private val typeHints = new TypeHints() {
+    val hints = List() // this is a hack
+    override def containsHint(clazz: Class[_]): Boolean = true
+    override def + (hints: TypeHints): TypeHints = ???
+    def hintFor(clazz: Class[_]) = clazz.getName
+    def classFor(hint: String) = Reflector.scalaTypeOf(hint).map(_.erasure)
+  }
+
+  val formats =
+    Serialization.formats(typeHints).withTypeHintFieldName("$type") +
+    Stmt.serializer +
+    Soot.methodSerializer +
+    Soot.toStringSerializer[Type] +
+    Soot.toStringSerializer[Unit] +
+    Soot.toStringSerializer[SootField] +
+    Soot.toStringSerializer[Local] +
+    Soot.toStringSerializer[SootClass]
 
   def initialize(config : Config) {
     Options.v().set_verbose(false)
