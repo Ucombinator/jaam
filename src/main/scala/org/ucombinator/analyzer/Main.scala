@@ -861,6 +861,7 @@ object Main {
     }
 
     def unitToMap(meth: SootMethod, unit : SootUnit) : Map[String, Any] = {
+      /*
       def auxFindSrcUnit(meth : SootMethod, target : SootUnit): SootUnit = {
         for (u <- Soot.getBody(meth).getUnits()) {
           if (target.toString().equals(u.toString()))
@@ -868,6 +869,7 @@ object Main {
         }
         throw new RuntimeException("can not find caller statement for " + target.toString())
       }
+      */
 
       val id = getUniqueId(unit).toString
       val result : Map[String, Any] = Map()
@@ -886,13 +888,14 @@ object Main {
           case None => {
             val targetIds = cg.edgesOutOf(meth).map(e => {
               /*
-               val units = Soot.getBody(e.getTgt.method).getUnits
-               if (e.isClinit) {
-               for (u <- units) {
-               result ++= unitToMap(e.getTgt.method, u)
-               }
-               }
-               */
+              val units = Soot.getBody(e.getTgt.method).getUnits
+              if (e.isClinit) {
+                for (u <- units) {
+                  result ++= unitToMap(e.getTgt.method, u)
+                }
+              }
+              */
+              
               if (e.getTgt.method().hasActiveBody) {
                 getUniqueId(Soot.getBody(e.getTgt.method).getUnits.getFirst)
               }
@@ -939,14 +942,14 @@ object Main {
 
         case inst: ReturnStmt => {
           val targetIds = cg.edgesInto(meth).map(e => {
-            getUniqueId(auxFindSrcUnit(e.getSrc.method(), e.srcUnit()))
+            getUniqueId(e.srcUnit())
           }).toList
           obj += ("targets" -> targetIds, "succ" -> List())
         }
 
         case inst: ReturnVoidStmt => {
           val targetIds = cg.edgesInto(meth).map(e => {
-            getUniqueId(auxFindSrcUnit(e.getSrc.method(), e.srcUnit()))
+            getUniqueId(e.srcUnit())
           }).toList
           obj += ("targets" -> targetIds, "succ" -> List())
         }
