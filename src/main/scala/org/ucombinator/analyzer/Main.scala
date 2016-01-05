@@ -885,13 +885,13 @@ object Main {
     }
 
     val callGraph = CallGraph(
-      for (cls <- Scene.v().getApplicationClasses();
+      (for (cls <- Scene.v().getApplicationClasses();
         method <- cls.getMethods;
         if method.isConcrete;
         unit <- Soot.getBody(method).getUnits) yield {
         val stmt = Stmt(unit, method)
         (stmt -> CallGraphValue(getTargets(stmt), stmt.nextSemantic)) //obj)
-      }.toMap)
+      }).toMap)
 
     implicit val formats = Soot.formats + Soot.mapSerializer[CallGraph, Stmt, CallGraphValue]
     println(Serialization.writePretty(callGraph))
