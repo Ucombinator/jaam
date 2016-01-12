@@ -810,7 +810,7 @@ object Main {
 
         config.cfg match {
           case None => defaultMode(config)
-          case Some(dir) => cfgMode()
+          case Some(dir) => cfgMode(config)
         }
     }
   }
@@ -856,7 +856,7 @@ object Main {
     println("Done!")
   }
 
-  def cfgMode() {
+  def cfgMode(config: Config) {
     val cg = Scene.v().getCallGraph()
 
     // TODO: target for throw
@@ -884,17 +884,42 @@ object Main {
       }
     }
 
+    val tgtMap = scala.collection.mutable.Map[String, List[String]]()
     val callGraph = CallGraph(
       (for (cls <- Scene.v().getApplicationClasses();
         method <- cls.getMethods;
         if method.isConcrete;
         unit <- Soot.getBody(method).getUnits) yield {
-        val stmt = Stmt(unit, method)
-        (stmt -> CallGraphValue(getTargets(stmt), stmt.nextSemantic)) //obj)
+          val stmt = Stmt(unit, method)
+          val targets = getTargets(stmt)
+
+          tgtMap.get(cls.toString) match {
+            case None => tgtMap += (cls.toString -> targets.map(_.sootMethod.getDeclaringClass.toString))
+            case Some(tgts) => tgtMap += (cls.toString -> (targets.map(_.sootMethod.getDeclaringClass.toString)++tgts).distinct)
+          }
+
+          (stmt -> CallGraphValue(targets, stmt.nextSemantic)) //obj)
       }).toMap)
 
+    def getDenpendencyList(className: String, acc: List[String]): List[String] = {
+      var existed = List(className) ++ acc
+      tgtMap.get(className) match {
+        case None => existed
+        case Some(deps) => {
+          deps.filter(!existed.contains(_)).foreach((c: String) => {
+            existed ++= getDenpendencyList(c, existed)
+          })
+          existed
+        }
+      }
+    }
+    val depList = getDenpendencyList(config.className, List()).distinct
+    val filteredCallGraph = CallGraph(callGraph.map.filterKeys(stmt => {
+      depList.contains(stmt.sootMethod.getDeclaringClass.toString)
+    }))
+
     implicit val formats = Soot.formats + Soot.mapSerializer[CallGraph, Stmt, CallGraphValue]
-    println(Serialization.writePretty(callGraph))
+    println(Serialization.writePretty(filteredCallGraph))
   }
 }
 
