@@ -10,6 +10,7 @@ import soot.options._
 import soot.jimple._
 import soot.jimple.{Stmt => SootStmt}
 import soot.tagkit.GenericAttribute
+import soot.tagkit.SourceFileTag
 
 import org.json4s._
 import org.json4s.native._
@@ -46,12 +47,19 @@ object Stmt {
   }
 
   def methodEntry(sootMethod : SootMethod) = Stmt(Soot.getBody(sootMethod).getUnits.getFirst, sootMethod)
-
-  def toString(sootStmt : SootStmt, sootMethod : SootMethod) : String = sootMethod + ":" + getIndex(sootStmt, sootMethod) + ":" + sootStmt
 }
 
 case class Stmt(val sootStmt : SootStmt, val sootMethod : SootMethod) {
-  Stmt.getIndex(sootStmt, sootMethod) // Force an early failure if sootStmt is not in sootMethod
+  val index = Stmt.getIndex(sootStmt, sootMethod)
+  val line = sootStmt.getJavaSourceStartLineNumber
+  val column = sootStmt.getJavaSourceStartColumnNumber
+  val sourceFile = {
+    val tag = sootMethod.getDeclaringClass.getTag("SourceFileTag")
+    if (tag != null) {
+      val sourceTag = tag.asInstanceOf[SourceFileTag]
+      if (sourceTag.getAbsolutePath != null) { sourceTag.getAbsolutePath + "/" } else { "" } + sourceTag.getSourceFile
+    } else { "<unknown>" }
+  }
   def nextSyntactic : Stmt = this.copy(sootStmt = Soot.getBody(sootMethod).getUnits().getSuccOf(sootStmt))
   def nextSemantic : List[Stmt] =
       sootStmt match {
@@ -64,7 +72,7 @@ case class Stmt(val sootStmt : SootStmt, val sootMethod : SootMethod) {
         case sootStmt => List(this.nextSyntactic)
       }
 
-  override def toString : String = Stmt.toString(sootStmt, sootMethod)
+  override def toString : String = sootMethod + ":" + index + ":" + sootStmt
 }
 
 object Soot {
