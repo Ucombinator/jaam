@@ -94,7 +94,7 @@ object Soot {
       { case s => ??? },
       { case x if runtimeClass.isAssignableFrom(x.getClass) =>
         val m = f.get(x).asInstanceOf[Map[K, V]]
-        JArray(m.keys.toList.map({case k => JArray(List(Extraction.decompose(k), Extraction.decompose(m(k))))})) }
+        JArray(m.keys.toList.sortBy(_.toString).map({case k => JArray(List(Extraction.decompose(k), Extraction.decompose(m(k))))})) }
     ))
   }
 
