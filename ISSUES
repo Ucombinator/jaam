@@ -42,3 +42,18 @@ java.lang.RuntimeException: Nonzero exit code: 1
 [error] Total time: 65 s, completed Dec 18, 2015 12:03:36 PM
 
 --------------------------
+
+Examples whose graphs seem unexpectedly (and perhaps incorrectly) large in the Hackathon on 11 Dec 02015:
+
+Red:
+
+Fib (huge large messy graph)
+
+Fibonacci (huge large messy graph)
+
+
+Yellow:
+
+Bubblesort (large graph)
+
+Exceptions (large graph, but plausible);
