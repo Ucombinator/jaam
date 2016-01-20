@@ -1,4 +1,4 @@
-name := "analyzer"
+name := "jaam"
 
 organization := "org.ucombinator"
 
@@ -19,4 +19,4 @@ libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % "2.10.6"
 )
 
-mainClass in Compile := Some("org.ucombinator.analyzer.Main")
+mainClass in Compile := Some("org.ucombinator.jaam.Main")

@@ -1,4 +1,4 @@
-package org.ucombinator.analyzer
+package org.ucombinator.jaam
 
 /*
   Warning:
@@ -17,7 +17,7 @@ import scala.collection.JavaConverters._
 import scala.language.postfixOps
 import xml.Utility
 
-import org.ucombinator.analyzer.Stmt.unitToStmt
+import org.ucombinator.jaam.Stmt.unitToStmt
 
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to

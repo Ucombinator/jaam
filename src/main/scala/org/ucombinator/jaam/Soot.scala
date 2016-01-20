@@ -1,9 +1,9 @@
-package org.ucombinator.analyzer
+package org.ucombinator.jaam
 
 import scala.collection.JavaConversions._
 import scala.math.BigInt
 
-import org.ucombinator.analyzer.Stmt.unitToStmt
+import org.ucombinator.jaam.Stmt.unitToStmt
 
 import soot._
 import soot.options._
@@ -22,7 +22,7 @@ import org.json4s.reflect.Reflector
 // classes or logic for the analyzer
 
 object Stmt {
-  val indexTag = "org.ucombinator.analyzer.Stmt.indexTag"
+  val indexTag = "org.ucombinator.jaam.Stmt.indexTag"
   val serializer = FieldSerializer[Stmt]()
 
   import scala.language.implicitConversions

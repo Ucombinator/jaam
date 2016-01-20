@@ -1,4 +1,4 @@
-# Scala-based analyzer framework for Java
+# JAAM: JVM Abstracting Abstract Machine
 
 ## Disclaimer
 

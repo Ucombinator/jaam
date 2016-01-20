@@ -1,4 +1,4 @@
-package org.ucombinator.analyzer
+package org.ucombinator.jaam
 
 import scala.collection.JavaConversions._
 
