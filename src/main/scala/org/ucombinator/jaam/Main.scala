@@ -482,6 +482,7 @@ case class State(val stmt : Stmt,
                 val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
                 exceptions = exceptions.join(classCastException)
               }
+            case AnyAtomicValue => {}
             case _ => throw new Exception ("Unknown value type " + vl)
           }
         }
