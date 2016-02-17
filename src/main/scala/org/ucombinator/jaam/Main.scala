@@ -61,7 +61,11 @@ case class StringConstantException(string : String) extends RuntimeException
 case class UndefinedAddrsException(addrs : Set[Addr]) extends RuntimeException
 
 // A continuation store paired with a continuation
-case class KontStack(store : KontStore, k : Kont) {
+case class KontStack(/*store : KontStore, */k : Kont) {
+  var store : KontStore = KontStore(Map())
+  def setStore(store : KontStore) : scala.Unit = this.store = store
+  def getStore() = store
+
   // TODO/generalize: Add widening in push and pop (to support PDCFA)
 
   // TODO/generalize: We need the control pointer of the target state to HANDLE PDCFA.
@@ -71,15 +75,21 @@ case class KontStack(store : KontStore, k : Kont) {
   def push(frame : Frame) : KontStack = {
     val kAddr = kalloca(frame)
     val newKontStore = store.update(kAddr, Set(k))
-    KontStack(newKontStore, RetKont(frame, kAddr))
+    val newkontStack = KontStack(RetKont(frame, kAddr))
+    newkontStack.setStore(newKontStore)
+    newkontStack
   }
 
   // Pop returns all possible frames beneath the current one.
   def pop() : Set[(Frame, KontStack)] = {
     k match {
       case RetKont(frame, kontAddr) => {
-        for (topk <- store(kontAddr)) yield (frame, KontStack(store, topk))
+        for (topk <- store(kontAddr)) yield {
+          val ks = KontStack(topk)
+          ks.setStore(store)
+          (frame, ks)
         }
+      }
       case HaltKont => Set()
     }
   }
@@ -107,8 +117,11 @@ case class KontStack(store : KontStore, k : Kont) {
         val newStore = store.update(CaughtExceptionFrameAddr(fp), D(Set(exception)))
 
         // TODO/soundness or performance?: use Hierarchy or FastHierarchy?
-        if (Soot.isSubclass(exception.asInstanceOf[ObjectValue].sootClass, caughtType))
-          return Set(State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, newStore, this, initializedClasses))
+        if (Soot.isSubclass(exception.asInstanceOf[ObjectValue].sootClass, caughtType)) {
+          val newState = State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, this, initializedClasses)
+          newState.setStore(newStore)
+          Set(newState)
+        }
       }
 
       // TODO/interface we should log this sort of thing
@@ -131,6 +144,14 @@ object KontStore {
 
 // Probably don't refactor. Might only want to widen on KontStore.
 case class KontStore(private val map : Map[KontAddr, Set[Kont]]) {
+  def join(other : KontStore) : KontStore = {
+    var newStore = this.copy()
+    other.map.foreach { case (k, v) => {
+      newStore = newStore.update(k, v)
+    }}
+    newStore
+  }
+
   def update(addr : KontAddr, konts : Set[Kont]) : KontStore = {
     map.get(addr) match {
       case Some(oldd) => KontStore(map + (addr -> (oldd ++ konts)))
@@ -243,6 +264,14 @@ object Store {
 case class Store(private val map : Map[Addr, D]) {
   def contains(addr : Addr) = map.contains(addr)
 
+  def join(store : Store): Store = {
+    var newStore = this.copy()
+    store.map.foreach { case (k, v) => {
+      newStore = newStore.update(k, v)
+    }}
+    newStore
+  }
+
   def update(addr : Addr, d : D) : Store = {
     map.get(addr) match {
       case Some(oldd) => Store(map + (addr -> oldd.join(d)))
@@ -297,23 +326,41 @@ object UpdatePacket {
 
 abstract sealed class AbstractState {
   def next() : Set[AbstractState]
+  def setStore(store: Store) : scala.Unit
+  def getStore() : Store
+
+  def setKontStore(store : KontStore) : scala.Unit
+  def getKontStore() : KontStore
+
   val id = AbstractState.idMap.getOrElseUpdate(this, AbstractState.nextId)
 }
+
 object AbstractState {
   type Id = Int
   val idMap = scala.collection.mutable.Map[AbstractState, Id]()
   var nextId_ = 0
   def nextId() : Id = { nextId_ += 1; nextId_ }
 }
+
 case object ErrorState extends AbstractState {
   override def next() : Set[AbstractState] = Set.empty
+  override def setStore(store : Store) = scala.Unit
+  override def getStore() = Store(Map())
+  override def setKontStore(store : KontStore) = scala.Unit
+  override def getKontStore() = KontStore(Map())
 }
 // State abstracts a collection of concrete states of execution.
 case class State(val stmt : Stmt,
                  val fp : FramePointer,
-                 val store : Store,
+                 //val store : Store,
                  val kontStack : KontStack,
                  val initializedClasses : Set[SootClass]) extends AbstractState {
+
+  var store: Store = Store(Map())
+  override def setStore(store : Store) : scala.Unit = this.store = store
+  override def getStore(): Store = store
+  override def getKontStore = kontStack.getStore()
+  override def setKontStore(store : KontStore) = kontStack.setStore(store)
 
   // When you call next, you may realize you are going to end up throwing some exceptions
   // TODO/refactor: Consider turning this into a list of exceptions.
@@ -544,13 +591,20 @@ case class State(val stmt : Stmt,
             println("!!!!! method = " + meth + " !!!!!" + Console.RESET)
             meth.getReturnType match {
               case _ : VoidType => Set(this.copy(stmt = nextStmt))
-              case _ : PrimType => Set(this.copy(stmt = nextStmt, store = store.update(destAddr, D.atomicTop)))
+              case _ : PrimType => {
+                val newState = this.copy(stmt = nextStmt)
+                val newStore = store.update(destAddr, D.atomicTop)
+                newState.setStore(newStore)
+                Set(newState)
+              }
               case _ =>
                 println(Console.RED + "!!!!! Native method returns an object.  Aborting. !!!!!" + Console.RESET)
                 Set()
             }
           } else {
-            Set(State(Stmt.methodEntry(meth), newFP, newStore, newKontStack, initializedClasses))
+            val newState = State(Stmt.methodEntry(meth), newFP, newKontStack, initializedClasses)
+            newState.setStore(newStore)
+            Set(newState)
           }
       }
     }
@@ -625,9 +679,9 @@ case class State(val stmt : Stmt,
             f <- sootClass.getFields(); if f.isStatic
           } yield (StaticFieldAddr(f) -> staticInitialValue(f))
           var newStore = store.update(staticUpdates.toMap)
-          this.copy(store = newStore,
-                    initializedClasses = initializedClasses + sootClass)
-            .handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
+          val newState = this.copy(initializedClasses = initializedClasses + sootClass)
+          newState.setStore(newStore)
+          newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
                           java.util.Collections.emptyList()), None, stmt)
         } else {
           // TODO: Do we need to do newStore for static fields?
@@ -639,10 +693,12 @@ case class State(val stmt : Stmt,
         val hash = Soot.classes.String.getFieldByName("hash")
         val hash32 = Soot.classes.String.getFieldByName("hash32")
         val bp = StringBasePointer(string)
-        Set(this.copy(store =
-          createArray(ArrayType.v(CharType.v,1), List(D.atomicTop/*string.length*/), Set(InstanceFieldAddr(bp, value)))
-            .update(InstanceFieldAddr(bp, hash), D.atomicTop)
-            .update(InstanceFieldAddr(bp, hash32), D.atomicTop)))
+        val newStore = createArray(ArrayType.v(CharType.v,1), List(D.atomicTop/*string.length*/), Set(InstanceFieldAddr(bp, value)))
+          .update(InstanceFieldAddr(bp, hash), D.atomicTop)
+          .update(InstanceFieldAddr(bp, hash32), D.atomicTop)
+        val newState = this.copy()
+        newState.setStore(newStore)
+        Set(newState)
 
       case UndefinedAddrsException(addrs) =>
         println()
@@ -679,21 +735,29 @@ case class State(val stmt : Stmt,
               if(c.hasSuperclass) initInstanceFields(c.getSuperclass)
             }
             initInstanceFields(sootClass)
-            Set(this.copy(stmt = stmt.nextSyntactic, store = newStore))
+            val newState = this.copy(stmt = stmt.nextSyntactic)
+            newState.setStore(newStore)
+            Set(newState)
           }
           case rhs : NewArrayExpr => {
             // Value of lhsAddr will be set to a pointer to the array. (as opposed to the array itself)
             val newStore = createArray(rhs.getType(), List(eval(rhs.getSize())), lhsAddr)
-            Set(this.copy(stmt = stmt.nextSyntactic, store = newStore))
+            val newState = this.copy(stmt = stmt.nextSyntactic)
+            newState.setStore(newStore)
+            Set(newState)
           }
           case rhs : NewMultiArrayExpr => {
             //see comment above about lhs addr
             val newStore = createArray(rhs.getType(), rhs.getSizes().toList map eval, lhsAddr)
-            Set(this.copy(stmt = stmt.nextSyntactic, store = newStore))
+            val newState = this.copy(stmt = stmt.nextSyntactic)
+            newState.setStore(newStore)
+            Set(newState)
           }
           case rhs => {
             val newStore = store.update(lhsAddr, eval(rhs))
-            Set(this.copy(stmt = stmt.nextSyntactic, store = newStore))
+            val newState = this.copy(stmt = stmt.nextSyntactic)
+            newState.setStore(newStore)
+            Set(newState)
           }
         }
       }
@@ -718,13 +782,19 @@ case class State(val stmt : Stmt,
             store
           }
 
-          State(frame.stmt, frame.fp, newStore, newStack, initializedClasses)
+          val state = State(frame.stmt, frame.fp, newStack, initializedClasses)
+          state.setStore(newStore)
+          state
         }
       }
 
       case sootStmt : ReturnVoidStmt =>
-        for ((frame, newStack) <- kontStack.pop() if !frame.acceptsReturnValue()) yield
-          State(frame.stmt, frame.fp, store, newStack, initializedClasses).asInstanceOf[AbstractState]
+        for ((frame, newStack) <- kontStack.pop() if !frame.acceptsReturnValue()) yield {
+          val s = State(frame.stmt, frame.fp, newStack, initializedClasses)
+          s.setStore(store)
+          s.asInstanceOf[AbstractState]
+        }
+
 
       // Since Soot's NopEliminator run before us, no "nop" should be
       // left in the code and this case isn't needed (and also is
@@ -768,7 +838,12 @@ object State {
        D(Set(ArrayValue(stringClass.getType(), initialBasePointer))),
       ArrayRefAddr(initialBasePointer) -> D(Set(ObjectValue(stringClass, initialBasePointer))),
       ArrayLengthAddr(initialBasePointer) -> D.atomicTop)
-    State(stmt, initialFramePointer, Store(initial_map), KontStack(KontStore(Map()), HaltKont), Set())
+    val store = Store(initial_map)
+    val ks = KontStack(HaltKont)
+    ks.setStore(KontStore(Map()))
+    val state = State(stmt, initialFramePointer, ks, Set())
+    state.setStore(store)
+    state
   }
 }
 
@@ -824,10 +899,65 @@ object Main {
     val initialState = State.inject(Stmt.methodEntry(mainMainMethod))
     window.addState(initialState)
 
-    var todo : List[AbstractState] = List(initialState)
-    var seen : Set[AbstractState] = Set()
+    var states : Set[AbstractState] = Set(initialState)
+    var store : Store = initialState.getStore()
+    var ks : KontStore = initialState.getKontStore()
+    var packets = Set[UpdatePacket]()
 
     // Explore the state graph
+    while (true) {
+      var todo = Set[AbstractState]()
+      var tempStore = Store(Map())
+      var tempKStore = KontStore(Map())
+      packets = Set[UpdatePacket]()
+
+      for (current <- states) {
+        current.setStore(store)
+        current.setKontStore(ks)
+        val nexts = current.next()
+        tempStore = nexts.map(_.getStore()).foldLeft(tempStore)(_.join(_))
+        tempKStore = nexts.map(_.getKontStore()).foldLeft(tempKStore)(_.join(_))
+
+        val newTodo = nexts.toList.filter(!states.contains(_))
+        for (next <- nexts) {
+          window.addNext(current, next)
+        }
+
+        val packet = UpdatePacket(
+          (for (n <- newTodo) yield { n.id -> n }).toMap,
+          for (n <- nexts) yield { current.id -> n.id })
+        packets += packet
+
+        todo = todo ++ nexts
+      }
+
+      val newStates = states ++ todo
+      val newStore = store.join(tempStore)
+      val newKStore = ks.join(tempKStore)
+      if (states.size == newStates.size
+        && store.equals(newStore)
+        && ks.equals(newKStore)) {
+        implicit val formats = Soot.formats +
+          UpdatePacket.serializer +
+          D.serializer +
+          Store.serializer +
+          KontStore.serializer
+
+        for (n <- states) {
+          println(Serialization.writePretty(n))
+        }
+        //println("States size: " + states.size)
+        println("Done!")
+        return
+      }
+      else {
+        states = newStates
+        store = newStore
+        ks = newKStore
+      }
+    }
+
+    /*
     while (todo nonEmpty) {
       val current = todo.head
       println("!!! Processing " + current.id + " !!!")
@@ -852,9 +982,8 @@ object Main {
       // TODO: Fix optimization bug here
       todo = newTodo ++ todo.tail
       seen = seen ++ nexts
-
     }
-    println("Done!")
+    */
   }
 
   def cfgMode(config: Config) {
@@ -954,7 +1083,7 @@ class Window extends JFrame ("Shimple Analyzer") {
   private val graphComponent = new mxGraphComponent(graph)
   private var stateToVertex = Map[AbstractState,Object]()
   private var vertexToState = Map[Object,AbstractState]()
-
+  private var edgeSet = Set[(AbstractState, AbstractState)]()
 
   graphComponent.setEnabled(false)
   graphComponent.setToolTips(true)
@@ -990,8 +1119,12 @@ class Window extends JFrame ("Shimple Analyzer") {
           graph.insertEdge(parentX, null, null, stateToVertex(start), v)
           stateToVertex += (end -> v)
           vertexToState += (v -> end)
+          edgeSet += ((start, end))
         case Some(v) =>
-          graph.insertEdge(parentX, null, null, stateToVertex(start), v)
+          if (!edgeSet.contains((start, end))) {
+            graph.insertEdge(parentX, null, null, stateToVertex(start), v)
+            edgeSet += ((start, end))
+          }
       }
       // TODO: layout basic blocks together
       layoutX.execute(parentX)

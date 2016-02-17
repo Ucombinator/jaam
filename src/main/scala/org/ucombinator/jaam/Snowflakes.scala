@@ -43,15 +43,22 @@ case class ReturnSnowflake(value : D) extends SnowflakeHandler {
       case sootStmt : DefinitionStmt => state.store.update(state.addrsOf(sootStmt.getLeftOp()), value)
       case sootStmt : InvokeStmt => state.store
     }
-    Set(state.copy(stmt = nextStmt, store = newNewStore))
+    val newState = state.copy(stmt = nextStmt)
+    newState.setStore(newNewStore)
+    Set(newState)
   }
 }
 
 case class PutStaticSnowflake(clas : String, field : String, v : soot.Value) extends SnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
     val sootField = Jimple.v.newStaticFieldRef(Soot.getSootClass(clas).getFieldByName(field).makeRef())
-    val newNewStore = state.store.update(state.addrsOf(sootField), state.copy(fp = newFP, store = newStore, kontStack = newKontStack).eval(v))
-    Set(state.copy(stmt = nextStmt, store = newNewStore))
+    val tempState = state.copy(fp = newFP, kontStack = newKontStack)
+    tempState.setStore(newStore)
+    val value = tempState.eval(v)
+    val newNewStore = state.store.update(state.addrsOf(sootField), value)
+    val newState = state.copy(stmt = nextStmt)
+    newState.setStore(newNewStore)
+    Set(newState)
   }
 }
 
@@ -115,8 +122,9 @@ object Snowflakes {
         newNewStore = updateStore(newNewStore, "java.lang.System", "err", "java.io.PrintStream")
         newNewStore = updateStore(newNewStore, "java.lang.System", "security", "java.lang.SecurityManager")
         newNewStore = updateStore(newNewStore, "java.lang.System", "cons", "java.io.Console")
-
-        Set(state.copy(stmt = nextStmt, store = newNewStore))
+        val newState = state.copy(stmt = nextStmt)
+        newState.setStore(newNewStore)
+        Set(newState)
       }
     })
   //private static native void registerNatives();
