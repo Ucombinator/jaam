@@ -956,34 +956,6 @@ object Main {
         ks = newKStore
       }
     }
-
-    /*
-    while (todo nonEmpty) {
-      val current = todo.head
-      println("!!! Processing " + current.id + " !!!")
-      val nexts : Set[AbstractState] = current.next()
-      for (n <- nexts) {
-        window.addNext(current, n)
-      }
-      val newTodo = nexts.toList.filter(!seen.contains(_))
-      val packet = UpdatePacket(
-        (for (n <- newTodo) yield { (n.id -> n) }).toMap,
-        for (n <- nexts) yield { (current.id -> n.id) })
-
-      implicit val formats = Soot.formats +
-        UpdatePacket.serializer +
-        D.serializer +
-        Store.serializer +
-        KontStore.serializer
-      println(Serialization.writePretty(packet))
-
-      println()
-
-      // TODO: Fix optimization bug here
-      todo = newTodo ++ todo.tail
-      seen = seen ++ nexts
-    }
-    */
   }
 
   def cfgMode(config: Config) {
