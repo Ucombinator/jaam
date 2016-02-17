@@ -9,7 +9,7 @@ SEP = ';' if os.name == 'nt' else ':'
 DIR = os.path.abspath(os.path.dirname(__file__))
 
 attributes = {
-    'version'   : '0.3.1',
+    'version'   : '0.3.2',
     'name'      : os.path.basename(sys.argv[0]),
     'long_name' : 'JAAM',
 }
@@ -49,8 +49,8 @@ def cfg(rt_jar, app_classpath, classpaths, classname, stdout=None, stderr=None):
     command = "sbt 'run --cfg {app_classpath} --classpath {rt_jar}{sep}{classpaths} -c {classname}'".format(
         rt_jar          = rt_jar,
         app_classpath   = app_classpath,
-        sep             = SEP,
-        classpaths      = SEP.join(classpaths),
+        sep             = SEP if classpaths else '',
+        classpaths      = SEP.join(classpaths) if classpaths else '',
         classname       = classname
     )
     run_command(command, stdout, stderr)
@@ -152,7 +152,8 @@ if __name__ == '__main__':
         sys.exit(0)
 
     args.rt_jar     = os.path.abspath(args.rt_jar)
-    args.classpath  = [os.path.abspath(classpath) for classpath in args.classpath]
+    if args.classpath:
+        args.classpath  = [os.path.abspath(classpath) for classpath in args.classpath]
 
     if args.subcommand == 'run':
         if not all([args.rt_jar, args.classpath, args.classname, args.main_method]):
@@ -168,14 +169,14 @@ if __name__ == '__main__':
             stderr      = args.error_outfile
         )
     elif args.subcommand == 'cfg':
-        if not all([args.rt_jar, args.app_classpath, args.classpath, args.classname]):
+        if not all([args.rt_jar, args.app_classpath, args.classname]):
             usage(args.subcommand)
-            print("Not all required options given. Need '--rt-jar', '--app-classpath', '--classpath', '--classname'.")
+            print("Not all required options given. Need '--rt-jar', '--app-classpath', '--classname'.")
             sys.exit(1)
         cfg(
             rt_jar          = args.rt_jar,
             app_classpath   = args.app_classpath,
-            classpths       = args.classpath,
+            classpaths      = args.classpath,
             classname       = args.classname,
             stdout          = args.outfile,
             stderr          = args.error_outfile
