@@ -2,35 +2,38 @@
 
 import argparse
 import subprocess
-from os import name as os_name
-from os.path import basename as path_basename
+import os
 import sys
 
-SEP = ';' if os_name == 'nt' else ':'
+SEP = ';' if os.name == 'nt' else ':'
+DIR = os.path.abspath(os.path.dirname(__file__))
 
 attributes = {
-    'version'   : '0.2',
-    'name'      : path_basename(sys.argv[0]),
+    'version'   : '0.3',
+    'name'      : os.path.basename(sys.argv[0]),
     'long_name' : 'JAAM',
 }
 __version__ = attributes['version']
 
-def run_command(command, stdout, stderr):
-    print("Running command:")
+def run_command(command, outfile, errfile):
+    subprocess.call(command, shell=True, cwd=DIR, stdout=outfile, stderr=errfile)
+
+def handle_command(command, stdout, stderr):
+    print("Running command from '{}':".format(DIR))
     print("    {}".format(command))
     if stdout:
         with open(stdout, 'w') as outfile:
             if stderr:
                 with open(stderr, 'w') as errfile:
-                    subprocess.call(command, shell=True, stdout=outfile, stderr=errfile)
+                    run_command(command, outfile, errfile)
             else:
-                subprocess.call(command, shell=True, stdout=outfile)
+                run_command(command, outfile, errfile)
     else:
         if stderr:
             with open(stderr, 'w') as errfile:
-                subprocess.call(command, shell=True, stderr=errfile)
+                run_command(command, outfile, errfile)
         else:
-            subprocess.call(command, shell=True)
+            run_command(command, outfile, errfile)
 
 def run(rt_jar, classpaths, classname, main_method, stdout=None, stderr=None):
     command = "sbt 'run --classpath {rt_jar}{sep}{classpaths} -c {classname} -m {main_method}'".format(
@@ -147,6 +150,9 @@ if __name__ == '__main__':
     if args.help:
         usage(command=args.subcommand)
         sys.exit(0)
+
+    args.rt_jar     = os.path.abspath(rt_jar)
+    args.classpath  = [os.path.abspath(classpath) for classpath in args.classpath]
 
     if args.subcommand == 'run':
         if not all([args.rt_jar, args.classpath, args.classname, args.main_method]):
