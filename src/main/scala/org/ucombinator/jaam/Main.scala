@@ -906,7 +906,7 @@ object Main {
 
     // Explore the state graph
     while (true) {
-      var todo = Set[AbstractState]()
+      var tempStates = Set[AbstractState]()
       var tempStore = Store(Map())
       var tempKStore = KontStore(Map())
       packets = Set[UpdatePacket]()
@@ -918,7 +918,7 @@ object Main {
         tempStore = nexts.map(_.getStore()).foldLeft(tempStore)(_.join(_))
         tempKStore = nexts.map(_.getKontStore()).foldLeft(tempKStore)(_.join(_))
 
-        val newTodo = nexts.toList.filter(!states.contains(_))
+        val newTodo = nexts.toList.filter(!tempStates.contains(_))
         for (next <- nexts) {
           window.addNext(current, next)
         }
@@ -928,10 +928,10 @@ object Main {
           for (n <- nexts) yield { current.id -> n.id })
         packets += packet
 
-        todo = todo ++ nexts
+        tempStates = tempStates ++ nexts
       }
 
-      val newStates = states ++ todo
+      val newStates = states ++ tempStates
       val newStore = store.join(tempStore)
       val newKStore = ks.join(tempKStore)
       if (states.size == newStates.size
@@ -943,7 +943,7 @@ object Main {
           Store.serializer +
           KontStore.serializer
 
-        for (n <- states) {
+        for (n <- packets) {
           println(Serialization.writePretty(n))
         }
         //println("States size: " + states.size)
