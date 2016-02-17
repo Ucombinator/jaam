@@ -9,7 +9,7 @@ SEP = ';' if os.name == 'nt' else ':'
 DIR = os.path.abspath(os.path.dirname(__file__))
 
 attributes = {
-    'version'   : '0.3',
+    'version'   : '0.3.1',
     'name'      : os.path.basename(sys.argv[0]),
     'long_name' : 'JAAM',
 }
@@ -151,7 +151,7 @@ if __name__ == '__main__':
         usage(command=args.subcommand)
         sys.exit(0)
 
-    args.rt_jar     = os.path.abspath(rt_jar)
+    args.rt_jar     = os.path.abspath(args.rt_jar)
     args.classpath  = [os.path.abspath(classpath) for classpath in args.classpath]
 
     if args.subcommand == 'run':
