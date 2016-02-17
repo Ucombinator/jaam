@@ -217,6 +217,7 @@ case class ArrayValue(val sootType : SootType, val bp : BasePointer) extends Val
 // FramePointers, when paired with variable names, yield the addresses of variables.
 abstract class FramePointer
 case object InvariantFramePointer extends FramePointer // TODO: delete this?  Is seems unused
+case class ZeroCFAFramePointer(val method : SootMethod) extends FramePointer
 case class OneCFAFramePointer(val method : SootMethod, val nextStmt : Stmt) extends FramePointer
 case object InitialFramePointer extends FramePointer
 
@@ -367,7 +368,7 @@ case class State(val stmt : Stmt,
   var exceptions = D(Set())
 
   // Allocates a new frame pointer (currently uses 1CFA)
-  def alloca(expr : InvokeExpr, nextStmt : Stmt) : FramePointer = OneCFAFramePointer(expr.getMethod, nextStmt)
+  def alloca(expr : InvokeExpr, nextStmt : Stmt) : FramePointer = ZeroCFAFramePointer(expr.getMethod)
   // Allocates objects
   def malloc() : BasePointer = OneCFABasePointer(stmt, fp)
 
