@@ -9,7 +9,7 @@ SEP = ';' if os.name == 'nt' else ':'
 DIR = os.path.abspath(os.path.dirname(__file__))
 
 attributes = {
-    'version'   : '0.3.2',
+    'version'   : '0.3.3',
     'name'      : os.path.basename(sys.argv[0]),
     'long_name' : 'JAAM',
 }
@@ -69,6 +69,7 @@ def usage(command=None):
         "usage: {name} run [-hv] [-J rt_jar] [-P classpath, -P classpath, ...]",
         "    [-c class] [-m main_method] [-o outfile] [-E stderr_outfile]",
         "",
+        "OPTIONS",
         "    -h, --help             Print this help information.",
         "    -v, --version          Print the version information.",
         "    -J, --rt-jar           The path to your 'rt.jar' file.",
@@ -80,11 +81,19 @@ def usage(command=None):
         "    -o, --outfile          Where to redirect stdout (if desired).",
         "    -E, --error-outfile    Where to redirect stderr (if desired).",
         "",
+        "EXAMPLES",
+        "    From the main JAAM directory, you can do:",
+        "        {name} run -J <path-to-rt.jar> -P to-analyze -c Factorial -m main",
+        "    You can also run this wrapper from anywhere. If your JAAM directory is",
+        "    located at $JAAMDIR, you could do:",
+        "        {name} run -J <path-to-rt.jar> -P $JAAMDIR/to-analyze -c Factorial -m main",
+        "",
     ]).format(name=attributes['name'])
     information['cfg'] = '\n'.join([
         "usage: {name} cfg [-hv] [-J rt_jar] [-P classpath, -P classpath, ...]",
         "    [-c class] [-m main_method] [-o outfile] [-E stderr_outfile]",
         "",
+        "OPTIONS",
         "    -h, --help             Print this help information.",
         "    -v, --version          Print the version information.",
         "    -J, --rt-jar           The path to your 'rt.jar' file.",
@@ -97,6 +106,13 @@ def usage(command=None):
         "    -o, --outfile          Where to redirect stdout (if desired).",
         "    -E, --error-outfile    Where to redirect stderr (if desired).",
         "",
+        "EXAMPLES",
+        "    From the main JAAM directory, you can do:",
+        "        {name} cfg -J <path-to-rt.jar> -a to-cfg -c Factorial",
+        "    You can also run this wrapper from anywhere. If your JAAM directory is",
+        "    located at $JAAMDIR, you could do:",
+        "        {name} run -J <path-to-rt.jar> -a $JAAMDIR/to-cfg -c Factorial",
+        "",
     ]).format(name=attributes['name'])
 
     if command in information:
@@ -105,8 +121,17 @@ def usage(command=None):
         print('\n'.join([
             "usage: {name} {{ run | cfg }}",
             "",
+            "OPTIONS",
             "    -h, --help             Print this help information.",
             "    -v, --version          Print the version information.",
+            "",
+            "SUBCOMMANDS",
+            "    run        Use the general analyzer and show the graphical output.",
+            "    cfg        Use CFG mode.",
+            "",
+            "You can get specific usage information for each subcommand by running, e.g.:",
+            "    {name} run --help",
+            "(Which would give you information about the 'run' command.)",
             "",
         ])).format(name=attributes['name'])
 
@@ -119,7 +144,7 @@ if __name__ == '__main__':
         usage()
         sys.exit(0)
 
-    parser = argparse.ArgumentParser(add_help=False,)
+    parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('-v', '--version', action='store_true')
 
     args = parser.parse_known_args()
@@ -151,7 +176,7 @@ if __name__ == '__main__':
         usage(command=args.subcommand)
         sys.exit(0)
 
-    args.rt_jar     = os.path.abspath(args.rt_jar)
+    args.rt_jar = os.path.abspath(args.rt_jar)
     if args.classpath:
         args.classpath  = [os.path.abspath(classpath) for classpath in args.classpath]
 
