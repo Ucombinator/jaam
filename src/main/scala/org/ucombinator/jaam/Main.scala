@@ -617,10 +617,27 @@ case class State(val stmt : Stmt,
         dispatch(null, expr.getMethod(), Set())
       case expr : InstanceInvokeExpr =>
         val d = eval(expr.getBase())
-        val vs = d.values filter { case ObjectValue(sootClass, _) => Soot.isSubclass(sootClass, expr.getMethod().getDeclaringClass); case _ => false }
-        ((for (ObjectValue(sootClass, _) <- vs) yield {
-          val objectClass = if (expr.isInstanceOf[SpecialInvokeExpr]) null else sootClass
-          dispatch(objectClass, expr.getMethod(), vs)
+        val vs = d.values filter { 
+          case ObjectValue(sootClass, _) => Soot.isSubclass(sootClass, expr.getMethod().getDeclaringClass)
+          case ArrayValue(sootType, _) => {
+            /*
+            println(expr.getMethod.getReturnType)
+            */
+            //TODO Check Type
+            true
+          }
+          case _ => false 
+        }
+        ((for (v <- vs) yield {
+          v match {
+            case ObjectValue(sootClass, _) => {
+              val objectClass = if (expr.isInstanceOf[SpecialInvokeExpr]) null else sootClass
+              dispatch(objectClass, expr.getMethod(), vs)
+            }
+            case ArrayValue(sootType, _) => {
+              dispatch(null, expr.getMethod, vs)
+            }
+          }
         }) :\ Set[AbstractState]())(_ ++ _) // TODO: better way to do this?
     }
   }

@@ -111,6 +111,28 @@ object Snowflakes {
       D(Set(ObjectValue(Soot.getSootClass(typ),
         SnowflakeBasePointer(clas + "." + field)))))
 
+  table.put(MethodDescription("java.lang.Object", "clone", List(), "java.lang.Object"),
+    new SnowflakeHandler {
+      override def apply(state: State,
+        nextStmt: Stmt,
+        newFP: FramePointer,
+        newStore: Store,
+        newKontStack: KontStack): Set[AbstractState] = {
+          val newNewStore = state.stmt.sootStmt match {
+            case stmt : DefinitionStmt => {
+              val value = stmt.getRightOp match {
+                case expr: InstanceInvokeExpr => state.eval(expr.getBase)
+              }
+              state.store.update(state.addrsOf(stmt.getLeftOp), value)
+            }
+            case stmt : InvokeStmt => state.store
+          }
+          val newState = state.copy(stmt = nextStmt)
+          newState.setStore(newNewStore)
+          Set(newState)
+      }
+    })
+
   // java.lang.System
   table.put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
     new SnowflakeHandler {
