@@ -144,22 +144,40 @@ object KontStore {
 
 // Probably don't refactor. Might only want to widen on KontStore.
 case class KontStore(private val map : Map[KontAddr, Set[Kont]]) {
+  var readAddrs = Set[KontAddr]()
+  var writeAddrs = Set[KontAddr]()
+
+  def resetReadAddrsAndWriteAddrs: scala.Unit = {
+    readAddrs = Set[KontAddr]()
+    writeAddrs = Set[KontAddr]()
+  }
+
   def join(other : KontStore) : KontStore = {
     var newStore = this.copy()
     other.map.foreach { case (k, v) => {
       newStore = newStore.update(k, v)
     }}
+    newStore.readAddrs = other.readAddrs ++ readAddrs
+    newStore.writeAddrs = other.writeAddrs ++ writeAddrs
     newStore
   }
 
   def update(addr : KontAddr, konts : Set[Kont]) : KontStore = {
-    map.get(addr) match {
-      case Some(oldd) => KontStore(map + (addr -> (oldd ++ konts)))
-      case None => KontStore(map + (addr -> konts))
+    val oldd = map.get(addr) match {
+      case Some(oldd) => oldd
+      case None => Set()
     }
+    val newd = oldd ++ konts
+    if (oldd.size != newd.size)
+      writeAddrs += addr
+    KontStore(map + (addr -> newd))
   }
 
-  def apply(addr : KontAddr) : Set[Kont] = map(addr)
+  def apply(addr : KontAddr) : Set[Kont] = {
+    readAddrs += addr
+    map(addr)
+  }
+
   def get(addr : KontAddr) : Option[Set[Kont]] = map.get(addr)
 
   def prettyString() : List[String] =
@@ -265,19 +283,37 @@ object Store {
 case class Store(private val map : Map[Addr, D]) {
   def contains(addr : Addr) = map.contains(addr)
 
+  var readAddrs = Set[Addr]()
+  var writeAddrs = Set[Addr]()
+
+  def resetReadAddrsAndWriteAddrs: scala.Unit = {
+    readAddrs = Set[Addr]()
+    writeAddrs = Set[Addr]()
+  }
+
   def join(store : Store): Store = {
     var newStore = this.copy()
     store.map.foreach { case (k, v) => {
       newStore = newStore.update(k, v)
     }}
+    newStore.readAddrs = store.readAddrs ++ readAddrs
+    newStore.writeAddrs = store.writeAddrs ++ writeAddrs
     newStore
   }
 
-  def update(addr : Addr, d : D) : Store = {
+  def get(addr: Addr): D = {
     map.get(addr) match {
-      case Some(oldd) => Store(map + (addr -> oldd.join(d)))
-      case None => Store(map + (addr -> d))
+      case Some(oldd) => oldd
+      case None => D(Set())
     }
+  }
+
+  def update(addr : Addr, d : D) : Store = {
+    val oldd: D = get(addr)
+    val newd: D = oldd.join(d)
+    if (oldd.values.size != newd.values.size)
+      writeAddrs += addr
+    Store(map + (addr -> newd))
   }
 
   def update(addrs : Set[Addr], d : D) : Store = {
@@ -304,6 +340,7 @@ case class Store(private val map : Map[Addr, D]) {
   }
 
   def apply(addrs : Set[Addr]) : D = {
+    readAddrs ++= addrs
     val ds = for (a <- addrs; if map.contains(a)) yield map(a)
     val res = ds.fold (D(Set()))(_ join _)
     if (res == D(Set())) throw UndefinedAddrsException(addrs)
@@ -333,6 +370,12 @@ abstract sealed class AbstractState {
   def setKontStore(store : KontStore) : scala.Unit
   def getKontStore() : KontStore
 
+  def getReadAddrs: Set[Addr]
+  def setReadAddrs(s: Set[Addr]): scala.Unit
+
+  def getKReadAddrs: Set[KontAddr]
+  def setKReadAddrs(s: Set[KontAddr]): scala.Unit
+
   val id = AbstractState.idMap.getOrElseUpdate(this, AbstractState.nextId)
 }
 
@@ -349,6 +392,10 @@ case object ErrorState extends AbstractState {
   override def getStore() = Store(Map())
   override def setKontStore(store : KontStore) = scala.Unit
   override def getKontStore() = KontStore(Map())
+  override def getReadAddrs = Set()
+  override def setReadAddrs(s: Set[Addr]) = scala.Unit
+  override def getKReadAddrs: Set[KontAddr] = Set()
+  override def setKReadAddrs(s: Set[KontAddr]) = scala.Unit
 }
 // State abstracts a collection of concrete states of execution.
 case class State(val stmt : Stmt,
@@ -362,6 +409,14 @@ case class State(val stmt : Stmt,
   override def getStore(): Store = store
   override def getKontStore = kontStack.getStore()
   override def setKontStore(store : KontStore) = kontStack.setStore(store)
+
+  var readAddrs = Set[Addr]()
+  override def getReadAddrs = readAddrs
+  override def setReadAddrs(s: Set[Addr]) = readAddrs = s
+
+  var kReadAddrs = Set[KontAddr]()
+  override def getKReadAddrs = kReadAddrs
+  override def setKReadAddrs(s: Set[KontAddr]) = kReadAddrs = s
 
   // When you call next, you may realize you are going to end up throwing some exceptions
   // TODO/refactor: Consider turning this into a list of exceptions.
@@ -917,6 +972,62 @@ object Main {
     val initialState = State.inject(Stmt.methodEntry(mainMainMethod))
     window.addState(initialState)
 
+    var todo: List[AbstractState] = List(initialState)
+    var done: Set[AbstractState] = Set()
+    var store: Store = initialState.getStore
+    var ks: KontStore = initialState.getKontStore
+    var packets = Set[UpdatePacket]()
+
+    while (todo nonEmpty) {
+      val current = todo.head
+      store.resetReadAddrsAndWriteAddrs
+      ks.resetReadAddrsAndWriteAddrs
+      current.setStore(store)
+      current.setKontStore(ks)
+
+      val nexts = current.next()
+      val tempStore = nexts.map(_.getStore).foldLeft(Store(Map()))(_.join(_))
+      val tempKStore = nexts.map(_.getKontStore).foldLeft(KontStore(Map()))(_.join(_))
+
+      current.setReadAddrs(current.getStore.readAddrs)
+      current.setKReadAddrs(current.getKontStore.readAddrs)
+
+      for (next <- nexts) {
+        window.addNext(current, next)
+      }
+
+      val newTodo = nexts.toList.filter(!done.contains(_))
+      val packet = UpdatePacket(
+        (for (n <- newTodo) yield { (n.id -> n) }).toMap,
+        for (n <- nexts) yield { (current.id -> n.id) })
+      packets += packet
+
+      for (d <- done) {
+        if (d.getReadAddrs.intersect(current.getStore.writeAddrs).nonEmpty
+          || d.getKReadAddrs.intersect(current.getKontStore.writeAddrs).nonEmpty) {
+            todo = todo ++ List(d)
+            done = done - d
+          }
+      }
+
+      store = store.join(tempStore)
+      ks = ks.join(tempKStore)
+      done += current
+      todo = newTodo ++ todo.tail
+    }
+
+    implicit val formats = Soot.formats +
+    UpdatePacket.serializer +
+    D.serializer +
+    Store.serializer +
+    KontStore.serializer
+    for (n <- packets) {
+      println(Serialization.writePretty(n))
+    }
+
+    println("Done!")
+    
+    /*
     var states : Set[AbstractState] = Set(initialState)
     var store : Store = initialState.getStore()
     var ks : KontStore = initialState.getKontStore()
@@ -952,9 +1063,7 @@ object Main {
       val newStates = states ++ tempStates
       val newStore = store.join(tempStore)
       val newKStore = ks.join(tempKStore)
-      if (states.size == newStates.size
-        && store.equals(newStore)
-        && ks.equals(newKStore)) {
+      if (states.size == newStates.size && store.equals(newStore) && ks.equals(newKStore)) {
         implicit val formats = Soot.formats +
           UpdatePacket.serializer +
           D.serializer +
@@ -974,6 +1083,7 @@ object Main {
         ks = newKStore
       }
     }
+    */
   }
 
   def cfgMode(config: Config) {

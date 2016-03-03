@@ -87,7 +87,7 @@ object Soot {
   def mapSerializer[T,K,V](implicit mfT: Manifest[T], mfMap: Manifest[Map[K,V]]) = {
     val runtimeClass = mfT.runtimeClass
     val fields = runtimeClass.getDeclaredFields
-    assert(fields.length == 1)
+    //assert(fields.length == 1)
     val f = fields(0)
     f.setAccessible(true)
     new CustomSerializer[Map[K,V]](implicit format => (
