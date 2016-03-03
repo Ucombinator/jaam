@@ -980,6 +980,7 @@ object Main {
 
     while (todo nonEmpty) {
       val current = todo.head
+      println("Processing " + current.id)
       store.resetReadAddrsAndWriteAddrs
       ks.resetReadAddrsAndWriteAddrs
       current.setStore(store)
@@ -1017,10 +1018,10 @@ object Main {
     }
 
     implicit val formats = Soot.formats +
-    UpdatePacket.serializer +
-    D.serializer +
-    Store.serializer +
-    KontStore.serializer
+      UpdatePacket.serializer +
+      D.serializer +
+      Store.serializer +
+      KontStore.serializer
     for (n <- packets) {
       println(Serialization.writePretty(n))
     }
