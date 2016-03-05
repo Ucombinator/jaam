@@ -15,6 +15,10 @@ interface is bare bones as most of the current work is on the core analyzer.
 
 ## Initialization
 
+The first time you run the tool, `sbt` will download a number of packages that
+the JAAM tool depends on. This may take a while, but these files are cached and
+will not need to be re-downloaded on successive runs.
+
 ### Finding the Path to the Java 1.7 `rt.jar` File
 
 You need to find the path your 'rt.jar' file, which is located inside the Java1.7 "home" directory:
@@ -38,10 +42,6 @@ For example, assume we are running OS X, and the `java_home` command above retur
 ```
 /Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/jre/lib/rt.jar
 ```
-
-The first time you run the tool, `sbt` will download a number of packages that
-the JAAM tool depends on. This may take a while, but these files are cached and
-will not need to be re-downloaded on successive runs.
 
 ## Usage
 
@@ -72,7 +72,7 @@ information about the graph to `stdout`.
 
 To exit the program press Ctrl-C at the terminal or fully quit the GUI.
 
-You may get an out of memory error. If you do, you can run JAAM with extra heap
+You may get an out-of-memory error. If you do, you can run JAAM with extra heap
 memory. For example:
 
 ```
@@ -88,6 +88,15 @@ huge (and incorrect) graphs. The remaining tests work correctly, to our knowledg
 
 You may occasionally see exceptions at the terminal that are coming from the
 Java GUI system (i.e. AWT or Swing). These are harmless and can safely be ignored.
+
+For example, you may sees the following error followed by an exception stack trace:
+
+```
+[error] (AWT-EventQueue-0) java.lang.NullPointerException
+```
+
+Because this error is in an `AWT-EventQueue`, it is one of the
+harmless errors and can be safely ignored.
 
 ### CFG Mode
 
