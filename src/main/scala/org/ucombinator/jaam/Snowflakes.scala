@@ -132,6 +132,22 @@ object Snowflakes {
           Set(newState)
       }
     })
+  
+  table.put(MethodDescription("java.lang.System", "arraycopy",
+    List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new SnowflakeHandler {
+      override def apply(state: State,
+        nextStmt: Stmt,
+        newFP: FramePointer,
+        newStore: Store,
+        newKontStack: KontStack): Set[AbstractState] = {
+          assert(state.stmt.sootStmt.getInvokeExpr.getArgCount == 5)
+          val expr = state.stmt.sootStmt.getInvokeExpr
+          val newNewStore = newStore.update(state.addrsOf(expr.getArg(2)), state.eval(expr.getArg(0)))
+          val newState = state.copy(stmt = nextStmt)
+          newState.setStore(newNewStore)
+          Set(newState)
+      }
+    })
 
   // java.lang.System
   table.put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
