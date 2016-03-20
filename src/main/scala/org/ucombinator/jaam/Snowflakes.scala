@@ -140,6 +140,20 @@ object Snowflakes {
   table.put(MethodDescription("java.lang.Double", "doubleToRawLongBits", List("double"), "long"), ReturnSnowflake(D.atomicTop))
   table.put(MethodDescription("java.lang.Float", "floatToRawIntBits", List("float"), "int"), ReturnSnowflake(D.atomicTop))
 
+  table.put(MethodDescription("java.lang.Class", "getPrimitiveClass", List("java.lang.String"), "java.lang.Class"),
+    new SnowflakeHandler {
+      override def apply(state: State, nextStmt: Stmt, newFP: FramePointer, newStore: Store, newKontStack: KontStack): Set[AbstractState] = {
+        val newNewStore = state.stmt.sootStmt match {
+          case stmt : DefinitionStmt => state.store.update(state.addrsOf(stmt.getLeftOp),
+            D(Set(ObjectValue(Soot.classes.Class, state.malloc()))))
+          case stmt : InvokeStmt => state.store
+        }
+        val newState = state.copy(stmt = nextStmt)
+        newState.setStore(newNewStore)
+        Set(newState)
+      }
+    })
+
   table.put(MethodDescription("java.lang.System", "arraycopy",
     List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new SnowflakeHandler {
       override def apply(state: State,
