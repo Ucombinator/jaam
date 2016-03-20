@@ -133,6 +133,13 @@ object Snowflakes {
       }
     })
   
+  table.put(MethodDescription("java.security.AccessController", "getStackAccessControlContext",
+    List(), "java.security.AccessControlContext"), NoOpSnowflake)
+  table.put(MethodDescription("java.lang.Class", "registerNatives", List(), "void"), NoOpSnowflake)
+
+  table.put(MethodDescription("java.lang.Double", "doubleToRawLongBits", List("double"), "long"), ReturnSnowflake(D.atomicTop))
+  table.put(MethodDescription("java.lang.Float", "floatToRawIntBits", List("float"), "int"), ReturnSnowflake(D.atomicTop))
+
   table.put(MethodDescription("java.lang.System", "arraycopy",
     List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new SnowflakeHandler {
       override def apply(state: State,
