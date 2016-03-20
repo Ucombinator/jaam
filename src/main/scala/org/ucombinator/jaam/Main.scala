@@ -525,7 +525,7 @@ case class State(val stmt : Stmt,
       case v : NegExpr => D.atomicTop
       case v : BinopExpr =>
         v match {
-          case (_ : EqExpr) | (_ : NeExpr) | (_ : GeExpr) | (_ : GtExpr) | (_ : LeExpr) | (_ : LtExpr) =>
+          case (_ : EqExpr) | (_ : NeExpr) | (_ : GeExpr) | (_ : GtExpr) | (_ : LeExpr) | (_ : LtExpr) | (_ : CmpExpr) =>
             eval(v.getOp1)
             eval(v.getOp2)
             D.atomicTop
