@@ -987,8 +987,8 @@ object Main {
       current.setKontStore(ks)
 
       val nexts = current.next()
-      val tempStore = nexts.map(_.getStore).foldLeft(Store(Map()))(_.join(_))
-      val tempKStore = nexts.map(_.getKontStore).foldLeft(KontStore(Map()))(_.join(_))
+      val tempStore = nexts.par.map(_.getStore).foldLeft(Store(Map()))(_.join(_))
+      val tempKStore = nexts.par.map(_.getKontStore).foldLeft(KontStore(Map()))(_.join(_))
 
       current.setReadAddrs(current.getStore.readAddrs)
       current.setKReadAddrs(current.getKontStore.readAddrs)
