@@ -976,7 +976,7 @@ object Main {
     var done: Set[AbstractState] = Set()
     var store: Store = initialState.getStore
     var ks: KontStore = initialState.getKontStore
-    var packets = Set[UpdatePacket]()
+    var packets = List[UpdatePacket]()
 
     while (todo nonEmpty) {
       val current = todo.head
@@ -1001,7 +1001,7 @@ object Main {
       val packet = UpdatePacket(
         (for (n <- newTodo) yield { (n.id -> n) }).toMap,
         for (n <- nexts) yield { (current.id -> n.id) })
-      packets += packet
+      packets ++= List(packet)
 
       for (d <- done) {
         if (d.getReadAddrs.intersect(current.getStore.writeAddrs).nonEmpty
