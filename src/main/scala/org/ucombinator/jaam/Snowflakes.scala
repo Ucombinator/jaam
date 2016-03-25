@@ -49,7 +49,7 @@ case class ReturnSnowflake(value : D) extends SnowflakeHandler {
   }
 }
 
-object ReturnObjectSnowflake extends SnowflakeHandler {
+case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
   override def apply(state : State,
                      nextStmt : Stmt,
                      newFP : FramePointer,
@@ -57,7 +57,7 @@ object ReturnObjectSnowflake extends SnowflakeHandler {
                      newKontStack : KontStack) : Set[AbstractState] = {
     val newNewStore = state.stmt.sootStmt match {
       case stmt : DefinitionStmt => state.store.update(state.addrsOf(stmt.getLeftOp),
-        D(Set(ObjectValue(Soot.classes.Class, state.malloc()))))
+        D(Set(ObjectValue(Soot.getSootClass(name), state.malloc()))))
       case stmt : InvokeStmt => state.store
     }
     val newState = state.copy(stmt = nextStmt)
@@ -167,8 +167,7 @@ object Snowflakes {
   table.put(MethodDescription("java.lang.Class", "getComponentType", List(), "java.lang.Class"),
     ReturnSnowflake(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer)))))
 
-  table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"),
-    ReturnObjectSnowflake)
+  table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"), ReturnObjectSnowflake("java.lang.Object"))
 
   table.put(MethodDescription("java.lang.System", "arraycopy",
     List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new SnowflakeHandler {
@@ -221,7 +220,7 @@ object Snowflakes {
   //table.put(MethodDescription("java.lang.Throwable", SootMethod.staticInitializerName, List(), "void"), NoOpSnowflake)
   //private native java.lang.Throwable fillInStackTrace(int);
   table.put(MethodDescription("java.lang.Throwable", "getStackTraceDepth", List(), "int"), ReturnSnowflake(D.atomicTop))
-  table.put(MethodDescription("java.lang.Throwable", "fillInStackTrace", List("int"), "java.lang.Throwable"), ReturnObjectSnowflake)
+  table.put(MethodDescription("java.lang.Throwable", "fillInStackTrace", List("int"), "java.lang.Throwable"), ReturnObjectSnowflake("java.lang.Throwable"))
 
   //native java.lang.StackTraceElement getStackTraceElement(int);
 
