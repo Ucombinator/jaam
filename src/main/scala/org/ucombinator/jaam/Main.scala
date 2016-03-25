@@ -976,7 +976,6 @@ object Main {
     var done: Set[AbstractState] = Set()
     var store: Store = initialState.getStore
     var ks: KontStore = initialState.getKontStore
-    //var packets = List[UpdatePacket]()
     var packets = List[UpdatePacket](UpdatePacket(Map(1 -> initialState), Set.empty))
 
     while (todo nonEmpty) {
