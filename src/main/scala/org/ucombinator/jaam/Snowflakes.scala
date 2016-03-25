@@ -221,6 +221,8 @@ object Snowflakes {
   //table.put(MethodDescription("java.lang.Throwable", SootMethod.staticInitializerName, List(), "void"), NoOpSnowflake)
   //private native java.lang.Throwable fillInStackTrace(int);
   table.put(MethodDescription("java.lang.Throwable", "getStackTraceDepth", List(), "int"), ReturnSnowflake(D.atomicTop))
+  table.put(MethodDescription("java.lang.Throwable", "fillInStackTrace", List("int"), "java.lang.Throwable"), ReturnObjectSnowflake)
+
   //native java.lang.StackTraceElement getStackTraceElement(int);
 
   // java.util.ArrayList
