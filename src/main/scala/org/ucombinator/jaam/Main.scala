@@ -14,6 +14,7 @@ package org.ucombinator.jaam
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
+import scala.collection.mutable.TreeSet
 import scala.language.postfixOps
 import xml.Utility
 
@@ -354,7 +355,9 @@ case class Store(private val map : Map[Addr, D]) {
 // Due to a bug in json4s we have to use "Int" instead of "AbstractState.Id" for the keys of this map
 // Once the following pull request is accepted we can use "AbstractState.Id":
 //   https://github.com/json4s/json4s/pull/324
-case class UpdatePacket(states : Map[Int,AbstractState], edges : Set[(AbstractState.Id, AbstractState.Id)])
+case class UpdatePacket(states : Map[Int,AbstractState], edges : Set[(AbstractState.Id, AbstractState.Id)]) {
+  def nonEmpty = states.nonEmpty && edges.nonEmpty
+}
 object UpdatePacket {
   val serializer = new CustomSerializer[UpdatePacket](implicit format => (
     { case s => ??? },
@@ -977,7 +980,9 @@ object Main {
     var done: Set[AbstractState] = Set()
     var store: Store = initialState.getStore
     var ks: KontStore = initialState.getKontStore
-    var packets = List[UpdatePacket](UpdatePacket(Map(1 -> initialState), Set.empty))
+    //var packets = List[UpdatePacket](UpdatePacket(Map(1 -> initialState), Set.empty))
+    var packets = TreeSet.empty(Ordering.by[UpdatePacket, Int](m => (m.states.keys ++ Seq(0)).max))
+    packets += UpdatePacket(Map(1 -> initialState), Set.empty)
 
     while (todo nonEmpty) {
       val current = todo.head
@@ -1000,9 +1005,10 @@ object Main {
 
       val newTodo = nexts.toList.filter(!done.contains(_))
       val packet = UpdatePacket(
-        (for (n <- newTodo) yield { (n.id -> n) }).toMap,
+        (for (n <- nexts) yield { (n.id -> n) }).toMap,
         for (n <- nexts) yield { (current.id -> n.id) })
-      packets ++= List(packet)
+      //packets ++= List(packets)
+      if (packet.nonEmpty) packets += packet
 
       for (d <- done) {
         if (d.getReadAddrs.intersect(current.getStore.writeAddrs).nonEmpty
