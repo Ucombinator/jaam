@@ -153,6 +153,7 @@ object Snowflakes {
   table.put(MethodDescription("java.security.AccessController", "getStackAccessControlContext",
     List(), "java.security.AccessControlContext"), NoOpSnowflake)
   table.put(MethodDescription("java.lang.Class", "registerNatives", List(), "void"), NoOpSnowflake)
+  table.put(MethodDescription("sun.misc.Unsafe", "registerNatives", List(), "void"), NoOpSnowflake)
 
   table.put(MethodDescription("java.lang.Double", "doubleToRawLongBits", List("double"), "long"), ReturnSnowflake(D.atomicTop))
   table.put(MethodDescription("java.lang.Float", "floatToRawIntBits", List("float"), "int"), ReturnSnowflake(D.atomicTop))
