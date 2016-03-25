@@ -149,7 +149,9 @@ object Snowflakes {
           Set(newState)
       }
     })
-  
+
+  table.put(MethodDescription("java.security.AccessController", "checkPermission", List("java.security.Permission"), "void"), NoOpSnowflake)
+
   table.put(MethodDescription("java.security.AccessController", "getStackAccessControlContext",
     List(), "java.security.AccessControlContext"), NoOpSnowflake)
   table.put(MethodDescription("java.lang.Class", "registerNatives", List(), "void"), NoOpSnowflake)
@@ -159,10 +161,11 @@ object Snowflakes {
   table.put(MethodDescription("java.lang.Float", "floatToRawIntBits", List("float"), "int"), ReturnSnowflake(D.atomicTop))
   table.put(MethodDescription("java.lang.Class", "isArray", List(), "boolean"), ReturnSnowflake(D.atomicTop))
   table.put(MethodDescription("java.lang.Class", "isPrimitive", List(), "boolean"), ReturnSnowflake(D.atomicTop))
-  
+ 
   table.put(MethodDescription("java.lang.Class", "getPrimitiveClass", List("java.lang.String"), "java.lang.Class"),
-    ReturnObjectSnowflake)
-  table.put(MethodDescription("java.lang.Class", "getComponentType", List(), "java.lang.Class"), ReturnObjectSnowflake)
+    ReturnSnowflake(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer)))))
+  table.put(MethodDescription("java.lang.Class", "getComponentType", List(), "java.lang.Class"),
+    ReturnSnowflake(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer)))))
 
   table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"),
     ReturnObjectSnowflake)
@@ -215,7 +218,7 @@ object Snowflakes {
 
   // java.lang.Throwable
   table.put(MethodDescription("java.lang.Throwable", SootMethod.constructorName, List(), "void"), NoOpSnowflake)
-  table.put(MethodDescription("java.lang.Throwable", SootMethod.staticInitializerName, List(), "void"), NoOpSnowflake)
+  //table.put(MethodDescription("java.lang.Throwable", SootMethod.staticInitializerName, List(), "void"), NoOpSnowflake)
   //private native java.lang.Throwable fillInStackTrace(int);
   table.put(MethodDescription("java.lang.Throwable", "getStackTraceDepth", List(), "int"), ReturnSnowflake(D.atomicTop))
   //native java.lang.StackTraceElement getStackTraceElement(int);

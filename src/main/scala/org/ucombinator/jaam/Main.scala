@@ -247,7 +247,9 @@ case object InitialBasePointer extends BasePointer
 // Note that due to interning, strings and classes may share base pointers with each other
 // Oh, and class loaders are a headache(!)
 case class StringBasePointer(val string : String) extends BasePointer
-case class ClassBasePointer(val name : String) extends BasePointer
+// we remvoe the argument of ClassBasePointer, to make all ClassBasePointer points to the same
+//case class ClassBasePointer(val name : String) extends BasePointer
+case object ClassBasePointer extends BasePointer
 
 //----------------- ADDRESSES ------------------
 
@@ -516,7 +518,7 @@ case class State(val stmt : Stmt,
       case _ : NumericConstant => D.atomicTop
       // TODO: Class and String objects are objects and so need their fields initialized
       // TODO/clarity: Add an example of Java code that can trigger this.
-      case v : ClassConstant => D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer(v.value))))
+      case v : ClassConstant => D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer)))
         //D(Set(ObjectValue(stmt.classmap("java.lang.Class"), StringBasePointer(v.value))))
       case v : StringConstant =>
         val bp = StringBasePointer(v.value)
@@ -1005,9 +1007,8 @@ object Main {
 
       val newTodo = nexts.toList.filter(!done.contains(_))
       val packet = UpdatePacket(
-        (for (n <- nexts) yield { (n.id -> n) }).toMap,
+        (for (n <- newTodo) yield { (n.id -> n) }).toMap,
         for (n <- nexts) yield { (current.id -> n.id) })
-      //packets ++= List(packets)
       if (packet.nonEmpty) packets += packet
 
       for (d <- done) {
