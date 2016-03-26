@@ -240,9 +240,13 @@ case class ZeroCFAFramePointer(val method : SootMethod) extends FramePointer
 case class OneCFAFramePointer(val method : SootMethod, val nextStmt : Stmt) extends FramePointer
 case object InitialFramePointer extends FramePointer
 
+abstract class From
+case object FromNative extends From
+case object FromJava extends From
+
 // BasePointers, when paired with field names, yield the addresses of fields.
 abstract class BasePointer
-case class OneCFABasePointer(stmt : Stmt, fp : FramePointer) extends BasePointer
+case class OneCFABasePointer(stmt : Stmt, fp : FramePointer, from : From) extends BasePointer
 case object InitialBasePointer extends BasePointer
 // Note that due to interning, strings and classes may share base pointers with each other
 // Oh, and class loaders are a headache(!)
@@ -344,7 +348,15 @@ case class Store(private val map : Map[Addr, D]) {
 
   def apply(addrs : Set[Addr]) : D = {
     readAddrs ++= addrs
-    val ds = for (a <- addrs; if map.contains(a)) yield map(a)
+    val ds = for (a <- addrs; if map.contains(a)) yield {
+      a match {
+        case InstanceFieldAddr(OneCFABasePointer(_, _, FromNative), _) =>
+          println(Console.RED + "!!!!! Access field of object created from native method !!!!!")
+          println(a + Console.RESET)
+        case _ =>
+      }
+      map(a)
+    }
     val res = ds.fold (D(Set()))(_ join _)
     if (res == D(Set())) throw UndefinedAddrsException(addrs)
     res
@@ -430,7 +442,8 @@ case class State(val stmt : Stmt,
   // Allocates a new frame pointer (currently uses 1CFA)
   def alloca(expr : InvokeExpr, nextStmt : Stmt) : FramePointer = ZeroCFAFramePointer(expr.getMethod)
   // Allocates objects
-  def malloc() : BasePointer = OneCFABasePointer(stmt, fp)
+  def malloc() : BasePointer = OneCFABasePointer(stmt, fp, FromJava)
+  def mallocFromNative() : BasePointer = OneCFABasePointer(stmt, fp, FromNative)
 
   // Any time you reference a class, you have to run this to make sure it's initialized.
   // If it isn't, the exception should be caught so the class can be initialized.

@@ -57,7 +57,7 @@ case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
                      newKontStack : KontStack) : Set[AbstractState] = {
     val newNewStore = state.stmt.sootStmt match {
       case stmt : DefinitionStmt => state.store.update(state.addrsOf(stmt.getLeftOp),
-        D(Set(ObjectValue(Soot.getSootClass(name), state.malloc()))))
+        D(Set(ObjectValue(Soot.getSootClass(name), state.mallocFromNative()))))
       case stmt : InvokeStmt => state.store
     }
     val newState = state.copy(stmt = nextStmt)
