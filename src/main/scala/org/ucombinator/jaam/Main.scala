@@ -370,7 +370,7 @@ case class Store(private val map : Map[Addr, D]) {
 // Once the following pull request is accepted we can use "AbstractState.Id":
 //   https://github.com/json4s/json4s/pull/324
 case class UpdatePacket(states : Map[Int,AbstractState], edges : Set[(AbstractState.Id, AbstractState.Id)]) {
-  def nonEmpty = states.nonEmpty && edges.nonEmpty
+  def nonEmpty = states.nonEmpty || edges.nonEmpty
 }
 object UpdatePacket {
   val serializer = new CustomSerializer[UpdatePacket](implicit format => (
@@ -655,7 +655,7 @@ case class State(val stmt : Stmt,
       val th = ThisFrameAddr(newFP)
       for (r <- receivers)
         newStore = newStore.update(th, D(Set(r)))
-
+      
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, newFP, newStore, newKontStack)
         case None =>

@@ -88,6 +88,13 @@ object Snowflakes {
       meth.getParameterTypes.toList.map(_.toString()),
       meth.getReturnType.toString()))
 
+  // For running Image Processor
+  table.put(MethodDescription("java.lang.System", "getProperty", List("java.lang.String"), "java.lang.String"),
+    ReturnSnowflake(D(Set(ObjectValue(Soot.classes.String, StringBasePointer("returns from getProperty"))))))
+  table.put(MethodDescription("java.nio.file.Paths", "get", List("java.lang.String", "java.lang.String[]"), "java.nio.file.Path"),
+    ReturnObjectSnowflake("java.nio.file.Path"))
+  table.put(MethodDescription("java.util.HashMap", SootMethod.constructorName, List(), "void"), ReturnObjectSnowflake("java.util.HashMap"))
+
   // java.io.PrintStream
   table.put(MethodDescription("java.io.PrintStream", "println", List("int"), "void"), NoOpSnowflake)
   table.put(MethodDescription("java.io.PrintStream", "println", List("java.lang.String"), "void"), NoOpSnowflake)
@@ -169,8 +176,6 @@ object Snowflakes {
 
   table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"), ReturnObjectSnowflake("java.lang.Object"))
 
-  table.put(MethodDescription("java.lang.System", "getProperty", List("java.lang.String"), "java.lang.String"),
-    ReturnSnowflake(D(Set(ObjectValue(Soot.classes.String, StringBasePointer("returns from getProperty"))))))
 
   table.put(MethodDescription("java.lang.System", "arraycopy",
     List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new SnowflakeHandler {
