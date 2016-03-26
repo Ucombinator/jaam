@@ -982,13 +982,19 @@ object Main {
     var done: Set[AbstractState] = Set()
     var store: Store = initialState.getStore
     var ks: KontStore = initialState.getKontStore
-    //var packets = List[UpdatePacket](UpdatePacket(Map(1 -> initialState), Set.empty))
-    var packets = TreeSet.empty(Ordering.by[UpdatePacket, Int](m => (m.states.keys ++ Seq(0)).max))
-    packets += UpdatePacket(Map(1 -> initialState), Set.empty)
+    //var packets = TreeSet.empty(Ordering.by[UpdatePacket, Int](m => (m.states.keys ++ Seq(0)).max))
+    //packets += UpdatePacket(Map(1 -> initialState), Set.empty)
+
+    implicit val formats = Soot.formats +
+      UpdatePacket.serializer +
+      D.serializer +
+      Store.serializer +
+      KontStore.serializer
+    println(Serialization.writePretty(UpdatePacket(Map(1 -> initialState), Set.empty)))
 
     while (todo nonEmpty) {
       val current = todo.head
-      println("Processing " + current.id)
+      //println("Processing " + current.id)
       store.resetReadAddrsAndWriteAddrs
       ks.resetReadAddrsAndWriteAddrs
       current.setStore(store)
@@ -1009,7 +1015,9 @@ object Main {
       val packet = UpdatePacket(
         (for (n <- newTodo) yield { (n.id -> n) }).toMap,
         for (n <- nexts) yield { (current.id -> n.id) })
-      if (packet.nonEmpty) packets += packet
+      if (packet.nonEmpty) {
+        println(Serialization.writePretty(packet))
+      }
 
       for (d <- done) {
         if (d.getReadAddrs.intersect(current.getStore.writeAddrs).nonEmpty
@@ -1025,74 +1033,7 @@ object Main {
       todo = newTodo ++ todo.tail
     }
 
-    implicit val formats = Soot.formats +
-      UpdatePacket.serializer +
-      D.serializer +
-      Store.serializer +
-      KontStore.serializer
-    for (n <- packets) {
-      println(Serialization.writePretty(n))
-    }
-
     println("Done!")
-    
-    /*
-    var states : Set[AbstractState] = Set(initialState)
-    var store : Store = initialState.getStore()
-    var ks : KontStore = initialState.getKontStore()
-    var packets = Set[UpdatePacket]()
-
-    // Explore the state graph
-    while (true) {
-      var tempStates = Set[AbstractState]()
-      var tempStore = Store(Map())
-      var tempKStore = KontStore(Map())
-      packets = Set[UpdatePacket]()
-
-      for (current <- states) {
-        current.setStore(store)
-        current.setKontStore(ks)
-        val nexts = current.next()
-        tempStore = nexts.map(_.getStore()).foldLeft(tempStore)(_.join(_))
-        tempKStore = nexts.map(_.getKontStore()).foldLeft(tempKStore)(_.join(_))
-
-        val newTodo = nexts.toList.filter(!tempStates.contains(_))
-        for (next <- nexts) {
-          window.addNext(current, next)
-        }
-
-        val packet = UpdatePacket(
-          (for (n <- newTodo) yield { n.id -> n }).toMap,
-          for (n <- nexts) yield { current.id -> n.id })
-        packets += packet
-
-        tempStates = tempStates ++ nexts
-      }
-
-      val newStates = states ++ tempStates
-      val newStore = store.join(tempStore)
-      val newKStore = ks.join(tempKStore)
-      if (states.size == newStates.size && store.equals(newStore) && ks.equals(newKStore)) {
-        implicit val formats = Soot.formats +
-          UpdatePacket.serializer +
-          D.serializer +
-          Store.serializer +
-          KontStore.serializer
-
-        for (n <- packets) {
-          println(Serialization.writePretty(n))
-        }
-        //println("States size: " + states.size)
-        println("Done!")
-        return
-      }
-      else {
-        states = newStates
-        store = newStore
-        ks = newKStore
-      }
-    }
-    */
   }
 
   def cfgMode(config: Config) {
