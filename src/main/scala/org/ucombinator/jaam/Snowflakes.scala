@@ -169,6 +169,9 @@ object Snowflakes {
 
   table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"), ReturnObjectSnowflake("java.lang.Object"))
 
+  table.put(MethodDescription("java.lang.System", "getProperty", List("java.lang.String"), "java.lang.String"),
+    ReturnSnowflake(D(Set(ObjectValue(Soot.classes.String, StringBasePointer("returns from getProperty"))))))
+
   table.put(MethodDescription("java.lang.System", "arraycopy",
     List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new SnowflakeHandler {
       override def apply(state: State,
