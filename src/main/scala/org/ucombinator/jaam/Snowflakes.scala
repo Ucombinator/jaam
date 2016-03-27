@@ -167,7 +167,7 @@ object Snowflakes {
   table.put(MethodDescription("java.lang.Float", "floatToRawIntBits", List("float"), "int"), ReturnSnowflake(D.atomicTop))
   table.put(MethodDescription("java.lang.Class", "isArray", List(), "boolean"), ReturnSnowflake(D.atomicTop))
   table.put(MethodDescription("java.lang.Class", "isPrimitive", List(), "boolean"), ReturnSnowflake(D.atomicTop))
- 
+  
   table.put(MethodDescription("java.lang.Class", "getPrimitiveClass", List("java.lang.String"), "java.lang.Class"),
     ReturnSnowflake(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer)))))
   table.put(MethodDescription("java.lang.Class", "getComponentType", List(), "java.lang.Class"),

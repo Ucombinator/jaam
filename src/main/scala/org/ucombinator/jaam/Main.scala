@@ -692,7 +692,15 @@ case class State(val stmt : Stmt,
       case expr : InstanceInvokeExpr =>
         val d = eval(expr.getBase())
         val vs = d.values filter { 
-          case ObjectValue(sootClass, _) => Soot.isSubclass(sootClass, expr.getMethod().getDeclaringClass)
+          case ObjectValue(sootClass, _) => {
+            if (expr.getMethod().getDeclaringClass.isInterface) {
+              val imps = Scene.v().getActiveHierarchy.getImplementersOf(expr.getMethod().getDeclaringClass)
+              imps.contains(sootClass)
+            }
+            else {
+              Soot.isSubclass(sootClass, expr.getMethod().getDeclaringClass)
+            }
+          }
           case ArrayValue(sootType, _) => {
             /*
             println(expr.getMethod.getReturnType)
