@@ -949,7 +949,6 @@ object State {
 
 // Command option config
 case class Config(
-  cfg: Option[String] = None,
   sootClassPath: String = null,
   className: String = null,
   methodName: String = null)
@@ -958,9 +957,6 @@ object Main {
   def main(args : Array[String]) {
     val parser = new scopt.OptionParser[Config]("shimple-analyzer") {
       head("shimple-analyzer")
-      opt[String]("cfg") action {
-        (x, c) => c.copy(cfg = Some(x))
-      } text("output TODO control flow graph")
 
       opt[String]("classpath") action {
         (x, c) => c.copy(sootClassPath = x)
@@ -983,11 +979,7 @@ object Main {
 
       case Some(config) =>
         Soot.initialize(config)
-
-        config.cfg match {
-          case None => defaultMode(config)
-          case Some(dir) => cfgMode(config)
-        }
+        defaultMode(config)
     }
   }
 
@@ -1055,72 +1047,6 @@ object Main {
     }
 
     println("Done!")
-  }
-
-  def cfgMode(config: Config) {
-    val cg = Scene.v().getCallGraph()
-
-    // TODO: target for throw
-    def getTargets(stmt : Stmt) : List[Stmt] = {
-      def getCallTarget() = {
-        // Skip over things like native methods
-        // TODO: note this edge somehow
-        for (e <- cg.edgesOutOf(stmt.sootMethod); if !e.getTgt.method().hasActiveBody) {
-          println("Warning: no active body of " + e.getTgt.method().getSignature)
-        }
-        cg.edgesOutOf(stmt.sootMethod).filter(_.getTgt.method().hasActiveBody).map(e => Stmt.methodEntry(e.getTgt.method)).toList
-      }
-      stmt.sootStmt match {
-        case (_ : InvokeStmt) => getCallTarget()
-
-        case sootStmt: DefinitionStmt => sootStmt.getRightOp match {
-          case rhs: InvokeExpr => getCallTarget()
-          case rhs => List()
-        }
-
-        case (_: ReturnStmt | _ : ReturnVoidStmt) =>
-          cg.edgesInto(stmt.sootMethod).map(e => Stmt(e.srcUnit(), e.getSrc.method())).toList
-
-        case _ => List()
-      }
-    }
-
-    val tgtMap = scala.collection.mutable.Map[String, List[String]]()
-    val callGraph = CallGraph(
-      (for (cls <- Scene.v().getApplicationClasses();
-        method <- cls.getMethods;
-        if method.isConcrete;
-        unit <- Soot.getBody(method).getUnits) yield {
-          val stmt = Stmt(unit, method)
-          val targets = getTargets(stmt)
-
-          tgtMap.get(cls.toString) match {
-            case None => tgtMap += (cls.toString -> targets.map(_.sootMethod.getDeclaringClass.toString))
-            case Some(tgts) => tgtMap += (cls.toString -> (targets.map(_.sootMethod.getDeclaringClass.toString)++tgts).distinct)
-          }
-
-          (stmt -> CallGraphValue(targets, stmt.nextSemantic)) //obj)
-      }).toMap)
-
-    def getDenpendencyList(className: String, acc: List[String]): List[String] = {
-      var existed = List(className) ++ acc
-      tgtMap.get(className) match {
-        case None => existed
-        case Some(deps) => {
-          deps.filter(!existed.contains(_)).foreach((c: String) => {
-            existed ++= getDenpendencyList(c, existed)
-          })
-          existed
-        }
-      }
-    }
-    val depList = getDenpendencyList(config.className, List()).distinct
-    val filteredCallGraph = CallGraph(callGraph.map.filterKeys(stmt => {
-      depList.contains(stmt.sootMethod.getDeclaringClass.toString)
-    }))
-
-    implicit val formats = Soot.formats + Soot.mapSerializer[CallGraph, Stmt, CallGraphValue]
-    println(Serialization.writePretty(filteredCallGraph))
   }
 }
 

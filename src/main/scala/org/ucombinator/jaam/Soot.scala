@@ -145,28 +145,13 @@ object Soot {
     Options.v().set_prepend_classpath(false)
     // Take definitions only from class files
     Options.v().set_src_prec(Options.src_prec_only_class)
-    config.cfg match {
-      case None => {}
-      case Some(dir) =>
-        // Whole program mode is slow but needed when we are in CFG mode
-        Options.v().set_whole_program(true)
-        Options.v().set_process_dir(dir.split(System.getProperty("path.separator")).toList)
-    }
 
     // Compute dependent options
-    soot.Main.v().autoSetOptions();
-
-    config.cfg match {
-      case None => {}
-      case Some(_) =>
-        // Load classes according to the configured options
-        Scene.v().loadNecessaryClasses()
-        Scene.v().setMainClass(Scene.v().getSootClass(config.className))
-    }
+    soot.Main.v().autoSetOptions()
 
     // Run transformations and analyses according to the configured options.
     // Transformation could include jimple, shimple, and CFG generation
-    PackManager.v().runPacks();
+    PackManager.v().runPacks()
     Scene.v().loadBasicClasses()
   }
 

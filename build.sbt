@@ -19,4 +19,6 @@ libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % "2.10.6"
 )
 
+scalacOptions ++= Seq("-unchecked", "-deprecation")
+
 mainClass in Compile := Some("org.ucombinator.jaam.Main")
