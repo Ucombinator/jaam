@@ -32,7 +32,7 @@ object NoOpSnowflake extends SnowflakeHandler {
                      newFP : FramePointer,
                      newStore : Store,
                      newKontStack : KontStack) : Set[AbstractState] =
-    Set(state.copy(stmt = nextStmt))
+    Set(state.copyState(stmt = nextStmt))
 }
 
 // TODO/soundness: Add JohnSnowflake for black-holes. Not everything becomes top, but an awful lot will.
@@ -43,9 +43,7 @@ case class ReturnSnowflake(value : D) extends SnowflakeHandler {
       case sootStmt : DefinitionStmt => state.store.update(state.addrsOf(sootStmt.getLeftOp()), value)
       case sootStmt : InvokeStmt => state.store
     }
-    val newState = state.copy(stmt = nextStmt)
-    newState.setStore(newNewStore)
-    Set(newState)
+    Set(state.copyState(stmt = nextStmt, store = newNewStore))
   }
 }
 
@@ -60,22 +58,18 @@ case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
         D(Set(ObjectValue(Soot.getSootClass(name), state.mallocFromNative()))))
       case stmt : InvokeStmt => state.store
     }
-    val newState = state.copy(stmt = nextStmt)
-    newState.setStore(newNewStore)
-    Set(newState)
+    Set(state.copyState(stmt = nextStmt, store = newNewStore))
   }
 }
 
 case class PutStaticSnowflake(clas : String, field : String, v : soot.Value) extends SnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
     val sootField = Jimple.v.newStaticFieldRef(Soot.getSootClass(clas).getFieldByName(field).makeRef())
-    val tempState = state.copy(fp = newFP, kontStack = newKontStack)
-    tempState.setStore(newStore)
+    val tempState = state.copyState(fp = newFP, kontStack = newKontStack, store = newStore)
+    //tempState.setStore(newStore)
     val value = tempState.eval(v)
     val newNewStore = state.store.update(state.addrsOf(sootField), value)
-    val newState = state.copy(stmt = nextStmt)
-    newState.setStore(newNewStore)
-    Set(newState)
+    Set(state.copyState(stmt = nextStmt, store = newNewStore))
   }
 }
 
@@ -137,22 +131,20 @@ object Snowflakes {
   table.put(MethodDescription("java.lang.Object", "clone", List(), "java.lang.Object"),
     new SnowflakeHandler {
       override def apply(state: State,
-        nextStmt: Stmt,
-        newFP: FramePointer,
-        newStore: Store,
-        newKontStack: KontStack): Set[AbstractState] = {
-          val newNewStore = state.stmt.sootStmt match {
-            case stmt : DefinitionStmt => {
-              val value = stmt.getRightOp match {
-                case expr: InstanceInvokeExpr => state.eval(expr.getBase)
-              }
-              state.store.update(state.addrsOf(stmt.getLeftOp), value)
+                         nextStmt: Stmt,
+                         newFP: FramePointer,
+                         newStore: Store,
+                         newKontStack: KontStack): Set[AbstractState] = {
+        val newNewStore = state.stmt.sootStmt match {
+          case stmt : DefinitionStmt => {
+            val value = stmt.getRightOp match {
+              case expr: InstanceInvokeExpr => state.eval(expr.getBase)
             }
-            case stmt : InvokeStmt => state.store
+            state.store.update(state.addrsOf(stmt.getLeftOp), value)
           }
-          val newState = state.copy(stmt = nextStmt)
-          newState.setStore(newNewStore)
-          Set(newState)
+          case stmt : InvokeStmt => state.store
+        }
+        Set(state.copyState(stmt = nextStmt, store = newStore))
       }
     })
 
@@ -167,7 +159,7 @@ object Snowflakes {
   table.put(MethodDescription("java.lang.Float", "floatToRawIntBits", List("float"), "int"), ReturnSnowflake(D.atomicTop))
   table.put(MethodDescription("java.lang.Class", "isArray", List(), "boolean"), ReturnSnowflake(D.atomicTop))
   table.put(MethodDescription("java.lang.Class", "isPrimitive", List(), "boolean"), ReturnSnowflake(D.atomicTop))
-  
+
   table.put(MethodDescription("java.lang.Class", "getPrimitiveClass", List("java.lang.String"), "java.lang.Class"),
     ReturnSnowflake(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer)))))
   table.put(MethodDescription("java.lang.Class", "getComponentType", List(), "java.lang.Class"),
@@ -178,34 +170,30 @@ object Snowflakes {
 
   table.put(MethodDescription("java.lang.System", "arraycopy",
     List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new SnowflakeHandler {
-      override def apply(state: State,
-        nextStmt: Stmt,
-        newFP: FramePointer,
-        newStore: Store,
-        newKontStack: KontStack): Set[AbstractState] = {
-          assert(state.stmt.sootStmt.getInvokeExpr.getArgCount == 5)
-          val expr = state.stmt.sootStmt.getInvokeExpr
-          val newNewStore = newStore.update(state.addrsOf(expr.getArg(2)), state.eval(expr.getArg(0)))
-          val newState = state.copy(stmt = nextStmt)
-          newState.setStore(newNewStore)
-          Set(newState)
-      }
-    })
+    override def apply(state: State,
+                       nextStmt: Stmt,
+                       newFP: FramePointer,
+                       newStore: Store,
+                       newKontStack: KontStack): Set[AbstractState] = {
+      assert(state.stmt.sootStmt.getInvokeExpr.getArgCount == 5)
+      val expr = state.stmt.sootStmt.getInvokeExpr
+      val newNewStore = newStore.update(state.addrsOf(expr.getArg(2)), state.eval(expr.getArg(0)))
+      Set(state.copyState(stmt = nextStmt, store = newStore))
+    }
+  })
 
   // java.lang.System
   table.put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
     new SnowflakeHandler {
       override def apply(state : State, nextStmt : Stmt,
-        newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
+                         newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
         var newNewStore = newStore
         newNewStore = updateStore(newNewStore, "java.lang.System", "in", "java.io.InputStream")
         newNewStore = updateStore(newNewStore, "java.lang.System", "out", "java.io.PrintStream")
         newNewStore = updateStore(newNewStore, "java.lang.System", "err", "java.io.PrintStream")
         newNewStore = updateStore(newNewStore, "java.lang.System", "security", "java.lang.SecurityManager")
         newNewStore = updateStore(newNewStore, "java.lang.System", "cons", "java.io.Console")
-        val newState = state.copy(stmt = nextStmt)
-        newState.setStore(newNewStore)
-        Set(newState)
+        Set(state.copyState(stmt = nextStmt, store = newStore))
       }
     })
   //private static native void registerNatives();
