@@ -21,13 +21,15 @@ will not need to be re-downloaded on successive runs.
 
 ### Finding the Path to the Java 1.7 `rt.jar` File
 
-You need to find the path your 'rt.jar' file, which is located inside the Java1.7 "home" directory:
+If your are using Java 1.7, then the `find-rt-jar.sh` script in `bin` can automatically find it for you.
+
+If you need to manually find the path your 'rt.jar' file, it is located inside the Java 1.7 "home" directory:
 
 ```
 <your Java 1.7 home directory>/jre/lib/rt.jar
 ```
 
-To find your Java 1.7 home directory, run the appropriate command for your operating system:
+How to find the Java 1.7 home directory varies by operating system:
 
 * On OS X, run the command `/usr/libexec/java_home -v 1.7`
 
