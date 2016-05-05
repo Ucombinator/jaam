@@ -1,5 +1,6 @@
 *.*~
-project
+project/*
+!project/*.sbt
 target
 javacache
 .DS_Store
