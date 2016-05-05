@@ -7,10 +7,13 @@ import sys
 
 SEP     = ';' if os.name == 'nt' else ':'
 DIR     = os.path.abspath(os.path.dirname(__file__))
+BIN     = os.path.join(DIR, 'bin')
+SBT     = os.path.join(BIN, 'sbt')
+FIND_RT = os.path.join(BIN, 'find-rt-jar.sh')
 VERBOSE = False
 
 attributes = {
-    'version'   : '0.4.0',
+    'version'   : '0.5.0',
     'name'      : os.path.basename(sys.argv[0]),
     'long_name' : 'JAAM',
 }
@@ -38,24 +41,14 @@ def handle_command(command, stdout, stderr):
             run_command(command, sys.stdout, sys.stderr)
 
 def run(rt_jar, classpaths, classname, main_method, java_opts=None, stdout=None, stderr=None):
-    command = "{java_opts}sbt 'run --classpath {rt_jar}{sep}{classpaths} -c {classname} -m {main_method}'".format(
+    command = "{java_opts}{sbt} 'run --classpath {rt_jar}{sep}{classpaths} -c {classname} -m {main_method}'".format(
         java_opts   = 'JAVA_OPTS="{opts}" '.format(opts=java_opts) if java_opts else '',
+        sbt         = SBT,
         rt_jar      = rt_jar,
         sep         = SEP,
         classpaths  = SEP.join(classpaths),
         classname   = classname,
         main_method = main_method
-    )
-    handle_command(command, stdout, stderr)
-
-def cfg(rt_jar, app_classpath, classpaths, classname, java_opts=None, stdout=None, stderr=None):
-    command = "{java_opts}sbt 'run --cfg {app_classpath} --classpath {rt_jar}{sep}{classpaths} -c {classname}'".format(
-        java_opts       = 'JAVA_OPTS="{opts}" '.format(opts=java_opts) if java_opts else '',
-        rt_jar          = rt_jar,
-        app_classpath   = app_classpath,
-        sep             = SEP if classpaths else '',
-        classpaths      = SEP.join(classpaths) if classpaths else '',
-        classname       = classname
     )
     handle_command(command, stdout, stderr)
 
@@ -67,10 +60,8 @@ def version():
 
 def usage(command=None):
     print(version())
-
-    information = {}
-    information['run'] = '\n'.join([
-        "usage: {name} run [-hv] [-J rt_jar] [-P classpath, -P classpath, ...]",
+    print('\n'.join([
+        "usage: {name} [-hv] [-J rt_jar] [-P classpath, -P classpath, ...]",
         "    [-c class] [-m main_method] [-o outfile] [-E stderr_outfile]",
         "",
         "OPTIONS",
@@ -90,138 +81,67 @@ def usage(command=None):
         "",
         "EXAMPLES",
         "    From the main JAAM directory, you can do:",
-        "        {name} run -J <path-to-rt.jar> -P to-analyze -c Factorial -m main",
+        "        {name} -J <path-to-rt.jar> -P to-analyze -c Factorial -m main",
         "    You can also run this wrapper from anywhere. If your JAAM directory is",
         "    located at $JAAMDIR, you could do:",
-        "        {name} run -J <path-to-rt.jar> -P $JAAMDIR/to-analyze -c Factorial -m main",
+        "        {name} -J <path-to-rt.jar> -P $JAAMDIR/to-analyze -c Factorial -m main",
         "",
-    ]).format(name=attributes['name'])
-    information['cfg'] = '\n'.join([
-        "usage: {name} cfg [-hv] [-J rt_jar] [-P classpath, -P classpath, ...]",
-        "    [-c class] [-m main_method] [-o outfile] [-E stderr_outfile]",
+        "NOTE ON rt.jar",
+        "    The Java runtime's `rt.jar` file is imperative to the function of this",
+        "    program. You can provide a path to it directly via the `--rt-jar` option",
+        "    or else the local `bin/find-rt-jar.sh` will be used to attempt to",
+        "    automatically find it.",
         "",
-        "OPTIONS",
-        "    -h, --help             Print this help information.",
-        "    -v, --version          Print the version information.",
-        "    -V, --verbose          Print extra information while running.",
-        "    -J, --rt-jar           The path to your 'rt.jar' file.",
-        "    -a, --app-classpath    A directory containing the path you want to analyze.",
-        "                           This could be a .jar file.",
-        "    -P, --classpath        A path you want to analyze. You can specify this",
-        "                           option multiple times to add multiple paths. They",
-        "                           could be .jar files.",
-        "    -c, --classname        The name of the class you want to analyze.",
-        "    --java-opts            Extra options passed as:",
-        "                           JAVA_OPTS=\"{{java_opts}}\"",
-        "    -o, --outfile          Where to redirect stdout (if desired).",
-        "    -E, --error-outfile    Where to redirect stderr (if desired).",
-        "",
-        "EXAMPLES",
-        "    From the main JAAM directory, you can do:",
-        "        {name} cfg -J <path-to-rt.jar> -a to-cfg -c Factorial",
-        "    You can also run this wrapper from anywhere. If your JAAM directory is",
-        "    located at $JAAMDIR, you could do:",
-        "        {name} run -J <path-to-rt.jar> -a $JAAMDIR/to-cfg -c Factorial",
-        "",
-    ]).format(name=attributes['name'])
-
-    if command in information:
-        print(information[command])
-    else:
-        print('\n'.join([
-            "usage: {name} {{ {usage_subcommands} }} [-hv]",
-            "",
-            "OPTIONS",
-            "    -h, --help             Print this help information.",
-            "    -v, --version          Print the version information.",
-            "    -V, --verbose          Print extra information while running.",
-            "",
-            "SUBCOMMANDS",
-            "    run        Use the general analyzer and show the graphical output.",
-            "    cfg        Use CFG mode.",
-            "",
-            "For specific information about how to use a subcommands, do:",
-            "    {name} {{ subcommand }} --help",
-            "",
-        ])).format(
-            name                = attributes['name'],
-            usage_subcommands   = ' | '.join(information.keys())
-        )
+    ]).format(name=attributes['name']))
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        usage()
-        sys.exit(1)
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('-h', '--help', action='store_true')
+    parser.add_argument('-v', '--version', action='store_true')
+    parser.add_argument('-V', '--verbose', action='store_true')
+    parser.add_argument('-J', '--rt-jar')
+    parser.add_argument('-P', '--classpath', action='append')
+    parser.add_argument('-c', '--classname')
+    parser.add_argument('-m', '--main-method')
+    parser.add_argument('--java-opts')
+    parser.add_argument('-o', '--outfile')
+    parser.add_argument('-E', '--error-outfile')
 
-    if len(sys.argv) == 2 and sys.argv[1] == '--help' or sys.argv[1] == '-h':
+    args = parser.parse_args()
+
+    if args.help:
         usage()
         sys.exit(0)
-
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument('-v', '--version', action='store_true')
-
-    args = parser.parse_known_args()
-    if args[0].version:
+    if args.version:
         print(version())
         sys.exit(0)
 
-    subparsers = parser.add_subparsers(dest='subcommand')
-
-    # Regular analyzer arguments.
-    parser_run = subparsers.add_parser('run', add_help=False)
-    parser_run.add_argument('-m', '--main-method')
-
-    # CFG-mode analyzer arguments.
-    parser_cfg = subparsers.add_parser('cfg', add_help=False)
-    parser_cfg.add_argument('-a', '--app-classpath')
-
-    for subparser in [parser_run, parser_cfg]:
-        subparser.add_argument('-h', '--help', action='store_true')
-        subparser.add_argument('-V', '--verbose', action='store_true')
-        subparser.add_argument('-J', '--rt-jar')
-        subparser.add_argument('-P', '--classpath', action='append')
-        subparser.add_argument('-c', '--classname')
-        subparser.add_argument('-o', '--outfile')
-        subparser.add_argument('-E', '--error-outfile')
-        subparser.add_argument('--java-opts')
-
-    args = parser.parse_args(args[1])
-
-    if args.help:
-        usage(command=args.subcommand)
-        sys.exit(0)
-
     VERBOSE = args.verbose
-    args.rt_jar = os.path.abspath(args.rt_jar)
+
+    if args.rt_jar is None:
+        try:
+            args.rt_jar = os.path.abspath(subprocess.check_output(FIND_RT, shell=True).split()[0])
+            if VERBOSE:
+                print("Using rt.jar: {}".format(args.rt_jar))
+        except:
+            print("No rt.jar file given.")
+            sys.exit(1)
+    else:
+        args.rt_jar = os.path.abspath(args.rt_jar)
 
     if args.classpath:
         args.classpath  = [os.path.abspath(classpath) for classpath in args.classpath]
 
-    if args.subcommand == 'run':
-        if not all([args.rt_jar, args.classpath, args.classname, args.main_method]):
-            usage(args.subcommand)
-            print("Not all required options given. Need '--rt-jar', '--classpath', '--classname', '--main-method'.")
-            sys.exit(1)
-        run(
-            rt_jar      = args.rt_jar,
-            classpaths  = args.classpath,
-            classname   = args.classname,
-            main_method = args.main_method,
-            java_opts   = args.java_opts,
-            stdout      = args.outfile,
-            stderr      = args.error_outfile
-        )
-    elif args.subcommand == 'cfg':
-        if not all([args.rt_jar, args.app_classpath, args.classname]):
-            usage(args.subcommand)
-            print("Not all required options given. Need '--rt-jar', '--app-classpath', '--classname'.")
-            sys.exit(1)
-        cfg(
-            rt_jar          = args.rt_jar,
-            app_classpath   = args.app_classpath,
-            classpaths      = args.classpath,
-            classname       = args.classname,
-            java_opts       = args.java_opts,
-            stdout          = args.outfile,
-            stderr          = args.error_outfile
-        )
+    if not all([args.classpath, args.classname, args.main_method]):
+        usage()
+        print("Not all required options given. Need '--classpath', '--classname', '--main-method'.")
+        sys.exit(1)
+    run(
+        rt_jar      = args.rt_jar,
+        classpaths  = args.classpath,
+        classname   = args.classname,
+        main_method = args.main_method,
+        java_opts   = args.java_opts,
+        stdout      = args.outfile,
+        stderr      = args.error_outfile
+    )
