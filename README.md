@@ -5,6 +5,10 @@
 This is an early work in progress. There are a lot of rough edges and bugs. The
 interface is bare bones as most of the current work is on the core analyzer.
 
+## Developers
+
+Instructions for developers [here](docs/DEVELOPERS.md).
+
 ## Requirements
 
 * [SBT](http://www.scala-sbt.org/)
