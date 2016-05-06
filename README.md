@@ -19,9 +19,10 @@ Instructions for developers [here](docs/DEVELOPERS.md).
 
 ## Initialization
 
-The first time you run the tool, `sbt` will download a number of packages that
-the JAAM tool depends on. This may take a while, but these files are cached and
-will not need to be re-downloaded on successive runs.
+Run `./bootstrap.sh` to check all dependencies are met. This will also download SBT/Scala for you.
+
+The first time you run the tool, `sbt` will download a number of packages that the JAAM tool depends on. This may take a
+while, but these files are cached and will not need to be re-downloaded on successive runs. 
 
 ### Finding the Path to the Java 1.7 `rt.jar` File
 
