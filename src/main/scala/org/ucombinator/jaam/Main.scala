@@ -1065,33 +1065,7 @@ object Main {
       override def showUsageOnError = true
     }
 
-    /*
-    val newArgs = Array("--classpath",
-      "/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/jre/lib/rt.jar:"+
-        "/Users/kraks/study/utah/STAC/jaam/to-analyze",
-      "-c", "Exceptions", "-m", "main")
-    */
-
-    /*
-    val newArgs = Array("--classpath",
-      "/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/jre/lib/rt.jar:"+
-        "/Users/kraks/study/utah/STAC/Public_EL_Info_03_Feb_2015/example_apps/ex3/home/challenge_program/pwcheck.jar",
-      "-c", "com.cyberpointllc.stac.host.Main", "-m", "main")
-    */
-
-    val newArgs = Array("--classpath",
-      "/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/jre/lib/rt.jar:"+
-        "/Users/kraks/study/utah/STAC/Enagement2/image_processor/challenge_program/ipchallenge-0.1.jar",
-      "-c", "com.stac.Main", "-m", "main")
-
-    /* Image Processor Engagement 1
-    val newArgs = Array("--classpath",
-      "/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/jre/lib/rt.jar:"+
-        "/Users/kraks/study/utah/STAC/stac_engagement_1_release_v1.0/Challenge_Programs/image_processor/challenge_program/ipchallenge-0.1.jar",
-      "-c", "com.stac.Main", "-m", "main")
-      */
-
-    parser.parse(newArgs, Config()) match {
+    parser.parse(args, Config()) match {
       case None =>
         println("Wrong arguments")
 
