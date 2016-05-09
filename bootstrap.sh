@@ -38,12 +38,31 @@ function interactive_prompt {
     fi
 }
 
+# Begin interacting with user to generate runner script.
+info "Getting default values for JAAM runner"
+# Get default values.
+(>&2 echo)
+interactive_prompt jaam_mode "Choose default mode ('user' or 'developer')" "user"
+interactive_prompt jaam_java "Choose default Java" "java"
+interactive_prompt jaam_rt_jar "Choose default rt.jar" "$($FIND_RT_JAR)"
+interactive_prompt jaam_java_opts "Choose default JAVA_OPTS" ""
+interactive_prompt jaam_sbt "Choose default SBT" "${SBT_PATH}"
+interactive_prompt jaam_runner "Choose location for jaam.sh runner" "${RUNNER_PATH}"
+(>&2 echo)
+
+info "Default mode: ${jaam_mode}"
+info "Default Java: ${jaam_java}"
+info "Default rt.jar: ${jaam_rt_jar}"
+info "Default JAVA_OPTS: ${jaam_java_opts}"
+info "Default SBT: ${jaam_sbt}"
+info "JAAM runner path: ${jaam_runner}"
+
 # Check that Java is installed.
 info "Checking Java is installed"
-if type -p java 1>/dev/null 2>&1
+if type -p "${jaam_java}" 1>/dev/null 2>&1
 then
     # Java is installed at `java`.
-    _java="$(type -p java)"
+    _java="$(type -p ${jaam_java})"
 elif [[ -n "${JAVA_HOME}" ]] && [[ -x "${JAVA_HOME}/bin/java" ]]
 then
     # Java is installed in a directory not on the path.
@@ -79,25 +98,6 @@ else
     error "SBT Bootstrapping failed"
     exit $rt
 fi
-
-# Begin interacting with user to generate runner script.
-info "Getting default values for JAAM runner"
-# Get default values.
-(>&2 echo)
-interactive_prompt jaam_mode "Choose default mode ('user' or 'developer')" "user"
-interactive_prompt jaam_java "Choose default Java" "$_java"
-interactive_prompt jaam_rt_jar "Choose default rt.jar" "$($FIND_RT_JAR)"
-interactive_prompt jaam_java_opts "Choose default JAVA_OPTS" ""
-interactive_prompt jaam_sbt "Choose default SBT" "${SBT_PATH}"
-interactive_prompt jaam_runner "Choose location for jaam.sh runner" "${RUNNER_PATH}"
-(>&2 echo)
-
-info "Default mode: ${jaam_mode}"
-info "Default Java: ${jaam_java}"
-info "Default rt.jar: ${jaam_rt_jar}"
-info "Default JAVA_OPTS: ${jaam_java_opts}"
-info "Default SBT: ${jaam_sbt}"
-info "JAAM runner path: ${jaam_runner}"
 
 info "Generating JAAM runner script at ${jaam_runner}"
 cat <<- EOF > "${jaam_runner}"
