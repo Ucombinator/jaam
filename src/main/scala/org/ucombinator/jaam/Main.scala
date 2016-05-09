@@ -64,7 +64,9 @@ case class UndefinedAddrsException(addrs : Set[Addr]) extends RuntimeException
 // A continuation store paired with a continuation
 case class KontStack(/*store : KontStore, */k : Kont) {
   var store : KontStore = KontStore(Map())
-  def setStore(store : KontStore) : scala.Unit = this.store = store
+  def setStore(store : KontStore) : scala.Unit = {
+    this.store = store
+  }
   def getStore() = store
 
   // TODO/generalize: Add widening in push and pop (to support PDCFA)
@@ -76,9 +78,9 @@ case class KontStack(/*store : KontStore, */k : Kont) {
   def push(frame : Frame) : KontStack = {
     val kAddr = kalloca(frame)
     val newKontStore = store.update(kAddr, Set(k))
-    val newkontStack = KontStack(RetKont(frame, kAddr))
-    newkontStack.setStore(newKontStore)
-    newkontStack
+    val newKontStack = KontStack(RetKont(frame, kAddr))
+    newKontStack.setStore(newKontStore)
+    newKontStack
   }
 
   // Pop returns all possible frames beneath the current one.
@@ -135,7 +137,6 @@ case class KontStack(/*store : KontStore, */k : Kont) {
     }
 
     stackWalk(stmt, fp, this)
-
     // TODO/soundness: deal with unhandled exceptions
   }
 }
@@ -228,9 +229,11 @@ abstract class AtomicValue extends Value
 
 case object AnyAtomicValue extends AtomicValue
 
-case class ObjectValue(val sootClass : SootClass,  val bp : BasePointer) extends Value
+case class ObjectValue(val sootClass : SootClass, val bp : BasePointer) extends Value
 
 case class ArrayValue(val sootType : SootType, val bp : BasePointer) extends Value
+
+case class SnowflakeInterfaceValue(val sootClass : SootClass, val bp : BasePointer) extends Value
 
 //----------------- POINTERS ------------------
 
@@ -429,6 +432,7 @@ case class State(val stmt : Stmt,
                  /*val initializedClasses : Set[SootClass]*/) extends AbstractState {
 
   var store: Store = Store(Map())
+
   override def setStore(store : Store) : scala.Unit = this.store = store
   override def getStore(): Store = store
   override def getKontStore = kontStack.getStore()
@@ -451,10 +455,10 @@ case class State(val stmt : Stmt,
   def copyState(stmt: Stmt = stmt,
                 fp: FramePointer = fp,
                 kontStack: KontStack = kontStack,
-                store: Store = Store(Map()),
-                kontStore: KontStore = KontStore(Map()),
+                store: Store = this.store,
+                kontStore: KontStore = this.kontStack.getStore(),
                 initializedClasses: Set[SootClass] = initializedClasses
-          ): State = {
+               ): State = {
     val newState = this.copy(stmt, fp, kontStack)
     newState.setStore(store)
     newState.setKontStore(kontStore)
@@ -498,7 +502,7 @@ case class State(val stmt : Stmt,
       case lhs : Local => Set(LocalFrameAddr(fp, lhs))
       case lhs : InstanceFieldRef =>
         val b : SootValue = lhs.getBase // the x in x.y
-      val d : D = eval(b)
+        val d : D = eval(b)
         // TODO/optimize
         // filter out incorrect class types
         // TODO/bug
@@ -606,18 +610,19 @@ case class State(val stmt : Stmt,
         } yield ArrayLengthAddr(bp)
         store(addrs)
 
-
       // TODO/precision: implement the actual check
       case v : InstanceOfExpr => D.atomicTop
 
       case v : CastExpr => {
+        // TODO: cast from a SnowflakeObject to another SnowflakeObject
         val castedExpr : SootValue = v.getOp
         val castedType : SootType = v.getType
         checkInitializedClasses(castedType)
-        val d = eval(castedExpr)
         if (castedType.isInstanceOf[PrimType]) {
           return D.atomicTop
         }
+
+        val d = eval(castedExpr)
         // TODO/soundness: Throw an exception if necessary.
         for (vl <- d.values) {
           vl match {
@@ -662,8 +667,12 @@ case class State(val stmt : Stmt,
       //
       // Note that Hierarchy.resolveConcreteDispath should be able to do this, but seems to be implemented wrong
       def overrides(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
+        println("sootClass: " + curr.toString)
+        println("root_m: " + root_m.toString)
         val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
-        if (curr_m == null) { overrides(curr.getSuperclass(), root_m) }
+        if (curr_m == null) {
+          overrides(curr.getSuperclass(), root_m)
+        }
         else if (root_m.getDeclaringClass.isInterface || AccessManager.isAccessLegal(curr_m, root_m)) { List(curr_m) }
         else {
           val o = overrides(curr.getSuperclass(), root_m)
@@ -686,7 +695,19 @@ case class State(val stmt : Stmt,
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, newFP, newStore, newKontStack)
         case None =>
-          if (meth.isNative) {
+          if (meth.getDeclaringClass.isJavaLibraryClass) {
+            val rtType = meth.getReturnType
+            rtType match {
+              case t: VoidType => NoOpSnowflake(this, nextStmt, newFP, newStore, newKontStack)
+              case pt: PrimType => ReturnSnowflake(D.atomicTop)(this, nextStmt, newFP, newStore, newKontStack)
+              case at: ArrayType =>
+                ReturnArraySnowflake(at.baseType.toString, at.numDimensions)
+                  .apply(this, nextStmt, newFP, newStore, newKontStack)
+              case rt: RefType =>
+                ReturnObjectSnowflake(rt.getClassName)(this, nextStmt, newFP, newStore, newKontStack)
+            }
+          }
+          else if (meth.isNative) {
             println()
             println(Console.YELLOW + "!!!!! WARNING: Native method without a snowflake. May be unsound. !!!!!")
             println("!!!!! stmt = " + stmt + " !!!!!")
@@ -718,6 +739,7 @@ case class State(val stmt : Stmt,
       case expr : InstanceInvokeExpr =>
         val d = eval(expr.getBase())
         val vs = d.values filter {
+          case ObjectValue(sootClass, SnowflakeBasePointer(_)) => true
           case ObjectValue(sootClass, _) => {
             if (expr.getMethod().getDeclaringClass.isInterface) {
               val imps = Scene.v().getActiveHierarchy.getImplementersOf(expr.getMethod().getDeclaringClass)
@@ -728,9 +750,6 @@ case class State(val stmt : Stmt,
             }
           }
           case ArrayValue(sootType, _) => {
-            /*
-            println(expr.getMethod.getReturnType)
-            */
             //TODO Check Type
             true
           }
@@ -792,22 +811,40 @@ case class State(val stmt : Stmt,
   override def next() : Set[AbstractState] = {
     try {
       val nexts = true_next()
-      val exceptionStates = (exceptions.values map { kontStack.handleException(_, stmt, fp, store, initializedClasses) }).flatten
+
+      /*
+      println("KStore:")
+      println(kontStack.getStore())
+      println("Exceptions:")
+      println(exceptions)
+      */
+
+      val exceptionStates = (exceptions.values map {
+        kontStack.handleException(_, stmt, fp, store, initializedClasses)
+      }).flatten
       nexts ++ exceptionStates
     } catch {
       case UninitializedClassException(sootClass) =>
         // TODO/soundness: needs to also initialize parent classes
         exceptions = D(Set())
         val meth = sootClass.getMethodByNameUnsafe(SootMethod.staticInitializerName)
+
         if (meth != null) {
-          // Initialize all static fields per JVM 5.4.2 and 5.5
-          val staticUpdates = for {
-            f <- sootClass.getFields(); if f.isStatic
-          } yield (StaticFieldAddr(f) -> staticInitialValue(f))
-          var newStore = store.update(staticUpdates.toMap)
-          val newState = this.copyState(store = newStore, initializedClasses = initializedClasses+sootClass)
-          newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
-            java.util.Collections.emptyList()), None, stmt)
+          if (meth.getDeclaringClass.isJavaLibraryClass) {
+            val newState = this.copyState(initializedClasses=initializedClasses+sootClass)
+            newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
+              java.util.Collections.emptyList()), None, stmt)
+          }
+          else {
+            // Initialize all static fields per JVM 5.4.2 and 5.5
+            val staticUpdates = for {
+              f <- sootClass.getFields(); if f.isStatic
+            } yield (StaticFieldAddr(f) -> staticInitialValue(f))
+            var newStore = store.update(staticUpdates.toMap)
+            val newState = this.copyState(store = newStore, initializedClasses = initializedClasses+sootClass)
+            newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
+              java.util.Collections.emptyList()), None, stmt)
+          }
         } else {
           // TODO: Do we need to do newStore for static fields?
           Set(this.copyState(initializedClasses = initializedClasses + sootClass))
@@ -844,28 +881,41 @@ case class State(val stmt : Stmt,
           case rhs : NewExpr => {
             val baseType : RefType = rhs.getBaseType()
             val sootClass = baseType.getSootClass()
-            val bp : BasePointer = malloc()
-            val obj : Value = ObjectValue(sootClass, bp)
-            val d = D(Set(obj))
-            var newStore = store.update(lhsAddr, d)
-            checkInitializedClasses(sootClass)
-            // initialize instance fields to default values for their type
-            def initInstanceFields(c : SootClass) {
-              for (f <- c.getFields) {
-                newStore = newStore.update(InstanceFieldAddr(bp, f), defaultInitialValue(f.getType))
-              }
-              // TODO: swap these lines?
-              if(c.hasSuperclass) initInstanceFields(c.getSuperclass)
+
+            val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
+            if (sootClass.isJavaLibraryClass || Snowflakes.contains(md)) {
+              val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
+              val d = D(Set(obj))
+              var newStore = store.update(lhsAddr, d)
+              newStore = newStore.join(Snowflakes.createObject(sootClass.getName, List()))
+              Set(this.copyState(stmt = stmt.nextSyntactic, store = newStore))
             }
-            initInstanceFields(sootClass)
-            Set(this.copyState(stmt = stmt.nextSyntactic, store = newStore))
+            else {
+              val bp : BasePointer = malloc()
+              val obj : Value = ObjectValue(sootClass, bp)
+              val d = D(Set(obj))
+              var newStore = store.update(lhsAddr, d)
+              checkInitializedClasses(sootClass)
+              // initialize instance fields to default values for their type
+              def initInstanceFields(c : SootClass) {
+                for (f <- c.getFields) {
+                  newStore = newStore.update(InstanceFieldAddr(bp, f), defaultInitialValue(f.getType))
+                }
+                // TODO: swap these lines?
+                if(c.hasSuperclass) initInstanceFields(c.getSuperclass)
+              }
+              initInstanceFields(sootClass)
+              Set(this.copyState(stmt = stmt.nextSyntactic, store = newStore))
+            }
           }
           case rhs : NewArrayExpr => {
+            //TODO, if base type is Java library class, call Snowflake.createArray
             // Value of lhsAddr will be set to a pointer to the array. (as opposed to the array itself)
             val newStore = createArray(rhs.getType(), List(eval(rhs.getSize())), lhsAddr)
             Set(this.copyState(stmt = stmt.nextSyntactic, store = newStore))
           }
           case rhs : NewMultiArrayExpr => {
+            //TODO, if base type is Java library class, call Snowflake.createArray
             //see comment above about lhs addr
             val newStore = createArray(rhs.getType(), rhs.getSizes().toList map eval, lhsAddr)
             Set(this.copyState(stmt = stmt.nextSyntactic, store = newStore))
@@ -1015,7 +1065,33 @@ object Main {
       override def showUsageOnError = true
     }
 
-    parser.parse(args, Config()) match {
+    /*
+    val newArgs = Array("--classpath",
+      "/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/jre/lib/rt.jar:"+
+        "/Users/kraks/study/utah/STAC/jaam/to-analyze",
+      "-c", "Exceptions", "-m", "main")
+    */
+
+    /*
+    val newArgs = Array("--classpath",
+      "/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/jre/lib/rt.jar:"+
+        "/Users/kraks/study/utah/STAC/Public_EL_Info_03_Feb_2015/example_apps/ex3/home/challenge_program/pwcheck.jar",
+      "-c", "com.cyberpointllc.stac.host.Main", "-m", "main")
+    */
+
+    val newArgs = Array("--classpath",
+      "/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/jre/lib/rt.jar:"+
+        "/Users/kraks/study/utah/STAC/Enagement2/image_processor/challenge_program/ipchallenge-0.1.jar",
+      "-c", "com.stac.Main", "-m", "main")
+
+    /* Image Processor Engagement 1
+    val newArgs = Array("--classpath",
+      "/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/jre/lib/rt.jar:"+
+        "/Users/kraks/study/utah/STAC/stac_engagement_1_release_v1.0/Challenge_Programs/image_processor/challenge_program/ipchallenge-0.1.jar",
+      "-c", "com.stac.Main", "-m", "main")
+      */
+
+    parser.parse(newArgs, Config()) match {
       case None =>
         println("Wrong arguments")
 
@@ -1072,8 +1148,15 @@ object Main {
         }
       }
 
-      done += current
-      todo = newTodo ++ todo.tail
+      if ((globalInitClasses++initClasses).size != globalInitClasses.size) {
+        println("Initialized classes changed.")
+        todo = newTodo ++ List(current) ++ todo.tail
+      }
+      else {
+        done += current
+        todo = newTodo ++ todo.tail
+      }
+
       globalStore = globalStore.join(newStore)
       globalKontStore = globalKontStore.join(newKStore)
       globalInitClasses ++= initClasses

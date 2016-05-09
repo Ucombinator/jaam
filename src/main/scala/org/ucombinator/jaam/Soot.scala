@@ -62,15 +62,15 @@ case class Stmt(val sootStmt : SootStmt, val sootMethod : SootMethod) {
   }
   def nextSyntactic : Stmt = this.copy(sootStmt = Soot.getBody(sootMethod).getUnits().getSuccOf(sootStmt))
   def nextSemantic : List[Stmt] =
-      sootStmt match {
-        case sootStmt : ReturnStmt => List()
-        case sootStmt : ReturnVoidStmt => List ()
-        case sootStmt : ThrowStmt => List ()
-        case sootStmt : GotoStmt => List(this.copy(sootStmt = sootStmt.getTarget))
-        case sootStmt : SwitchStmt => sootStmt.getTargets.toList.map(u => this.copy(sootStmt = u))
-        case sootStmt : IfStmt => List(this.nextSyntactic, this.copy(sootStmt = sootStmt.getTarget))
-        case sootStmt => List(this.nextSyntactic)
-      }
+    sootStmt match {
+      case sootStmt : ReturnStmt => List()
+      case sootStmt : ReturnVoidStmt => List ()
+      case sootStmt : ThrowStmt => List ()
+      case sootStmt : GotoStmt => List(this.copy(sootStmt = sootStmt.getTarget))
+      case sootStmt : SwitchStmt => sootStmt.getTargets.toList.map(u => this.copy(sootStmt = u))
+      case sootStmt : IfStmt => List(this.nextSyntactic, this.copy(sootStmt = sootStmt.getTarget))
+      case sootStmt => List(this.nextSyntactic)
+    }
 
   override def toString : String = sootMethod + ":" + index + ":" + sootStmt
 }
@@ -81,7 +81,7 @@ object Soot {
     new CustomSerializer[T](implicit format => (
       { case s => ??? },
       { case x if cls.isAssignableFrom(x.getClass) => JString(x.toString) }
-    ))
+      ))
   }
 
   def mapSerializer[T,K,V](implicit mfT: Manifest[T], mfMap: Manifest[Map[K,V]]) = {
@@ -95,7 +95,7 @@ object Soot {
       { case x if runtimeClass.isAssignableFrom(x.getClass) =>
         val m = f.get(x).asInstanceOf[Map[K, V]]
         JArray(m.keys.toList.sortBy(_.toString).map({case k => JArray(List(Extraction.decompose(k), Extraction.decompose(m(k))))})) }
-    ))
+      ))
   }
 
   val methodSerializer = new CustomSerializer[SootMethod](implicit format => (
@@ -109,7 +109,7 @@ object Soot {
         ("returnType", Extraction.decompose(m.getReturnType)),
         ("modifiers", Extraction.decompose(m.getModifiers)),
         ("exceptions", Extraction.decompose(m.getExceptions)))) }
-  ))
+    ))
 
   private val typeHints = new TypeHints() {
     val hints = List() // this is a hack
@@ -121,13 +121,13 @@ object Soot {
 
   val formats =
     Serialization.formats(typeHints).withTypeHintFieldName("$type") +
-    Stmt.serializer +
-    Soot.methodSerializer +
-    Soot.toStringSerializer[Type] +
-    Soot.toStringSerializer[Unit] +
-    Soot.toStringSerializer[SootField] +
-    Soot.toStringSerializer[Local] +
-    Soot.toStringSerializer[SootClass]
+      Stmt.serializer +
+      Soot.methodSerializer +
+      Soot.toStringSerializer[Type] +
+      Soot.toStringSerializer[Unit] +
+      Soot.toStringSerializer[SootField] +
+      Soot.toStringSerializer[Local] +
+      Soot.toStringSerializer[SootClass]
 
   def initialize(config : Config) {
     Options.v().set_verbose(false)
@@ -166,6 +166,18 @@ object Soot {
 
   def getSootClass(s : String) = Scene.v().loadClass(s, SootClass.SIGNATURES)
 
+  def getSootType(t : String): Type = t match {
+    case "int" => soot.IntType.v()
+    case "bool" => soot.BooleanType.v()
+    case "double" => soot.DoubleType.v()
+    case "float" => soot.FloatType.v()
+    case "long" => soot.LongType.v()
+    case "byte" => soot.ByteType.v()
+    case "short" => soot.ShortType.v()
+    case "char" => soot.CharType.v()
+    case _ => soot.RefType.v(t)
+  }
+
   def isPrimitive(t : Type) : Boolean = !t.isInstanceOf[RefLikeType]
 
   def isSubclass(sub : SootClass, sup : SootClass) : Boolean =
@@ -196,8 +208,8 @@ object Soot {
           }
           case (ot : Type, at : ArrayType) => {
             ot.equals(classes.Object.getType) ||
-            ot.equals(classes.Clonable.getType) ||
-            ot.equals(classes.Serializable.getType)
+              ot.equals(classes.Clonable.getType) ||
+              ot.equals(classes.Serializable.getType)
           }
           case (at : ArrayType, ot : Type) => {
             println("Warning: checking if a non-array type is an array")

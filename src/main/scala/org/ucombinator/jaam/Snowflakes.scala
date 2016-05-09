@@ -25,7 +25,6 @@ abstract class SnowflakeHandler {
             newKontStack : KontStack) : Set[AbstractState]
 }
 
-
 object NoOpSnowflake extends SnowflakeHandler {
   override def apply(state : State,
                      nextStmt : Stmt,
@@ -55,10 +54,29 @@ case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
                      newKontStack : KontStack) : Set[AbstractState] = {
     val newNewStore = state.stmt.sootStmt match {
       case stmt : DefinitionStmt => state.store.update(state.addrsOf(stmt.getLeftOp),
-        D(Set(ObjectValue(Soot.getSootClass(name), state.mallocFromNative()))))
+        D(Set(ObjectValue(Soot.getSootClass(name), SnowflakeBasePointer(name)))))
       case stmt : InvokeStmt => state.store
     }
-    Set(state.copyState(stmt = nextStmt, store = newNewStore))
+    val objectStore = Snowflakes.createObject(name, List())
+    Set(state.copyState(stmt = nextStmt, store = newNewStore.join(objectStore)))
+  }
+}
+
+case class ReturnArraySnowflake(baseType: String, dim: Int) extends SnowflakeHandler {
+  override def apply(state : State,
+                     nextStmt : Stmt,
+                     newFP : FramePointer,
+                     newStore : Store,
+                     newKontStack : KontStack) : Set[AbstractState] = {
+    val sizes = List.fill(dim)(D.atomicTop)
+    val sootBaseType = Soot.getSootType(baseType)
+    val at = soot.ArrayType.v(sootBaseType, dim)
+    val newNewStore = state.stmt.sootStmt match {
+      case stmt : DefinitionStmt =>
+        Snowflakes.createArray(at, sizes, state.addrsOf(stmt.getLeftOp), state.malloc())
+      case stmt : InvokeStmt => Store(Map())
+    }
+    Set(state.copyState(stmt=nextStmt, store=state.store.join(newNewStore)))
   }
 }
 
@@ -66,7 +84,6 @@ case class PutStaticSnowflake(clas : String, field : String, v : soot.Value) ext
   override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
     val sootField = Jimple.v.newStaticFieldRef(Soot.getSootClass(clas).getFieldByName(field).makeRef())
     val tempState = state.copyState(fp = newFP, kontStack = newKontStack, store = newStore)
-    //tempState.setStore(newStore)
     val value = tempState.eval(v)
     val newNewStore = state.store.update(state.addrsOf(sootField), value)
     Set(state.copyState(stmt = nextStmt, store = newNewStore))
@@ -75,6 +92,8 @@ case class PutStaticSnowflake(clas : String, field : String, v : soot.Value) ext
 
 object Snowflakes {
   val table = scala.collection.mutable.Map.empty[MethodDescription, SnowflakeHandler]
+  var initializedObjectValues = Map.empty[String, Store]
+
   def get(meth : SootMethod) : Option[SnowflakeHandler] =
     table.get(MethodDescription(
       meth.getDeclaringClass.getName,
@@ -82,11 +101,86 @@ object Snowflakes {
       meth.getParameterTypes.toList.map(_.toString()),
       meth.getReturnType.toString()))
 
+  def contains(meth : MethodDescription) : Boolean =
+    table.contains(meth)
+
+  def createArray(t : soot.Type,
+                  sizes : List[D],
+                  addrs : Set[Addr],
+                  bp : BasePointer) : Store = {
+    sizes match {
+      case Nil => {
+        t match {
+          case pt: PrimType => Store(addrs.zipWithIndex.map{case(a,i) => (a, D.atomicTop)}.toMap)
+          case rt: RefType => {
+            val className = rt.getClassName
+            val sootClass = Soot.getSootClass(className)
+              Store(addrs.zipWithIndex.map{case(a,i) => (a, D(Set(ObjectValue(sootClass, bp))))}.toMap)
+          }
+        }
+      }
+      case (s :: ss) => {
+        //val bp : BasePointer = SnowflakeBasePointer(t.toString)
+        createArray(t.asInstanceOf[ArrayType].getElementType, ss, Set(ArrayRefAddr(bp)), bp)
+          .update(addrs, D(Set(ArrayValue(t, bp))))
+          .update(ArrayLengthAddr(bp), s)
+      }
+    }
+  }
+
+  def createObject(className: String, processing : List[String]) : Store = {
+    if (initializedObjectValues.contains(className)) {
+      return initializedObjectValues(className)
+    }
+
+    println("creating snowflake object " + className)
+    val sootClass = Soot.getSootClass(className)
+    val fields = sootClass.getFields
+    var store = Store(Map())
+
+    if (sootClass.hasSuperclass) {
+      val newStore = createObject(sootClass.getSuperclass.getName, processing++List(className))
+      store = store.join(newStore)
+    }
+
+    for (f <- fields) {
+      println("initializing snowflake field " + className + "." + f.getName)
+      val fieldType = f.getType
+      val bp = SnowflakeBasePointer(className)
+      val addrs : Set[Addr] = if (f.isStatic) { Set(StaticFieldAddr(f)) }
+                              else { Set(InstanceFieldAddr(bp, f)) }
+
+      fieldType match {
+        case pt: PrimType => store = store.update(addrs, D.atomicTop)
+        case at: ArrayType =>
+          val dim = List.fill(at.numDimensions)(D.atomicTop)
+          store = store.join(createArray(at, dim, addrs, bp))
+        case rt: RefType =>
+          val fieldClassName = rt.getClassName
+          if (!processing.contains(fieldClassName)) {
+            store = store.update(addrs,
+              D(Set(ObjectValue(Soot.getSootClass(fieldClassName), SnowflakeBasePointer(className)))))
+            val newStore = createObject(fieldClassName, processing++List(className))
+            store = store.join(newStore)
+          }
+        case _ =>
+      }
+    }
+
+    initializedObjectValues = initializedObjectValues + (className -> store)
+    store
+  }
+
+  // Just for testing
+  table.put(MethodDescription("A", SootMethod.constructorName, List(), "void"), ReturnObjectSnowflake("A"))
+  table.put(MethodDescription("C", "getSomeA", List("int"), "A[]"), ReturnArraySnowflake("A", 1))
+
   // For running Image Processor
   table.put(MethodDescription("java.lang.System", "getProperty", List("java.lang.String"), "java.lang.String"),
     ReturnSnowflake(D(Set(ObjectValue(Soot.classes.String, StringBasePointer("returns from getProperty"))))))
   //table.put(MethodDescription("java.nio.file.Paths", "get", List("java.lang.String", "java.lang.String[]"), "java.nio.file.Path"), ReturnObjectSnowflake("java.nio.file.Path"))
-  table.put(MethodDescription("java.util.HashMap", SootMethod.constructorName, List(), "void"), ReturnObjectSnowflake("java.util.HashMap"))
+  table.put(MethodDescription("java.util.HashMap", SootMethod.constructorName, List(), "void"),
+    ReturnObjectSnowflake("java.util.HashMap"))
 
   // java.io.PrintStream
   table.put(MethodDescription("java.io.PrintStream", "println", List("int"), "void"), NoOpSnowflake)
@@ -144,7 +238,7 @@ object Snowflakes {
           }
           case stmt : InvokeStmt => state.store
         }
-        Set(state.copyState(stmt = nextStmt, store = newStore))
+        Set(state.copyState(stmt = nextStmt, store = newNewStore))
       }
     })
 
@@ -167,7 +261,6 @@ object Snowflakes {
 
   table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"), ReturnObjectSnowflake("java.lang.Object"))
 
-
   table.put(MethodDescription("java.lang.System", "arraycopy",
     List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new SnowflakeHandler {
     override def apply(state: State,
@@ -178,7 +271,7 @@ object Snowflakes {
       assert(state.stmt.sootStmt.getInvokeExpr.getArgCount == 5)
       val expr = state.stmt.sootStmt.getInvokeExpr
       val newNewStore = newStore.update(state.addrsOf(expr.getArg(2)), state.eval(expr.getArg(0)))
-      Set(state.copyState(stmt = nextStmt, store = newStore))
+      Set(state.copyState(stmt = nextStmt, store = newNewStore))
     }
   })
 
@@ -193,7 +286,7 @@ object Snowflakes {
         newNewStore = updateStore(newNewStore, "java.lang.System", "err", "java.io.PrintStream")
         newNewStore = updateStore(newNewStore, "java.lang.System", "security", "java.lang.SecurityManager")
         newNewStore = updateStore(newNewStore, "java.lang.System", "cons", "java.io.Console")
-        Set(state.copyState(stmt = nextStmt, store = newStore))
+        Set(state.copyState(stmt = nextStmt, store = newNewStore))
       }
     })
   //private static native void registerNatives();
