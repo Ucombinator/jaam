@@ -5,6 +5,10 @@
 This is an early work in progress. There are a lot of rough edges and bugs. The
 interface is bare bones as most of the current work is on the core analyzer.
 
+## Developers
+
+Instructions for developers [here](docs/DEVELOPERS.md).
+
 ## Requirements
 
 * [SBT](http://www.scala-sbt.org/)
@@ -15,19 +19,23 @@ interface is bare bones as most of the current work is on the core analyzer.
 
 ## Initialization
 
-The first time you run the tool, `sbt` will download a number of packages that
-the JAAM tool depends on. This may take a while, but these files are cached and
-will not need to be re-downloaded on successive runs.
+Run `./bootstrap.sh` to check all dependencies are met. This will also download SBT/Scala for you.
+
+The first time you run the tool, `sbt` will download a number of packages that the JAAM tool depends on. This may take a
+while, but these files are cached and will not need to be re-downloaded on successive runs. 
 
 ### Finding the Path to the Java 1.7 `rt.jar` File
 
-You need to find the path your 'rt.jar' file, which is located inside the Java1.7 "home" directory:
+If your are using Java 1.7, then the `find-rt-jar.sh` script in `bin` can automatically find it for you. This script can
+also be automatically be used by the `jaam.py` wrapper (see below).
+
+If you need to manually find the path your 'rt.jar' file, it is located inside the Java 1.7 "home" directory:
 
 ```
 <your Java 1.7 home directory>/jre/lib/rt.jar
 ```
 
-To find your Java 1.7 home directory, run the appropriate command for your operating system:
+How to find the Java 1.7 home directory varies by operating system:
 
 * On OS X, run the command `/usr/libexec/java_home -v 1.7`
 
@@ -45,12 +53,12 @@ For example, assume we are running OS X, and the `java_home` command above retur
 
 ## Usage
 
-### Default (Control Flow Analysis) Mode
+### Control Flow Analysis Mode
 
 Simply run:
 
 ```
-jaam.py run -J <rt.jar path> -P <classpath> -c <class> -m <main>
+jaam.py -J <rt.jar path> -P <classpath> -c <class> -m <main>
 ```
 
 * `<rt.jar path>` is the full path to your `rt.jar` file (see above).
@@ -61,10 +69,13 @@ jaam.py run -J <rt.jar path> -P <classpath> -c <class> -m <main>
   to start the analysis.
 * `<main>` is the name of the `main` function from which to start the analysis.
 
+Note that the `jaam.py` wrapper can automatically use the `bin/find-rt-jar.sh` script to find your `rt.jar` file for
+you by simply not using the `-J` option. This will be the assumed course of action in the rest of the examples.
+
 For example, analyzing `Factorial` located in `to-analyze` on OS X might look like:
 
 ```
-jaam.py run -J /Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/jre/lib/rt.jar -P to-analyze -c Factorial -m main
+jaam.py -P to-analyze -c Factorial -m main
 ```
 
 After a while, this will launch a GUI showing the state graph and will print out
@@ -76,7 +87,7 @@ You may get an out-of-memory error. If you do, you can run JAAM with extra heap
 memory. For example:
 
 ```
-jaam.py run -J /Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/jre/lib/rt.jar -P to-analyze -c Factorial -m main --java-opts="-Xmx8g"
+jaam.py -P to-analyze -c Factorial -m main --java-opts="-Xmx8g"
 ```
 
 You can change '8g' to whatever amount of memory you need. You can also add
@@ -97,41 +108,6 @@ For example, you may sees the following error followed by an exception stack tra
 
 Because this error is in an `AWT-EventQueue`, it is one of the
 harmless errors and can be safely ignored.
-
-### CFG Mode
-
-Run:
-
-```
-jaam.py cfg -J <rt.jar path> -a <application-classpath> -P <library-classpath> -c <class>
-```
-
-* `<rt.jar path>` is the full path to your `rt.jar` file (see above).
-* `<application-classpath>` is the directory containing the class files to be
-  analyzed. For the examples included with the source, this should be `to-cfg`.
-* `<library-classpath>` should contain the path to other libraries needed for
-  the analysis. This may be empty. You can specify multiple
-  `<library-classpath>`s by using multiple `-P` arguments.
-* `<class>` is the name of the class containing the `main` function from which
-  to start the analysis.
-
-The call graph will be dumped to `stdout` in JSON format.
-
-For example, on OS X you might do the following from the JAAM directory:
-
-```
-jaam.py cfg -J /Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/jre/lib/rt.jar -a to-cfg -c Factorial
-```
-
-The JSON output is an array, and each object in the array represents a statement
-in the program with a unqiue `id`. The object will also have the following items:
-
-* `method`: the signature of method.
-* `inst`: the statement.
-* `targets`: an array containing the target statements. If the target is a
-  function, it points to the first statement of the callee. If the target is the
-  caller, then it will point back to the statement which invokes to here.
-* `succ`: an array containing the successor statements of the current statement.
 
 ### Behind the Scenes
 
