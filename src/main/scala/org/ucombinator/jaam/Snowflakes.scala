@@ -46,6 +46,8 @@ case class ReturnSnowflake(value : D) extends SnowflakeHandler {
   }
 }
 
+case class UninitializedSnowflakeObjectException(className : String) extends RuntimeException
+
 case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
   override def apply(state : State,
                      nextStmt : Stmt,
@@ -93,6 +95,7 @@ case class PutStaticSnowflake(clas : String, field : String, v : soot.Value) ext
 object Snowflakes {
   val table = scala.collection.mutable.Map.empty[MethodDescription, SnowflakeHandler]
   var initializedObjectValues = Map.empty[String, Store]
+//  var initializedArrayValues = Set.empty[Pair[String,Int]]
 
   def get(meth : SootMethod) : Option[SnowflakeHandler] =
     table.get(MethodDescription(
@@ -103,6 +106,32 @@ object Snowflakes {
 
   def contains(meth : MethodDescription) : Boolean =
     table.contains(meth)
+
+/*
+  def createArrayOrThrow(t : soot.Type,
+                  sizes : List[D],
+                  addrs : Set[Addr],
+                  bp : BasePointer) : Store = {
+    sizes match {
+      case Nil => {
+        t match {
+          case pt: PrimType => Store(addrs.zipWithIndex.map{case(a,i) => (a, D.atomicTop)}.toMap)
+          case rt: RefType => {
+            val className = rt.getClassName
+            val sootClass = Soot.getSootClass(className)
+              Store(addrs.zipWithIndex.map{case(a,i) => (a, D(Set(ObjectValue(sootClass, bp))))}.toMap)
+          }
+        }
+      }
+      case (s :: ss) => {
+        //val bp : BasePointer = SnowflakeBasePointer(t.toString)
+        createArray(t.asInstanceOf[ArrayType].getElementType, ss, Set(ArrayRefAddr(bp)), bp)
+          .update(addrs, D(Set(ArrayValue(t, bp))))
+          .update(ArrayLengthAddr(bp), s)
+      }
+    }
+  }
+ */
 
   def createArray(t : soot.Type,
                   sizes : List[D],
@@ -128,12 +157,19 @@ object Snowflakes {
     }
   }
 
+  def createObjectOrThrow(name : String) : D = {
+    if (!initializedObjectValues.contains(name)) {
+      throw UninitializedSnowflakeObjectException(name)
+    }
+    D(Set(ObjectValue(Soot.getSootClass(name), SnowflakeBasePointer(name))))
+  }
+
   def createObject(className: String, processing : List[String]) : Store = {
     if (initializedObjectValues.contains(className)) {
       return initializedObjectValues(className)
     }
 
-    println("creating snowflake object " + className)
+//    println("creating snowflake object " + className)
     val sootClass = Soot.getSootClass(className)
     val fields = sootClass.getFields
     var store = Store(Map())
@@ -144,7 +180,7 @@ object Snowflakes {
     }
 
     for (f <- fields) {
-      println("initializing snowflake field " + className + "." + f.getName)
+//      println("initializing snowflake field " + className + "." + f.getName)
       val fieldType = f.getType
       val bp = SnowflakeBasePointer(className)
       val addrs : Set[Addr] = if (f.isStatic) { Set(StaticFieldAddr(f)) }
