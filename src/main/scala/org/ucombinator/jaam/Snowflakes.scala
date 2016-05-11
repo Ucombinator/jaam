@@ -92,6 +92,107 @@ case class PutStaticSnowflake(clas : String, field : String, v : soot.Value) ext
   }
 }
 
+object HashMapSnowflakes {
+  lazy val HashMap = Soot.getSootClass("java.util.HashMap")
+
+  Snowflakes.table.put(MethodDescription("java.util.HashMap", SootMethod.constructorName, List(), "void"), HashMapSnowflakes.init())
+  Snowflakes.table.put(MethodDescription("java.util.HashMap", "put", List("java.lang.Object", "java.lang.Object"), "java.lang.Object"), HashMapSnowflakes.put())
+  Snowflakes.table.put(MethodDescription("java.util.HashMap", "get", List("java.lang.Object"), "java.lang.Object"), HashMapSnowflakes.get())
+
+  case class KeysAddr(val bp : BasePointer) extends Addr
+  case class ValuesAddr(val bp : BasePointer) extends Addr
+
+  case class init() extends SnowflakeHandler {
+    override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
+      println("HashMapSnowflakes.init().apply()")
+      // void HashMap.<init>():
+      //  this.keys = {}
+      //  this.values = {}
+
+      var newNewStore = state.store
+      for (v <- newStore.get(ThisFrameAddr(newFP)).values) {
+        v match {
+          case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
+            newNewStore = newNewStore
+              .update(KeysAddr(bp), D(Set()))
+              .update(ValuesAddr(bp), D(Set()))
+          case _ => {}
+        }
+      }
+
+      Set(state.copyState(stmt = nextStmt, store = newNewStore))
+    }
+  }
+
+  case class put() extends SnowflakeHandler {
+    override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
+      // Object HashMap.put(Object o1, Object o2):
+      //   this.keys += o1
+      //   this.values += o2
+
+      // TODO: avoid duplication with get()
+      var newNewStore = state.store
+      state.stmt.sootStmt match {
+        case stmt : InvokeStmt => {}
+        case stmt : DefinitionStmt =>
+          for (v <- newStore.get(ThisFrameAddr(newFP)).values) {
+            v match {
+              case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
+                // D.atomicTop is for the null returned when the key had no previous assignment
+                newNewStore = newNewStore.update(
+                  state.addrsOf(stmt.getLeftOp),
+                  state.store.get(ValuesAddr(bp)).join(D.atomicTop))
+              case _ => {}
+            }
+          }
+      }
+
+      val key = newStore.get(ParameterFrameAddr(newFP, 0))
+      val value = newStore.get(ParameterFrameAddr(newFP, 1))
+println("HashMap.put("+key+", "+value+")")
+      for (v <- newStore.get(ThisFrameAddr(newFP)).values) {
+        v match {
+          case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
+            newNewStore = newNewStore
+              .update(KeysAddr(bp), key)
+              .update(ValuesAddr(bp), value)
+          case _ => {}
+        }
+      }
+
+      Set(state.copyState(stmt = nextStmt, store = newNewStore))
+    }
+  }
+
+  case class get() extends SnowflakeHandler {
+    override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
+      // Object HashMap.get(Object):
+      //   return this.values
+
+      var newNewStore = state.store
+      state.stmt.sootStmt match {
+        case stmt : InvokeStmt => {}
+        case stmt : DefinitionStmt =>
+          for (v <- newStore.get(ThisFrameAddr(newFP)).values) {
+            v match {
+              case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
+                // D.atomicTop is for the null returned when the key is not found
+      println("HashMap.get("+state.store.get(ValuesAddr(bp))+")")
+                newNewStore = newNewStore.update(
+                  state.addrsOf(stmt.getLeftOp),
+                  state.store.get(ValuesAddr(bp)).join(D.atomicTop))
+              case x => 
+      println("HashMap.get skipped "+x)
+//{}
+            }
+          }
+      }
+
+      Set(state.copyState(stmt = nextStmt, store = newNewStore))
+    }
+  }
+}
+
 object Snowflakes {
   val table = scala.collection.mutable.Map.empty[MethodDescription, SnowflakeHandler]
   var initializedObjectValues = Map.empty[String, Store]
@@ -221,6 +322,8 @@ object Snowflakes {
   // java.io.PrintStream
   table.put(MethodDescription("java.io.PrintStream", "println", List("int"), "void"), NoOpSnowflake)
   table.put(MethodDescription("java.io.PrintStream", "println", List("java.lang.String"), "void"), NoOpSnowflake)
+
+  HashMapSnowflakes // this triggers HashMapSnowflakes to add snowflake entries
 
   // java.lang.Class
   //private static native void registerNatives();
