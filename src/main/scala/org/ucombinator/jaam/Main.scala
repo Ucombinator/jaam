@@ -68,6 +68,11 @@ case class KontStack(/*store : KontStore, */k : Kont) {
     this.store = store
   }
   def getStore() = store
+  def copyKontStack(store: KontStore = this.store): KontStack = {
+    val ks = this.copy()
+    ks.setStore(store)
+    ks
+  }
 
   // TODO/generalize: Add widening in push and pop (to support PDCFA)
 
@@ -121,7 +126,7 @@ case class KontStack(/*store : KontStore, */k : Kont) {
 
         // TODO/soundness or performance?: use Hierarchy or FastHierarchy?
         if (Soot.isSubclass(exception.asInstanceOf[ObjectValue].sootClass, caughtType)) {
-          val newState = State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, this)
+          val newState = State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, this.copyKontStack())
           newState.setStore(newStore)
           newState.setInitializedClasses(initializedClasses)
           return Set(newState)
@@ -129,7 +134,7 @@ case class KontStack(/*store : KontStore, */k : Kont) {
       }
 
       // TODO/interface we should log this sort of thing
-      val nextFrames = this.pop()
+      val nextFrames = kontStack.pop()
       if (nextFrames isEmpty) {
         return Set(ErrorState)
       }
