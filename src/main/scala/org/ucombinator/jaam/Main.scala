@@ -124,7 +124,7 @@ case class KontStack(/*store : KontStore, */k : Kont) {
           val newState = State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, this)
           newState.setStore(newStore)
           newState.setInitializedClasses(initializedClasses)
-          Set(newState)
+          return Set(newState)
         }
       }
 
