@@ -180,7 +180,7 @@ cat <<- EOF > "${jaam_runner}"
 	# Check rt.jar version.
 	if [[ "\${JAAM_check_rt_jar}" ]]
 	then
-	    version=$("\${JAAM_check_rt_jar}" "\${JAAM_rt_jar}")
+	    version=\$("\${JAAM_check_rt_jar}" "\${JAAM_rt_jar}")
 	    if [[ "\$version" != "\${JAAM_rt_jar_version}" ]]
 	    then
 	        echo "Bad rt.jar version: \$version"
@@ -191,16 +191,8 @@ cat <<- EOF > "${jaam_runner}"
 	    exit 1
 	fi
 	
-	# Check for JAVA_OPTS (don't want to override it).
-	if [[ "\$JAVA_OPTS" ]]
-	then
-	    execute_java_opts="JAVA_OPTS='\${JAVA_OPTS}' "
-	elif [[ "\$JAAM_java_opts" ]]
-	then
-	    execute_java_opts="JAVA_OPTS='\${JAAM_java_opts}' "
-	else
-	    execute_java_opts=""
-	fi
+	# Use JAVA_OPTS if provided, otherwise use the default from above.
+	execute_java_opts=${JAVA_OPTS:-"${JAAM_java_opts}"}
 	
 	# Do the execution.
 	if [[ "\$JAAM_mode" == "user" ]]
