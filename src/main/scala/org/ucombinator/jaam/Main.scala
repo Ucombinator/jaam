@@ -68,6 +68,11 @@ case class KontStack(/*store : KontStore, */k : Kont) {
     this.store = store
   }
   def getStore() = store
+  def copyKontStack(store: KontStore = this.store): KontStack = {
+    val ks = this.copy()
+    ks.setStore(store)
+    ks
+  }
 
   // TODO/generalize: Add widening in push and pop (to support PDCFA)
 
@@ -121,15 +126,15 @@ case class KontStack(/*store : KontStore, */k : Kont) {
 
         // TODO/soundness or performance?: use Hierarchy or FastHierarchy?
         if (Soot.isSubclass(exception.asInstanceOf[ObjectValue].sootClass, caughtType)) {
-          val newState = State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, this)
+          val newState = State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, this.copyKontStack())
           newState.setStore(newStore)
           newState.setInitializedClasses(initializedClasses)
-          Set(newState)
+          return Set(newState)
         }
       }
 
       // TODO/interface we should log this sort of thing
-      val nextFrames = this.pop()
+      val nextFrames = kontStack.pop()
       if (nextFrames isEmpty) {
         return Set(ErrorState)
       }
@@ -233,7 +238,7 @@ case class ObjectValue(val sootClass : SootClass, val bp : BasePointer) extends 
 
 case class ArrayValue(val sootType : SootType, val bp : BasePointer) extends Value
 
-case class SnowflakeInterfaceValue(val sootClass : SootClass, val bp : BasePointer) extends Value
+//case class SnowflakeInterfaceValue(val sootClass : SootClass, val bp : BasePointer) extends Value
 
 //----------------- POINTERS ------------------
 
@@ -613,21 +618,126 @@ case class State(val stmt : Stmt,
       // TODO/precision: implement the actual check
       case v : InstanceOfExpr => D.atomicTop
 
-      case v : CastExpr => {
+      case v : CastExpr =>
         // TODO: cast from a SnowflakeObject to another SnowflakeObject
         val castedExpr : SootValue = v.getOp
         val castedType : SootType = v.getType
         checkInitializedClasses(castedType)
+        val d = eval(castedExpr)
+        // TODO: filter out elements of "d" that are not of the
+        // expression's type (should be done in general inside "eval"
+        // (and maybe already is))
+        def isCastableTo(v : Value, t : SootType) : Boolean = {
+          v match {
+            case _ : AtomicValue => t.isInstanceOf[PrimType]
+            case ObjectValue(sootClass, _) => Soot.isSubType(sootClass.getType, t)
+            case ArrayValue(sootType, _) => Soot.isSubType(sootType, t)
+//            case SnowflakeInterfaceValue(sootClass, _) => Soot.isSubType(sootClass.getType, t)
+          }
+        }
+
+        var d2 = D(Set())
+
+        for (v <- d.values) {
+//          println("v:"+v+" castedType:"+castedType)
+          if (isCastableTo(v, castedType)) {
+            // Up casts are always legal
+            d2 = d2.join(D(Set((v))))
+          } else if (v.isInstanceOf[ObjectValue] && v.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer] &&
+            Soot.isSubType(castedType, v.asInstanceOf[ObjectValue].sootClass.getType)
+          ) {
+//          } else if (v.isInstanceOf[SnowflakeInterfaceValue]
+//            && Soot.isSubType(castedType, v.asInstanceOf[SnowflakeInterfaceValue].sootClass.getType)) {
+            // Snowflakes can be down cast, but they might throw an exception
+            val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
+            exceptions = exceptions.join(classCastException)
+            val name = castedType match {
+              case r : RefType => r.getClassName
+              case a : ArrayType => ???
+            }
+            d2 = d2.join(Snowflakes.createObjectOrThrow(name))
+          } else {
+            // Anything else would cause an exception
+            val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
+            exceptions = exceptions.join(classCastException)
+          }
+        }
+
+        d2
+
+/*
+println("castExpr!!!!:", v)
+        // TODO: cast from a SnowflakeObject to another SnowflakeObject
+        val castedExpr : SootValue = v.getOp
+        val castedType : SootType = v.getType
+        checkInitializedClasses(castedType)
+        val d = eval(castedExpr)
+        // TODO: filter out elements of "d" that are not of the
+        // expression's type (should be done in general inside "eval"
+        // (and maybe already is))
+
+        var vs = Set()
+
+        for (v <- d.values) {
+          if (Soot.isSubType(objectType.getType, castedType)) {
+            // Up casts are always legal
+            vs += v
+          } else if (v.instanceOf[SnowflakeBasePointer]
+            && Soot.isSubType(castedType, objectType.getType)) {
+            // Snowflakes can be down cast, but they might throw an exception
+            val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastaException, malloc())))
+            exceptions = exceptions.join(classCastException)
+            vs += Snowflake.createObjectOrThrow()
+          } else {
+            // Anything else would cause an exception
+            val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastaException, malloc())))
+            exceptions = exceptions.join(classCastException)
+          }
+
+
+/*
+          // Up cast or cast to self
+          if (Soot.isSubType(objectType.getType, castedType)) {
+            vs += v
+          }
+          // Down cast
+          else if (Soot.isSubType(castedType, objectType.getType) {
+            if 
+            exceptions += ...
+            if 
+          }
+          if (downcast) {
+            exception
+            convertsnowflake
+          }
+          v match {
+            case _ : AnyAtomicValue =>
+              if (castedType.isInstanceOf[PrimType]) {
+                d = d join D.atomicTop
+              }
+            case ObjectValue
+          }
+        }
+
+        d2
+
+
+
+
+
         if (castedType.isInstanceOf[PrimType]) {
           return D.atomicTop
         }
+println(castedExpr)
+println(castedType)
 
-        val d = eval(castedExpr)
         // TODO/soundness: Throw an exception if necessary.
         for (vl <- d.values) {
           vl match {
             case ObjectValue(objectType, _) =>
+println("objectType=", objectType)
               if (!Soot.isSubType(objectType.getType, castedType)) {
+println("isSubtype")
                 val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
                 exceptions = exceptions.join(classCastException)
               }
@@ -640,8 +750,23 @@ case class State(val stmt : Stmt,
             case _ => throw new Exception ("Unknown value type " + vl)
           }
         }
-        d
+
+        for (vl <- d.values) {
+          vl match {
+            case ObjectValue(
+          }
+        }
+        castedType match {
+          case castedType : RefType =>
+            if (castedType.isJavaLibraryClass) {
+            }
+          case _ => ???
+        }
+        if (castedType..isJavaLibraryClass
+        if (javalib) { new java snowflake}
+        else {        d }
       }
+*/*/
 
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
@@ -657,7 +782,7 @@ case class State(val stmt : Stmt,
 
     // o.f(3); // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
-    def dispatch(c : SootClass, m : SootMethod, receivers : Set[Value]) : Set[AbstractState] = {
+    def dispatch(bp : BasePointer, c : SootClass, m : SootMethod, receivers : Set[Value]) : Set[AbstractState] = {
       // This function finds all methods that could override root_m.
       // These methods are returned with the root-most at the end of
       // the list and the leaf-most at the head.  Thus the caller
@@ -667,8 +792,6 @@ case class State(val stmt : Stmt,
       //
       // Note that Hierarchy.resolveConcreteDispath should be able to do this, but seems to be implemented wrong
       def overrides(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
-        println("sootClass: " + curr.toString)
-        println("root_m: " + root_m.toString)
         val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
         if (curr_m == null) {
           overrides(curr.getSuperclass(), root_m)
@@ -695,7 +818,8 @@ case class State(val stmt : Stmt,
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, newFP, newStore, newKontStack)
         case None =>
-          if (meth.getDeclaringClass.isJavaLibraryClass) {
+          if (meth.getDeclaringClass.isJavaLibraryClass ||
+              bp.isInstanceOf[SnowflakeBasePointer]) {
             val rtType = meth.getReturnType
             rtType match {
               case t: VoidType => NoOpSnowflake(this, nextStmt, newFP, newStore, newKontStack)
@@ -735,7 +859,7 @@ case class State(val stmt : Stmt,
       case expr : DynamicInvokeExpr => ??? // TODO: Could only come from non-Java sources
       case expr : StaticInvokeExpr =>
         checkInitializedClasses(expr.getMethod().getDeclaringClass())
-        dispatch(null, expr.getMethod(), Set())
+        dispatch(null, null, expr.getMethod(), Set())
       case expr : InstanceInvokeExpr =>
         val d = eval(expr.getBase())
         val vs = d.values filter {
@@ -757,12 +881,12 @@ case class State(val stmt : Stmt,
         }
         ((for (v <- vs) yield {
           v match {
-            case ObjectValue(sootClass, _) => {
+            case ObjectValue(sootClass, bp) => {
               val objectClass = if (expr.isInstanceOf[SpecialInvokeExpr]) null else sootClass
-              dispatch(objectClass, expr.getMethod(), vs)
+              dispatch(bp, objectClass, expr.getMethod(), vs)
             }
             case ArrayValue(sootType, _) => {
-              dispatch(null, expr.getMethod, vs)
+              dispatch(null, null, expr.getMethod, vs)
             }
           }
         }) :\ Set[AbstractState]())(_ ++ _) // TODO: better way to do this?
@@ -849,6 +973,11 @@ case class State(val stmt : Stmt,
           // TODO: Do we need to do newStore for static fields?
           Set(this.copyState(initializedClasses = initializedClasses + sootClass))
         }
+
+      case UninitializedSnowflakeObjectException(className) =>
+        val newStore = store.join(Snowflakes.createObject(className, List()))
+        Set(this.copyState(store = store)) //store=>store.join(Snowflakes.createObject(className, List()))))
+
 
       case StringConstantException(string) =>
         val value = Soot.classes.String.getFieldByName("value")
@@ -1123,7 +1252,7 @@ object Main {
       }
 
       if ((globalInitClasses++initClasses).size != globalInitClasses.size) {
-        println("Initialized classes changed.")
+//        println("Initialized classes changed.")
         todo = newTodo ++ List(current) ++ todo.tail
       }
       else {
