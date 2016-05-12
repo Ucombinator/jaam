@@ -9,6 +9,11 @@ scalaVersion := "2.10.6"
 resolvers += "Ucombinator maven repository on github" at "https://ucombinator.github.io/maven-repo"
 resolvers += Resolver.sonatypeRepo("public")
 
+lazy val check_rt_jar = (project in file("check_rt_jar")).
+  settings(
+    version := "1.0"
+  )
+
 libraryDependencies ++= Seq(
   "org.ucombinator.soot" % "soot-all-in-one" % "nightly.20150205",
   "org.scalacheck" %% "scalacheck" % "1.12.2" % "test",
