@@ -1,8 +1,12 @@
 *.*~
 project/*
 !project/*.sbt
+bin/sbt
+bin/jaam.sh
+jaam.jar
 target
 javacache
 .DS_Store
 sootOutput
 .*.sw?
+.idea
