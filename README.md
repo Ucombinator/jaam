@@ -7,15 +7,16 @@ interface is bare bones as most of the current work is on the core analyzer.
 
 ## Developers
 
-Instructions for developers [here](docs/DEVELOPERS.md).
+Additional instructions for developers [here](docs/DEVELOPERS.md).
 
 ## Requirements
 
-* [SBT](http://www.scala-sbt.org/)
-* [Scala](http://www.scala-lang.org/)
 * [Java 1.7 Development Kit](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html)
   - Java 1.8 is unsupported
-* [Python 2](https://www.python.org/downloads/) — for the `jaam.py` wrapper script
+* [SBT](http://www.scala-sbt.org/)
+  - Installed automatically during bootstrapping
+* [Scala](http://www.scala-lang.org/)
+  - Installed automatically during bootstrapping
 
 ## Initialization
 
