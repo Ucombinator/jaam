@@ -174,7 +174,7 @@ cat <<- EOF > "${jaam_runner}"
 	: \${JAAM_rt_jar:="${jaam_rt_jar}"}
 	: \${JAAM_rt_jar_version:="${NEED_VERSION}"}
 	: \${JAAM_java_opts:="${jaam_java_opts}"}
-	: \${JAAM_sbt:="${jaam_sbt}"}
+	: \${JAAM_sbt:="${SBT_PATH}"}
 	: \${JAAM_check_rt_jar:="${rtjarcheck_loc}"}
 
 	# Check rt.jar version.
@@ -192,17 +192,19 @@ cat <<- EOF > "${jaam_runner}"
 	fi
 	
 	# Use JAVA_OPTS if provided, otherwise use the default from above.
-	execute_java_opts=${JAVA_OPTS:-"${JAAM_java_opts}"}
+	chosen_java_opts=\${JAVA_OPTS:-"\${JAAM_java_opts}"}
+    JAVA_OPTS="\${chosen_java_opts}"
 	
 	# Do the execution.
 	if [[ "\$JAAM_mode" == "user" ]]
 	then
-	    exec "\${execute_java_opts}\${JAAM_java}" -jar "\${JAAM_jar}" -J "\${JAAM_rt_jar}" "\$@"
+	    exec "\${JAAM_java}" -jar "\${JAAM_jar}" -J "\${JAAM_rt_jar}" "\$@"
 	elif [[ "\$JAAM_mode" == "developer" ]]
 	then
-	    exec "SBT_JAVA=\"\${JAAM_java}\" \${execute_java_opts}\${JAAM_sbt}" "run -J \${JAAM_rt_jar} \$*"
+	    SBT_JAVA="\${JAAM_java}"
+	    exec "\${JAAM_sbt}" "run -J \${JAAM_rt_jar} \$*"
 	else
-	    echo "Error: Invalid mode set: \$JAAM_mode"
+	    echo "Error: Invalid mode set: \${JAAM_mode}"
 	    exit 1
 	fi
 EOF
