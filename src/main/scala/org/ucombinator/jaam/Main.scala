@@ -1170,6 +1170,7 @@ case class System(state: AbstractState,
 
 // Command option config
 case class Config(
+                   rtJar: String = null,
                    sootClassPath: String = null,
                    className: String = null,
                    methodName: String = null)
@@ -1182,6 +1183,10 @@ object Main {
       opt[String]("classpath") action {
         (x, c) => c.copy(sootClassPath = x)
       } text("the TODO class directory")
+
+      opt[String]('J', "rt_jar") action {
+        (x, c) => c.copy(rtJar = x)
+      } text("the rt.jar file")
 
       opt[String]('c', "class") action {
         (x, c) => c.copy(className = x)

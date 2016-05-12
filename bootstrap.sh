@@ -13,7 +13,7 @@ function info {
 }
 
 function warn {
-    echo -e "\[033[0;33mwarn\033[0m] $*"
+    echo -e "[\033[0;33mwarn\033[0m] $*"
 }
 function error {
     echo -e "[\033[0;31merror\033[0m] $*"
@@ -117,7 +117,7 @@ fi
 
 # Run SBT to set it up and get Scala (as needed).
 info "Bootstrapping SBT/Scala"
-cd "${MY_DIR}" && "./${SBT_REL_PATH}" about
+cd "${MY_DIR}" && "./${SBT_REL_PATH}" assembly
 
 # Check SBT bootstrapping ran successfully.
 rt=$?
@@ -180,7 +180,7 @@ cat <<- EOF > "${jaam_runner}"
 	# Check rt.jar version.
 	if [[ "\${JAAM_check_rt_jar}" ]]
 	then
-	    version=\$("\${JAAM_check_rt_jar}" "\${JAAM_rt_jar}")
+	    version=\$("\${JAAM_java}" -jar "\${JAAM_check_rt_jar}" "\${JAAM_rt_jar}")
 	    if [[ "\$version" != "\${JAAM_rt_jar_version}" ]]
 	    then
 	        echo "Bad rt.jar version: \$version"
@@ -197,10 +197,10 @@ cat <<- EOF > "${jaam_runner}"
 	# Do the execution.
 	if [[ "\$JAAM_mode" == "user" ]]
 	then
-	    exec "\${execute_java_opts}\${JAAM_java}" -jar "\${JAAM_jar}" "\$@"
+	    exec "\${execute_java_opts}\${JAAM_java}" -jar "\${JAAM_jar}" -J "\${JAAM_rt_jar}" "\$@"
 	elif [[ "\$JAAM_mode" == "developer" ]]
 	then
-	    exec "SBT_JAVA=\"\${JAAM_java}\" \${execute_java_opts}\${JAAM_sbt}" "run \$*"
+	    exec "SBT_JAVA=\"\${JAAM_java}\" \${execute_java_opts}\${JAAM_sbt}" "run -J \${JAAM_rt_jar} \$*"
 	else
 	    echo "Error: Invalid mode set: \$JAAM_mode"
 	    exit 1
