@@ -261,8 +261,8 @@ case object InitialBasePointer extends BasePointer
 // Oh, and class loaders are a headache(!)
 case class StringBasePointer(val string : String) extends BasePointer
 // we remvoe the argument of ClassBasePointer, to make all ClassBasePointer points to the same
-//case class ClassBasePointer(val name : String) extends BasePointer
-case object ClassBasePointer extends BasePointer
+case class ClassBasePointer(val name : String) extends BasePointer
+//case object ClassBasePointer extends BasePointer
 
 //----------------- ADDRESSES ------------------
 
@@ -567,7 +567,7 @@ case class State(val stmt : Stmt,
       case _ : NumericConstant => D.atomicTop
       // TODO: Class and String objects are objects and so need their fields initialized
       // TODO/clarity: Add an example of Java code that can trigger this.
-      case v : ClassConstant => D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer)))
+      case v : ClassConstant => D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer(v.value.replace('/', '.')))))
       //D(Set(ObjectValue(stmt.classmap("java.lang.Class"), StringBasePointer(v.value))))
       case v : StringConstant =>
         val bp = StringBasePointer(v.value)
@@ -998,6 +998,34 @@ println("isSubtype")
     }
   }
 
+  def newExpr(lhsAddr : Set[Addr], sootClass : SootClass) : Store = {
+    val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
+    if (sootClass.isJavaLibraryClass || Snowflakes.contains(md)) {
+      val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
+      val d = D(Set(obj))
+      var newStore = store.update(lhsAddr, d)
+      newStore = newStore.join(Snowflakes.createObject(sootClass.getName, List()))
+      newStore
+    }
+    else {
+      val bp : BasePointer = malloc()
+      val obj : Value = ObjectValue(sootClass, bp)
+      val d = D(Set(obj))
+      var newStore = store.update(lhsAddr, d)
+      checkInitializedClasses(sootClass)
+      // initialize instance fields to default values for their type
+      def initInstanceFields(c : SootClass) {
+        for (f <- c.getFields) {
+          newStore = newStore.update(InstanceFieldAddr(bp, f), defaultInitialValue(f.getType))
+        }
+        // TODO: swap these lines?
+        if(c.hasSuperclass) initInstanceFields(c.getSuperclass)
+      }
+      initInstanceFields(sootClass)
+      newStore
+    }
+  }
+
   def true_next() : Set[AbstractState] = {
     stmt.sootStmt match {
       case sootStmt : InvokeStmt => handleInvoke(sootStmt.getInvokeExpr, None)
@@ -1011,31 +1039,7 @@ println("isSubtype")
             val baseType : RefType = rhs.getBaseType()
             val sootClass = baseType.getSootClass()
 
-            val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
-            if (sootClass.isJavaLibraryClass || Snowflakes.contains(md)) {
-              val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
-              val d = D(Set(obj))
-              var newStore = store.update(lhsAddr, d)
-              newStore = newStore.join(Snowflakes.createObject(sootClass.getName, List()))
-              Set(this.copyState(stmt = stmt.nextSyntactic, store = newStore))
-            }
-            else {
-              val bp : BasePointer = malloc()
-              val obj : Value = ObjectValue(sootClass, bp)
-              val d = D(Set(obj))
-              var newStore = store.update(lhsAddr, d)
-              checkInitializedClasses(sootClass)
-              // initialize instance fields to default values for their type
-              def initInstanceFields(c : SootClass) {
-                for (f <- c.getFields) {
-                  newStore = newStore.update(InstanceFieldAddr(bp, f), defaultInitialValue(f.getType))
-                }
-                // TODO: swap these lines?
-                if(c.hasSuperclass) initInstanceFields(c.getSuperclass)
-              }
-              initInstanceFields(sootClass)
-              Set(this.copyState(stmt = stmt.nextSyntactic, store = newStore))
-            }
+            Set(this.copyState(stmt = stmt.nextSyntactic, store = this.newExpr(lhsAddr, sootClass)))
           }
           case rhs : NewArrayExpr => {
             //TODO, if base type is Java library class, call Snowflake.createArray
