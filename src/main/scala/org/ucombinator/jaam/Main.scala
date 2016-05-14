@@ -548,6 +548,7 @@ case class State(val stmt : Stmt,
       assert(op.getType.isInstanceOf[PrimType] && !op.getType.isInstanceOf[BooleanType])
     }
     def assertIntegral(op : SootValue) {
+      println("assertIntegral "+op+" "+op.getType)
       assert(op.getType.isInstanceOf[PrimType] &&
         !op.getType.isInstanceOf[BooleanType] &&
         !op.getType.isInstanceOf[FloatType] &&
@@ -559,7 +560,7 @@ case class State(val stmt : Stmt,
         !op.getType.isInstanceOf[DoubleType])
     }
 
-    v match {
+    val result = v match {
       //TODO missing: CmplExpr, CmpgExpr, MethodHandle
       //TODO/precision actually do the calculations
       case (_ : Local) | (_ : Ref) => store(addrsOf(v))
@@ -584,9 +585,15 @@ case class State(val stmt : Stmt,
             eval(v.getOp1)
             eval(v.getOp2)
             D.atomicTop
-          case (_ : ShrExpr) | (_ : ShlExpr) | (_ : UshrExpr) | (_ : RemExpr) =>
+          case (_ : ShrExpr) | (_ : ShlExpr) | (_ : UshrExpr) =>
             assertIntegral(v.getOp1)
             assertIntegral(v.getOp2)
+            eval(v.getOp1)
+            eval(v.getOp2)
+            D.atomicTop
+          case (_ : RemExpr) =>
+            assertNumeric(v.getOp1) // floats are allowed
+            assertNumeric(v.getOp2)
             eval(v.getOp1)
             eval(v.getOp2)
             D.atomicTop
@@ -624,6 +631,7 @@ case class State(val stmt : Stmt,
         val castedType : SootType = v.getType
         checkInitializedClasses(castedType)
         val d = eval(castedExpr)
+        println("CastExpr "+v+" "+d)
         // TODO: filter out elements of "d" that are not of the
         // expression's type (should be done in general inside "eval"
         // (and maybe already is))
@@ -655,6 +663,7 @@ case class State(val stmt : Stmt,
               case r : RefType => r.getClassName
               case a : ArrayType => ???
             }
+            println("snowflake cast "+castedType+" v "+v)
             d2 = d2.join(Snowflakes.createObjectOrThrow(name))
           } else {
             // Anything else would cause an exception
@@ -663,6 +672,9 @@ case class State(val stmt : Stmt,
           }
         }
 
+        println("caseExpr writeAddrs "+this.store.writeAddrs)
+        println("caseExpr readAddrs "+this.store.readAddrs)
+        println("caseExpr d2 "+d2)
         d2
 
 /*
@@ -770,6 +782,7 @@ println("isSubtype")
 
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
+    result
   }
 
   // The last parameter of handleInvoke allows us to override what
@@ -779,6 +792,7 @@ println("isSubtype")
   def handleInvoke(expr : InvokeExpr,
                    destAddr : Option[Set[Addr]],
                    nextStmt : Stmt = stmt.nextSyntactic) : Set[AbstractState] = {
+println("handleInvoke "+expr)
 
     // o.f(3); // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
@@ -816,10 +830,13 @@ println("isSubtype")
         newStore = newStore.update(th, D(Set(r)))
 
       Snowflakes.get(meth) match {
-        case Some(h) => h(this, nextStmt, newFP, newStore, newKontStack)
+        case Some(h) =>
+          println("snowflake "+h)
+          h(this, nextStmt, newFP, newStore, newKontStack)
         case None =>
           if (meth.getDeclaringClass.isJavaLibraryClass ||
               bp.isInstanceOf[SnowflakeBasePointer]) {
+            println("generic snowflake "+meth)
             val rtType = meth.getReturnType
             rtType match {
               case t: VoidType => NoOpSnowflake(this, nextStmt, newFP, newStore, newKontStack)
@@ -862,12 +879,15 @@ println("isSubtype")
         dispatch(null, null, expr.getMethod(), Set())
       case expr : InstanceInvokeExpr =>
         val d = eval(expr.getBase())
+        println("d "+d)
         val vs = d.values filter {
           case ObjectValue(sootClass, SnowflakeBasePointer(_)) => true
           case ObjectValue(sootClass, _) => {
+            println("sootClass "+sootClass+" "+expr.getMethod().getDeclaringClass)
             if (expr.getMethod().getDeclaringClass.isInterface) {
               val imps = Scene.v().getActiveHierarchy.getImplementersOf(expr.getMethod().getDeclaringClass)
               imps.contains(sootClass)
+              true
             }
             else {
               Soot.isSubclass(sootClass, expr.getMethod().getDeclaringClass)
@@ -879,6 +899,7 @@ println("isSubtype")
           }
           case _ => false
         }
+        println("vs "+vs)
         ((for (v <- vs) yield {
           v match {
             case ObjectValue(sootClass, bp) => {
@@ -934,7 +955,31 @@ println("isSubtype")
   // Returns the set of successor states to this state.
   override def next() : Set[AbstractState] = {
     try {
-      val nexts = true_next()
+      val nexts = for (s <- true_next()) yield {
+        s match {
+          case s : State =>
+            println("thisReadAddrs "+this.store.readAddrs)
+            for (a <- this.store.readAddrs) {
+              println("  " + this.store.get(a))
+            }
+            println("thisWriteAddrs "+this.store.writeAddrs)
+            for (a <- this.store.writeAddrs) {
+              println("  " + s.store.get(a))
+            }
+            val s2 = s.copyState(store = this.store.join(s.store))
+            println("readAddrs "+s.store.readAddrs)
+            for (a <- s.store.readAddrs) {
+              println("  " + s.store.get(a))
+            }
+            println("writeAddrs "+s.store.writeAddrs)
+            for (a <- s.store.writeAddrs) {
+              println("  " + s.store.get(a))
+            }
+            s2
+          case _ => s
+        }
+      }
+
 
       /*
       println("KStore:")
@@ -976,7 +1021,7 @@ println("isSubtype")
 
       case UninitializedSnowflakeObjectException(className) =>
         val newStore = store.join(Snowflakes.createObject(className, List()))
-        Set(this.copyState(store = store)) //store=>store.join(Snowflakes.createObject(className, List()))))
+        Set(this.copyState(store = newStore)) //store=>store.join(Snowflakes.createObject(className, List()))))
 
 
       case StringConstantException(string) =>
@@ -1033,6 +1078,7 @@ println("isSubtype")
       case sootStmt : DefinitionStmt => {
         val lhsAddr = addrsOf(sootStmt.getLeftOp())
 
+        val result : Set[AbstractState] =
         sootStmt.getRightOp() match {
           case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
           case rhs : NewExpr => {
@@ -1054,10 +1100,41 @@ println("isSubtype")
             Set(this.copyState(stmt = stmt.nextSyntactic, store = newStore))
           }
           case rhs => {
+            println("eval(rhs) "+eval(rhs)+" "+lhsAddr)
             val newStore = store.update(lhsAddr, eval(rhs))
             Set(this.copyState(stmt = stmt.nextSyntactic, store = newStore))
           }
         }
+        println("oldstore")
+        if (true) {
+          val s = this
+          println("DefinitionStmt "+s.stmt+" ")
+          println("Reads: "+s.store.readAddrs)
+          for (a <- s.store.readAddrs) {
+            println("Value: "+s.store.get(a))
+          }
+          println("Writes: "+s.store.writeAddrs)
+          for (a <- s.store.writeAddrs) {
+            println("Value: "+s.store.get(a))
+          }
+        }
+        println("newstore")
+        for (s <- result) {
+          s match {
+            case s : State =>
+              println("DefinitionStmt "+s.stmt+" ")
+              println("Reads: "+s.store.readAddrs)
+              for (a <- s.store.readAddrs) {
+                println("Value: "+s.store.get(a))
+              }
+              println("Writes: "+s.store.writeAddrs)
+              for (a <- s.store.writeAddrs) {
+                println("Value: "+s.store.get(a))
+              }
+            case _ => {}
+          }
+        }
+        result
       }
 
       case sootStmt : IfStmt => {
@@ -1217,9 +1294,9 @@ object Main {
     val mainMainMethod : SootMethod = Soot.getSootClass(config.className).getMethodByName(config.methodName)
 
     // Setting up the GUI
-    val window = new Window
+    //val window = new Window
     val initialState = State.inject(Stmt.methodEntry(mainMainMethod))
-    window.addState(initialState)
+    //window.addState(initialState)
 
     var todo: List[AbstractState] = List(initialState)
     var done: Set[AbstractState] = Set()
@@ -1237,9 +1314,10 @@ object Main {
     while (todo nonEmpty) {
       //TODO refactor store widening code
       val current = todo.head
+      println("Processing " + current.id)
       val (nexts, newStore, newKStore, initClasses) = System(current, globalStore, globalKontStore, globalInitClasses).next
       for (next <- nexts) {
-        window.addNext(current, next)
+        //window.addNext(current, next)
       }
 
       val newTodo = nexts.toList.filter(!done.contains(_))

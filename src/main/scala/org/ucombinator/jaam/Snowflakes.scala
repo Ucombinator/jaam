@@ -101,6 +101,8 @@ object HashMapSnowflakes {
   Snowflakes.table.put(MethodDescription("java.util.HashMap", SootMethod.constructorName, List(), "void"), HashMapSnowflakes.init())
   Snowflakes.table.put(MethodDescription("java.util.HashMap", "put", List("java.lang.Object", "java.lang.Object"), "java.lang.Object"), HashMapSnowflakes.put())
   Snowflakes.table.put(MethodDescription("java.util.HashMap", "get", List("java.lang.Object"), "java.lang.Object"), HashMapSnowflakes.get())
+  Snowflakes.table.put(MethodDescription("java.util.Iterator", "hasNext", List(), "boolean"), hasNext())
+  Snowflakes.table.put(MethodDescription("java.util.Iterator", "next", List(), "java.lang.Object"), next())
 
   case class KeysAddr(val bp : BasePointer) extends Addr
   case class ValuesAddr(val bp : BasePointer) extends Addr
@@ -112,13 +114,14 @@ object HashMapSnowflakes {
       //  this.keys = {}
       //  this.values = {}
 
-      var newNewStore = state.store
-      for (v <- newStore.get(ThisFrameAddr(newFP)).values) {
+      var newNewStore = newStore
+      for (v <- newStore(Set(ThisFrameAddr(newFP))).values) {
         v match {
           case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
-            newNewStore = newNewStore
-              .update(KeysAddr(bp), D(Set()))
-              .update(ValuesAddr(bp), D(Set()))
+            newNewStore = newNewStore.join(newNewStore
+              .update(KeysAddr(bp), D(Set())))
+            newNewStore = newNewStore.join(newNewStore
+              .update(ValuesAddr(bp), D(Set())))
           case _ => {}
         }
       }
@@ -134,17 +137,17 @@ object HashMapSnowflakes {
       //   this.values += o2
 
       // TODO: avoid duplication with get()
-      var newNewStore = state.store
+      var newNewStore = newStore
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
-          for (v <- newStore.get(ThisFrameAddr(newFP)).values) {
+          for (v <- newStore(Set(ThisFrameAddr(newFP))).values) {
             v match {
               case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
                 // D.atomicTop is for the null returned when the key had no previous assignment
-                newNewStore = newNewStore.update(
+                newNewStore = newNewStore.join(newNewStore.update(
                   state.addrsOf(stmt.getLeftOp),
-                  state.store.get(ValuesAddr(bp)).join(D.atomicTop))
+                  newNewStore(Set(ValuesAddr(bp))).join(D.atomicTop)))
               case _ => {}
             }
           }
@@ -153,12 +156,13 @@ object HashMapSnowflakes {
       val key = newStore.get(ParameterFrameAddr(newFP, 0))
       val value = newStore.get(ParameterFrameAddr(newFP, 1))
 println("HashMap.put("+key+", "+value+")")
-      for (v <- newStore.get(ThisFrameAddr(newFP)).values) {
+      for (v <- newStore(Set(ThisFrameAddr(newFP))).values) {
         v match {
           case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
-            newNewStore = newNewStore
-              .update(KeysAddr(bp), key)
-              .update(ValuesAddr(bp), value)
+            newNewStore = newNewStore.join(newNewStore
+              .update(KeysAddr(bp), key))
+            newNewStore = newNewStore.join(newNewStore
+              .update(ValuesAddr(bp), value))
           case _ => {}
         }
       }
@@ -172,19 +176,19 @@ println("HashMap.put("+key+", "+value+")")
       // Object HashMap.get(Object):
       //   return this.values
 
-      var newNewStore = state.store
+      var newNewStore = newStore
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
-          for (v <- newStore.get(ThisFrameAddr(newFP)).values) {
+          for (v <- newStore(Set(ThisFrameAddr(newFP))).values) {
             v match {
               case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
                 // D.atomicTop is for the null returned when the key is not found
       println("HashMap.get("+state.store.get(ValuesAddr(bp))+")")
-                newNewStore = newNewStore.update(
-                  state.addrsOf(stmt.getLeftOp),
-                  state.store.get(ValuesAddr(bp)).join(D.atomicTop))
-              case x => 
+                newNewStore = newNewStore.join(newNewStore
+                  .update(state.addrsOf(stmt.getLeftOp),
+                    newNewStore(Set(ValuesAddr(bp))).join(D.atomicTop)))
+              case x =>
       println("HashMap.get skipped "+x)
 //{}
             }
@@ -204,17 +208,17 @@ println("HashMap.put("+key+", "+value+")")
   case class EntrySetOfHashMap(val bp : BasePointer) extends BasePointer
   case class entrySet() extends SnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
-      var newNewStore = state.store
+      var newNewStore = newStore
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
-          for (v <- newStore.get(ThisFrameAddr(newFP)).values) {
+          for (v <- newStore(Set(ThisFrameAddr(newFP))).values) {
             v match {
               case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
                 // D.atomicTop is for the null returned when the key is not found
-                newNewStore = newNewStore.update(
+                newNewStore = newNewStore.join(newNewStore.update(
                   state.addrsOf(stmt.getLeftOp),
-                  D(Set(ObjectValue(EntrySet, EntrySetOfHashMap(bp)))))
+                  D(Set(ObjectValue(EntrySet, EntrySetOfHashMap(bp))))))
               case x => {}
             }
           }
@@ -229,17 +233,17 @@ println("HashMap.put("+key+", "+value+")")
   case class IteratorOfEntrySetOfHashMap(val bp : BasePointer) extends BasePointer
   case class iterator() extends SnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
-      var newNewStore = state.store
+      var newNewStore = newStore
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
-          for (v <- newStore.get(ThisFrameAddr(newFP)).values) {
+          for (v <- newStore(Set(ThisFrameAddr(newFP))).values) {
             v match {
               case ObjectValue(sootClass, EntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, EntrySet) =>
                 // D.atomicTop is for the null returned when the key is not found
-                newNewStore = newNewStore.update(
+                newNewStore = newNewStore.join(newNewStore.update(
                   state.addrsOf(stmt.getLeftOp),
-                  D(Set(ObjectValue(Iterator, IteratorOfEntrySetOfHashMap(bp)))))
+                  D(Set(ObjectValue(Iterator, IteratorOfEntrySetOfHashMap(bp))))))
               case x => {}
             }
           }
@@ -253,17 +257,28 @@ println("HashMap.put("+key+", "+value+")")
   //   return atomicTop
   case class hasNext() extends SnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
-      var newNewStore = state.store
+      println("Iterator.hasNext")
+      var newNewStore = newStore
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
-          for (v <- newStore.get(ThisFrameAddr(newFP)).values) {
+          println("DefinitionStmt")
+          for (v <- newStore(Set(ThisFrameAddr(newFP))).values) {
+            println("value " + v)
+            println("Iterator "+Iterator)
             v match {
               case ObjectValue(sootClass, IteratorOfEntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, Iterator) =>
+                println("HashMapIterator")
                 // D.atomicTop is for the null returned when the key is not found
-                newNewStore = newNewStore.update(
+                newNewStore = newNewStore.join(newNewStore.update(
                   state.addrsOf(stmt.getLeftOp),
-                  D.atomicTop)
+                  D.atomicTop))
+              case ObjectValue(sootClass, ArrayListSnowflakes.IteratorOfArrayList(bp)) if Soot.isSubclass(sootClass, Iterator) =>
+                println("ArrayListHashMap")
+                // D.atomicTop is for the null returned when the key is not found
+                newNewStore = newNewStore.join(newNewStore.update(
+                  state.addrsOf(stmt.getLeftOp),
+                  D.atomicTop))
               case x => {}
             }
           }
@@ -278,22 +293,36 @@ println("HashMap.put("+key+", "+value+")")
   case class EntryOfIteratorOfEntrySetOfHashMap(val bp : BasePointer) extends BasePointer
   case class next() extends SnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
-      var newNewStore = state.store
+      println("next().apply")
+      var newNewStore = newStore
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
-          for (v <- newStore.get(ThisFrameAddr(newFP)).values) {
+          println("next().definitionstmt "+stmt)
+          for (v <- newStore(Set(ThisFrameAddr(newFP))).values) {
+            println("next().v "+v)
             v match {
               case ObjectValue(sootClass, IteratorOfEntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, Iterator) =>
+                println("next() IteratorOfEntrySetOfHashMap "+bp)
                 // D.atomicTop is for the null returned when the key is not found
-                newNewStore = newNewStore.update(
+                newNewStore = newNewStore.join(newNewStore.update(
                   state.addrsOf(stmt.getLeftOp),
-                  D(Set(ObjectValue(Entry, EntryOfIteratorOfEntrySetOfHashMap(bp)))))
+                  D(Set(ObjectValue(Entry, EntryOfIteratorOfEntrySetOfHashMap(bp))))))
+              case ObjectValue(sootClass, ArrayListSnowflakes.IteratorOfArrayList(bp)) if Soot.isSubclass(sootClass, Iterator) =>
+                // D.atomicTop is for the null returned when the key is not found
+                // TODO: throw exception
+                println("next() IteratorOfArrayList "+bp)
+                println("refAddr "+newNewStore.get(ArrayListSnowflakes.RefAddr(bp)))
+                newNewStore = newNewStore.join(newNewStore.update(
+                  state.addrsOf(stmt.getLeftOp),
+                  newNewStore(Set(ArrayListSnowflakes.RefAddr(bp)))))
               case x => {}
             }
           }
       }
 
+      println("next.writeAddrs "+newNewStore.writeAddrs)
+      println("next.readAddrs "+newNewStore.readAddrs)
       Set(state.copyState(stmt = nextStmt, store = newNewStore))
     }
   }
@@ -301,17 +330,17 @@ println("HashMap.put("+key+", "+value+")")
   // java.lang.Object Entry.getKey()
   case class getKey() extends SnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
-      var newNewStore = state.store
+      var newNewStore = newStore
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
-          for (v <- newStore.get(ThisFrameAddr(newFP)).values) {
+          for (v <- newStore(Set(ThisFrameAddr(newFP))).values) {
             v match {
               case ObjectValue(sootClass, EntryOfIteratorOfEntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, Entry) =>
                 // D.atomicTop is for the null returned when the key is not found
-                newNewStore = newNewStore.update(
+                newNewStore = newNewStore.join(newNewStore.update(
                   state.addrsOf(stmt.getLeftOp),
-                  state.store.get(KeysAddr(bp)).join(D.atomicTop))
+                  newNewStore(Set(KeysAddr(bp))).join(D.atomicTop)))
               case x => {}
             }
           }
@@ -324,17 +353,17 @@ println("HashMap.put("+key+", "+value+")")
   // java.lang.Object getValue()
   case class getValue() extends SnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
-      var newNewStore = state.store
+      var newNewStore = newStore
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
-          for (v <- newStore.get(ThisFrameAddr(newFP)).values) {
+          for (v <- newStore(Set(ThisFrameAddr(newFP))).values) {
             v match {
               case ObjectValue(sootClass, EntryOfIteratorOfEntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, Entry) =>
                 // D.atomicTop is for the null returned when the key is not found
-                newNewStore = newNewStore.update(
+                newNewStore = newNewStore.join(newNewStore.update(
                   state.addrsOf(stmt.getLeftOp),
-                  state.store.get(ValuesAddr(bp)).join(D.atomicTop))
+                  newNewStore(Set(ValuesAddr(bp))).join(D.atomicTop)))
               case x => {}
             }
           }
@@ -344,6 +373,175 @@ println("HashMap.put("+key+", "+value+")")
     }
   }
 
+}
+
+object ArrayListSnowflakes {
+  lazy val ArrayList = Soot.getSootClass("java.util.ArrayList")
+  lazy val Iterator = Soot.getSootClass("java.util.Iterator")
+
+  Snowflakes.table.put(MethodDescription("java.util.ArrayList", SootMethod.constructorName, List(), "void"), ArrayListSnowflakes.init())
+  Snowflakes.table.put(MethodDescription("java.util.ArrayList", "add", List("java.lang.Object"), "boolean"), ArrayListSnowflakes.add())
+  Snowflakes.table.put(MethodDescription("java.util.ArrayList", "iterator", List(), "java.util.Iterator"), ArrayListSnowflakes.iterator())
+//  Snowflakes.table.put(MethodDescription("java.util.HashMap", "get", List("java.lang.Object"), "java.lang.Object"), HashMapSnowflakes.get())
+
+  case class LengthAddr(val bp : BasePointer) extends Addr
+  case class RefAddr(val bp : BasePointer) extends Addr
+
+  case class init() extends SnowflakeHandler {
+    override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
+      // void ArrayList.<init>():
+      //  this.length = top
+      //  this.refs = {}
+
+println("ArrayList.init()")
+      var newNewStore = newStore
+      for (v <- newStore(Set(ThisFrameAddr(newFP))).values) {
+        v match {
+          case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
+            println("ArrayList.sootClass bp "+sootClass+" "+bp)
+            newNewStore = newNewStore.join(newNewStore
+              .update(LengthAddr(bp), D.atomicTop))
+            newNewStore = newNewStore.join(newNewStore
+              .update(RefAddr(bp), D.atomicTop)) // D.atomicTop is so we don't get undefiend addrs exception
+            println("ArrayList RefAddr "+RefAddr(bp)+" "+newNewStore.get(RefAddr(bp)))
+          case _ => {}
+        }
+      }
+
+println("writeAddrs "+newNewStore.writeAddrs)
+println("readAddrs "+newNewStore.readAddrs)
+      Set(state.copyState(stmt = nextStmt, store = newNewStore))
+    }
+  }
+
+  case class add() extends SnowflakeHandler {
+    override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
+      println("add")
+      // boolean ArrayList.add(Object o)
+      //   this.length += top
+      //   this.refs += o
+
+      // TODO: avoid duplication
+      var newNewStore = newStore
+      state.stmt.sootStmt match {
+        case stmt : InvokeStmt => {}
+        case stmt : DefinitionStmt =>
+          for (v <- newStore(Set(ThisFrameAddr(newFP))).values) {
+            v match {
+              case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
+                newNewStore = newNewStore.join(newNewStore.update(
+                  state.addrsOf(stmt.getLeftOp),
+                  D.atomicTop))
+              case _ => {}
+            }
+          }
+      }
+
+      val value = newStore(Set(ParameterFrameAddr(newFP, 0)))
+      println("param 0 "+value)
+      println("this "+newStore.get(ThisFrameAddr(newFP)).values)
+      for (v <- newStore(Set(ThisFrameAddr(newFP))).values) {
+        v match {
+          case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
+            println("add store "+bp)
+            newNewStore = newNewStore.join(newNewStore
+              .update(RefAddr(bp), value))
+          case _ => {}
+        }
+      }
+
+println("add readAddrs "+newNewStore.readAddrs)
+println("add writeAddrs "+newNewStore.writeAddrs)
+
+      Set(state.copyState(stmt = nextStmt, store = newNewStore))
+    }
+  }
+
+/*
+  case class get() extends SnowflakeHandler {
+    override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
+      // Object HashMap.get(Object):
+      //   return this.values
+
+      var newNewStore = newStore
+      state.stmt.sootStmt match {
+        case stmt : InvokeStmt => {}
+        case stmt : DefinitionStmt =>
+          for (v <- newStore(ThisFrameAddr(newFP)).values) {
+            v match {
+              case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
+                // D.atomicTop is for the null returned when the key is not found
+      println("HashMap.get("+state.store.get(RefAddr(bp))+")")
+                newNewStore = newNewStore.update(
+                  state.addrsOf(stmt.getLeftOp),
+                  newNewStore(RefAddr(bp)).join(D.atomicTop))
+              case x => 
+      println("HashMap.get skipped "+x)
+//{}
+            }
+          }
+      }
+
+      Set(state.copyState(stmt = nextStmt, store = newNewStore))
+    }
+  }
+ */
+
+/*
+  // java.util.Set HashMap.entrySet():
+  //   return this
+  case class EntrySetOfHashMap(val bp : BasePointer) extends BasePointer
+  case class entrySet() extends SnowflakeHandler {
+    override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
+      var newNewStore = newStore
+      state.stmt.sootStmt match {
+        case stmt : InvokeStmt => {}
+        case stmt : DefinitionStmt =>
+          for (v <- newStore(ThisFrameAddr(newFP)).values) {
+            v match {
+              case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
+                // D.atomicTop is for the null returned when the key is not found
+                newNewStore = newNewStore.update(
+                  state.addrsOf(stmt.getLeftOp),
+                  D(Set(ObjectValue(EntrySet, EntrySetOfHashMap(bp)))))
+              case x => {}
+            }
+          }
+      }
+
+      Set(state.copyState(stmt = nextStmt, store = newNewStore))
+    }
+  }
+ */
+
+  // java.util.Iterator ArrayList.iterator():
+  //   return this
+  case class IteratorOfArrayList(val bp : BasePointer) extends BasePointer
+  case class iterator() extends SnowflakeHandler {
+    override def apply(state : State, nextStmt : Stmt, newFP : FramePointer, newStore : Store, newKontStack : KontStack) = {
+      println("ArrayList.iterator")
+      var newNewStore = newStore
+      state.stmt.sootStmt match {
+        case stmt : InvokeStmt => {}
+        case stmt : DefinitionStmt =>
+          println("DefinitionStmt")
+          for (v <- newStore(Set(ThisFrameAddr(newFP))).values) {
+            println("value " + v)
+            v match {
+              case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
+                println("ArrayList "+sootClass+" "+bp+" "+state.addrsOf(stmt.getLeftOp))
+                // D.atomicTop is for the null returned when the key is not found
+                newNewStore = newNewStore.join(newNewStore.update(
+                  state.addrsOf(stmt.getLeftOp),
+                  D(Set(ObjectValue(Iterator, IteratorOfArrayList(bp))))))
+              case x => {}
+            }
+          }
+      }
+
+      Set(state.copyState(stmt = nextStmt, store = newNewStore))
+    }
+  }
 }
 
 object ClassSnowflakes {
@@ -356,7 +554,7 @@ object ClassSnowflakes {
       }
       val lhsAddr = state.addrsOf(local)
 
-      val ss = for (v <- newStore.get(ThisFrameAddr(newFP)).values) yield {
+      val ss = for (v <- newStore(Set(ThisFrameAddr(newFP))).values) yield {
         v match {
           case ObjectValue(_, ClassBasePointer(className)) =>
             val sootClass = Soot.getSootClass(className)
@@ -500,14 +698,15 @@ object Snowflakes {
   table.put(MethodDescription("java.lang.System", "getProperty", List("java.lang.String"), "java.lang.String"),
     ReturnSnowflake(D(Set(ObjectValue(Soot.classes.String, StringBasePointer("returns from getProperty"))))))
   //table.put(MethodDescription("java.nio.file.Paths", "get", List("java.lang.String", "java.lang.String[]"), "java.nio.file.Path"), ReturnObjectSnowflake("java.nio.file.Path"))
-  table.put(MethodDescription("java.util.HashMap", SootMethod.constructorName, List(), "void"),
-    ReturnObjectSnowflake("java.util.HashMap"))
+  //table.put(MethodDescription("java.util.HashMap", SootMethod.constructorName, List(), "void"),
+  //  ReturnObjectSnowflake("java.util.HashMap"))
 
   // java.io.PrintStream
   table.put(MethodDescription("java.io.PrintStream", "println", List("int"), "void"), NoOpSnowflake)
   table.put(MethodDescription("java.io.PrintStream", "println", List("java.lang.String"), "void"), NoOpSnowflake)
 
   HashMapSnowflakes // this triggers HashMapSnowflakes to add snowflake entries
+  ArrayListSnowflakes
   ClassSnowflakes
 
   // java.lang.Class
