@@ -87,7 +87,8 @@ object Soot {
   def mapSerializer[T,K,V](implicit mfT: Manifest[T], mfMap: Manifest[Map[K,V]]) = {
     val runtimeClass = mfT.runtimeClass
     val fields = runtimeClass.getDeclaredFields
-    //assert(fields.length == 1)
+    assert(fields.length == 1)
+    //assert(fields.length >= 1)
     val f = fields(0)
     f.setAccessible(true)
     new CustomSerializer[Map[K,V]](implicit format => (
@@ -185,7 +186,13 @@ object Soot {
      ((sub.isInterface, sup.isInterface) match {
       case (false, false) => Scene.v().getActiveHierarchy.isClassSubclassOf(sub, sup)
       case (true, true) => Scene.v().getActiveHierarchy.isInterfaceSubinterfaceOf(sub, sup)
-    })
+      case (false, true) => {
+        val h = Scene.v().getActiveHierarchy()
+        h.getSuperclassesOfIncluding(sub)
+          .exists(_.getInterfaces().exists(h.getSuperinterfacesOfIncluding(_).exists(_ == sup)))
+      }
+       case (true, false) => false
+     })
   }
 
   object classes {

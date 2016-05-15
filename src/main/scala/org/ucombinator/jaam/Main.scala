@@ -148,16 +148,16 @@ case class KontStack(/*store : KontStore, */k : Kont) {
 
 object KontStore {
   val serializer = Soot.mapSerializer[KontStore, KontAddr, Set[Kont]]
+  var readAddrs = Set[KontAddr]()
+  var writeAddrs = Set[KontAddr]()
 }
 
 // Probably don't refactor. Might only want to widen on KontStore.
 case class KontStore(private val map : Map[KontAddr, Set[Kont]]) {
-  var readAddrs = Set[KontAddr]()
-  var writeAddrs = Set[KontAddr]()
 
   def resetReadAddrsAndWriteAddrs: scala.Unit = {
-    readAddrs = Set[KontAddr]()
-    writeAddrs = Set[KontAddr]()
+    KontStore.readAddrs = Set[KontAddr]()
+    KontStore.writeAddrs = Set[KontAddr]()
   }
 
   def join(other : KontStore) : KontStore = {
@@ -165,8 +165,8 @@ case class KontStore(private val map : Map[KontAddr, Set[Kont]]) {
     other.map.foreach { case (k, v) => {
       newStore = newStore.update(k, v)
     }}
-    newStore.readAddrs = other.readAddrs ++ readAddrs
-    newStore.writeAddrs = other.writeAddrs ++ writeAddrs
+    //newStore.readAddrs = other.readAddrs ++ readAddrs
+    //newStore.writeAddrs = other.writeAddrs ++ writeAddrs
     newStore
   }
 
@@ -177,12 +177,12 @@ case class KontStore(private val map : Map[KontAddr, Set[Kont]]) {
     }
     val newd = oldd ++ konts
     if (oldd.size != newd.size)
-      writeAddrs += addr
+      KontStore.writeAddrs += addr
     KontStore(map + (addr -> newd))
   }
 
   def apply(addr : KontAddr) : Set[Kont] = {
-    readAddrs += addr
+    KontStore.readAddrs += addr
     map(addr)
   }
 
@@ -293,32 +293,38 @@ case class ArrayLengthAddr(val bp : BasePointer) extends Addr
 case class StaticFieldAddr(val field : SootField) extends Addr
 
 object Store {
-  val serializer = Soot.mapSerializer[Store, Addr, D]
-}
-
-case class Store(private val map : Map[Addr, D]) {
-  def contains(addr : Addr) = map.contains(addr)
-
+  val serializer = Soot.toStringSerializer[Store] //Soot.mapSerializer[Store, Addr, D]
+  var on = false
+  var print = false
   var readAddrs = Set[Addr]()
   var writeAddrs = Set[Addr]()
+  var map : Map[Addr, D] = Map()
+}
+
+case class Store() { //private val map : Map[Addr, D]) {
+  def contains(addr : Addr) = Store.map.contains(addr)
+
+//  var readAddrs = Set[Addr]()
+//  var writeAddrs = Set[Addr]()
 
   def resetReadAddrsAndWriteAddrs: scala.Unit = {
-    readAddrs = Set[Addr]()
-    writeAddrs = Set[Addr]()
+    Store.readAddrs = Set[Addr]()
+    Store.writeAddrs = Set[Addr]()
   }
 
   def join(store : Store): Store = {
-    var newStore = this.copy()
-    store.map.foreach { case (k, v) => {
-      newStore = newStore.update(k, v)
-    }}
-    newStore.readAddrs = store.readAddrs ++ readAddrs
-    newStore.writeAddrs = store.writeAddrs ++ writeAddrs
-    newStore
+//    var newStore = this.copy()
+//    store.map.foreach { case (k, v) => {
+//      newStore = newStore.update(k, v)
+//    }}
+//    //newStore.readAddrs = store.readAddrs ++ readAddrs
+//    //newStore.writeAddrs = store.writeAddrs ++ writeAddrs
+//    newStore
+    Store()
   }
 
   def get(addr: Addr): D = {
-    map.get(addr) match {
+    Store.map.get(addr) match {
       case Some(oldd) => oldd
       case None => D(Set())
     }
@@ -327,9 +333,18 @@ case class Store(private val map : Map[Addr, D]) {
   def update(addr : Addr, d : D) : Store = {
     val oldd: D = get(addr)
     val newd: D = oldd.join(d)
-    if (oldd.values.size != newd.values.size)
-      writeAddrs += addr
-    Store(map + (addr -> newd))
+    if (Store.on && oldd.values.size != newd.values.size) {
+//      if (Store.print) {
+//        println("update "+addr)
+//        println("oldd "+oldd)
+//        println("d "+d)
+//        println("newd "+newd)
+//      }
+      Store.writeAddrs += addr
+    }
+    Store.map = Store.map + (addr -> newd)
+    Store()
+//    Store(map + (addr -> newd))
   }
 
   def update(addrs : Set[Addr], d : D) : Store = {
@@ -356,15 +371,15 @@ case class Store(private val map : Map[Addr, D]) {
   }
 
   def apply(addrs : Set[Addr]) : D = {
-    readAddrs ++= addrs
-    val ds = for (a <- addrs; if map.contains(a)) yield {
+    Store.readAddrs ++= addrs
+    val ds = for (a <- addrs; if Store.map.contains(a)) yield {
       a match {
         case InstanceFieldAddr(OneCFABasePointer(_, _, FromNative), _) =>
           println(Console.RED + "!!!!! Access field of object created from native method !!!!!")
           println(a + Console.RESET)
         case _ =>
       }
-      map(a)
+      Store.map(a)
     }
     val res = ds.fold (D(Set()))(_ join _)
     if (res == D(Set())) throw UndefinedAddrsException(addrs)
@@ -372,7 +387,7 @@ case class Store(private val map : Map[Addr, D]) {
   }
 
   def prettyString() : List[String] =
-    (for ((a, d) <- map) yield { a + " -> " + d }).toList
+    (for ((a, d) <- Store.map) yield { a + " -> " + d }).toList
 }
 
 // Due to a bug in json4s we have to use "Int" instead of "AbstractState.Id" for the keys of this map
@@ -402,6 +417,12 @@ abstract sealed class AbstractState {
   def getKReadAddrs: Set[KontAddr]
   def setKReadAddrs(s: Set[KontAddr]): scala.Unit
 
+  def getWriteAddrs: Set[Addr]
+  def setWriteAddrs(s: Set[Addr]): scala.Unit
+
+  def getKWriteAddrs: Set[KontAddr]
+  def setKWriteAddrs(s: Set[KontAddr]): scala.Unit
+
   def setInitializedClasses(classes: Set[SootClass]) : scala.Unit
   def getInitializedClasses() : Set[SootClass]
 
@@ -418,13 +439,17 @@ object AbstractState {
 case object ErrorState extends AbstractState {
   override def next() : Set[AbstractState] = Set.empty
   override def setStore(store : Store) = scala.Unit
-  override def getStore() = Store(Map())
+  override def getStore() = Store(/*Map()*/)
   override def setKontStore(store : KontStore) = scala.Unit
   override def getKontStore() = KontStore(Map())
   override def getReadAddrs = Set()
   override def setReadAddrs(s: Set[Addr]) = scala.Unit
   override def getKReadAddrs: Set[KontAddr] = Set()
   override def setKReadAddrs(s: Set[KontAddr]) = scala.Unit
+  override def getWriteAddrs = Set()
+  override def setWriteAddrs(s: Set[Addr]) = scala.Unit
+  override def getKWriteAddrs: Set[KontAddr] = Set()
+  override def setKWriteAddrs(s: Set[KontAddr]) = scala.Unit
   override def setInitializedClasses(classes: Set[SootClass]) = scala.Unit
   override def getInitializedClasses() : Set[SootClass] = Set()
 }
@@ -435,8 +460,14 @@ case class State(val stmt : Stmt,
                  //val store : Store,
                  val kontStack : KontStack
                  /*val initializedClasses : Set[SootClass]*/) extends AbstractState {
+  // Needed because different "stores" should lead to different objects
+//  override def equals(that: Any): Boolean =
+//    that match {
+//      case that: State => this.stmt == that.stmt && this.fp == that.fp && this.kontStack == that.kontStack && this.store == that.store
+//      case _ => false
+//   }
 
-  var store: Store = Store(Map())
+  var store: Store = Store(/*Map()*/)
 
   override def setStore(store : Store) : scala.Unit = this.store = store
   override def getStore(): Store = store
@@ -450,6 +481,14 @@ case class State(val stmt : Stmt,
   var kReadAddrs = Set[KontAddr]()
   override def getKReadAddrs = kReadAddrs
   override def setKReadAddrs(s: Set[KontAddr]) = kReadAddrs = s
+
+  var writeAddrs = Set[Addr]()
+  override def getWriteAddrs = writeAddrs
+  override def setWriteAddrs(s: Set[Addr]) = writeAddrs = s
+
+  var kWriteAddrs = Set[KontAddr]()
+  override def getKWriteAddrs = kWriteAddrs
+  override def setKWriteAddrs(s: Set[KontAddr]) = kWriteAddrs = s
 
   var initializedClasses = Set[SootClass]()
   override def setInitializedClasses(classes: Set[SootClass]) = {
@@ -548,7 +587,6 @@ case class State(val stmt : Stmt,
       assert(op.getType.isInstanceOf[PrimType] && !op.getType.isInstanceOf[BooleanType])
     }
     def assertIntegral(op : SootValue) {
-      println("assertIntegral "+op+" "+op.getType)
       assert(op.getType.isInstanceOf[PrimType] &&
         !op.getType.isInstanceOf[BooleanType] &&
         !op.getType.isInstanceOf[FloatType] &&
@@ -631,7 +669,7 @@ case class State(val stmt : Stmt,
         val castedType : SootType = v.getType
         checkInitializedClasses(castedType)
         val d = eval(castedExpr)
-        println("CastExpr "+v+" "+d)
+//        println("CastExpr "+v+" "+d)
         // TODO: filter out elements of "d" that are not of the
         // expression's type (should be done in general inside "eval"
         // (and maybe already is))
@@ -663,7 +701,7 @@ case class State(val stmt : Stmt,
               case r : RefType => r.getClassName
               case a : ArrayType => ???
             }
-            println("snowflake cast "+castedType+" v "+v)
+//            println("snowflake cast "+castedType+" v "+v)
             d2 = d2.join(Snowflakes.createObjectOrThrow(name))
           } else {
             // Anything else would cause an exception
@@ -672,9 +710,9 @@ case class State(val stmt : Stmt,
           }
         }
 
-        println("caseExpr writeAddrs "+this.store.writeAddrs)
-        println("caseExpr readAddrs "+this.store.readAddrs)
-        println("caseExpr d2 "+d2)
+//        println("caseExpr writeAddrs "+Store.writeAddrs)
+//        println("caseExpr readAddrs "+Store.readAddrs)
+//        println("caseExpr d2 "+d2)
         d2
 
 /*
@@ -792,7 +830,7 @@ println("isSubtype")
   def handleInvoke(expr : InvokeExpr,
                    destAddr : Option[Set[Addr]],
                    nextStmt : Stmt = stmt.nextSyntactic) : Set[AbstractState] = {
-println("handleInvoke "+expr)
+//println("handleInvoke "+expr)
 
     // o.f(3); // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
@@ -816,6 +854,7 @@ println("handleInvoke "+expr)
           (if (o.exists(m => AccessManager.isAccessLegal(curr_m, m))) List(curr_m) else List()) ++ o
         }
       }
+//      println("dispatch "+expr+" "+bp+" "+c+" "+m+" "+receivers)
 
       val meth = if (c == null) m else overrides(c, m).head
       // TODO: put a better message when there is no getActiveBody due to it being a native method
@@ -831,12 +870,25 @@ println("handleInvoke "+expr)
 
       Snowflakes.get(meth) match {
         case Some(h) =>
-          println("snowflake "+h)
-          h(this, nextStmt, newFP, newStore, newKontStack)
+//          println("snowflake "+h)
+          val s = h(this, nextStmt, newFP, newStore, newKontStack)
+//          println("wrote 4")
+//          for (state <- s) {
+//            println("  "+state)
+//            state match {
+//              case s : State =>
+//                println("next wrote 3")
+//                for (a <- Store.writeAddrs) {
+//                  println("  "+a+"="+s.store.get(a))
+//                }
+//              case _ => {}
+//            }
+//          }
+          s
         case None =>
           if (meth.getDeclaringClass.isJavaLibraryClass ||
               bp.isInstanceOf[SnowflakeBasePointer]) {
-            println("generic snowflake "+meth)
+            Snowflakes.warn(this.id, stmt, meth)
             val rtType = meth.getReturnType
             rtType match {
               case t: VoidType => NoOpSnowflake(this, nextStmt, newFP, newStore, newKontStack)
@@ -849,8 +901,8 @@ println("handleInvoke "+expr)
             }
           }
           else if (meth.isNative) {
-            println()
-            println(Console.YELLOW + "!!!!! WARNING: Native method without a snowflake. May be unsound. !!!!!")
+//            println()
+            println(Console.YELLOW + "!!!!! WARNING (in state "+this.id+"): Native method without a snowflake. May be unsound. !!!!!")
             println("!!!!! stmt = " + stmt + " !!!!!")
             println("!!!!! method = " + meth + " !!!!!" + Console.RESET)
             meth.getReturnType match {
@@ -879,27 +931,37 @@ println("handleInvoke "+expr)
         dispatch(null, null, expr.getMethod(), Set())
       case expr : InstanceInvokeExpr =>
         val d = eval(expr.getBase())
-        println("d "+d)
+//        println("d "+d)
+//        println("d.values "+d.values)
         val vs = d.values filter {
-          case ObjectValue(sootClass, SnowflakeBasePointer(_)) => true
+          case ObjectValue(c,_) => Soot.isSubclass(c, expr.getMethod.getDeclaringClass)
+/*
+          case ObjectValue(c, SnowflakeBasePointer(_)) => Soot.isSubclass(c, expr.getMethod.getDeclaringClass)
+          case ObjectValue(_, HashMapSnowflakes.EntrySetOfHashMap(_)) => true
+          case ObjectValue(_, HashMapSnowflakes.IteratorOfEntrySetOfHashMap(_)) => true
+          case ObjectValue(_, HashMapSnowflakes.EntryOfIteratorOfEntrySetOfHashMap(_)) => true
+          case ObjectValue(_, HashMapSnowflakes.EntrySetOfHashMap(_)) => true
+          case ObjectValue(_, ArrayListSnowflakes.IteratorOfArrayList(_)) => true
+
           case ObjectValue(sootClass, _) => {
-            println("sootClass "+sootClass+" "+expr.getMethod().getDeclaringClass)
+//            println("sootClass "+sootClass+" "+expr.getMethod().getDeclaringClass)
             if (expr.getMethod().getDeclaringClass.isInterface) {
               val imps = Scene.v().getActiveHierarchy.getImplementersOf(expr.getMethod().getDeclaringClass)
               imps.contains(sootClass)
-              true
+              //true
             }
             else {
               Soot.isSubclass(sootClass, expr.getMethod().getDeclaringClass)
             }
           }
+ */
           case ArrayValue(sootType, _) => {
             //TODO Check Type
             true
           }
           case _ => false
         }
-        println("vs "+vs)
+//        println("vs "+vs)
         ((for (v <- vs) yield {
           v match {
             case ObjectValue(sootClass, bp) => {
@@ -955,32 +1017,7 @@ println("handleInvoke "+expr)
   // Returns the set of successor states to this state.
   override def next() : Set[AbstractState] = {
     try {
-      val nexts = for (s <- true_next()) yield {
-        s match {
-          case s : State =>
-            println("thisReadAddrs "+this.store.readAddrs)
-            for (a <- this.store.readAddrs) {
-              println("  " + this.store.get(a))
-            }
-            println("thisWriteAddrs "+this.store.writeAddrs)
-            for (a <- this.store.writeAddrs) {
-              println("  " + s.store.get(a))
-            }
-            val s2 = s.copyState(store = this.store.join(s.store))
-            println("readAddrs "+s.store.readAddrs)
-            for (a <- s.store.readAddrs) {
-              println("  " + s.store.get(a))
-            }
-            println("writeAddrs "+s.store.writeAddrs)
-            for (a <- s.store.writeAddrs) {
-              println("  " + s.store.get(a))
-            }
-            s2
-          case _ => s
-        }
-      }
-
-
+      val nexts = true_next()
       /*
       println("KStore:")
       println(kontStack.getStore())
@@ -994,6 +1031,7 @@ println("handleInvoke "+expr)
       nexts ++ exceptionStates
     } catch {
       case UninitializedClassException(sootClass) =>
+        println("Exception: Static initializing "+sootClass)
         // TODO/soundness: needs to also initialize parent classes
         exceptions = D(Set())
         val meth = sootClass.getMethodByNameUnsafe(SootMethod.staticInitializerName)
@@ -1020,11 +1058,12 @@ println("handleInvoke "+expr)
         }
 
       case UninitializedSnowflakeObjectException(className) =>
+        println("Exception: Initializing snowflake "+className)
         val newStore = store.join(Snowflakes.createObject(className, List()))
         Set(this.copyState(store = newStore)) //store=>store.join(Snowflakes.createObject(className, List()))))
 
-
       case StringConstantException(string) =>
+        println("Exception: Initializing string constant: \""+string+"\"")
         val value = Soot.classes.String.getFieldByName("value")
         val hash = Soot.classes.String.getFieldByName("hash")
         val hash32 = Soot.classes.String.getFieldByName("hash32")
@@ -1035,15 +1074,14 @@ println("handleInvoke "+expr)
         Set(this.copyState(store = newStore))
 
       case UndefinedAddrsException(addrs) =>
-        println()
-        println(Console.RED + "!!!!! ERROR: Undefined Addrs !!!!!")
+        println(Console.RED + "!!!!! ERROR (in state "+this.id+"): Undefined Addrs !!!!!")
         println("!!!!! stmt = " + stmt + " !!!!!")
         println("!!!!! addrs = " + addrs + " !!!!!" + Console.RESET)
         Set()
     }
   }
 
-  def newExpr(lhsAddr : Set[Addr], sootClass : SootClass) : Store = {
+  def newExpr(lhsAddr : Set[Addr], sootClass : SootClass, store : Store) : Store = {
     val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
     if (sootClass.isJavaLibraryClass || Snowflakes.contains(md)) {
       val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
@@ -1078,14 +1116,13 @@ println("handleInvoke "+expr)
       case sootStmt : DefinitionStmt => {
         val lhsAddr = addrsOf(sootStmt.getLeftOp())
 
-        val result : Set[AbstractState] =
         sootStmt.getRightOp() match {
           case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
           case rhs : NewExpr => {
             val baseType : RefType = rhs.getBaseType()
             val sootClass = baseType.getSootClass()
 
-            Set(this.copyState(stmt = stmt.nextSyntactic, store = this.newExpr(lhsAddr, sootClass)))
+            Set(this.copyState(stmt = stmt.nextSyntactic, store = this.newExpr(lhsAddr, sootClass, store)))
           }
           case rhs : NewArrayExpr => {
             //TODO, if base type is Java library class, call Snowflake.createArray
@@ -1100,41 +1137,11 @@ println("handleInvoke "+expr)
             Set(this.copyState(stmt = stmt.nextSyntactic, store = newStore))
           }
           case rhs => {
-            println("eval(rhs) "+eval(rhs)+" "+lhsAddr)
+//            println("eval(rhs) "+eval(rhs)+" "+lhsAddr)
             val newStore = store.update(lhsAddr, eval(rhs))
             Set(this.copyState(stmt = stmt.nextSyntactic, store = newStore))
           }
         }
-        println("oldstore")
-        if (true) {
-          val s = this
-          println("DefinitionStmt "+s.stmt+" ")
-          println("Reads: "+s.store.readAddrs)
-          for (a <- s.store.readAddrs) {
-            println("Value: "+s.store.get(a))
-          }
-          println("Writes: "+s.store.writeAddrs)
-          for (a <- s.store.writeAddrs) {
-            println("Value: "+s.store.get(a))
-          }
-        }
-        println("newstore")
-        for (s <- result) {
-          s match {
-            case s : State =>
-              println("DefinitionStmt "+s.stmt+" ")
-              println("Reads: "+s.store.readAddrs)
-              for (a <- s.store.readAddrs) {
-                println("Value: "+s.store.get(a))
-              }
-              println("Writes: "+s.store.writeAddrs)
-              for (a <- s.store.writeAddrs) {
-                println("Value: "+s.store.get(a))
-              }
-            case _ => {}
-          }
-        }
-        result
       }
 
       case sootStmt : IfStmt => {
@@ -1214,8 +1221,8 @@ object State {
         D(Set(ArrayValue(stringClass.getType(), initialBasePointer))),
       ArrayRefAddr(initialBasePointer) -> D(Set(ObjectValue(stringClass, initialBasePointer))),
       ArrayLengthAddr(initialBasePointer) -> D.atomicTop)
+    val store = Store(/*initial_map*/).update(initial_map)
 
-    val store = Store(initial_map)
     val ks = KontStack(HaltKont)
     ks.setStore(KontStore(Map()))
     val state = State(stmt, initialFramePointer, ks)
@@ -1224,26 +1231,40 @@ object State {
   }
 }
 
-case class System(state: AbstractState,
+object System {
+  def next(state: AbstractState,
                   store: Store,
                   kstore: KontStore,
-                  initializedClasses: Set[SootClass]) {
-
-  store.resetReadAddrsAndWriteAddrs
-  kstore.resetReadAddrsAndWriteAddrs
-
-  def next: (Set[AbstractState], Store, KontStore, Set[SootClass]) = {
+                  initializedClasses: Set[SootClass]): (Set[AbstractState], Store, KontStore, Set[SootClass]) = {
     state.setStore(store)
     state.setKontStore(kstore)
     state.setInitializedClasses(initializedClasses)
 
+  store.resetReadAddrsAndWriteAddrs
+  kstore.resetReadAddrsAndWriteAddrs
+    Store.on = true
+
     val nexts = state.next()
-    val newStore = nexts.par.map(_.getStore()).foldLeft(Store(Map()))(_.join(_))
+
+
+    Store.on = false
+
+    state.setReadAddrs(Store.readAddrs)
+    state.setKReadAddrs(KontStore.readAddrs)
+    state.setWriteAddrs(Store.writeAddrs)
+    state.setKWriteAddrs(KontStore.writeAddrs)
+
+    val newStore = Store() //nexts.par.map(_.getStore()).foldLeft(Store(Map()))(_.join(_))
     val newKStore = nexts.par.map(_.getKontStore()).foldLeft(KontStore(Map()))(_.join(_))
     val newInitClasses = nexts.par.map(_.getInitializedClasses()).foldLeft(Set[SootClass]())(_.++(_))
 
-    state.setReadAddrs(state.getStore().readAddrs)
-    state.setKReadAddrs(state.getKontStore().readAddrs)
+//    if (Store.print) {
+//      println("next wrote 2")
+//      for (a <- Store.writeAddrs) {
+//        println("  "+a+"="+newStore.get(a))
+//      }
+//    }
+
 
     (nexts, newStore, newKStore, newInitClasses)
   }
@@ -1314,11 +1335,12 @@ object Main {
     while (todo nonEmpty) {
       //TODO refactor store widening code
       val current = todo.head
-      println("Processing " + current.id)
-      val (nexts, newStore, newKStore, initClasses) = System(current, globalStore, globalKontStore, globalInitClasses).next
-      for (next <- nexts) {
+      println()
+      println("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
+      val (nexts, newStore, newKStore, initClasses) = System.next(current, globalStore, globalKontStore, globalInitClasses)
+//      for (next <- nexts) {
         //window.addNext(current, next)
-      }
+//      }
 
       val newTodo = nexts.toList.filter(!done.contains(_))
 
@@ -1330,13 +1352,35 @@ object Main {
         println(Serialization.writePretty(packet))
       }
 
+//      println("Read:")
+//      for (a <- current.getReadAddrs) {
+//        println("    "+a)
+//        for (v <- newStore.get(a).values) {
+//          println("        "+v)
+//        }
+//      }
+//      println("Wrote:")
+//      for (a <- current.getWriteAddrs) {
+//        println("    "+a)
+//        for (v <- newStore.get(a).values) {
+//          println("        "+v)
+//        }
+//      }
+//      println("Rescheduling states")
       for (d <- done) {
-        if (d.getReadAddrs.intersect(current.getStore.writeAddrs).nonEmpty
-          || d.getKReadAddrs.intersect(current.getKontStore.writeAddrs).nonEmpty) {
+        if (d.getReadAddrs.intersect(current.getWriteAddrs).nonEmpty
+          || d.getKReadAddrs.intersect(current.getKWriteAddrs).nonEmpty) {
+//          println("Rescheduled "+d.id+" "+(d match { case s : State => s.stmt.toString; case s => s.toString}))
+//    if (Store.print) {
+//      println("  due to "+d.getReadAddrs.intersect(current.getWriteAddrs))
+//      println("  or to "+d.getKReadAddrs.intersect(current.getKWriteAddrs))
+//    }
           todo = todo ++ List(d)
           done = done - d
         }
       }
+      Store.print = false
+//      println("Done rescheduling")
 
       if ((globalInitClasses++initClasses).size != globalInitClasses.size) {
 //        println("Initialized classes changed.")
@@ -1350,6 +1394,7 @@ object Main {
       globalStore = globalStore.join(newStore)
       globalKontStore = globalKontStore.join(newKStore)
       globalInitClasses ++= initClasses
+      println("Done processing state "+current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
     }
 
     println("Done!")
