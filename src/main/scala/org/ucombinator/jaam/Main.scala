@@ -1279,8 +1279,8 @@ case class Config(
 
 object Main {
   def main(args : Array[String]) {
-    val parser = new scopt.OptionParser[Config]("shimple-analyzer") {
-      head("shimple-analyzer")
+    val parser = new scopt.OptionParser[Config]("jaam") {
+      head("jaam")
 
       opt[String]("classpath") action {
         (x, c) => c.copy(sootClassPath = x)
@@ -1297,6 +1297,8 @@ object Main {
       opt[String]('m', "method") action {
         (x, c) => c.copy(methodName = x)
       } text("the main method")
+
+      help("help") text("prints this usage text")
 
       override def showUsageOnError = true
     }

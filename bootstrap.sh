@@ -6,7 +6,7 @@ NEED_VERSION="1.7"
 MY_DIR="$(cd $(dirname $0); pwd -P)"
 SBT_REL_PATH="bin/sbt"
 SBT_PATH="${MY_DIR}/${SBT_REL_PATH}"
-RUNNER_PATH="${MY_DIR}/jaam.sh"
+RUNNER_PATH="${MY_DIR}/bin/jaam.sh"
 declare -a SUPPORTED_MODES=("user" "developer")
 MODES_PROMPT=$(printf " | %s" "${SUPPORTED_MODES[@]}")
 MODES_PROMPT="${MODES_PROMPT:3}"
@@ -326,16 +326,25 @@ cat <<- EOF > "${jaam_runner}"
 	
 	# Use JAVA_OPTS if provided, otherwise use the default from above.
 	chosen_java_opts=\${JAVA_OPTS:-"\${JAAM_java_opts}"}
-    JAVA_OPTS="\${chosen_java_opts}"
+	JAVA_OPTS="\${chosen_java_opts}"
+
+	# Define arguments. If none, call with `--help`.
+	user_args="\$@"
+	dev_args="\$*"
+	if [[ -z "\$*" ]]
+	then
+	    user_args="--help"
+	    dev_args="--help"
+	fi
 	
 	# Do the execution.
 	if [[ "\$JAAM_mode" == "user" ]]
 	then
-	    exec "\${JAAM_java}" -jar "\${JAAM_jar}" -J "\${JAAM_rt_jar}" "\$@"
+	    exec "\${JAAM_java}" -jar "\${JAAM_jar}" -J "\${JAAM_rt_jar}" "\${user_args}"
 	elif [[ "\$JAAM_mode" == "developer" ]]
 	then
 	    SBT_JAVA="\${JAAM_java}"
-	    exec "\${JAAM_sbt}" "run -J \${JAAM_rt_jar} \$*"
+	    exec "\${JAAM_sbt}" "run -J \${JAAM_rt_jar} \${dev_args}"
 	else
 	    echo "Error: Invalid mode set: \${JAAM_mode}"
 	    exit 1
