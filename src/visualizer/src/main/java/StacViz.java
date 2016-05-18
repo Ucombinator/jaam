@@ -65,7 +65,7 @@ public class StacViz
 		
 		if(load)
 		{
-			ti.run(fromJson);
+			ti.run();
 			Parameters.repaintAll();
 		}
 	}

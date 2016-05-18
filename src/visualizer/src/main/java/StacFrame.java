@@ -90,7 +90,7 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						loadGraphOperation(false);
+						loadGraphOperation();
 					}
 				}
 		);		
@@ -619,14 +619,14 @@ public class StacFrame extends JFrame
 		leftSplitPane.resetToPreferredSizes();
 	}
 	
-	public void loadGraphOperation(boolean fromJSON)
+	public void loadGraphOperation()
 	{
 		String file = Parameters.openFile();
 		if(file==null)
 			return;
 		TakeInput ti = new TakeInput();
 		ti.setFileInput(file);
-		ti.run(fromJSON);		
+		ti.run();		
 		Parameters.repaintAll();
 	}
 	

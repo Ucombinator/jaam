@@ -1,0 +1,46 @@
+Features to add (w/ priority):
+- Check parser for subspace.out: 1
+- Add file name for graph that was loaded: 1
+- Change dragging: 1
+- Click on method name in left panel: 1
+- Create magnifier view option: 1
+- Set zoom to maintain position of current mouse location: 1
+
+- Set right-click drag on minimap to move currently selected area: 2
+- Fix aspect ratio: 2
+- Click on lines: 2
+- Read Java code for method: 2
+- Add options menu for right-click on vertices: 2
+- Add comments in left area: 2
+- Use actual JSON parser: 2
+- Search interface: 2
+- Show cycles for method nodes: 2
+- Different shapes for basic vertices and collapsed vertices: 2
+- Allow turning edges on/off per vertex: 2
+- Add tooltips for vertex names: 2
+
+- Rearrange children to remove edge crossings: 3
+- Write README: 3
+- Selection rectangle should be transparent: 3
+- Add ID’s for all nodes: 3
+- No transparency for boxes: 3
+- Show only selected edges? Or shade by graph theoretic distance? 3
+- Tabbed interface: 3
+- Show path between two nodes? 3
+- Ping selected nodes? 3
+- Extend box height for large labels: 3
+- Abbreviate method names correctly: 3
+
+- Allow for collapsing/expanding currently selected vertices, with user-provided label: 4
+- Allow for collapsing/expanding right area: 4
+- Background highlight for methods, differing colors (it should be planar, so finding a coloring with five or six colors is easy): 4
+- Redo loop highlighting (customized): 4
+- Rearrange positions of vertices: 4
+- Search history: 4
+- Cycle through loops for selected vertex: 4
+- Boolean operations for searches: 4
+- Taint checking: 4
+- Buffer drawing to prevent flashing? 4
+
+- Multiple windows with different views: 5
+- Expandable view for hotkeys across bottom (similar to context view?): 5
