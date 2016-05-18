@@ -10,4 +10,4 @@ javacache
 sootOutput
 .*.sw?
 .idea
-.class
+*.class
