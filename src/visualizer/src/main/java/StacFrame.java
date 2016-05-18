@@ -775,7 +775,6 @@ public class StacFrame extends JFrame
 						}
 						
 						Parameters.repaintAll();
-						Parameters.leftArea.scrollToTop();
 					}
 				}
 				

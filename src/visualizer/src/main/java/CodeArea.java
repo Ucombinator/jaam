@@ -148,6 +148,7 @@ public class CodeArea extends JTextArea
 		this.computeDescriptionIndex();
 		this.writeText();
 		this.drawHighlights(Parameters.colorSelection, Parameters.colorFocus);
+		this.setCaretPosition(0);
 	}
 	
 	private void computeDescriptionIndex()
@@ -209,10 +210,5 @@ public class CodeArea extends JTextArea
 		{
 			System.out.println(e);
 		}
-	}
-	
-	public void scrollToTop()
-	{
-		this.setCaretPosition(0);
 	}
 }
