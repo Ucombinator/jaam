@@ -1,41 +1,12 @@
-name := "jaam"
+organization in ThisBuild := "org.ucombinator"
 
-organization := "org.ucombinator"
-
-version := "0-SNAPSHOT"
-
-scalaVersion := "2.10.6"
+scalaVersion in ThisBuild := "2.10.6"
 
 resolvers += "Ucombinator maven repository on github" at "https://ucombinator.github.io/maven-repo"
 resolvers += Resolver.sonatypeRepo("public")
 
-lazy val check_rt_jar = (project in file("check_rt_jar")).
-  settings(
-    version := "1.0"
-  )
+lazy val check_rt_jar = project in file("src/check_rt_jar")
 
-libraryDependencies ++= Seq(
-  "org.ucombinator.soot" % "soot-all-in-one" % "nightly.20150205",
-  "org.scalacheck" %% "scalacheck" % "1.12.2" % "test",
-  "org.scalatest" % "scalatest_2.10" % "2.0" % "test",
-  "org.ucombinator.jgraphx" % "jgraphx" % "3.2.0.0",
-  "org.json4s" %% "json4s-native" % "3.3.0",
-  "com.github.scopt" %% "scopt" % "3.3.0",
-  "org.scala-lang" % "scala-reflect" % "2.10.6"
-)
+lazy val analyzer = project in file("src/analyzer")
 
-scalacOptions ++= Seq("-unchecked", "-deprecation")
-
-mainClass in (Compile, assembly) := Some("org.ucombinator.jaam.Main")
-
-// Assembly-specific configuration
-test in assembly := {}
-assemblyOutputPath in assembly := new File("./jaam.jar")
-
-// META-INF discarding
-assemblyMergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
-{
-  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-  case x => MergeStrategy.first
-}
-}
+lazy val visualizer = project in file("src/visualizer")
