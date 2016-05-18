@@ -50,45 +50,8 @@ public class VizPanel extends JPanel
 		this.left = (this.getWidth()-this.boxwidth*graph.getWidth()*(graph.currWindow.right-graph.currWindow.left))/2;
 		this.top = (this.getHeight()-this.boxheight*graph.getHeight()*(graph.currWindow.bottom-graph.currWindow.top))/2;
 
-		//Draw directed edges between connected vertices
-		if(this.showEdge)
-		{
-			for(Vertex ver : graph.vertices)
-			{
-				AbstractVertex v = ver;
-				while(!v.isVisible)
-					v = v.getMergeParent();
-				
-				for(AbstractVertex nbr : ver.neighbors)
-				{	
-					while(!nbr.isVisible)
-						nbr = nbr.getMergeParent();
-					
-					if(v != nbr && v.drawEdges && nbr.drawEdges)
-						drawEdge(g, v, nbr, true);
-				}
-			}
-		}
-
-		//Draw boxes for vertices
-		//If a vertex is highlighted, it will be added to highlightedVertices
-		for(Vertex ver : graph.vertices)
-		{
-			if(ver.isVisible)
-				drawVertex(g, ver, true);
-		}
-
-		for(MethodVertex ver : graph.methodVertices)
-		{
-			if(ver.isVisible)
-				drawVertex(g, ver, true);
-		}
-		
-		for(MethodPathVertex ver : graph.methodPathVertices)
-		{
-			if(ver.isVisible)
-				drawVertex(g, ver, true);
-		}
+		drawEdges(g);
+		drawVertices(g);
 		
 		//Draw arrows toward highlighted vertices that are off the main screen
 		//drawHighlightedVertexMap(g);
@@ -115,7 +78,29 @@ public class VizPanel extends JPanel
 		}
 	}
 	
-	public void drawVertex(Graphics2D g, AbstractVertex ver, boolean isMainWindow)
+	//Draw all visible graph vertices.
+	public void drawVertices(Graphics2D g)
+	{
+		for(Vertex ver : StacViz.graph.vertices)
+		{
+			if(ver.isVisible)
+				drawVertex(g, ver);
+		}
+
+		for(MethodVertex ver : StacViz.graph.methodVertices)
+		{
+			if(ver.isVisible)
+				drawVertex(g, ver);
+		}
+		
+		for(MethodPathVertex ver : StacViz.graph.methodPathVertices)
+		{
+			if(ver.isVisible)
+				drawVertex(g, ver);
+		}
+	}
+	
+	public void drawVertex(Graphics2D g, AbstractVertex ver)
 	{
 		Graph graph = StacViz.graph;
 		double x1temp, x2temp, y1temp, y2temp;
@@ -133,7 +118,7 @@ public class VizPanel extends JPanel
 			x2temp = ver.x + fac;
 		}
 		
-		if(isMainWindow)
+		if(!this.context)
 		{
 			x1temp -= graph.currWindow.left*graph.getWidth();
 			x2temp -= graph.currWindow.left*graph.getWidth();
@@ -154,7 +139,7 @@ public class VizPanel extends JPanel
 			y2temp = ver.y + fac;
 		}
 		
-		if(isMainWindow)
+		if(!this.context)
 		{
 			y1temp -= graph.currWindow.top*graph.getHeight();
 			y2temp -= graph.currWindow.top*graph.getHeight();
@@ -185,7 +170,7 @@ public class VizPanel extends JPanel
 		}
 		
 		Font ff = new Font("Serif", Font.BOLD, Parameters.font.getSize());
-		if(isMainWindow)
+		if(!this.context)
 			this.drawCenteredString(g, ver.getName(), (int) (this.getX(ver.x - graph.currWindow.left*graph.getWidth())), (int) (this.getY(ver.y-graph.currWindow.top*graph.getHeight())), ff, Color.BLACK);
 		else
 			this.drawCenteredString(g, ver.getName(), (int) (this.getX(ver.x)), (int) (this.getY(ver.y)), ff, Color.BLACK);
@@ -197,6 +182,29 @@ public class VizPanel extends JPanel
 		
 		g.setStroke(new BasicStroke(1));
 		g.drawRect(x1, y1, x2 - x1, y2 - y1);
+	}
+	
+	//If edges are turned on, draw all visible graph edges.
+	public void drawEdges(Graphics2D g)
+	{
+		if(this.showEdge)
+		{
+			for(Vertex ver : StacViz.graph.vertices)
+			{
+				AbstractVertex v = ver;
+				while(!v.isVisible)
+					v = v.getMergeParent();
+				
+				for(AbstractVertex nbr : ver.neighbors)
+				{	
+					while(!nbr.isVisible)
+						nbr = nbr.getMergeParent();
+					
+					if(v != nbr && v.drawEdges && nbr.drawEdges)
+						drawEdge(g, v, nbr);
+				}
+			}
+		}
 	}
 	
 	//Checks if an edge between two different vertices should be highlighted
@@ -213,7 +221,7 @@ public class VizPanel extends JPanel
 			return true;
 	}
 	
-	public void drawEdge(Graphics2D g, AbstractVertex v, AbstractVertex nbr, boolean isMainWindow)
+	public void drawEdge(Graphics2D g, AbstractVertex v, AbstractVertex nbr)
 	{
 		Graph graph = StacViz.graph;
 		double x1temp, x2temp, y1temp, y2temp;
@@ -225,7 +233,7 @@ public class VizPanel extends JPanel
 		x1temp = v.x;
 		x2temp = nbr.x;
 		
-		if(isMainWindow)
+		if(!this.context)
 		{
 			x1temp -= graph.getWidth()*graph.currWindow.left;
 			x2temp -= graph.getWidth()*graph.currWindow.left;
@@ -266,7 +274,7 @@ public class VizPanel extends JPanel
 			}
 		}
 		
-		if(isMainWindow)
+		if(!this.context)
 		{
 			y1temp -= graph.currWindow.top*graph.getHeight();
 			y2temp -= graph.currWindow.top*graph.getHeight();
@@ -554,44 +562,8 @@ public class VizPanel extends JPanel
 		this.left = (this.getWidth()-this.boxwidth*graph.getWidth())/2;
 		this.top = (this.getHeight()-this.boxheight*graph.getHeight())/2;
 
-		//Draw directed edges between connected vertices
-		if(this.showEdge)
-		{
-			for(Vertex ver : graph.vertices)
-			{
-				AbstractVertex v = ver;
-				while(!v.isVisible)
-					v = v.getMergeParent();
-				
-				for(AbstractVertex nbr : ver.neighbors)
-				{	
-					while(!nbr.isVisible)
-						nbr = nbr.getMergeParent();
-					
-					if(v != nbr)
-						drawEdge(g, v, nbr, false);
-				}
-			}
-		}
-
-		//Draw boxes for vertices
-		for(Vertex ver : StacViz.graph.vertices)
-		{
-			if(ver.isVisible)
-				drawVertex(g, ver, false);
-		}
-
-		for(MethodVertex ver : graph.methodVertices)
-		{
-			if(ver.isVisible)
-				drawVertex(g, ver, false);
-		}
-		
-		for(MethodPathVertex ver : graph.methodPathVertices)
-		{
-			if(ver.isVisible)
-				drawVertex(g, ver, false);
-		}
+		drawEdges(g);
+		drawVertices(g);
 	}
 	
 	public Color getHSBColorT(float H, float S, float B)
@@ -655,9 +627,8 @@ public class VizPanel extends JPanel
 				g.setColor(Color.YELLOW);
 				g.drawRect(x1, y1, x2-x1, y2-y1);
 			}
-			
-
 		}
+
 		if(this.showSelection)
 		{
 			g2.setColor(Parameters.colorSelection);
@@ -699,7 +670,6 @@ public class VizPanel extends JPanel
 			this.contextPaint(g2);
 		else
 			this.vizPaint(g2);
-		
 		
 		g.dispose();
 	}

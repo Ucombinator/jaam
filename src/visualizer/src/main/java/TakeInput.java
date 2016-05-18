@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.StringTokenizer;
 
-import javax.swing.JOptionPane;
 
 public class TakeInput extends Thread//implements Runnable
 {
@@ -18,7 +17,6 @@ public class TakeInput extends Thread//implements Runnable
 
 	public void run(boolean fromCFG)
 	{
-		Parameters.stFrame.setSplitScreen();
 		StacViz.graph = new Graph();
 		
 		if(fromCFG)
@@ -39,7 +37,6 @@ public class TakeInput extends Thread//implements Runnable
 		StacViz.graph.computeInstLists();
 		StacViz.graph.setAllMethodHeight();
 		StacViz.graph.collapseAll();
-		StacViz.graph.computeShowViz();
 		Parameters.mouseLastTime = System.currentTimeMillis();
 		Parameters.refreshAll();
 		
@@ -223,13 +220,13 @@ public class TakeInput extends Thread//implements Runnable
 				String method = stmtMatcherToMethod(stmtMatcher);
 				int ind = Integer.parseInt(stmtMatcher.group(8));
 				int ln = Integer.parseInt(stmtMatcher.group(9));
-	
+
 				StacViz.graph.addVertex(id, method, inst, description, ind, ln, true);
 			}
 			else
 			{
-				System.out.println("something is wrong");
-				JOptionPane.showMessageDialog(null, description);
+				System.out.println("Cannot parse vertex");
+				System.out.println(description);
 			}
 		}
 		else if(desc.indexOf("org.ucombinator.jaam.ErrorState$") >= 0)

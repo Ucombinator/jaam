@@ -52,9 +52,15 @@ public class Graph
 	
 	public void increaseZoom(double factor)
 	{
-		double centerX = (this.currWindow.left+this.currWindow.right)/2;
-		double centerY = (this.currWindow.top+this.currWindow.bottom)/2;
-		this.zoomNPan(centerX, centerY, factor);
+		//Don't allow zooming closer than this level
+		double currSize = this.currWindow.getFracArea();
+		if(factor > 1 || currSize > 1.0/StacViz.graph.vertices.size())
+		{
+			System.out.println("Zooming in...");
+			double centerX = (this.currWindow.left+this.currWindow.right)/2;
+			double centerY = (this.currWindow.top+this.currWindow.bottom)/2;
+			this.zoomNPan(centerX, centerY, factor);
+		}
 	}
 	
 	public void resetZoom()
@@ -63,19 +69,16 @@ public class Graph
 		currWindow.setNext(newWindow);
 		newWindow.setPrev(currWindow);
 		currWindow = newWindow;	
-		this.computeShowViz();
 	}
 	
 	public void loadPreviousView()
 	{
 		currWindow = currWindow.getPrev();
-		this.computeShowViz();
 	}	
 	
 	public void restoreNewView()
 	{
 		currWindow = currWindow.getNext();
-		this.computeShowViz();
 	}	
 	
 	public void shiftView(int hor, int ver)
@@ -85,7 +88,6 @@ public class Graph
 		newWindow.setPrev(currWindow);
 		currWindow.setNext(newWindow);
 		currWindow = newWindow;
-		this.computeShowViz();
 	}
 	
 	public void addHotkeyedView(int digit)
@@ -106,7 +108,6 @@ public class Graph
 		currWindow.setNext(newWindow);
 		newWindow.zoomNPan(centerX, centerY, factor);
 		currWindow = newWindow;
-		this.computeShowViz();
 	}
 	
 	public void zoomNPan(double left, double right, double top, double bottom)
@@ -115,7 +116,6 @@ public class Graph
 		newWindow.setPrev(currWindow);
 		currWindow.setNext(newWindow);
 		currWindow = newWindow;
-		this.computeShowViz();
 	}
 	
 	public void zoomNPan(View v)
@@ -124,7 +124,6 @@ public class Graph
 		newWindow.setPrev(currWindow);
 		currWindow.setNext(newWindow);
 		currWindow = newWindow;
-		this.computeShowViz();
 	}
 	
 	//TODO: Figure out why some vertices aren't being selected...
@@ -165,54 +164,6 @@ public class Graph
 		}
 	}
 	
-	public void computeShowViz()
-	{
-		for(Vertex v : this.vertices)
-			v.showViz = false;
-
-		for(MethodVertex v : this.methodVertices)
-			v.showViz = false;
-		
-		for(MethodPathVertex v : this.methodPathVertices)
-			v.showViz = false;
-		
-		AbstractVertex ver, v, nbr;
-		
-		for(int i = 0; i < this.vertices.size(); i++)
-		{
-			ver = this.vertices.get(i);
-			
-			v = ver;
-			while(!v.isVisible)
-				v = v.getMergeParent();
-			
-			for(int j=0; j< ver.neighbors.size(); j++)
-			{
-				nbr = ver.neighbors.get(j);
-				
-				while(!nbr.isVisible)
-					nbr = nbr.getMergeParent();
-				
-				if(v == nbr)
-					continue;
-
-								
-				if(v.x >= this.currWindow.left*this.getWidth() && v.x <= this.currWindow.right*this.getWidth()
-						&& v.y >= this.currWindow.top*this.getHeight() && v.y <= this.currWindow.bottom*this.getHeight())
-				{
-					v.showViz = true;
-					nbr.showViz = true;
-				}
-				else if(nbr.x >= this.currWindow.left*this.getWidth() && nbr.x <= this.currWindow.right*this.getWidth()
-						&& nbr.y >= this.currWindow.top*this.getHeight() && nbr.y <= this.currWindow.bottom*this.getHeight())
-				{
-					v.showViz = true;
-					nbr.showViz = true;
-				}
-			}
-		}
-	}
-
 /*
 	
 	public void extractGraph(String file)

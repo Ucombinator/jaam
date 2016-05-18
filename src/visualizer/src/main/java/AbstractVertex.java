@@ -32,7 +32,7 @@ public abstract class AbstractVertex
 	//Since merging occurs as a tree, we only have one merge parent and one merge root
 	//The parent is the vertex on the line above us?
 	protected AbstractVertex parent, mergeRoot;
-	protected boolean isVisible, showViz, mergeable;
+	protected boolean isVisible, mergeable;
 	protected boolean isHighlighted, isIncomingHighlighted, isOutgoingHighlighted; //Highlight this vertex, incoming edges, or outgoing edges
 	protected boolean drawEdges;
 	protected int numChildrenHighlighted;

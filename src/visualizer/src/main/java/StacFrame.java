@@ -10,8 +10,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
@@ -51,15 +49,11 @@ public class StacFrame extends JFrame
 	private JMenuBar menuBar;
 	private JMenu menuFile, menuSearch, menuNavigation, menuCustomize, menuHelp;
 	private int width, height;
-	private JSplitPane centerPanel;
+	private JSplitPane centerSplitPane;
 	public VizPanel vizPanel, contextPanel;
-//	private JTextArea property, consoleArea;
-//	private JLabel propertyLabel, consoleLabel;
-	public JButton zoomMinus, zoomPlus;
 	private JPanel menuPanel, leftPanel, rightPanel;
-//	public JSplitPane leftSplitPane, rightSplitPane;
 	public JCheckBox showContext, showEdge;
-	private boolean context=false, mouseDrag=false;
+	private boolean context = false, mouseDrag = false;
 //	private boolean mouseDrag=false;
 	
 	public enum searchType
@@ -69,31 +63,19 @@ public class StacFrame extends JFrame
 	
 	public StacFrame()
 	{
-		this(false);
-	}
-	
-	public StacFrame(boolean cont)
-	{
 		super("STAC Visualization");
 		width = Parameters.width;
 		height = Parameters.height;
-//		this.context = cont;
 		this.setLocation(0, 0);
-
-/*
-		if(cont)
-		{
-			this.setTitle("Context View");
-			width = Parameters.contextWidth;
-			height = Parameters.contextHeight;
-			this.setLocation(Parameters.width, 0);
-		}
-*/
 		
 		setSize(this.width,this.height);
 		
 		makeMenu();
 		makeLayout();
+		setSplitScreen();
+		
+		this.pack();
+		this.setVisible(true);
 	}
 	
 	
@@ -376,7 +358,6 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						StacViz.graph.collapseOnce();
-						StacViz.graph.computeShowViz();
 						Parameters.refreshAll();
 					}
 				}
@@ -392,7 +373,6 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						StacViz.graph.deCollapseOnce();
-						StacViz.graph.computeShowViz();
 						Parameters.refreshAll();
 					}
 				}
@@ -558,7 +538,6 @@ public class StacFrame extends JFrame
 		
 		setLayout(new BorderLayout());
 		
-//		this.vizPanel = new VizPanel(this,this.context);
 		this.vizPanel = new VizPanel(this,false);
 		this.getContentPane().add(this.vizPanel,BorderLayout.CENTER);
 		
@@ -591,6 +570,7 @@ public class StacFrame extends JFrame
 					if(showEdge.isSelected())
 					{
 						vizPanel.showEdge = true;
+						
 					}
 					else
 					{
@@ -601,74 +581,6 @@ public class StacFrame extends JFrame
 			}
 		);
 		contextPanel.add(showEdge);
-
-		
-//		if(!this.context)
-		{
-/*			
-			showContext = new JCheckBox("Context View");
-			showContext.setEnabled(true);
-			showContext.addItemListener
-			(
-				new ItemListener()
-				{
-					public void itemStateChanged(ItemEvent e)
-					{
-						if(showContext.isSelected())
-						{
-							Parameters.contextFrame.setVisible(true);
-						}
-						else
-						{
-							Parameters.contextFrame.setVisible(false);
-						}
-					}
-				}
-			);
-			contextPanel.add(showContext);
-*/		
-		
-			JPanel zoomPanel = new JPanel();
-			zoomPanel.setBorder(BorderFactory.createEtchedBorder());
-			zoomPanel.setLayout(new GridLayout(1,3));
-			this.menuPanel.add(zoomPanel);
-			
-			zoomMinus = new JButton("-");
-			zoomMinus.setEnabled(false);
-			zoomMinus.addActionListener
-			(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent e)
-					{
-						StacViz.graph.increaseZoom(1.0/Parameters.zoomFactor);
-						Parameters.refreshAll();
-					}
-				}
-			);
-			zoomPanel.add(zoomMinus);
-			
-			JLabel zoomL = new JLabel("zoom");
-			zoomL.setHorizontalAlignment(SwingConstants.CENTER);
-			zoomPanel.add(zoomL);
-			
-			zoomPlus = new JButton("+");
-			zoomPlus.setEnabled(false);
-			zoomPlus.addActionListener
-			(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent e)
-					{
-						StacViz.graph.increaseZoom(Parameters.zoomFactor);
-						Parameters.refreshAll();
-					}
-				}
-			);
-			zoomPanel.add(zoomPlus);
-
-		}
-
 		
 		JPanel sizePanel = new JPanel();
 		sizePanel.setBorder(BorderFactory.createEtchedBorder());
@@ -711,66 +623,34 @@ public class StacFrame extends JFrame
 		
 		
 		this.setJMenuBar(menuBar);
-//		if(this.context)
-//			this.setVisible(false);
-//		else
-			this.setVisible(true);
-		
-//		if(!this.context)
-		{
-//			Parameters.contextFrame = new StacFrame(true);
-			
-			this.refresh();
-			
-			
-			
-//			this.vizPanel.requestFocus();
-//			this.requestFocus();
-			
-			this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		}
-/*		else
-		{
-			this.addWindowListener
-			(
-				new WindowAdapter()
-				{
-					public void windowClosing(WindowEvent windowEvent)
-					{
-						Parameters.stFrame.showContext.setSelected(false);
-						Parameters.stFrame.refresh();
-			        }
-			    }
-			);
-		}
-*/		
+		this.setVisible(true);
+		this.refresh();
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);	
 	}
-	
 	
 	public void setSplitScreen()
 	{
 		double rw1 = 0.2, rw2 = 0.75, rw3 = 0.6;
 		if(StacViz.graph != null)
 		{
-			rw1 = centerPanel.getDividerLocation()*1.0/centerPanel.getWidth();
-			rw2 = ((JSplitPane)centerPanel.getRightComponent()).getDividerLocation()*1.0/(((JSplitPane)centerPanel.getRightComponent()).getWidth());
-			rw3 = ((JSplitPane)centerPanel.getLeftComponent()).getDividerLocation()*1.0/(((JSplitPane)centerPanel.getLeftComponent()).getHeight());
+			rw1 = centerSplitPane.getDividerLocation()*1.0/centerSplitPane.getWidth();
+			rw2 = ((JSplitPane)centerSplitPane.getRightComponent()).getDividerLocation()*1.0/(((JSplitPane)centerSplitPane.getRightComponent()).getWidth());
+			rw3 = ((JSplitPane)centerSplitPane.getLeftComponent()).getDividerLocation()*1.0/(((JSplitPane)centerSplitPane.getLeftComponent()).getHeight());
 		}
 		this.getContentPane().remove(((BorderLayout)this.getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER));
-		centerPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
-		this.getContentPane().add(this.centerPanel,BorderLayout.CENTER);
-		centerPanel.setLeftComponent(new JSplitPane(JSplitPane.VERTICAL_SPLIT, true));
-		centerPanel.setRightComponent(new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true));
+		centerSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
+		this.getContentPane().add(this.centerSplitPane, BorderLayout.CENTER);
+		centerSplitPane.setLeftComponent(new JSplitPane(JSplitPane.VERTICAL_SPLIT, true));
+		centerSplitPane.setRightComponent(new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true));
 		
-		centerPanel.setOneTouchExpandable(true);
-		((JSplitPane)centerPanel.getLeftComponent()).setOneTouchExpandable(true);		
-		((JSplitPane)centerPanel.getRightComponent()).setOneTouchExpandable(true);		
-		
+		centerSplitPane.setOneTouchExpandable(true);
+		((JSplitPane)centerSplitPane.getLeftComponent()).setOneTouchExpandable(true);		
+		((JSplitPane)centerSplitPane.getRightComponent()).setOneTouchExpandable(true);		
 		
 		leftPanel = new JPanel();
-		((JSplitPane)centerPanel.getLeftComponent()).setLeftComponent(leftPanel);
+		((JSplitPane)centerSplitPane.getLeftComponent()).setLeftComponent(leftPanel);
 		rightPanel = new JPanel();
-		((JSplitPane)centerPanel.getRightComponent()).setRightComponent(rightPanel);
+		((JSplitPane)centerSplitPane.getRightComponent()).setRightComponent(rightPanel);
 
 		JLabel leftL = new JLabel("Context", JLabel.CENTER);
 		Parameters.leftArea = new CodeArea();
@@ -789,14 +669,14 @@ public class StacFrame extends JFrame
 		rightPanel.setFont(Parameters.font);
 		
 
-		((JSplitPane)centerPanel.getRightComponent()).setLeftComponent(this.vizPanel);
+		((JSplitPane)centerSplitPane.getRightComponent()).setLeftComponent(this.vizPanel);
 		this.contextPanel = new VizPanel(this,true);
-		((JSplitPane)centerPanel.getLeftComponent()).setRightComponent(this.contextPanel);
+		((JSplitPane)centerSplitPane.getLeftComponent()).setRightComponent(this.contextPanel);
 
 		
-		centerPanel.setResizeWeight(rw1);
-		((JSplitPane)centerPanel.getRightComponent()).setResizeWeight(rw2);
-		((JSplitPane)centerPanel.getLeftComponent()).setResizeWeight(rw3);
+		centerSplitPane.setResizeWeight(rw1);
+		((JSplitPane)centerSplitPane.getRightComponent()).setResizeWeight(rw2);
+		((JSplitPane)centerSplitPane.getLeftComponent()).setResizeWeight(rw3);
 //		centerPanel.resetToPreferredSizes();
 		
 		this.addMouseToContext();
@@ -815,12 +695,10 @@ public class StacFrame extends JFrame
 		Parameters.refreshAll();
 	}
 	
-
 	public void refresh()
 	{
-		this.paintAll(getGraphics());
+		this.repaint();
 	}
-
 	
 	public void addToConsole(String str)
 	{
@@ -954,7 +832,6 @@ public class StacFrame extends JFrame
 									if(ver.getMergeChildren().size() > 0) //We have a merge vertex
 									{
 										ver.deCollapse();
-										StacViz.graph.computeShowViz();
 										Parameters.refreshAll();
 									}
 								}
@@ -971,13 +848,13 @@ public class StacFrame extends JFrame
 									if(ver.getMergeParent() != null)
 									{
 										ver.getMergeParent().collapse();
-										StacViz.graph.computeShowViz();
 									}
 								}
 							}
 						}
 						
 						Parameters.refreshAll();
+						Parameters.leftArea.scrollToTop();
 					}
 				}
 				
@@ -1148,13 +1025,8 @@ public class StacFrame extends JFrame
 					contextPanel.requestFocusInWindow();
 					context = true;
 					
-//					double x = contextPanel.getBackX(getX(m))*StacViz.graph.getWidth();
-//					double y = contextPanel.getBackY(getY(m))*StacViz.graph.getHeight();
 					double x = contextPanel.getBackX(getX(m));
 					double y = contextPanel.getBackY(getY(m));
-					
-					
-//					System.out.println("x="+x+", y="+y);
 
 					StacViz.graph.zoomNPan(x, y, 1.0);
 					Parameters.refreshAll();
@@ -1272,7 +1144,7 @@ public class StacFrame extends JFrame
 		if(this.context)
 			return m.getX() - contextPanel.getLocation().x;// - this.leftPanel.getWidth() - centerPanel.getDividerSize();
 		else
-			return m.getX() - vizPanel.getLocation().x - this.leftPanel.getWidth() - centerPanel.getDividerSize();
+			return m.getX() - vizPanel.getLocation().x - this.leftPanel.getWidth() - centerSplitPane.getDividerSize();
 	}
 	
 	public double getY(MouseEvent m)

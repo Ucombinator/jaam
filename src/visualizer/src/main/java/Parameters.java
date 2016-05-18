@@ -68,6 +68,7 @@ public class Parameters
 		}
 		
 		rightArea.setText(text.toString());
+		rightArea.setCaretPosition(0);
 	}
 	
 	
@@ -138,14 +139,9 @@ public class Parameters
 
 	public static void refreshAll()
 	{
-		stFrame.refresh();
-
-//		if(stFrame.showContext.isSelected())
-//		if(StacViz.graph !=null)
-//			contextFrame.refresh();
-		
 		leftArea.setDescription();
 		setRightText();
+		stFrame.refresh();
 	}
 	
 	public static void test()

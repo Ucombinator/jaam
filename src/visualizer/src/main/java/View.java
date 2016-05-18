@@ -41,6 +41,11 @@ public class View
 		initialized = toCopy.initialized;
 	}
 	
+	public double getFracArea()
+	{
+		return (this.right - this.left)*(this.bottom - this.top);
+	}
+	
 	public void setPrev(View prev)
 	{
 		this.prev = prev;

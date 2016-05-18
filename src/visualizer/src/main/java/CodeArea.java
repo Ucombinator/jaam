@@ -210,4 +210,9 @@ public class CodeArea extends JTextArea
 			System.out.println(e);
 		}
 	}
+	
+	public void scrollToTop()
+	{
+		this.setCaretPosition(0);
+	}
 }
