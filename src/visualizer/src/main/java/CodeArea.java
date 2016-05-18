@@ -76,7 +76,7 @@ public class CodeArea extends JTextArea
 					}
 					
 					StacViz.graph.redoCycleHighlights();
-					Parameters.refreshAll();
+					Parameters.repaintAll();
 				}
 				
 				public void mousePressed(MouseEvent e){}

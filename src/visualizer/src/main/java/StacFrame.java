@@ -54,7 +54,6 @@ public class StacFrame extends JFrame
 	private JPanel menuPanel, leftPanel, rightPanel;
 	public JCheckBox showContext, showEdge;
 	private boolean context = false, mouseDrag = false;
-//	private boolean mouseDrag=false;
 	
 	public enum searchType
 	{
@@ -69,17 +68,14 @@ public class StacFrame extends JFrame
 		this.setLocation(0, 0);
 		
 		setSize(this.width,this.height);
-		
-		makeMenu();
+
+		makeMenuBar();
 		makeLayout();
-		setSplitScreen();
 		
-		this.pack();
 		this.setVisible(true);
 	}
 	
-	
-	public void makeMenu()
+	public void makeMenuBar()
 	{
 		menuBar = new JMenuBar();
 		
@@ -97,46 +93,7 @@ public class StacFrame extends JFrame
 						loadGraphOperation(false);
 					}
 				}
-		);
-
-		JMenuItem loadCFG = new JMenuItem("Load graph in CFG mode");
-		menuFile.add(loadCFG);
-		loadCFG.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						loadGraphOperation(true);
-					}
-					
-				}
-		);
-		
-		JMenuItem saveGraph = new JMenuItem("Save graph (not implemented)");
-		menuFile.add(saveGraph);
-		saveGraph.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-					}
-				}
 		);		
-		
-		JMenuItem saveCFG = new JMenuItem("Save graph in CFG mode (not implemented)");		
-		menuFile.add(saveCFG);
-		saveCFG.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-					}
-				}
-		);
-		
 		
 		//Search menu
 		menuSearch = new JMenu("Search");
@@ -150,7 +107,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.ID);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -164,7 +121,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.INSTRUCTION);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -178,7 +135,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.METHOD);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -192,7 +149,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.ALL_LEAVES);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -207,7 +164,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.ALL_SOURCES);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -222,7 +179,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.OUT_OPEN);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -237,7 +194,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.OUT_CLOSED);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -252,7 +209,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.IN_OPEN);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -267,7 +224,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.IN_CLOSED);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -281,7 +238,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.ROOT_PATH);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -297,7 +254,7 @@ public class StacFrame extends JFrame
 					{
 						StacViz.graph.clearHighlights();
 						Parameters.leftArea.clear();
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -315,7 +272,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						StacViz.graph.increaseZoom(Parameters.zoomFactor);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -329,7 +286,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						StacViz.graph.increaseZoom(1/Parameters.zoomFactor);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -343,7 +300,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						StacViz.graph.resetZoom();
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -358,7 +315,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						StacViz.graph.collapseOnce();
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -373,7 +330,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						StacViz.graph.deCollapseOnce();
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -388,7 +345,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						StacViz.graph.loadPreviousView();
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -404,7 +361,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						StacViz.graph.restoreNewView();
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -419,7 +376,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						StacViz.graph.shiftView(0, -1);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -434,7 +391,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						StacViz.graph.shiftView(0, 1);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -449,7 +406,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						StacViz.graph.shiftView(-1, 0);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -464,7 +421,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						StacViz.graph.shiftView(1, 0);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -487,7 +444,7 @@ public class StacFrame extends JFrame
 						Parameters.font = new Font("Serif", Font.PLAIN, Integer.parseInt(newFontSize));
 						Parameters.leftArea.setFont(Parameters.font);
 						Parameters.rightArea.setFont(Parameters.font);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 		);
@@ -496,7 +453,7 @@ public class StacFrame extends JFrame
 		//Help menu
 		menuHelp = new JMenu("Help");
 		menuBar.add(menuHelp);
-		JMenuItem help = new JMenuItem("shortcuts");
+		JMenuItem help = new JMenuItem("Shortcuts");
 		menuHelp.add(help);
 		help.addActionListener
 		(
@@ -527,23 +484,15 @@ public class StacFrame extends JFrame
 	}
 	
 	public void makeLayout()
-	{		
+	{
 		//centerPanel and vizPanel
 		this.setLayout(new BorderLayout());
-		
-		
-		///////////////////*************************** Layout *******************************///////////////////
-		
-		////////*********** centerPanel and vizPanel *************////////
-		
-		setLayout(new BorderLayout());
-		
-		this.vizPanel = new VizPanel(this,false);
-		this.getContentPane().add(this.vizPanel,BorderLayout.CENTER);
+		setSplitScreen();
 		
 		this.addMouseToViz();
 		this.addKeyboard(vizPanel);
-		
+		this.addMouseToContext();
+		this.addKeyboard(contextPanel);
 		
 		//menuPanel
 		this.menuPanel = new JPanel();
@@ -551,12 +500,10 @@ public class StacFrame extends JFrame
 		this.menuPanel.setLayout(new FlowLayout());
 		this.getContentPane().add(this.menuPanel, BorderLayout.NORTH);
 		
-		
 		JPanel contextPanel = new JPanel();
 		contextPanel.setBorder(BorderFactory.createEtchedBorder());
 		contextPanel.setLayout(new GridLayout(1,1));
 		this.menuPanel.add(contextPanel);
-		
 		
 		showEdge = new JCheckBox("Show Edge");
 		showEdge.setEnabled(true);
@@ -567,16 +514,8 @@ public class StacFrame extends JFrame
 			{
 				public void itemStateChanged(ItemEvent e)
 				{
-					if(showEdge.isSelected())
-					{
-						vizPanel.showEdge = true;
-						
-					}
-					else
-					{
-						vizPanel.showEdge = false;
-					}
-					refresh();
+					vizPanel.showEdge = showEdge.isSelected();					
+					StacFrame.this.repaint();
 				}
 			}
 		);
@@ -596,7 +535,7 @@ public class StacFrame extends JFrame
 				public void actionPerformed(ActionEvent e)
 				{
 					vizPanel.boxSize *= Parameters.boxFactor;
-					Parameters.refreshAll();
+					Parameters.repaintAll();
 				}
 			}
 		);
@@ -615,7 +554,7 @@ public class StacFrame extends JFrame
 				public void actionPerformed(ActionEvent e)
 				{
 					vizPanel.boxSize /= Parameters.boxFactor;
-					Parameters.refreshAll();
+					Parameters.repaintAll();
 				}
 			}
 		);
@@ -624,33 +563,34 @@ public class StacFrame extends JFrame
 		
 		this.setJMenuBar(menuBar);
 		this.setVisible(true);
-		this.refresh();
+		this.repaint();
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);	
 	}
 	
 	public void setSplitScreen()
 	{
-		double rw1 = 0.2, rw2 = 0.75, rw3 = 0.6;
-		if(StacViz.graph != null)
-		{
-			rw1 = centerSplitPane.getDividerLocation()*1.0/centerSplitPane.getWidth();
-			rw2 = ((JSplitPane)centerSplitPane.getRightComponent()).getDividerLocation()*1.0/(((JSplitPane)centerSplitPane.getRightComponent()).getWidth());
-			rw3 = ((JSplitPane)centerSplitPane.getLeftComponent()).getDividerLocation()*1.0/(((JSplitPane)centerSplitPane.getLeftComponent()).getHeight());
-		}
-		this.getContentPane().remove(((BorderLayout)this.getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER));
+		System.out.println("Setting split screen");
+
 		centerSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
+		JSplitPane leftSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true);
+		JSplitPane rightSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
+		centerSplitPane.setLeftComponent(leftSplitPane);
+		centerSplitPane.setRightComponent(rightSplitPane);
 		this.getContentPane().add(this.centerSplitPane, BorderLayout.CENTER);
-		centerSplitPane.setLeftComponent(new JSplitPane(JSplitPane.VERTICAL_SPLIT, true));
-		centerSplitPane.setRightComponent(new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true));
 		
 		centerSplitPane.setOneTouchExpandable(true);
-		((JSplitPane)centerSplitPane.getLeftComponent()).setOneTouchExpandable(true);		
-		((JSplitPane)centerSplitPane.getRightComponent()).setOneTouchExpandable(true);		
+		leftSplitPane.setOneTouchExpandable(true);		
+		rightSplitPane.setOneTouchExpandable(true);
 		
 		leftPanel = new JPanel();
-		((JSplitPane)centerSplitPane.getLeftComponent()).setLeftComponent(leftPanel);
+		leftSplitPane.setLeftComponent(leftPanel);
 		rightPanel = new JPanel();
-		((JSplitPane)centerSplitPane.getRightComponent()).setRightComponent(rightPanel);
+		rightSplitPane.setRightComponent(rightPanel);
+
+		this.vizPanel = new VizPanel(this,false);
+		rightSplitPane.setLeftComponent(this.vizPanel);
+		this.contextPanel = new VizPanel(this,true);
+		leftSplitPane.setRightComponent(this.contextPanel);
 
 		JLabel leftL = new JLabel("Context", JLabel.CENTER);
 		Parameters.leftArea = new CodeArea();
@@ -658,6 +598,7 @@ public class StacFrame extends JFrame
 		leftPanel.add(leftL,BorderLayout.NORTH);
 		JScrollPane scrollL = new JScrollPane (Parameters.leftArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		leftPanel.add(scrollL, BorderLayout.CENTER);
+		leftPanel.setFont(Parameters.font);
 		
 		JLabel rightL = new JLabel("Description", JLabel.CENTER);
 		Parameters.rightArea = new JTextArea();
@@ -668,20 +609,14 @@ public class StacFrame extends JFrame
 		rightPanel.add(scrollR, BorderLayout.CENTER);
 		rightPanel.setFont(Parameters.font);
 		
-
-		((JSplitPane)centerSplitPane.getRightComponent()).setLeftComponent(this.vizPanel);
-		this.contextPanel = new VizPanel(this,true);
-		((JSplitPane)centerSplitPane.getLeftComponent()).setRightComponent(this.contextPanel);
-
-		
+		double rw1 = 0.2, rw2 = 0.75, rw3 = 0.6;
 		centerSplitPane.setResizeWeight(rw1);
-		((JSplitPane)centerSplitPane.getRightComponent()).setResizeWeight(rw2);
-		((JSplitPane)centerSplitPane.getLeftComponent()).setResizeWeight(rw3);
-//		centerPanel.resetToPreferredSizes();
+		rightSplitPane.setResizeWeight(rw2);
+		leftSplitPane.setResizeWeight(rw3);
 		
-		this.addMouseToContext();
-		this.addKeyboard(contextPanel);
-		
+		centerSplitPane.resetToPreferredSizes();
+		rightSplitPane.resetToPreferredSizes();
+		leftSplitPane.resetToPreferredSizes();
 	}
 	
 	public void loadGraphOperation(boolean fromJSON)
@@ -692,19 +627,13 @@ public class StacFrame extends JFrame
 		TakeInput ti = new TakeInput();
 		ti.setFileInput(file);
 		ti.run(fromJSON);		
-		Parameters.refreshAll();
-	}
-	
-	public void refresh()
-	{
-		this.repaint();
+		Parameters.repaintAll();
 	}
 	
 	public void addToConsole(String str)
 	{
 		System.out.println(str);
 	}
-	
 	
 	public void searchAndHighlight(searchType search)
 	{
@@ -726,6 +655,7 @@ public class StacFrame extends JFrame
 		{
 			title = "Enter node ID";
 		}
+
 		String input = "";
 		if(search != searchType.ALL_LEAVES && search != searchType.ALL_SOURCES)
 		{
@@ -757,14 +687,6 @@ public class StacFrame extends JFrame
 	{
 		return (StacViz.graph!=null);
 	}
-
-//	public void addMouse()
-//	{
-//		this.addMouseToViz();
-//		if(StacViz.graph != null)
-//			this.addMouseToContext();
-//	}
-	
 	
 	public void addMouseToViz()
 	{
@@ -776,12 +698,11 @@ public class StacFrame extends JFrame
 				{
 					if(!checkGraph())
 						return;
+					
 					vizPanel.requestFocusInWindow();
 					context = false;
 					double x = vizPanel.getBackX(getX(m))*StacViz.graph.getWidth();
 					double y = vizPanel.getBackY(getY(m))*StacViz.graph.getHeight();
-					
-//					System.out.println("x="+x+", y="+y);
 					
 					if(System.currentTimeMillis() - Parameters.mouseLastTime > Parameters.mouseInterval)
 					{
@@ -832,7 +753,7 @@ public class StacFrame extends JFrame
 									if(ver.getMergeChildren().size() > 0) //We have a merge vertex
 									{
 										ver.deCollapse();
-										Parameters.refreshAll();
+										Parameters.repaintAll();
 									}
 								}
 							}
@@ -853,7 +774,7 @@ public class StacFrame extends JFrame
 							}
 						}
 						
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 						Parameters.leftArea.scrollToTop();
 					}
 				}
@@ -895,7 +816,7 @@ public class StacFrame extends JFrame
 
 							StacViz.graph.selectVertices(x1, x2, y1, y2);
 						}
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 			}
@@ -905,51 +826,7 @@ public class StacFrame extends JFrame
 		(
 			new MouseMotionListener()
 			{
-/*
-				public void mouseMoved(MouseEvent m)
-				{
-					if(Parameters.graph == null)
-						return;
-//					if(System.currentTimeMillis() - Parameters.mouseLastTime < Parameters.mouseInterval)
-//						return;
-					Parameters.mouseLastTime = System.currentTimeMillis();
-//					System.out.println("mouse moving...");
-					double x = vizPanel.getBackX(getX(m))*Parameters.graph.getWidth();
-					double y = vizPanel.getBackY(getY(m))*Parameters.graph.getHeight();
-					Vertex ver = Parameters.graph.getVertexAtCoordinate(x, y);
-					if(ver==null)
-					{
-						Parameters.shownVertex = null;
-					}
-					else if(ver!=Parameters.shownVertex)
-					{
-						Parameters.shownVertex = ver;
-						Parameters.rightArea.setText(ver.getRightPanelContent());
-						Parameters.rightArea.setCaretPosition(0);
-						
-						int i=0;
-						Vertex ver2;
-						
-						for(ver2=ver; ver2.mergeParent!=null; ver2 = ver2.mergeParent, i++);
-						
-						if(i==2)
-							repopulateLeftArea(ver,ver.mergeParent);
-						else
-							repopulateLeftArea(null,ver);
-						
-						
-						Parameters.highlightTo = true;
-						Parameters.highlightFrom = true;
-						Parameters.vertexHighlight = false;
-						Parameters.graph.clearHighlights();
-						ver.findCycles();
-						refreshBoth();
-						
-					}
-				}
-*/
-				public void mouseMoved(MouseEvent m){}
-				
+				public void mouseMoved(MouseEvent m){}				
 
 				public void mouseDragged(MouseEvent m)
 				{
@@ -962,7 +839,7 @@ public class StacFrame extends JFrame
 
 					if((System.currentTimeMillis()-Parameters.startTime)/Parameters.refreshInterval > Parameters.lastInterval)
 					{
-						refresh();
+						StacFrame.this.repaint();
 						Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.refreshInterval;
 					}
 				}
@@ -978,8 +855,6 @@ public class StacFrame extends JFrame
 					if(!checkGraph())
 						return;
 					int notches = e.getWheelRotation();
-					//System.out.println("Moved mouse wheel: " + notches);
-
 					
 					//Zoom in or box++ for mouse wheel up, zoom out or box-- for mouse wheel down
 					if(notches > 0)
@@ -1004,13 +879,13 @@ public class StacFrame extends JFrame
 							StacViz.graph.increaseZoom(1/Parameters.zoomFactor);
 						}
 					}
-					Parameters.refreshAll();
+					
+					Parameters.repaintAll();
 				}
 			}
 		);
 		
 	}
-	
 	
 	public void addMouseToContext()
 	{
@@ -1029,7 +904,7 @@ public class StacFrame extends JFrame
 					double y = contextPanel.getBackY(getY(m));
 
 					StacViz.graph.zoomNPan(x, y, 1.0);
-					Parameters.refreshAll();
+					Parameters.repaintAll();
 
 					if(System.currentTimeMillis() - Parameters.mouseLastTime > Parameters.mouseInterval)
 					{
@@ -1077,7 +952,7 @@ public class StacFrame extends JFrame
 							double y2 = contextPanel.getBackY(contextPanel.selectBottom);
 							StacViz.graph.zoomNPan(x1, x2, y1, y2);
 						}
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 				}
 
@@ -1103,7 +978,7 @@ public class StacFrame extends JFrame
 
 					if((System.currentTimeMillis()-Parameters.startTime)/Parameters.refreshInterval > Parameters.lastInterval)
 					{
-						refresh();
+						StacFrame.this.repaint();
 						Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.refreshInterval;
 					}
 				}
@@ -1131,13 +1006,12 @@ public class StacFrame extends JFrame
 					{
 						contextPanel.boxSize *= Parameters.boxFactor;
 					}
-					Parameters.refreshAll();
+					Parameters.repaintAll();
 				}
 			}
 		);
 
 	}
-	
 	
 	public double getX(MouseEvent m)
 	{
@@ -1151,7 +1025,6 @@ public class StacFrame extends JFrame
 	{
 		return m.getY() - (this.getHeight() - this.getContentPane().getSize().height) - vizPanel.getY() - this.menuPanel.getHeight();
 	}
-
 
 	public void addKeyboard(JPanel viz)
 	{
@@ -1168,7 +1041,7 @@ public class StacFrame extends JFrame
 					{
 						String lim = JOptionPane.showInputDialog(null, "Set Limit on the number of vertices:");
 						Parameters.limitV = Long.parseLong(lim);
-						Parameters.refreshAll();
+						Parameters.repaintAll();
 					}
 
 					if(Character.isDigit(code))
@@ -1185,7 +1058,7 @@ public class StacFrame extends JFrame
 							//Go to hotkeyed view
 							System.out.println("Loading hotkeyed view: " + digit);
 							StacViz.graph.loadHotkeyedView(digit);
-							Parameters.refreshAll();
+							Parameters.repaintAll();
 						}
 					}
 				}

@@ -38,7 +38,7 @@ public class TakeInput extends Thread//implements Runnable
 		StacViz.graph.setAllMethodHeight();
 		StacViz.graph.collapseAll();
 		Parameters.mouseLastTime = System.currentTimeMillis();
-		Parameters.refreshAll();
+		Parameters.repaintAll();
 		
 		System.out.println("number of vertices = "+StacViz.graph.vertices.size());
 		System.out.println("number of method vertices = "+StacViz.graph.methodVertices.size());
@@ -159,7 +159,7 @@ public class TakeInput extends Thread//implements Runnable
 						if((System.currentTimeMillis()-Parameters.startTime)/Parameters.interval>Parameters.lastInterval)
 						{
 							System.out.println("number of vertices up to now = "+StacViz.graph.vertices.size());
-							Parameters.refreshAll();
+							Parameters.repaintAll();
 							Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.interval;
 						}
 						
@@ -490,7 +490,7 @@ public class TakeInput extends Thread//implements Runnable
 					System.out.println("Adding edge: " + e.source + ", " + e.dest);
 				//System.out.println("desc pairs: " + desc1 + "\n            " + desc2);
 				StacViz.graph.addEdge(e.source + " , " + e.dest);
-				Parameters.refreshAll();
+				Parameters.repaintAll();
 			}
 		}
 		catch(IOException e)
