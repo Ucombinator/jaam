@@ -34,6 +34,7 @@ public abstract class AbstractVertex
 	protected AbstractVertex parent, mergeRoot;
 	protected boolean isVisible, showViz, mergeable;
 	protected boolean isHighlighted, isIncomingHighlighted, isOutgoingHighlighted; //Highlight this vertex, incoming edges, or outgoing edges
+	protected boolean drawEdges;
 	protected int numChildrenHighlighted;
 	protected int loopHeight;
 	
@@ -66,6 +67,11 @@ public abstract class AbstractVertex
 	public boolean isAtCoordinate(double x, double y)
 	{
 		return this.isVisible && Math.abs(x - this.x) < 0.25 && Math.abs(y - this.y) < 0.25;
+	}
+	
+	public double distTo(double x, double y)
+	{
+		return Math.sqrt((x - this.x)*(x - this.x) + (y - this.y)*(y - this.y));
 	}
 	
 	public void replaceChild(AbstractVertex ver)

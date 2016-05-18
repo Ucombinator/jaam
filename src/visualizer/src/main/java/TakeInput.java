@@ -41,7 +41,7 @@ public class TakeInput extends Thread//implements Runnable
 		StacViz.graph.collapseAll();
 		StacViz.graph.computeShowViz();
 		Parameters.mouseLastTime = System.currentTimeMillis();
-		Parameters.refreshBoth();
+		Parameters.refreshAll();
 		
 		System.out.println("number of vertices = "+StacViz.graph.vertices.size());
 		System.out.println("number of method vertices = "+StacViz.graph.methodVertices.size());
@@ -109,10 +109,7 @@ public class TakeInput extends Thread//implements Runnable
 					
 					while(true)
 					{
-						System.out.println("Found line: " + line);
-						line = input.readLine();
-						System.out.println("Next line: " + line);
-						
+						line = input.readLine();						
 						if(line.trim().equalsIgnoreCase("\"edges\":["))
 							break;
 						
@@ -141,7 +138,6 @@ public class TakeInput extends Thread//implements Runnable
 						if((System.currentTimeMillis()-Parameters.startTime)/Parameters.interval>Parameters.lastInterval)
 						{
 							System.out.println("number of vertices up to now = "+StacViz.graph.vertices.size());
-							Parameters.refreshBoth();
 							Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.interval;
 						}
 					}
@@ -166,7 +162,7 @@ public class TakeInput extends Thread//implements Runnable
 						if((System.currentTimeMillis()-Parameters.startTime)/Parameters.interval>Parameters.lastInterval)
 						{
 							System.out.println("number of vertices up to now = "+StacViz.graph.vertices.size());
-							Parameters.refreshBoth();
+							Parameters.refreshAll();
 							Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.interval;
 						}
 						
@@ -228,7 +224,7 @@ public class TakeInput extends Thread//implements Runnable
 				int ind = Integer.parseInt(stmtMatcher.group(8));
 				int ln = Integer.parseInt(stmtMatcher.group(9));
 	
-				StacViz.graph.addVertex(id, method, inst, description, ind, ln);
+				StacViz.graph.addVertex(id, method, inst, description, ind, ln, true);
 			}
 			else
 			{
@@ -238,7 +234,7 @@ public class TakeInput extends Thread//implements Runnable
 		}
 		else if(desc.indexOf("org.ucombinator.jaam.ErrorState$") >= 0)
 		{
-			StacViz.graph.addVertex(id, "ErrorState", "", "ErrorState", -1, -1);
+			StacViz.graph.addVertex(id, "ErrorState", "", "ErrorState", -1, -1, false);
 		}
 		else
 		{
@@ -497,7 +493,7 @@ public class TakeInput extends Thread//implements Runnable
 					System.out.println("Adding edge: " + e.source + ", " + e.dest);
 				//System.out.println("desc pairs: " + desc1 + "\n            " + desc2);
 				StacViz.graph.addEdge(e.source + " , " + e.dest);
-				Parameters.refreshBoth();
+				Parameters.refreshAll();
 			}
 		}
 		catch(IOException e)

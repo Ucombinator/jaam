@@ -17,6 +17,7 @@ public class MethodVertex extends AbstractVertex
 		this.name = method.getName();
 		this.isVisible = isVisible;
 		this.numChildrenHighlighted = 0;
+		this.drawEdges = true;
 		
 		this.neighbors = new ArrayList<AbstractVertex>();
 		this.incoming = new ArrayList<AbstractVertex>();
@@ -36,7 +37,7 @@ public class MethodVertex extends AbstractVertex
 	
 	public String getRightPanelContent()
 	{
-		String str = "Method Vertex\n\n"
+		String str = "Method Vertex (loop height = " + loopHeight + ")\n\n"
 				+ "method: " + this.getMethodName() + "\n\n"
 				+ "This contains " + this.mergeChildren.size() + " regular vertices\n";
 		return str;
@@ -106,6 +107,13 @@ public class MethodVertex extends AbstractVertex
 					//This may cause a ClassCast exception, but the logic seems to make it work. I don't know why.
 					((MethodVertex) in).getMergeParent().addMergeChild(this);
 					this.mergeParent = ((MethodVertex) in).getMergeParent();
+					
+					if(!this.drawEdges)
+					{
+						System.out.println("Removing edges for path vertex containing " + this.getMethodName());
+						this.mergeParent.drawEdges = false;
+					}
+						
 					return;
 				}
 			}
@@ -119,6 +127,13 @@ public class MethodVertex extends AbstractVertex
 				((MethodVertex) out).getMergeParent().getMergeChildren().add(this);
 				out.getMergeParent().mergeRoot = this;
 				this.mergeParent = ((MethodVertex) out).getMergeParent();
+				
+				if(!this.drawEdges)
+				{
+					System.out.println("Removing edges for path vertex containing " + this.getMethodName());
+					this.mergeParent.drawEdges = false;
+				}
+				
 				return;
 			}
 		}
@@ -136,5 +151,11 @@ public class MethodVertex extends AbstractVertex
 		this.mergeParent = ver;
 		ver.addMergeChild(this);
 		ver.mergeable = true;
+		
+		if(!this.drawEdges)
+		{
+			System.out.println("Removing edges for path vertex containing " + this.getMethodName());
+			this.mergeParent.drawEdges = false;
+		}
 	}
 }

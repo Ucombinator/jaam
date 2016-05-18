@@ -57,7 +57,7 @@ public class Vertex extends AbstractVertex
 	
 	public String getRightPanelContent()
 	{
-		String str = "Regular Vertex\n\n"
+		String str = "Regular Vertex (loop height = " + this.loopHeight + ")\n\n"
 				+ "id: " + this.id + "\n"
 				+ "instruction: " + this.getInstruction() + "\n"
 				+ "method: " + this.getMethodName() + "\n\n"
@@ -182,7 +182,7 @@ public class Vertex extends AbstractVertex
 		
 	public String getName()
 	{
-		return this.getMethodName() + "\n" + this.getInstruction();
+		return this.id + "\n" + this.getMethodName() + "\n" + this.getInstruction();
 	}
 	
 	public void setLoopHeader(Vertex v)
@@ -260,6 +260,12 @@ public class Vertex extends AbstractVertex
 		
 		this.mergeParent = ver;
 		ver.mergeChildren.add(this);
+		
+		if(!this.drawEdges)
+		{
+			System.out.println("Removing edges for method: " + this.getMethodName());
+			ver.drawEdges = false;
+		}
 		
 		for(AbstractVertex v : this.children)
 			((Vertex) v).mergeByMethod(ver);

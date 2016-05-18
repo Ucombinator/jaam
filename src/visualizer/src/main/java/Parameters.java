@@ -11,10 +11,10 @@ import java.awt.Font;
 
 public class Parameters
 {
-	public static int width = 800, height = 800;
+	public static int width = 1200, height = 800;
 	public static int contextWidth = 600, contextHeight = 800;
 	public static int consoleRow = 5, consoleColumn = 10;
-	public static double minBoxWidth = 50, minBoxHeight = 50;
+	public static double minBoxWidth = 20, minBoxHeight = 20;
 	public static double thresholdWidth = 75, thresholdHeight = 75;
 	public static double zoomFactor = 3.0/4.0, boxFactor = 3.0/4.0;
 	public static int boxLines = 3;
@@ -136,11 +136,16 @@ public class Parameters
 				
 	}
 
-	public static void refreshBoth()
+	public static void refreshAll()
 	{
 		stFrame.refresh();
-		if(stFrame.showContext.isSelected())
-			contextFrame.refresh();
+
+//		if(stFrame.showContext.isSelected())
+//		if(StacViz.graph !=null)
+//			contextFrame.refresh();
+		
+		leftArea.setDescription();
+		setRightText();
 	}
 	
 	public static void test()

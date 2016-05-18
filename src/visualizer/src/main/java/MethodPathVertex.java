@@ -17,6 +17,7 @@ public class MethodPathVertex extends AbstractVertex
 		this.index = i;
 		this.name = "";
 		this.numChildrenHighlighted = 0;
+		this.drawEdges = true;
 		
 		this.mergeChildren = new ArrayList<MethodVertex>();
 		this.instructionList = new ArrayList<Instruction>();
@@ -25,7 +26,8 @@ public class MethodPathVertex extends AbstractVertex
 	
 	public String getRightPanelContent()
 	{
-		StringBuilder s = new StringBuilder("Path Vertex\n\n" + "This contains " + this.mergeChildren.size() + " method vertices:\n");
+		StringBuilder s = new StringBuilder("Path Vertex (loop height = " + loopHeight + ")\n\n"
+				+ "This contains " + this.mergeChildren.size() + " method vertices:\n");
 		for(MethodVertex v : this.mergeChildren)
 			s.append(v.getName() + "\n");
 		

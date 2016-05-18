@@ -130,10 +130,15 @@ public class View
 	
 	public void zoomNPan(double centerX, double centerY, double factor)
 	{
-		this.left = this.left + centerX - (this.left+this.right)/2;
-		this.right = this.right + centerX - (this.left+this.right)/2;
-		this.top = this.top + centerY - (this.top+this.bottom)/2;
-		this.bottom = this.bottom + centerY - (this.top+this.bottom)/2;
+//		System.out.println("before ... left="+left+", right="+right+", top="+top+", bottom="+bottom+", factor="+factor);
+		
+		double xSpan = (this.left+this.right)/2;
+		double ySpan = (this.top+this.bottom)/2;
+		
+		this.left = this.left + centerX - xSpan;
+		this.right = this.right + centerX - xSpan;
+		this.top = this.top + centerY - ySpan;
+		this.bottom = this.bottom + centerY - ySpan;
 		
 		this.left = centerX - (centerX - this.left)*factor; 
 		this.right = centerX + (this.right - centerX)*factor; 
@@ -142,5 +147,6 @@ public class View
 		
 		//Make sure that our coordinates are all within [0,1]
 		validateView();
+//		System.out.println("after ... left="+left+", right="+right+", top="+top+", bottom="+bottom+", factor="+factor);
 	}
 }

@@ -20,7 +20,7 @@ public class VizPanel extends JPanel
 	public boolean showSelection = false;
 	public double selectLeft, selectRight, selectTop, selectBottom;
 	public double boxSize = 1.0;
-	public static final float hues[] = {0.4f, 0.2f, 0.1f, 0.05f, 0f}; //Used for shading edges from green to red
+	public static float hues[]; //Used for shading edges from green to red
 	public boolean showEdge = true;
 
 	public VizPanel(StacFrame p, boolean cont)
@@ -64,7 +64,7 @@ public class VizPanel extends JPanel
 					while(!nbr.isVisible)
 						nbr = nbr.getMergeParent();
 					
-					if(v != nbr)
+					if(v != nbr && v.drawEdges && nbr.drawEdges)
 						drawEdge(g, v, nbr, true);
 				}
 			}
@@ -92,6 +92,27 @@ public class VizPanel extends JPanel
 		
 		//Draw arrows toward highlighted vertices that are off the main screen
 		//drawHighlightedVertexMap(g);
+	}
+	
+	public static void computeHues()
+	{
+		float start = 0.4f; //green
+		float end = 0.0f; //red
+		
+		int maxLoopHeight = 0;
+		for(Vertex v : StacViz.graph.vertices)
+		{
+			if(v.loopHeight > maxLoopHeight)
+				maxLoopHeight = v.loopHeight;
+		}
+		
+		System.out.println("Max loop height: " + maxLoopHeight);
+		
+		hues = new float[maxLoopHeight + 1];
+		for(int i = 0; i <= maxLoopHeight; i++)
+		{
+			hues[i] = start - ((float) i)/(maxLoopHeight + 1)*(start - end);
+		}
 	}
 	
 	public void drawVertex(Graphics2D g, AbstractVertex ver, boolean isMainWindow)
@@ -280,8 +301,10 @@ public class VizPanel extends JPanel
 		if(this.boxSize < 1)
 			length = length * this.boxSize;
 
-		if(length < 2.0)
+		if(length < 2.0 && !this.context)
 			length = 2.0;
+		if(length < 1.0 && this.context)
+			length = 1.0;
 		
 		this.drawArrowhead(g, x2, y2, angle, length);
 	}
@@ -378,8 +401,24 @@ public class VizPanel extends JPanel
 	    	width = this.boxwidth * 0.5 * this.boxSize;
 	    }
 	    
+	    double height;
+	    if(this.boxheight < this.minHeight)
+	    {
+	    	height = this.minHeight * 0.5 * this.boxSize;
+	    }
+	    else
+	    {
+	    	height = this.boxheight * 0.5 * this.boxSize;
+	    }
+
 	    String[] lines = text.split("\n");
-	    for(int i = 0; i < lines.length; i++)
+	    
+	    height = height/metrics.getHeight();
+	    if(height<1)
+	    	height = 1;
+	    int i;
+	    for(i=0; i<lines.length-height; i++);
+	    for(; i < lines.length; i++)
 	    {
 		    String line = lines[i];
 		    if(width < metrics.stringWidth(line))
@@ -603,11 +642,6 @@ public class VizPanel extends JPanel
 		
 		
 		if(this.context)
-			this.contextPaint(g2);
-		else
-			this.vizPaint(g2);
-		
-		if(this.context)
 		{
 			g.setColor(Parameters.colorFocus);
 			
@@ -658,6 +692,14 @@ public class VizPanel extends JPanel
 		    g2.setColor(Color.GRAY);
 		    g2.drawRect(x1, y1, x2-x1, y2-y1);
 		}
+
+		
+		
+		if(this.context)
+			this.contextPaint(g2);
+		else
+			this.vizPaint(g2);
+		
 		
 		g.dispose();
 	}

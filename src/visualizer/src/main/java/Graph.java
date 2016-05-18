@@ -294,6 +294,44 @@ public class Graph
 		return null;
 	}
 	
+	public AbstractVertex getVertexNearestCoordinate(double x, double y)
+	{
+		AbstractVertex closest = null;
+		double closestDist = Double.MAX_VALUE;
+		
+		for(Vertex v : vertices)
+		{
+			double newDist = v.distTo(x,  y);
+			if(v.isVisible && newDist < closestDist)
+			{
+				closest = v;
+				closestDist = newDist;
+			}
+		}
+		
+		for(MethodVertex v : methodVertices)
+		{
+			double newDist = v.distTo(x,  y);
+			if(v.isVisible && newDist < closestDist)
+			{
+				closest = v;
+				closestDist = newDist;
+			}				
+		}
+		
+		for(MethodPathVertex v : methodPathVertices)
+		{
+			double newDist = v.distTo(x,  y);
+			if(v.isVisible && newDist < closestDist)
+			{
+				closest = v;
+				closestDist = newDist;
+			}
+		}
+		
+		return closest;
+	}
+	
  	public void addVertex(String des)
 	{
 		String name = des.substring(0, des.indexOf(':'));
@@ -347,7 +385,7 @@ public class Graph
 		ver.setNameToInstruction();
 	}
 	
-	public void addVertex(int v, String methodName, String inst, String desc, int ind, int line)
+	public void addVertex(int v, String methodName, String inst, String desc, int ind, int line, boolean drawEdges)
 	{
 		Vertex ver = this.containsVertex(v);
 		
@@ -363,6 +401,7 @@ public class Graph
 		ver.setNameToInstruction();
 		ver.jimpleIndex = ind;
 		ver.jimpleLine = line;
+		ver.drawEdges = drawEdges;
 		
 		if(ind > this.maxIndex)
 			this.maxIndex = ind;
@@ -399,7 +438,7 @@ public class Graph
 		dest = Integer.parseInt(token.nextToken());
 		if(src == dest)
 		{
-			System.out.println("ERROR! Cannot add self-loop.");
+			//System.out.println("ERROR! Cannot add self-loop.");
 			return;
 		}
 		
@@ -1200,6 +1239,6 @@ public class Graph
 		}
 		
 		System.out.println("Loop heights found!");
+		VizPanel.computeHues();
 	}
-
 }
