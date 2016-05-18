@@ -340,7 +340,7 @@ cat <<- EOF > "${jaam_runner}"
 	# Do the execution.
 	if [[ "\$JAAM_mode" == "user" ]]
 	then
-	    exec "\${JAAM_java}" -jar "\${JAAM_jar}" -J "\${JAAM_rt_jar}" "\${user_args}"
+	    exec "\${JAAM_java}" -jar "\${JAAM_jar}" -J "\${JAAM_rt_jar}" \${user_args}
 	elif [[ "\$JAAM_mode" == "developer" ]]
 	then
 	    SBT_JAVA="\${JAAM_java}"
