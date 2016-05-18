@@ -1,5 +1,5 @@
 
-public class StacViz
+public class Main
 {
 
 	public static Graph graph;

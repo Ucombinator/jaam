@@ -4,6 +4,7 @@ project/*
 bin/sbt
 bin/jaam.sh
 jaam.jar
+visualizer.jar
 target
 javacache
 .DS_Store
