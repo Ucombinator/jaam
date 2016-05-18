@@ -137,11 +137,11 @@ public class Parameters
 				
 	}
 
-	public static void refreshAll()
+	public static void repaintAll()
 	{
 		leftArea.setDescription();
 		setRightText();
-		stFrame.refresh();
+		stFrame.repaint();
 	}
 	
 	public static void test()
