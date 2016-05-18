@@ -188,13 +188,13 @@ while ! check_java "${jaam_java}"
 do
     interactive_prompt jaam_java "Invalid Java given. Choose new Java" ""
 done
-default_rt_jar=$("${jaam_java}" -XshowSettings:properties -version 2<&1 | awk '/rt\.jar/ {print $NF}')
 interactive_prompt jaam_java_opts "Choose default JAVA_OPTS" ""
 # Check given Java opts.
 while ! check_java_opts "${jaam_java}" "${jaam_java_opts}"
 do
     interactive_prompt jaam_java_opts "Invalid JAVA_OPTS given. Choose again" ""
 done
+default_rt_jar=$("${jaam_java}" -XshowSettings:properties -version 2<&1 | awk '/rt\.jar/ {print $NF}')
 interactive_prompt jaam_rt_jar "Choose default rt.jar" "$default_rt_jar"
 interactive_prompt jaam_sbt_opts "Choose default SBT_OPTS (called when invoking \`sbt\`)" "-Xms512M -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256M"
 interactive_prompt jaam_runner "Choose location for jaam.sh runner" "${RUNNER_PATH}"
