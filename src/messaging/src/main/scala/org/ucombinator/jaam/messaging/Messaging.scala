@@ -1,3 +1,5 @@
+/* This library handles message serialization for communicating between
+ * tools */
 package org.ucombinator.jaam.messaging
 
 import java.io.InputStream
@@ -9,17 +11,14 @@ import com.esotericsoftware.kryo.io._
 import com.twitter.chill.ScalaKryoInstantiator
 import soot.{Unit => _, _}
 
-
 object Message {
-  type Input = com.esotericsoftware.kryo.io.Input
-  type Output = com.esotericsoftware.kryo.io.Output
+  class Input(in : InputStream) extends com.esotericsoftware.kryo.io.Input(in) {}
+  class Output(out : OutputStream) extends com.esotericsoftware.kryo.io.Output(out) {}
 
   val instantiator = new ScalaKryoInstantiator
   val kryo = instantiator.newKryo()
-
   kryo.addDefaultSerializer(classOf[soot.util.Chain[java.lang.Object]], classOf[com.esotericsoftware.kryo.serializers.FieldSerializer[java.lang.Object]])
-
-  UnmodifiableCollectionsSerializer.registerSerializers( kryo )
+  UnmodifiableCollectionsSerializer.registerSerializers(kryo)
 
   def openInput(in : InputStream) : Input =
     new Input(in)
@@ -39,14 +38,30 @@ object Message {
   def write(out : Output, m : Message) : Unit = {
     kryo.writeClassAndObject(out, m)
   }
-
-
-
-  abstract class Message {}
-
-  case class Edge(x : Int, y : Int) extends Message {}
-
 }
+
+////////////////////////////////////////
+// Message types
+////////////////////////////////////////
+
+abstract class Message {}
+case class Done() extends Message {}
+
+case class Edge(id : Id[Edge], src : Id[State], dst : Id[State]) extends Message {}
+
+abstract class AbstractState(id : Id[AbstractState]) extends Message {}
+case class ErrorState(id : Id[AbstractState]) extends Message(id) {}
+case class State(id : Id[AbstractState], stmt : Stmt, framePointer : String, kontStack : String) extends Message(id) {}
+
+
+////////////////////////////////////////
+// Types inside messages
+////////////////////////////////////////
+case class Id[Namespace](id : Int) {
+  // val namespace = classOf[Namespace]
+}
+
+case class Stmt(stmt : SootStmt, method : SootMethod) {}
 
 
 /*
