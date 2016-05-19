@@ -54,7 +54,7 @@ public class Graph
 	{
 		//Don't allow zooming closer than this level
 		double currSize = this.currWindow.getFracArea();
-		if(factor > 1 || currSize > 1.0/StacViz.graph.vertices.size())
+		if(factor > 1 || currSize > 1.0/Main.graph.vertices.size())
 		{
 			System.out.println("Zooming in...");
 			double centerX = (this.currWindow.left+this.currWindow.right)/2;
@@ -456,11 +456,11 @@ public class Graph
 	public void redoCycleHighlights()
 	{
 		//First we remove all cycle highlights
-		for(Vertex v : StacViz.graph.vertices)
+		for(Vertex v : Main.graph.vertices)
 			v.clearCycleHighlights();
 		
 		//Then we rehighlight the correct cycles
-		for(Vertex v : StacViz.graph.vertices)
+		for(Vertex v : Main.graph.vertices)
 		{
 			if(v.isHighlighted())
 			{
@@ -854,7 +854,7 @@ public class Graph
 				
 				flag = false;
 				AbstractVertex ver = src;
-				while(ver != StacViz.graph.root)
+				while(ver != Main.graph.root)
 				{
 					if(ver == dest)
 					{

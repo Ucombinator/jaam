@@ -32,7 +32,7 @@ public class VizPanel extends JPanel
 	
 	public void vizPaint(Graphics2D g)
 	{		
-		Graph graph = StacViz.graph;
+		Graph graph = Main.graph;
 
 		this.boxwidth = this.getWidth()*0.96/(graph.getWidth()*(graph.currWindow.right-graph.currWindow.left));
 		this.boxheight = this.getHeight()*0.96/(graph.getHeight()*(graph.currWindow.bottom-graph.currWindow.top));
@@ -63,7 +63,7 @@ public class VizPanel extends JPanel
 		float end = 0.0f; //red
 		
 		int maxLoopHeight = 0;
-		for(Vertex v : StacViz.graph.vertices)
+		for(Vertex v : Main.graph.vertices)
 		{
 			if(v.loopHeight > maxLoopHeight)
 				maxLoopHeight = v.loopHeight;
@@ -81,19 +81,19 @@ public class VizPanel extends JPanel
 	//Draw all visible graph vertices.
 	public void drawVertices(Graphics2D g)
 	{
-		for(Vertex ver : StacViz.graph.vertices)
+		for(Vertex ver : Main.graph.vertices)
 		{
 			if(ver.isVisible)
 				drawVertex(g, ver);
 		}
 
-		for(MethodVertex ver : StacViz.graph.methodVertices)
+		for(MethodVertex ver : Main.graph.methodVertices)
 		{
 			if(ver.isVisible)
 				drawVertex(g, ver);
 		}
 		
-		for(MethodPathVertex ver : StacViz.graph.methodPathVertices)
+		for(MethodPathVertex ver : Main.graph.methodPathVertices)
 		{
 			if(ver.isVisible)
 				drawVertex(g, ver);
@@ -102,7 +102,7 @@ public class VizPanel extends JPanel
 	
 	public void drawVertex(Graphics2D g, AbstractVertex ver)
 	{
-		Graph graph = StacViz.graph;
+		Graph graph = Main.graph;
 		double x1temp, x2temp, y1temp, y2temp;
 		int x1, x2, y1, y2;
 		double fac = 0.25*this.boxSize;
@@ -189,7 +189,7 @@ public class VizPanel extends JPanel
 	{
 		if(this.showEdge)
 		{
-			for(Vertex ver : StacViz.graph.vertices)
+			for(Vertex ver : Main.graph.vertices)
 			{
 				AbstractVertex v = ver;
 				while(!v.isVisible)
@@ -223,7 +223,7 @@ public class VizPanel extends JPanel
 	
 	public void drawEdge(Graphics2D g, AbstractVertex v, AbstractVertex nbr)
 	{
-		Graph graph = StacViz.graph;
+		Graph graph = Main.graph;
 		double x1temp, x2temp, y1temp, y2temp;
 		int x1, x2, y1, y2;
 		double fac = 0.25*this.boxSize;
@@ -468,9 +468,9 @@ public class VizPanel extends JPanel
 	/*public void drawHighlightedVertexMap(Graphics2D g)
 	{
 		double left = 0;
-		double right = (StacViz.graph.currWindow.right - StacViz.graph.currWindow.left)*StacViz.graph.getWidth();
+		double right = (Main.graph.currWindow.right - Main.graph.currWindow.left)*Main.graph.getWidth();
 		double top = 0;
-		double bottom = (StacViz.graph.currWindow.bottom - StacViz.graph.currWindow.top)*StacViz.graph.getHeight();
+		double bottom = (Main.graph.currWindow.bottom - Main.graph.currWindow.top)*Main.graph.getHeight();
 		double middleX = (left + right)/2.0;
 		double middleY = (top + bottom)/2.0;
 		
@@ -548,7 +548,7 @@ public class VizPanel extends JPanel
 	
 	public void contextPaint(Graphics2D g)
 	{
-		Graph graph = StacViz.graph;
+		Graph graph = Main.graph;
 
 		this.boxwidth = this.getWidth()*0.96/graph.getWidth();
 		this.boxheight = this.getHeight()*0.96/graph.getHeight();
@@ -591,7 +591,7 @@ public class VizPanel extends JPanel
 		super.paintComponent(g);
 		this.setBackground(Color.WHITE);
 
-		if(StacViz.graph == null)
+		if(Main.graph == null)
 			return;
 	
 //		g.fillOval(this.getWidth()-5, this.getHeight()-5, 5, 5);
@@ -610,7 +610,7 @@ public class VizPanel extends JPanel
 		
 		int x1, x2, y1, y2;
 		
-		Graph graph = StacViz.graph;
+		Graph graph = Main.graph;
 		
 		
 		if(this.context)
@@ -676,7 +676,7 @@ public class VizPanel extends JPanel
 	
 	public double getBackX(double x)
 	{
-		Graph graph = StacViz.graph;
+		Graph graph = Main.graph;
 		if(this.context)
 			return (x-this.left)/(this.boxwidth*graph.getWidth());
 		else
@@ -686,7 +686,7 @@ public class VizPanel extends JPanel
 	
 	public double getBackY(double y)
 	{
-		Graph graph = StacViz.graph;
+		Graph graph = Main.graph;
 		if(this.context)
 			return (y-this.top)/(this.boxheight*graph.getHeight());
 //			return (y-this.top)/(this.boxheight);

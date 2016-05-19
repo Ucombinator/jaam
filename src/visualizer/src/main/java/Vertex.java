@@ -40,7 +40,7 @@ public class Vertex extends AbstractVertex
 
 		if(addC)
 		{
-			StacViz.graph.root.addChild(this);
+			Main.graph.root.addChild(this);
 		}
 
 		loopHeader = null;
@@ -99,10 +99,10 @@ public class Vertex extends AbstractVertex
 		boolean flag = false;
 
 		Method newMethod = ((Vertex) dest.parent).getMethod();
-		if(dest.parent == StacViz.graph.root || newMethod.equals(dest.getMethod()))
+		if(dest.parent == Main.graph.root || newMethod.equals(dest.getMethod()))
 		{
 			Vertex ver = this;
-			while(ver != StacViz.graph.root)
+			while(ver != Main.graph.root)
 			{
 				if(ver == dest)
 				{
@@ -128,7 +128,7 @@ public class Vertex extends AbstractVertex
 							continue;
 						if(same)
 						{
-							if(dest.parent != StacViz.graph.root && parentMethod.equals(dest.getMethod()) && !potentialMethod.equals(dest.getMethod()))
+							if(dest.parent != Main.graph.root && parentMethod.equals(dest.getMethod()) && !potentialMethod.equals(dest.getMethod()))
 								continue;
 						}
 						if(ver.checkPotentialParent(potential))
@@ -245,17 +245,17 @@ public class Vertex extends AbstractVertex
 		//Initialize first method vertex
 		if(ver == null)
 		{
-			ver = new MethodVertex(this.id, StacViz.graph.methodVertices.size(), this.method, false);
+			ver = new MethodVertex(this.id, Main.graph.methodVertices.size(), this.method, false);
 			ver.mergeRoot = this;
-			StacViz.graph.methodVertices.add(ver);
+			Main.graph.methodVertices.add(ver);
 		}
 		
 		//Create new method vertex
 		if(!ver.getMethod().equals(this.method))
 		{
-			ver = new MethodVertex(this.id, StacViz.graph.methodVertices.size(), this.method, false);
+			ver = new MethodVertex(this.id, Main.graph.methodVertices.size(), this.method, false);
 			ver.mergeRoot = this;
-			StacViz.graph.methodVertices.add(ver);
+			Main.graph.methodVertices.add(ver);
 		}
 		
 		this.mergeParent = ver;

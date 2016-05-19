@@ -49,19 +49,19 @@ public class Parameters
 	public static void setRightText()
 	{
 		StringBuilder text = new StringBuilder();
-		for(Vertex v : StacViz.graph.vertices)
+		for(Vertex v : Main.graph.vertices)
 		{
 			if(v.isHighlighted)
 				text.append(v.getRightPanelContent() + "\n\n");
 		}
 		
-		for(MethodVertex v : StacViz.graph.methodVertices)
+		for(MethodVertex v : Main.graph.methodVertices)
 		{
 			if(v.isHighlighted)
 				text.append(v.getRightPanelContent() + "\n\n");
 		}
 		
-		for(MethodPathVertex v : StacViz.graph.methodPathVertices)
+		for(MethodPathVertex v : Main.graph.methodPathVertices)
 		{
 			if(v.isHighlighted)
 				text.append(v.getRightPanelContent() + "\n\n");

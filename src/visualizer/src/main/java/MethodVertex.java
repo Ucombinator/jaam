@@ -145,9 +145,9 @@ public class MethodVertex extends AbstractVertex
 	public void initializeMethodPathVertex()
 	{
 		//System.out.println("Adding new method path vertex for method " + this.getMethodName());
-		MethodPathVertex ver = new MethodPathVertex(this.id, StacViz.graph.methodPathVertices.size());
+		MethodPathVertex ver = new MethodPathVertex(this.id, Main.graph.methodPathVertices.size());
 		ver.mergeRoot = this;
-		StacViz.graph.methodPathVertices.add(ver);
+		Main.graph.methodPathVertices.add(ver);
 		this.mergeParent = ver;
 		ver.addMergeChild(this);
 		ver.mergeable = true;

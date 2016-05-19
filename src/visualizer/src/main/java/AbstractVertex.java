@@ -109,7 +109,7 @@ public abstract class AbstractVertex
 	
 			this.left = this.mergeRoot.left;
 			this.top = this.mergeRoot.top;
-			StacViz.graph.setMaxHeight(0);
+			Main.graph.setMaxHeight(0);
 			
 			double w = this.mergeRoot.disappear(this.left, this.top+1, this);
 			if(w > 1)
@@ -120,7 +120,7 @@ public abstract class AbstractVertex
 			this.right = this.left + this.width;
 			this.x = (this.left + this.right)/2;
 			
-			this.height = StacViz.graph.getMaxHeight() + 1;
+			this.height = Main.graph.getMaxHeight() + 1;
 			this.bottom = this.top + this.height;
 			this.y = this.top + 0.5;
 	
@@ -151,8 +151,8 @@ public abstract class AbstractVertex
 
 				v.shiftSubtree(left + w - v.left);
 				v.shiftSubtreeY(top - v.top);
-				if(v.height > StacViz.graph.getMaxHeight())
-					StacViz.graph.setMaxHeight(v.height);
+				if(v.height > Main.graph.getMaxHeight())
+					Main.graph.setMaxHeight(v.height);
 				v.parent = mP;
 				v.parentIndex = mP.children.size();
 				mP.children.add(v);
@@ -358,7 +358,7 @@ public abstract class AbstractVertex
 	public boolean checkPotentialParent(AbstractVertex potential)
 	{
 		AbstractVertex ver = this;
-		while(ver != StacViz.graph.root)
+		while(ver != Main.graph.root)
 		{
 			if(ver == this)
 			{
@@ -386,7 +386,7 @@ public abstract class AbstractVertex
 			while(ver.parent!=null)
 			{
 				ver.printCoordinates();
-				StacViz.graph.printParent(ver);
+				Main.graph.printParent(ver);
 				ver = ver.parent;
 			}
 			ver.printCoordinates();
@@ -395,7 +395,7 @@ public abstract class AbstractVertex
 			while(ver.parent!=null)
 			{
 				ver.printCoordinates();
-				StacViz.graph.printParent(ver);
+				Main.graph.printParent(ver);
 				ver = ver.parent;
 			}
 			ver.printCoordinates();
@@ -407,12 +407,12 @@ public abstract class AbstractVertex
 		
 		boolean flag = false;
 
-		if(dest.parent == StacViz.graph.root)
+		if(dest.parent == Main.graph.root)
 		{
 			if(Parameters.debug)
 				System.out.println("checkpoint 1");
 			AbstractVertex ver = this;
-			while(ver != StacViz.graph.root)
+			while(ver != Main.graph.root)
 			{
 				if(Parameters.debug)
 				{
@@ -492,7 +492,7 @@ public abstract class AbstractVertex
 				while(ver.parent!=null)
 				{
 					ver.printCoordinates();
-					StacViz.graph.printParent(ver);
+					Main.graph.printParent(ver);
 					ver = ver.parent;
 				}
 				ver.printCoordinates();
@@ -501,26 +501,26 @@ public abstract class AbstractVertex
 				while(ver.parent!=null)
 				{
 					ver.printCoordinates();
-					StacViz.graph.printParent(ver);
+					Main.graph.printParent(ver);
 					ver = ver.parent;
 				}
 				ver.printCoordinates();
 				System.out.println("-------------------------");
 			}
 			
-			StacViz.graph.root.increaseWidth(dest, -1*dest.width);
-			for(int i=dest.parentIndex+1; i<StacViz.graph.root.children.size(); i++)
+			Main.graph.root.increaseWidth(dest, -1*dest.width);
+			for(int i=dest.parentIndex+1; i<Main.graph.root.children.size(); i++)
 			{
-				StacViz.graph.root.children.get(i).parentIndex --;
+				Main.graph.root.children.get(i).parentIndex --;
 			}
-			StacViz.graph.root.children.remove(dest.parentIndex);
+			Main.graph.root.children.remove(dest.parentIndex);
 			double height = 0;
-			for(int i=0; i< StacViz.graph.root.children.size(); i++)
+			for(int i=0; i< Main.graph.root.children.size(); i++)
 			{
-				if(StacViz.graph.root.children.get(i).height>height)
-					height = StacViz.graph.root.children.get(i).height;
+				if(Main.graph.root.children.get(i).height>height)
+					height = Main.graph.root.children.get(i).height;
 			}
-			StacViz.graph.root.height = height + 1;
+			Main.graph.root.height = height + 1;
 			
 			this.addChild(dest);
 
@@ -531,7 +531,7 @@ public abstract class AbstractVertex
 				while(ver.parent!=null)
 				{
 					ver.printCoordinates();
-					StacViz.graph.printParent(ver);
+					Main.graph.printParent(ver);
 					ver = ver.parent;
 				}
 				ver.printCoordinates();
@@ -540,7 +540,7 @@ public abstract class AbstractVertex
 				while(ver.parent!=null)
 				{
 					ver.printCoordinates();
-					StacViz.graph.printParent(ver);
+					Main.graph.printParent(ver);
 					ver = ver.parent;
 				}
 				ver.printCoordinates();
