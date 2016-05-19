@@ -1,6 +1,6 @@
 name := "jaam-visualizer"
 
-version := "0.6"
+version := "0.1-SNAPSHOT"
 
 // Assembly-specific configuration
 test in assembly := {}
