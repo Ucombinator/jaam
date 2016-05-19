@@ -1,6 +1,6 @@
 name := "jaam-analyzer"
 
-version := "0.5"
+version := "0.1-SNAPSHOT"
 
 libraryDependencies ++= Seq(
   "org.ucombinator.soot" % "soot-all-in-one" % "nightly.20150205",
