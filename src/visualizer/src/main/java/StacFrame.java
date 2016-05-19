@@ -252,7 +252,7 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						StacViz.graph.clearHighlights();
+						Main.graph.clearHighlights();
 						Parameters.leftArea.clear();
 						Parameters.repaintAll();
 					}
@@ -271,7 +271,7 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						StacViz.graph.increaseZoom(Parameters.zoomFactor);
+						Main.graph.increaseZoom(Parameters.zoomFactor);
 						Parameters.repaintAll();
 					}
 				}
@@ -285,7 +285,7 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						StacViz.graph.increaseZoom(1/Parameters.zoomFactor);
+						Main.graph.increaseZoom(1/Parameters.zoomFactor);
 						Parameters.repaintAll();
 					}
 				}
@@ -299,7 +299,7 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						StacViz.graph.resetZoom();
+						Main.graph.resetZoom();
 						Parameters.repaintAll();
 					}
 				}
@@ -314,7 +314,7 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						StacViz.graph.collapseOnce();
+						Main.graph.collapseOnce();
 						Parameters.repaintAll();
 					}
 				}
@@ -329,7 +329,7 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						StacViz.graph.deCollapseOnce();
+						Main.graph.deCollapseOnce();
 						Parameters.repaintAll();
 					}
 				}
@@ -344,7 +344,7 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						StacViz.graph.loadPreviousView();
+						Main.graph.loadPreviousView();
 						Parameters.repaintAll();
 					}
 				}
@@ -360,7 +360,7 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						StacViz.graph.restoreNewView();
+						Main.graph.restoreNewView();
 						Parameters.repaintAll();
 					}
 				}
@@ -375,7 +375,7 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						StacViz.graph.shiftView(0, -1);
+						Main.graph.shiftView(0, -1);
 						Parameters.repaintAll();
 					}
 				}
@@ -390,7 +390,7 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						StacViz.graph.shiftView(0, 1);
+						Main.graph.shiftView(0, 1);
 						Parameters.repaintAll();
 					}
 				}
@@ -405,7 +405,7 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						StacViz.graph.shiftView(-1, 0);
+						Main.graph.shiftView(-1, 0);
 						Parameters.repaintAll();
 					}
 				}
@@ -420,7 +420,7 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						StacViz.graph.shiftView(1, 0);
+						Main.graph.shiftView(1, 0);
 						Parameters.repaintAll();
 					}
 				}
@@ -669,7 +669,7 @@ public class StacFrame extends JFrame
 				return;
 		}
 
-		StacViz.graph.searchNodes(search, input);
+		Main.graph.searchNodes(search, input);
 		
 		Parameters.vertexHighlight = true;
 		
@@ -685,7 +685,7 @@ public class StacFrame extends JFrame
 	
 	public boolean checkGraph()
 	{
-		return (StacViz.graph!=null);
+		return (Main.graph!=null);
 	}
 	
 	public void addMouseToViz()
@@ -701,24 +701,24 @@ public class StacFrame extends JFrame
 					
 					vizPanel.requestFocusInWindow();
 					context = false;
-					double x = vizPanel.getBackX(getX(m))*StacViz.graph.getWidth();
-					double y = vizPanel.getBackY(getY(m))*StacViz.graph.getHeight();
+					double x = vizPanel.getBackX(getX(m))*Main.graph.getWidth();
+					double y = vizPanel.getBackY(getY(m))*Main.graph.getHeight();
 					
 					if(System.currentTimeMillis() - Parameters.mouseLastTime > Parameters.mouseInterval)
 					{
 						Parameters.mouseLastTime = System.currentTimeMillis();
 						
-						if(SwingUtilities.isLeftMouseButton(m) && StacViz.graph != null)
+						if(SwingUtilities.isLeftMouseButton(m) && Main.graph != null)
 						{	
 							if(m.isShiftDown())
 							{
-								AbstractVertex ver = StacViz.graph.getVertexNearestCoordinate(x, y);
+								AbstractVertex ver = Main.graph.getVertexNearestCoordinate(x, y);
 								if(ver != null)
 								{
 									if(ver.isHighlighted())
 									{
 										ver.clearAllHighlights();
-										StacViz.graph.redoCycleHighlights();
+										Main.graph.redoCycleHighlights();
 									}
 									else
 									{
@@ -730,9 +730,9 @@ public class StacFrame extends JFrame
 							}
 							else if(m.getClickCount() == 1)
 							{
-								AbstractVertex ver = StacViz.graph.getVertexNearestCoordinate(x, y);
+								AbstractVertex ver = Main.graph.getVertexNearestCoordinate(x, y);
 								Parameters.leftArea.clear();
-								StacViz.graph.clearHighlights();
+								Main.graph.clearHighlights();
 
 								if(ver != null)
 								{
@@ -747,7 +747,7 @@ public class StacFrame extends JFrame
 							
 							else if(m.getClickCount() == 2)
 							{
-								AbstractVertex ver = StacViz.graph.getVertexNearestCoordinate(x, y);
+								AbstractVertex ver = Main.graph.getVertexNearestCoordinate(x, y);
 								if(ver != null)
 								{
 									if(ver.getMergeChildren().size() > 0) //We have a merge vertex
@@ -759,11 +759,11 @@ public class StacFrame extends JFrame
 							}
 						}
 						
-						if(SwingUtilities.isRightMouseButton(m) && StacViz.graph != null)
+						if(SwingUtilities.isRightMouseButton(m) && Main.graph != null)
 						{
 							//if(m.getClickCount() == 1)
 							{
-								AbstractVertex ver = StacViz.graph.getVertexNearestCoordinate(x, y);
+								AbstractVertex ver = Main.graph.getVertexNearestCoordinate(x, y);
 								if(ver != null)
 								{
 									if(ver.getMergeParent() != null)
@@ -806,14 +806,14 @@ public class StacFrame extends JFrame
 					if(mouseDrag)
 					{
 						mouseDrag = false;
-						if(StacViz.graph != null)
+						if(Main.graph != null)
 						{
 							double x1 = vizPanel.getBackX(vizPanel.selectLeft);
 							double x2 = vizPanel.getBackX(vizPanel.selectRight);
 							double y1 = vizPanel.getBackY(vizPanel.selectTop);
 							double y2 = vizPanel.getBackY(vizPanel.selectBottom);
 
-							StacViz.graph.selectVertices(x1, x2, y1, y2);
+							Main.graph.selectVertices(x1, x2, y1, y2);
 						}
 						Parameters.repaintAll();
 					}
@@ -864,7 +864,7 @@ public class StacFrame extends JFrame
 						}
 						else
 						{
-							StacViz.graph.increaseZoom(Parameters.zoomFactor);
+							Main.graph.increaseZoom(Parameters.zoomFactor);
 						}
 					}
 					else
@@ -875,7 +875,7 @@ public class StacFrame extends JFrame
 						}
 						else
 						{
-							StacViz.graph.increaseZoom(1/Parameters.zoomFactor);
+							Main.graph.increaseZoom(1/Parameters.zoomFactor);
 						}
 					}
 					
@@ -902,7 +902,7 @@ public class StacFrame extends JFrame
 					double x = contextPanel.getBackX(getX(m));
 					double y = contextPanel.getBackY(getY(m));
 
-					StacViz.graph.zoomNPan(x, y, 1.0);
+					Main.graph.zoomNPan(x, y, 1.0);
 					Parameters.repaintAll();
 
 					if(System.currentTimeMillis() - Parameters.mouseLastTime > Parameters.mouseInterval)
@@ -943,13 +943,13 @@ public class StacFrame extends JFrame
 					if(mouseDrag)
 					{
 						mouseDrag = false;
-						if(StacViz.graph != null)
+						if(Main.graph != null)
 						{
 							double x1 = contextPanel.getBackX(contextPanel.selectLeft);
 							double x2 = contextPanel.getBackX(contextPanel.selectRight);
 							double y1 = contextPanel.getBackY(contextPanel.selectTop);
 							double y2 = contextPanel.getBackY(contextPanel.selectBottom);
-							StacViz.graph.zoomNPan(x1, x2, y1, y2);
+							Main.graph.zoomNPan(x1, x2, y1, y2);
 						}
 						Parameters.repaintAll();
 					}
@@ -1050,13 +1050,13 @@ public class StacFrame extends JFrame
 						{
 							//Assign hotkey to view
 							System.out.println("Assigning hotkey to " + digit);
-							StacViz.graph.addHotkeyedView(digit);
+							Main.graph.addHotkeyedView(digit);
 						}
 						else
 						{
 							//Go to hotkeyed view
 							System.out.println("Loading hotkeyed view: " + digit);
-							StacViz.graph.loadHotkeyedView(digit);
+							Main.graph.loadHotkeyedView(digit);
 							Parameters.repaintAll();
 						}
 					}

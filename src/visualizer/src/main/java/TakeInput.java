@@ -11,28 +11,28 @@ import java.util.LinkedHashMap;
 import java.util.StringTokenizer;
 
 
-public class TakeInput extends Thread//implements Runnable
+public class TakeInput extends Thread
 {
 	BufferedReader input;
 
 	public void run()
 	{
-		StacViz.graph = new Graph();
+		Main.graph = new Graph();
 		this.parseDefault();
 		
-		StacViz.graph.finalizeParentsForRootChildren();
-		StacViz.graph.identifyLoops();
-		StacViz.graph.calcLoopHeights();
-		StacViz.graph.mergeAllByMethod();
-		StacViz.graph.mergePaths();
-		StacViz.graph.computeInstLists();
-		StacViz.graph.setAllMethodHeight();
-		StacViz.graph.collapseAll();
+		Main.graph.finalizeParentsForRootChildren();
+		Main.graph.identifyLoops();
+		Main.graph.calcLoopHeights();
+		Main.graph.mergeAllByMethod();
+		Main.graph.mergePaths();
+		Main.graph.computeInstLists();
+		Main.graph.setAllMethodHeight();
+		Main.graph.collapseAll();
 		Parameters.mouseLastTime = System.currentTimeMillis();
 		Parameters.repaintAll();
 		
-		System.out.println("number of vertices = " + StacViz.graph.vertices.size());
-		System.out.println("number of method vertices = " + StacViz.graph.methodVertices.size());
+		System.out.println("number of vertices = " + Main.graph.vertices.size());
+		System.out.println("number of method vertices = " + Main.graph.methodVertices.size());
 	}
 	
 	public void setSystemInput()
@@ -48,7 +48,8 @@ public class TakeInput extends Thread//implements Runnable
 			
 			if(this.input == null)
 				System.out.println("null file");
-			
+			else
+				Parameters.stFrame.setTitle("STAC Visualizer: " + file);			
 		}
 		catch(IOException ex)
 		{
@@ -72,7 +73,7 @@ public class TakeInput extends Thread//implements Runnable
 			line = input.readLine();
 			while(!Parameters.cut_off)
 			{
-				if(StacViz.graph.vertices.size()>=Parameters.limitV)
+				if(Main.graph.vertices.size()>=Parameters.limitV)
 				{
 					Parameters.cut_off = true;
 					break;
@@ -124,7 +125,7 @@ public class TakeInput extends Thread//implements Runnable
 						this.defaultAddVertex(id, desc);
 						if((System.currentTimeMillis()-Parameters.startTime)/Parameters.interval>Parameters.lastInterval)
 						{
-							System.out.println("number of vertices up to now = "+StacViz.graph.vertices.size());
+							System.out.println("number of vertices up to now = "+Main.graph.vertices.size());
 							Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.interval;
 						}
 					}
@@ -145,10 +146,10 @@ public class TakeInput extends Thread//implements Runnable
 						line = input.readLine();
 						
 						tempStr = tempStr + line.trim();
-						StacViz.graph.addEdge(tempStr);
+						Main.graph.addEdge(tempStr);
 						if((System.currentTimeMillis()-Parameters.startTime)/Parameters.interval>Parameters.lastInterval)
 						{
-							System.out.println("number of vertices up to now = "+StacViz.graph.vertices.size());
+							System.out.println("number of vertices up to now = "+Main.graph.vertices.size());
 							Parameters.repaintAll();
 							Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.interval;
 						}
@@ -209,7 +210,7 @@ public class TakeInput extends Thread//implements Runnable
 				int ind = Integer.parseInt(stmtMatcher.group(8));
 				int ln = Integer.parseInt(stmtMatcher.group(9));
 
-				StacViz.graph.addVertex(id, method, inst, description, ind, ln, true);
+				Main.graph.addVertex(id, method, inst, description, ind, ln, true);
 			}
 			else
 			{
@@ -219,7 +220,7 @@ public class TakeInput extends Thread//implements Runnable
 		}
 		else if(desc.indexOf("org.ucombinator.jaam.ErrorState$") >= 0)
 		{
-			StacViz.graph.addVertex(id, "ErrorState", "", "ErrorState", -1, -1, false);
+			Main.graph.addVertex(id, "ErrorState", "", "ErrorState", -1, -1, false);
 		}
 		else
 		{

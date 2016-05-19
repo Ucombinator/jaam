@@ -60,7 +60,7 @@ public class CodeArea extends JTextArea
 					{
 						Highlighter h = CodeArea.this.getHighlighter();
 						h.removeAllHighlights();
-						StacViz.graph.clearHighlights();
+						Main.graph.clearHighlights();
 					
 						if(row >= 0 && row < rowToIndex.size())
 						{
@@ -75,7 +75,7 @@ public class CodeArea extends JTextArea
 						}
 					}
 					
-					StacViz.graph.redoCycleHighlights();
+					Main.graph.redoCycleHighlights();
 					Parameters.repaintAll();
 				}
 				
@@ -96,7 +96,7 @@ public class CodeArea extends JTextArea
 	public void searchByJimpleIndex(String method, int index, boolean addHighlight)
 	{
 		//Next we either add or remove the highlighted vertices
-		for(Vertex v : StacViz.graph.vertices)
+		for(Vertex v : Main.graph.vertices)
 		{
 			if(v.getMethodName().contains(method) && v.jimpleIndex == index)
 			{				
@@ -122,7 +122,7 @@ public class CodeArea extends JTextArea
 	{
 		//System.out.println("Setting new description for left area");
 		description = new ArrayList<Instruction>();
-		this.methods = StacViz.graph.collectHighlightedMethods();
+		this.methods = Main.graph.collectHighlightedMethods();
 		
 		for(Method method : this.methods)
 		{
