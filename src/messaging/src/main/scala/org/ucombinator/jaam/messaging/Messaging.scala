@@ -11,44 +11,62 @@ import com.esotericsoftware.kryo.io._
 import com.twitter.chill.ScalaKryoInstantiator
 import soot.{Unit => _, _}
 
+
+////////////////////////////////////////
+// Methods and types for reading and writing message
+////////////////////////////////////////
+
 object Message {
+  // Types for reading and writing messages
+  // These extend from Kryo instead of a type alias to keep Java happy
   class Input(in : InputStream) extends com.esotericsoftware.kryo.io.Input(in) {}
   class Output(out : OutputStream) extends com.esotericsoftware.kryo.io.Output(out) {}
 
-  val instantiator = new ScalaKryoInstantiator
-  val kryo = instantiator.newKryo()
-  kryo.addDefaultSerializer(classOf[soot.util.Chain[java.lang.Object]], classOf[com.esotericsoftware.kryo.serializers.FieldSerializer[java.lang.Object]])
-  UnmodifiableCollectionsSerializer.registerSerializers(kryo)
-
+  // Lift an InputStream to Message.Input
   def openInput(in : InputStream) : Input =
     new Input(in)
 
+  // Lift an OutputStream to Message.Output
   def openOutput(out : OutputStream) : Output =
     new Output(out)
 
-// TODO: check for exceptions
+  // Reads a 'Message' from 'in'
+  // TODO: check for exceptions
   def read(in : Input) : Message = {
-    val o = kryo.readClassAndObject(in)
-    o match {
+    kryo.readClassAndObject(in) match {
       case o : Message => o
       case _ => throw new Exception("TODO: Message.read failed")
     }
   }
 
+  // Writes the 'Message' 'm' to 'out'
   def write(out : Output, m : Message) : Unit = {
     kryo.writeClassAndObject(out, m)
   }
+
+  // Initialize Kryo
+  val instantiator = new ScalaKryoInstantiator
+  val kryo = instantiator.newKryo()
+  kryo.addDefaultSerializer(classOf[soot.util.Chain[java.lang.Object]], classOf[com.esotericsoftware.kryo.serializers.FieldSerializer[java.lang.Object]])
+  UnmodifiableCollectionsSerializer.registerSerializers(kryo)
 }
+
 
 ////////////////////////////////////////
 // Message types
 ////////////////////////////////////////
 
+// The super type of all messages
 abstract class Message {}
-case class Done() extends Message {}
 
+// Signals that all messages are done
+// TODO: check if "object" is okay here
+case object Done() extends Message {}
+
+// Declare a transition edge between two 'State' nodes
 case class Edge(id : Id[Edge], src : Id[State], dst : Id[State]) extends Message {}
 
+// Declare 'AbstractState' nodes
 abstract class AbstractState(id : Id[AbstractState]) extends Message {}
 case class ErrorState(id : Id[AbstractState]) extends Message(id) {}
 case class State(id : Id[AbstractState], stmt : Stmt, framePointer : String, kontStack : String) extends Message(id) {}
@@ -57,10 +75,14 @@ case class State(id : Id[AbstractState], stmt : Stmt, framePointer : String, kon
 ////////////////////////////////////////
 // Types inside messages
 ////////////////////////////////////////
+
+// Identifiers qualified by a namespace
 case class Id[Namespace](id : Int) {
   // val namespace = classOf[Namespace]
 }
 
+// Type for statements (needed because 'SootStmt' doesn't specify the
+// 'SootMethod' that it is in)
 case class Stmt(stmt : SootStmt, method : SootMethod) {}
 
 
