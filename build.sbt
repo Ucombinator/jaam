@@ -10,3 +10,5 @@ lazy val check_rt_jar = project in file("src/check_rt_jar")
 lazy val analyzer = project in file("src/analyzer")
 
 lazy val visualizer = project in file("src/visualizer")
+
+lazy val messaging = project in file("src/messaging")
