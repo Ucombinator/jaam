@@ -1,14 +1,109 @@
 package org.ucombinator.jaam.messaging
 
+import java.io.InputStream
+import java.io.OutputStream
 import de.javakaffee.kryoserializers._
+import com.esotericsoftware.minlog.Log
+import com.esotericsoftware.kryo._
+import com.esotericsoftware.kryo.io._
+import com.twitter.chill.ScalaKryoInstantiator
+import soot.{Unit => _, _}
 
-abstract class Message {}
 
 object Message {
+  type Input = com.esotericsoftware.kryo.io.Input
+  type Output = com.esotericsoftware.kryo.io.Output
 
-case class Edge(x : Int, y : Int) {}
+  val instantiator = new ScalaKryoInstantiator
+  val kryo = instantiator.newKryo()
+
+  kryo.addDefaultSerializer(classOf[soot.util.Chain[java.lang.Object]], classOf[com.esotericsoftware.kryo.serializers.FieldSerializer[java.lang.Object]])
+
+  UnmodifiableCollectionsSerializer.registerSerializers( kryo )
+
+  def openInput(in : InputStream) : Input =
+    new Input(in)
+
+  def openOutput(out : OutputStream) : Output =
+    new Output(out)
+
+// TODO: check for exceptions
+  def read(in : Input) : Message = {
+    val o = kryo.readClassAndObject(in)
+    o match {
+      case o : Message => o
+      case _ => throw new Exception("TODO: Message.read failed")
+    }
+  }
+
+  def write(out : Output, m : Message) : Unit = {
+    kryo.writeClassAndObject(out, m)
+  }
+
+
+
+  abstract class Message {}
+
+  case class Edge(x : Int, y : Int) extends Message {}
 
 }
+
+
+/*
+
+
+AbstractState
+  ErrorState
+  State(Stmt, FramePointer, KontStack)
+
+Stmt(SootStmt, SootMethod)
+
+
+FramePointer
+  InvariantFramePointer
+  ZeroCFAFramePointer(SootMethod)
+  OneCFAFramePointer(SootMethod, Stmt)
+  InitialFramePointer
+
+From
+  FromNative
+  FromJava
+
+BasePointer
+  OneCFABasePointer(Stmt, FramePointer, From)
+  InitialBasePointer
+  StringBasePointer(String)
+  ClassBasePointer(String)
+
+Value
+  AtomicValue
+    AnyAtomicValue
+  ObjectValue(SootClass, BasePointer)
+  ArrayValue(SootType, BasePointer)
+
+KontAddr
+  OneCFAKontAddr
+
+Addr
+  FrameAddr
+    LocalFrameAddr(FramePointer, Local)
+    ParameterFrameAddr(FramePointer, Int)
+    ThisFrameAddr
+    CaughtExceptionFrameAddr
+  InstanceFieldAddr
+  ArrayRefAddr
+  ArrayLengthAddr
+  StaticFieldAddr
+
+Store
+KontStack(Kont)
+
+Kont
+  RetKont(Frame, KontAddr)
+  HaltKont
+
+Frame(Stmt, FramePointer, Option[Set[Addr]]))
+ */
 
 /*
 
