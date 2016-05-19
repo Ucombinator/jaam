@@ -10,6 +10,7 @@ import com.esotericsoftware.kryo._
 import com.esotericsoftware.kryo.io._
 import com.twitter.chill.ScalaKryoInstantiator
 import soot.{Unit => _, _}
+import soot.jimple.{Stmt => SootStmt}
 
 
 ////////////////////////////////////////
@@ -61,7 +62,7 @@ abstract class Message {}
 
 // Signals that all messages are done
 // TODO: check if "object" is okay here
-case object Done() extends Message {}
+case object Done extends Message {}
 
 // Declare a transition edge between two 'State' nodes
 case class Edge(id : Id[Edge], src : Id[State], dst : Id[State]) extends Message {}
