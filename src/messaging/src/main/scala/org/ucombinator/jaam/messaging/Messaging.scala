@@ -68,8 +68,8 @@ case class Edge(id : Id[Edge], src : Id[State], dst : Id[State]) extends Message
 
 // Declare 'AbstractState' nodes
 abstract class AbstractState(id : Id[AbstractState]) extends Message {}
-case class ErrorState(id : Id[AbstractState]) extends Message(id) {}
-case class State(id : Id[AbstractState], stmt : Stmt, framePointer : String, kontStack : String) extends Message(id) {}
+case class ErrorState(id : Id[AbstractState]) extends AbstractState(id) {}
+case class State(id : Id[AbstractState], stmt : Stmt, framePointer : String, kontStack : String) extends AbstractState(id) {}
 
 
 ////////////////////////////////////////
