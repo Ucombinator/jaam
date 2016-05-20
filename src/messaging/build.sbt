@@ -8,7 +8,7 @@ libraryDependencies ++= Seq(
   "org.scalatest" % "scalatest_2.10" % "2.0" % "test",
   "com.github.scopt" %% "scopt" % "3.3.0",
   "org.scala-lang" % "scala-reflect" % "2.10.6",
-  "com.twitter" %% "chill" % "0.3.6",
+  "com.twitter" % "chill_2.10" % "0.8.0",
   "de.javakaffee" % "kryo-serializers" % "0.37"
 )
 
