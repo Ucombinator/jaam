@@ -1,4 +1,6 @@
 
+import org.ucombinator.jaam.messaging.Message;
+
 public class Main
 {
 	public static Graph graph;
@@ -24,14 +26,14 @@ public class Main
 			{
 				i++;
 				
-				String file ="";
+				String file;
 				if(args[i].startsWith("./") || args[i].startsWith("/"))
 				{
-					file=args[i];
+					file = args[i];
 				}
 				else
 				{
-					file="./"+args[i];
+					file = "./"+args[i];
 				}
 				
 				Parameters.pwd = Parameters.folderFromPath(file);

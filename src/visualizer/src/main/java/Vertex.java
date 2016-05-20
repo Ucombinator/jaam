@@ -61,6 +61,8 @@ public class Vertex extends AbstractVertex
 				+ "id: " + this.id + "\n"
 				+ "instruction: " + this.getInstruction() + "\n"
 				+ "method: " + this.getMethodName() + "\n\n"
+				+ " location (left, right, top, bottom): "
+				+ this.left + ", " + this.right + ", " + this.top + ", " + this.bottom + "\n"
 				+ this.getDescription() + "\n";
 		return str;
 	}

@@ -50,16 +50,36 @@ public class Graph
 		return maxH;
 	}
 	
-	public void increaseZoom(double factor)
+	public void increaseZoom(double factor, double mouseX, double mouseY)
 	{
 		//Don't allow zooming closer than this level
 		double currSize = this.currWindow.getFracArea();
 		if(factor > 1 || currSize > 1.0/Main.graph.vertices.size())
 		{
-			System.out.println("Zooming in...");
-			double centerX = (this.currWindow.left+this.currWindow.right)/2;
-			double centerY = (this.currWindow.top+this.currWindow.bottom)/2;
-			this.zoomNPan(centerX, centerY, factor);
+			if(mouseX < 0 || mouseY < 0)
+			{
+				System.out.println("Zooming in...");
+				double centerX = (this.currWindow.left+this.currWindow.right)/2;
+				double centerY = (this.currWindow.top+this.currWindow.bottom)/2;
+				this.zoomNPan(centerX, centerY, factor);
+			}
+			else
+			{
+				//Keep the current mouse location at the same relative position
+				double width = this.currWindow.right - this.currWindow.left;
+				double height = this.currWindow.bottom - this.currWindow.top;
+				double mouseXFrac = (mouseX - this.currWindow.left)/width;
+				double mouseYFrac = (mouseY - this.currWindow.top)/height;
+
+				double newLeft = mouseX - mouseXFrac*factor*width;
+				double newRight = mouseX + (1 - mouseXFrac)*factor*width;
+				double newCenterX = (newLeft + newRight)/2;
+
+				double newTop = mouseY - mouseYFrac*factor*height;
+				double newBottom = mouseY + (1 - mouseYFrac)*factor*height;
+				double newCenterY = (newTop + newBottom)/2;
+				this.zoomNPan(newCenterX, newCenterY, factor);
+			}
 		}
 	}
 	
@@ -1035,12 +1055,14 @@ public class Graph
 			System.out.println(v.getName() + ": " + v.x + ", " + v.y + ", left = " + v.left + ", right = " + v.right + ", width = " + v.width + ", top = " + v.top + ", bottom = " + v.bottom + ", height = " + v.height);
 		}
 	}
-	
+
+	//Return the width of our graph in box units
 	public double getWidth()
 	{
 		return root.width;
 	}
-	
+
+	//Return the height of our graph in box units
 	public double getHeight()
 	{
 		return root.height - 1;

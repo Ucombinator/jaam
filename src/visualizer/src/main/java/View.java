@@ -1,5 +1,6 @@
 
 //Stores a view of a graph (left, right, top, bottom)
+//Each of these values is stored as a double between 0 and 1
 public class View
 {
 	double left, right, top, bottom;
@@ -135,8 +136,6 @@ public class View
 	
 	public void zoomNPan(double centerX, double centerY, double factor)
 	{
-//		System.out.println("before ... left="+left+", right="+right+", top="+top+", bottom="+bottom+", factor="+factor);
-		
 		double xSpan = (this.left+this.right)/2;
 		double ySpan = (this.top+this.bottom)/2;
 		
@@ -152,6 +151,5 @@ public class View
 		
 		//Make sure that our coordinates are all within [0,1]
 		validateView();
-//		System.out.println("after ... left="+left+", right="+right+", top="+top+", bottom="+bottom+", factor="+factor);
 	}
 }

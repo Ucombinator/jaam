@@ -4,12 +4,8 @@ import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.regex.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.StringTokenizer;
-
+//import com.esotericsoftware.kryo.io.*;
 
 public class TakeInput extends Thread
 {
@@ -19,6 +15,7 @@ public class TakeInput extends Thread
 	{
 		Main.graph = new Graph();
 		this.parseDefault();
+		//this.parseMessages();
 		
 		Main.graph.finalizeParentsForRootChildren();
 		Main.graph.identifyLoops();
@@ -63,11 +60,11 @@ public class TakeInput extends Thread
 		int id = -1, start = 0, end = 0;
 		String desc = "", tempStr = "";
 		Pattern vertexPattern = Pattern.compile("(\"(\\d+)\":)");
-		
+
 		Parameters.cut_off = false;
 		Parameters.startTime = System.currentTimeMillis();
 		Parameters.lastInterval = -1;
-		
+
 		try
 		{
 			line = input.readLine();
@@ -89,22 +86,22 @@ public class TakeInput extends Thread
 					Parameters.cut_off = true;
 					break;
 				}
-				
-				
+
+
 				if(line.contains("\"states\":{"))
 				{
 					tempStr = "";
-					
+
 					while(true)
 					{
-						line = input.readLine();						
+						line = input.readLine();
 						if(line.trim().equalsIgnoreCase("\"edges\":["))
 							break;
-						
+
 						tempStr = tempStr + line + "\n";
-						
+
 					}
-					
+
 					Matcher vertexMatcher = vertexPattern.matcher(tempStr);
 					if(vertexMatcher.find())
 					{
@@ -129,22 +126,22 @@ public class TakeInput extends Thread
 							Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.interval;
 						}
 					}
-					
-					
+
+
 					while(true)
 					{
 						line = input.readLine();
 						if(line.trim().equalsIgnoreCase(""))
 							break;
-						
+
 						line = input.readLine();
-						
+
 						tempStr = line.trim();
 						tempStr = tempStr.substring(0, tempStr.length()-1);
 						tempStr = tempStr + " -> ";
-						
+
 						line = input.readLine();
-						
+
 						tempStr = tempStr + line.trim();
 						Main.graph.addEdge(tempStr);
 						if((System.currentTimeMillis()-Parameters.startTime)/Parameters.interval>Parameters.lastInterval)
@@ -153,9 +150,9 @@ public class TakeInput extends Thread
 							Parameters.repaintAll();
 							Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.interval;
 						}
-						
+
 						line = input.readLine();
-						
+
 						if(!line.contains(","))
 							break;
 					}
@@ -163,7 +160,7 @@ public class TakeInput extends Thread
 
 				line = input.readLine();
 			}
-			
+
 			this.input.close();
 		}
 		catch(IOException e)
@@ -172,6 +169,11 @@ public class TakeInput extends Thread
 		}
 
 	}
+
+	/*public void parseMessages()
+	{
+		return;
+	}*/
 	
 	public void defaultAddVertex(int id, String description)
 	{

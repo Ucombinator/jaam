@@ -15,8 +15,12 @@ public class VizPanel extends JPanel
 {
 	private boolean context;
 	private StacFrame parent;
-	private double maxWidth, maxHeight, minWidth, minHeight, boxwidth, boxheight;
-	private double left, top;
+	private double maxWidth, maxHeight, minWidth, minHeight, boxWidth, boxHeight;
+
+	//The leftMargin margin is the width of the panel minus the width of the currently displayed graph, divided by 2.
+	//The topMargin margin is the height of the panel minus the height of the currently displayed graph, divided by 2.
+	private double leftMargin, topMargin;
+
 	public boolean showSelection = false;
 	public double selectLeft, selectRight, selectTop, selectBottom;
 	public double boxSize = 1.0;
@@ -34,21 +38,21 @@ public class VizPanel extends JPanel
 	{		
 		Graph graph = Main.graph;
 
-		this.boxwidth = this.getWidth()*0.96/(graph.getWidth()*(graph.currWindow.right-graph.currWindow.left));
-		this.boxheight = this.getHeight()*0.96/(graph.getHeight()*(graph.currWindow.bottom-graph.currWindow.top));
+		this.boxWidth = this.getWidth()*0.96/(graph.getWidth()*(graph.currWindow.right-graph.currWindow.left));
+		this.boxHeight = this.getHeight()*0.96/(graph.getHeight()*(graph.currWindow.bottom-graph.currWindow.top));
 		
-		if(this.boxwidth>this.maxWidth)
+		if(this.boxWidth >this.maxWidth)
 		{
-			this.boxwidth = this.maxWidth;
+			this.boxWidth = this.maxWidth;
 		}
 
-		if(this.boxheight>this.maxHeight)
+		if(this.boxHeight >this.maxHeight)
 		{
-			this.boxheight = this.maxHeight;
+			this.boxHeight = this.maxHeight;
 		}
 
-		this.left = (this.getWidth()-this.boxwidth*graph.getWidth()*(graph.currWindow.right-graph.currWindow.left))/2;
-		this.top = (this.getHeight()-this.boxheight*graph.getHeight()*(graph.currWindow.bottom-graph.currWindow.top))/2;
+		this.leftMargin = (this.getWidth()-this.boxWidth *graph.getWidth()*(graph.currWindow.right-graph.currWindow.left))/2;
+		this.topMargin = (this.getHeight()-this.boxHeight *graph.getHeight()*(graph.currWindow.bottom-graph.currWindow.top))/2;
 
 		drawEdges(g);
 		drawVertices(g);
@@ -107,10 +111,10 @@ public class VizPanel extends JPanel
 		int x1, x2, y1, y2;
 		double fac = 0.25*this.boxSize;
 		
-		if(this.boxwidth < this.minWidth)
+		if(this.boxWidth < this.minWidth)
 		{
-			x1temp = ver.x - fac*this.minWidth/this.boxwidth;
-			x2temp = ver.x + fac*this.minWidth/this.boxwidth;
+			x1temp = ver.x - fac*this.minWidth/this.boxWidth;
+			x2temp = ver.x + fac*this.minWidth/this.boxWidth;
 		}
 		else
 		{
@@ -128,10 +132,10 @@ public class VizPanel extends JPanel
 		x2 = (int) this.getX(x2temp);
 		
 		
-		if(this.boxheight < this.minHeight)
+		if(this.boxHeight < this.minHeight)
 		{
-			y1temp = ver.y - fac*this.minHeight/this.boxheight;
-			y2temp = ver.y + fac*this.minHeight/this.boxheight;
+			y1temp = ver.y - fac*this.minHeight/this.boxHeight;
+			y2temp = ver.y + fac*this.minHeight/this.boxHeight;
 		}
 		else
 		{
@@ -175,7 +179,7 @@ public class VizPanel extends JPanel
 		else
 			this.drawCenteredString(g, ver.getName(), (int) (this.getX(ver.x)), (int) (this.getY(ver.y)), ff, Color.BLACK);
 		
-		if(this.boxwidth < this.minWidth || this.boxheight < this.minHeight)
+		if(this.boxWidth < this.minWidth || this.boxHeight < this.minHeight)
 			g.setColor(this.getColorT(Color.BLACK.getRGB()));
 		else
 			g.setColor(Color.BLACK);
@@ -245,14 +249,14 @@ public class VizPanel extends JPanel
 		//Start of arrow is at center of first box
 		y1temp = v.y;
 		
-		//If box 1 is above box 2, draw arrow to the center of the top line
+		//If box 1 is above box 2, draw arrow to the center of the topMargin line
 		if(v.y > nbr.y)
 		{
 			isCurved = true;
 			
-			if(this.boxheight < this.minHeight)
+			if(this.boxHeight < this.minHeight)
 			{
-				y2temp = nbr.y + fac*this.minHeight/this.boxheight;
+				y2temp = nbr.y + fac*this.minHeight/this.boxHeight;
 			}
 			else
 			{
@@ -264,9 +268,9 @@ public class VizPanel extends JPanel
 		else
 		{
 			isCurved = false;
-			if(this.boxheight < this.minHeight)
+			if(this.boxHeight < this.minHeight)
 			{
-				y2temp = nbr.y - fac*this.minHeight/this.boxheight;
+				y2temp = nbr.y - fac*this.minHeight/this.boxHeight;
 			}
 			else
 			{
@@ -400,23 +404,23 @@ public class VizPanel extends JPanel
 	    FontMetrics metrics = g.getFontMetrics(font);
 	    
 	    double width;
-	    if(this.boxwidth < this.minWidth)
+	    if(this.boxWidth < this.minWidth)
 	    {
 	    	width = this.minWidth * 0.5 * this.boxSize;
 	    }
 	    else
 	    {
-	    	width = this.boxwidth * 0.5 * this.boxSize;
+	    	width = this.boxWidth * 0.5 * this.boxSize;
 	    }
 	    
 	    double height;
-	    if(this.boxheight < this.minHeight)
+	    if(this.boxHeight < this.minHeight)
 	    {
 	    	height = this.minHeight * 0.5 * this.boxSize;
 	    }
 	    else
 	    {
-	    	height = this.boxheight * 0.5 * this.boxSize;
+	    	height = this.boxHeight * 0.5 * this.boxSize;
 	    }
 
 	    String[] lines = text.split("\n");
@@ -467,12 +471,12 @@ public class VizPanel extends JPanel
 	
 	/*public void drawHighlightedVertexMap(Graphics2D g)
 	{
-		double left = 0;
-		double right = (Main.graph.currWindow.right - Main.graph.currWindow.left)*Main.graph.getWidth();
-		double top = 0;
-		double bottom = (Main.graph.currWindow.bottom - Main.graph.currWindow.top)*Main.graph.getHeight();
-		double middleX = (left + right)/2.0;
-		double middleY = (top + bottom)/2.0;
+		double leftMargin = 0;
+		double right = (Main.graph.currWindow.right - Main.graph.currWindow.leftMargin)*Main.graph.getWidth();
+		double topMargin = 0;
+		double bottom = (Main.graph.currWindow.bottom - Main.graph.currWindow.topMargin)*Main.graph.getHeight();
+		double middleX = (leftMargin + right)/2.0;
+		double middleY = (topMargin + bottom)/2.0;
 		
 		int[] countVertices = new int[9];
 		for(int i = 0; i < 9; i++)
@@ -482,7 +486,7 @@ public class VizPanel extends JPanel
 		
 		for(AbstractVertex v : highlightedVertices)
 		{
-			//We split our window by the left, right, top, and bottom of the current view.
+			//We split our window by the leftMargin, right, topMargin, and bottom of the current view.
 			//This gives us nine possible regions. The eight outer regions are not contained
 			//in our current view, so we add an arrow for each one with the number of highlighted
 			//vertices it contains.
@@ -496,8 +500,8 @@ public class VizPanel extends JPanel
 			 *
 			
 			int currIndex = 0;
-			//x-position: left side = 0, middle = 1, right = 2
-			if(v.x >= left && v.x <= right)
+			//x-position: leftMargin side = 0, middle = 1, right = 2
+			if(v.x >= leftMargin && v.x <= right)
 			{
 				currIndex++;
 			}
@@ -506,8 +510,8 @@ public class VizPanel extends JPanel
 				currIndex += 2;
 			}
 			
-			//y-position: top = 0, middle = 3, bottom = 6
-			if(v.y >= top && v.y <= bottom)
+			//y-position: topMargin = 0, middle = 3, bottom = 6
+			if(v.y >= topMargin && v.y <= bottom)
 			{
 				currIndex += 3;
 			}
@@ -520,8 +524,8 @@ public class VizPanel extends JPanel
 		}
 		
 		double[] arrowAngle = {225, 270, 315, 180, -1, 0, 135, 90, 45};
-		double[] xPositions = {left, middleX, right, left, -1, right, left, middleX, right};
-		double[] yPositions = {top, top, top, middleY, middleY, middleY, bottom, bottom, bottom};
+		double[] xPositions = {leftMargin, middleX, right, leftMargin, -1, right, leftMargin, middleX, right};
+		double[] yPositions = {topMargin, topMargin, topMargin, middleY, middleY, middleY, bottom, bottom, bottom};
 		int arrowLength = 20;
 		
 		g.setColor(Color.BLACK);
@@ -534,8 +538,8 @@ public class VizPanel extends JPanel
 			if(i != 4)
 			{
 				arrowAngle[i] *= Math.PI/180.0; //Convert angles to radians
-				int x1 = (int) (this.getX(xPositions[i]));
-				int y1 = (int) (this.getY(yPositions[i]));
+				int x1 = (int) (this.getRelativeXPixels(xPositions[i]));
+				int y1 = (int) (this.getRelativeYPixels(yPositions[i]));
 				int x2 = x1 + (int)(arrowLength*Math.cos(arrowAngle[i]));
 				int y2 = y1 + (int)(arrowLength*Math.sin(arrowAngle[i]));
 				//System.out.println(xPositions[i] + ", " + yPositions[i]);
@@ -550,17 +554,17 @@ public class VizPanel extends JPanel
 	{
 		Graph graph = Main.graph;
 
-		this.boxwidth = this.getWidth()*0.96/graph.getWidth();
-		this.boxheight = this.getHeight()*0.96/graph.getHeight();
+		this.boxWidth = this.getWidth()*0.96/graph.getWidth();
+		this.boxHeight = this.getHeight()*0.96/graph.getHeight();
 
-		if(this.boxwidth>this.maxWidth)
-			this.boxwidth = this.maxWidth;
+		if(this.boxWidth >this.maxWidth)
+			this.boxWidth = this.maxWidth;
 
-		if(this.boxheight>this.maxHeight)
-			this.boxheight = this.maxHeight;
+		if(this.boxHeight >this.maxHeight)
+			this.boxHeight = this.maxHeight;
 		
-		this.left = (this.getWidth()-this.boxwidth*graph.getWidth())/2;
-		this.top = (this.getHeight()-this.boxheight*graph.getHeight())/2;
+		this.leftMargin = (this.getWidth()-this.boxWidth *graph.getWidth())/2;
+		this.topMargin = (this.getHeight()-this.boxHeight *graph.getHeight())/2;
 
 		drawEdges(g);
 		drawVertices(g);
@@ -673,41 +677,50 @@ public class VizPanel extends JPanel
 		
 		g.dispose();
 	}
-	
-	public double getBackX(double x)
+
+	//Convert an absolute pixel location to a horizontal value between 0 and 1
+	public double getRelativeFracFromAbsolutePixelX(double x)
 	{
+		System.out.println("Absolute pixel: " + x);
+		System.out.println("Left side: " + this.leftMargin);
 		Graph graph = Main.graph;
 		if(this.context)
-			return (x-this.left)/(this.boxwidth*graph.getWidth());
+		{
+			return (x - this.leftMargin)/(this.boxWidth *graph.getWidth());
+		}
 		else
-			return (((x-this.left)/this.boxwidth)+(graph.getWidth()*graph.currWindow.left))/graph.getWidth();
-//			return (x-this.left)/(this.boxwidth*graph.getWidth()*(graph.currWindow.right-graph.currWindow.left))+graph.currWindow.left;
+		{
+			return ((x - this.leftMargin)/this.boxWidth)/graph.getWidth() + graph.currWindow.left;
+		}
 	}
-	
-	public double getBackY(double y)
+
+	//Convert an absolute pixel location to a vertical value between 0 and 1
+	public double getRelativeFracFromAbsolutePixelY(double y)
 	{
+		System.out.println("Absolute pixel: " + y);
+		System.out.println("Top: " + this.topMargin);
 		Graph graph = Main.graph;
 		if(this.context)
-			return (y-this.top)/(this.boxheight*graph.getHeight());
-//			return (y-this.top)/(this.boxheight);
+			return (y-this.topMargin)/(this.boxHeight *graph.getHeight());
 		else
-			return (((y-this.top)/this.boxheight)+(graph.getHeight()*graph.currWindow.top))/graph.getHeight();
-//			return (y-this.top)/(this.boxheight*graph.getHeight()*(graph.currWindow.bottom-graph.currWindow.top))+graph.currWindow.top;
+			return (((y-this.topMargin)/this.boxHeight)+(graph.getHeight()*graph.currWindow.top))/graph.getHeight();
 	}
 	
 	public StacFrame getParent()
 	{
 		return parent;
 	}
-	
+
+	//Convert a horizontal box index to an absolute x pixel location
 	public double getX(double x)
 	{
-		return this.left + this.boxwidth * x;
+		return this.leftMargin + this.boxWidth * x;
 	}
-	
+
+	//Convert a vertical box index to an absolute y pixel location
 	public double getY(double y)
 	{
-		return this.top + this.boxheight * y;
+		return this.topMargin + this.boxHeight * y;
 	}
 	
 	public void console(String str)

@@ -43,7 +43,6 @@ import java.awt.Font;
  *
  */
 
-
 public class StacFrame extends JFrame
 {
 	private JMenuBar menuBar;
@@ -271,7 +270,7 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						Main.graph.increaseZoom(Parameters.zoomFactor);
+						Main.graph.increaseZoom(Parameters.zoomFactor, -1, -1);
 						Parameters.repaintAll();
 					}
 				}
@@ -285,7 +284,7 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						Main.graph.increaseZoom(1/Parameters.zoomFactor);
+						Main.graph.increaseZoom(1/Parameters.zoomFactor, -1, -1);
 						Parameters.repaintAll();
 					}
 				}
@@ -701,8 +700,8 @@ public class StacFrame extends JFrame
 					
 					vizPanel.requestFocusInWindow();
 					context = false;
-					double x = vizPanel.getBackX(getX(m))*Main.graph.getWidth();
-					double y = vizPanel.getBackY(getY(m))*Main.graph.getHeight();
+					double x = vizPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(m))*Main.graph.getWidth();
+					double y = vizPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(m))*Main.graph.getHeight();
 					
 					if(System.currentTimeMillis() - Parameters.mouseLastTime > Parameters.mouseInterval)
 					{
@@ -787,8 +786,8 @@ public class StacFrame extends JFrame
 					if(!checkGraph())
 						return;
 					context = false;
-					vizPanel.selectLeft = getX(m);
-					vizPanel.selectTop = getY(m);
+					vizPanel.selectLeft = getRelativeXPixels(m);
+					vizPanel.selectTop = getRelativeYPixels(m);
 					vizPanel.showSelection = true;
 					
 					Parameters.startTime = System.currentTimeMillis();
@@ -808,10 +807,10 @@ public class StacFrame extends JFrame
 						mouseDrag = false;
 						if(Main.graph != null)
 						{
-							double x1 = vizPanel.getBackX(vizPanel.selectLeft);
-							double x2 = vizPanel.getBackX(vizPanel.selectRight);
-							double y1 = vizPanel.getBackY(vizPanel.selectTop);
-							double y2 = vizPanel.getBackY(vizPanel.selectBottom);
+							double x1 = vizPanel.getRelativeFracFromAbsolutePixelX(vizPanel.selectLeft);
+							double x2 = vizPanel.getRelativeFracFromAbsolutePixelX(vizPanel.selectRight);
+							double y1 = vizPanel.getRelativeFracFromAbsolutePixelY(vizPanel.selectTop);
+							double y2 = vizPanel.getRelativeFracFromAbsolutePixelY(vizPanel.selectBottom);
 
 							Main.graph.selectVertices(x1, x2, y1, y2);
 						}
@@ -833,8 +832,8 @@ public class StacFrame extends JFrame
 						return;
 					context = false;
 					mouseDrag = true;
-					vizPanel.selectRight = getX(m);
-					vizPanel.selectBottom = getY(m);
+					vizPanel.selectRight = getRelativeXPixels(m);
+					vizPanel.selectBottom = getRelativeYPixels(m);
 
 					if((System.currentTimeMillis()-Parameters.startTime)/Parameters.refreshInterval > Parameters.lastInterval)
 					{
@@ -864,7 +863,9 @@ public class StacFrame extends JFrame
 						}
 						else
 						{
-							Main.graph.increaseZoom(Parameters.zoomFactor);
+							double x = vizPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(e));
+							double y = vizPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(e));
+							Main.graph.increaseZoom(Parameters.zoomFactor, x, y);
 						}
 					}
 					else
@@ -875,7 +876,9 @@ public class StacFrame extends JFrame
 						}
 						else
 						{
-							Main.graph.increaseZoom(1/Parameters.zoomFactor);
+							double x = vizPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(e));
+							double y = vizPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(e));
+							Main.graph.increaseZoom(1/Parameters.zoomFactor, x, y);
 						}
 					}
 					
@@ -899,8 +902,8 @@ public class StacFrame extends JFrame
 					contextPanel.requestFocusInWindow();
 					context = true;
 					
-					double x = contextPanel.getBackX(getX(m));
-					double y = contextPanel.getBackY(getY(m));
+					double x = contextPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(m));
+					double y = contextPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(m));
 
 					Main.graph.zoomNPan(x, y, 1.0);
 					Parameters.repaintAll();
@@ -924,8 +927,8 @@ public class StacFrame extends JFrame
 					if(!checkGraph())
 						return;
 					context = true;
-					contextPanel.selectLeft = getX(m);
-					contextPanel.selectTop = getY(m);
+					contextPanel.selectLeft = getRelativeXPixels(m);
+					contextPanel.selectTop = getRelativeYPixels(m);
 					contextPanel.showSelection = true;
 					
 					Parameters.startTime = System.currentTimeMillis();
@@ -945,10 +948,10 @@ public class StacFrame extends JFrame
 						mouseDrag = false;
 						if(Main.graph != null)
 						{
-							double x1 = contextPanel.getBackX(contextPanel.selectLeft);
-							double x2 = contextPanel.getBackX(contextPanel.selectRight);
-							double y1 = contextPanel.getBackY(contextPanel.selectTop);
-							double y2 = contextPanel.getBackY(contextPanel.selectBottom);
+							double x1 = contextPanel.getRelativeFracFromAbsolutePixelX(contextPanel.selectLeft);
+							double x2 = contextPanel.getRelativeFracFromAbsolutePixelX(contextPanel.selectRight);
+							double y1 = contextPanel.getRelativeFracFromAbsolutePixelY(contextPanel.selectTop);
+							double y2 = contextPanel.getRelativeFracFromAbsolutePixelY(contextPanel.selectBottom);
 							Main.graph.zoomNPan(x1, x2, y1, y2);
 						}
 						Parameters.repaintAll();
@@ -972,8 +975,8 @@ public class StacFrame extends JFrame
 						return;
 					context = true;
 					mouseDrag = true;
-					contextPanel.selectRight = getX(m);
-					contextPanel.selectBottom = getY(m);
+					contextPanel.selectRight = getRelativeXPixels(m);
+					contextPanel.selectBottom = getRelativeYPixels(m);
 
 					if((System.currentTimeMillis()-Parameters.startTime)/Parameters.refreshInterval > Parameters.lastInterval)
 					{
@@ -1012,16 +1015,20 @@ public class StacFrame extends JFrame
 
 	}
 	
-	public double getX(MouseEvent m)
+	//Gets the x location of a mouse event in pixels, shifted so that the left side is 0.
+	public double getRelativeXPixels(MouseEvent m)
 	{
 		if(this.context)
-			return m.getX() - contextPanel.getLocation().x;// - this.leftPanel.getWidth() - centerPanel.getDividerSize();
+			return m.getX() - contextPanel.getLocation().x;
 		else
 			return m.getX() - vizPanel.getLocation().x - this.leftPanel.getWidth() - centerSplitPane.getDividerSize();
 	}
-	
-	public double getY(MouseEvent m)
+
+	//Gets the y location of a mouse event in pixels, shifted so that the top of the current panel is 0.
+	public double getRelativeYPixels(MouseEvent m)
 	{
+		//TODO: Why is this not different for the context menu?
+		//Subtract the top bar, the menu panel height, and the start height of the current panel
 		return m.getY() - (this.getHeight() - this.getContentPane().getSize().height) - vizPanel.getY() - this.menuPanel.getHeight();
 	}
 

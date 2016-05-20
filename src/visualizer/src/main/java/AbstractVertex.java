@@ -26,8 +26,10 @@ public abstract class AbstractVertex
 	//children stores all of the vertices to which we have edges from this vertex
 	//incoming stores all of the vertices that have edges into this vertex
 	protected ArrayList<AbstractVertex> neighbors, children, incoming;
-	
-	protected double x, y, left, right, top, bottom, width, height;
+
+	//I have no idea what these are...
+	protected double left, right, top, bottom;
+	protected double x, y, width, height;
 	
 	//Since merging occurs as a tree, we only have one merge parent and one merge root
 	//The parent is the vertex on the line above us?

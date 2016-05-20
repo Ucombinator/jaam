@@ -12,13 +12,10 @@ import java.awt.Font;
 public class Parameters
 {
 	public static int width = 1200, height = 800;
-	public static int contextWidth = 600, contextHeight = 800;
-	public static int consoleRow = 5, consoleColumn = 10;
 	public static double minBoxWidth = 20, minBoxHeight = 20;
-	public static double thresholdWidth = 75, thresholdHeight = 75;
 	public static double zoomFactor = 3.0/4.0, boxFactor = 3.0/4.0;
 	public static int boxLines = 3;
-	public static StacFrame stFrame, contextFrame;
+	public static StacFrame stFrame;
 	public static JTextArea rightArea;
 	public static CodeArea leftArea;
 	public static String pwd = "../..";
@@ -28,9 +25,7 @@ public class Parameters
 	public static int transparency = 160;
 	public static Font font = new Font("Serif", Font.PLAIN, 14);
 	
-	public static boolean debug = false, loading = false;
-	public static long ThreadSleep = 1;
-	public static boolean willSleep = false;
+	public static boolean debug = false;
 	public static long interval = 5000, startTime, lastInterval, refreshInterval = 200;
 	public static long mouseInterval = 100, mouseLastTime;
 	public static boolean highlightIncoming = false, highlightOutgoing = false, vertexHighlight = true;
