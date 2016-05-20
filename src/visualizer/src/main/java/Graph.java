@@ -56,6 +56,8 @@ public class Graph
 		double currSize = this.currWindow.getFracArea();
 		if(factor > 1 || currSize > 1.0/Main.graph.vertices.size())
 		{
+			//Error values mean we don't have a valid mouse location, so we zoom to the center.
+			//This will most likely occur when someone decides to use the menu items.
 			if(mouseX < 0 || mouseY < 0)
 			{
 				System.out.println("Zooming in...");
@@ -65,7 +67,7 @@ public class Graph
 			}
 			else
 			{
-				//Keep the current mouse location at the same relative position
+				//Keep the current mouse location at the same relative position.
 				double width = this.currWindow.right - this.currWindow.left;
 				double height = this.currWindow.bottom - this.currWindow.top;
 				double mouseXFrac = (mouseX - this.currWindow.left)/width;

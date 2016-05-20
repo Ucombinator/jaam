@@ -81,18 +81,30 @@ public class StacFrame extends JFrame
 		//File menu
 		menuFile = new JMenu("File");
 		menuBar.add(menuFile);
-		JMenuItem loadGraph = new JMenuItem("Load graph");
+		JMenuItem loadGraph = new JMenuItem("Load graph from JSON"); //Will be removed soon
 		menuFile.add(loadGraph);
-		loadGraph.addActionListener
-		(
+		loadGraph.addActionListener(
 				new ActionListener()
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						loadGraphOperation();
+						loadGraph(false);
 					}
 				}
-		);		
+		);
+
+		JMenuItem loadMessages = new JMenuItem("Load graph from message file");
+		menuFile.add(loadMessages);
+		loadMessages.addActionListener(
+				new ActionListener()
+				{
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						loadGraph(true);
+					}
+				}
+		);
 		
 		//Search menu
 		menuSearch = new JMenu("Search");
@@ -586,7 +598,7 @@ public class StacFrame extends JFrame
 		rightPanel = new JPanel();
 		rightSplitPane.setRightComponent(rightPanel);
 
-		this.vizPanel = new VizPanel(this,false);
+		this.vizPanel = new VizPanel(this, false);
 		rightSplitPane.setLeftComponent(this.vizPanel);
 		this.contextPanel = new VizPanel(this,true);
 		leftSplitPane.setRightComponent(this.contextPanel);
@@ -618,14 +630,14 @@ public class StacFrame extends JFrame
 		leftSplitPane.resetToPreferredSizes();
 	}
 	
-	public void loadGraphOperation()
+	public void loadGraph(boolean fromMessages)
 	{
 		String file = Parameters.openFile();
 		if(file==null)
 			return;
+
 		TakeInput ti = new TakeInput();
-		ti.setFileInput(file);
-		ti.run();		
+		ti.run(file, fromMessages);
 		Parameters.repaintAll();
 	}
 	

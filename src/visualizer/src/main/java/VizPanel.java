@@ -38,6 +38,7 @@ public class VizPanel extends JPanel
 	{		
 		Graph graph = Main.graph;
 
+		//Provide a margin of 2% on each side?
 		this.boxWidth = this.getWidth()*0.96/(graph.getWidth()*(graph.currWindow.right-graph.currWindow.left));
 		this.boxHeight = this.getHeight()*0.96/(graph.getHeight()*(graph.currWindow.bottom-graph.currWindow.top));
 		
@@ -176,16 +177,21 @@ public class VizPanel extends JPanel
 		Font ff = new Font("Serif", Font.BOLD, Parameters.font.getSize());
 		if(!this.context)
 			this.drawCenteredString(g, ver.getName(), (int) (this.getX(ver.x - graph.currWindow.left*graph.getWidth())), (int) (this.getY(ver.y-graph.currWindow.top*graph.getHeight())), ff, Color.BLACK);
-		else
-			this.drawCenteredString(g, ver.getName(), (int) (this.getX(ver.x)), (int) (this.getY(ver.y)), ff, Color.BLACK);
+		//Remove labels from minimap
+		//else
+		//	this.drawCenteredString(g, ver.getName(), (int) (this.getX(ver.x)), (int) (this.getY(ver.y)), ff, Color.BLACK);
 		
 		if(this.boxWidth < this.minWidth || this.boxHeight < this.minHeight)
 			g.setColor(this.getColorT(Color.BLACK.getRGB()));
 		else
 			g.setColor(Color.BLACK);
-		
-		g.setStroke(new BasicStroke(1));
-		g.drawRect(x1, y1, x2 - x1, y2 - y1);
+
+		//Draw outline of boxes only in main window
+		if(!this.context)
+		{
+			g.setStroke(new BasicStroke(1));
+			g.drawRect(x1, y1, x2 - x1, y2 - y1);
+		}
 	}
 	
 	//If edges are turned on, draw all visible graph edges.
@@ -591,14 +597,11 @@ public class VizPanel extends JPanel
 	
 	public void paintComponent(Graphics g)
 	{
-//		super.repaint();
 		super.paintComponent(g);
 		this.setBackground(Color.WHITE);
 
 		if(Main.graph == null)
 			return;
-	
-//		g.fillOval(this.getWidth()-5, this.getHeight()-5, 5, 5);
 		
 		this.minWidth = Parameters.minBoxWidth;
 		this.minHeight = Parameters.minBoxHeight;
@@ -621,7 +624,8 @@ public class VizPanel extends JPanel
 		{
 			g.setColor(Parameters.colorFocus);
 			
-			if(graph.currWindow.left>0 || graph.currWindow.right<1 || graph.currWindow.top>0 || graph.currWindow.bottom<1)
+			if(graph.currWindow.left > 0 || graph.currWindow.right < 1
+					|| graph.currWindow.top > 0 || graph.currWindow.bottom < 1)
 			{
 				x1 = (int) this.getX(graph.getWidth()*graph.currWindow.left);
 				y1 = (int) this.getY(graph.getHeight()*graph.currWindow.top);
