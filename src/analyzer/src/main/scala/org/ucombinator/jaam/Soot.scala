@@ -52,9 +52,6 @@ object Stmt {
 }
 
 case class Stmt(val sootStmt : SootStmt, val sootMethod : SootMethod) {
-
-  def toMessage() : messaging.Stmt = messaging.Stmt(sootStmt, sootMethod)
-
   val index = Stmt.getIndex(sootStmt, sootMethod)
   val line = sootStmt.getJavaSourceStartLineNumber
   val column = sootStmt.getJavaSourceStartColumnNumber
@@ -65,6 +62,8 @@ case class Stmt(val sootStmt : SootStmt, val sootMethod : SootMethod) {
       if (sourceTag.getAbsolutePath != null) { sourceTag.getAbsolutePath + "/" } else { "" } + sourceTag.getSourceFile
     } else { "<unknown>" }
   }
+
+  def toMessage() : messaging.Stmt = messaging.Stmt(sootMethod, index, sootStmt)
   def nextSyntactic : Stmt = this.copy(sootStmt = Soot.getBody(sootMethod).getUnits().getSuccOf(sootStmt))
   def nextSemantic : List[Stmt] =
     sootStmt match {
