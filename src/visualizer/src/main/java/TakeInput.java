@@ -11,10 +11,10 @@ public class TakeInput extends Thread
 	Input messageInput;
 
 	//If file is empty, we read from System.in
-	public void run(String file, boolean messages) {
+	public void run(String file, boolean fromMessages) {
 		Main.graph = new Graph();
 
-		if(messages)
+		if(!fromMessages)
 			this.parseDefault(file);
 		else
 			this.parseMessages(file);
