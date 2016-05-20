@@ -1,21 +1,19 @@
 Features to add (w/ priority):
-- Check parser for subspace.out: 1
 - Change dragging: 1
 - Click on method name in left panel: 1
 - Create magnifier view option: 1
 - Remove boundaries of boxes (maybe just in minimap?): 1
 
-- Change mouse cursor to hourglass while loading graph: 2
 - Show expected format in search dialog boxes: 2
 - Change auto-scroll in left area: 2
 - Set scroll with arrow keys in left area: 2
 - Show which panel is focused on: 2
 - Set right-click drag on minimap to move currently selected area: 2
 - Fix aspect ratio: 2
-- Click on lines: 2
+- Click on edges: 2
 - Read Java code for method: 2
 - Add options menu for right-click on vertices: 2
-- Fix flickering in menus: 2
+- Fix flickering in menus (can’t identify reason): 2
 - Add comments in left area: 2
 - Use actual JSON parser: 2
 - Search interface: 2
@@ -56,3 +54,7 @@ Features to add (w/ priority):
 
 - Multiple windows with different views: 5
 - Expandable view for hotkeys across bottom (similar to context view?): 5
+
+Investigated, but probably won’t happen:
+- Check parser for subspace.out (Skip because we want to change to using messages anyway)
+- Change mouse cursor to hourglass while loading graph (seems really hard, a progress bar might be easier)
