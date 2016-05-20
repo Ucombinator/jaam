@@ -591,14 +591,11 @@ public class VizPanel extends JPanel
 	
 	public void paintComponent(Graphics g)
 	{
-//		super.repaint();
 		super.paintComponent(g);
 		this.setBackground(Color.WHITE);
 
 		if(Main.graph == null)
 			return;
-	
-//		g.fillOval(this.getWidth()-5, this.getHeight()-5, 5, 5);
 		
 		this.minWidth = Parameters.minBoxWidth;
 		this.minHeight = Parameters.minBoxHeight;
@@ -621,7 +618,8 @@ public class VizPanel extends JPanel
 		{
 			g.setColor(Parameters.colorFocus);
 			
-			if(graph.currWindow.left>0 || graph.currWindow.right<1 || graph.currWindow.top>0 || graph.currWindow.bottom<1)
+			if(graph.currWindow.left > 0 || graph.currWindow.right < 1
+					|| graph.currWindow.top > 0 || graph.currWindow.bottom < 1)
 			{
 				x1 = (int) this.getX(graph.getWidth()*graph.currWindow.left);
 				y1 = (int) this.getY(graph.getHeight()*graph.currWindow.top);
