@@ -1,6 +1,4 @@
 
-import org.ucombinator.jaam.messaging.Message;
-
 public class Main
 {
 	public static Graph graph;
@@ -10,6 +8,8 @@ public class Main
 		Parameters.stFrame = new StacFrame();
 		boolean load = false;
 		TakeInput ti = new TakeInput();
+		String file = "";
+
 		for(int i = 0; i < args.length; i++)
 		{
 			if(args[i].equalsIgnoreCase("--refresh") || args[i].equalsIgnoreCase("-r"))
@@ -25,8 +25,7 @@ public class Main
 			else if(args[i].equalsIgnoreCase("--file") || args[i].equalsIgnoreCase("-f"))
 			{
 				i++;
-				
-				String file;
+
 				if(args[i].startsWith("./") || args[i].startsWith("/"))
 				{
 					file = args[i];
@@ -38,12 +37,10 @@ public class Main
 				
 				Parameters.pwd = Parameters.folderFromPath(file);
 
-				ti.setFileInput(file);
 				load = true;
 			}
 			else if(args[i].equalsIgnoreCase("--pipe") || args[i].equalsIgnoreCase("-p"))
 			{
-				ti.setSystemInput();
 				load = true;
 			}
 			else if(args[i].equalsIgnoreCase("--debug") || args[i].equalsIgnoreCase("-d"))
@@ -62,7 +59,8 @@ public class Main
 		
 		if(load)
 		{
-			ti.run();
+			//From the command line, we can only load message file
+			ti.run(file, true);
 			Parameters.repaintAll();
 		}
 	}

@@ -1,22 +1,24 @@
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.regex.*;
 import java.util.StringTokenizer;
-//import com.esotericsoftware.kryo.io.*;
+import org.ucombinator.jaam.messaging.*;
+import org.ucombinator.jaam.messaging.Message.Input;
 
 public class TakeInput extends Thread
 {
-	BufferedReader input;
+	BufferedReader parseInput;
+	Input messageInput;
 
-	public void run()
-	{
+	//If file is empty, we read from System.in
+	public void run(String file, boolean messages) {
 		Main.graph = new Graph();
-		this.parseDefault();
-		//this.parseMessages();
-		
+
+		if(messages)
+			this.parseDefault(file);
+		else
+			this.parseMessages(file);
+
 		Main.graph.finalizeParentsForRootChildren();
 		Main.graph.identifyLoops();
 		Main.graph.calcLoopHeights();
@@ -27,23 +29,18 @@ public class TakeInput extends Thread
 		Main.graph.collapseAll();
 		Parameters.mouseLastTime = System.currentTimeMillis();
 		Parameters.repaintAll();
-		
+
 		System.out.println("number of vertices = " + Main.graph.vertices.size());
 		System.out.println("number of method vertices = " + Main.graph.methodVertices.size());
 	}
 	
-	public void setSystemInput()
-	{
-		this.input = new BufferedReader(new InputStreamReader(System.in));
-	}
-	
-	public void setFileInput(String file)
+	private void setFileInput(String file)
 	{
 		try
 		{
-			this.input = new BufferedReader(new FileReader(file));
+			this.parseInput = new BufferedReader(new FileReader(file));
 			
-			if(this.input == null)
+			if(this.parseInput == null)
 				System.out.println("null file");
 			else
 				Parameters.stFrame.setTitle("STAC Visualizer: " + file);			
@@ -54,8 +51,13 @@ public class TakeInput extends Thread
 		}
 	}
 	
-	public void parseDefault()
+	private void parseDefault(String file)
 	{
+		if(file.equals(""))
+			this.parseInput = new BufferedReader(new InputStreamReader(System.in));
+		else
+			this.setFileInput(file);
+
 		String line;
 		int id = -1, start = 0, end = 0;
 		String desc = "", tempStr = "";
@@ -67,7 +69,7 @@ public class TakeInput extends Thread
 
 		try
 		{
-			line = input.readLine();
+			line = parseInput.readLine();
 			while(!Parameters.cut_off)
 			{
 				if(Main.graph.vertices.size()>=Parameters.limitV)
@@ -77,7 +79,7 @@ public class TakeInput extends Thread
 				}
 				if(line==null||line.length()==0)
 				{
-					line = input.readLine();
+					line = parseInput.readLine();
 					continue;
 				}
 				if(line.equals("Done!"))
@@ -94,7 +96,7 @@ public class TakeInput extends Thread
 
 					while(true)
 					{
-						line = input.readLine();
+						line = parseInput.readLine();
 						if(line.trim().equalsIgnoreCase("\"edges\":["))
 							break;
 
@@ -130,17 +132,17 @@ public class TakeInput extends Thread
 
 					while(true)
 					{
-						line = input.readLine();
+						line = parseInput.readLine();
 						if(line.trim().equalsIgnoreCase(""))
 							break;
 
-						line = input.readLine();
+						line = parseInput.readLine();
 
 						tempStr = line.trim();
 						tempStr = tempStr.substring(0, tempStr.length()-1);
 						tempStr = tempStr + " -> ";
 
-						line = input.readLine();
+						line = parseInput.readLine();
 
 						tempStr = tempStr + line.trim();
 						Main.graph.addEdge(tempStr);
@@ -151,17 +153,17 @@ public class TakeInput extends Thread
 							Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.interval;
 						}
 
-						line = input.readLine();
+						line = parseInput.readLine();
 
 						if(!line.contains(","))
 							break;
 					}
 				}
 
-				line = input.readLine();
+				line = parseInput.readLine();
 			}
 
-			this.input.close();
+			this.parseInput.close();
 		}
 		catch(IOException e)
 		{
@@ -170,10 +172,26 @@ public class TakeInput extends Thread
 
 	}
 
-	/*public void parseMessages()
+	public void parseMessages(String file)
 	{
-		return;
-	}*/
+		if(file.equals(""))
+			messageInput = new Input(System.in);
+		try
+		{
+			messageInput = new Input(new FileInputStream(file));
+			Message message = Message.read(messageInput);
+
+			while(!(message instanceof Done))
+			{
+				System.out.println(message.toString());
+				message = Message.read(messageInput);
+			}
+		}
+		catch(FileNotFoundException e)
+		{
+			System.out.println(e);
+		}
+	}
 	
 	public void defaultAddVertex(int id, String description)
 	{
