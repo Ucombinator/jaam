@@ -57,6 +57,7 @@ import org.json4s._
 import org.json4s.native._
 
 import java.io.FileOutputStream
+import java.io.FileInputStream
 
 import org.ucombinator.jaam.messaging
 import org.ucombinator.jaam.messaging.{State => MState, AbstractState => MAbstractState, ErrorState => MErrorState, Edge => MEdge, Id, Message, Done}
@@ -1324,9 +1325,22 @@ object Main {
   }
 
   def defaultMode(config : Config) {
+    /* 
+    val inMessaging = Message.openInput(new FileInputStream("test.dat"))
+    def read() {
+      val message = Message.read(inMessaging)
+      message match {
+        case d: Done => println(message)
+        case m => 
+          println(m)
+          read()
+      }
+    }
+    read()
+    return
+    */
 
     val outMessaging = Message.openOutput(new FileOutputStream("test.dat"))
-
     val mainMainMethod : SootMethod = Soot.getSootClass(config.className).getMethodByName(config.methodName)
 
     // Setting up the GUI
@@ -1433,7 +1447,7 @@ object Main {
       println("Done processing state "+current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
     }
 
-    Message.write(outMessaging, Done)
+    //Message.write(outMessaging, Done)
     outMessaging.close()
 
 

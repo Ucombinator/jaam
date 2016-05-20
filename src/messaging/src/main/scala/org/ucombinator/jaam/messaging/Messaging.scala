@@ -4,6 +4,7 @@ package org.ucombinator.jaam.messaging
 
 import java.io.InputStream
 import java.io.OutputStream
+import scala.collection.mutable.ArrayBuffer
 import de.javakaffee.kryoserializers._
 import com.esotericsoftware.minlog.Log
 import com.esotericsoftware.kryo._
@@ -20,8 +21,32 @@ import soot.jimple.{Stmt => SootStmt}
 object Message {
   // Types for reading and writing messages
   // These extend from Kryo instead of a type alias to keep Java happy
-  class Input(in : InputStream) extends com.esotericsoftware.kryo.io.Input(in) {}
-  class Output(out : OutputStream) extends com.esotericsoftware.kryo.io.Output(out) {}
+  class Input(in : InputStream) extends com.esotericsoftware.kryo.io.Input(in) {
+    var isRead : Boolean = false
+    var ms : Array[Message] = Array.empty[Message]
+    var index : Int = 0
+    def pop() : Message = {
+      if (index <= ms.size) {
+        val m = ms(index)
+        index += 1
+        return m
+      }
+      Done()
+    }
+  }
+
+  class Output(out : OutputStream) extends com.esotericsoftware.kryo.io.Output(out) {
+    val buf: ArrayBuffer[Message] = ArrayBuffer.empty[Message]
+    def append(m : Message): Unit = {
+      buf += m
+    }
+    override def close() : Unit = {
+      //println("size of buf: " + buf.size)
+      append(Done())
+      kryo.writeClassAndObject(this, buf.toArray)
+      super.close()
+    }
+  }
 
   // Lift an InputStream to Message.Input
   def openInput(in : InputStream) : Input =
@@ -34,15 +59,21 @@ object Message {
   // Reads a 'Message' from 'in'
   // TODO: check for exceptions
   def read(in : Input) : Message = {
-    kryo.readClassAndObject(in) match {
-      case o : Message => o
-      case _ => throw new Exception("TODO: Message.read failed")
+    if (in.isRead) in.pop
+    else {
+      kryo.readClassAndObject(in) match {
+        case ms : Array[Message] => 
+          in.ms = ms
+          in.isRead = true
+        case _ => throw new Exception("TODO: Message.read failed")
+      }
+      read(in)
     }
   }
 
   // Writes the 'Message' 'm' to 'out'
   def write(out : Output, m : Message) : Unit = {
-    kryo.writeClassAndObject(out, m)
+    out.append(m)
   }
 
   // Initialize Kryo
@@ -62,7 +93,7 @@ abstract class Message {}
 
 // Signals that all messages are done
 // TODO: check if "object" is okay here
-case object Done extends Message {}
+case class Done extends Message {}
 
 // Declare a transition edge between two 'State' nodes
 case class Edge(id : Id[Edge], src : Id[AbstractState], dst : Id[AbstractState]) extends Message {}
