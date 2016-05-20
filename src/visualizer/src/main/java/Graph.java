@@ -357,8 +357,13 @@ public class Graph
 		ver.setInstruction(inst);
 		ver.setNameToInstruction();
 	}
+
+	public void addErrorState(int id)
+	{
+		this.addVertex(id, "ErrorState", "", "ErrorState", -1, false);
+	}
 	
-	public void addVertex(int v, String methodName, String inst, String desc, int ind, int line, boolean drawEdges)
+	public void addVertex(int v, String methodName, String inst, String desc, int ind, boolean drawEdges)
 	{
 		Vertex ver = this.containsVertex(v);
 		
@@ -372,10 +377,29 @@ public class Graph
 		ver.setDescription(desc);
 		ver.setInstruction(inst);
 		ver.setNameToInstruction();
-		ver.jimpleIndex = ind;
-		ver.jimpleLine = line;
 		ver.drawEdges = drawEdges;
 		
+		if(ind > this.maxIndex)
+			this.maxIndex = ind;
+	}
+
+	public void addVertex(int v, String methodName, String inst, int ind, boolean drawEdges)
+	{
+		Vertex ver = this.containsVertex(v);
+
+		if(ver == null)
+		{
+			ver = new Vertex(v, this.vertices.size());
+			this.vertices.add(ver);
+		}
+
+		this.matchVertexToMethod(ver, methodName);
+		//ver.setDescription(desc);
+		ver.setInstruction(inst);
+		ver.setNameToInstruction();
+		ver.jimpleIndex = ind;
+		ver.drawEdges = drawEdges;
+
 		if(ind > this.maxIndex)
 			this.maxIndex = ind;
 	}
@@ -399,8 +423,6 @@ public class Graph
 	public void addEdge(String line)
 	{
 		int src, dest;
-		Vertex vSrc, vDest;
-		
 		StringTokenizer token = new StringTokenizer(line);
 		
 		if(token.countTokens() != 3)
@@ -409,26 +431,35 @@ public class Graph
 		src = Integer.parseInt(token.nextToken());
 		token.nextToken();
 		dest = Integer.parseInt(token.nextToken());
+
+		addEdge(src, dest);
+	}
+
+	public void addEdge(int src, int dest)
+	{
+		Vertex vSrc, vDest;
+
 		if(src == dest)
 		{
 			//System.out.println("ERROR! Cannot add self-loop.");
 			return;
 		}
-		
+
 		vSrc = this.containsVertex(src);
 		if(vSrc==null)
 		{
 			vSrc=new Vertex(src, this.vertices.size());
 			this.vertices.add(vSrc);
 		}
+
 		vDest = this.containsVertex(dest);
 		if(vDest==null)
 		{
 			vDest=new Vertex(dest, this.vertices.size());
 			this.vertices.add(vDest);
 		}
-		vSrc.addNeighbor(vDest);
 
+		vSrc.addNeighbor(vDest);
 	}
 	
 	public void clearHighlights()

@@ -184,6 +184,32 @@ public class TakeInput extends Thread
 			while(!(message instanceof Done))
 			{
 				System.out.println(message.toString());
+
+				//Name collision with our own Edge class
+				if(message instanceof org.ucombinator.jaam.messaging.Edge)
+				{
+					org.ucombinator.jaam.messaging.Edge edgeMessage = (org.ucombinator.jaam.messaging.Edge) message;
+					int edgeId = edgeMessage.id().id();
+					int srcId = edgeMessage.src().id();
+					int destId = edgeMessage.dst().id();
+					Main.graph.addEdge(srcId, destId);
+				}
+				else if(message instanceof ErrorState)
+				{
+					int id = ((ErrorState) message).id().id();
+					Main.graph.addErrorState(id);
+				}
+				//Name collision with java.lang.Thread.State
+				else if(message instanceof org.ucombinator.jaam.messaging.State)
+				{
+					org.ucombinator.jaam.messaging.State stateMessage = (org.ucombinator.jaam.messaging.State) message;
+					int id = stateMessage.id().id();
+					String methodName = stateMessage.stmt().method().toString();
+					String instruction = stateMessage.stmt().stmt().toString();
+					int jimpleIndex = stateMessage.stmt().index();
+					Main.graph.addVertex(id, methodName, instruction, "", jimpleIndex, true);
+				}
+
 				message = Message.read(messageInput);
 			}
 		}
@@ -228,9 +254,8 @@ public class TakeInput extends Thread
 				String inst = this.stmtMatcherToInst(stmtMatcher);
 				String method = stmtMatcherToMethod(stmtMatcher);
 				int ind = Integer.parseInt(stmtMatcher.group(8));
-				int ln = Integer.parseInt(stmtMatcher.group(9));
 
-				Main.graph.addVertex(id, method, inst, description, ind, ln, true);
+				Main.graph.addVertex(id, method, inst, description, ind, true);
 			}
 			else
 			{
@@ -240,7 +265,7 @@ public class TakeInput extends Thread
 		}
 		else if(desc.indexOf("org.ucombinator.jaam.ErrorState$") >= 0)
 		{
-			Main.graph.addVertex(id, "ErrorState", "", "ErrorState", -1, -1, false);
+			Main.graph.addErrorState(id);
 		}
 		else
 		{

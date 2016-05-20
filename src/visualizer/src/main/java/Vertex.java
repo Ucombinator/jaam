@@ -3,7 +3,7 @@ import java.util.ArrayList;
 
 public class Vertex extends AbstractVertex
 {
-	public int jimpleIndex, jimpleLine;
+	public int jimpleIndex;
 	public String instList[];
 	public String description = "", instruction = "";
 	public MethodVertex mergeParent;
