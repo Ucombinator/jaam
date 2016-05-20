@@ -65,7 +65,7 @@ abstract class Message {}
 case object Done extends Message {}
 
 // Declare a transition edge between two 'State' nodes
-case class Edge(id : Id[Edge], src : Id[State], dst : Id[State]) extends Message {}
+case class Edge(id : Id[Edge], src : Id[AbstractState], dst : Id[AbstractState]) extends Message {}
 
 // Declare 'AbstractState' nodes
 abstract class AbstractState(id : Id[AbstractState]) extends Message {}
