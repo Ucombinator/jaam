@@ -377,6 +377,7 @@ public class Graph
 		ver.setDescription(desc);
 		ver.setInstruction(inst);
 		ver.setNameToInstruction();
+		ver.jimpleIndex = ind;
 		ver.drawEdges = drawEdges;
 		
 		if(ind > this.maxIndex)
