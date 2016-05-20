@@ -3,10 +3,9 @@ Features to add (w/ priority):
 - Change dragging: 1
 - Click on method name in left panel: 1
 - Create magnifier view option: 1
-- Set zoom to maintain position of current mouse location: 1
 - Remove boundaries of boxes (maybe just in minimap?): 1
 
-- Change mouse cursor to hourglass while loading graph
+- Change mouse cursor to hourglass while loading graph: 2
 - Show expected format in search dialog boxes: 2
 - Change auto-scroll in left area: 2
 - Set scroll with arrow keys in left area: 2
