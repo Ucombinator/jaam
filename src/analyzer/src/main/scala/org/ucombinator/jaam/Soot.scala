@@ -16,6 +16,8 @@ import org.json4s._
 import org.json4s.native._
 import org.json4s.reflect.Reflector
 
+import org.ucombinator.jaam.messaging
+
 // Helpers for working with Soot.
 //
 // Note that these methods relate to Soot only and do not include any
@@ -50,6 +52,9 @@ object Stmt {
 }
 
 case class Stmt(val sootStmt : SootStmt, val sootMethod : SootMethod) {
+
+  def toMessage() : messaging.Stmt = messaging.Stmt(sootStmt, sootMethod)
+
   val index = Stmt.getIndex(sootStmt, sootMethod)
   val line = sootStmt.getJavaSourceStartLineNumber
   val column = sootStmt.getJavaSourceStartColumnNumber

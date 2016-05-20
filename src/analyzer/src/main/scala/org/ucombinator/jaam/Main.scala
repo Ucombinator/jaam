@@ -56,6 +56,11 @@ import com.mxgraph.layout.mxCompactTreeLayout
 import org.json4s._
 import org.json4s.native._
 
+import java.io.FileOutputStream
+
+import org.ucombinator.jaam.messaging
+import org.ucombinator.jaam.messaging.{State => MState, AbstractState => MAbstractState, ErrorState => MErrorState, Edge => MEdge, Id, Message, Done}
+
 // Possibly thrown during transition between states.
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
 case class StringConstantException(string : String) extends RuntimeException
@@ -426,6 +431,8 @@ abstract sealed class AbstractState {
   def setInitializedClasses(classes: Set[SootClass]) : scala.Unit
   def getInitializedClasses() : Set[SootClass]
 
+  def toMessage() : MAbstractState
+
   val id = AbstractState.idMap.getOrElseUpdate(this, AbstractState.nextId)
 }
 
@@ -452,6 +459,7 @@ case object ErrorState extends AbstractState {
   override def setKWriteAddrs(s: Set[KontAddr]) = scala.Unit
   override def setInitializedClasses(classes: Set[SootClass]) = scala.Unit
   override def getInitializedClasses() : Set[SootClass] = Set()
+  override def toMessage() = messaging.ErrorState(Id[messaging.AbstractState](id))
 }
 
 // State abstracts a collection of concrete states of execution.
@@ -495,6 +503,8 @@ case class State(val stmt : Stmt,
     initializedClasses = classes
   }
   override def getInitializedClasses() : Set[SootClass] = initializedClasses
+
+  override def toMessage() = messaging.State(Id[messaging.AbstractState](id), stmt.toMessage, fp.toString, kontStack.toString)
 
   def copyState(stmt: Stmt = stmt,
                 fp: FramePointer = fp,
@@ -1314,6 +1324,9 @@ object Main {
   }
 
   def defaultMode(config : Config) {
+
+    val outMessaging = Message.openOutput(new FileOutputStream("test.dat"))
+
     val mainMainMethod : SootMethod = Soot.getSootClass(config.className).getMethodByName(config.methodName)
 
     // Setting up the GUI
@@ -1326,13 +1339,15 @@ object Main {
     var globalStore: Store = initialState.getStore
     var globalKontStore: KontStore = initialState.getKontStore
     var globalInitClasses: Set[SootClass] = Set()
+    var doneEdges: Map[Int,Pair[Int, Int]] = Map()
 
+    Message.write(outMessaging, initialState.toMessage)
     implicit val formats = Soot.formats +
       UpdatePacket.serializer +
       D.serializer +
       Store.serializer +
       KontStore.serializer
-    println(Serialization.writePretty(UpdatePacket(Map(1 -> initialState), Set.empty)))
+    //println(Serialization.writePretty(UpdatePacket(Map(1 -> initialState), Set.empty)))
 
     while (todo nonEmpty) {
       //TODO refactor store widening code
@@ -1346,13 +1361,32 @@ object Main {
 
       val newTodo = nexts.toList.filter(!done.contains(_))
 
-      val packet = UpdatePacket(
-        (for (n <- newTodo) yield { (n.id -> n) }).toMap,
-        for (n <- nexts) yield { (current.id -> n.id) })
-
-      if (packet.nonEmpty) {
-        println(Serialization.writePretty(packet))
+      for (n <- newTodo) {
+        println("Writing state "+n.id)
+        Message.write(outMessaging, n.toMessage)
       }
+      for (n <- nexts) {
+        if (!doneEdges.contains(current, n)) {
+          val id = doneEdges.size
+          println("Writing edge "+id+": "+current.id+" -> "+n.id)
+          doneEdges += id -> Pair(current.id, n.id)
+          Message.write(outMessaging, messaging.Edge(Id[MEdge](id), Id[messaging.AbstractState](current.id), Id[messaging.AbstractState](n.id)))
+        } else {
+          println("Skipping edge "+current.id+" -> "+n.id)
+        }
+      }
+//      val packet = UpdatePacket(
+//        (for (n <- newTodo) yield { (n.id -> n) }).toMap,
+//        for (n <- nexts) yield { (current.id -> n.id) })
+//        
+//      }
+//        (n.id -> n) }).toMap,
+//      val packet = UpdatePacket(
+//        for (n <- nexts) yield { (current.id -> n.id) })
+//
+//      if (packet.nonEmpty) {
+//        println(Serialization.writePretty(packet))
+//      }
 
 //      println("Read:")
 //      for (a <- current.getReadAddrs) {
@@ -1398,6 +1432,10 @@ object Main {
       globalInitClasses ++= initClasses
       println("Done processing state "+current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
     }
+
+    Message.write(outMessaging, Done)
+    outMessaging.close()
+
 
     println("Done!")
   }
