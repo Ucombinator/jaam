@@ -681,8 +681,6 @@ public class VizPanel extends JPanel
 	//Convert an absolute pixel location to a horizontal value between 0 and 1
 	public double getRelativeFracFromAbsolutePixelX(double x)
 	{
-		System.out.println("Absolute pixel: " + x);
-		System.out.println("Left side: " + this.leftMargin);
 		Graph graph = Main.graph;
 		if(this.context)
 		{
@@ -697,8 +695,6 @@ public class VizPanel extends JPanel
 	//Convert an absolute pixel location to a vertical value between 0 and 1
 	public double getRelativeFracFromAbsolutePixelY(double y)
 	{
-		System.out.println("Absolute pixel: " + y);
-		System.out.println("Top: " + this.topMargin);
 		Graph graph = Main.graph;
 		if(this.context)
 			return (y-this.topMargin)/(this.boxHeight *graph.getHeight());
