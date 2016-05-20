@@ -115,7 +115,7 @@ case class Id[Namespace](id : Int) {
 
 // Type for statements (needed because 'SootStmt' doesn't specify the
 // 'SootMethod' that it is in)
-case class Stmt(stmt : SootStmt, method : SootMethod) {}
+case class Stmt(method : SootMethod, index : Int, stmt : SootStmt) {}
 
 
 /*
