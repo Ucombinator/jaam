@@ -23,6 +23,11 @@ public class MethodPathVertex extends AbstractVertex
 		this.instructionList = new ArrayList<Instruction>();
 		this.methods = new HashSet<Method>();
 	}
+
+	public String getName()
+	{
+		return this.name;
+	}
 	
 	public String getRightPanelContent()
 	{

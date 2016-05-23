@@ -183,7 +183,7 @@ public class TakeInput extends Thread
 
 			while(!(message instanceof Done))
 			{
-				System.out.println(message.toString());
+				//System.out.println(message.toString());
 
 				//Name collision with our own Edge class
 				if(message instanceof org.ucombinator.jaam.messaging.Edge)

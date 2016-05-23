@@ -3,7 +3,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.HashMap;
-import java.util.Collections;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -928,6 +927,9 @@ public class Graph
 		}
 	}
 
+	//Collapse all visible vertices once.
+	//We check method path vertices and then method vertices,
+	//so that we don't check the same vertex twice
 	public void collapseOnce()
 	{
 		for(MethodPathVertex v : this.methodPathVertices)
@@ -942,7 +944,10 @@ public class Graph
 				v.collapse();
 		}
 	}
-	
+
+	//Expand all visible vertices once.
+	//We must check method vertices and then method path vertices,
+	//so that no vertex is expanded twice.
 	public void deCollapseOnce()
 	{
 		for(MethodVertex v : this.methodVertices)
@@ -1032,7 +1037,7 @@ public class Graph
 			System.out.print(v.id+": ");
 			int deg = v.getOutDegree();
 			
-			for(int j=0; j<deg; j++)
+			for(int j = 0; j < deg; j++)
 			{
 				System.out.print(v.neighbors.get(j).id+" ");
 			}
@@ -1125,9 +1130,9 @@ public class Graph
 		//System.out.println("Expanding vertex: " + Integer.toString(v0.id));
 		v0.traversed = true;
 		v0.dfsPathPos = dfsPathPos;
-		for(AbstractVertex ver : v0.neighbors)
+		for(Vertex ver : v0.neighbors)
 		{
-			Vertex v = (Vertex) ver;
+			Vertex v = ver;
 			//System.out.println("New child: " + Integer.toString(v.id));
 			if(!v.traversed)
 			{

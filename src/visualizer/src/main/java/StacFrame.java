@@ -683,15 +683,9 @@ public class StacFrame extends JFrame
 		Main.graph.searchNodes(search, input);
 		
 		Parameters.vertexHighlight = true;
-		
-		if(search == searchType.OUT_OPEN)
-			Parameters.highlightOutgoing = false;
-		else
-			Parameters.highlightOutgoing = true;
-		if(search == searchType.IN_OPEN)
-			Parameters.highlightIncoming = false;
-		else
-			Parameters.highlightIncoming = true;
+
+		Parameters.highlightOutgoing = search != searchType.OUT_OPEN;
+		Parameters.highlightIncoming = search != searchType.IN_OPEN;
 	}
 	
 	public boolean checkGraph()

@@ -19,10 +19,15 @@ public class MethodVertex extends AbstractVertex
 		this.numChildrenHighlighted = 0;
 		this.drawEdges = true;
 		
-		this.neighbors = new ArrayList<AbstractVertex>();
+		//this.neighbors = new ArrayList<AbstractVertex>();
 		this.incoming = new ArrayList<AbstractVertex>();
 		this.children = new ArrayList<AbstractVertex>();
 		this.mergeChildren = new ArrayList<Vertex>();
+	}
+
+	public String getName()
+	{
+		return this.name;
 	}
 	
 	public String getMethodName()
@@ -82,7 +87,7 @@ public class MethodVertex extends AbstractVertex
 		
 		for(Vertex temp : this.getMergeChildren())
 		{
-			for(AbstractVertex v : temp.neighbors)
+			for(Vertex v : temp.neighbors)
 			{
 				if(v.getMergeParent() != this)
 				{

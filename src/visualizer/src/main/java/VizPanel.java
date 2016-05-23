@@ -205,13 +205,15 @@ public class VizPanel extends JPanel
 				while(!v.isVisible)
 					v = v.getMergeParent();
 				
-				for(AbstractVertex nbr : ver.neighbors)
-				{	
-					while(!nbr.isVisible)
-						nbr = nbr.getMergeParent();
-					
-					if(v != nbr && v.drawEdges && nbr.drawEdges)
-						drawEdge(g, v, nbr);
+				for(Vertex nbr : ver.neighbors)
+				{
+					AbstractVertex w = nbr;
+					while(!w.isVisible)
+						w = w.getMergeParent();
+
+					//System.out.println("Drawing edge: " + v.getName() + ", " + w.getName());
+					if(v != w && v.drawEdges && w.drawEdges)
+						drawEdge(g, v, w);
 				}
 			}
 		}
@@ -225,13 +227,10 @@ public class VizPanel extends JPanel
 			return false;
 		else if(Parameters.highlightOutgoing && !Parameters.highlightIncoming && v.isOutgoingHighlighted)
 			return false;
-		else if(Parameters.highlightIncoming && !Parameters.highlightOutgoing && nbr.isIncomingHighlighted)
-			return false;
-		else
-			return true;
+		else return !(Parameters.highlightIncoming && !Parameters.highlightOutgoing && nbr.isIncomingHighlighted);
 	}
 	
-	public void drawEdge(Graphics2D g, AbstractVertex v, AbstractVertex nbr)
+	public void drawEdge(Graphics2D g, AbstractVertex v, AbstractVertex w)
 	{
 		Graph graph = Main.graph;
 		double x1temp, x2temp, y1temp, y2temp;
@@ -241,7 +240,7 @@ public class VizPanel extends JPanel
 		
 		
 		x1temp = v.x;
-		x2temp = nbr.x;
+		x2temp = w.x;
 		
 		if(!this.context)
 		{
@@ -256,17 +255,16 @@ public class VizPanel extends JPanel
 		y1temp = v.y;
 		
 		//If box 1 is above box 2, draw arrow to the center of the topMargin line
-		if(v.y > nbr.y)
+		if(v.y > w.y)
 		{
 			isCurved = true;
-			
 			if(this.boxHeight < this.minHeight)
 			{
-				y2temp = nbr.y + fac*this.minHeight/this.boxHeight;
+				y2temp = w.y + fac*this.minHeight/this.boxHeight;
 			}
 			else
 			{
-				y2temp = nbr.y + fac;
+				y2temp = w.y + fac;
 			}
 		}
 		
@@ -276,11 +274,11 @@ public class VizPanel extends JPanel
 			isCurved = false;
 			if(this.boxHeight < this.minHeight)
 			{
-				y2temp = nbr.y - fac*this.minHeight/this.boxHeight;
+				y2temp = w.y - fac*this.minHeight/this.boxHeight;
 			}
 			else
 			{
-				y2temp = nbr.y - fac;
+				y2temp = w.y - fac;
 			}
 		}
 		
@@ -294,7 +292,7 @@ public class VizPanel extends JPanel
 		y2 = (int) this.getY(y2temp);
 
 		
-		if(isHighlightedEdge(v, nbr))
+		if(isHighlightedEdge(v, w))
 		{
 			g.setColor(Color.RED);
 			g.setStroke(new BasicStroke(4));
@@ -578,7 +576,7 @@ public class VizPanel extends JPanel
 	
 	public Color getHSBColorT(float H, float S, float B)
 	{
-		int rgb = Color.HSBtoRGB((float)H, (float)S, (float)B);
+		int rgb = Color.HSBtoRGB(H, S, B);
 	    int red = (rgb >> 16) & 0xFF;
 	    int green = (rgb >> 8) & 0xFF;
 	    int blue = rgb & 0xFF;

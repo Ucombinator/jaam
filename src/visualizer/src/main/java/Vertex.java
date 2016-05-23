@@ -8,10 +8,12 @@ public class Vertex extends AbstractVertex
 	public String description = "", instruction = "";
 	public MethodVertex mergeParent;
 	public Method method;
-	
-	public int DFSColor; // 0:white, 1:grey, 2:black
-	
+
+	//neighbors stores the edges of the vertices in our base graph, before collapsing occurs
+	protected ArrayList<Vertex> neighbors;
+
 	//Used for shading vertices based on the number of nested loops they contain
+	//loopHeight is stored for all vertices
 	private Vertex loopHeader;
 	private ArrayList<Vertex> loopChildren;
 	public int dfsPathPos;
@@ -25,6 +27,7 @@ public class Vertex extends AbstractVertex
 	public Vertex(int d, int i, String nm, boolean addC)
 	{
 		this.setDefaults();
+		this.neighbors = new ArrayList<Vertex>();
 		vertexType = VertexType.LINE;
 		
 		this.id = d;
@@ -95,7 +98,7 @@ public class Vertex extends AbstractVertex
 		this.neighbors.add(dest);
 		dest.incoming.add(this);
 		
-		if(dest.id<this.id)
+		if(dest.id < this.id)
 			return;
 		
 		boolean flag = false;
@@ -117,12 +120,12 @@ public class Vertex extends AbstractVertex
 			if(flag) // if there is loop then, try to find potential point to break the loop 
 			{
 				boolean cont = true, same = true;
-				AbstractVertex parVer=null, chVer=null, potential;
+				AbstractVertex parVer = null, chVer = null, potential;
 				ver = this;
 				while(ver != dest && cont)
 				{
 					Method parentMethod = ((Vertex) ver.parent).getMethod();
-					for(int i=0; i<ver.incoming.size(); i++)
+					for(int i = 0; i < ver.incoming.size(); i++)
 					{
 						potential = ver.incoming.get(i);
 						Method potentialMethod = ((Vertex) potential).getMethod();
@@ -133,7 +136,7 @@ public class Vertex extends AbstractVertex
 							if(dest.parent != Main.graph.root && parentMethod.equals(dest.getMethod()) && !potentialMethod.equals(dest.getMethod()))
 								continue;
 						}
-						if(ver.checkPotentialParent(potential))
+						if(ver.checkPotentialParent())
 						{
 							cont = false;
 							parVer = potential;
@@ -234,42 +237,42 @@ public class Vertex extends AbstractVertex
 		}
 	}
 	
-	public void mergeByMethod(MethodVertex mergeVer)
-	{
+	public void mergeByMethod(MethodVertex mergeVer) {
 		MethodVertex ver = mergeVer;
-		
-		if(this.method == null)
-		{
+
+		if (this.method == null) {
 			System.out.println("ERROR! Uninitialized method for vertex ");
 			System.exit(-1);
 		}
-		
+
 		//Initialize first method vertex
-		if(ver == null)
-		{
+		if (ver == null) {
 			ver = new MethodVertex(this.id, Main.graph.methodVertices.size(), this.method, false);
 			ver.mergeRoot = this;
 			Main.graph.methodVertices.add(ver);
 		}
-		
+
 		//Create new method vertex
-		if(!ver.getMethod().equals(this.method))
-		{
+		if (!ver.getMethod().equals(this.method)) {
 			ver = new MethodVertex(this.id, Main.graph.methodVertices.size(), this.method, false);
 			ver.mergeRoot = this;
 			Main.graph.methodVertices.add(ver);
 		}
-		
+
 		this.mergeParent = ver;
 		ver.mergeChildren.add(this);
-		
-		if(!this.drawEdges)
-		{
+
+		if (!this.drawEdges) {
 			System.out.println("Removing edges for method: " + this.getMethodName());
 			ver.drawEdges = false;
 		}
-		
-		for(AbstractVertex v : this.children)
+
+		for (AbstractVertex v : this.children)
 			((Vertex) v).mergeByMethod(ver);
-	}	
+	}
+
+	public int getOutDegree()
+	{
+		return this.neighbors.size();
+	}
 }
