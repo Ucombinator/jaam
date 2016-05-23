@@ -112,13 +112,14 @@ public class TakeInput extends Thread
 						while(vertexMatcher.find())
 						{
 							end = vertexMatcher.start(1);
-							desc = tempStr.substring(start, end-2);
+							desc = tempStr.substring(start, end - 2);
 							desc = desc.substring(0, desc.lastIndexOf("\n")-1);
 							this.defaultAddVertex(id, desc);
 							id = Integer.parseInt(vertexMatcher.group(2));
 							start = vertexMatcher.end(1);
 						}
-						tempStr = tempStr.substring(0, tempStr.length()-1);
+
+						tempStr = tempStr.substring(0, tempStr.length() - 1);
 						tempStr = tempStr.substring(0, tempStr.lastIndexOf("\n"));
 						desc = tempStr.substring(start);
 						this.defaultAddVertex(id, desc);
@@ -128,7 +129,6 @@ public class TakeInput extends Thread
 							Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.interval;
 						}
 					}
-
 
 					while(true)
 					{
@@ -169,7 +169,6 @@ public class TakeInput extends Thread
 		{
 			System.out.println(e);
 		}
-
 	}
 
 	public void parseMessages(String file)
@@ -183,8 +182,6 @@ public class TakeInput extends Thread
 
 			while(!(message instanceof Done))
 			{
-				//System.out.println(message.toString());
-
 				//Name collision with our own Edge class
 				if(message instanceof org.ucombinator.jaam.messaging.Edge)
 				{

@@ -103,6 +103,8 @@ public class Vertex extends AbstractVertex
 		
 		boolean flag = false;
 
+		//When we add an edge, we must check whether it creates a loop that requires us
+		//to modify our layout.
 		Method newMethod = ((Vertex) dest.parent).getMethod();
 		if(dest.parent == Main.graph.root || newMethod.equals(dest.getMethod()))
 		{

@@ -185,87 +185,6 @@ public class Graph
 		}
 	}
 	
-/*
-	
-	public void extractGraph(String file)
-	{
-		String line;
-		StringTokenizer token;
-		int src, dest;
-		Vertex vSrc, vDest;
-		
-		try
-		{
-//			System.out.println(file);
-			BufferedReader r = new BufferedReader(new FileReader(file));
-			
-//			if(r == null)
-//				System.out.println("null file");
-			
-			while(true)
-			{
-				line = r.readLine();
-				if(line==null)
-					break;
-				
-				if(line.contains(" -> "))
-				{
-					token = new StringTokenizer(line);
-					if(token.countTokens()!=3)
-						continue;
-					src = Integer.parseInt(token.nextToken());
-					token.nextToken();
-					dest = Integer.parseInt(token.nextToken());
-					vSrc = this.containsVertex(src);
-					if(vSrc==null)
-					{
-						vSrc=new Vertex(src, this.vertices.size());
-						this.vertices.add(vSrc);
-					}
-					vDest = this.containsVertex(dest);
-					if(vDest==null)
-					{
-						vDest=new Vertex(dest, this.vertices.size());
-						this.vertices.add(vDest);
-					}
-					vSrc.addNeighbor(vDest);
-				}
-			}
-			r.close();
-			
-		}
-		catch(IOException ex)
-		{
-			ex.printStackTrace();
-		}
-
-	}
-	
-//*/	
-	
-	public AbstractVertex getVertexAtCoordinate(double x, double y)
-	{
-		for(Vertex v : vertices)
-		{
-			if(v.isAtCoordinate(x, y))
-				return v;
-		}
-		
-		for(MethodVertex v : this.methodVertices)
-		{
-			if(v.isAtCoordinate(x, y))
-				return v;
-		}
-		
-		for(MethodPathVertex v : this.methodPathVertices)
-		{
-			if(v.isAtCoordinate(x, y))
-				return v;
-		}
-		
-		return null;
-	}
-	
 	public AbstractVertex getVertexNearestCoordinate(double x, double y)
 	{
 		AbstractVertex closest = null;
@@ -303,59 +222,6 @@ public class Graph
 		
 		return closest;
 	}
-	
- 	public void addVertex(String des)
-	{
-		String name = des.substring(0, des.indexOf(':'));
-		int id = Integer.parseInt(name);
-		Vertex ver = this.containsVertex(id);		
-		
-		if(ver==null)
-		{
-			ver = new Vertex(id, this.vertices.size());
-			this.vertices.add(ver);
-		}
-		
-		String desc = des.substring(name.length()+1);
-		ver.setDescription(desc);
-		
-		Pattern methodPattern = Pattern.compile("(\"stmt\":\\{.*?\"sootMethod\":\\{(.*?)\\}.*?\\})", Pattern.DOTALL);
-		Matcher methodMatcher = methodPattern.matcher(desc);
-		if(methodMatcher.find())
-		{
-			String methodName = methodMatcher.group(2);
-			this.matchVertexToMethod(ver, methodName);
-		}
-	}
-	
-	public void addVertex(int v, String methodName, String inst)
-	{
-		Vertex ver = this.containsVertex(v);
-		this.matchVertexToMethod(ver, methodName);
-		
-		if(ver==null)
-		{
-			ver = new Vertex(v,this.vertices.size());
-			this.vertices.add(ver);
-		}
-		ver.setDescription("\"method\":" + methodName + "\n\"instruction\":" + inst);
-		ver.setInstruction(inst);
-	}
-	
-	public void addVertex(int v, String methodName, String inst, String desc)
-	{
-		Vertex ver = this.containsVertex(v);
-		this.matchVertexToMethod(ver, methodName);
-		
-		if(ver==null)
-		{
-			ver = new Vertex(v,this.vertices.size());
-			this.vertices.add(ver);
-		}
-		ver.setDescription(desc);
-		ver.setInstruction(inst);
-		ver.setNameToInstruction();
-	}
 
 	public void addErrorState(int id)
 	{
@@ -379,27 +245,6 @@ public class Graph
 		ver.jimpleIndex = ind;
 		ver.drawEdges = drawEdges;
 		
-		if(ind > this.maxIndex)
-			this.maxIndex = ind;
-	}
-
-	public void addVertex(int v, String methodName, String inst, int ind, boolean drawEdges)
-	{
-		Vertex ver = this.containsVertex(v);
-
-		if(ver == null)
-		{
-			ver = new Vertex(v, this.vertices.size());
-			this.vertices.add(ver);
-		}
-
-		this.matchVertexToMethod(ver, methodName);
-		//ver.setDescription(desc);
-		ver.setInstruction(inst);
-		ver.setNameToInstruction();
-		ver.jimpleIndex = ind;
-		ver.drawEdges = drawEdges;
-
 		if(ind > this.maxIndex)
 			this.maxIndex = ind;
 	}

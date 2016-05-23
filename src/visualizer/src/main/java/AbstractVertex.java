@@ -22,10 +22,13 @@ public abstract class AbstractVertex
 	protected int index, parentIndex;
 
 	//children stores all of the vertices to which we have edges from this vertex
-	//incoming stores all of the vertices that have edges into this vertex
+	//in the current display
+	//incoming stores all of the vertices that have edges into this vertex in
+	//the current display
+	//The base graph is stored in the neighbors in the Vertex class.
 	protected ArrayList<AbstractVertex> children, incoming;
 
-	//I have no idea what these are...
+	//These are the coordinates of a subtree (maybe?)
 	protected double left, right, top, bottom;
 	protected double x, y, width, height;
 	
@@ -47,7 +50,6 @@ public abstract class AbstractVertex
 	
 	public void setDefaults()
 	{
-		//this.neighbors = new ArrayList<AbstractVertex>();
 		this.incoming = new ArrayList<AbstractVertex>();
 		this.children = new ArrayList<AbstractVertex>();
 		
@@ -59,11 +61,6 @@ public abstract class AbstractVertex
 		this.bottom = 0;
 		this.x = 0.5;
 		this.y = -0.5;
-	}
-	
-	public boolean isAtCoordinate(double x, double y)
-	{
-		return this.isVisible && Math.abs(x - this.x) < 0.25 && Math.abs(y - this.y) < 0.25;
 	}
 	
 	public double distTo(double x, double y)
@@ -175,8 +172,6 @@ public abstract class AbstractVertex
 		//It must be visible and have a valid merge root.
 		if(this.isVisible || this.mergeRoot != null)
 		{
-			System.out.println("Expanding node: " + this.getName());
-
 			//If so, we set the merge start vertex to take its parent's location...
 			this.mergeRoot.left = this.left;
 			this.mergeRoot.top = this.top;
