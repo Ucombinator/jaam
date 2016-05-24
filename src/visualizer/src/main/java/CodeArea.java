@@ -41,7 +41,7 @@ public class CodeArea extends JTextArea
 						if(row >= 0 && row < rowToIndex.size())
 						{
 							Instruction line = description.get(rowToIndex.get(row));
-							System.out.println("Instruction selected on row " + row + ", " + line);
+							System.out.println("Instruction selected on row " + row + ", " + line.str);
 							if(line.isInstr)
 							{
 								if(line.isHighlighted)
@@ -99,11 +99,17 @@ public class CodeArea extends JTextArea
 		for(Vertex v : Main.graph.vertices)
 		{
 			if(v.getMethodName().contains(method) && v.jimpleIndex == index)
-			{				
+			{
 				if(addHighlight)
+				{
+					System.out.println("Adding highlight to vertex: " + v.getName());
 					v.addHighlight(true, true, true);
+				}
 				else
+				{
+					System.out.println("Removing highlight from vertex: " + v.getName());
 					v.clearAllHighlights();
+				}
 			}
 		}
 	}
@@ -139,6 +145,7 @@ public class CodeArea extends JTextArea
 		}
 		
 		int rowNumber = 0;
+		rowToIndex = new ArrayList<Integer>();
 		for(int i = 0; i < description.size(); i++, rowNumber++)
 		{
 			if(description.get(i).str.length() > 0)
@@ -175,30 +182,22 @@ public class CodeArea extends JTextArea
 		this.setText(fullText.toString());
 	}
 	
-	//Search our description for the line that needs to be highlighted
-	public void highlightMatchingInstruction(Vertex v)
-	{
-		for(Instruction inst : this.description)
-		{
-			if(v.getMethodName().equals(inst.methodName) && v.jimpleIndex == inst.jimpleIndex)
-				inst.isHighlighted = true;
-		}
-	}
-	
-	public void drawHighlights(Color c1, Color c2)
+	private void drawHighlights(Color c1, Color c2)
 	{
 		for(int i = 0; i < this.description.size(); i++)
 		{
+			//TODO: Find new color for applying both highlights?
 			Instruction line = this.description.get(i);
 			if(line.isHighlighted)
 				this.drawLineHighlight(i, c1);
-			if(line.isCycleHighlighted)
+			else if(line.isCycleHighlighted)
 				this.drawLineHighlight(i, c2);
 		}
 	}
 	
 	private void drawLineHighlight(int rowIndex, Color c)
 	{
+		System.out.println("Highlighting row: " + rowIndex);
 		DefaultHighlighter.DefaultHighlightPainter highlightPainter = new DefaultHighlighter.DefaultHighlightPainter(c);
 		Highlighter h = this.getHighlighter();
 		

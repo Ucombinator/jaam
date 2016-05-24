@@ -813,10 +813,10 @@ public class StacFrame extends JFrame
 						mouseDrag = false;
 						if(Main.graph != null)
 						{
-							double x1 = vizPanel.getRelativeFracFromAbsolutePixelX(vizPanel.selectLeft);
-							double x2 = vizPanel.getRelativeFracFromAbsolutePixelX(vizPanel.selectRight);
-							double y1 = vizPanel.getRelativeFracFromAbsolutePixelY(vizPanel.selectTop);
-							double y2 = vizPanel.getRelativeFracFromAbsolutePixelY(vizPanel.selectBottom);
+							double x1 = vizPanel.getIndexFromPixelX(vizPanel.selectLeft);
+							double x2 = vizPanel.getIndexFromPixelX(vizPanel.selectRight);
+							double y1 = vizPanel.getIndexFromPixelY(vizPanel.selectTop);
+							double y2 = vizPanel.getIndexFromPixelY(vizPanel.selectBottom);
 
 							Main.graph.selectVertices(x1, x2, y1, y2);
 						}

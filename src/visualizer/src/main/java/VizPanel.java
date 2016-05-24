@@ -129,8 +129,8 @@ public class VizPanel extends JPanel
 			x2temp -= graph.currWindow.left*graph.getWidth();
 		}
 		
-		x1 = (int) this.getX(x1temp);
-		x2 = (int) this.getX(x2temp);
+		x1 = (int) this.getPixelXFromIndex(x1temp);
+		x2 = (int) this.getPixelXFromIndex(x2temp);
 		
 		
 		if(this.boxHeight < this.minHeight)
@@ -150,8 +150,8 @@ public class VizPanel extends JPanel
 			y2temp -= graph.currWindow.top*graph.getHeight();
 		}
 		
-		y1 = (int) this.getY(y1temp);
-		y2 = (int) this.getY(y2temp);		
+		y1 = (int) this.getPixelYFromIndex(y1temp);
+		y2 = (int) this.getPixelYFromIndex(y2temp);
 		
 		if(Parameters.vertexHighlight && (ver.isHighlighted() || ver.isChildHighlighted()))
 		{
@@ -176,10 +176,10 @@ public class VizPanel extends JPanel
 		
 		Font ff = new Font("Serif", Font.BOLD, Parameters.font.getSize());
 		if(!this.context)
-			this.drawCenteredString(g, ver.getName(), (int) (this.getX(ver.x - graph.currWindow.left*graph.getWidth())), (int) (this.getY(ver.y-graph.currWindow.top*graph.getHeight())), ff, Color.BLACK);
+			this.drawCenteredString(g, ver.getName(), (int) (this.getPixelXFromIndex(ver.x - graph.currWindow.left*graph.getWidth())), (int) (this.getPixelYFromIndex(ver.y-graph.currWindow.top*graph.getHeight())), ff, Color.BLACK);
 		//Remove labels from minimap
 		//else
-		//	this.drawCenteredString(g, ver.getName(), (int) (this.getX(ver.x)), (int) (this.getY(ver.y)), ff, Color.BLACK);
+		//	this.drawCenteredString(g, ver.getName(), (int) (this.getPixelXFromIndex(ver.x)), (int) (this.getPixelYFromIndex(ver.y)), ff, Color.BLACK);
 		
 		if(this.boxWidth < this.minWidth || this.boxHeight < this.minHeight)
 			g.setColor(this.getColorT(Color.BLACK.getRGB()));
@@ -248,8 +248,8 @@ public class VizPanel extends JPanel
 			x2temp -= graph.getWidth()*graph.currWindow.left;
 		}
 		
-		x1 = (int) this.getX(x1temp);
-		x2 = (int) this.getX(x2temp);
+		x1 = (int) this.getPixelXFromIndex(x1temp);
+		x2 = (int) this.getPixelXFromIndex(x2temp);
 		
 		//Start of arrow is at center of first box
 		y1temp = v.y;
@@ -288,8 +288,8 @@ public class VizPanel extends JPanel
 			y2temp -= graph.currWindow.top*graph.getHeight();
 		}
 		
-		y1 = (int) this.getY(y1temp);
-		y2 = (int) this.getY(y2temp);
+		y1 = (int) this.getPixelYFromIndex(y1temp);
+		y2 = (int) this.getPixelYFromIndex(y2temp);
 
 		
 		if(isHighlightedEdge(v, w))
@@ -625,10 +625,10 @@ public class VizPanel extends JPanel
 			if(graph.currWindow.left > 0 || graph.currWindow.right < 1
 					|| graph.currWindow.top > 0 || graph.currWindow.bottom < 1)
 			{
-				x1 = (int) this.getX(graph.getWidth()*graph.currWindow.left);
-				y1 = (int) this.getY(graph.getHeight()*graph.currWindow.top);
-				x2 = (int) this.getX(graph.getWidth()*graph.currWindow.right);
-				y2 = (int) this.getY(graph.getHeight()*graph.currWindow.bottom);
+				x1 = (int) this.getPixelXFromIndex(graph.getWidth()*graph.currWindow.left);
+				y1 = (int) this.getPixelYFromIndex(graph.getHeight()*graph.currWindow.top);
+				x2 = (int) this.getPixelXFromIndex(graph.getWidth()*graph.currWindow.right);
+				y2 = (int) this.getPixelYFromIndex(graph.getHeight()*graph.currWindow.bottom);
 				g.fillRect(x1, y1, x2-x1, y2-y1);
 				g.setColor(Color.YELLOW);
 				g.drawRect(x1, y1, x2-x1, y2-y1);
@@ -710,15 +710,25 @@ public class VizPanel extends JPanel
 	}
 
 	//Convert a horizontal box index to an absolute x pixel location
-	public double getX(double x)
+	public double getPixelXFromIndex(double x)
 	{
 		return this.leftMargin + this.boxWidth * x;
 	}
 
 	//Convert a vertical box index to an absolute y pixel location
-	public double getY(double y)
+	public double getPixelYFromIndex(double y)
 	{
 		return this.topMargin + this.boxHeight * y;
+	}
+
+	public double getIndexFromPixelX(double xPixel)
+	{
+		return (xPixel - this.leftMargin)/this.boxWidth;
+	}
+
+	public double getIndexFromPixelY(double yPixel)
+	{
+		return (yPixel - this.topMargin)/this.boxHeight;
 	}
 	
 	public void console(String str)

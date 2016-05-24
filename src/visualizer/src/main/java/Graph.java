@@ -1073,7 +1073,8 @@ public class Graph
 		}
 		
 		//This loop should terminate because every vertex has exactly one loop header, and there should not
-		//be a loop in following header pointers.
+		//be a loop in following header pointers. Each pass sets the height for the vertices at the next
+		//level.
 		int currLoopHeight = 1;
 		while(toSearch.size() > 0)
 		{
