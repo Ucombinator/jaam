@@ -1,4 +1,4 @@
 
 The visualizer must be built with sbt to receive messages using the Message class in Messaging.scala.
 
-Running ‘sbt visualizer/compile’ (from the jaam directory) produces visualizer.jar
+Running ‘sbt visualizer/assembly’ (from the jaam directory) produces visualizer.jar, which can be run with ‘java -jar visualizer.jar.’
