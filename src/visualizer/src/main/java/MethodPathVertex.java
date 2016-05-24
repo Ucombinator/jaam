@@ -31,7 +31,8 @@ public class MethodPathVertex extends AbstractVertex
 	
 	public String getRightPanelContent()
 	{
-		StringBuilder s = new StringBuilder("Path Vertex (loop height = " + loopHeight + ")\n\n"
+		StringBuilder s = new StringBuilder("Path Vertex (loop height = " + loopHeight + ")\n"
+				+ "id: " + this.id + "\n"
 				+ "This contains " + this.mergeChildren.size() + " method vertices:\n");
 		for(MethodVertex v : this.mergeChildren)
 			s.append(v.getName() + "\n");

@@ -101,22 +101,15 @@ public class CodeArea extends JTextArea
 			if(v.getMethodName().contains(method) && v.jimpleIndex == index)
 			{
 				if(addHighlight)
-				{
-					System.out.println("Adding highlight to vertex: " + v.getName());
 					v.addHighlight(true, true, true);
-				}
 				else
-				{
-					System.out.println("Removing highlight from vertex: " + v.getName());
 					v.clearAllHighlights();
-				}
 			}
 		}
 	}
 
 	public void clear()
 	{
-		//System.out.println("Clearing left area");
 		this.methods = new HashSet<Method>();
 		this.description = new ArrayList<Instruction>();
 		this.rowToIndex = new ArrayList<Integer>();
@@ -126,13 +119,13 @@ public class CodeArea extends JTextArea
 	//Rewrite our description based on which vertices are highlighted
 	public void setDescription()
 	{
-		//System.out.println("Setting new description for left area");
 		description = new ArrayList<Instruction>();
 		this.methods = Main.graph.collectHighlightedMethods();
 		
 		for(Method method : this.methods)
 		{
 			method.highlightInstructions();
+
 			//Add header line with method name
 			String currMethod = method.getName();
 			description.add(new Instruction(currMethod + "\n", currMethod, false, -1));

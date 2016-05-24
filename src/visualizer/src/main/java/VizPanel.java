@@ -334,6 +334,8 @@ public class VizPanel extends JPanel
 		int x3, y3;
 		int midX = (x1 + x2)/2;
 		int midY = (y1 + y2)/2;
+
+		//This sets the incoming/outgoing angle to be arctan(1/2), or about 26 degrees. It looks okay.
 		double dist = 0.5*getEuclideanDistance(x1, y1, midX, midY);
 		
 		if(x1 == x2)

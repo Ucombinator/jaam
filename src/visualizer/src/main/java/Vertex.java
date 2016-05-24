@@ -4,7 +4,6 @@ import java.util.ArrayList;
 public class Vertex extends AbstractVertex
 {
 	public int jimpleIndex;
-	public String instList[];
 	public String description = "", instruction = "";
 	public MethodVertex mergeParent;
 	public Method method;
@@ -60,10 +59,10 @@ public class Vertex extends AbstractVertex
 	
 	public String getRightPanelContent()
 	{
-		String str = "Regular Vertex (loop height = " + this.loopHeight + ")\n\n"
+		String str = "Regular Vertex (loop height = " + this.loopHeight + ")\n"
 				+ "id: " + this.id + "\n"
 				+ "instruction: " + this.getInstruction() + "\n"
-				+ "method: " + this.getMethodName() + "\n\n"
+				+ "method: " + this.getMethodName() + "\n"
 				+ " location (left, right, top, bottom): "
 				+ this.left + ", " + this.right + ", " + this.top + ", " + this.bottom + "\n"
 				+ this.getDescription() + "\n";
@@ -242,21 +241,26 @@ public class Vertex extends AbstractVertex
 	public void mergeByMethod(MethodVertex mergeVer) {
 		MethodVertex ver = mergeVer;
 
-		if (this.method == null) {
+		if (this.method == null)
+		{
 			System.out.println("ERROR! Uninitialized method for vertex ");
 			System.exit(-1);
 		}
 
 		//Initialize first method vertex
-		if (ver == null) {
-			ver = new MethodVertex(this.id, Main.graph.methodVertices.size(), this.method, false);
+		if (ver == null)
+		{
+			Main.graph.totalVertices++;
+			ver = new MethodVertex(Main.graph.totalVertices, Main.graph.methodVertices.size(), this.method, false);
 			ver.mergeRoot = this;
 			Main.graph.methodVertices.add(ver);
 		}
 
 		//Create new method vertex
-		if (!ver.getMethod().equals(this.method)) {
-			ver = new MethodVertex(this.id, Main.graph.methodVertices.size(), this.method, false);
+		if (!ver.getMethod().equals(this.method))
+		{
+			Main.graph.totalVertices++;
+			ver = new MethodVertex(Main.graph.totalVertices, Main.graph.methodVertices.size(), this.method, false);
 			ver.mergeRoot = this;
 			Main.graph.methodVertices.add(ver);
 		}
@@ -264,7 +268,8 @@ public class Vertex extends AbstractVertex
 		this.mergeParent = ver;
 		ver.mergeChildren.add(this);
 
-		if (!this.drawEdges) {
+		if (!this.drawEdges)
+		{
 			System.out.println("Removing edges for method: " + this.getMethodName());
 			ver.drawEdges = false;
 		}

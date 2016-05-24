@@ -42,8 +42,9 @@ public class MethodVertex extends AbstractVertex
 	
 	public String getRightPanelContent()
 	{
-		String str = "Method Vertex (loop height = " + loopHeight + ")\n\n"
-				+ "method: " + this.getMethodName() + "\n\n"
+		String str = "Method Vertex (loop height = " + loopHeight + ")\n"
+				+ "id: " + this.id + "\n"
+				+ "method: " + this.getMethodName() + "\n"
 				+ "This contains " + this.mergeChildren.size() + " regular vertices\n";
 		return str;
 	}
@@ -149,8 +150,9 @@ public class MethodVertex extends AbstractVertex
 	
 	public void initializeMethodPathVertex()
 	{
-		//System.out.println("Adding new method path vertex for method " + this.getMethodName());
-		MethodPathVertex ver = new MethodPathVertex(this.id, Main.graph.methodPathVertices.size());
+		Main.graph.totalVertices++;
+		MethodPathVertex ver = new MethodPathVertex(Main.graph.totalVertices, Main.graph.methodPathVertices.size());
+
 		ver.mergeRoot = this;
 		Main.graph.methodPathVertices.add(ver);
 		this.mergeParent = ver;
