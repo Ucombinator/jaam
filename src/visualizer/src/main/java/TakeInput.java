@@ -84,7 +84,7 @@ public class TakeInput extends Thread
 				}
 				if(line.equals("Done!"))
 				{
-					Parameters.console("Done!!");
+					System.out.println("Done!");
 					Parameters.cut_off = true;
 					break;
 				}

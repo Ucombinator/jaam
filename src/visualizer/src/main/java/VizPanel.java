@@ -687,13 +687,13 @@ public class VizPanel extends JPanel
 		g.dispose();
 	}
 
-	//Convert an absolute pixel location to a horizontal value between 0 and 1
+	//Convert a current pixel location to a horizontal value between 0 and 1
 	public double getRelativeFracFromAbsolutePixelX(double x)
 	{
 		Graph graph = Main.graph;
 		if(this.context)
 		{
-			return (x - this.leftMargin)/(this.boxWidth *graph.getWidth());
+			return (x - this.leftMargin)/(this.boxWidth*graph.getWidth());
 		}
 		else
 		{
@@ -710,37 +710,33 @@ public class VizPanel extends JPanel
 		else
 			return (((y-this.topMargin)/this.boxHeight)+(graph.getHeight()*graph.currWindow.top))/graph.getHeight();
 	}
-	
-	public StacFrame getParent()
-	{
-		return parent;
-	}
 
-	//Convert a horizontal box index to an absolute x pixel location
+	//Convert a horizontal box index to a current x pixel location
 	public double getPixelXFromIndex(double x)
 	{
 		return this.leftMargin + this.boxWidth * x;
 	}
 
-	//Convert a vertical box index to an absolute y pixel location
+	//Convert a vertical box index to a current y pixel location
 	public double getPixelYFromIndex(double y)
 	{
 		return this.topMargin + this.boxHeight * y;
 	}
 
-	public double getIndexFromPixelX(double xPixel)
+	public double getIndexFromCurrentPixelX(double currXPixel)
 	{
-		return (xPixel - this.leftMargin)/this.boxWidth;
+		double xFrac = getRelativeFracFromAbsolutePixelX(currXPixel);
+		return xFrac*Main.graph.getWidth();
 	}
 
-	public double getIndexFromPixelY(double yPixel)
+	public double getIndexFromCurrentPixelY(double currYPixel)
 	{
-		return (yPixel - this.topMargin)/this.boxHeight;
+		double yFrac = getRelativeFracFromAbsolutePixelY(currYPixel);
+		return yFrac*Main.graph.getHeight();
 	}
-	
-	public void console(String str)
+
+	public StacFrame getParent()
 	{
-		this.parent.addToConsole(str);
+		return parent;
 	}
-	
 }

@@ -1,10 +1,10 @@
 Features to add (w/ priority):
-- Fix drag location calculations: 1
 - Read Java code for method: 1
 - Add options menu for right-click on vertices: 1
 - Click on method name in left panel: 1
 - Create magnifier view option: 1
 
+- Search for merge vertices by ID: 2
 - Zoom goes to center when mouse is at very top of window: 2
 - Select merge root whenever a merge parent is selected: 2
 - Show expected format in search dialog boxes: 2

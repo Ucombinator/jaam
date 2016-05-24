@@ -641,11 +641,6 @@ public class StacFrame extends JFrame
 		Parameters.repaintAll();
 	}
 	
-	public void addToConsole(String str)
-	{
-		System.out.println(str);
-	}
-	
 	public void searchAndHighlight(searchType search)
 	{
 		String title = "";
@@ -813,10 +808,10 @@ public class StacFrame extends JFrame
 						mouseDrag = false;
 						if(Main.graph != null)
 						{
-							double x1 = vizPanel.getIndexFromPixelX(vizPanel.selectLeft);
-							double x2 = vizPanel.getIndexFromPixelX(vizPanel.selectRight);
-							double y1 = vizPanel.getIndexFromPixelY(vizPanel.selectTop);
-							double y2 = vizPanel.getIndexFromPixelY(vizPanel.selectBottom);
+							double x1 = vizPanel.getIndexFromCurrentPixelX(vizPanel.selectLeft);
+							double x2 = vizPanel.getIndexFromCurrentPixelX(vizPanel.selectRight);
+							double y1 = vizPanel.getIndexFromCurrentPixelY(vizPanel.selectTop);
+							double y2 = vizPanel.getIndexFromCurrentPixelY(vizPanel.selectBottom);
 
 							Main.graph.selectVertices(x1, x2, y1, y2);
 						}

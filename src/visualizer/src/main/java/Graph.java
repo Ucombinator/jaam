@@ -150,8 +150,7 @@ public class Graph
 		currWindow.setNext(newWindow);
 		currWindow = newWindow;
 	}
-	
-	//TODO: Figure out why some vertices aren't being selected...
+
 	public void selectVertices(double x1, double x2, double y1, double y2)
 	{
 		System.out.println("Selecting vertices: " + x1 + ", " + y1 + ", " + x2 + ", " + y2);
