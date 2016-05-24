@@ -1,7 +1,6 @@
 Features to add (w/ priority):
 - Read Java code for method: 1
 - Add options menu for right-click on vertices: 1
-- Change dragging: 1
 - Click on method name in left panel: 1
 - Create magnifier view option: 1
 
@@ -21,7 +20,6 @@ Features to add (w/ priority):
 - Allow turning edges on/off per vertex: 2
 - Add tooltips for vertex names: 2
 - After expanding a single node, select all of its children: 2
-- Fix choosing control points for curved edges: 2
 - Change undo/redo to apply to other operations (searching, selecting, etc.): 2
 
 - Rearrange children to remove edge crossings: 3
