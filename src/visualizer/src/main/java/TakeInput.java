@@ -175,10 +175,10 @@ public class TakeInput extends Thread
 	public void parseMessages(String file)
 	{
 		if(file.equals(""))
-			messageInput = new Input(System.in);
+			messageInput = Message.openInput(System.in);
 		try
 		{
-			messageInput = new Input(new FileInputStream(file));
+			messageInput = Message.openInput(new FileInputStream(file));
 			Message message = Message.read(messageInput);
 
 			while(!(message instanceof Done))

@@ -1341,6 +1341,15 @@ object Main {
     */
 
     val outMessaging = Message.openOutput(new FileOutputStream("test.dat"))
+    //val outMessaging : Message.Output = null
+    //val inMessaging = Message.openInput(new FileInputStream("test2.dat"))
+    //var m = Message.read(inMessaging)
+    //while (!m.isInstanceOf[Done]) {
+    //  println(m)
+    //  m = Message.read(inMessaging)
+    //}
+    //println("DONE")
+
     val mainMainMethod : SootMethod = Soot.getSootClass(config.className).getMethodByName(config.methodName)
 
     // Setting up the GUI
