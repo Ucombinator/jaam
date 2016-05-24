@@ -153,35 +153,23 @@ public class Graph
 		System.out.println("Selecting vertices: " + x1 + ", " + y1 + ", " + x2 + ", " + y2);
 		for(Vertex v : this.vertices)
 		{
-			System.out.println(v.x + ", " + v.y);
 			v.clearAllHighlights();
 			if(v.isVisible && x1 < v.x && v.x < x2 && y1 < v.y && v.y < y2)
-			{
-				System.out.println("Selecting vertex: " + v.getName());
 				v.addHighlight(true, true, true);
-			}
 		}
 		
 		for(MethodVertex v : this.methodVertices)
 		{
-			System.out.println(v.x + ", " + v.y);
 			v.clearAllHighlights();
 			if(v.isVisible && x1 < v.x && v.x < x2 && y1 < v.y && v.y < y2)
-			{
-				System.out.println("Selecting vertex: " + v.getName());
 				v.addHighlight(true, true, true);
-			}
 		}
 		
 		for(MethodPathVertex v: this.methodPathVertices)
 		{
-			System.out.println(v.x + ", " + v.y);
 			v.clearAllHighlights();
 			if(v.isVisible && x1 < v.x && v.x < x2 && y1 < v.y && v.y < y2)
-			{
-				System.out.println("Selecting vertex: " + v.getName());
 				v.addHighlight(true, true, true);
-			}
 		}
 	}
 	

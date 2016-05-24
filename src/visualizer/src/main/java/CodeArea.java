@@ -197,7 +197,6 @@ public class CodeArea extends JTextArea
 	
 	private void drawLineHighlight(int rowIndex, Color c)
 	{
-		System.out.println("Highlighting row: " + rowIndex);
 		DefaultHighlighter.DefaultHighlightPainter highlightPainter = new DefaultHighlighter.DefaultHighlightPainter(c);
 		Highlighter h = this.getHighlighter();
 		

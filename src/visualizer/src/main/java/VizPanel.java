@@ -334,7 +334,7 @@ public class VizPanel extends JPanel
 		int x3, y3;
 		int midX = (x1 + x2)/2;
 		int midY = (y1 + y2)/2;
-		double dist = Parameters.minBoxWidth;
+		double dist = 0.5*getEuclideanDistance(x1, y1, midX, midY);
 		
 		if(x1 == x2)
 		{
@@ -374,6 +374,11 @@ public class VizPanel extends JPanel
 			length = 2.0;
 		
 		this.drawArrowhead(g, x2, y2, angle, length);
+	}
+
+	private double getEuclideanDistance(double x1, double y1, double x2, double y2)
+	{
+		return Math.sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
 	}
 	
 	public void drawArrowhead(Graphics2D g, int x, int y, double angle, double length)

@@ -1003,7 +1003,6 @@ public class StacFrame extends JFrame
 					if(!checkGraph())
 						return;
 					int notches = e.getWheelRotation();
-//					System.out.println("Moved mouse wheel: " + notches);
 					
 					//box++ for mouse wheel up, box-- for mouse wheel down
 					if(notches > 0)
