@@ -683,9 +683,9 @@ public class StacFrame extends JFrame
 		Parameters.highlightIncoming = search != searchType.IN_OPEN;
 	}
 	
-	public boolean checkGraph()
+	public boolean isGraphLoaded()
 	{
-		return (Main.graph!=null);
+		return (Main.graph != null);
 	}
 	
 	public void addMouseToViz()
@@ -696,7 +696,7 @@ public class StacFrame extends JFrame
 			{
 				public void mouseClicked(MouseEvent m)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					
 					vizPanel.requestFocusInWindow();
@@ -784,7 +784,7 @@ public class StacFrame extends JFrame
 
 				public void mousePressed(MouseEvent m)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					context = false;
 					vizPanel.selectLeft = getRelativeXPixels(m);
@@ -797,7 +797,7 @@ public class StacFrame extends JFrame
 
 				public void mouseReleased(MouseEvent ev)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					vizPanel.requestFocus();
 					vizPanel.showSelection = false;
@@ -829,7 +829,7 @@ public class StacFrame extends JFrame
 
 				public void mouseDragged(MouseEvent m)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					context = false;
 					mouseDrag = true;
@@ -851,8 +851,9 @@ public class StacFrame extends JFrame
 			{
 				public void mouseWheelMoved(MouseWheelEvent e)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
+
 					int notches = e.getWheelRotation();
 					
 					//Zoom in or box++ for mouse wheel up, zoom out or box-- for mouse wheel down
@@ -898,7 +899,7 @@ public class StacFrame extends JFrame
 			{
 				public void mouseClicked(MouseEvent m)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					contextPanel.requestFocusInWindow();
 					context = true;
@@ -925,7 +926,7 @@ public class StacFrame extends JFrame
 
 				public void mousePressed(MouseEvent m)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					context = true;
 					contextPanel.selectLeft = getRelativeXPixels(m);
@@ -938,7 +939,7 @@ public class StacFrame extends JFrame
 
 				public void mouseReleased(MouseEvent ev)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					context = true;
 //					vizPanel.requestFocus();
@@ -972,7 +973,7 @@ public class StacFrame extends JFrame
 
 				public void mouseDragged(MouseEvent m)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					context = true;
 					mouseDrag = true;
@@ -995,7 +996,7 @@ public class StacFrame extends JFrame
 			{
 				public void mouseWheelMoved(MouseWheelEvent e)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					int notches = e.getWheelRotation();
 					

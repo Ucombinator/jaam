@@ -42,18 +42,18 @@ public class VizPanel extends JPanel
 		this.boxWidth = this.getWidth()*0.96/(graph.getWidth()*(graph.currWindow.right-graph.currWindow.left));
 		this.boxHeight = this.getHeight()*0.96/(graph.getHeight()*(graph.currWindow.bottom-graph.currWindow.top));
 		
-		if(this.boxWidth >this.maxWidth)
+		if(this.boxWidth > this.maxWidth)
 		{
 			this.boxWidth = this.maxWidth;
 		}
 
-		if(this.boxHeight >this.maxHeight)
+		if(this.boxHeight > this.maxHeight)
 		{
 			this.boxHeight = this.maxHeight;
 		}
 
-		this.leftMargin = (this.getWidth()-this.boxWidth *graph.getWidth()*(graph.currWindow.right-graph.currWindow.left))/2;
-		this.topMargin = (this.getHeight()-this.boxHeight *graph.getHeight()*(graph.currWindow.bottom-graph.currWindow.top))/2;
+		this.leftMargin = (this.getWidth() - this.boxWidth*graph.getWidth()*(graph.currWindow.right - graph.currWindow.left))/2;
+		this.topMargin = (this.getHeight() - this.boxHeight*graph.getHeight()*(graph.currWindow.bottom - graph.currWindow.top))/2;
 
 		drawEdges(g);
 		drawVertices(g);
@@ -574,8 +574,8 @@ public class VizPanel extends JPanel
 		if(this.boxHeight >this.maxHeight)
 			this.boxHeight = this.maxHeight;
 		
-		this.leftMargin = (this.getWidth()-this.boxWidth *graph.getWidth())/2;
-		this.topMargin = (this.getHeight()-this.boxHeight *graph.getHeight())/2;
+		this.leftMargin = (this.getWidth() - this.boxWidth *graph.getWidth())/2;
+		this.topMargin = (this.getHeight() - this.boxHeight *graph.getHeight())/2;
 
 		drawEdges(g);
 		drawVertices(g);
@@ -693,11 +693,11 @@ public class VizPanel extends JPanel
 		Graph graph = Main.graph;
 		if(this.context)
 		{
-			return (x - this.leftMargin)/(this.boxWidth*graph.getWidth());
+			return x/(this.boxWidth*graph.getWidth());
 		}
 		else
 		{
-			return ((x - this.leftMargin)/this.boxWidth)/graph.getWidth() + graph.currWindow.left;
+			return x/(this.boxWidth*graph.getWidth()) + graph.currWindow.left;
 		}
 	}
 
@@ -706,9 +706,9 @@ public class VizPanel extends JPanel
 	{
 		Graph graph = Main.graph;
 		if(this.context)
-			return (y-this.topMargin)/(this.boxHeight *graph.getHeight());
+			return y/(this.boxHeight *graph.getHeight());
 		else
-			return (((y-this.topMargin)/this.boxHeight)+(graph.getHeight()*graph.currWindow.top))/graph.getHeight();
+			return y/(this.boxHeight*graph.getHeight()) + graph.currWindow.top;
 	}
 
 	//Convert a horizontal box index to a current x pixel location

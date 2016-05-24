@@ -5,7 +5,6 @@ Features to add (w/ priority):
 - Create magnifier view option: 1
 
 - Search for merge vertices by ID: 2
-- Zoom goes to center when mouse is at very top of window: 2
 - Select merge root whenever a merge parent is selected: 2
 - Show expected format in search dialog boxes: 2
 - Change auto-scroll in left area: 2

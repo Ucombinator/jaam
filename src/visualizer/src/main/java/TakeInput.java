@@ -11,7 +11,8 @@ public class TakeInput extends Thread
 	Input messageInput;
 
 	//If file is empty, we read from System.in
-	public void run(String file, boolean fromMessages) {
+	public void run(String file, boolean fromMessages)
+	{
 		Main.graph = new Graph();
 
 		if(!fromMessages)
@@ -77,20 +78,21 @@ public class TakeInput extends Thread
 					Parameters.cut_off = true;
 					break;
 				}
-				if(line==null||line.length()==0)
+
+				else if(line == null || line.length() == 0)
 				{
 					line = parseInput.readLine();
 					continue;
 				}
-				if(line.equals("Done!"))
+
+				else if(line.equals("Done!"))
 				{
 					System.out.println("Done!");
 					Parameters.cut_off = true;
 					break;
 				}
 
-
-				if(line.contains("\"states\":{"))
+				else if(line.contains("\"states\":{"))
 				{
 					tempStr = "";
 

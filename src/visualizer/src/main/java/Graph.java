@@ -22,8 +22,8 @@ public class Graph
 	public View[] hotkeyedViews;
 	private double maxH; // required for collapse method
 	public int maxIndex;
-	
-	
+
+
 	public Graph()
 	{
 		this.totalVertices = 0;
@@ -61,7 +61,7 @@ public class Graph
 		{
 			//Error values mean we don't have a valid mouse location, so we zoom to the center.
 			//This will most likely occur when someone decides to use the menu items.
-			if(mouseX < 0 || mouseY < 0)
+			if(mouseX < 0 || mouseX > 1 || mouseY < 0 || mouseY > 1)
 			{
 				System.out.println("Zooming in...");
 				double centerX = (this.currWindow.left+this.currWindow.right)/2;
@@ -153,7 +153,6 @@ public class Graph
 
 	public void selectVertices(double x1, double x2, double y1, double y2)
 	{
-		System.out.println("Selecting vertices: " + x1 + ", " + y1 + ", " + x2 + ", " + y2);
 		for(Vertex v : this.vertices)
 		{
 			v.clearAllHighlights();
@@ -239,12 +238,8 @@ public class Graph
 		
 		if(ind > this.maxIndex)
 			this.maxIndex = ind;
-
-		if(totalVertices != this.vertices.size())
-			System.out.println("Error! Mismatch between totalVertices = " + totalVertices
-					+ " and vertices.size() = " + vertices.size());
 	}
-	
+
 	public void matchVertexToMethod(Vertex v, String methodName)
 	{
 		Method currMethod;
@@ -644,7 +639,7 @@ public class Graph
 		for(MethodPathVertex v : this.methodPathVertices)
 			v.collectMethodsAndInstructions();
 	}
-		
+
 	public void finalizeParentsForRootChildren()
 	{
 		AbstractVertex dest, src;
