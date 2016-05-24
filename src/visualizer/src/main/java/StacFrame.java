@@ -1,8 +1,9 @@
 
+import java.io.File;
+
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.FlowLayout;
-
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -15,6 +16,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelListener;
 import java.awt.event.MouseWheelEvent;
+import java.awt.Font;
 
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
@@ -33,8 +35,6 @@ import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.JLabel;
 import javax.swing.JButton;
-
-import java.awt.Font;
 
 
 /**
@@ -102,6 +102,19 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent e)
 					{
 						loadGraph(true);
+					}
+				}
+		);
+
+		final JMenuItem loadJavaCode = new JMenuItem("Load matching decompiled code");
+		menuFile.add(loadJavaCode);
+		loadJavaCode.addActionListener(
+				new ActionListener()
+				{
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						TakeInput.loadDecompiledCode();
 					}
 				}
 		);
@@ -632,12 +645,12 @@ public class StacFrame extends JFrame
 	
 	public void loadGraph(boolean fromMessages)
 	{
-		String file = Parameters.openFile();
-		if(file==null)
+		File file = Parameters.openFile(false);
+		if(file == null)
 			return;
 
 		TakeInput ti = new TakeInput();
-		ti.run(file, fromMessages);
+		ti.run(file.getAbsolutePath(), fromMessages);
 		Parameters.repaintAll();
 	}
 	

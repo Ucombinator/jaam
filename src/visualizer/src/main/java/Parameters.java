@@ -65,21 +65,22 @@ public class Parameters
 		rightArea.setText(text.toString());
 		rightArea.setCaretPosition(0);
 	}
-	
-	
-	public static String openFile()
+
+	public static File openFile(boolean includeDirectories)
 	{
 		try
 		{
 			JFileChooser choose = new javax.swing.JFileChooser(new File(pwd).getCanonicalPath());
+			if(includeDirectories)
+				choose.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+
 			int ret = choose.showOpenDialog(null);
-			//choose.setVisible(true);
-			if(ret==JFileChooser.APPROVE_OPTION)
+			if(ret == JFileChooser.APPROVE_OPTION)
 			{
 				pwd = Parameters.folderFromPath(choose.getSelectedFile().getAbsolutePath());
-				return choose.getSelectedFile().getAbsolutePath();
+				return choose.getSelectedFile();
 			}
-			return null;
+			else return null;
 		}
 		catch(IOException ex)
 		{

@@ -1,11 +1,10 @@
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.HashMap;
 import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 public class Graph
@@ -14,6 +13,7 @@ public class Graph
 	public ArrayList<MethodVertex> methodVertices;
 	public ArrayList<MethodPathVertex> methodPathVertices;
 	public HashMap<String, Method> methods;
+	public HashMap<String, Class> classes;
 	public AbstractVertex root;
 	public View currWindow;
 	static int numHotkeys = 10;
@@ -28,6 +28,7 @@ public class Graph
 		this.methodVertices = new ArrayList<MethodVertex>();
 		this.methodPathVertices = new ArrayList<MethodPathVertex>();
 		this.methods = new HashMap<String, Method>();
+		this.classes = new HashMap<String, Class>();
 		root = new Vertex(-1,-1);
 		this.maxIndex = -1;
 		
@@ -306,7 +307,22 @@ public class Graph
 
 		vSrc.addNeighbor(vDest);
 	}
-	
+
+	public void matchClassesToCode(String basePath, ArrayList<File> javaFiles)
+	{
+		//Search through all the files, removing basePath from the beginning and .java from the end
+		for(File file : javaFiles)
+		{
+			String path = file.getAbsolutePath();
+			String className = path.substring(basePath.length(), path.length() - 5).replace('/', '.');
+
+			if(this.classes.containsKey(className))
+				this.classes.get(className).parseJavaFile(file.getAbsolutePath());
+			else
+				System.out.println("Cannot find class: " + className);
+		}
+	}
+
 	public void clearHighlights()
 	{
 		for(Vertex v : this.vertices)
@@ -362,7 +378,7 @@ public class Graph
 		{
 			if(v.isHighlighted())
 			{
-				//System.out.println("Highlighting cycle for vertex " + v.getName());
+				//System.out.println("Highlighting cycle for vertex " + v.getFullName());
 				v.highlightCycles();
 			}
 		}

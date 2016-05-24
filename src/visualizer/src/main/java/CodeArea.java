@@ -128,7 +128,7 @@ public class CodeArea extends JTextArea
 		{
 			method.highlightInstructions();
 			//Add header line with method name
-			String currMethod = method.getName();
+			String currMethod = method.getFullName();
 			description.add(new Instruction(currMethod + "\n", currMethod, false, -1));
 			
 			//Add all instructions in the method

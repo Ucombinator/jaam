@@ -82,7 +82,7 @@ public class Vertex extends AbstractVertex
 	
 	public String getMethodName()
 	{
-		return this.method.getName();
+		return this.method.getFullName();
 	}
 	
 	public ArrayList<AbstractVertex> getMergeChildren()

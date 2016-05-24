@@ -51,7 +51,7 @@ public class MethodPathVertex extends AbstractVertex
 	
 	public void addMergeChild(MethodVertex v)
 	{
-		//System.out.println("Adding merge child: " + v.getName());
+		//System.out.println("Adding merge child: " + v.getFullName());
 		this.mergeChildren.add(v);
 		this.writeName();
 	}

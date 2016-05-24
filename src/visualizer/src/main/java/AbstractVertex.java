@@ -372,7 +372,7 @@ public abstract class AbstractVertex
 	
 	public void addHighlight(boolean vertex, boolean to, boolean from)
 	{
-		//System.out.println("Highlighting vertex: " + this.getName());
+		//System.out.println("Highlighting vertex: " + this.getFullName());
 		if(vertex)
 			this.isHighlighted = true;
 		if(to)
@@ -386,7 +386,7 @@ public abstract class AbstractVertex
 			if(vertex)
 			{
 				v.numChildrenHighlighted++;
-				//System.out.println("Adding child highlight to " + v.getName());
+				//System.out.println("Adding child highlight to " + v.getFullName());
 			}
 			if(to)
 				v.isIncomingHighlighted = true;
@@ -409,7 +409,7 @@ public abstract class AbstractVertex
 	
 	public boolean isChildHighlighted()
 	{
-		//System.out.println("Highlighted children for vertex: " + this.getName() + " = " + this.numChildrenHighlighted);
+		//System.out.println("Highlighted children for vertex: " + this.getFullName() + " = " + this.numChildrenHighlighted);
 		return this.numChildrenHighlighted > 0;
 	}
 	
@@ -463,7 +463,7 @@ public abstract class AbstractVertex
 	
 	/*public void printCoordinates()
 	{
-		System.out.println(this.getName() + ": " + this.x + ", " + this.y + ", left = " + this.left + ", right = " + this.right +
+		System.out.println(this.getFullName() + ": " + this.x + ", " + this.y + ", left = " + this.left + ", right = " + this.right +
 				", width = " + this.width + ", top = " + this.top + ", bottom = " + this.bottom + ", height = " + this.height);
 	}*/
 }

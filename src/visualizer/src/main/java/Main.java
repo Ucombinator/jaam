@@ -14,12 +14,10 @@ public class Main
 		{
 			if(args[i].equalsIgnoreCase("--refresh") || args[i].equalsIgnoreCase("-r"))
 			{
-				i++;
 				Parameters.interval = Long.parseLong(args[i].trim());
 			}
 			else if(args[i].equalsIgnoreCase("--limit") || args[i].equalsIgnoreCase("-l"))
 			{
-				i++;
 				Parameters.limitV = Long.parseLong(args[i].trim());
 			}
 			else if(args[i].equalsIgnoreCase("--file") || args[i].equalsIgnoreCase("-f"))

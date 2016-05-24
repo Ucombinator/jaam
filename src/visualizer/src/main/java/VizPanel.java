@@ -179,7 +179,7 @@ public class VizPanel extends JPanel
 			this.drawCenteredString(g, ver.getName(), (int) (this.getX(ver.x - graph.currWindow.left*graph.getWidth())), (int) (this.getY(ver.y-graph.currWindow.top*graph.getHeight())), ff, Color.BLACK);
 		//Remove labels from minimap
 		//else
-		//	this.drawCenteredString(g, ver.getName(), (int) (this.getX(ver.x)), (int) (this.getY(ver.y)), ff, Color.BLACK);
+		//	this.drawCenteredString(g, ver.getFullName(), (int) (this.getX(ver.x)), (int) (this.getY(ver.y)), ff, Color.BLACK);
 		
 		if(this.boxWidth < this.minWidth || this.boxHeight < this.minHeight)
 			g.setColor(this.getColorT(Color.BLACK.getRGB()));
@@ -211,7 +211,7 @@ public class VizPanel extends JPanel
 					while(!w.isVisible)
 						w = w.getMergeParent();
 
-					//System.out.println("Drawing edge: " + v.getName() + ", " + w.getName());
+					//System.out.println("Drawing edge: " + v.getFullName() + ", " + w.getFullName());
 					if(v != w && v.drawEdges && w.drawEdges)
 						drawEdge(g, v, w);
 				}

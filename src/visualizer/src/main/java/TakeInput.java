@@ -2,6 +2,8 @@
 import java.io.*;
 import java.util.regex.*;
 import java.util.StringTokenizer;
+import java.util.ArrayList;
+import java.util.Stack;
 import org.ucombinator.jaam.messaging.*;
 import org.ucombinator.jaam.messaging.Message.Input;
 
@@ -32,6 +34,7 @@ public class TakeInput extends Thread
 
 		System.out.println("number of vertices = " + Main.graph.vertices.size());
 		System.out.println("number of method vertices = " + Main.graph.methodVertices.size());
+		System.out.println("number of classes = " + Main.graph.classes.size());
 	}
 	
 	private void setFileInput(String file)
@@ -290,5 +293,62 @@ public class TakeInput extends Thread
 		while(token.hasMoreTokens())
 			toReturn += " "+token.nextToken();
 		return toReturn;
+	}
+
+	public static void loadDecompiledCode()
+	{
+		if(Main.graph != null)
+		{
+			File file = Parameters.openFile(true);
+			if(file.isDirectory())
+			{
+				ArrayList<File> javaFiles = getJavaFilesRec(file);
+				Main.graph.matchClassesToCode(file.getAbsolutePath() + "/", javaFiles);
+			}
+			else if(file.getAbsolutePath().endsWith(".java"))
+			{
+				//For now, we assume that there is only one class, because otherwise the user
+				//would load a directory.
+				if(Main.graph.classes.size() == 1)
+				{
+					Class ourClass = Main.graph.classes.entrySet().iterator().next().getValue();
+					ourClass.parseJavaFile(file.getAbsolutePath());
+				}
+				else
+					System.out.println("Cannot load single class. Number of classes: " + Main.graph.classes.size());
+			}
+		}
+		else
+		{
+			System.out.println("Cannot load source code until we have a graph...");
+		}
+	}
+
+	public static ArrayList<File> getJavaFilesRec(File file)
+	{
+		ArrayList<File> javaFiles = new ArrayList<File>();
+		Stack<File> toSearch = new Stack<File>();
+		toSearch.add(file);
+
+		while (!toSearch.isEmpty())
+		{
+			File nextFilepath = toSearch.pop();
+			if (nextFilepath.isFile() && nextFilepath.toString().endsWith(".java"))
+			{
+				//Add this .java file
+				javaFiles.add(nextFilepath);
+			}
+			else if (nextFilepath.isDirectory())
+			{
+				//Search directory for more .java files
+				File[] newFilepaths = nextFilepath.listFiles();
+
+				//Assume we actually have a tree of directories, with no extra links
+				for (File f : newFilepaths)
+					toSearch.add(f);
+			}
+		}
+
+		return javaFiles;
 	}
 }

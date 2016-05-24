@@ -14,7 +14,7 @@ public class MethodVertex extends AbstractVertex
 		this.id = id;
 		this.index = index;
 		this.method = method;
-		this.name = method.getName();
+		this.name = method.getFullName();
 		this.isVisible = isVisible;
 		this.numChildrenHighlighted = 0;
 		this.drawEdges = true;
@@ -32,7 +32,7 @@ public class MethodVertex extends AbstractVertex
 	
 	public String getMethodName()
 	{
-		return this.method.getName();
+		return this.method.getFullName();
 	}
 	
 	public Method getMethod()
