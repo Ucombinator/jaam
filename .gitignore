@@ -12,3 +12,5 @@ sootOutput
 .*.sw?
 .idea
 *.class
+*.dat
+*.txt

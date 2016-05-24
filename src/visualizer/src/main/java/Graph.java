@@ -9,6 +9,8 @@ import java.util.StringTokenizer;
 
 public class Graph
 {
+	public int totalVertices;
+	public int baseEdges;
 	public ArrayList<Vertex> vertices;
 	public ArrayList<MethodVertex> methodVertices;
 	public ArrayList<MethodPathVertex> methodPathVertices;
@@ -20,10 +22,12 @@ public class Graph
 	public View[] hotkeyedViews;
 	private double maxH; // required for collapse method
 	public int maxIndex;
-	
-	
+
+
 	public Graph()
 	{
+		this.totalVertices = 0;
+		this.baseEdges = 0;
 		this.vertices = new ArrayList<Vertex>();
 		this.methodVertices = new ArrayList<MethodVertex>();
 		this.methodPathVertices = new ArrayList<MethodPathVertex>();
@@ -31,7 +35,7 @@ public class Graph
 		this.classes = new HashMap<String, Class>();
 		root = new Vertex(-1,-1);
 		this.maxIndex = -1;
-		
+
 		currWindow = new View(true);
 		hotkeyedViews = new View[numHotkeys];
 		for(int i = 0; i < numHotkeys; i++)
@@ -58,7 +62,7 @@ public class Graph
 		{
 			//Error values mean we don't have a valid mouse location, so we zoom to the center.
 			//This will most likely occur when someone decides to use the menu items.
-			if(mouseX < 0 || mouseY < 0)
+			if(mouseX < 0 || mouseX > 1 || mouseY < 0 || mouseY > 1)
 			{
 				System.out.println("Zooming in...");
 				double centerX = (this.currWindow.left+this.currWindow.right)/2;
@@ -147,42 +151,28 @@ public class Graph
 		currWindow.setNext(newWindow);
 		currWindow = newWindow;
 	}
-	
-	//TODO: Figure out why some vertices aren't being selected...
+
 	public void selectVertices(double x1, double x2, double y1, double y2)
 	{
-		System.out.println("Selecting vertices: " + x1 + ", " + y1 + ", " + x2 + ", " + y2);
 		for(Vertex v : this.vertices)
 		{
-			System.out.println(v.x + ", " + v.y);
 			v.clearAllHighlights();
 			if(v.isVisible && x1 < v.x && v.x < x2 && y1 < v.y && v.y < y2)
-			{
-				System.out.println("Selecting vertex: " + v.getName());
 				v.addHighlight(true, true, true);
-			}
 		}
 		
 		for(MethodVertex v : this.methodVertices)
 		{
-			System.out.println(v.x + ", " + v.y);
 			v.clearAllHighlights();
 			if(v.isVisible && x1 < v.x && v.x < x2 && y1 < v.y && v.y < y2)
-			{
-				System.out.println("Selecting vertex: " + v.getName());
 				v.addHighlight(true, true, true);
-			}
 		}
 		
 		for(MethodPathVertex v: this.methodPathVertices)
 		{
-			System.out.println(v.x + ", " + v.y);
 			v.clearAllHighlights();
 			if(v.isVisible && x1 < v.x && v.x < x2 && y1 < v.y && v.y < y2)
-			{
-				System.out.println("Selecting vertex: " + v.getName());
 				v.addHighlight(true, true, true);
-			}
 		}
 	}
 	
@@ -235,6 +225,7 @@ public class Graph
 		
 		if(ver == null)
 		{
+			totalVertices++;
 			ver = new Vertex(v, this.vertices.size());
 			this.vertices.add(ver);
 		}
@@ -249,7 +240,7 @@ public class Graph
 		if(ind > this.maxIndex)
 			this.maxIndex = ind;
 	}
-	
+
 	public void matchVertexToMethod(Vertex v, String methodName)
 	{
 		Method currMethod;
@@ -271,41 +262,42 @@ public class Graph
 		int src, dest;
 		StringTokenizer token = new StringTokenizer(line);
 		
-		if(token.countTokens() != 3)
-			return;
-		
-		src = Integer.parseInt(token.nextToken());
-		token.nextToken();
-		dest = Integer.parseInt(token.nextToken());
+		if(token.countTokens() == 3)
+		{
+			baseEdges++;
+			src = Integer.parseInt(token.nextToken());
+			token.nextToken();
+			dest = Integer.parseInt(token.nextToken());
 
-		addEdge(src, dest);
+			addEdge(src, dest);
+		}
 	}
 
 	public void addEdge(int src, int dest)
 	{
 		Vertex vSrc, vDest;
 
-		if(src == dest)
+		if(src != dest)
 		{
-			//System.out.println("ERROR! Cannot add self-loop.");
-			return;
-		}
+			vSrc = this.containsVertex(src);
+			if (vSrc == null)
+			{
+				totalVertices++;
+				vSrc = new Vertex(src, this.vertices.size());
+				this.vertices.add(vSrc);
+			}
 
-		vSrc = this.containsVertex(src);
-		if(vSrc==null)
-		{
-			vSrc=new Vertex(src, this.vertices.size());
-			this.vertices.add(vSrc);
-		}
+			vDest = this.containsVertex(dest);
+			if (vDest == null)
+			{
+				totalVertices++;
+				vDest = new Vertex(dest, this.vertices.size());
+				this.vertices.add(vDest);
+			}
 
-		vDest = this.containsVertex(dest);
-		if(vDest==null)
-		{
-			vDest=new Vertex(dest, this.vertices.size());
-			this.vertices.add(vDest);
+			baseEdges++;
+			vSrc.addNeighbor(vDest);
 		}
-
-		vSrc.addNeighbor(vDest);
 	}
 
 	public void matchClassesToCode(String basePath, ArrayList<File> javaFiles)
@@ -622,11 +614,6 @@ public class Graph
 				v.addHighlight(true, true, true);
 		}
 	}
-
-	public int numVertices()
-	{
-		return this.vertices.size();
-	}
 	
 	public Vertex containsVertex(int id)
 	{
@@ -645,92 +632,6 @@ public class Graph
 		{
 			Method method = entry.getValue();
 			method.collectAndSortInstructions();
-		}
-	}
-	
-	public void mergeMoreMethods()
-	{
-		for(int i = 0; i < this.methodVertices.size(); i++)
-		{
-			MethodVertex method1 = this.methodVertices.get(i);
-			for(int j = i + 1; j < this.methodVertices.size(); j++)
-			{
-				MethodVertex method2 = this.methodVertices.get(j);
-				if(method2.name.equals(method1.name))
-				{
-					MethodPathVertex root1 = (MethodPathVertex) method1.mergeRoot;
-					MethodPathVertex root2 = (MethodPathVertex) method2.mergeRoot;
-					
-					AbstractVertex childVer = null, parentVer = null;
-					
-					for(int k = 0; k < root2.incoming.size(); k++)
-					{
-						if(root2.incoming.get(k).getMergeParent() == method1)
-						{
-							System.out.println("potential merging: " + root2.getName() + " to " + root2.incoming.get(k).getName());
-							AbstractVertex ver = root2;
-							while(ver != this.root && ver.getMergeParent() != method1)
-							{
-								ver = ver.parent;
-							}
-							
-							if(ver != this.root)
-							{
-								childVer = root2;
-								parentVer = root2.incoming.get(k);
-								break;
-							}
-						}
-					}
-
-					if(parentVer != null) // root2 can be merged
-					{
-						System.out.println("going to merge " + j + " to " + i);
-						childVer.changeParent(parentVer);
-						System.out.println("change parent done");
-						for(int k = 0; k < method2.mergeChildren.size(); k++)
-						{
-							method2.mergeChildren.get(k).mergeParent = method1;
-							method1.mergeChildren.add(method2.mergeChildren.get(k));
-						}
-						System.out.println("merging done");
-						this.methodVertices.remove(j);
-						j--;
-						continue;
-					}
-					for(int k=0; k<root1.incoming.size(); k++)
-					{
-						if(root1.incoming.get(k).getMergeParent() == method2)
-						{
-							System.out.println("potential merging: "+root1.getName()+" to "+root1.incoming.get(k).getName());
-							AbstractVertex ver = root1;
-							while(ver!=this.root && ver.getMergeParent() != method2)
-							{
-								ver = ver.parent;
-							}
-							if(ver==this.root)
-								continue;
-							childVer = root1;
-							parentVer = root1.incoming.get(k);
-							break;
-						}
-					}
-					if(parentVer==null)
-						continue;
-					System.out.println("\ngoing to merge "+i+" to "+j);
-					childVer.changeParent(parentVer);
-					System.out.println("change parent done");
-					for(int k=0; k<method1.mergeChildren.size(); k++)
-					{
-						method1.mergeChildren.get(k).mergeParent = method2;
-						method2.mergeChildren.add(method1.mergeChildren.get(k));
-					}
-					System.out.println("merging done");
-					this.methodVertices.remove(i);
-					i--;
-					break;
-				}
-			}
 		}
 	}
 	
@@ -754,7 +655,7 @@ public class Graph
 		for(MethodPathVertex v : this.methodPathVertices)
 			v.collectMethodsAndInstructions();
 	}
-		
+
 	public void finalizeParentsForRootChildren()
 	{
 		AbstractVertex dest, src;
@@ -1089,7 +990,8 @@ public class Graph
 		}
 		
 		//This loop should terminate because every vertex has exactly one loop header, and there should not
-		//be a loop in following header pointers.
+		//be a loop in following header pointers. Each pass sets the height for the vertices at the next
+		//level.
 		int currLoopHeight = 1;
 		while(toSearch.size() > 0)
 		{

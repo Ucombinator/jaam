@@ -35,12 +35,6 @@ public class Parameters
 	public static long limitV = Long.MAX_VALUE;
 	public static boolean cut_off = true;
 	
-	
-	public static void console(String str)
-	{
-		Parameters.stFrame.addToConsole(str);
-	}
-	
 	public static void setRightText()
 	{
 		StringBuilder text = new StringBuilder();
