@@ -35,7 +35,7 @@ the following from the top level of your JAAM directory:
 ## Usage
 
 Currently the project functions in two parts: an analyzer (which produces a
-static analysis of the Java application of your choosing) and a visualier (which
+static analysis of the Java application of your choosing) and a visualizer (which
 makes it easy to look at the analysis).
 
 Note that you must have completed [initialization](#Initialization) before
@@ -51,6 +51,10 @@ options:
 | `--classpath`     | Give a classpath to analyze within.                                   |
 | `-c`, `--class`   | Give a specific class within the classpath.                           |
 | `-m`, `--method`  | Give a specific method within the class from which to start analysis. |
+| `-o`, `--outfile` | Where to save the output from the analysis for use in the visualizer. |
+
+If you give no `--outfile` specification, the analyzer will use the given class
+name as a filename.
 
 For example, to analyze the `Factorial` class located in the `to-analyze`
 classpath in this repository:
@@ -60,8 +64,8 @@ classpath in this repository:
 ```
 
 It may take a moment. You will see some output to the console, and a file named
-`test.dat` will be created inside your current working directory. This file
-contains the raw output that will be used by the visualizer.
+`Factorial.jaam` will be created inside your current working directory. This
+file contains the raw output that will be used by the visualizer.
 
 You can try this with most of the class files in `examples/`. `Static`
 currently generates an error when run. `Fib` and `Fibonacci` currently produce

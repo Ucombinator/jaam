@@ -1286,7 +1286,8 @@ case class Config(
                    rtJar: String = null,
                    sootClassPath: String = null,
                    className: String = null,
-                   methodName: String = null)
+                   methodName: String = null,
+                   outputFile: String = null)
 
 object Main {
   def main(args : Array[String]) {
@@ -1309,6 +1310,10 @@ object Main {
         (x, c) => c.copy(methodName = x)
       } text("the main method")
 
+      opt[String]('o', "outfile") action {
+        (x, c) => c.copy(outputFile = x)
+      } text("the output file for the serialized data")
+
       help("help") text("prints this usage text")
 
       override def showUsageOnError = true
@@ -1325,7 +1330,13 @@ object Main {
   }
 
   def defaultMode(config : Config) {
-    val outMessaging = Message.openOutput(new FileOutputStream("test.jaam"))
+    val outputFileOpt = Option(config.outputFile)
+    var outputFile: String = null
+    outputFileOpt match {
+      case None => outputFile = config.className + ".jaam"
+      case Some(x) => outputFile = x
+    }
+    val outMessaging = Message.openOutput(new FileOutputStream(outputFile))
     val mainMainMethod : SootMethod = Soot.getSootClass(config.className).getMethodByName(config.methodName)
     val initialState = State.inject(Stmt.methodEntry(mainMainMethod))
 
