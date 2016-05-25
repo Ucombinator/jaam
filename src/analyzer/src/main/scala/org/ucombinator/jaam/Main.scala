@@ -16,9 +16,8 @@ import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.collection.mutable.TreeSet
 import scala.language.postfixOps
-import xml.Utility
 
-import org.ucombinator.jaam.Stmt.unitToStmt
+import java.io.FileOutputStream
 
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
@@ -28,7 +27,6 @@ import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, Type => Soo
 
 import soot.jimple._
 import soot.jimple.{Stmt => SootStmt}
-
 import soot.jimple.internal.JStaticInvokeExpr
 import soot.jimple.internal.JArrayRef
 
@@ -38,29 +36,9 @@ import soot.util.Chain
 import soot.options.Options
 import soot.jimple.toolkits.invoke.AccessManager
 
-//ICFG
-import soot.toolkits.graph._
-import soot.jimple.toolkits.ide.icfg._
+import org.ucombinator.jaam.messaging.Message
 
-// JGraphX
-
-import javax.swing.JFrame
-import javax.swing.SwingUtilities
-import javax.swing.ToolTipManager
-
-import com.mxgraph.swing.mxGraphComponent
-import com.mxgraph.view.mxGraph
-import com.mxgraph.layout.mxCompactTreeLayout
-
-// JSON4s
-import org.json4s._
-import org.json4s.native._
-
-import java.io.FileOutputStream
-import java.io.FileInputStream
-
-import org.ucombinator.jaam.messaging
-import org.ucombinator.jaam.messaging.{State => MState, AbstractState => MAbstractState, ErrorState => MErrorState, Edge => MEdge, Id, Message, Done}
+import org.ucombinator.jaam.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
 
 // Possibly thrown during transition between states.
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
@@ -153,7 +131,6 @@ case class KontStack(/*store : KontStore, */k : Kont) {
 }
 
 object KontStore {
-  val serializer = Soot.mapSerializer[KontStore, KontAddr, Set[Kont]]
   var readAddrs = Set[KontAddr]()
   var writeAddrs = Set[KontAddr]()
 }
@@ -228,10 +205,6 @@ case class D(val values: Set[Value]) {
 
 object D {
   val atomicTop = D(Set(AnyAtomicValue))
-  val serializer = new CustomSerializer[D](implicit format => (
-    { case s => ??? },
-    { case D(values) => Extraction.decompose(values) }
-    ))
 }
 
 abstract class Value
@@ -299,9 +272,7 @@ case class ArrayLengthAddr(val bp : BasePointer) extends Addr
 case class StaticFieldAddr(val field : SootField) extends Addr
 
 object Store {
-  val serializer = Soot.toStringSerializer[Store] //Soot.mapSerializer[Store, Addr, D]
   var on = false
-  var print = false
   var readAddrs = Set[Addr]()
   var writeAddrs = Set[Addr]()
   var map : Map[Addr, D] = Map()
@@ -396,19 +367,6 @@ case class Store() { //private val map : Map[Addr, D]) {
     (for ((a, d) <- Store.map) yield { a + " -> " + d }).toList
 }
 
-// Due to a bug in json4s we have to use "Int" instead of "AbstractState.Id" for the keys of this map
-// Once the following pull request is accepted we can use "AbstractState.Id":
-//   https://github.com/json4s/json4s/pull/324
-case class UpdatePacket(states : Map[Int,AbstractState], edges : Set[(AbstractState.Id, AbstractState.Id)]) {
-  def nonEmpty = states.nonEmpty || edges.nonEmpty
-}
-object UpdatePacket {
-  val serializer = new CustomSerializer[UpdatePacket](implicit format => (
-    { case s => ??? },
-    { case (i : AbstractState.Id, j : AbstractState.Id) => Extraction.decompose(List(i,j)) }
-    ))
-}
-
 abstract sealed class AbstractState {
   def next() : Set[AbstractState]
   def setStore(store: Store) : scala.Unit
@@ -432,7 +390,7 @@ abstract sealed class AbstractState {
   def setInitializedClasses(classes: Set[SootClass]) : scala.Unit
   def getInitializedClasses() : Set[SootClass]
 
-  def toMessage() : MAbstractState
+  def toMessage() : messaging.AbstractState
 
   val id = AbstractState.idMap.getOrElseUpdate(this, AbstractState.nextId)
 }
@@ -460,7 +418,7 @@ case object ErrorState extends AbstractState {
   override def setKWriteAddrs(s: Set[KontAddr]) = scala.Unit
   override def setInitializedClasses(classes: Set[SootClass]) = scala.Unit
   override def getInitializedClasses() : Set[SootClass] = Set()
-  override def toMessage() = messaging.ErrorState(Id[messaging.AbstractState](id))
+  override def toMessage() = messaging.ErrorState(messaging.Id[messaging.AbstractState](id))
 }
 
 // State abstracts a collection of concrete states of execution.
@@ -505,7 +463,7 @@ case class State(val stmt : Stmt,
   }
   override def getInitializedClasses() : Set[SootClass] = initializedClasses
 
-  override def toMessage() = messaging.State(Id[messaging.AbstractState](id), stmt.toMessage, fp.toString, kontStack.toString)
+  override def toMessage() = messaging.State(messaging.Id[messaging.AbstractState](id), stmt.toMessage, fp.toString, kontStack.toString)
 
   def copyState(stmt: Stmt = stmt,
                 fp: FramePointer = fp,
@@ -912,7 +870,6 @@ println("isSubtype")
             }
           }
           else if (meth.isNative) {
-//            println()
             println(Console.YELLOW + "!!!!! WARNING (in state "+this.id+"): Native method without a snowflake. May be unsound. !!!!!")
             println("!!!!! stmt = " + stmt + " !!!!!")
             println("!!!!! method = " + meth + " !!!!!" + Console.RESET)
@@ -1088,6 +1045,7 @@ println("isSubtype")
         println(Console.RED + "!!!!! ERROR (in state "+this.id+"): Undefined Addrs !!!!!")
         println("!!!!! stmt = " + stmt + " !!!!!")
         println("!!!!! addrs = " + addrs + " !!!!!" + Console.RESET)
+
         Set()
     }
   }
@@ -1368,7 +1326,7 @@ object Main {
           val id = doneEdges.size
           println("Writing edge "+id+": "+current.id+" -> "+n.id)
           doneEdges += id -> Pair(current.id, n.id)
-          Message.write(outMessaging, messaging.Edge(Id[MEdge](id), Id[messaging.AbstractState](current.id), Id[messaging.AbstractState](n.id)))
+          Message.write(outMessaging, messaging.Edge(messaging.Id[messaging.Edge](id), messaging.Id[messaging.AbstractState](current.id), messaging.Id[messaging.AbstractState](n.id)))
         } else {
           println("Skipping edge "+current.id+" -> "+n.id)
         }
@@ -1381,8 +1339,6 @@ object Main {
           done = done - d
         }
       }
-
-      Store.print = false
 
       if ((globalInitClasses++initClasses).size != globalInitClasses.size) {
         todo = newTodo ++ List(current) ++ todo.tail

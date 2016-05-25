@@ -3,8 +3,6 @@ package org.ucombinator.jaam
 import scala.collection.JavaConversions._
 import scala.math.BigInt
 
-import org.ucombinator.jaam.Stmt.unitToStmt
-
 import soot._
 import soot.options._
 import soot.jimple._
@@ -12,11 +10,7 @@ import soot.jimple.{Stmt => SootStmt}
 import soot.tagkit.GenericAttribute
 import soot.tagkit.SourceFileTag
 
-import org.json4s._
-import org.json4s.native._
-import org.json4s.reflect.Reflector
-
-import org.ucombinator.jaam.messaging
+import org.ucombinator.jaam.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
 
 // Helpers for working with Soot.
 //
@@ -25,7 +19,6 @@ import org.ucombinator.jaam.messaging
 
 object Stmt {
   val indexTag = "org.ucombinator.jaam.Stmt.indexTag"
-  val serializer = FieldSerializer[Stmt]()
 
   import scala.language.implicitConversions
   implicit def unitToStmt(unit : Unit) : SootStmt = {
@@ -80,60 +73,6 @@ case class Stmt(val sootStmt : SootStmt, val sootMethod : SootMethod) {
 }
 
 object Soot {
-  def toStringSerializer[T](implicit mf: Manifest[T]) = {
-    val cls = mf.runtimeClass
-    new CustomSerializer[T](implicit format => (
-      { case s => ??? },
-      { case x if cls.isAssignableFrom(x.getClass) => JString(x.toString) }
-      ))
-  }
-
-  def mapSerializer[T,K,V](implicit mfT: Manifest[T], mfMap: Manifest[Map[K,V]]) = {
-    val runtimeClass = mfT.runtimeClass
-    val fields = runtimeClass.getDeclaredFields
-    assert(fields.length == 1)
-    //assert(fields.length >= 1)
-    val f = fields(0)
-    f.setAccessible(true)
-    new CustomSerializer[Map[K,V]](implicit format => (
-      { case s => ??? },
-      { case x if runtimeClass.isAssignableFrom(x.getClass) =>
-        val m = f.get(x).asInstanceOf[Map[K, V]]
-        JArray(m.keys.toList.sortBy(_.toString).map({case k => JArray(List(Extraction.decompose(k), Extraction.decompose(m(k))))})) }
-      ))
-  }
-
-  val methodSerializer = new CustomSerializer[SootMethod](implicit format => (
-    { case s => ??? },
-    { case m:SootMethod =>
-      JObject(List(
-        (format.typeHintFieldName, JString(format.typeHints.hintFor(m.getClass))),
-        ("declaringClass", Extraction.decompose(m.getDeclaringClass)),
-        ("name", Extraction.decompose(m.getName)),
-        ("parameterTypes", Extraction.decompose(m.getParameterTypes)),
-        ("returnType", Extraction.decompose(m.getReturnType)),
-        ("modifiers", Extraction.decompose(m.getModifiers)),
-        ("exceptions", Extraction.decompose(m.getExceptions)))) }
-    ))
-
-  private val typeHints = new TypeHints() {
-    val hints = List() // this is a hack
-    override def containsHint(clazz: Class[_]): Boolean = true
-    override def + (hints: TypeHints): TypeHints = ???
-    def hintFor(clazz: Class[_]) = clazz.getName
-    def classFor(hint: String) = Reflector.scalaTypeOf(hint).map(_.erasure)
-  }
-
-  val formats =
-    Serialization.formats(typeHints).withTypeHintFieldName("$type") +
-      Stmt.serializer +
-      Soot.methodSerializer +
-      Soot.toStringSerializer[Type] +
-      Soot.toStringSerializer[Unit] +
-      Soot.toStringSerializer[SootField] +
-      Soot.toStringSerializer[Local] +
-      Soot.toStringSerializer[SootClass]
-
   def initialize(config : Config) {
     Options.v().set_verbose(false)
     // Put class bodies in Jimple format
