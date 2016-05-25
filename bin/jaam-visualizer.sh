@@ -3,7 +3,7 @@
 # Handles execution of JAAM's Visualizer for you!
 
 : ${JAAM_dir:="$(cd $(dirname $(dirname $0)); pwd -P)"}
-: ${JAAM_visualizer:="${JAAM_dir}/assembled/visualizer.jar"}
+: ${JAAM_visualizer:="${JAAM_dir}/assembled/jaam-visualizer.jar"}
 : ${JAAM_java:="java"}
 : ${JAAM_java_opts:=""}
 

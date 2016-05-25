@@ -18,7 +18,7 @@ mainClass in (Compile, assembly) := Some("org.ucombinator.jaam.Main")
 
 // Assembly-specific configuration
 test in assembly := {}
-assemblyOutputPath in assembly := new File("./assembled/analyzer.jar")
+assemblyOutputPath in assembly := new File("./assembled/jaam-analyzer.jar")
 
 // META-INF discarding
 assemblyMergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
