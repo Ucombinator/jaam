@@ -19,89 +19,7 @@ import com.esotericsoftware.kryo.serializers.FieldSerializer
 // Methods and types for reading and writing message
 ////////////////////////////////////////
 
-class MyKryo extends com.twitter.chill.KryoBase {
-  var seenClasses = Set[Class[_]]()
-
-  {
-    this.setRegistrationRequired(false)
-    this.setInstantiatorStrategy(new org.objenesis.strategy.StdInstantiatorStrategy)
-    // Handle cases where we may have an odd classloader setup like with libjars
-    // for hadoop
-    val classLoader = Thread.currentThread.getContextClassLoader
-    this.setClassLoader(classLoader)
-    val reg = new com.twitter.chill.AllScalaRegistrar
-    reg(this)
-    this.setAutoReset(false)
-    this.addDefaultSerializer(classOf[soot.util.Chain[java.lang.Object]], classOf[com.esotericsoftware.kryo.serializers.FieldSerializer[java.lang.Object]])
-    UnmodifiableCollectionsSerializer.registerSerializers(this)
-  }
-
-  def classSignature(typ : java.lang.reflect.Type) : String = {
-    typ match {
-      case null => ""
-      case typ : Class[_] =>
-        "  "+typ.getCanonicalName() + "\n" +
-         (for (i <- typ.getDeclaredFields().toList.sortBy(_.toString)) yield {
-          "   "+i+"\n"
-         }).mkString("") +
-         classSignature(typ.getGenericSuperclass())
-      case _ => ""
-    }
-  }
-
-  override def writeClass(output : Output, t : Class[_]) : Registration = {
-    val r = super.writeClass(output, t)
-
-    if (r == null || seenClasses.contains(r.getType)) {
-      output.writeString(null)
-    } else {
-      seenClasses += r.getType
-      output.writeString(classSignature(r.getType))
-    }
-
-    r
-  }
-
-  override def readClass(input : Input) : Registration = {
-    val r = super.readClass(input)
-
-    val found = input.readString()
-
-    if (r == null) { return null }
-
-    if (found != null) {
-      val expected = classSignature(r.getType)
-
-      if (expected != found) {
-        //throw new java.io.IOException("Differing Jaam class signatures\n Expected:\n%s Found:\n%s".format(expected, found))
-        println("Differing Jaam class signatures\n Expected:\n%s Found:\n%s".format(expected, found))
-      }
-    }
-
-    r
-  }
-}
-
 object Message {
-  // File signature using the same style as PNG
-  // \212 = 0x8a = 'J' + 0x40: High bit set so 'file' knows we are binary
-  // "JAAM": Help humans figure out what format the file is
-  // "\r\n": Detect bad line conversion
-  // \032 = 0x1a = "^Z": Stops output on DOS
-  // "\n": Detect bad line conversion
-  val formatSignature = "\212JAAM\r\n\032\n".getBytes(java.nio.charset.StandardCharsets.ISO_8859_1)
-  val formatVersion = java.nio.ByteBuffer.allocate(4).putInt(1 /* this is the version number */).array()
-
-  // Types for reading and writing messages
-  // These extend from Kryo instead of being type alias to keep Java happy
-  class Input(in : InputStream) extends com.esotericsoftware.kryo.io.Input(in) {}
-  class Output(out : OutputStream) extends com.esotericsoftware.kryo.io.Output(out) {
-    override def close() : Unit = {
-      Message.write(this, Done())
-      super.close()
-    }
-  }
-
   // Lift an InputStream to Message.Input
   def openInput(in : InputStream) : Input = {
     def checkHeader(name : String, expected : Array[Byte]) {
@@ -124,7 +42,7 @@ object Message {
     checkHeader("Jaam file-format signature", formatSignature)
     checkHeader("Jaam file-format version", formatVersion)
 
-    new Input(new java.util.zip.InflaterInputStream(in))
+    new Input(new java.util.zip.InflaterInputStream(in)){}
   }
 
   // Lift an OutputStream to Message.Output
@@ -132,13 +50,13 @@ object Message {
     out.write(formatSignature)
     out.write(formatVersion)
 
-    new Output(new java.util.zip.DeflaterOutputStream(out))
+    new Output(new java.util.zip.DeflaterOutputStream(out)){}
   }
 
   // Reads a 'Message' from 'in'
   // TODO: check for exceptions
   def read(in : Input) : Message = {
-    kryo.readClassAndObject(in) match {
+    in.kryo.readClassAndObject(in) match {
       case o : Message => o
       case _ => throw new Exception("TODO: Message.read failed")
     }
@@ -146,10 +64,32 @@ object Message {
 
   // Writes the 'Message' 'm' to 'out'
   def write(out : Output, m : Message) : Unit = {
-    kryo.writeClassAndObject(out, m)
+    out.kryo.writeClassAndObject(out, m)
   }
 
-  val kryo = new MyKryo()
+  // The types of input and output streams
+  // These extend Input/Output instead of being type alias to keep Java happy
+  //
+  // You should *not* directly instantiate these.  Use openInput and openOutput instead.
+  abstract class Input(in : InputStream) extends com.esotericsoftware.kryo.io.Input(in) {
+    val kryo : Kryo = new JaamKryo()
+  }
+  abstract class Output(out : OutputStream) extends com.esotericsoftware.kryo.io.Output(out) {
+    val kryo : Kryo = new JaamKryo()
+    override def close() : Unit = {
+      Message.write(this, Done())
+      super.close()
+    }
+  }
+
+  // File signature using the same style as PNG
+  // \212 = 0x8a = 'J' + 0x40: High bit set so 'file' knows we are binary
+  // "JAAM": Help humans figure out what format the file is
+  // "\r\n": Detect bad line conversion
+  // \032 = 0x1a = "^Z": Stops output on DOS
+  // "\n": Detect bad line conversion
+  private val formatSignature = "\212JAAM\r\n\032\n".getBytes(java.nio.charset.StandardCharsets.ISO_8859_1)
+  private val formatVersion = java.nio.ByteBuffer.allocate(4).putInt(1 /* this is the version number */).array()
 }
 
 
@@ -239,3 +179,71 @@ Kont
 
 Frame(Stmt, FramePointer, Option[Set[Addr]]))
  */
+
+////////////////////////////////////////
+// Internal classes
+////////////////////////////////////////
+
+// Adds extra checking of the types to be sure they are correct
+class JaamKryo extends com.twitter.chill.KryoBase {
+  var seenClasses = Set[Class[_]]()
+
+  {
+    this.setRegistrationRequired(false)
+    this.setInstantiatorStrategy(new org.objenesis.strategy.StdInstantiatorStrategy)
+    // Handle cases where we may have an odd classloader setup like with libjars
+    // for hadoop
+    val classLoader = Thread.currentThread.getContextClassLoader
+    this.setClassLoader(classLoader)
+    val reg = new com.twitter.chill.AllScalaRegistrar
+    reg(this)
+    this.setAutoReset(false)
+    this.addDefaultSerializer(classOf[soot.util.Chain[java.lang.Object]], classOf[com.esotericsoftware.kryo.serializers.FieldSerializer[java.lang.Object]])
+    UnmodifiableCollectionsSerializer.registerSerializers(this)
+  }
+
+  def classSignature(typ : java.lang.reflect.Type) : String = {
+    typ match {
+      case null => ""
+      case typ : Class[_] =>
+        "  "+typ.getCanonicalName() + "\n" +
+         (for (i <- typ.getDeclaredFields().toList.sortBy(_.toString)) yield {
+          "   "+i+"\n"
+         }).mkString("") +
+         classSignature(typ.getGenericSuperclass())
+      case _ => ""
+    }
+  }
+
+  override def writeClass(output : Output, t : Class[_]) : Registration = {
+    val r = super.writeClass(output, t)
+
+    if (r == null || seenClasses.contains(r.getType)) {
+      output.writeString(null)
+    } else {
+      seenClasses += r.getType
+      output.writeString(classSignature(r.getType))
+    }
+
+    r
+  }
+
+  override def readClass(input : Input) : Registration = {
+    val r = super.readClass(input)
+
+    val found = input.readString()
+
+    if (r == null) { return null }
+
+    if (found != null) {
+      val expected = classSignature(r.getType)
+
+      if (expected != found) {
+        //throw new java.io.IOException("Differing Jaam class signatures\n Expected:\n%s Found:\n%s".format(expected, found))
+        println("Differing Jaam class signatures\n Expected:\n%s Found:\n%s".format(expected, found))
+      }
+    }
+
+    r
+  }
+}
