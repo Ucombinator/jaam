@@ -1,8 +1,9 @@
 
+import java.io.File;
+
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.FlowLayout;
-
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -15,6 +16,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelListener;
 import java.awt.event.MouseWheelEvent;
+import java.awt.Font;
 
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
@@ -33,8 +35,6 @@ import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.JLabel;
 import javax.swing.JButton;
-
-import java.awt.Font;
 
 
 /**
@@ -102,6 +102,19 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent e)
 					{
 						loadGraph(true);
+					}
+				}
+		);
+
+		final JMenuItem loadJavaCode = new JMenuItem("Load matching decompiled code");
+		menuFile.add(loadJavaCode);
+		loadJavaCode.addActionListener(
+				new ActionListener()
+				{
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						TakeInput.loadDecompiledCode();
 					}
 				}
 		);
@@ -632,18 +645,13 @@ public class StacFrame extends JFrame
 	
 	public void loadGraph(boolean fromMessages)
 	{
-		String file = Parameters.openFile();
-		if(file==null)
+		File file = Parameters.openFile(false);
+		if(file == null)
 			return;
 
 		TakeInput ti = new TakeInput();
-		ti.run(file, fromMessages);
+		ti.run(file.getAbsolutePath(), fromMessages);
 		Parameters.repaintAll();
-	}
-	
-	public void addToConsole(String str)
-	{
-		System.out.println(str);
 	}
 	
 	public void searchAndHighlight(searchType search)
@@ -683,20 +691,14 @@ public class StacFrame extends JFrame
 		Main.graph.searchNodes(search, input);
 		
 		Parameters.vertexHighlight = true;
-		
-		if(search == searchType.OUT_OPEN)
-			Parameters.highlightOutgoing = false;
-		else
-			Parameters.highlightOutgoing = true;
-		if(search == searchType.IN_OPEN)
-			Parameters.highlightIncoming = false;
-		else
-			Parameters.highlightIncoming = true;
+
+		Parameters.highlightOutgoing = search != searchType.OUT_OPEN;
+		Parameters.highlightIncoming = search != searchType.IN_OPEN;
 	}
 	
-	public boolean checkGraph()
+	public boolean isGraphLoaded()
 	{
-		return (Main.graph!=null);
+		return (Main.graph != null);
 	}
 	
 	public void addMouseToViz()
@@ -707,7 +709,7 @@ public class StacFrame extends JFrame
 			{
 				public void mouseClicked(MouseEvent m)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					
 					vizPanel.requestFocusInWindow();
@@ -795,7 +797,7 @@ public class StacFrame extends JFrame
 
 				public void mousePressed(MouseEvent m)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					context = false;
 					vizPanel.selectLeft = getRelativeXPixels(m);
@@ -808,7 +810,7 @@ public class StacFrame extends JFrame
 
 				public void mouseReleased(MouseEvent ev)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					vizPanel.requestFocus();
 					vizPanel.showSelection = false;
@@ -819,10 +821,10 @@ public class StacFrame extends JFrame
 						mouseDrag = false;
 						if(Main.graph != null)
 						{
-							double x1 = vizPanel.getRelativeFracFromAbsolutePixelX(vizPanel.selectLeft);
-							double x2 = vizPanel.getRelativeFracFromAbsolutePixelX(vizPanel.selectRight);
-							double y1 = vizPanel.getRelativeFracFromAbsolutePixelY(vizPanel.selectTop);
-							double y2 = vizPanel.getRelativeFracFromAbsolutePixelY(vizPanel.selectBottom);
+							double x1 = vizPanel.getIndexFromCurrentPixelX(vizPanel.selectLeft);
+							double x2 = vizPanel.getIndexFromCurrentPixelX(vizPanel.selectRight);
+							double y1 = vizPanel.getIndexFromCurrentPixelY(vizPanel.selectTop);
+							double y2 = vizPanel.getIndexFromCurrentPixelY(vizPanel.selectBottom);
 
 							Main.graph.selectVertices(x1, x2, y1, y2);
 						}
@@ -840,7 +842,7 @@ public class StacFrame extends JFrame
 
 				public void mouseDragged(MouseEvent m)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					context = false;
 					mouseDrag = true;
@@ -862,8 +864,9 @@ public class StacFrame extends JFrame
 			{
 				public void mouseWheelMoved(MouseWheelEvent e)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
+
 					int notches = e.getWheelRotation();
 					
 					//Zoom in or box++ for mouse wheel up, zoom out or box-- for mouse wheel down
@@ -909,7 +912,7 @@ public class StacFrame extends JFrame
 			{
 				public void mouseClicked(MouseEvent m)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					contextPanel.requestFocusInWindow();
 					context = true;
@@ -936,7 +939,7 @@ public class StacFrame extends JFrame
 
 				public void mousePressed(MouseEvent m)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					context = true;
 					contextPanel.selectLeft = getRelativeXPixels(m);
@@ -949,7 +952,7 @@ public class StacFrame extends JFrame
 
 				public void mouseReleased(MouseEvent ev)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					context = true;
 //					vizPanel.requestFocus();
@@ -983,7 +986,7 @@ public class StacFrame extends JFrame
 
 				public void mouseDragged(MouseEvent m)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					context = true;
 					mouseDrag = true;
@@ -1006,10 +1009,9 @@ public class StacFrame extends JFrame
 			{
 				public void mouseWheelMoved(MouseWheelEvent e)
 				{
-					if(!checkGraph())
+					if(!isGraphLoaded())
 						return;
 					int notches = e.getWheelRotation();
-//					System.out.println("Moved mouse wheel: " + notches);
 					
 					//box++ for mouse wheel up, box-- for mouse wheel down
 					if(notches > 0)

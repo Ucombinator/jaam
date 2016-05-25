@@ -101,7 +101,8 @@ public class View
 		top = 0;
 		bottom = 1;
 	}
-	
+
+	//Shift view by 10%, but stop at edge of screen
 	public void shiftView(int hor, int ver)
 	{
 		double xSpan = this.right - this.left;
@@ -109,27 +110,27 @@ public class View
 		
 		this.left = this.left + hor*xSpan/10;
 		this.right = this.right + hor*xSpan/10;
-		if(this.left<0)
+		if(this.left < 0)
 		{
 			this.left = 0;
 			this.right = xSpan;
 		}
-		if(this.right>1)
+		if(this.right > 1)
 		{
-			this.left = 1-xSpan;
+			this.left = 1 - xSpan;
 			this.right = 1;
 		}
 		
 		this.top = this.top + ver*ySpan/10;
 		this.bottom = this.bottom + ver*ySpan/10;
-		if(this.top<0)
+		if(this.top < 0)
 		{
 			this.top = 0;
 			this.bottom = ySpan;
 		}
-		if(this.bottom>1)
+		if(this.bottom > 1)
 		{
-			this.top = 1-ySpan;
+			this.top = 1 - ySpan;
 			this.bottom = 1;
 		}
 	}

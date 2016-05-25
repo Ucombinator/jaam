@@ -23,10 +23,16 @@ public class MethodPathVertex extends AbstractVertex
 		this.instructionList = new ArrayList<Instruction>();
 		this.methods = new HashSet<Method>();
 	}
+
+	public String getName()
+	{
+		return this.name;
+	}
 	
 	public String getRightPanelContent()
 	{
-		StringBuilder s = new StringBuilder("Path Vertex (loop height = " + loopHeight + ")\n\n"
+		StringBuilder s = new StringBuilder("Path Vertex (loop height = " + loopHeight + ")\n"
+				+ "id: " + this.id + "\n"
 				+ "This contains " + this.mergeChildren.size() + " method vertices:\n");
 		for(MethodVertex v : this.mergeChildren)
 			s.append(v.getName() + "\n");
@@ -46,7 +52,7 @@ public class MethodPathVertex extends AbstractVertex
 	
 	public void addMergeChild(MethodVertex v)
 	{
-		//System.out.println("Adding merge child: " + v.getName());
+		//System.out.println("Adding merge child: " + v.getFullName());
 		this.mergeChildren.add(v);
 		this.writeName();
 	}

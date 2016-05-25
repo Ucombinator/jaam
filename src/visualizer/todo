@@ -1,10 +1,11 @@
 Features to add (w/ priority):
 - Read Java code for method: 1
 - Add options menu for right-click on vertices: 1
-- Change dragging: 1
 - Click on method name in left panel: 1
 - Create magnifier view option: 1
 
+- Search for merge vertices by ID: 2
+- Select merge root whenever a merge parent is selected: 2
 - Show expected format in search dialog boxes: 2
 - Change auto-scroll in left area: 2
 - Set scroll with arrow keys in left area: 2
@@ -14,21 +15,16 @@ Features to add (w/ priority):
 - Click on edges: 2
 - Fix flickering in menus (can’t identify reason): 2
 - Add comments in left area: 2
-- Use actual JSON parser: 2
 - Search interface: 2
 - Show cycles for method nodes: 2
-- Different shapes for basic vertices and collapsed vertices: 2
+- Different shapes for basic vertices and parent vertices: 2
 - Allow turning edges on/off per vertex: 2
 - Add tooltips for vertex names: 2
 - After expanding a single node, select all of its children: 2
-- Fix choosing control points for curved edges: 2
 - Change undo/redo to apply to other operations (searching, selecting, etc.): 2
 
 - Rearrange children to remove edge crossings: 3
-- Write README: 3
 - Selection rectangle should be transparent: 3
-- Add ID’s for all nodes: 3
-- No transparency for boxes: 3
 - Show only selected edges? Or shade by graph theoretic distance? 3
 - Tabbed interface: 3
 - Show path between two nodes? 3
@@ -56,4 +52,4 @@ Features to add (w/ priority):
 
 Investigated, but probably won’t happen:
 - Check parser for subspace.out (Skip because we want to change to using messages anyway)
-- Change mouse cursor to hourglass while loading graph (seems really hard, a progress bar might be easier)
+- Change mouse cursor to hourglass while loading graph (seems really annoying to do properly with threading, a progress bar might be easier)
