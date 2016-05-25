@@ -1,8 +1,7 @@
 *.*~
+assembled/*.jar
 project/*
 !project/*.sbt
-bin/sbt
-bin/jaam.sh
 jaam.jar
 visualizer.jar
 target
