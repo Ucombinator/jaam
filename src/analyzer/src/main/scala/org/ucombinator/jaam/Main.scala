@@ -1325,7 +1325,7 @@ object Main {
   }
 
   def defaultMode(config : Config) {
-    val outMessaging = Message.openOutput(new FileOutputStream("test.dat"))
+    val outMessaging = Message.openOutput(new FileOutputStream("test.jaam"))
     val mainMainMethod : SootMethod = Soot.getSootClass(config.className).getMethodByName(config.methodName)
     val initialState = State.inject(Stmt.methodEntry(mainMainMethod))
 
