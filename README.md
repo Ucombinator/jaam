@@ -1,5 +1,16 @@
 # JAAM: JVM Abstracting Abstract Machine
 
+## Contents
+
+* [Disclaimer](#disclaimer)
+* [License](#license)
+* [Requirements](#requirements)
+* [Building](#building) -- how to get JAAM running
+* [Usage](#usage) -- how to use JAAM
+  * [Analyzer](#analyzer)
+  * [Visualizer](#visualizer)
+* [Developers](#developers) -- more about JAAM's internals
+
 ## Disclaimer
 
 This is an early work in progress. There are a lot of rough edges and bugs. The
@@ -11,10 +22,6 @@ This project is licensed under the [BSD Two-Clause License](LICENSE.md) _with
 the exception of_ the [bundled `rt.jar` file](resources/rt.jar), which is
 distributed under the [GNU General Public License v. 2](LICENSE-GPLv2.md).
 
-## Developers
-
-Additional instructions for developers [here](docs/DEVELOPERS.md).
-
 ## Requirements
 
 * [Java JRE](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
@@ -23,7 +30,7 @@ Additional instructions for developers [here](docs/DEVELOPERS.md).
 * [Scala](http://www.scala-lang.org/)
   - Installed during first run of SBT
 
-## Initialization
+## Building
 
 To get SBT and Scala set up, as well as compile the project for use, simply run
 the following from the top level of your JAAM directory:
@@ -38,7 +45,7 @@ Currently the project functions in two parts: an analyzer (which produces a
 static analysis of the Java application of your choosing) and a visualizer (which
 makes it easy to look at the analysis).
 
-Note that you must have completed [initialization](#Initialization) before
+Note that you must have completed [building JAAM](#Building) before
 proceeding.
 
 ### Analyzer
@@ -104,7 +111,35 @@ To run the visualizer, simply do:
 
 This will launch a GUI for visualization of JAAM's static analysis. To give it
 input, click `File` then `Load graph from message file` and specify the
-`test.dat` file you created with the analyzer.
+`.jaam` file you created with the analyzer (`Factorial.jaam` if you used the
+given example).
 
 By default, all possible nodes are collapsed. Double-click on them to expand the
 visualization graph.
+
+## Developers
+
+Some people may want to know more about how the project is organized or how it
+functions on a deeper level. This is the section for those people.
+
+### Build System
+
+The project is managed by SBT: the Simple Build Tool. SBT allows for the easy
+compilation of a multi-faceted project such as ours with external dependencies
+and such all handled automagically.
+
+The build settings are all stored in the various `build.sbt` files you'll see
+throughout the project hierarchy: one at the top level, and one for each
+subproject inside the `src` directory.
+
+We use the SBT module [assembly](https://github.com/sbt/sbt-assembly) to produce
+"fat JARs" -- JAR files that are self-contained and fully executable. The
+subprojects appropriately build with each other contained inside if needed.
+
+### Organization
+
+We've split our project into a few subprojects:
+
+1. Analyzer: performs static analysis on Java classes
+2. Visualizer: shows the results of the analysis
+3. Messaging: allows interoperability between Analyzer and Visualizer
