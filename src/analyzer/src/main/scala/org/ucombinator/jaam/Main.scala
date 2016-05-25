@@ -1325,37 +1325,9 @@ object Main {
   }
 
   def defaultMode(config : Config) {
-    /* 
-    val inMessaging = Message.openInput(new FileInputStream("test.dat"))
-    def read() {
-      val message = Message.read(inMessaging)
-      message match {
-        case d: Done => println(message)
-        case m => 
-          println(m)
-          read()
-      }
-    }
-    read()
-    return
-    */
-
     val outMessaging = Message.openOutput(new FileOutputStream("test.dat"))
-    //val outMessaging : Message.Output = null
-    //val inMessaging = Message.openInput(new FileInputStream("test2.dat"))
-    //var m = Message.read(inMessaging)
-    //while (!m.isInstanceOf[Done]) {
-    //  println(m)
-    //  m = Message.read(inMessaging)
-    //}
-    //println("DONE")
-
     val mainMainMethod : SootMethod = Soot.getSootClass(config.className).getMethodByName(config.methodName)
-
-    // Setting up the GUI
-    //val window = new Window
     val initialState = State.inject(Stmt.methodEntry(mainMainMethod))
-    //window.addState(initialState)
 
     var todo: List[AbstractState] = List(initialState)
     var done: Set[AbstractState] = Set()
@@ -1365,12 +1337,6 @@ object Main {
     var doneEdges: Map[Int,Pair[Int, Int]] = Map()
 
     Message.write(outMessaging, initialState.toMessage)
-    implicit val formats = Soot.formats +
-      UpdatePacket.serializer +
-      D.serializer +
-      Store.serializer +
-      KontStore.serializer
-    //println(Serialization.writePretty(UpdatePacket(Map(1 -> initialState), Set.empty)))
 
     while (todo nonEmpty) {
       //TODO refactor store widening code
@@ -1378,9 +1344,6 @@ object Main {
       println()
       println("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
       val (nexts, newStore, newKStore, initClasses) = System.next(current, globalStore, globalKontStore, globalInitClasses)
-//      for (next <- nexts) {
-        //window.addNext(current, next)
-//      }
 
       val newTodo = nexts.toList.filter(!done.contains(_))
 
@@ -1388,6 +1351,7 @@ object Main {
         println("Writing state "+n.id)
         Message.write(outMessaging, n.toMessage)
       }
+
       for (n <- nexts) {
         if (!doneEdges.contains(current, n)) {
           val id = doneEdges.size
@@ -1398,51 +1362,18 @@ object Main {
           println("Skipping edge "+current.id+" -> "+n.id)
         }
       }
-//      val packet = UpdatePacket(
-//        (for (n <- newTodo) yield { (n.id -> n) }).toMap,
-//        for (n <- nexts) yield { (current.id -> n.id) })
-//        
-//      }
-//        (n.id -> n) }).toMap,
-//      val packet = UpdatePacket(
-//        for (n <- nexts) yield { (current.id -> n.id) })
-//
-//      if (packet.nonEmpty) {
-//        println(Serialization.writePretty(packet))
-//      }
 
-//      println("Read:")
-//      for (a <- current.getReadAddrs) {
-//        println("    "+a)
-//        for (v <- newStore.get(a).values) {
-//          println("        "+v)
-//        }
-//      }
-//      println("Wrote:")
-//      for (a <- current.getWriteAddrs) {
-//        println("    "+a)
-//        for (v <- newStore.get(a).values) {
-//          println("        "+v)
-//        }
-//      }
-//      println("Rescheduling states")
       for (d <- done) {
         if (d.getReadAddrs.intersect(current.getWriteAddrs).nonEmpty
           || d.getKReadAddrs.intersect(current.getKWriteAddrs).nonEmpty) {
-//          println("Rescheduled "+d.id+" "+(d match { case s : State => s.stmt.toString; case s => s.toString}))
-//    if (Store.print) {
-//      println("  due to "+d.getReadAddrs.intersect(current.getWriteAddrs))
-//      println("  or to "+d.getKReadAddrs.intersect(current.getKWriteAddrs))
-//    }
           todo = todo ++ List(d)
           done = done - d
         }
       }
+
       Store.print = false
-//      println("Done rescheduling")
 
       if ((globalInitClasses++initClasses).size != globalInitClasses.size) {
-//        println("Initialized classes changed.")
         todo = newTodo ++ List(current) ++ todo.tail
       }
       else {
@@ -1456,148 +1387,8 @@ object Main {
       println("Done processing state "+current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
     }
 
-    //Message.write(outMessaging, Done)
     outMessaging.close()
-
 
     println("Done!")
   }
 }
-
-case class CallGraph(val map : Map[Stmt, CallGraphValue])
-case class CallGraphValue(val targets : List[Stmt], val successors : List[Stmt])
-
-class Window extends JFrame ("Shimple Analyzer") {
-  // TODO: make exiting window go back to repl
-  // TODO: save graph files to review later
-  val graph = new mxGraph() {
-    override def getToolTipForCell(cell : Object) : String = {
-      vertexToState.get(cell) match {
-        case None => super.getToolTipForCell(cell)
-        case Some(state : State) =>
-          var tip = "<html>"
-          tip += "FP: " + Utility.escape(state.fp.toString) + "<br><br>"
-          tip += "Kont: " + Utility.escape(state.kontStack.k.toString) + "<br><br>"
-          tip += "Store:<br>" + state.store.prettyString.foldLeft("")(_ + "&nbsp;&nbsp;" + Utility.escape(_) + "<br>") + "<br>"
-          tip += "KontStore:<br>" + state.kontStack.store.prettyString.foldLeft("")(_ + "&nbsp;&nbsp;" + Utility.escape(_) + "<br>")
-          //tip += "InitializedClasses: " + state.initializedClasses.toString + "<br>"
-          tip += "</html>"
-          tip
-        case Some(ErrorState) => "ERROR"
-      }
-    }
-  }
-
-
-  private val layoutX = new mxCompactTreeLayout(graph, false)
-  private val parentX = graph.getDefaultParent()
-  private val graphComponent = new mxGraphComponent(graph)
-  private var stateToVertex = Map[AbstractState,Object]()
-  private var vertexToState = Map[Object,AbstractState]()
-  private var edgeSet = Set[(AbstractState, AbstractState)]()
-
-  graphComponent.setEnabled(false)
-  graphComponent.setToolTips(true)
-  getContentPane().add(graphComponent)
-  ToolTipManager.sharedInstance().setInitialDelay(0)
-  ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE)
-  setSize(400, 320)
-  setExtendedState(java.awt.Frame.MAXIMIZED_BOTH)
-  setVisible(true)
-
-  private def stateString(state : AbstractState) : String = state match {
-    // TODO/interface more information
-    case ErrorState => "ErrorState"
-    case state: State =>
-      state.id + "\n" + state.stmt.sootMethod.toString() + "\n" + state.stmt.sootStmt.toString()
-  }
-
-  def addState(state : State) {
-    val vertex = graph.insertVertex(parentX, null, stateString(state), 100, 100, 20, 20, "ROUNDED")
-    graph.updateCellSize(vertex)
-    stateToVertex += (state -> vertex)
-    vertexToState += (vertex -> state)
-  }
-
-  def addNext(start : AbstractState, end : AbstractState) {
-    graph.getModel().beginUpdate()
-    try {
-      stateToVertex.get(end) match {
-        case None =>
-          val tag = stateString(end)
-          val v = graph.insertVertex(parentX, null, tag, 240, 150, 80, 30, "ROUNDED")
-          graph.updateCellSize(v)
-          graph.insertEdge(parentX, null, null, stateToVertex(start), v)
-          stateToVertex += (end -> v)
-          vertexToState += (v -> end)
-          edgeSet += ((start, end))
-        case Some(v) =>
-          if (!edgeSet.contains((start, end))) {
-            graph.insertEdge(parentX, null, null, stateToVertex(start), v)
-            edgeSet += ((start, end))
-          }
-      }
-      // TODO: layout basic blocks together
-      layoutX.execute(parentX)
-    }
-    finally
-    {
-      graph.getModel().endUpdate()
-    }
-  }
-}
-
-//future rendering of control flow graphs
-/*
-class CFG extends JFrame ("Control Flow Graph") {
-
-  val graph = new mxGraph()
-
-  private val layoutX = new mxCompactTreeLayout(graph, false)
-  private val parentX = graph.getDefaultParent()
-  private val graphComponent = new mxGraphComponent(graph)
-  private var stateToVertex = Map[Block,Object]()
-  private var vertexToState = Map[Object,Block]()
-
-
-  graphComponent.setEnabled(false)
-  graphComponent.setToolTips(true)
-  getContentPane().add(graphComponent)
-  ToolTipManager.sharedInstance().setInitialDelay(0)
-  ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE)
-  setSize(400, 320)
-  setExtendedState(java.awt.Frame.MAXIMIZED_BOTH)
-  setVisible(true)
-
-
-   def addState(inst : Block) {
-    val vertex = graph.insertVertex(parentX, null, inst, 100, 100, 20, 20, "ROUNDED")
-    graph.updateCellSize(vertex)
-    stateToVertex += (inst -> vertex)
-    vertexToState += (vertex -> inst)
-  }
-
-   def addNext(start : Block, end : Block) {
-    graph.getModel().beginUpdate()
-    try {
-      stateToVertex.get(end) match {
-        case None =>
-          //val tag = stateString(end)
-          val v = graph.insertVertex(parentX, null, end, 240, 150, 80, 30, "ROUNDED")
-          graph.updateCellSize(v)
-          graph.insertEdge(parentX, null, null, stateToVertex(start), v)
-          stateToVertex += (end -> v)
-          vertexToState += (v -> end)
-        case Some(v) =>
-          graph.insertEdge(parentX, null, null, stateToVertex(start), v)
-      }
-      layoutX.execute(parentX)
-    }
-    finally
-    {
-      graph.getModel().endUpdate()
-    }
-  }
-
-}
-*/

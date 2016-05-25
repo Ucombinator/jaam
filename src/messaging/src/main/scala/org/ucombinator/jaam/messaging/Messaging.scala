@@ -19,96 +19,6 @@ import com.esotericsoftware.kryo.serializers.FieldSerializer
 // Methods and types for reading and writing message
 ////////////////////////////////////////
 
-
-/*
-//A 	getAnnotation(Class<A> annotationClass)
-//Annotation[] 	getAnnotations()
-String 	getCanonicalName()
-//Class<?>[] 	getClasses()
-//ClassLoader 	getClassLoader()
-//Class<?> 	getComponentType()
-//Constructor<T> 	getConstructor(Class<?>... parameterTypes)
-//Constructor<?>[] 	getConstructors()
-//Annotation[] 	getDeclaredAnnotations()
-//Class<?>[] 	getDeclaredClasses()
-//Constructor<T> 	getDeclaredConstructor(Class<?>... parameterTypes)
-//Constructor<?>[] 	getDeclaredConstructors()
-//Field 	getDeclaredField(String name)
-Field[] 	getDeclaredFields()
-//Method 	getDeclaredMethod(String name, Class<?>... parameterTypes)
-//Method[] 	getDeclaredMethods()
-//Class<?> 	getDeclaringClass()
-//Class<?> 	getEnclosingClass()
-//Constructor<?> 	getEnclosingConstructor()
-//Method 	getEnclosingMethod()
-//T[] 	getEnumConstants()
-//Field 	getField(String name)
-Field[] 	getFields()
-//Type[] 	getGenericInterfaces()
-Type 	getGenericSuperclass()
-//Class<?>[] 	getInterfaces()
-//Method 	getMethod(String name, Class<?>... parameterTypes)
-//Method[] 	getMethods()
-int 	getModifiers()
-//String 	getName()
-Package 	getPackage()
-//ProtectionDomain 	getProtectionDomain()
-//URL 	getResource(String name)
-//InputStream 	getResourceAsStream(String name)
-//Object[] 	getSigners()
-//String 	getSimpleName()
-Class<? super T> 	getSuperclass()
-//TypeVariable<Class<T>>[] 	getTypeParameters()
-
-
-
-
-final Kryo kryo;
-final Class type;
-/** type variables declared for this type */
-final TypeVariable[] typeParameters;
-final Class componentType;
-protected final FieldSerializerConfig config;
-private CachedField[] fields = new CachedField[0];
-private CachedField[] transientFields = new CachedField[0];
-protected HashSet<CachedField> removedFields = new HashSet();
-Object access;
-private FieldSerializerUnsafeUtil unsafeUtil;
-
-private FieldSerializerGenericsUtil genericsUtil;
-
-private FieldSerializerAnnotationsUtil annotationsUtil;
-
-/** Concrete classes passed as values for type variables */
-private Class[] generics;
-
-private Generics genericsScope;
-
-/** If set, this serializer tries to use a variable length encoding for int and long fields */
-private boolean varIntsEnabled;
-
-/** If set, adjacent primitive fields are written in bulk This flag may only work with Oracle JVMs, because they layout
- * primitive fields in memory in such a way that primitive fields are grouped together. This option has effect only when used
- * with Unsafe-based FieldSerializer.
- * <p>
- * FIXME: Not all versions of Sun/Oracle JDK properly work with this option. Disable it for now. Later add dynamic checks to
- * see if this feature is supported by a current JDK version.
- * </p> */
-private boolean useMemRegions = false;
-
-private boolean hasObjectFields = false;
-
-static CachedFieldFactory asmFieldFactory;
-static CachedFieldFactory objectFieldFactory;
-static CachedFieldFactory unsafeFieldFactory;
-
-static boolean unsafeAvailable;
-static Class<?> unsafeUtilClass;
-static Method sortFieldsByOffsetMethod;
-
-
- */
-
 class MyKryo extends com.twitter.chill.KryoBase {
   var seenClasses = Set[Class[_]]()
 
@@ -278,14 +188,11 @@ case class Stmt(method : SootMethod, index : Int, stmt : SootStmt) {}
 
 
 /*
-
-
 AbstractState
   ErrorState
   State(Stmt, FramePointer, KontStack)
 
 Stmt(SootStmt, SootMethod)
-
 
 FramePointer
   InvariantFramePointer
@@ -331,100 +238,4 @@ Kont
   HaltKont
 
 Frame(Stmt, FramePointer, Option[Set[Addr]]))
- */
-
-/*
-
-
-diff --git a/build.sbt b/build.sbt
-index 3cc4d85..0786c26 100644
---- a/build.sbt
-+++ b/build.sbt
-@@ -23,7 +23,8 @@ libraryDependencies ++= Seq(
-   "com.github.scopt" %% "scopt" % "3.3.0",
-   "org.scala-lang" % "scala-reflect" % "2.10.6",
-   "com.esotericsoftware" % "kryo" % "3.0.3",
--  "com.twitter" %% "chill" % "0.3.6"
-+  "com.twitter" %% "chill" % "0.3.6",
-+  "de.javakaffee" % "kryo-serializers" % "0.37"
- )
- 
- scalacOptions ++= Seq("-unchecked", "-deprecation")
-diff --git a/src/main/scala/org/ucombinator/jaam/Main.scala b/src/main/scala/org/ucombinator/jaam/Main.scala
-index c268509..c179b5a 100644
---- a/src/main/scala/org/ucombinator/jaam/Main.scala
-+++ b/src/main/scala/org/ucombinator/jaam/Main.scala
-@@ -56,6 +56,8 @@ import com.mxgraph.layout.mxCompactTreeLayout
- import org.json4s._
- import org.json4s.native._
- 
-+import de.javakaffee.kryoserializers._
-+import com.esotericsoftware.minlog.Log
- import com.esotericsoftware.kryo._
- import com.esotericsoftware.kryo.io._
- import com.twitter.chill.ScalaKryoInstantiator
-@@ -1323,6 +1325,8 @@ object Main {
-     val instantiator = new ScalaKryoInstantiator
-     instantiator.setRegistrationRequired(false)
-     val kryo = instantiator.newKryo()
-+kryo.addDefaultSerializer(classOf[soot.util.Chain[java.lang.Object]], classOf[com.esotericsoftware.kryo.serializers.FieldSerializer[java.lang.Object]])
-+UnmodifiableCollectionsSerializer.registerSerializers( kryo )
- 
-     val mainMainMethod : SootMethod = Soot.getSootClass(config.className).getMethodByName(config.methodName)
- 
-@@ -1351,14 +1355,16 @@ object Main {
-       // Serialization test
-       val arrOut: ByteArrayOutputStream = new ByteArrayOutputStream()
-       val output = new Output(arrOut)
--      kryo.writeObject(output, current)
-+      kryo.writeClassAndObject(output, current)
-       output.close()
-       
-       val arrIn: ByteArrayInputStream = new ByteArrayInputStream(arrOut.toByteArray())
-       val input = new Input(arrIn)
-       
-       if (current.isInstanceOf[State]) {
--        val current1 = kryo.readObject(input, classOf[State])
-+        println("Just before the error")
-+        val current1 = kryo.readClassAndObject(input)
-+        println("Just after the error")
-         println(current1)
-       }
-       else {
- */
-
-
-
-/*
-
-name := "jaam-messaging"
-
-version := "0.1"
-
-libraryDependencies ++= Seq(
-  "org.ucombinator.soot" % "soot-all-in-one" % "nightly.20150205",
-  "org.scalacheck" %% "scalacheck" % "1.12.2" % "test",
-  "org.scalatest" % "scalatest_2.10" % "2.0" % "test",
-  "com.github.scopt" %% "scopt" % "3.3.0",
-  "org.scala-lang" % "scala-reflect" % "2.10.6",
-  "com.twitter" %% "chill" % "0.3.6",
-  "de.javakaffee" % "kryo-serializers" % "0.37"
-)
-
-scalacOptions ++= Seq("-unchecked", "-deprecation")
-
-//mainClass in (Compile, assembly) := Some("org.ucombinator.jaam.Main")
-
-// Assembly-specific configuration
-//test in assembly := {}
-//assemblyOutputPath in assembly := new File("./jaam.jar")
-
-// META-INF discarding
-//assemblyMergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
-//{
-//  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-//  case x => MergeStrategy.first
-//}
-//}
-
  */
