@@ -8,3 +8,4 @@ sootOutput
 .*.sw?
 .idea
 *.class
+*.dat
