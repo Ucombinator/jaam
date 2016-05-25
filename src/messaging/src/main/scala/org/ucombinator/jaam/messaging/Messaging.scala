@@ -239,8 +239,7 @@ class JaamKryo extends com.twitter.chill.KryoBase {
       val expected = classSignature(r.getType)
 
       if (expected != found) {
-        //throw new java.io.IOException("Differing Jaam class signatures\n Expected:\n%s Found:\n%s".format(expected, found))
-        println("Differing Jaam class signatures\n Expected:\n%s Found:\n%s".format(expected, found))
+        throw new java.io.IOException("Differing Jaam class signatures\n Expected:\n%s Found:\n%s".format(expected, found))
       }
     }
 
