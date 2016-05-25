@@ -1,4 +1,4 @@
-class Hello {
+class VoidCalls {
     public static void main(String[] args) {
         p1();
         p2();
