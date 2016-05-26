@@ -748,7 +748,7 @@ case class State(val stmt : Stmt,
             var newStore = store
             self match {
               case Some(s) => newStore = newStore.update(ThisFrameAddr(newFP), D(Set(s)))
-              case None => ??? // TODO: throw exception here?
+              case None => {} // TODO: throw exception here?
             }
             for (i <- 0 until expr.getArgCount())
               newStore = newStore.update(ParameterFrameAddr(newFP, i), args(i))

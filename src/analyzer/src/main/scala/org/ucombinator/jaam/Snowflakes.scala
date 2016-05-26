@@ -28,35 +28,35 @@ abstract class SnowflakeHandler {
   def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState]
 }
 
-abstract class StaticSnowflakeHandler {
+abstract class StaticSnowflakeHandler extends SnowflakeHandler {
   def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState]
 
-  def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] =
+  override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] =
     self match {
       case None => this.apply(state, nextStmt, args)
-      case Some(_) => throw new Exception("Static Snowflake used on non-static call. state = "+state)
+      case Some(_) => throw new Exception("Static Snowflake used on non-static call. snowflake = "+this+" state = "+state)
     }
 }
 
-abstract class NonstaticSnowflakeHandler {
+abstract class NonstaticSnowflakeHandler extends SnowflakeHandler {
   def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState]
 
-  def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] =
+  override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] =
     self match {
-      case None => throw new Exception("Non-static Snowflake used on static call. state = "+state)
+      case None => throw new Exception("Non-static Snowflake used on static call. snowflake = "+this+" state = "+state)
       case Some(s) => this.apply(state, nextStmt, s, args)
     }
 }
 
-object NoOpSnowflake extends NonstaticSnowflakeHandler {
-  override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] =
+object NoOpSnowflake extends SnowflakeHandler {
+  override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] =
     Set(state.copyState(stmt = nextStmt))
 }
 
 // TODO/soundness: Add JohnSnowflake for black-holes. Not everything becomes top, but an awful lot will.
 
-case class ReturnSnowflake(value : D) extends NonstaticSnowflakeHandler {
-  override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
+case class ReturnSnowflake(value : D) extends SnowflakeHandler {
+  override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
     val newNewStore = state.stmt.sootStmt match {
       case sootStmt : DefinitionStmt => state.store.update(state.addrsOf(sootStmt.getLeftOp()), value)
       case sootStmt : InvokeStmt => state.store
@@ -67,8 +67,8 @@ case class ReturnSnowflake(value : D) extends NonstaticSnowflakeHandler {
 
 case class UninitializedSnowflakeObjectException(className : String) extends RuntimeException
 
-case class ReturnObjectSnowflake(name : String) extends NonstaticSnowflakeHandler {
-  override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
+case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
+  override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
     val newNewStore = state.stmt.sootStmt match {
       case stmt : DefinitionStmt => state.store.update(state.addrsOf(stmt.getLeftOp),
         D(Set(ObjectValue(Soot.getSootClass(name), SnowflakeBasePointer(name)))))
@@ -134,7 +134,7 @@ object HashMapSnowflakes {
             .update(ValuesAddr(bp), D(Set()))
         case _ =>
           Snowflakes.warn(state.id, null, null)
-          extraStates ++= NoOpSnowflake(state, nextStmt, self, args)
+          extraStates ++= NoOpSnowflake(state, nextStmt, Some(self), args)
       }
 
       extraStates + state.copyState(stmt = nextStmt, store = newNewStore)
@@ -161,7 +161,7 @@ object HashMapSnowflakes {
                 newNewStore(Set(ValuesAddr(bp))).join(D.atomicTop))
             case _ =>
               Snowflakes.warn(state.id, null, null)
-              extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, self, args)
+              extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
           }
       }
 
@@ -198,7 +198,7 @@ object HashMapSnowflakes {
                   newNewStore(Set(ValuesAddr(bp))).join(D.atomicTop))
             case _ =>
               Snowflakes.warn(state.id, null, null)
-              extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, self, args)
+              extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
           }
       }
 
@@ -224,7 +224,7 @@ object HashMapSnowflakes {
                 D(Set(ObjectValue(EntrySet, EntrySetOfHashMap(bp)))))
             case _ =>
               Snowflakes.warn(state.id, null, null)
-              extraStates ++= ReturnObjectSnowflake("java.util.Set")(state, nextStmt, self, args)
+              extraStates ++= ReturnObjectSnowflake("java.util.Set")(state, nextStmt, Some(self), args)
           }
       }
 
@@ -250,7 +250,7 @@ object HashMapSnowflakes {
                 D(Set(ObjectValue(Iterator, IteratorOfEntrySetOfHashMap(bp)))))
             case x =>
               Snowflakes.warn(state.id, null, null)
-              extraStates ++= ReturnObjectSnowflake("java.util.Set")(state, nextStmt, self, args)
+              extraStates ++= ReturnObjectSnowflake("java.util.Set")(state, nextStmt, Some(self), args)
           }
       }
 
@@ -280,7 +280,7 @@ object HashMapSnowflakes {
                 D.atomicTop)
             case _ =>
               Snowflakes.warn(state.id, null, null)
-              extraStates ++= ReturnSnowflake(D.atomicTop)(state, nextStmt, self, args)
+              extraStates ++= ReturnSnowflake(D.atomicTop)(state, nextStmt, Some(self), args)
           }
       }
 
@@ -312,7 +312,7 @@ object HashMapSnowflakes {
                 newNewStore(Set(ArrayListSnowflakes.RefAddr(bp))))
             case _ =>
               Snowflakes.warn(state.id, null, null)
-              extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, self, args)
+              extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
           }
       }
 
@@ -336,7 +336,7 @@ object HashMapSnowflakes {
                 newNewStore(Set(KeysAddr(bp))).join(D.atomicTop))
             case _ =>
               Snowflakes.warn(state.id, null, null)
-              extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, self, args)
+              extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
           }
       }
 
@@ -360,7 +360,7 @@ object HashMapSnowflakes {
                 newNewStore(Set(ValuesAddr(bp))).join(D.atomicTop))
             case _ =>
               Snowflakes.warn(state.id, null, null)
-              extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, self, args)
+              extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
           }
       }
 
@@ -397,7 +397,7 @@ object ArrayListSnowflakes {
             .update(RefAddr(bp), D.atomicTop) // D.atomicTop is so we don't get undefiend addrs exception
         case _ =>
           Snowflakes.warn(state.id, null, null)
-          extraStates ++= NoOpSnowflake(state, nextStmt, self, args)
+          extraStates ++= NoOpSnowflake(state, nextStmt, Some(self), args)
       }
 
       extraStates + state.copyState(stmt = nextStmt, store = newNewStore)
@@ -422,7 +422,7 @@ object ArrayListSnowflakes {
                 D.atomicTop)
             case _ =>
               Snowflakes.warn(state.id, null, null)
-              extraStates ++= ReturnSnowflake(D.atomicTop)(state, nextStmt, self, args)
+              extraStates ++= ReturnSnowflake(D.atomicTop)(state, nextStmt, Some(self), args)
           }
       }
 
@@ -456,7 +456,7 @@ object ArrayListSnowflakes {
                 D(Set(ObjectValue(Iterator, IteratorOfArrayList(bp)))))
             case _ =>
               Snowflakes.warn(state.id, null, null)
-              extraStates ++= ReturnObjectSnowflake("java.util.Iterator")(state, nextStmt, self, args)
+              extraStates ++= ReturnObjectSnowflake("java.util.Iterator")(state, nextStmt, Some(self), args)
           }
       }
 
