@@ -24,17 +24,38 @@ case class MethodDescription(val className : String,
 
 // Snowflakes are special-cased methods
 abstract class SnowflakeHandler {
-  def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState]
+  // self is None if this is a static call and Some otherwise
+  def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState]
 }
 
-object NoOpSnowflake extends SnowflakeHandler {
+abstract class StaticSnowflakeHandler {
+  def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState]
+
+  def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] =
+    self match {
+      case None => this.apply(state, nextStmt, args)
+      case Some(_) => throw new Exception("Static Snowflake used on non-static call. state = "+state)
+    }
+}
+
+abstract class NonstaticSnowflakeHandler {
+  def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState]
+
+  def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] =
+    self match {
+      case None => throw new Exception("Non-static Snowflake used on static call. state = "+state)
+      case Some(s) => this.apply(state, nextStmt, s, args)
+    }
+}
+
+object NoOpSnowflake extends NonstaticSnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] =
     Set(state.copyState(stmt = nextStmt))
 }
 
 // TODO/soundness: Add JohnSnowflake for black-holes. Not everything becomes top, but an awful lot will.
 
-case class ReturnSnowflake(value : D) extends SnowflakeHandler {
+case class ReturnSnowflake(value : D) extends NonstaticSnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
     val newNewStore = state.stmt.sootStmt match {
       case sootStmt : DefinitionStmt => state.store.update(state.addrsOf(sootStmt.getLeftOp()), value)
@@ -46,7 +67,7 @@ case class ReturnSnowflake(value : D) extends SnowflakeHandler {
 
 case class UninitializedSnowflakeObjectException(className : String) extends RuntimeException
 
-case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
+case class ReturnObjectSnowflake(name : String) extends NonstaticSnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
     val newNewStore = state.stmt.sootStmt match {
       case stmt : DefinitionStmt => state.store.update(state.addrsOf(stmt.getLeftOp),
@@ -59,7 +80,7 @@ case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
   }
 }
 
-case class ReturnArraySnowflake(baseType: String, dim: Int) extends SnowflakeHandler {
+case class ReturnArraySnowflake(baseType: String, dim: Int) extends NonstaticSnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
     val sizes = List.fill(dim)(D.atomicTop)
     val sootBaseType = Soot.getSootType(baseType)
@@ -73,8 +94,8 @@ case class ReturnArraySnowflake(baseType: String, dim: Int) extends SnowflakeHan
   }
 }
 
-case class PutStaticSnowflake(clas : String, field : String) extends SnowflakeHandler {
-  override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
+case class PutStaticSnowflake(clas : String, field : String) extends StaticSnowflakeHandler {
+  override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
     val sootField = Jimple.v.newStaticFieldRef(Soot.getSootClass(clas).getFieldByName(field).makeRef())
     val value = args(0)
     val newNewStore = state.store.update(state.addrsOf(sootField), value)
@@ -97,7 +118,7 @@ object HashMapSnowflakes {
   case class KeysAddr(val bp : BasePointer) extends Addr
   case class ValuesAddr(val bp : BasePointer) extends Addr
 
-  case class init() extends SnowflakeHandler {
+  case class init() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       // void HashMap.<init>():
       //  this.keys = {}
@@ -120,7 +141,7 @@ object HashMapSnowflakes {
     }
   }
 
-  case class put() extends SnowflakeHandler {
+  case class put() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       // Object HashMap.put(Object o1, Object o2):
       //   this.keys += o1
@@ -159,7 +180,7 @@ object HashMapSnowflakes {
     }
   }
 
-  case class get() extends SnowflakeHandler {
+  case class get() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       // Object HashMap.get(Object):
       //   return this.values
@@ -188,7 +209,7 @@ object HashMapSnowflakes {
   // java.util.Set HashMap.entrySet():
   //   return this
   case class EntrySetOfHashMap(val bp : BasePointer) extends BasePointer
-  case class entrySet() extends SnowflakeHandler {
+  case class entrySet() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       var extraStates = Set[AbstractState]()
       var newNewStore = state.store
@@ -214,7 +235,7 @@ object HashMapSnowflakes {
   // java.util.Iterator EntrySet.iterator():
   //   return this
   case class IteratorOfEntrySetOfHashMap(val bp : BasePointer) extends BasePointer
-  case class iterator() extends SnowflakeHandler {
+  case class iterator() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       var extraStates = Set[AbstractState]()
       var newNewStore = state.store
@@ -239,7 +260,7 @@ object HashMapSnowflakes {
 
   // boolean Iterator.hasNext():
   //   return atomicTop
-  case class hasNext() extends SnowflakeHandler {
+  case class hasNext() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       var extraStates = Set[AbstractState]()
       var newNewStore = state.store
@@ -270,7 +291,7 @@ object HashMapSnowflakes {
   // java.lang.Object Iterator.next()
   //    return (Entry) this
   case class EntryOfIteratorOfEntrySetOfHashMap(val bp : BasePointer) extends BasePointer
-  case class next() extends SnowflakeHandler {
+  case class next() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       var extraStates = Set[AbstractState]()
       var newNewStore = state.store
@@ -300,7 +321,7 @@ object HashMapSnowflakes {
   }
 
   // java.lang.Object Entry.getKey()
-  case class getKey() extends SnowflakeHandler {
+  case class getKey() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       var extraStates = Set[AbstractState]()
       var newNewStore = state.store
@@ -324,7 +345,7 @@ object HashMapSnowflakes {
   }
 
   // java.lang.Object getValue()
-  case class getValue() extends SnowflakeHandler {
+  case class getValue() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       var extraStates = Set[AbstractState]()
       var newNewStore = state.store
@@ -361,7 +382,7 @@ object ArrayListSnowflakes {
   case class LengthAddr(val bp : BasePointer) extends Addr
   case class RefAddr(val bp : BasePointer) extends Addr
 
-  case class init() extends SnowflakeHandler {
+  case class init() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       // void ArrayList.<init>():
       //  this.length = top
@@ -383,7 +404,7 @@ object ArrayListSnowflakes {
     }
   }
 
-  case class add() extends SnowflakeHandler {
+  case class add() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       // boolean ArrayList.add(Object o)
       //   this.length += top
@@ -420,7 +441,7 @@ object ArrayListSnowflakes {
   // java.util.Iterator ArrayList.iterator():
   //   return this
   case class IteratorOfArrayList(val bp : BasePointer) extends BasePointer
-  case class iterator() extends SnowflakeHandler {
+  case class iterator() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       var extraStates = Set[AbstractState]()
       var newNewStore = state.store
@@ -446,7 +467,7 @@ object ArrayListSnowflakes {
 
 object ClassSnowflakes {
   Snowflakes.table.put(MethodDescription("java.lang.Class", "newInstance", List(), "java.lang.Object"), newInstance())
-  case class newInstance() extends SnowflakeHandler {
+  case class newInstance() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       val local = state.stmt.sootStmt match {
         case stmt : DefinitionStmt => stmt.getLeftOp().asInstanceOf[Local]
@@ -613,15 +634,10 @@ object Snowflakes {
         SnowflakeBasePointer(clas + "." + field)))))
 
   table.put(MethodDescription("java.lang.Object", "clone", List(), "java.lang.Object"),
-    new SnowflakeHandler {
+    new NonstaticSnowflakeHandler {
       override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
         val newNewStore = state.stmt.sootStmt match {
-          case stmt : DefinitionStmt => {
-            val value = stmt.getRightOp match {
-              case expr: InstanceInvokeExpr => state.eval(expr.getBase)
-            }
-            state.store.update(state.addrsOf(stmt.getLeftOp), value)
-          }
+          case stmt : DefinitionStmt => state.store.update(state.addrsOf(stmt.getLeftOp), D(Set(self)))
           case stmt : InvokeStmt => state.store
         }
         Set(state.copyState(stmt = nextStmt, store = newNewStore))
@@ -648,8 +664,8 @@ object Snowflakes {
   table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"), ReturnObjectSnowflake("java.lang.Object"))
 
   table.put(MethodDescription("java.lang.System", "arraycopy",
-    List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new SnowflakeHandler {
-    override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
+    List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new StaticSnowflakeHandler {
+    override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
       assert(state.stmt.sootStmt.getInvokeExpr.getArgCount == 5)
       val expr = state.stmt.sootStmt.getInvokeExpr
       val newNewStore = state.store.update(state.addrsOf(expr.getArg(2)), state.eval(expr.getArg(0)))
@@ -659,8 +675,8 @@ object Snowflakes {
 
   // java.lang.System
   table.put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
-    new SnowflakeHandler {
-      override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
+    new StaticSnowflakeHandler {
+      override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
         var newNewStore = state.store
         newNewStore = updateStore(newNewStore, "java.lang.System", "in", "java.io.InputStream")
         newNewStore = updateStore(newNewStore, "java.lang.System", "out", "java.io.PrintStream")

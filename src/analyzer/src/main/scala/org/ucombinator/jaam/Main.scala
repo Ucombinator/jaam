@@ -708,15 +708,16 @@ case class State(val stmt : Stmt,
 
     // o.f(3); // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
-    def dispatch(self : Value, meth : SootMethod) : Set[AbstractState] = {
+    def dispatch(self : Option[Value], meth : SootMethod) : Set[AbstractState] = {
       val args = for (a <- expr.getArgs().toList) yield eval(a)
 
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, self, args)
         case None =>
           if (meth.getDeclaringClass.isJavaLibraryClass ||
-            self.isInstanceOf[ObjectValue] &&
-            self.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
+            self.isDefined &&
+            self.get.isInstanceOf[ObjectValue] &&
+            self.get.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
             Snowflakes.warn(this.id, stmt, meth)
             val rtType = meth.getReturnType
             rtType match {
@@ -745,7 +746,10 @@ case class State(val stmt : Stmt,
             val newFP = alloca(expr, nextStmt)
             val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
             var newStore = store
-            newStore = newStore.update(ThisFrameAddr(newFP), D(Set(self)))
+            self match {
+              case Some(s) => newStore = newStore.update(ThisFrameAddr(newFP), D(Set(s)))
+              case None => ??? // TODO: throw exception here?
+            }
             for (i <- 0 until expr.getArgCount())
               newStore = newStore.update(ParameterFrameAddr(newFP, i), args(i))
 
@@ -761,17 +765,17 @@ case class State(val stmt : Stmt,
       case expr : DynamicInvokeExpr => ??? // TODO: Could only come from non-Java sources
       case expr : StaticInvokeExpr =>
         checkInitializedClasses(expr.getMethod().getDeclaringClass())
-        dispatch(null, expr.getMethod())
+        dispatch(None, expr.getMethod())
       case expr : InstanceInvokeExpr =>
         ((for (v <- eval(expr.getBase()).values) yield {
           v match {
             case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, expr.getMethod.getDeclaringClass) => {
               val objectClass = if (expr.isInstanceOf[SpecialInvokeExpr]) null else sootClass
               val meth = (if (expr.isInstanceOf[SpecialInvokeExpr]) expr.getMethod() else overrides(objectClass, expr.getMethod()).head)
-              dispatch(v, meth)
+              dispatch(Some(v), meth)
             }
             case ArrayValue(sootType, _) => {
-              dispatch(null, expr.getMethod)
+              dispatch(Some(v), expr.getMethod)
             }
             case _ => Set()
           }
