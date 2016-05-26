@@ -134,9 +134,12 @@ case class Done() extends Message {}
 case class Edge(id : Id[Edge], src : Id[AbstractState], dst : Id[AbstractState]) extends Message {}
 
 // Declare 'AbstractState' nodes
-abstract class AbstractState(id : Id[AbstractState]) extends Message {}
-case class ErrorState(id : Id[AbstractState]) extends AbstractState(id) {}
-case class State(id : Id[AbstractState], stmt : Stmt, framePointer : String, kontStack : String) extends AbstractState(id) {}
+abstract class Node(id : Id[Node]) extends Message {}
+abstract class AbstractState(id : Id[Node]) extends Node(id) {}
+case class ErrorState(id : Id[Node]) extends AbstractState(id) {}
+case class State(id : Id[Node], stmt : Stmt, framePointer : String, kontStack : String) extends AbstractState(id) {}
+
+case class Group(id : Id[Node], states : java.util.List[Node], labels : String)
 
 
 ////////////////////////////////////////

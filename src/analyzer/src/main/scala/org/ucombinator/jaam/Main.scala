@@ -412,7 +412,7 @@ case object ErrorState extends AbstractState {
   override def setKWriteAddrs(s: Set[KontAddr]) = scala.Unit
   override def setInitializedClasses(classes: Set[SootClass]) = scala.Unit
   override def getInitializedClasses() : Set[SootClass] = Set()
-  override def toMessage() = messaging.ErrorState(messaging.Id[messaging.AbstractState](id))
+  override def toMessage() = messaging.ErrorState(messaging.Id[messaging.Node](id))
 }
 
 // State abstracts a collection of concrete states of execution.
@@ -457,7 +457,7 @@ case class State(val stmt : Stmt,
   }
   override def getInitializedClasses() : Set[SootClass] = initializedClasses
 
-  override def toMessage() = messaging.State(messaging.Id[messaging.AbstractState](id), stmt.toMessage, fp.toString, kontStack.toString)
+  override def toMessage() = messaging.State(messaging.Id[messaging.Node](id), stmt.toMessage, fp.toString, kontStack.toString)
 
   def copyState(stmt: Stmt = stmt,
                 fp: FramePointer = fp,
