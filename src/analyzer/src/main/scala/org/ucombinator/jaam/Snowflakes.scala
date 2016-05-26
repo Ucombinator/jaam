@@ -2,6 +2,8 @@ package org.ucombinator.jaam
 
 import scala.collection.JavaConversions._
 
+import com.esotericsoftware.minlog.Log
+
 import soot._
 import soot.jimple._
 
@@ -520,9 +522,7 @@ object ClassSnowflakes {
 object Snowflakes {
 
   def warn(id : Int, stmt : Stmt, meth : SootMethod) {
-    println(Console.YELLOW + "!!!!! WARNING (in state "+id+"): Using generic snowflake for Java library. May be unsound. !!!!!")
-    println("!!!!! stmt = " + stmt + " !!!!!")
-    println("!!!!! method = " + meth + " !!!!!" + Console.RESET)
+    Log.warn("Using generic snowflake for Java library in state "+id+". May be unsound. stmt = " + stmt + " method = " + meth)
   }
 
   val table = scala.collection.mutable.Map.empty[MethodDescription, SnowflakeHandler]

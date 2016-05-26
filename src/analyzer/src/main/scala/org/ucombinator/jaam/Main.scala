@@ -19,11 +19,12 @@ import scala.language.postfixOps
 
 import java.io.FileOutputStream
 
+import com.esotericsoftware.minlog.Log
+
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
 // fix this when we build the Scala wrapper for Soot.)
-import soot._
-import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, Type => SootType}
+import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, Type => SootType, _}
 
 import soot.jimple._
 import soot.jimple.{Stmt => SootStmt}
@@ -311,12 +312,6 @@ case class Store() { //private val map : Map[Addr, D]) {
     val oldd: D = get(addr)
     val newd: D = oldd.join(d)
     if (Store.on && oldd.values.size != newd.values.size) {
-//      if (Store.print) {
-//        println("update "+addr)
-//        println("oldd "+oldd)
-//        println("d "+d)
-//        println("newd "+newd)
-//      }
       Store.writeAddrs += addr
     }
     Store.map = Store.map + (addr -> newd)
@@ -352,8 +347,7 @@ case class Store() { //private val map : Map[Addr, D]) {
     val ds = for (a <- addrs; if Store.map.contains(a)) yield {
       a match {
         case InstanceFieldAddr(OneCFABasePointer(_, _, FromNative), _) =>
-          println(Console.RED + "!!!!! Access field of object created from native method !!!!!")
-          println(a + Console.RESET)
+          Log.error("Access to field of object created from native method. addr = "+a)
         case _ =>
       }
       Store.map(a)
@@ -638,7 +632,6 @@ case class State(val stmt : Stmt,
         val castedType : SootType = v.getType
         checkInitializedClasses(castedType)
         val d = eval(castedExpr)
-//        println("CastExpr "+v+" "+d)
         // TODO: filter out elements of "d" that are not of the
         // expression's type (should be done in general inside "eval"
         // (and maybe already is))
@@ -654,7 +647,6 @@ case class State(val stmt : Stmt,
         var d2 = D(Set())
 
         for (v <- d.values) {
-//          println("v:"+v+" castedType:"+castedType)
           if (isCastableTo(v, castedType)) {
             // Up casts are always legal
             d2 = d2.join(D(Set((v))))
@@ -670,7 +662,6 @@ case class State(val stmt : Stmt,
               case r : RefType => r.getClassName
               case a : ArrayType => ???
             }
-//            println("snowflake cast "+castedType+" v "+v)
             d2 = d2.join(Snowflakes.createObjectOrThrow(name))
           } else {
             // Anything else would cause an exception
@@ -679,113 +670,7 @@ case class State(val stmt : Stmt,
           }
         }
 
-//        println("caseExpr writeAddrs "+Store.writeAddrs)
-//        println("caseExpr readAddrs "+Store.readAddrs)
-//        println("caseExpr d2 "+d2)
         d2
-
-/*
-println("castExpr!!!!:", v)
-        // TODO: cast from a SnowflakeObject to another SnowflakeObject
-        val castedExpr : SootValue = v.getOp
-        val castedType : SootType = v.getType
-        checkInitializedClasses(castedType)
-        val d = eval(castedExpr)
-        // TODO: filter out elements of "d" that are not of the
-        // expression's type (should be done in general inside "eval"
-        // (and maybe already is))
-
-        var vs = Set()
-
-        for (v <- d.values) {
-          if (Soot.isSubType(objectType.getType, castedType)) {
-            // Up casts are always legal
-            vs += v
-          } else if (v.instanceOf[SnowflakeBasePointer]
-            && Soot.isSubType(castedType, objectType.getType)) {
-            // Snowflakes can be down cast, but they might throw an exception
-            val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastaException, malloc())))
-            exceptions = exceptions.join(classCastException)
-            vs += Snowflake.createObjectOrThrow()
-          } else {
-            // Anything else would cause an exception
-            val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastaException, malloc())))
-            exceptions = exceptions.join(classCastException)
-          }
-
-
-/*
-          // Up cast or cast to self
-          if (Soot.isSubType(objectType.getType, castedType)) {
-            vs += v
-          }
-          // Down cast
-          else if (Soot.isSubType(castedType, objectType.getType) {
-            if 
-            exceptions += ...
-            if 
-          }
-          if (downcast) {
-            exception
-            convertsnowflake
-          }
-          v match {
-            case _ : AnyAtomicValue =>
-              if (castedType.isInstanceOf[PrimType]) {
-                d = d join D.atomicTop
-              }
-            case ObjectValue
-          }
-        }
-
-        d2
-
-
-
-
-
-        if (castedType.isInstanceOf[PrimType]) {
-          return D.atomicTop
-        }
-println(castedExpr)
-println(castedType)
-
-        // TODO/soundness: Throw an exception if necessary.
-        for (vl <- d.values) {
-          vl match {
-            case ObjectValue(objectType, _) =>
-println("objectType=", objectType)
-              if (!Soot.isSubType(objectType.getType, castedType)) {
-println("isSubtype")
-                val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
-                exceptions = exceptions.join(classCastException)
-              }
-            case ArrayValue(arrayType, basePointer) =>
-              if (!Soot.isSubType(arrayType, castedType)) {
-                val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
-                exceptions = exceptions.join(classCastException)
-              }
-            case AnyAtomicValue => {}
-            case _ => throw new Exception ("Unknown value type " + vl)
-          }
-        }
-
-        for (vl <- d.values) {
-          vl match {
-            case ObjectValue(
-          }
-        }
-        castedType match {
-          case castedType : RefType =>
-            if (castedType.isJavaLibraryClass) {
-            }
-          case _ => ???
-        }
-        if (castedType..isJavaLibraryClass
-        if (javalib) { new java snowflake}
-        else {        d }
-      }
-*/*/
 
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
@@ -799,8 +684,6 @@ println("isSubtype")
   def handleInvoke(expr : InvokeExpr,
                    destAddr : Option[Set[Addr]],
                    nextStmt : Stmt = stmt.nextSyntactic) : Set[AbstractState] = {
-//println("handleInvoke "+expr)
-
     // o.f(3); // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
     def dispatch(bp : BasePointer, c : SootClass, m : SootMethod, receivers : Set[Value]) : Set[AbstractState] = {
@@ -823,7 +706,6 @@ println("isSubtype")
           (if (o.exists(m => AccessManager.isAccessLegal(curr_m, m))) List(curr_m) else List()) ++ o
         }
       }
-//      println("dispatch "+expr+" "+bp+" "+c+" "+m+" "+receivers)
 
       val meth = if (c == null) m else overrides(c, m).head
       // TODO: put a better message when there is no getActiveBody due to it being a native method
@@ -838,22 +720,7 @@ println("isSubtype")
         newStore = newStore.update(th, D(Set(r)))
 
       Snowflakes.get(meth) match {
-        case Some(h) =>
-//          println("snowflake "+h)
-          val s = h(this, nextStmt, newFP, newStore, newKontStack)
-//          println("wrote 4")
-//          for (state <- s) {
-//            println("  "+state)
-//            state match {
-//              case s : State =>
-//                println("next wrote 3")
-//                for (a <- Store.writeAddrs) {
-//                  println("  "+a+"="+s.store.get(a))
-//                }
-//              case _ => {}
-//            }
-//          }
-          s
+        case Some(h) => h(this, nextStmt, newFP, newStore, newKontStack)
         case None =>
           if (meth.getDeclaringClass.isJavaLibraryClass ||
               bp.isInstanceOf[SnowflakeBasePointer]) {
@@ -870,9 +737,7 @@ println("isSubtype")
             }
           }
           else if (meth.isNative) {
-            println(Console.YELLOW + "!!!!! WARNING (in state "+this.id+"): Native method without a snowflake. May be unsound. !!!!!")
-            println("!!!!! stmt = " + stmt + " !!!!!")
-            println("!!!!! method = " + meth + " !!!!!" + Console.RESET)
+            Log.warn("Native method without a snowflake in state "+this.id+". May be unsound. stmt = " + stmt)
             meth.getReturnType match {
               case _ : VoidType => Set(this.copyState(stmt = nextStmt))
               case _ : PrimType => {
@@ -880,7 +745,7 @@ println("isSubtype")
                 Set(this.copyState(stmt = nextStmt, store = newStore))
               }
               case _ =>
-                println(Console.RED + "!!!!! Native method returns an object.  Aborting. !!!!!" + Console.RESET)
+                Log.error("Native method returns an object. Aborting.")
                 Set()
             }
           } else {
@@ -899,37 +764,14 @@ println("isSubtype")
         dispatch(null, null, expr.getMethod(), Set())
       case expr : InstanceInvokeExpr =>
         val d = eval(expr.getBase())
-//        println("d "+d)
-//        println("d.values "+d.values)
         val vs = d.values filter {
           case ObjectValue(c,_) => Soot.isSubclass(c, expr.getMethod.getDeclaringClass)
-/*
-          case ObjectValue(c, SnowflakeBasePointer(_)) => Soot.isSubclass(c, expr.getMethod.getDeclaringClass)
-          case ObjectValue(_, HashMapSnowflakes.EntrySetOfHashMap(_)) => true
-          case ObjectValue(_, HashMapSnowflakes.IteratorOfEntrySetOfHashMap(_)) => true
-          case ObjectValue(_, HashMapSnowflakes.EntryOfIteratorOfEntrySetOfHashMap(_)) => true
-          case ObjectValue(_, HashMapSnowflakes.EntrySetOfHashMap(_)) => true
-          case ObjectValue(_, ArrayListSnowflakes.IteratorOfArrayList(_)) => true
-
-          case ObjectValue(sootClass, _) => {
-//            println("sootClass "+sootClass+" "+expr.getMethod().getDeclaringClass)
-            if (expr.getMethod().getDeclaringClass.isInterface) {
-              val imps = Scene.v().getActiveHierarchy.getImplementersOf(expr.getMethod().getDeclaringClass)
-              imps.contains(sootClass)
-              //true
-            }
-            else {
-              Soot.isSubclass(sootClass, expr.getMethod().getDeclaringClass)
-            }
-          }
- */
           case ArrayValue(sootType, _) => {
             //TODO Check Type
             true
           }
           case _ => false
         }
-//        println("vs "+vs)
         ((for (v <- vs) yield {
           v match {
             case ObjectValue(sootClass, bp) => {
@@ -986,20 +828,13 @@ println("isSubtype")
   override def next() : Set[AbstractState] = {
     try {
       val nexts = true_next()
-      /*
-      println("KStore:")
-      println(kontStack.getStore())
-      println("Exceptions:")
-      println(exceptions)
-      */
-
       val exceptionStates = (exceptions.values map {
         kontStack.handleException(_, stmt, fp, store, initializedClasses)
       }).flatten
       nexts ++ exceptionStates
     } catch {
       case UninitializedClassException(sootClass) =>
-        println("Exception: Static initializing "+sootClass)
+        Log.info("Static initializing "+sootClass)
         // TODO/soundness: needs to also initialize parent classes
         exceptions = D(Set())
         val meth = sootClass.getMethodByNameUnsafe(SootMethod.staticInitializerName)
@@ -1026,12 +861,12 @@ println("isSubtype")
         }
 
       case UninitializedSnowflakeObjectException(className) =>
-        println("Exception: Initializing snowflake "+className)
+        Log.info("Initializing snowflake "+className)
         val newStore = store.join(Snowflakes.createObject(className, List()))
         Set(this.copyState(store = newStore)) //store=>store.join(Snowflakes.createObject(className, List()))))
 
       case StringConstantException(string) =>
-        println("Exception: Initializing string constant: \""+string+"\"")
+        Log.info("Initializing string constant: \""+string+"\"")
         val value = Soot.classes.String.getFieldByName("value")
         val hash = Soot.classes.String.getFieldByName("hash")
         val hash32 = Soot.classes.String.getFieldByName("hash32")
@@ -1042,10 +877,7 @@ println("isSubtype")
         Set(this.copyState(store = newStore))
 
       case UndefinedAddrsException(addrs) =>
-        println(Console.RED + "!!!!! ERROR (in state "+this.id+"): Undefined Addrs !!!!!")
-        println("!!!!! stmt = " + stmt + " !!!!!")
-        println("!!!!! addrs = " + addrs + " !!!!!" + Console.RESET)
-
+        Log.error("Undefined Addrs in state "+this.id+" stmt = "+stmt+" addrs = "+addrs)
         Set()
     }
   }
@@ -1106,7 +938,6 @@ println("isSubtype")
             Set(this.copyState(stmt = stmt.nextSyntactic, store = newStore))
           }
           case rhs => {
-//            println("eval(rhs) "+eval(rhs)+" "+lhsAddr)
             val newStore = store.update(lhsAddr, eval(rhs))
             Set(this.copyState(stmt = stmt.nextSyntactic, store = newStore))
           }
@@ -1227,14 +1058,6 @@ object System {
     val newKStore = nexts.par.map(_.getKontStore()).foldLeft(KontStore(Map()))(_.join(_))
     val newInitClasses = nexts.par.map(_.getInitializedClasses()).foldLeft(Set[SootClass]())(_.++(_))
 
-//    if (Store.print) {
-//      println("next wrote 2")
-//      for (a <- Store.writeAddrs) {
-//        println("  "+a+"="+newStore.get(a))
-//      }
-//    }
-
-
     (nexts, newStore, newKStore, newInitClasses)
   }
 }
@@ -1282,6 +1105,7 @@ object Main {
         println("Wrong arguments")
 
       case Some(config) =>
+        Log.setLogger(new JaamLogger)
         Soot.initialize(config)
         defaultMode(config)
     }
@@ -1310,25 +1134,24 @@ object Main {
     while (todo nonEmpty) {
       //TODO refactor store widening code
       val current = todo.head
-      println()
-      println("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
+      Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
       val (nexts, newStore, newKStore, initClasses) = System.next(current, globalStore, globalKontStore, globalInitClasses)
 
       val newTodo = nexts.toList.filter(!done.contains(_))
 
       for (n <- newTodo) {
-        println("Writing state "+n.id)
+        Log.info("Writing state "+n.id)
         outMessaging.write(n.toMessage)
       }
 
       for (n <- nexts) {
         if (!doneEdges.contains(current, n)) {
           val id = doneEdges.size
-          println("Writing edge "+id+": "+current.id+" -> "+n.id)
+          Log.info("Writing edge "+id+": "+current.id+" -> "+n.id)
           doneEdges += id -> Pair(current.id, n.id)
           outMessaging.write(messaging.Edge(messaging.Id[messaging.Edge](id), messaging.Id[messaging.AbstractState](current.id), messaging.Id[messaging.AbstractState](n.id)))
         } else {
-          println("Skipping edge "+current.id+" -> "+n.id)
+          Log.info("Skipping edge "+current.id+" -> "+n.id)
         }
       }
 
@@ -1351,11 +1174,28 @@ object Main {
       globalStore = globalStore.join(newStore)
       globalKontStore = globalKontStore.join(newKStore)
       globalInitClasses ++= initClasses
-      println("Done processing state "+current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
+      Log.info("Done processing state "+current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
     }
 
     outMessaging.close()
 
-    println("Done!")
+    Log.info("Done!")
+  }
+
+  class JaamLogger extends Log.Logger {
+    private var level = 0
+
+    override def log(level : Int, category : String, message : String, ex : Throwable) {
+      this.level = level
+      super.log(level, category, message, ex)
+    }
+
+    override def print(s : String) = {
+      this.level match {
+        case Log.LEVEL_ERROR => super.print(Console.RED + s + Console.RESET)
+        case Log.LEVEL_WARN => super.print(Console.YELLOW + s + Console.RESET)
+        case _ => super.print(s)
+      }
+    }
   }
 }

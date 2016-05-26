@@ -3,6 +3,8 @@ package org.ucombinator.jaam
 import scala.collection.JavaConversions._
 import scala.math.BigInt
 
+import com.esotericsoftware.minlog.Log
+
 import soot._
 import soot.options._
 import soot.jimple._
@@ -11,6 +13,7 @@ import soot.tagkit.GenericAttribute
 import soot.tagkit.SourceFileTag
 
 import org.ucombinator.jaam.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
+
 
 // Helpers for working with Soot.
 //
@@ -167,7 +170,7 @@ object Soot {
               ot.equals(classes.Serializable.getType)
           }
           case (at : ArrayType, ot : Type) => {
-            println("Warning: checking if a non-array type is an array")
+            Log.warn("Checking if a non-array type "+ot+" is an array")
             false // maybe
           }
           case _ => {

@@ -1,9 +1,10 @@
+package org.ucombinator.jaam.messaging
+
 /*****************************************
  * This library handles reading and writting ".jaam" files.  For usage see
  * MessageInput and MessageOutput in this package.
  * ****************************************/
 
-package org.ucombinator.jaam.messaging
 import java.lang.Object
 import java.io.{InputStream, OutputStream, IOException}
 import java.lang.reflect.Type
