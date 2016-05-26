@@ -684,59 +684,51 @@ case class State(val stmt : Stmt,
   def handleInvoke(expr : InvokeExpr,
                    destAddr : Option[Set[Addr]],
                    nextStmt : Stmt = stmt.nextSyntactic) : Set[AbstractState] = {
+
+    // This function finds all methods that could override root_m.
+    // These methods are returned with the root-most at the end of
+    // the list and the leaf-most at the head.  Thus the caller
+    // should use the head of the returned list.  The reason a list
+    // is returned is so this function can recursively compute the
+    // transitivity rule in Java's method override definition.
+    //
+    // Note that Hierarchy.resolveConcreteDispath should be able to do this, but seems to be implemented wrong
+    def overrides(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
+      val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
+      if (curr_m == null) {
+        overrides(curr.getSuperclass(), root_m)
+      }
+      else if (root_m.getDeclaringClass.isInterface || AccessManager.isAccessLegal(curr_m, root_m)) { List(curr_m) }
+      else {
+        val o = overrides(curr.getSuperclass(), root_m)
+        (if (o.exists(m => AccessManager.isAccessLegal(curr_m, m))) List(curr_m) else List()) ++ o
+      }
+    }
+
+
     // o.f(3); // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
-    def dispatch(bp : BasePointer, c : SootClass, m : SootMethod, receivers : Set[Value]) : Set[AbstractState] = {
-      // This function finds all methods that could override root_m.
-      // These methods are returned with the root-most at the end of
-      // the list and the leaf-most at the head.  Thus the caller
-      // should use the head of the returned list.  The reason a list
-      // is returned is so this function can recursively compute the
-      // transitivity rule in Java's method override definition.
-      //
-      // Note that Hierarchy.resolveConcreteDispath should be able to do this, but seems to be implemented wrong
-      def overrides(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
-        val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
-        if (curr_m == null) {
-          overrides(curr.getSuperclass(), root_m)
-        }
-        else if (root_m.getDeclaringClass.isInterface || AccessManager.isAccessLegal(curr_m, root_m)) { List(curr_m) }
-        else {
-          val o = overrides(curr.getSuperclass(), root_m)
-          (if (o.exists(m => AccessManager.isAccessLegal(curr_m, m))) List(curr_m) else List()) ++ o
-        }
-      }
-
-      val meth = if (c == null) m else overrides(c, m).head
-      // TODO: put a better message when there is no getActiveBody due to it being a native method
-      val newFP = alloca(expr, nextStmt)
-      var newStore = store
-      for (i <- 0 until expr.getArgCount())
-        newStore = newStore.update(ParameterFrameAddr(newFP, i), eval(expr.getArg(i)))
-      val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
-      // TODO/optimize: filter out incorrect class types
-      val th = ThisFrameAddr(newFP)
-      for (r <- receivers)
-        newStore = newStore.update(th, D(Set(r)))
+    def dispatch(self : Value, meth : SootMethod) : Set[AbstractState] = {
+      val args = for (a <- expr.getArgs().toList) yield eval(a)
 
       Snowflakes.get(meth) match {
-        case Some(h) => h(this, nextStmt, newFP, newStore, newKontStack)
+        case Some(h) => h(this, nextStmt, self, args)
         case None =>
           if (meth.getDeclaringClass.isJavaLibraryClass ||
-              bp.isInstanceOf[SnowflakeBasePointer]) {
+            self.isInstanceOf[ObjectValue] &&
+            self.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
             Snowflakes.warn(this.id, stmt, meth)
             val rtType = meth.getReturnType
             rtType match {
-              case t: VoidType => NoOpSnowflake(this, nextStmt, newFP, newStore, newKontStack)
-              case pt: PrimType => ReturnSnowflake(D.atomicTop)(this, nextStmt, newFP, newStore, newKontStack)
-              case at: ArrayType =>
-                ReturnArraySnowflake(at.baseType.toString, at.numDimensions)
-                  .apply(this, nextStmt, newFP, newStore, newKontStack)
+              case _ : VoidType => NoOpSnowflake(this, nextStmt, self, args)
+              case _ : PrimType => ReturnSnowflake(D.atomicTop)(this, nextStmt, self, args)
+              case t : ArrayType =>
+                ReturnArraySnowflake(t.baseType.toString, t.numDimensions)
+                  .apply(this, nextStmt, self, args)
               case rt: RefType =>
-                ReturnObjectSnowflake(rt.getClassName)(this, nextStmt, newFP, newStore, newKontStack)
+                ReturnObjectSnowflake(rt.getClassName)(this, nextStmt, self, args)
             }
-          }
-          else if (meth.isNative) {
+          } else if (meth.isNative) {
             Log.warn("Native method without a snowflake in state "+this.id+". May be unsound. stmt = " + stmt)
             meth.getReturnType match {
               case _ : VoidType => Set(this.copyState(stmt = nextStmt))
@@ -749,6 +741,14 @@ case class State(val stmt : Stmt,
                 Set()
             }
           } else {
+            // TODO/optimize: filter out incorrect class types
+            val newFP = alloca(expr, nextStmt)
+            val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
+            var newStore = store
+            newStore = newStore.update(ThisFrameAddr(newFP), D(Set(self)))
+            for (i <- 0 until expr.getArgCount())
+              newStore = newStore.update(ParameterFrameAddr(newFP, i), args(i))
+
             val newState = State(Stmt.methodEntry(meth), newFP, newKontStack)
             newState.setStore(newStore)
             newState.setInitializedClasses(initializedClasses)
@@ -761,26 +761,19 @@ case class State(val stmt : Stmt,
       case expr : DynamicInvokeExpr => ??? // TODO: Could only come from non-Java sources
       case expr : StaticInvokeExpr =>
         checkInitializedClasses(expr.getMethod().getDeclaringClass())
-        dispatch(null, null, expr.getMethod(), Set())
+        dispatch(null, expr.getMethod())
       case expr : InstanceInvokeExpr =>
-        val d = eval(expr.getBase())
-        val vs = d.values filter {
-          case ObjectValue(c,_) => Soot.isSubclass(c, expr.getMethod.getDeclaringClass)
-          case ArrayValue(sootType, _) => {
-            //TODO Check Type
-            true
-          }
-          case _ => false
-        }
-        ((for (v <- vs) yield {
+        ((for (v <- eval(expr.getBase()).values) yield {
           v match {
-            case ObjectValue(sootClass, bp) => {
+            case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, expr.getMethod.getDeclaringClass) => {
               val objectClass = if (expr.isInstanceOf[SpecialInvokeExpr]) null else sootClass
-              dispatch(bp, objectClass, expr.getMethod(), vs)
+              val meth = (if (expr.isInstanceOf[SpecialInvokeExpr]) expr.getMethod() else overrides(objectClass, expr.getMethod()).head)
+              dispatch(v, meth)
             }
             case ArrayValue(sootType, _) => {
-              dispatch(null, null, expr.getMethod, vs)
+              dispatch(null, expr.getMethod)
             }
+            case _ => Set()
           }
         }) :\ Set[AbstractState]())(_ ++ _) // TODO: better way to do this?
     }
