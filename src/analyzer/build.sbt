@@ -11,7 +11,18 @@ libraryDependencies ++= Seq(
   "com.esotericsoftware" % "minlog" % "1.3.0"
 )
 
-scalacOptions ++= Seq("-unchecked", "-deprecation")
+scalacOptions ++= Seq(
+  // Emit warning and location for usages of deprecated APIs.
+  "-deprecation",
+  // Explain type errors in more detail.
+  "–explaintypes",
+  // Emit warning and location for usages of features that should be imported explicitly.
+  "-feature",
+  // Generates faster bytecode by applying optimisations to the program
+  "-optimise",
+  // Enable additional warnings where generated code depends on assumptions.
+  "-unchecked"
+)
 
 // Fixes "Cannot check match for unreachability" warning
 // TODO: not sure if this is the best way to do this
