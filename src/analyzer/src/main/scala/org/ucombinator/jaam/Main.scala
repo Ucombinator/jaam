@@ -36,7 +36,7 @@ import soot.util.Chain
 import soot.options.Options
 import soot.jimple.toolkits.invoke.AccessManager
 
-import org.ucombinator.jaam.messaging.Message
+import org.ucombinator.jaam.messaging._
 
 import org.ucombinator.jaam.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
 
@@ -1294,7 +1294,7 @@ object Main {
       case None => outputFile = config.className + ".jaam"
       case Some(x) => outputFile = x
     }
-    val outMessaging = Message.openOutput(new FileOutputStream(outputFile))
+    val outMessaging = new MessageOutput(new FileOutputStream(outputFile))
     val mainMainMethod : SootMethod = Soot.getSootClass(config.className).getMethodByName(config.methodName)
     val initialState = State.inject(Stmt.methodEntry(mainMainMethod))
 
@@ -1305,7 +1305,7 @@ object Main {
     var globalInitClasses: Set[SootClass] = Set()
     var doneEdges: Map[Int,Pair[Int, Int]] = Map()
 
-    Message.write(outMessaging, initialState.toMessage)
+    outMessaging.write(initialState.toMessage)
 
     while (todo nonEmpty) {
       //TODO refactor store widening code
@@ -1318,7 +1318,7 @@ object Main {
 
       for (n <- newTodo) {
         println("Writing state "+n.id)
-        Message.write(outMessaging, n.toMessage)
+        outMessaging.write(n.toMessage)
       }
 
       for (n <- nexts) {
@@ -1326,7 +1326,7 @@ object Main {
           val id = doneEdges.size
           println("Writing edge "+id+": "+current.id+" -> "+n.id)
           doneEdges += id -> Pair(current.id, n.id)
-          Message.write(outMessaging, messaging.Edge(messaging.Id[messaging.Edge](id), messaging.Id[messaging.AbstractState](current.id), messaging.Id[messaging.AbstractState](n.id)))
+          outMessaging.write(messaging.Edge(messaging.Id[messaging.Edge](id), messaging.Id[messaging.AbstractState](current.id), messaging.Id[messaging.AbstractState](n.id)))
         } else {
           println("Skipping edge "+current.id+" -> "+n.id)
         }

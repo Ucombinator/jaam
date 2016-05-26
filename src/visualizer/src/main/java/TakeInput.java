@@ -5,12 +5,11 @@ import java.util.StringTokenizer;
 import java.util.ArrayList;
 import java.util.Stack;
 import org.ucombinator.jaam.messaging.*;
-import org.ucombinator.jaam.messaging.Message.Input;
 
 public class TakeInput extends Thread
 {
 	BufferedReader parseInput;
-	Input messageInput;
+	MessageInput messageInput;
 
 	//If file is empty, we read from System.in
 	public void run(String file, boolean fromMessages)
@@ -179,11 +178,11 @@ public class TakeInput extends Thread
 	public void parseMessages(String file)
 	{
 		if(file.equals(""))
-			messageInput = Message.openInput(System.in);
+			messageInput = new MessageInput(System.in);
 		try
 		{
-			messageInput = Message.openInput(new FileInputStream(file));
-			Message message = Message.read(messageInput);
+			messageInput = new MessageInput(new FileInputStream(file));
+			Message message = messageInput.read();
 
 			while(!(message instanceof Done))
 			{
@@ -212,7 +211,7 @@ public class TakeInput extends Thread
 					Main.graph.addVertex(id, methodName, instruction, "", jimpleIndex, true);
 				}
 
-				message = Message.read(messageInput);
+				message = messageInput.read();
 			}
 		}
 		catch(FileNotFoundException e)
