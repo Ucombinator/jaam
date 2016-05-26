@@ -13,6 +13,10 @@ libraryDependencies ++= Seq(
 
 scalacOptions ++= Seq("-unchecked", "-deprecation")
 
+// Fixes "Cannot check match for unreachability" warning
+// TODO: not sure if this is the best way to do this
+initialize ~= { _ => sys.props("scalac.patmat.analysisBudget") = "1024" }
+
 mainClass in (Compile, assembly) := Some("org.ucombinator.jaam.Main")
 
 // Assembly-specific configuration
