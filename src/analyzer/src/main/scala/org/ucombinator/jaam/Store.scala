@@ -78,15 +78,8 @@ abstract class AbstractStore[K <: Addr, E, V <: AbstractDomain[E] : ClassTag](va
     (for ((a, d) <- map) yield { a + " -> " + d }).toList
 }
 
-object Store {
-  val serializer = Soot.toStringSerializer[Store]
-}
 case class Store(override val map: mutable.Map[Addr, D])
   extends AbstractStore[Addr, Value, D](map, D(Set()))
 
-object KontStore {
-  //TODO: use which serializer? toStringSerializer or mapSerializer?
-  val serializer = Soot.toStringSerializer[KontStore]
-}
 case class KontStore(override val map: mutable.Map[KontAddr, KontD])
   extends AbstractStore[KontAddr, Kont, KontD](map, KontD(Set()))

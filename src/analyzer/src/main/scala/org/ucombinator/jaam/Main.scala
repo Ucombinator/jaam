@@ -40,13 +40,6 @@ import javax.swing.JFrame
 import javax.swing.SwingUtilities
 import javax.swing.ToolTipManager
 
-import com.mxgraph.swing.mxGraphComponent
-import com.mxgraph.view.mxGraph
-import com.mxgraph.layout.mxCompactTreeLayout
-
-// JSON4s
-import org.json4s._
-
 import java.io.FileOutputStream
 import java.io.FileInputStream
 import org.ucombinator.jaam.messaging
@@ -233,22 +226,12 @@ abstract class AbstractDomain[T](val values: Set[T]) {
 }
 
 case class KontD(override val values: Set[Kont]) extends AbstractDomain[Kont](values)
-object KontD {
-  val serializer = new CustomSerializer[KontD](implicit format => (
-    { case s => ??? },
-    { case KontD(values) => Extraction.decompose(values) }
-    ))
-}
 
 case class D(override val values: Set[Value]) extends AbstractDomain[Value](values) {
   def maybeZero() : Boolean = values.exists(_.isInstanceOf[AtomicValue])
 }
 object D {
   val atomicTop = D(Set(AnyAtomicValue))
-  val serializer = new CustomSerializer[D](implicit format => (
-    { case s => ??? },
-    { case D(values) => Extraction.decompose(values) }
-    ))
 }
 
 abstract sealed class AbstractState {
@@ -634,11 +617,11 @@ case class State(val stmt : Stmt,
             val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
             var newStore = store // TODO: currently update the store directly, not using newStore
             self match {
-              case Some(s) => newStore = newStore.update(ThisFrameAddr(newFP), D(Set(s)))
+              case Some(s) => newStore.update(ThisFrameAddr(newFP), D(Set(s)))
               case None => {} // TODO: throw exception here?
             }
             for (i <- 0 until expr.getArgCount())
-              newStore = newStore.update(ParameterFrameAddr(newFP, i), args(i))
+              newStore.update(ParameterFrameAddr(newFP, i), args(i))
 
             val newState = State(Stmt.methodEntry(meth), newFP, newKontStack)
             newState.setInitializedClasses(initializedClasses)
@@ -695,7 +678,7 @@ case class State(val stmt : Stmt,
   // by the SootType t with dimension sizes 'sizes'
   def createArray(t : SootType, sizes : List[D], addrs : Set[Addr]) : Store = sizes match {
     // Should only happen on recursive calls. (createArray should never be called by a user with an empty list of sizes).
-    case Nil => Store(Map(addrs -> defaultInitialValue(t)))
+    case Nil => Store(Map()).update(addrs, defaultInitialValue(t)).asInstanceOf[Store]
     case (s :: ss) => {
       val bp : BasePointer = malloc()
       // TODO/soundness: exception for a negative length
@@ -757,7 +740,7 @@ case class State(val stmt : Stmt,
         val bp = StringBasePointer(string)
         val newStore = createArray(ArrayType.v(CharType.v,1), List(D.atomicTop/*string.length*/), Set(InstanceFieldAddr(bp, value)))
           .update(InstanceFieldAddr(bp, hash), D.atomicTop)
-          .update(InstanceFieldAddr(bp, hash32), D.atomicTop).asInstance[Store]
+          .update(InstanceFieldAddr(bp, hash32), D.atomicTop).asInstanceOf[Store]
         store.join(newStore)
         Set(this.copyState(/*store = newStore*/))
 
@@ -772,26 +755,26 @@ case class State(val stmt : Stmt,
     if (sootClass.isJavaLibraryClass || Snowflakes.contains(md)) {
       val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
       val d = D(Set(obj))
-      var newStore = store.update(lhsAddr, d)
-      newStore = newStore.join(Snowflakes.createObject(sootClass.getName, List()))
-      newStore.asInstanceOf[Store]
+      store.update(lhsAddr, d)
+      store.join(Snowflakes.createObject(sootClass.getName, List()))
+      store.asInstanceOf[Store]
     }
     else {
       val bp : BasePointer = malloc()
       val obj : Value = ObjectValue(sootClass, bp)
       val d = D(Set(obj))
-      var newStore = store.update(lhsAddr, d)
+      store.update(lhsAddr, d)
       checkInitializedClasses(sootClass)
       // initialize instance fields to default values for their type
       def initInstanceFields(c : SootClass) {
         for (f <- c.getFields) {
-          newStore = newStore.update(InstanceFieldAddr(bp, f), defaultInitialValue(f.getType))
+          store.update(InstanceFieldAddr(bp, f), defaultInitialValue(f.getType))
         }
         // TODO: swap these lines?
         if(c.hasSuperclass) initInstanceFields(c.getSuperclass)
       }
       initInstanceFields(sootClass)
-      newStore.asInstanceOf[Store]
+      store.asInstanceOf[Store]
     }
   }
 
@@ -813,16 +796,18 @@ case class State(val stmt : Stmt,
             //TODO, if base type is Java library class, call Snowflake.createArray
             // Value of lhsAddr will be set to a pointer to the array. (as opposed to the array itself)
             val newStore = createArray(rhs.getType(), List(eval(rhs.getSize())), lhsAddr)
+            store.join(newStore)
             Set(this.copyState(stmt = stmt.nextSyntactic/*store = newStore*/))
           }
           case rhs : NewMultiArrayExpr => {
             //TODO, if base type is Java library class, call Snowflake.createArray
             //see comment above about lhs addr
             val newStore = createArray(rhs.getType(), rhs.getSizes().toList map eval, lhsAddr)
+            store.join(newStore)
             Set(this.copyState(stmt = stmt.nextSyntactic/*store = newStore*/))
           }
           case rhs => {
-            val newStore = store.update(lhsAddr, eval(rhs))
+            store.update(lhsAddr, eval(rhs))
             Set(this.copyState(stmt = stmt.nextSyntactic/*store = newStore*/))
           }
         }
@@ -1038,7 +1023,7 @@ object Main {
         if (!doneEdges.contains((current.id, n.id))) {
           val id = doneEdges.size
           Log.info("Writing edge "+id+": "+current.id+" -> "+n.id)
-          doneEdges += id -> Pair(current.id, n.id)
+          doneEdges += (current.id, n.id) -> id
           outMessaging.write(messaging.Edge(messaging.Id[messaging.Edge](id), messaging.Id[messaging.AbstractState](current.id), messaging.Id[messaging.AbstractState](n.id)))
         } else {
           Log.info("Skipping edge "+current.id+" -> "+n.id)
