@@ -62,7 +62,7 @@ object Message {
     if (in.isRead) in.pop
     else {
       kryo.readClassAndObject(in) match {
-        case ms : Array[Message] => 
+        case ms : Array[Message] =>
           in.ms = ms
           in.isRead = true
         case _ => throw new Exception("TODO: Message.read failed")
@@ -189,7 +189,7 @@ index 3cc4d85..0786c26 100644
 +  "com.twitter" %% "chill" % "0.3.6",
 +  "de.javakaffee" % "kryo-serializers" % "0.37"
  )
- 
+
  scalacOptions ++= Seq("-unchecked", "-deprecation")
 diff --git a/src/main/scala/org/ucombinator/jaam/Main.scala b/src/main/scala/org/ucombinator/jaam/Main.scala
 index c268509..c179b5a 100644
@@ -198,7 +198,7 @@ index c268509..c179b5a 100644
 @@ -56,6 +56,8 @@ import com.mxgraph.layout.mxCompactTreeLayout
  import org.json4s._
  import org.json4s.native._
- 
+
 +import de.javakaffee.kryoserializers._
 +import com.esotericsoftware.minlog.Log
  import com.esotericsoftware.kryo._
@@ -210,9 +210,9 @@ index c268509..c179b5a 100644
      val kryo = instantiator.newKryo()
 +kryo.addDefaultSerializer(classOf[soot.util.Chain[java.lang.Object]], classOf[com.esotericsoftware.kryo.serializers.FieldSerializer[java.lang.Object]])
 +UnmodifiableCollectionsSerializer.registerSerializers( kryo )
- 
+
      val mainMainMethod : SootMethod = Soot.getSootClass(config.className).getMethodByName(config.methodName)
- 
+
 @@ -1351,14 +1355,16 @@ object Main {
        // Serialization test
        val arrOut: ByteArrayOutputStream = new ByteArrayOutputStream()
@@ -220,10 +220,10 @@ index c268509..c179b5a 100644
 -      kryo.writeObject(output, current)
 +      kryo.writeClassAndObject(output, current)
        output.close()
-       
+
        val arrIn: ByteArrayInputStream = new ByteArrayInputStream(arrOut.toByteArray())
        val input = new Input(arrIn)
-       
+
        if (current.isInstanceOf[State]) {
 -        val current1 = kryo.readObject(input, classOf[State])
 +        println("Just before the error")
