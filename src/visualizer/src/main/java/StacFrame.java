@@ -106,7 +106,7 @@ public class StacFrame extends JFrame
 				}
 		);
 
-		final JMenuItem loadJavaCode = new JMenuItem("Load matching decompiled code");
+		/*final JMenuItem loadJavaCode = new JMenuItem("Load matching decompiled code");
 		menuFile.add(loadJavaCode);
 		loadJavaCode.addActionListener(
 				new ActionListener()
@@ -117,7 +117,7 @@ public class StacFrame extends JFrame
 						TakeInput.loadDecompiledCode();
 					}
 				}
-		);
+		);*/
 		
 		//Search menu
 		menuSearch = new JMenu("Search");
