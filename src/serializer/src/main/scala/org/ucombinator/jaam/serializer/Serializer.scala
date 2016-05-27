@@ -1,8 +1,8 @@
-package org.ucombinator.jaam.messaging
+package org.ucombinator.jaam.serializer
 
 /*****************************************
  * This library handles reading and writting ".jaam" files.  For usage see
- * MessageInput and MessageOutput in this package.
+ * PacketInput and PacketOutput in this package.
  * ****************************************/
 
 import java.lang.Object
@@ -26,22 +26,22 @@ import com.twitter.chill.{AllScalaRegistrar, KryoBase, ScalaKryoInstantiator}
 
 
 ////////////////////////////////////////
-// 'MessageInput' is used to read a ".jaam" file
+// 'PacketInput' is used to read a ".jaam" file
 //
 // Usage of this class:
-//   in = new MessageInput(new FileInputStream("<filename>.jaam"))
+//   in = new PacketInput(new FileInputStream("<filename>.jaam"))
 //   in.read()
-class MessageInput(private val input : InputStream) {
-  // Reads a 'Message'
+class PacketInput(private val input : InputStream) {
+  // Reads a 'Packet'
   // TODO: check for exceptions
-  def read() : Message = {
+  def read() : Packet = {
     this.kryo.readClassAndObject(in) match {
-      case o : Message => o
-      case o => throw new IOException("Read object is not a Message: " + o)
+      case o : Packet => o
+      case o => throw new IOException("Read object is not a Packet: " + o)
     }
   }
 
-  // Closes this 'MessageInput'
+  // Closes this 'PacketInput'
   def close() = in.close()
 
   ////////////////////////////////////////
@@ -74,23 +74,23 @@ class MessageInput(private val input : InputStream) {
 }
 
 ////////////////////////////////////////
-// 'MessageOutput' is used to write ".jaam" files
+// 'PacketOutput' is used to write ".jaam" files
 //
 // Usage of this class:
-//   out = new MessageOutput(new FileOutputStream("<filename>.jaam"))
-//   out.write(message)
-class MessageOutput(private val output : OutputStream) {
-  // Writes a 'Message'
-  def write(m : Message) : Unit = {
+//   out = new PacketOutput(new FileOutputStream("<filename>.jaam"))
+//   out.write(packet)
+class PacketOutput(private val output : OutputStream) {
+  // Writes a 'Packet'
+  def write(m : Packet) : Unit = {
     this.kryo.writeClassAndObject(this.out, m)
   }
 
   // Flushes output
   def flush() = out.flush()
 
-  // Closes this 'MessageInput'
+  // Closes this 'PacketInput'
   def close() : Unit = {
-    this.write(Done())
+    this.write(EOF())
     out.close()
   }
 
@@ -119,21 +119,21 @@ private[this] object Signatures {
 
 
 ////////////////////////////////////////
-// Message types
+// Packet types
 ////////////////////////////////////////
 
-// The super type of all messages
-abstract class Message {}
+// The super type of all packets
+abstract class Packet {}
 
-// Signals that all messages are done
+// Signals that all packets are done
 // TODO: check if "object" is okay here
-case class Done() extends Message {}
+case class EOF () extends Packet {}
 
 // Declare a transition edge between two 'State' nodes
-case class Edge(id : Id[Edge], src : Id[AbstractState], dst : Id[AbstractState]) extends Message {}
+case class Edge(id : Id[Edge], src : Id[AbstractState], dst : Id[AbstractState]) extends Packet {}
 
 // Declare 'AbstractState' nodes
-abstract class Node(id : Id[Node]) extends Message {}
+abstract class Node(id : Id[Node]) extends Packet {}
 abstract class AbstractState(id : Id[Node]) extends Node(id) {}
 case class ErrorState(id : Id[Node]) extends AbstractState(id) {}
 case class State(id : Id[Node], stmt : Stmt, framePointer : String, kontStack : String) extends AbstractState(id) {}
@@ -142,7 +142,7 @@ case class Group(id : Id[Node], states : java.util.List[Node], labels : String)
 
 
 ////////////////////////////////////////
-// Types inside messages
+// Types inside packets
 ////////////////////////////////////////
 
 // Identifiers qualified by a namespace
@@ -155,7 +155,7 @@ case class Id[Namespace](id : Int) {
 case class Stmt(method : SootMethod, index : Int, stmt : SootStmt) {}
 
 /*
-Classes that we may eventually need to support in 'Message':
+Classes that we may eventually need to support in 'Packet':
 
 AbstractState
   ErrorState

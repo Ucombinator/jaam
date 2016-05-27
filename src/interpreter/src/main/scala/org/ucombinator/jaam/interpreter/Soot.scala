@@ -1,4 +1,4 @@
-package org.ucombinator.jaam
+package org.ucombinator.jaam.interpreter
 
 import scala.collection.JavaConversions._
 import scala.math.BigInt
@@ -14,6 +14,7 @@ import soot.tagkit.SourceFileTag
 
 import org.ucombinator.jaam.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
 
+import org.ucombinator.jaam.serializer
 
 // Helpers for working with Soot.
 //
@@ -59,7 +60,7 @@ case class Stmt(val sootStmt : SootStmt, val sootMethod : SootMethod) {
     } else { "<unknown>" }
   }
 
-  def toMessage() : messaging.Stmt = messaging.Stmt(sootMethod, index, sootStmt)
+  def toPacket() : serializer.Stmt = serializer.Stmt(sootMethod, index, sootStmt)
   def nextSyntactic : Stmt = this.copy(sootStmt = Soot.getBody(sootMethod).getUnits().getSuccOf(sootStmt))
   def nextSemantic : List[Stmt] =
     sootStmt match {

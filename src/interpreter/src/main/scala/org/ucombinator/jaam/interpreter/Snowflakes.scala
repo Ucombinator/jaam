@@ -1,4 +1,4 @@
-package org.ucombinator.jaam
+package org.ucombinator.jaam.interpreter
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.Map

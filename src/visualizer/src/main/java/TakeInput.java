@@ -4,22 +4,22 @@ import java.util.regex.*;
 import java.util.StringTokenizer;
 import java.util.ArrayList;
 import java.util.Stack;
-import org.ucombinator.jaam.messaging.*;
+import org.ucombinator.jaam.serializer.*;
 
 public class TakeInput extends Thread
 {
 	BufferedReader parseInput;
-	MessageInput messageInput;
+	PacketInput packetInput;
 
 	//If file is empty, we read from System.in
-	public void run(String file, boolean fromMessages)
+	public void run(String file, boolean fromPackets)
 	{
 		Main.graph = new Graph();
 
-		if(!fromMessages)
+		if(!fromPackets)
 			this.parseDefault(file);
 		else
-			this.parseMessages(file);
+			this.parsePackets(file);
 
 		Main.graph.finalizeParentsForRootChildren();
 		Main.graph.identifyLoops();
@@ -175,43 +175,43 @@ public class TakeInput extends Thread
 		}
 	}
 
-	public void parseMessages(String file)
+	public void parsePackets(String file)
 	{
 		if(file.equals(""))
-			messageInput = new MessageInput(System.in);
+			packetInput = new PacketInput(System.in);
 		try
 		{
-			messageInput = new MessageInput(new FileInputStream(file));
-			Message message = messageInput.read();
+			packetInput = new PacketInput(new FileInputStream(file));
+			Packet packet = packetInput.read();
 
-			while(!(message instanceof Done))
+			while(!(packet instanceof EOF))
 			{
 				//Name collision with our own Edge class
-				if(message instanceof org.ucombinator.jaam.messaging.Edge)
+				if(packet instanceof org.ucombinator.jaam.serializer.Edge)
 				{
-					org.ucombinator.jaam.messaging.Edge edgeMessage = (org.ucombinator.jaam.messaging.Edge) message;
-					int edgeId = edgeMessage.id().id();
-					int srcId = edgeMessage.src().id();
-					int destId = edgeMessage.dst().id();
+					org.ucombinator.jaam.serializer.Edge edgePacket = (org.ucombinator.jaam.serializer.Edge) packet;
+					int edgeId = edgePacket.id().id();
+					int srcId = edgePacket.src().id();
+					int destId = edgePacket.dst().id();
 					Main.graph.addEdge(srcId, destId);
 				}
-				else if(message instanceof ErrorState)
+				else if(packet instanceof ErrorState)
 				{
-					int id = ((ErrorState) message).id().id();
+					int id = ((ErrorState) packet).id().id();
 					Main.graph.addErrorState(id);
 				}
 				//Name collision with java.lang.Thread.State
-				else if(message instanceof org.ucombinator.jaam.messaging.State)
+				else if(packet instanceof org.ucombinator.jaam.serializer.State)
 				{
-					org.ucombinator.jaam.messaging.State stateMessage = (org.ucombinator.jaam.messaging.State) message;
-					int id = stateMessage.id().id();
-					String methodName = stateMessage.stmt().method().toString();
-					String instruction = stateMessage.stmt().stmt().toString();
-					int jimpleIndex = stateMessage.stmt().index();
+					org.ucombinator.jaam.serializer.State statePacket = (org.ucombinator.jaam.serializer.State) packet;
+					int id = statePacket.id().id();
+					String methodName = statePacket.stmt().method().toString();
+					String instruction = statePacket.stmt().stmt().toString();
+					int jimpleIndex = statePacket.stmt().index();
 					Main.graph.addVertex(id, methodName, instruction, "", jimpleIndex, true);
 				}
 
-				message = messageInput.read();
+				packet = packetInput.read();
 			}
 		}
 		catch(FileNotFoundException e)

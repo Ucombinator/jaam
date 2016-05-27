@@ -1,4 +1,4 @@
-package org.ucombinator.jaam
+package org.ucombinator.jaam.interpreter
 
 /*
   Warning:
@@ -42,9 +42,7 @@ import javax.swing.ToolTipManager
 
 import java.io.FileOutputStream
 import java.io.FileInputStream
-import org.ucombinator.jaam.messaging
-import org.ucombinator.jaam.messaging.{State => MState, AbstractState => MAbstractState, ErrorState => MErrorState, Edge => MEdge, Id, Message, Done}
-import org.ucombinator.jaam.messaging._
+import org.ucombinator.jaam.serializer
 
 import org.ucombinator.jaam.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
 
@@ -257,7 +255,7 @@ abstract sealed class AbstractState {
   def setInitializedClasses(classes: Set[SootClass]) : scala.Unit
   def getInitializedClasses() : Set[SootClass]
 
-  def toMessage() : messaging.AbstractState
+  def toPacket() : serializer.AbstractState
 
   val id = AbstractState.idMap.getOrElseUpdate(this, AbstractState.nextId)
 }
@@ -285,7 +283,7 @@ case object ErrorState extends AbstractState {
   override def setKWriteAddrs(s: Set[KontAddr]) = scala.Unit
   override def setInitializedClasses(classes: Set[SootClass]) = scala.Unit
   override def getInitializedClasses() : Set[SootClass] = Set()
-  override def toMessage() = messaging.ErrorState(messaging.Id[messaging.Node](id))
+  override def toPacket() = serializer.ErrorState(serializer.Id[serializer.Node](id))
 }
 
 // State abstracts a collection of concrete states of execution.
@@ -330,7 +328,7 @@ case class State(val stmt : Stmt,
   }
   override def getInitializedClasses() : Set[SootClass] = initializedClasses
 
-  override def toMessage() = messaging.State(messaging.Id[messaging.Node](id), stmt.toMessage, fp.toString, kontStack.toString)
+  override def toPacket() = serializer.State(serializer.Id[serializer.Node](id), stmt.toPacket, fp.toString, kontStack.toString)
 
   def copyState(stmt: Stmt = stmt,
                 fp: FramePointer = fp,
@@ -989,7 +987,7 @@ object Main {
       case None => outputFile = config.className + ".jaam"
       case Some(x) => outputFile = x
     }
-    val outMessaging = new MessageOutput(new FileOutputStream(outputFile))
+    val outSerializer = new serializer.PacketOutput(new FileOutputStream(outputFile))
     val mainMainMethod : SootMethod = Soot.getSootClass(config.className).getMethodByName(config.methodName)
     val initialState = State.inject(Stmt.methodEntry(mainMainMethod))
 
@@ -998,7 +996,7 @@ object Main {
     var globalInitClasses: Set[SootClass] = Set()
     var doneEdges: Map[Pair[Int, Int], Int] = Map()
 
-    outMessaging.write(initialState.toMessage)
+    outSerializer.write(initialState.toPacket)
 
     while (todo nonEmpty) {
       //TODO refactor store widening code
@@ -1013,7 +1011,7 @@ object Main {
 
       for (n <- newTodo) {
         Log.info("Writing state "+n.id)
-        outMessaging.write(n.toMessage)
+        outSerializer.write(n.toPacket)
       }
 
       for (n <- nexts) {
@@ -1021,7 +1019,7 @@ object Main {
           val id = doneEdges.size
           Log.info("Writing edge "+id+": "+current.id+" -> "+n.id)
           doneEdges += (current.id, n.id) -> id
-          outMessaging.write(messaging.Edge(messaging.Id[messaging.Edge](id), messaging.Id[messaging.AbstractState](current.id), messaging.Id[messaging.AbstractState](n.id)))
+          outSerializer.write(serializer.Edge(serializer.Id[serializer.Edge](id), serializer.Id[serializer.AbstractState](current.id), serializer.Id[serializer.AbstractState](n.id)))
         } else {
           Log.info("Skipping edge "+current.id+" -> "+n.id)
         }
@@ -1048,7 +1046,7 @@ object Main {
       Log.info("Done processing state "+current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
     }
 
-    outMessaging.close()
+    outSerializer.close()
     Log.info("Done!")
   }
 

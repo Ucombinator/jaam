@@ -1,4 +1,4 @@
-name := "jaam-messaging"
+name := "jaam-serializer"
 
 version := "0.1-SNAPSHOT"
 

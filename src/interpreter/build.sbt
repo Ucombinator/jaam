@@ -1,4 +1,4 @@
-name := "jaam-analyzer"
+name := "jaam-interpreter"
 
 version := "0.1-SNAPSHOT"
 
@@ -28,11 +28,11 @@ scalacOptions ++= Seq(
 // TODO: not sure if this is the best way to do this
 initialize ~= { _ => sys.props("scalac.patmat.analysisBudget") = "1024" }
 
-mainClass in (Compile, assembly) := Some("org.ucombinator.jaam.Main")
+mainClass in (Compile, assembly) := Some("org.ucombinator.jaam.interpreter.Main")
 
 // Assembly-specific configuration
 test in assembly := {}
-assemblyOutputPath in assembly := new File("./assembled/jaam-analyzer.jar")
+assemblyOutputPath in assembly := new File("./assembled/jaam-interpreter.jar")
 
 // META-INF discarding
 assemblyMergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
