@@ -7,11 +7,11 @@ Jaam analyzes JVM bytecode to try to discover vulnerabilities and side channels.
 * [Disclaimer](#disclaimer)
 * [License](#license)
 * [Requirements](#requirements)
-* [Building](#building) -- how to get JAAM running
-* [Usage](#usage) -- how to use JAAM
+* [Building](#building) -- how to get Jaam running
+* [Usage](#usage) -- how to use Jaam
   * [Analyzer](#analyzer)
   * [Visualizer](#visualizer)
-* [Developers](#developers) -- more about JAAM's internals
+* [Developers](#developers) -- more about Jaam's internals
 
 ## Disclaimer
 
@@ -47,7 +47,7 @@ Currently the project functions in two parts: an abstract interpreter (which
 produces a static analysis of the Java application of your choosing) and a
 visualizer (which makes it easy to look at the analysis results).
 
-Note that you must have completed [building JAAM](#Building) before proceeding.
+Note that you must have completed [building Jaam](#Building) before proceeding.
 
 ### Abstract Interpreter
 
