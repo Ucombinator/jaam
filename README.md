@@ -64,7 +64,7 @@ If you give no `--outfile` specification, the analyzer will use the given class
 name as a filename.
 
 For example, to analyze the `Factorial` class located in the `to-analyze`
-classpath in this repository:
+classpath in this repository, first compile it to a .class file. Then run the provided script:
 
 ```
 ./bin/jaam-analyzer.sh --classpath examples -c Factorial -m main
