@@ -65,8 +65,8 @@ public class Graph
 			if(mouseX < 0 || mouseX > 1 || mouseY < 0 || mouseY > 1)
 			{
 				System.out.println("Zooming in...");
-				double centerX = (this.currWindow.left+this.currWindow.right)/2;
-				double centerY = (this.currWindow.top+this.currWindow.bottom)/2;
+				double centerX = (this.currWindow.left + this.currWindow.right)/2;
+				double centerY = (this.currWindow.top + this.currWindow.bottom)/2;
 				this.zoomNPan(centerX, centerY, factor);
 			}
 			else
