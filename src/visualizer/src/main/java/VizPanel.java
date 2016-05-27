@@ -691,11 +691,23 @@ public class VizPanel extends JPanel
 		Graph graph = Main.graph;
 		if(this.context)
 		{
-			return x/(this.boxWidth*graph.getWidth());
+			double xFrac = (x - this.leftMargin) / (this.boxWidth*graph.getWidth());
+			if(xFrac < 0)
+				return 0;
+			else if(xFrac > 1)
+				return 1;
+			else
+				return xFrac;
 		}
 		else
 		{
-			return x/(this.boxWidth*graph.getWidth()) + graph.currWindow.left;
+			double xFrac = (x - this.leftMargin) / (this.boxWidth*graph.getWidth()) + graph.currWindow.left;
+			if(xFrac < 0)
+				return 0;
+			else if(xFrac > 1)
+				return 1;
+			else
+				return xFrac;
 		}
 	}
 
@@ -704,9 +716,25 @@ public class VizPanel extends JPanel
 	{
 		Graph graph = Main.graph;
 		if(this.context)
-			return y/(this.boxHeight *graph.getHeight());
+		{
+			double yFrac = (y - this.topMargin) / (this.boxHeight * graph.getHeight());
+			if(yFrac < 0)
+				return 0;
+			else if(yFrac > 1)
+				return 1;
+			else
+				return yFrac;
+		}
 		else
-			return y/(this.boxHeight*graph.getHeight()) + graph.currWindow.top;
+		{
+			double yFrac = (y - this.topMargin) / (this.boxHeight * graph.getHeight()) + graph.currWindow.top;
+			if(yFrac < 0)
+				return 0;
+			else if(yFrac > 1)
+				return 1;
+			else
+				return yFrac;
+		}
 	}
 
 	//Convert a horizontal box index to a current x pixel location
