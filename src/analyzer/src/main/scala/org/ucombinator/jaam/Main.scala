@@ -716,7 +716,6 @@ case class State(val stmt : Stmt,
             val staticUpdates = for {
               f <- sootClass.getFields(); if f.isStatic
             } yield (StaticFieldAddr(f) -> staticInitialValue(f))
-            //var newStore = store.update(staticUpdates.toMap)
             store.update(Map(staticUpdates.toMap.toSeq: _*))
             val newState = this.copyState(initializedClasses = initializedClasses+sootClass)
             newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
@@ -730,7 +729,7 @@ case class State(val stmt : Stmt,
       case UninitializedSnowflakeObjectException(className) =>
         Log.info("Initializing snowflake "+className)
         store.join(Snowflakes.createObject(className, List()))
-        Set(this.copyState(/*store = newStore*/)) //store=>store.join(Snowflakes.createObject(className, List()))))
+        Set(this.copyState())
 
       case StringConstantException(string) =>
         Log.info("Initializing string constant: \""+string+"\"")
@@ -742,7 +741,7 @@ case class State(val stmt : Stmt,
           .update(InstanceFieldAddr(bp, hash), D.atomicTop)
           .update(InstanceFieldAddr(bp, hash32), D.atomicTop).asInstanceOf[Store]
         store.join(newStore)
-        Set(this.copyState(/*store = newStore*/))
+        Set(this.copyState())
 
       case UndefinedAddrsException(addrs) =>
         Log.error("Undefined Addrs in state "+this.id+" stmt = "+stmt+" addrs = "+addrs)
@@ -790,25 +789,23 @@ case class State(val stmt : Stmt,
             val baseType : RefType = rhs.getBaseType()
             val sootClass = baseType.getSootClass()
             this.newExpr(lhsAddr, sootClass, store)
-            Set(this.copyState(stmt = stmt.nextSyntactic/*store = this.newExpr(lhsAddr, sootClass, store)*/))
+            Set(this.copyState(stmt = stmt.nextSyntactic)
           }
           case rhs : NewArrayExpr => {
             //TODO, if base type is Java library class, call Snowflake.createArray
             // Value of lhsAddr will be set to a pointer to the array. (as opposed to the array itself)
-            val newStore = createArray(rhs.getType(), List(eval(rhs.getSize())), lhsAddr)
-            store.join(newStore)
-            Set(this.copyState(stmt = stmt.nextSyntactic/*store = newStore*/))
+            store.join(createArray(rhs.getType(), List(eval(rhs.getSize())), lhsAddr))
+            Set(this.copyState(stmt = stmt.nextSyntactic))
           }
           case rhs : NewMultiArrayExpr => {
             //TODO, if base type is Java library class, call Snowflake.createArray
             //see comment above about lhs addr
-            val newStore = createArray(rhs.getType(), rhs.getSizes().toList map eval, lhsAddr)
-            store.join(newStore)
-            Set(this.copyState(stmt = stmt.nextSyntactic/*store = newStore*/))
+            store.join(createArray(rhs.getType(), rhs.getSizes().toList map eval, lhsAddr))
+            Set(this.copyState(stmt = stmt.nextSyntactic))
           }
           case rhs => {
             store.update(lhsAddr, eval(rhs))
-            Set(this.copyState(stmt = stmt.nextSyntactic/*store = newStore*/))
+            Set(this.copyState(stmt = stmt.nextSyntactic))
           }
         }
       }
