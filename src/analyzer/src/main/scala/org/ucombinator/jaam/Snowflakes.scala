@@ -124,17 +124,16 @@ object HashMapSnowflakes {
       //  this.values = {}
 
       var extraStates = Set[AbstractState]()
-      var newNewStore = state.store
       self match {
         case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
-          newNewStore.update(KeysAddr(bp), D(Set()))
-          newNewStore.update(ValuesAddr(bp), D(Set()))
+          state.store.update(KeysAddr(bp), D(Set()))
+          state.store.update(ValuesAddr(bp), D(Set()))
         case _ =>
           Snowflakes.warn(state.id, null, null)
           extraStates ++= NoOpSnowflake(state, nextStmt, Some(self), args)
       }
 
-      extraStates + state.copyState(stmt = nextStmt, store = newNewStore)
+      extraStates + state.copyState(stmt = nextStmt)
     }
   }
 
@@ -146,15 +145,14 @@ object HashMapSnowflakes {
 
       // TODO: avoid duplication with get()
       var extraStates = Set[AbstractState]()
-      var newNewStore = state.store
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
             case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
               // D.atomicTop is for the null returned when the key had no previous assignment
-              newNewStore.update(state.addrsOf(stmt.getLeftOp),
-                newNewStore(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
+              state.store.update(state.addrsOf(stmt.getLeftOp),
+                state.store(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
             case _ =>
               Snowflakes.warn(state.id, null, null)
               extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
@@ -165,12 +163,12 @@ object HashMapSnowflakes {
       val value = args(1)
       self match {
         case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
-          newNewStore.update(KeysAddr(bp), key)
-          newNewStore.update(ValuesAddr(bp), value)
+          state.store.update(KeysAddr(bp), key)
+          state.store.update(ValuesAddr(bp), value)
         case _ => {} // Already taken care of in the first half of this function
       }
 
-      extraStates + state.copyState(stmt = nextStmt, store = newNewStore)
+      extraStates + state.copyState(stmt = nextStmt)
     }
   }
 
@@ -180,15 +178,14 @@ object HashMapSnowflakes {
       //   return this.values
 
       var extraStates = Set[AbstractState]()
-      var newNewStore = state.store
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
             case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
               // D.atomicTop is for the null returned when the key is not found
-              newNewStore.update(state.addrsOf(stmt.getLeftOp),
-                  newNewStore(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
+              state.store.update(state.addrsOf(stmt.getLeftOp),
+                  state.store(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
             case _ =>
               Snowflakes.warn(state.id, null, null)
               extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
@@ -205,14 +202,13 @@ object HashMapSnowflakes {
   case class entrySet() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       var extraStates = Set[AbstractState]()
-      var newNewStore = state.store
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
             case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
               // D.atomicTop is for the null returned when the key is not found
-              newNewStore.update(state.addrsOf(stmt.getLeftOp),
+              state.store.update(state.addrsOf(stmt.getLeftOp),
                 D(Set(ObjectValue(EntrySet, EntrySetOfHashMap(bp)))))
             case _ =>
               Snowflakes.warn(state.id, null, null)
@@ -230,14 +226,13 @@ object HashMapSnowflakes {
   case class iterator() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       var extraStates = Set[AbstractState]()
-      var newNewStore = state.store
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
             case ObjectValue(sootClass, EntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, EntrySet) =>
               // D.atomicTop is for the null returned when the key is not found
-              newNewStore.update(state.addrsOf(stmt.getLeftOp),
+              state.store.update(state.addrsOf(stmt.getLeftOp),
                 D(Set(ObjectValue(Iterator, IteratorOfEntrySetOfHashMap(bp)))))
             case x =>
               Snowflakes.warn(state.id, null, null)
@@ -254,24 +249,23 @@ object HashMapSnowflakes {
   case class hasNext() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       var extraStates = Set[AbstractState]()
-      var newNewStore = state.store
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
             case ObjectValue(sootClass, IteratorOfEntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, Iterator) =>
               // D.atomicTop is for the null returned when the key is not found
-              newNewStore.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
+              state.store.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
             case ObjectValue(sootClass, ArrayListSnowflakes.IteratorOfArrayList(bp)) if Soot.isSubclass(sootClass, Iterator) =>
               // D.atomicTop is for the null returned when the key is not found
-              newNewStore.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
+              state.store.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
             case _ =>
               Snowflakes.warn(state.id, null, null)
               extraStates ++= ReturnSnowflake(D.atomicTop)(state, nextStmt, Some(self), args)
           }
       }
 
-      extraStates + state.copyState(stmt = nextStmt, store = newNewStore)
+      extraStates + state.copyState(stmt = nextStmt)
     }
   }
 
@@ -281,27 +275,26 @@ object HashMapSnowflakes {
   case class next() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       var extraStates = Set[AbstractState]()
-      var newNewStore = state.store
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
             case ObjectValue(sootClass, IteratorOfEntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, Iterator) =>
               // D.atomicTop is for the null returned when the key is not found
-              newNewStore.update(state.addrsOf(stmt.getLeftOp),
+              state.store.update(state.addrsOf(stmt.getLeftOp),
                 D(Set(ObjectValue(Entry, EntryOfIteratorOfEntrySetOfHashMap(bp)))))
             case ObjectValue(sootClass, ArrayListSnowflakes.IteratorOfArrayList(bp)) if Soot.isSubclass(sootClass, Iterator) =>
               // D.atomicTop is for the null returned when the key is not found
               // TODO: throw exception
-              newNewStore.update(state.addrsOf(stmt.getLeftOp),
-                newNewStore(Set[Addr](ArrayListSnowflakes.RefAddr(bp))))
+              state.store.update(state.addrsOf(stmt.getLeftOp),
+                state.store(Set[Addr](ArrayListSnowflakes.RefAddr(bp))))
             case _ =>
               Snowflakes.warn(state.id, null, null)
               extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
           }
       }
 
-      extraStates + state.copyState(stmt = nextStmt, store = newNewStore)
+      extraStates + state.copyState(stmt = nextStmt)
     }
   }
 
@@ -309,22 +302,21 @@ object HashMapSnowflakes {
   case class getKey() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       var extraStates = Set[AbstractState]()
-      var newNewStore = state.store
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
             case ObjectValue(sootClass, EntryOfIteratorOfEntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, Entry) =>
               // D.atomicTop is for the null returned when the key is not found
-              newNewStore.update(state.addrsOf(stmt.getLeftOp),
-                newNewStore(Set[Addr](KeysAddr(bp))).join(D.atomicTop))
+              state.store.update(state.addrsOf(stmt.getLeftOp),
+                state.store(Set[Addr](KeysAddr(bp))).join(D.atomicTop))
             case _ =>
               Snowflakes.warn(state.id, null, null)
               extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
           }
       }
 
-      extraStates + state.copyState(stmt = nextStmt, store = newNewStore)
+      extraStates + state.copyState(stmt = nextStmt)
     }
   }
 
@@ -332,22 +324,21 @@ object HashMapSnowflakes {
   case class getValue() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       var extraStates = Set[AbstractState]()
-      var newNewStore = state.store
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
             case ObjectValue(sootClass, EntryOfIteratorOfEntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, Entry) =>
               // D.atomicTop is for the null returned when the key is not found
-              newNewStore.update(state.addrsOf(stmt.getLeftOp),
-                newNewStore(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
+              state.store.update(state.addrsOf(stmt.getLeftOp),
+                state.store(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
             case _ =>
               Snowflakes.warn(state.id, null, null)
               extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
           }
       }
 
-      extraStates + state.copyState(stmt = nextStmt, store = newNewStore)
+      extraStates + state.copyState(stmt = nextStmt)
     }
   }
 
@@ -371,17 +362,16 @@ object ArrayListSnowflakes {
       //  this.length = top
       //  this.refs = {}
       var extraStates = Set[AbstractState]()
-      var newNewStore = state.store
       self match {
         case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
-          newNewStore.update(LengthAddr(bp), D.atomicTop)
-          newNewStore.update(RefAddr(bp), D.atomicTop) // D.atomicTop is so we don't get undefiend addrs exception
+          state.store.update(LengthAddr(bp), D.atomicTop)
+          state.store.update(RefAddr(bp), D.atomicTop) // D.atomicTop is so we don't get undefiend addrs exception
         case _ =>
           Snowflakes.warn(state.id, null, null)
           extraStates ++= NoOpSnowflake(state, nextStmt, Some(self), args)
       }
 
-      extraStates + state.copyState(stmt = nextStmt, store = newNewStore)
+      extraStates + state.copyState(stmt = nextStmt)
     }
   }
 
@@ -392,13 +382,12 @@ object ArrayListSnowflakes {
       //   this.refs += o
       // TODO: avoid duplication
       var extraStates = Set[AbstractState]()
-      var newNewStore = state.store
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
             case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
-              newNewStore.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
+              state.store.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
             case _ =>
               Snowflakes.warn(state.id, null, null)
               extraStates ++= ReturnSnowflake(D.atomicTop)(state, nextStmt, Some(self), args)
@@ -408,11 +397,11 @@ object ArrayListSnowflakes {
       val value = args(0)
       self match {
         case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
-          newNewStore.update(RefAddr(bp), value)
+          state.store.update(RefAddr(bp), value)
         case _ => {} // already handled by the code in the first half of this function
       }
 
-      extraStates + state.copyState(stmt = nextStmt, store = newNewStore)
+      extraStates + state.copyState(stmt = nextStmt)
     }
   }
 
@@ -422,14 +411,13 @@ object ArrayListSnowflakes {
   case class iterator() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       var extraStates = Set[AbstractState]()
-      var newNewStore = state.store
       state.stmt.sootStmt match {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
             case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
               // D.atomicTop is for the null returned when the key is not found
-              newNewStore.update(state.addrsOf(stmt.getLeftOp),
+              state.store.update(state.addrsOf(stmt.getLeftOp),
                 D(Set(ObjectValue(Iterator, IteratorOfArrayList(bp)))))
             case _ =>
               Snowflakes.warn(state.id, null, null)
@@ -437,7 +425,7 @@ object ArrayListSnowflakes {
           }
       }
 
-      extraStates + state.copyState(stmt = nextStmt, store = newNewStore)
+      extraStates + state.copyState(stmt = nextStmt)
     }
   }
 }
