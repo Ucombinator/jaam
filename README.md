@@ -1,117 +1,145 @@
 # JAAM: JVM Abstracting Abstract Machine
 
+## Contents
+
+* [Disclaimer](#disclaimer)
+* [License](#license)
+* [Requirements](#requirements)
+* [Building](#building) -- how to get JAAM running
+* [Usage](#usage) -- how to use JAAM
+  * [Analyzer](#analyzer)
+  * [Visualizer](#visualizer)
+* [Developers](#developers) -- more about JAAM's internals
+
 ## Disclaimer
 
 This is an early work in progress. There are a lot of rough edges and bugs. The
 interface is bare bones as most of the current work is on the core analyzer.
 
-## Developers
+## License
 
-Additional instructions for developers [here](docs/DEVELOPERS.md).
+This project is licensed under the [BSD Two-Clause License](LICENSE.md) _with
+the exception of_ the [bundled `rt.jar` file](resources/rt.jar), which is
+distributed under the [GNU General Public License v. 2](LICENSE-GPLv2.md).
 
 ## Requirements
 
-* [Java 1.7 Development Kit](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html)
-  - Java 1.8 is unsupported
+* [Java JRE](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 * [SBT](http://www.scala-sbt.org/)
-  - Installed automatically during bootstrapping
+  - Installer script included
 * [Scala](http://www.scala-lang.org/)
-  - Installed automatically during bootstrapping
+  - Installed during first run of SBT
 
-## Initialization
+## Building
 
-Run `./bootstrap.sh` to set up the repository for local development.
-
-The bootstrapping script attempts to make your development with JAAM
-significantly easier. When you run it, it will ask you for a number of inputs.
-Most of these have default values supplied for you (and which are mostly
-taken from your system automatically, e.g. the current Java). The
-bootstrapping process will then ensure you have SBT and Scala installed,
-assemble the JAAM project into a top-level `jaam.jar`, check the version of
-the given `rt.jar` file (this is important, as JAAM is only recommended to be
-run with an `rt.jar` file of version 1.7), and then writes out a nifty script
-to help you use JAAM in the future.
-
-### Finding the Path to the Java 1.7 `rt.jar` File
-
-If you need to manually find the path your 'rt.jar' file (which should usually
-be unnecessary), it is located inside the Java 1.7 "home" directory:
+To get SBT and Scala set up, as well as compile the project for use, simply run
+the following from the top level of your JAAM directory:
 
 ```
-<your Java 1.7 home directory>/jre/lib/rt.jar
-```
-
-How to find the Java 1.7 home directory varies by operating system:
-
-* On OS X, run the command `/usr/libexec/java_home -v 1.7`
-
-* On Linux, the path might look like
-  - `/usr/lib/jvm/java-7-oracle`
-  - `/usr/lib/jvm/java-7-openjdk-amd64`
-
-For example, assume we are running OS X, and the `java_home` command above
-returns the path
-`/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home`.
-Appending `/jre/lib/rt.jar` to the end of the home directory path will give
-the full path to `rt.jar`:
-
-```
-/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/jre/lib/rt.jar
+./bin/sbt assembly
 ```
 
 ## Usage
 
-After bootstrapping, you only need to use the `jaam.sh` executable to run
-JAAM. You can supply a few options:
+Currently the project functions in two parts: an analyzer (which produces a
+static analysis of the Java application of your choosing) and a visualizer (which
+makes it easy to look at the analysis).
+
+Note that you must have completed [building JAAM](#Building) before
+proceeding.
+
+### Analyzer
+
+To run the analyzer, use the `bin/jaam-analyzer.sh` script. You can supply a few
+options:
 
 | Option            | Effect                                                                |
 |-------------------|-----------------------------------------------------------------------|
-| `-J`, `--rt_jar`  | Specify an `rt.jar` file to use.                                      |
 | `--classpath`     | Give a classpath to analyze within.                                   |
 | `-c`, `--class`   | Give a specific class within the classpath.                           |
 | `-m`, `--method`  | Give a specific method within the class from which to start analysis. |
+| `-o`, `--outfile` | Where to save the output from the analysis for use in the visualizer. |
 
-Note, however, that the `--rt_jar` option usually does not need to be used, as
-the `jaam.sh` script includes a reference to the `rt.jar` file you specified
-during bootstrapping.
+If you give no `--outfile` specification, the analyzer will use the given class
+name as a filename.
 
 For example, to analyze the `Factorial` class located in the `to-analyze`
-classpath in this repository:
+classpath in this repository, first compile it to a .class file. Then run the provided script:
 
 ```
-./jaam.sh --classpath to-analyze -c Factorial -m main
+./bin/jaam-analyzer.sh --classpath examples -c Factorial -m main
 ```
 
-It may take a moment, but this will launch a GUI showing the state graph.
-Additional information about the graph will be printed to `stdout`.
+It may take a moment. You will see some output to the console, and a file named
+`Factorial.jaam` will be created inside your current working directory. This
+file contains the raw output that will be used by the visualizer.
 
-To exit the program, press Ctrl-C at the terminal or fully quit the GUI.
+You can try this with most of the class files in `examples/`. `Static`
+currently generates an error when run. `Fib` and `Fibonacci` currently produce
+huge (and incorrect) graphs. The remaining tests work correctly, to our
+knowledge.
+
+#### Out-of-Memory Errors
 
 You may get an out-of-memory error. If you do, you can run JAAM with extra
 heap memory by specifying your `JAVA_OPTS`. For example:
 
 ```
-JAVA_OPTS="-Xmx8g" ./jaam.sh --classpath to-analyze -c Factorial -m main
+JAVA_OPTS="-Xmx8g" {jaam-analyzer.sh invocation}
 ```
 
 You can change '8g' to whatever amount of memory you need. You can also add
 other Java options for controlling stack size, etc.
 
-You can try this with most of the class files in `to-analyze/`. `Static`
-currently generates an error when run. `Fib` and `Fibonacci` currently produce
-huge (and incorrect) graphs. The remaining tests work correctly, to our
-knowledge.
+#### Analyzing JAR Files
 
-You may occasionally see exceptions at the terminal that are coming from the
-Java GUI system (i.e. AWT or Swing). These are harmless and can safely be
-ignored.
-
-For example, you may see the following error followed by an exception stack
-trace:
+To analyze a `.jar` file, you must know the fully-qualified classpath of the
+main class, e.g. `com.company.project.Main`. Given a JAR file named `test.jar`
+and a Main class at `com.company.test.Main`, you would invoke the analyzer with:
 
 ```
-[error] (AWT-EventQueue-0) java.lang.NullPointerException
+./bin/jaam-analyzer.sh --classpath test.jar -c com.company.project.Main -m main
 ```
 
-Because this error is in an `AWT-EventQueue`, it is one of the
-harmless errors and can be safely ignored.
+### Visualizer
+
+To run the visualizer, simply do:
+
+```
+./bin/jaam-visualizer.sh
+```
+
+This will launch a GUI for visualization of JAAM's static analysis. To give it
+input, click `File` then `Load graph from message file` and specify the
+`.jaam` file you created with the analyzer (`Factorial.jaam` if you used the
+given example).
+
+By default, all possible nodes are collapsed. Double-click on them to expand the
+visualization graph.
+
+## Developers
+
+Some people may want to know more about how the project is organized or how it
+functions on a deeper level. This is the section for those people.
+
+### Build System
+
+The project is managed by SBT: the Simple Build Tool. SBT allows for the easy
+compilation of a multi-faceted project such as ours with external dependencies
+and such all handled automagically.
+
+The build settings are all stored in the various `build.sbt` files you'll see
+throughout the project hierarchy: one at the top level, and one for each
+subproject inside the `src` directory.
+
+We use the SBT module [assembly](https://github.com/sbt/sbt-assembly) to produce
+"fat JARs" -- JAR files that are self-contained and fully executable. The
+subprojects appropriately build with each other contained inside if needed.
+
+### Organization
+
+We've split our project into a few subprojects:
+
+1. Analyzer: performs static analysis on Java classes
+2. Visualizer: shows the results of the analysis
+3. Messaging: allows interoperability between Analyzer and Visualizer

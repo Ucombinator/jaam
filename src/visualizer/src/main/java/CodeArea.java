@@ -41,7 +41,7 @@ public class CodeArea extends JTextArea
 						if(row >= 0 && row < rowToIndex.size())
 						{
 							Instruction line = description.get(rowToIndex.get(row));
-							System.out.println("Instruction selected on row " + row + ", " + line);
+							System.out.println("Instruction selected on row " + row + ", " + line.str);
 							if(line.isInstr)
 							{
 								if(line.isHighlighted)
@@ -99,7 +99,7 @@ public class CodeArea extends JTextArea
 		for(Vertex v : Main.graph.vertices)
 		{
 			if(v.getMethodName().contains(method) && v.jimpleIndex == index)
-			{				
+			{
 				if(addHighlight)
 					v.addHighlight(true, true, true);
 				else
@@ -110,7 +110,6 @@ public class CodeArea extends JTextArea
 
 	public void clear()
 	{
-		//System.out.println("Clearing left area");
 		this.methods = new HashSet<Method>();
 		this.description = new ArrayList<Instruction>();
 		this.rowToIndex = new ArrayList<Integer>();
@@ -120,15 +119,15 @@ public class CodeArea extends JTextArea
 	//Rewrite our description based on which vertices are highlighted
 	public void setDescription()
 	{
-		//System.out.println("Setting new description for left area");
 		description = new ArrayList<Instruction>();
 		this.methods = Main.graph.collectHighlightedMethods();
 		
 		for(Method method : this.methods)
 		{
 			method.highlightInstructions();
+
 			//Add header line with method name
-			String currMethod = method.getName();
+			String currMethod = method.getFullName();
 			description.add(new Instruction(currMethod + "\n", currMethod, false, -1));
 			
 			//Add all instructions in the method
@@ -139,6 +138,7 @@ public class CodeArea extends JTextArea
 		}
 		
 		int rowNumber = 0;
+		rowToIndex = new ArrayList<Integer>();
 		for(int i = 0; i < description.size(); i++, rowNumber++)
 		{
 			if(description.get(i).str.length() > 0)
@@ -175,24 +175,15 @@ public class CodeArea extends JTextArea
 		this.setText(fullText.toString());
 	}
 	
-	//Search our description for the line that needs to be highlighted
-	public void highlightMatchingInstruction(Vertex v)
-	{
-		for(Instruction inst : this.description)
-		{
-			if(v.getMethodName().equals(inst.methodName) && v.jimpleIndex == inst.jimpleIndex)
-				inst.isHighlighted = true;
-		}
-	}
-	
-	public void drawHighlights(Color c1, Color c2)
+	private void drawHighlights(Color c1, Color c2)
 	{
 		for(int i = 0; i < this.description.size(); i++)
 		{
+			//TODO: Find new color for applying both highlights?
 			Instruction line = this.description.get(i);
 			if(line.isHighlighted)
 				this.drawLineHighlight(i, c1);
-			if(line.isCycleHighlighted)
+			else if(line.isCycleHighlighted)
 				this.drawLineHighlight(i, c2);
 		}
 	}

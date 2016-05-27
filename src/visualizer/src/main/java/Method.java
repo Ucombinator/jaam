@@ -3,7 +3,9 @@ import java.util.ArrayList;
 
 public class Method
 {
+	public Class ourClass;
 	private final String methodName;
+	//private final String functionName;
 	ArrayList<Vertex> vertices;
 	ArrayList<Instruction> instructionList;
 	
@@ -11,13 +13,49 @@ public class Method
 	{
 		//System.out.println("Creating method: " + methodName);
 		this.methodName = methodName;
+
+		if(!methodName.equals("ErrorState"))
+		{
+			String[] splitMethodName = methodName.split(" ");
+
+			//Remove beginning angle bracket and ending colon
+			String className = splitMethodName[0].substring(1, splitMethodName[0].length() - 1);
+			this.addClass(className);
+
+			//this.functionName = splitMethodName[1];
+		}
+
+
 		vertices = new ArrayList<Vertex>();
 		instructionList = new ArrayList<Instruction>();
 	}
 	
-	public String getName()
+	public String getFullName()
 	{
 		return this.methodName;
+	}
+
+	public String getClassName()
+	{
+		return this.ourClass.getClassName();
+	}
+
+	/*public String getFunctionName()
+	{
+		return this.functionName;
+	}*/
+
+	public void addClass(String className)
+	{
+		this.ourClass = Main.graph.classes.get(className);
+		if(this.ourClass == null)
+		{
+			this.ourClass = new Class(className);
+			Main.graph.classes.put(className, this.ourClass);
+			System.out.println("Adding new class: " + className);
+		}
+
+		this.ourClass.addMethod(this);
 	}
 	
 	public void addVertex(Vertex v)

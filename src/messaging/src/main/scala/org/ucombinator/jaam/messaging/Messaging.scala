@@ -1,86 +1,120 @@
-/* This library handles message serialization for communicating between
- * tools */
 package org.ucombinator.jaam.messaging
 
-import java.io.InputStream
-import java.io.OutputStream
-import scala.collection.mutable.ArrayBuffer
-import de.javakaffee.kryoserializers._
-import com.esotericsoftware.minlog.Log
-import com.esotericsoftware.kryo._
-import com.esotericsoftware.kryo.io._
-import com.twitter.chill.ScalaKryoInstantiator
-import soot.{Unit => _, _}
+/*****************************************
+ * This library handles reading and writting ".jaam" files.  For usage see
+ * MessageInput and MessageOutput in this package.
+ * ****************************************/
+
+import java.lang.Object
+import java.io.{InputStream, OutputStream, IOException}
+import java.lang.reflect.Type
+import java.util.zip.{DeflaterOutputStream, InflaterInputStream}
+
+import soot.SootMethod
 import soot.jimple.{Stmt => SootStmt}
+import soot.util.Chain
+
+import com.esotericsoftware.minlog.Log
+
+import com.esotericsoftware.kryo.{Kryo, Registration}
+import com.esotericsoftware.kryo.io.{Input, Output}
+import com.esotericsoftware.kryo.serializers.FieldSerializer
+
+import org.objenesis.strategy.StdInstantiatorStrategy
+import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer
+import com.twitter.chill.{AllScalaRegistrar, KryoBase, ScalaKryoInstantiator}
 
 
 ////////////////////////////////////////
-// Methods and types for reading and writing message
-////////////////////////////////////////
-
-object Message {
-  // Types for reading and writing messages
-  // These extend from Kryo instead of a type alias to keep Java happy
-  class Input(in : InputStream) extends com.esotericsoftware.kryo.io.Input(in) {
-    var isRead : Boolean = false
-    var ms : Array[Message] = Array.empty[Message]
-    var index : Int = 0
-    def pop() : Message = {
-      if (index <= ms.size) {
-        val m = ms(index)
-        index += 1
-        return m
-      }
-      Done()
-    }
-  }
-
-  class Output(out : OutputStream) extends com.esotericsoftware.kryo.io.Output(out) {
-    val buf: ArrayBuffer[Message] = ArrayBuffer.empty[Message]
-    def append(m : Message): Unit = {
-      buf += m
-    }
-    override def close() : Unit = {
-      //println("size of buf: " + buf.size)
-      append(Done())
-      kryo.writeClassAndObject(this, buf.toArray)
-      super.close()
-    }
-  }
-
-  // Lift an InputStream to Message.Input
-  def openInput(in : InputStream) : Input =
-    new Input(in)
-
-  // Lift an OutputStream to Message.Output
-  def openOutput(out : OutputStream) : Output =
-    new Output(out)
-
-  // Reads a 'Message' from 'in'
+// 'MessageInput' is used to read a ".jaam" file
+//
+// Usage of this class:
+//   in = new MessageInput(new FileInputStream("<filename>.jaam"))
+//   in.read()
+class MessageInput(private val input : InputStream) {
+  // Reads a 'Message'
   // TODO: check for exceptions
-  def read(in : Input) : Message = {
-    if (in.isRead) in.pop
-    else {
-      kryo.readClassAndObject(in) match {
-        case ms : Array[Message] =>
-          in.ms = ms
-          in.isRead = true
-        case _ => throw new Exception("TODO: Message.read failed")
-      }
-      read(in)
+  def read() : Message = {
+    this.kryo.readClassAndObject(in) match {
+      case o : Message => o
+      case o => throw new IOException("Read object is not a Message: " + o)
     }
   }
 
-  // Writes the 'Message' 'm' to 'out'
-  def write(out : Output, m : Message) : Unit = {
-    out.append(m)
+  // Closes this 'MessageInput'
+  def close() = in.close()
+
+  ////////////////////////////////////////
+  // Implementation internals
+  ////////////////////////////////////////
+
+  checkHeader("Jaam file-format signature", Signatures.formatSignature)
+  checkHeader("Jaam file-format version", Signatures.formatVersion)
+
+  private val in = new Input(new InflaterInputStream(input))
+  private val kryo : Kryo = new JaamKryo()
+
+  private def checkHeader(name : String, expected : Array[Byte]) {
+    val found = new Array[Byte](expected.length)
+    val len = input.read(found, 0, found.length)
+
+    if (len != expected.length) {
+      throw new IOException(
+        "Reading %s yielded only %d bytes. Expected %d bytes."
+          .format(name, len, expected.length))
+    }
+
+    if (found.toList != expected.toList) {
+      val e = (for (i <- expected) yield { "%x".format(i) }).mkString("")
+      val f = (for (i <- found)    yield { "%x".format(i) }).mkString("")
+      throw new IOException("Invalid %s\n Expected: 0x%s\n Found:    0x%s"
+        .format(name, e, f))
+    }
+  }
+}
+
+////////////////////////////////////////
+// 'MessageOutput' is used to write ".jaam" files
+//
+// Usage of this class:
+//   out = new MessageOutput(new FileOutputStream("<filename>.jaam"))
+//   out.write(message)
+class MessageOutput(private val output : OutputStream) {
+  // Writes a 'Message'
+  def write(m : Message) : Unit = {
+    this.kryo.writeClassAndObject(this.out, m)
   }
 
-  // Initialize Kryo
-  val instantiator = new ScalaKryoInstantiator
-  val kryo = instantiator.newKryo()
-  kryo.addDefaultSerializer(classOf[soot.util.Chain[java.lang.Object]], classOf[com.esotericsoftware.kryo.serializers.FieldSerializer[java.lang.Object]])
-  UnmodifiableCollectionsSerializer.registerSerializers(kryo)
+  // Flushes output
+  def flush() = out.flush()
+
+  // Closes this 'MessageInput'
+  def close() : Unit = {
+    this.write(Done())
+    out.close()
+  }
+
+  ////////////////////////////////////////
+  // Implementation internals
+  ////////////////////////////////////////
+
+  output.write(Signatures.formatSignature)
+  output.write(Signatures.formatVersion)
+
+  private val out = new Output(new DeflaterOutputStream(output))
+  private val kryo : Kryo = new JaamKryo()
+}
+
+
+private[this] object Signatures {
+  // File signature using the same style as PNG
+  // \212 = 0x8a = 'J' + 0x40: High bit set so 'file' knows we are binary
+  // "JAAM": Help humans figure out what format the file is
+  // "\r\n": Detect bad line conversion
+  // \032 = 0x1a = "^Z": Stops output on DOS
+  // "\n": Detect bad line conversion
+  val formatSignature = "\212JAAM\r\n\032\n".getBytes(java.nio.charset.StandardCharsets.ISO_8859_1)
+  val formatVersion = java.nio.ByteBuffer.allocate(4).putInt(1 /* this is the version number */).array()
 }
 
 
@@ -99,9 +133,12 @@ case class Done() extends Message {}
 case class Edge(id : Id[Edge], src : Id[AbstractState], dst : Id[AbstractState]) extends Message {}
 
 // Declare 'AbstractState' nodes
-abstract class AbstractState(id : Id[AbstractState]) extends Message {}
-case class ErrorState(id : Id[AbstractState]) extends AbstractState(id) {}
-case class State(id : Id[AbstractState], stmt : Stmt, framePointer : String, kontStack : String) extends AbstractState(id) {}
+abstract class Node(id : Id[Node]) extends Message {}
+abstract class AbstractState(id : Id[Node]) extends Node(id) {}
+case class ErrorState(id : Id[Node]) extends AbstractState(id) {}
+case class State(id : Id[Node], stmt : Stmt, framePointer : String, kontStack : String) extends AbstractState(id) {}
+
+case class Group(id : Id[Node], states : java.util.List[Node], labels : String)
 
 
 ////////////////////////////////////////
@@ -117,16 +154,14 @@ case class Id[Namespace](id : Int) {
 // 'SootMethod' that it is in)
 case class Stmt(method : SootMethod, index : Int, stmt : SootStmt) {}
 
-
 /*
-
+Classes that we may eventually need to support in 'Message':
 
 AbstractState
   ErrorState
   State(Stmt, FramePointer, KontStack)
 
 Stmt(SootStmt, SootMethod)
-
 
 FramePointer
   InvariantFramePointer
@@ -174,6 +209,7 @@ Kont
 Frame(Stmt, FramePointer, Option[Set[Addr]]))
  */
 
+<<<<<<< HEAD
 /*
 
 
@@ -234,38 +270,73 @@ index c268509..c179b5a 100644
        else {
  */
 
+=======
+////////////////////////////////////////
+// Internal classes
+////////////////////////////////////////
+>>>>>>> a25adb18a8678ed2a3259bc3c232bd6ae88e801b
 
+// Internal Kryo object that adds extra checking of the types and field
+// structures of read and written objects to be sure they match what was
+// expected.
+class JaamKryo extends KryoBase {
+  var seenClasses = Set[Class[_]]()
 
-/*
+  // This is copies from Chill
+  this.setRegistrationRequired(false)
+  this.setInstantiatorStrategy(new StdInstantiatorStrategy)
+  // Handle cases where we may have an odd classloader setup like with libjars
+  // for hadoop
+  val classLoader = Thread.currentThread.getContextClassLoader
+  this.setClassLoader(classLoader)
+  val reg = new AllScalaRegistrar
+  reg(this)
+  this.setAutoReset(false)
+  this.addDefaultSerializer(classOf[Chain[Object]], classOf[FieldSerializer[java.lang.Object]])
+  UnmodifiableCollectionsSerializer.registerSerializers(this)
 
-name := "jaam-messaging"
+  // Produces a string that documents the field structure of 'typ'
+  def classSignature(typ : Type) : String = {
+    typ match {
+      case null => ""
+      case typ : Class[_] =>
+        "  "+typ.getCanonicalName() + "\n" +
+         (for (i <- typ.getDeclaredFields().toList.sortBy(_.toString)) yield {
+          "   "+i+"\n"
+         }).mkString("") +
+         classSignature(typ.getGenericSuperclass())
+      case _ => ""
+    }
+  }
 
-version := "0.1"
+  override def writeClass(output : Output, t : Class[_]) : Registration = {
+    val r = super.writeClass(output, t)
 
-libraryDependencies ++= Seq(
-  "org.ucombinator.soot" % "soot-all-in-one" % "nightly.20150205",
-  "org.scalacheck" %% "scalacheck" % "1.12.2" % "test",
-  "org.scalatest" % "scalatest_2.10" % "2.0" % "test",
-  "com.github.scopt" %% "scopt" % "3.3.0",
-  "org.scala-lang" % "scala-reflect" % "2.10.6",
-  "com.twitter" %% "chill" % "0.3.6",
-  "de.javakaffee" % "kryo-serializers" % "0.37"
-)
+    if (r == null || seenClasses.contains(r.getType)) {
+      output.writeString(null)
+    } else {
+      seenClasses += r.getType
+      output.writeString(classSignature(r.getType))
+    }
 
-scalacOptions ++= Seq("-unchecked", "-deprecation")
+    r
+  }
 
-//mainClass in (Compile, assembly) := Some("org.ucombinator.jaam.Main")
+  override def readClass(input : Input) : Registration = {
+    val r = super.readClass(input)
 
-// Assembly-specific configuration
-//test in assembly := {}
-//assemblyOutputPath in assembly := new File("./jaam.jar")
+    val found = input.readString()
 
-// META-INF discarding
-//assemblyMergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
-//{
-//  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-//  case x => MergeStrategy.first
-//}
-//}
+    if (r == null) { return null }
 
- */
+    if (found != null) {
+      val expected = classSignature(r.getType)
+
+      if (expected != found) {
+        throw new IOException("Differing Jaam class signatures\n Expected:\n%s Found:\n%s".format(expected, found))
+      }
+    }
+
+    r
+  }
+}

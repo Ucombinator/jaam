@@ -20,20 +20,20 @@ import scala.language.postfixOps
 import scala.reflect.ClassTag
 import xml.Utility
 
-import org.ucombinator.jaam.Stmt.unitToStmt
+import java.io.FileOutputStream
+
+import com.esotericsoftware.minlog.Log
 
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
 // fix this when we build the Scala wrapper for Soot.)
-import soot._
-import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, Type => SootType}
+import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, Type => SootType, _}
 
 import soot.jimple._
 import soot.jimple.{Stmt => SootStmt}
 import soot.jimple.internal.JStaticInvokeExpr
 import soot.tagkit._
 import soot.jimple.toolkits.invoke.AccessManager
-
 
 // JGraphX
 import javax.swing.JFrame
@@ -51,6 +51,9 @@ import java.io.FileOutputStream
 import java.io.FileInputStream
 import org.ucombinator.jaam.messaging
 import org.ucombinator.jaam.messaging.{State => MState, AbstractState => MAbstractState, ErrorState => MErrorState, Edge => MEdge, Id, Message, Done}
+import org.ucombinator.jaam.messaging._
+
+import org.ucombinator.jaam.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
 
 // Possibly thrown during transition between states.
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
@@ -160,7 +163,6 @@ object HaltKont extends Kont
 
 // TODO/precision D needs to have an interface that allows eval to use it
 
-
 abstract class Value
 
 abstract class AtomicValue extends Value
@@ -249,19 +251,6 @@ object D {
     ))
 }
 
-// Due to a bug in json4s we have to use "Int" instead of "AbstractState.Id" for the keys of this map
-// Once the following pull request is accepted we can use "AbstractState.Id":
-//   https://github.com/json4s/json4s/pull/324
-case class UpdatePacket(states : Map[Int,AbstractState], edges : Set[(AbstractState.Id, AbstractState.Id)]) {
-  def nonEmpty = states.nonEmpty || edges.nonEmpty
-}
-object UpdatePacket {
-  val serializer = new CustomSerializer[UpdatePacket](implicit format => (
-    { case s => ??? },
-    { case (i : AbstractState.Id, j : AbstractState.Id) => Extraction.decompose(List(i,j)) }
-    ))
-}
-
 abstract sealed class AbstractState {
   def next() : Set[AbstractState]
   def setStore(store: Store) : scala.Unit
@@ -285,7 +274,7 @@ abstract sealed class AbstractState {
   def setInitializedClasses(classes: Set[SootClass]) : scala.Unit
   def getInitializedClasses() : Set[SootClass]
 
-  def toMessage() : MAbstractState
+  def toMessage() : messaging.AbstractState
 
   val id = AbstractState.idMap.getOrElseUpdate(this, AbstractState.nextId)
 }
@@ -313,7 +302,7 @@ case object ErrorState extends AbstractState {
   override def setKWriteAddrs(s: Set[KontAddr]) = scala.Unit
   override def setInitializedClasses(classes: Set[SootClass]) = scala.Unit
   override def getInitializedClasses() : Set[SootClass] = Set()
-  override def toMessage() = messaging.ErrorState(Id[messaging.AbstractState](id))
+  override def toMessage() = messaging.ErrorState(messaging.Id[messaging.Node](id))
 }
 
 // State abstracts a collection of concrete states of execution.
@@ -358,7 +347,7 @@ case class State(val stmt : Stmt,
   }
   override def getInitializedClasses() : Set[SootClass] = initializedClasses
 
-  override def toMessage() = messaging.State(Id[messaging.AbstractState](id), stmt.toMessage, fp.toString, kontStack.toString)
+  override def toMessage() = messaging.State(messaging.Id[messaging.Node](id), stmt.toMessage, fp.toString, kontStack.toString)
 
   def copyState(stmt: Stmt = stmt,
                 fp: FramePointer = fp,
@@ -533,7 +522,6 @@ case class State(val stmt : Stmt,
         val castedType : SootType = v.getType
         checkInitializedClasses(castedType)
         val d = eval(castedExpr)
-        //        println("CastExpr "+v+" "+d)
         // TODO: filter out elements of "d" that are not of the
         // expression's type (should be done in general inside "eval"
         // (and maybe already is))
@@ -548,7 +536,6 @@ case class State(val stmt : Stmt,
 
         var d2 = D(Set())
         for (v <- d.values) {
-          //          println("v:"+v+" castedType:"+castedType)
           if (isCastableTo(v, castedType)) {
             // Up casts are always legal
             d2 = d2.join(D(Set((v))))
@@ -564,7 +551,6 @@ case class State(val stmt : Stmt,
               case r : RefType => r.getClassName
               case a : ArrayType => ???
             }
-            // println("snowflake cast "+castedType+" v "+v)
             d2 = d2.join(Snowflakes.createObjectOrThrow(name))
           } else {
             // Anything else would cause an exception
@@ -574,106 +560,6 @@ case class State(val stmt : Stmt,
         }
 
         d2
-
-      /*
-      println("castExpr!!!!:", v)
-              // TODO: cast from a SnowflakeObject to another SnowflakeObject
-              val castedExpr : SootValue = v.getOp
-              val castedType : SootType = v.getType
-              checkInitializedClasses(castedType)
-              val d = eval(castedExpr)
-              // TODO: filter out elements of "d" that are not of the
-              // expression's type (should be done in general inside "eval"
-              // (and maybe already is))
-
-              var vs = Set()
-
-              for (v <- d.values) {
-                if (Soot.isSubType(objectType.getType, castedType)) {
-                  // Up casts are always legal
-                  vs += v
-                } else if (v.instanceOf[SnowflakeBasePointer]
-                  && Soot.isSubType(castedType, objectType.getType)) {
-                  // Snowflakes can be down cast, but they might throw an exception
-                  val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastaException, malloc())))
-                  exceptions = exceptions.join(classCastException)
-                  vs += Snowflake.createObjectOrThrow()
-                } else {
-                  // Anything else would cause an exception
-                  val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastaException, malloc())))
-                  exceptions = exceptions.join(classCastException)
-                }
-
-
-      /*
-                // Up cast or cast to self
-                if (Soot.isSubType(objectType.getType, castedType)) {
-                  vs += v
-                }
-                // Down cast
-                else if (Soot.isSubType(castedType, objectType.getType) {
-                  if
-                  exceptions += ...
-                  if
-                }
-                if (downcast) {
-                  exception
-                  convertsnowflake
-                }
-                v match {
-                  case _ : AnyAtomicValue =>
-                    if (castedType.isInstanceOf[PrimType]) {
-                      d = d join D.atomicTop
-                    }
-                  case ObjectValue
-                }
-              }
-
-              d2
-
-              if (castedType.isInstanceOf[PrimType]) {
-                return D.atomicTop
-              }
-      println(castedExpr)
-      println(castedType)
-
-              // TODO/soundness: Throw an exception if necessary.
-              for (vl <- d.values) {
-                vl match {
-                  case ObjectValue(objectType, _) =>
-      println("objectType=", objectType)
-                    if (!Soot.isSubType(objectType.getType, castedType)) {
-      println("isSubtype")
-                      val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
-                      exceptions = exceptions.join(classCastException)
-                    }
-                  case ArrayValue(arrayType, basePointer) =>
-                    if (!Soot.isSubType(arrayType, castedType)) {
-                      val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
-                      exceptions = exceptions.join(classCastException)
-                    }
-                  case AnyAtomicValue => {}
-                  case _ => throw new Exception ("Unknown value type " + vl)
-                }
-              }
-
-              for (vl <- d.values) {
-                vl match {
-                  case ObjectValue(
-                }
-              }
-              castedType match {
-                case castedType : RefType =>
-                  if (castedType.isJavaLibraryClass) {
-                  }
-                case _ => ???
-              }
-              if (castedType..isJavaLibraryClass
-              if (javalib) { new java snowflake}
-              else {        d }
-            }
-      */*/
-
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
     result
@@ -686,61 +572,52 @@ case class State(val stmt : Stmt,
   def handleInvoke(expr : InvokeExpr,
                    destAddr : Option[Set[Addr]],
                    nextStmt : Stmt = stmt.nextSyntactic) : Set[AbstractState] = {
+    // This function finds all methods that could override root_m.
+    // These methods are returned with the root-most at the end of
+    // the list and the leaf-most at the head.  Thus the caller
+    // should use the head of the returned list.  The reason a list
+    // is returned is so this function can recursively compute the
+    // transitivity rule in Java's method override definition.
+    //
+    // Note that Hierarchy.resolveConcreteDispath should be able to do this, but seems to be implemented wrong
+    def overrides(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
+      val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
+      if (curr_m == null) {
+        overrides(curr.getSuperclass(), root_m)
+      }
+      else if (root_m.getDeclaringClass.isInterface || AccessManager.isAccessLegal(curr_m, root_m)) { List(curr_m) }
+      else {
+        val o = overrides(curr.getSuperclass(), root_m)
+        (if (o.exists(m => AccessManager.isAccessLegal(curr_m, m))) List(curr_m) else List()) ++ o
+      }
+    }
+
+
     // o.f(3); // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
-    def dispatch(bp : BasePointer, c : SootClass, m : SootMethod, receivers : Set[Value]) : Set[AbstractState] = {
-      // This function finds all methods that could override root_m.
-      // These methods are returned with the root-most at the end of
-      // the list and the leaf-most at the head.  Thus the caller
-      // should use the head of the returned list.  The reason a list
-      // is returned is so this function can recursively compute the
-      // transitivity rule in Java's method override definition.
-      //
-      // Note that Hierarchy.resolveConcreteDispath should be able to do this, but seems to be implemented wrong
-      def overrides(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
-        val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
-        if (curr_m == null) {
-          overrides(curr.getSuperclass(), root_m)
-        }
-        else if (root_m.getDeclaringClass.isInterface || AccessManager.isAccessLegal(curr_m, root_m)) { List(curr_m) }
-        else {
-          val o = overrides(curr.getSuperclass(), root_m)
-          (if (o.exists(m => AccessManager.isAccessLegal(curr_m, m))) List(curr_m) else List()) ++ o
-        }
-      }
-
-      val meth = if (c == null) m else overrides(c, m).head
-      // TODO: put a better message when there is no getActiveBody due to it being a native method
-      val newFP = alloca(expr, nextStmt)
-      var newStore = store // TODO: currently update the store directly, not using newStore
-      for (i <- 0 until expr.getArgCount())
-        store.update(ParameterFrameAddr(newFP, i), eval(expr.getArg(i)))
-      val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
-      // TODO/optimize: filter out incorrect class types
-      val th = ThisFrameAddr(newFP)
-      for (r <- receivers) store.update(th, D(Set(r)))
+    def dispatch(self : Option[Value], meth : SootMethod) : Set[AbstractState] = {
+      val args = for (a <- expr.getArgs().toList) yield eval(a)
 
       Snowflakes.get(meth) match {
-        case Some(h) => h(this, nextStmt, newFP, store, newKontStack)
+        case Some(h) => h(this, nextStmt, self, args)
         case None =>
           if (meth.getDeclaringClass.isJavaLibraryClass ||
-            bp.isInstanceOf[SnowflakeBasePointer]) {
+            self.isDefined &&
+            self.get.isInstanceOf[ObjectValue] &&
+            self.get.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
             Snowflakes.warn(this.id, stmt, meth)
             val rtType = meth.getReturnType
             rtType match {
-              case t: VoidType => NoOpSnowflake(this, nextStmt, newFP, store, newKontStack)
-              case pt: PrimType => ReturnSnowflake(D.atomicTop)(this, nextStmt, newFP, store, newKontStack)
-              case at: ArrayType =>
-                ReturnArraySnowflake(at.baseType.toString, at.numDimensions)
-                  .apply(this, nextStmt, newFP, store, newKontStack)
+              case _ : VoidType => NoOpSnowflake(this, nextStmt, self, args)
+              case _ : PrimType => ReturnSnowflake(D.atomicTop)(this, nextStmt, self, args)
+              case t : ArrayType =>
+                ReturnArraySnowflake(t.baseType.toString, t.numDimensions)
+                  .apply(this, nextStmt, self, args)
               case rt: RefType =>
-                ReturnObjectSnowflake(rt.getClassName)(this, nextStmt, newFP, store, newKontStack)
+                ReturnObjectSnowflake(rt.getClassName)(this, nextStmt, self, args)
             }
-          }
-          else if (meth.isNative) {
-            println(Console.YELLOW + "!!!!! WARNING (in state "+this.id+"): Native method without a snowflake. May be unsound. !!!!!")
-            println("!!!!! stmt = " + stmt + " !!!!!")
-            println("!!!!! method = " + meth + " !!!!!" + Console.RESET)
+          } else if (meth.isNative) {
+            Log.warn("Native method without a snowflake in state "+this.id+". May be unsound. stmt = " + stmt)
             meth.getReturnType match {
               case _ : VoidType => Set(this.copyState(stmt = nextStmt))
               case _ : PrimType => {
@@ -748,10 +625,21 @@ case class State(val stmt : Stmt,
                 Set(this.copyState(stmt = nextStmt))
               }
               case _ =>
-                println(Console.RED + "!!!!! Native method returns an object.  Aborting. !!!!!" + Console.RESET)
+                Log.error("Native method returns an object. Aborting.")
                 Set()
             }
           } else {
+            // TODO/optimize: filter out incorrect class types
+            val newFP = alloca(expr, nextStmt)
+            val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
+            var newStore = store // TODO: currently update the store directly, not using newStore
+            self match {
+              case Some(s) => newStore = newStore.update(ThisFrameAddr(newFP), D(Set(s)))
+              case None => {} // TODO: throw exception here?
+            }
+            for (i <- 0 until expr.getArgCount())
+              newStore = newStore.update(ParameterFrameAddr(newFP, i), args(i))
+
             val newState = State(Stmt.methodEntry(meth), newFP, newKontStack)
             newState.setInitializedClasses(initializedClasses)
             Set(newState)
@@ -763,46 +651,19 @@ case class State(val stmt : Stmt,
       case expr : DynamicInvokeExpr => ??? // TODO: Could only come from non-Java sources
       case expr : StaticInvokeExpr =>
         checkInitializedClasses(expr.getMethod().getDeclaringClass())
-        dispatch(null, null, expr.getMethod(), Set())
+        dispatch(None, expr.getMethod())
       case expr : InstanceInvokeExpr =>
-        val d = eval(expr.getBase())
-        val vs = d.values filter {
-          case ObjectValue(c,_) => Soot.isSubclass(c, expr.getMethod.getDeclaringClass)
-          /*
-                    case ObjectValue(c, SnowflakeBasePointer(_)) => Soot.isSubclass(c, expr.getMethod.getDeclaringClass)
-                    case ObjectValue(_, HashMapSnowflakes.EntrySetOfHashMap(_)) => true
-                    case ObjectValue(_, HashMapSnowflakes.IteratorOfEntrySetOfHashMap(_)) => true
-                    case ObjectValue(_, HashMapSnowflakes.EntryOfIteratorOfEntrySetOfHashMap(_)) => true
-                    case ObjectValue(_, HashMapSnowflakes.EntrySetOfHashMap(_)) => true
-                    case ObjectValue(_, ArrayListSnowflakes.IteratorOfArrayList(_)) => true
-
-                    case ObjectValue(sootClass, _) => {
-          //            println("sootClass "+sootClass+" "+expr.getMethod().getDeclaringClass)
-                      if (expr.getMethod().getDeclaringClass.isInterface) {
-                        val imps = Scene.v().getActiveHierarchy.getImplementersOf(expr.getMethod().getDeclaringClass)
-                        imps.contains(sootClass)
-                        //true
-                      }
-                      else {
-                        Soot.isSubclass(sootClass, expr.getMethod().getDeclaringClass)
-                      }
-                    }
-           */
-          case ArrayValue(sootType, _) => {
-            //TODO Check Type
-            true
-          }
-          case _ => false
-        }
-        ((for (v <- vs) yield {
+        ((for (v <- eval(expr.getBase()).values) yield {
           v match {
-            case ObjectValue(sootClass, bp) => {
+            case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, expr.getMethod.getDeclaringClass) => {
               val objectClass = if (expr.isInstanceOf[SpecialInvokeExpr]) null else sootClass
-              dispatch(bp, objectClass, expr.getMethod(), vs)
+              val meth = (if (expr.isInstanceOf[SpecialInvokeExpr]) expr.getMethod() else overrides(objectClass, expr.getMethod()).head)
+              dispatch(Some(v), meth)
             }
             case ArrayValue(sootType, _) => {
-              dispatch(null, null, expr.getMethod, vs)
+              dispatch(Some(v), expr.getMethod)
             }
+            case _ => Set()
           }
         }) :\ Set[AbstractState]())(_ ++ _) // TODO: better way to do this?
     }
@@ -834,7 +695,7 @@ case class State(val stmt : Stmt,
   // by the SootType t with dimension sizes 'sizes'
   def createArray(t : SootType, sizes : List[D], addrs : Set[Addr]) : Store = sizes match {
     // Should only happen on recursive calls. (createArray should never be called by a user with an empty list of sizes).
-    case Nil => store.update(addrs, defaultInitialValue(t)).asInstanceOf[Store]
+    case Nil => Store(Map(addrs -> defaultInitialValue(t)))
     case (s :: ss) => {
       val bp : BasePointer = malloc()
       // TODO/soundness: exception for a negative length
@@ -856,7 +717,7 @@ case class State(val stmt : Stmt,
       nexts ++ exceptionStates
     } catch {
       case UninitializedClassException(sootClass) =>
-        println("Exception: Static initializing "+sootClass)
+        Log.info("Static initializing "+sootClass)
         // TODO/soundness: needs to also initialize parent classes
         exceptions = D(Set())
         val meth = sootClass.getMethodByNameUnsafe(SootMethod.staticInitializerName)
@@ -884,28 +745,24 @@ case class State(val stmt : Stmt,
         }
 
       case UninitializedSnowflakeObjectException(className) =>
-        println("Exception: Initializing snowflake "+className)
-        //val newStore = store.join(Snowflakes.createObject(className, List()))
+        Log.info("Initializing snowflake "+className)
         store.join(Snowflakes.createObject(className, List()))
-        //Set(this.copyState(store = newStore)) //store=>store.join(Snowflakes.createObject(className, List()))))
-        Set(this.copyState())
+        Set(this.copyState(/*store = newStore*/)) //store=>store.join(Snowflakes.createObject(className, List()))))
 
       case StringConstantException(string) =>
-        println("Exception: Initializing string constant: \""+string+"\"")
+        Log.info("Initializing string constant: \""+string+"\"")
         val value = Soot.classes.String.getFieldByName("value")
         val hash = Soot.classes.String.getFieldByName("hash")
         val hash32 = Soot.classes.String.getFieldByName("hash32")
         val bp = StringBasePointer(string)
-        //val newStore =
-        createArray(ArrayType.v(CharType.v,1), List(D.atomicTop/*string.length*/), Set(InstanceFieldAddr(bp, value)))
+        val newStore = createArray(ArrayType.v(CharType.v,1), List(D.atomicTop/*string.length*/), Set(InstanceFieldAddr(bp, value)))
           .update(InstanceFieldAddr(bp, hash), D.atomicTop)
-          .update(InstanceFieldAddr(bp, hash32), D.atomicTop)
+          .update(InstanceFieldAddr(bp, hash32), D.atomicTop).asInstance[Store]
+        store.join(newStore)
         Set(this.copyState(/*store = newStore*/))
 
       case UndefinedAddrsException(addrs) =>
-        println(Console.RED + "!!!!! ERROR (in state "+this.id+"): Undefined Addrs !!!!!")
-        println("!!!!! stmt = " + stmt + " !!!!!")
-        println("!!!!! addrs = " + addrs + " !!!!!" + Console.RESET)
+        Log.error("Undefined Addrs in state "+this.id+" stmt = "+stmt+" addrs = "+addrs)
         Set()
     }
   }
@@ -1099,7 +956,8 @@ case class Config(
                    rtJar: String = null,
                    sootClassPath: String = null,
                    className: String = null,
-                   methodName: String = null)
+                   methodName: String = null,
+                   outputFile: String = null)
 
 object Main {
   def main(args : Array[String]) {
@@ -1122,6 +980,10 @@ object Main {
         (x, c) => c.copy(methodName = x)
       } text("the main method")
 
+      opt[String]('o', "outfile") action {
+        (x, c) => c.copy(outputFile = x)
+      } text("the output file for the serialized data")
+
       help("help") text("prints this usage text")
 
       override def showUsageOnError = true
@@ -1132,38 +994,34 @@ object Main {
         println("Wrong arguments")
 
       case Some(config) =>
+        Log.setLogger(new JaamLogger)
         Soot.initialize(config)
         defaultMode(config)
     }
   }
 
   def defaultMode(config : Config) {
-    val outMessaging = Message.openOutput(new FileOutputStream("test.dat"))
+    val outputFileOpt = Option(config.outputFile)
+    var outputFile: String = null
+    outputFileOpt match {
+      case None => outputFile = config.className + ".jaam"
+      case Some(x) => outputFile = x
+    }
+    val outMessaging = new MessageOutput(new FileOutputStream(outputFile))
     val mainMainMethod : SootMethod = Soot.getSootClass(config.className).getMethodByName(config.methodName)
-
-    // Setting up the GUI
-    //val window = new Window
     val initialState = State.inject(Stmt.methodEntry(mainMainMethod))
-    //window.addState(initialState)
 
     var todo: List[AbstractState] = List(initialState)
     var done: Set[AbstractState] = Set()
     var globalInitClasses: Set[SootClass] = Set()
     var doneEdges: Map[Pair[Int, Int], Int] = Map()
 
-    Message.write(outMessaging, initialState.toMessage)
-    implicit val formats = Soot.formats +
-      UpdatePacket.serializer +
-      D.serializer +
-      Store.serializer +
-      KontStore.serializer
-    //println(Serialization.writePretty(UpdatePacket(Map(1 -> initialState), Set.empty)))
+    outMessaging.write(initialState.toMessage)
 
     while (todo nonEmpty) {
       //TODO refactor store widening code
       val current = todo.head
-      println()
-      println("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
+      Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
       val (nexts, initClasses) = System.next(current, globalInitClasses)
       //for (next <- nexts) {
       //  window.addNext(current, next)
@@ -1172,17 +1030,18 @@ object Main {
       val newTodo = nexts.toList.filter(!done.contains(_))
 
       for (n <- newTodo) {
-        println("Writing state "+n.id)
-        Message.write(outMessaging, n.toMessage)
+        Log.info("Writing state "+n.id)
+        outMessaging.write(n.toMessage)
       }
+
       for (n <- nexts) {
         if (!doneEdges.contains((current.id, n.id))) {
           val id = doneEdges.size
-          println("Writing edge "+id+": "+current.id+" -> "+n.id)
-          doneEdges += (current.id, n.id) -> id
-          Message.write(outMessaging, messaging.Edge(Id[MEdge](id), Id[messaging.AbstractState](current.id), Id[messaging.AbstractState](n.id)))
+          Log.info("Writing edge "+id+": "+current.id+" -> "+n.id)
+          doneEdges += id -> Pair(current.id, n.id)
+          outMessaging.write(messaging.Edge(messaging.Id[messaging.Edge](id), messaging.Id[messaging.AbstractState](current.id), messaging.Id[messaging.AbstractState](n.id)))
         } else {
-          println("Skipping edge "+current.id+" -> "+n.id)
+          Log.info("Skipping edge "+current.id+" -> "+n.id)
         }
       }
 
@@ -1204,148 +1063,27 @@ object Main {
       }
 
       globalInitClasses ++= initClasses
-      println("Done processing state "+current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
+      Log.info("Done processing state "+current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
     }
 
     outMessaging.close()
-    println("Done!")
+    Log.info("Done!")
   }
-}
 
-case class CallGraph(val map : Map[Stmt, CallGraphValue])
-case class CallGraphValue(val targets : List[Stmt], val successors : List[Stmt])
+  class JaamLogger extends Log.Logger {
+    private var level = 0
 
-class Window extends JFrame ("Shimple Analyzer") {
-  // TODO: make exiting window go back to repl
-  // TODO: save graph files to review later
-  val graph = new mxGraph() {
-    override def getToolTipForCell(cell : Object) : String = {
-      vertexToState.get(cell) match {
-        case None => super.getToolTipForCell(cell)
-        case Some(state : State) =>
-          var tip = "<html>"
-          tip += "FP: " + Utility.escape(state.fp.toString) + "<br><br>"
-          tip += "Kont: " + Utility.escape(state.kontStack.k.toString) + "<br><br>"
-          tip += "Store:<br>" + state.store.prettyString.foldLeft("")(_ + "&nbsp;&nbsp;" + Utility.escape(_) + "<br>") + "<br>"
-          tip += "KontStore:<br>" + state.kontStack.store.prettyString.foldLeft("")(_ + "&nbsp;&nbsp;" + Utility.escape(_) + "<br>")
-          //tip += "InitializedClasses: " + state.initializedClasses.toString + "<br>"
-          tip += "</html>"
-          tip
-        case Some(ErrorState) => "ERROR"
+    override def log(level : Int, category : String, message : String, ex : Throwable) {
+      this.level = level
+      super.log(level, category, message, ex)
+    }
+
+    override def print(s : String) = {
+      this.level match {
+        case Log.LEVEL_ERROR => super.print(Console.RED + s + Console.RESET)
+        case Log.LEVEL_WARN => super.print(Console.YELLOW + s + Console.RESET)
+        case _ => super.print(s)
       }
     }
   }
-
-
-  private val layoutX = new mxCompactTreeLayout(graph, false)
-  private val parentX = graph.getDefaultParent()
-  private val graphComponent = new mxGraphComponent(graph)
-  private var stateToVertex = Map[AbstractState,Object]()
-  private var vertexToState = Map[Object,AbstractState]()
-  private var edgeSet = Set[(AbstractState, AbstractState)]()
-
-  graphComponent.setEnabled(false)
-  graphComponent.setToolTips(true)
-  getContentPane().add(graphComponent)
-  ToolTipManager.sharedInstance().setInitialDelay(0)
-  ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE)
-  setSize(400, 320)
-  setExtendedState(java.awt.Frame.MAXIMIZED_BOTH)
-  setVisible(true)
-
-  private def stateString(state : AbstractState) : String = state match {
-    // TODO/interface more information
-    case ErrorState => "ErrorState"
-    case state: State =>
-      state.id + "\n" + state.stmt.sootMethod.toString() + "\n" + state.stmt.sootStmt.toString()
-  }
-
-  def addState(state : State) {
-    val vertex = graph.insertVertex(parentX, null, stateString(state), 100, 100, 20, 20, "ROUNDED")
-    graph.updateCellSize(vertex)
-    stateToVertex += (state -> vertex)
-    vertexToState += (vertex -> state)
-  }
-
-  def addNext(start : AbstractState, end : AbstractState) {
-    graph.getModel().beginUpdate()
-    try {
-      stateToVertex.get(end) match {
-        case None =>
-          val tag = stateString(end)
-          val v = graph.insertVertex(parentX, null, tag, 240, 150, 80, 30, "ROUNDED")
-          graph.updateCellSize(v)
-          graph.insertEdge(parentX, null, null, stateToVertex(start), v)
-          stateToVertex += (end -> v)
-          vertexToState += (v -> end)
-          edgeSet += ((start, end))
-        case Some(v) =>
-          if (!edgeSet.contains((start, end))) {
-            graph.insertEdge(parentX, null, null, stateToVertex(start), v)
-            edgeSet += ((start, end))
-          }
-      }
-      // TODO: layout basic blocks together
-      layoutX.execute(parentX)
-    }
-    finally
-    {
-      graph.getModel().endUpdate()
-    }
-  }
 }
-
-//future rendering of control flow graphs
-/*
-class CFG extends JFrame ("Control Flow Graph") {
-
-  val graph = new mxGraph()
-
-  private val layoutX = new mxCompactTreeLayout(graph, false)
-  private val parentX = graph.getDefaultParent()
-  private val graphComponent = new mxGraphComponent(graph)
-  private var stateToVertex = Map[Block,Object]()
-  private var vertexToState = Map[Object,Block]()
-
-
-  graphComponent.setEnabled(false)
-  graphComponent.setToolTips(true)
-  getContentPane().add(graphComponent)
-  ToolTipManager.sharedInstance().setInitialDelay(0)
-  ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE)
-  setSize(400, 320)
-  setExtendedState(java.awt.Frame.MAXIMIZED_BOTH)
-  setVisible(true)
-
-
-   def addState(inst : Block) {
-    val vertex = graph.insertVertex(parentX, null, inst, 100, 100, 20, 20, "ROUNDED")
-    graph.updateCellSize(vertex)
-    stateToVertex += (inst -> vertex)
-    vertexToState += (vertex -> inst)
-  }
-
-   def addNext(start : Block, end : Block) {
-    graph.getModel().beginUpdate()
-    try {
-      stateToVertex.get(end) match {
-        case None =>
-          //val tag = stateString(end)
-          val v = graph.insertVertex(parentX, null, end, 240, 150, 80, 30, "ROUNDED")
-          graph.updateCellSize(v)
-          graph.insertEdge(parentX, null, null, stateToVertex(start), v)
-          stateToVertex += (end -> v)
-          vertexToState += (v -> end)
-        case Some(v) =>
-          graph.insertEdge(parentX, null, null, stateToVertex(start), v)
-      }
-      layoutX.execute(parentX)
-    }
-    finally
-    {
-      graph.getModel().endUpdate()
-    }
-  }
-
-}
-*/
