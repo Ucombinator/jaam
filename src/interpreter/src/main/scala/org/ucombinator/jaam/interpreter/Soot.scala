@@ -12,7 +12,7 @@ import soot.jimple.{Stmt => SootStmt}
 import soot.tagkit.GenericAttribute
 import soot.tagkit.SourceFileTag
 
-import org.ucombinator.jaam.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
+import org.ucombinator.jaam.interpreter.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
 
 import org.ucombinator.jaam.serializer
 

@@ -44,7 +44,7 @@ import java.io.FileOutputStream
 import java.io.FileInputStream
 import org.ucombinator.jaam.serializer
 
-import org.ucombinator.jaam.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
+import org.ucombinator.jaam.interpreter.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
 
 // Possibly thrown during transition between states.
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
