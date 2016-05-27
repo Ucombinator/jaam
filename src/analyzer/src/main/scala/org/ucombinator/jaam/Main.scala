@@ -789,7 +789,7 @@ case class State(val stmt : Stmt,
             val baseType : RefType = rhs.getBaseType()
             val sootClass = baseType.getSootClass()
             this.newExpr(lhsAddr, sootClass, store)
-            Set(this.copyState(stmt = stmt.nextSyntactic)
+            Set(this.copyState(stmt = stmt.nextSyntactic))
           }
           case rhs : NewArrayExpr => {
             //TODO, if base type is Java library class, call Snowflake.createArray
