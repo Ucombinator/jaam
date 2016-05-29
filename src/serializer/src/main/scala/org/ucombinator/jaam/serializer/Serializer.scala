@@ -133,10 +133,10 @@ case class EOF () extends Packet {}
 case class Edge(id : Id[Edge], src : Id[AbstractState], dst : Id[AbstractState]) extends Packet {}
 
 // Declare 'AbstractState' nodes
-abstract class Node(id : Id[Node]) extends Packet {}
-abstract class AbstractState(id : Id[Node]) extends Node(id) {}
-case class ErrorState(id : Id[Node]) extends AbstractState(id) {}
-case class State(id : Id[Node], stmt : Stmt, framePointer : String, kontStack : String) extends AbstractState(id) {}
+abstract class Node(val id : Id[Node]) extends Packet {}
+abstract class AbstractState(override val id : Id[Node]) extends Node(id) {}
+case class ErrorState(override val id : Id[Node]) extends AbstractState(id) {}
+case class State(override val id : Id[Node], stmt : Stmt, framePointer : String, kontStack : String) extends AbstractState(id) {}
 
 case class Group(id : Id[Node], states : java.util.List[Node], labels : String)
 
