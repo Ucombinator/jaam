@@ -138,7 +138,7 @@ abstract class AbstractState(override val id : Id[Node]) extends Node(id) {}
 case class ErrorState(override val id : Id[Node]) extends AbstractState(id) {}
 case class State(override val id : Id[Node], stmt : Stmt, framePointer : String, kontStack : String) extends AbstractState(id) {}
 
-case class Group(id : Id[Node], states : java.util.List[Node], labels : String)
+//case class Group(id : Id[Node], states : java.util.List[Node], labels : String)
 
 
 ////////////////////////////////////////
