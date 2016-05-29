@@ -928,9 +928,7 @@ case class Config(
 
 object Main {
   def main(args : Array[String]) {
-    val parser = new scopt.OptionParser[Config]("jaam") {
-      head("jaam")
-
+    val parser = new scopt.OptionParser[Config]("jaam-interpreter") {
       opt[String]("classpath") action {
         (x, c) => c.copy(sootClassPath = x)
       } text("the TODO class directory")
