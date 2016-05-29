@@ -9,7 +9,7 @@ Jaam analyzes JVM bytecode to try to discover vulnerabilities and side channels.
 * [Requirements](#requirements)
 * [Building](#building) -- how to get Jaam running
 * [Usage](#usage) -- how to use Jaam
-  * [Analyzer](#analyzer)
+  * [Abstract Interpreter](#abstract interpreter)
   * [Visualizer](#visualizer)
 * [Developers](#developers) -- more about Jaam's internals
 
@@ -51,8 +51,8 @@ Note that you must have completed [building Jaam](#Building) before proceeding.
 
 ### Abstract Interpreter
 
-To run the analyzer, use the `bin/jaam-interpreter.sh` script. You can supply a
-few options:
+To run the abstract interpreter, use the `bin/jaam-interpreter` script. You can
+supply a few options:
 
 | Option            | Effect                                                                |
 |-------------------|-----------------------------------------------------------------------|
@@ -61,14 +61,14 @@ few options:
 | `-m`, `--method`  | Give a specific method within the class from which to start analysis. |
 | `-o`, `--outfile` | Where to save the output from the analysis for use in the visualizer. |
 
-If you give no `--outfile` specification, the analyzer will use the fully
+If you give no `--outfile` specification, the interpreter will use the fully
 qualified class name as a filename.
 
 For example, to analyze the `Factorial` class located in the `to-analyze`
 classpath in this repository, first compile it to a .class file. Then run the provided script:
 
 ```
-./bin/jaam-interpreter.sh --classpath examples -c Factorial -m main
+./bin/jaam-interpreter --classpath examples -c Factorial -m main
 ```
 
 It may take a moment. You will see some output to the console, and a file named
@@ -86,7 +86,7 @@ You may get an out-of-memory error. If you do, you can run Jaam with extra
 heap memory by specifying your `JAVA_OPTS`. For example:
 
 ```
-JAVA_OPTS="-Xmx8g" {jaam-analyzer.sh invocation}
+JAVA_OPTS="-Xmx8g" {jaam-interpreter invocation}
 ```
 
 You can change '8g' to whatever amount of memory you need. You can also add
@@ -96,10 +96,11 @@ other Java options for controlling stack size, etc.
 
 To analyze a `.jar` file, you must know the fully-qualified classpath of the
 main class, e.g. `com.company.project.Main`. Given a JAR file named `test.jar`
-and a Main class at `com.company.test.Main`, you would invoke the analyzer with:
+and a Main class at `com.company.test.Main`, you would invoke the interpreter
+with:
 
 ```
-./bin/jaam-analyzer.sh --classpath test.jar -c com.company.project.Main -m main
+./bin/jaam-interpreter --classpath test.jar -c com.company.project.Main -m main
 ```
 
 ### Visualizer
@@ -107,13 +108,13 @@ and a Main class at `com.company.test.Main`, you would invoke the analyzer with:
 To run the visualizer, simply do:
 
 ```
-./bin/jaam-visualizer.sh
+./bin/jaam-visualizer
 ```
 
 This will launch a GUI for visualization of Jaam's static analysis. To give it
-input, click `File` then `Load graph from message file` and specify the
-`.jaam` file you created with the analyzer (`Factorial.jaam` if you used the
-given example).
+input, click `File` then `Load graph from message file` and specify the `.jaam`
+file you created with the interpreter (`Factorial.jaam` if you used the given
+example).
 
 By default, all possible nodes are collapsed. Double-click on them to expand the
 visualization graph.
