@@ -1,4 +1,4 @@
 #!/bin/bash
 : ${SBT_JAVA:="java"}
 : ${SBT_OPTS:="-Xms512M -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled"}
-"${SBT_JAVA}" ${SBT_OPTS} -jar "$(dirname $0)/sbt-launch.jar" "$@"
+"${SBT_JAVA}" ${SBT_OPTS} -jar "$(dirname $0)/../jars/sbt-launch.jar" "$@"

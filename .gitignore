@@ -1,8 +1,9 @@
 *~
-assembled/*.jar
+jars/jaam-interpreter.jar
+jars/jaam-visualizer.jar
+target
 project/target
 project/project/target
-target
 .DS_Store
 sootOutput
 .*.sw?

@@ -1,6 +1,6 @@
 name := "jaam-interpreter"
 version := "0.1-SNAPSHOT"
-assemblyOutputPath in assembly := new File("./assembled/jaam-interpreter.jar")
+assemblyOutputPath in assembly := new File("./jars/jaam-interpreter.jar")
 
 // Fixes "Cannot check match for unreachability" warning
 // TODO: not sure if this is the best way to do this

@@ -3,7 +3,7 @@
 # Handles execution of JAAM's Analyzer for you!
 
 : ${JAAM_dir:="$(cd $(dirname $(dirname $0)); pwd -P)"}
-: ${JAAM_interpreter:="${JAAM_dir}/assembled/jaam-interpreter.jar"}
+: ${JAAM_interpreter:="${JAAM_dir}/jars/jaam-interpreter.jar"}
 : ${JAAM_java:="java"}
 : ${JAAM_rt_jar:="${JAAM_dir}/resources/rt.jar"}
 : ${JAAM_java_opts:=""}
