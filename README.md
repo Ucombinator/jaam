@@ -9,7 +9,7 @@ Jaam analyzes JVM bytecode to try to discover vulnerabilities and side channels.
 * [Requirements](#requirements)
 * [Building](#building) -- how to get Jaam running
 * [Usage](#usage) -- how to use Jaam
-  * [Abstract Interpreter](#abstract interpreter)
+  * [Abstract Interpreter](#abstract-interpreter)
   * [Visualizer](#visualizer)
 * [Developers](#developers) -- more about Jaam's internals
 
