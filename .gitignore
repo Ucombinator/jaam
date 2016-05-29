@@ -1,7 +1,7 @@
 *~
 assembled/*.jar
-project/*
-!project/*.sbt
+project/target
+project/project/target
 target
 .DS_Store
 sootOutput
