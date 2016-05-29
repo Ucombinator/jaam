@@ -1028,7 +1028,7 @@ object Main {
       }
 
       globalInitClasses ++= initClasses
-      Log.info("Done processing state "+current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
+      Log.info("Done processing state "+current.id)
     }
 
     outSerializer.close()
