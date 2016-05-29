@@ -1,20 +1,17 @@
 package org.ucombinator.jaam.interpreter
 
 import scala.collection.JavaConversions._
-import scala.math.BigInt
 
 import com.esotericsoftware.minlog.Log
 
-import soot._
-import soot.options._
-import soot.jimple._
-import soot.jimple.{Stmt => SootStmt}
-import soot.tagkit.GenericAttribute
-import soot.tagkit.SourceFileTag
+import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
+import soot.jimple.{Stmt => SootStmt, _}
 
-import org.ucombinator.jaam.interpreter.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
+import soot.options.Options
+import soot.tagkit.{GenericAttribute, SourceFileTag}
 
 import org.ucombinator.jaam.serializer
+import org.ucombinator.jaam.interpreter.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
 
 // Helpers for working with Soot.
 //
@@ -25,7 +22,7 @@ object Stmt {
   val indexTag = "org.ucombinator.jaam.Stmt.indexTag"
 
   import scala.language.implicitConversions
-  implicit def unitToStmt(unit : Unit) : SootStmt = {
+  implicit def unitToStmt(unit : SootUnit) : SootStmt = {
     assert(unit ne null, "unit is null")
     assert(unit.isInstanceOf[SootStmt], "unit not instance of Stmt. Unit is of class: " + unit.getClass)
     unit.asInstanceOf[SootStmt]

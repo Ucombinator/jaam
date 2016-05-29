@@ -6,11 +6,10 @@ import scala.reflect.ClassTag
 /* mutable generic store */
 abstract class AbstractStore[K <: Addr, E, V <: AbstractDomain[E] : ClassTag](val map: mutable.Map[K, V], val bot: V) {
   var on: Boolean = false
-  var print: Boolean = false
   var readAddrs = Set[K]()
   var writeAddrs = Set[K]()
 
-  def resetReadAddrsAndWriteAddrs(): scala.Unit = {
+  def resetReadAddrsAndWriteAddrs(): Unit = {
     readAddrs = Set[K]()
     writeAddrs = Set[K]()
   }

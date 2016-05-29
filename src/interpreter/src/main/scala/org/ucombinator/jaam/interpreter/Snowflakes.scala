@@ -1,10 +1,12 @@
 package org.ucombinator.jaam.interpreter
 
 import scala.collection.JavaConversions._
-import scala.collection.mutable.Map
+import scala.collection.mutable
+
 import com.esotericsoftware.minlog.Log
-import soot._
-import soot.jimple._
+
+import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
+import soot.jimple.{Stmt => SootStmt, _}
 
 // Snowflakes are special Java procedures whose behavior we know and special-case.
 // For example, native methods (that would be difficult to analyze) are snowflakes.
@@ -86,7 +88,7 @@ case class ReturnArraySnowflake(baseType: String, dim: Int) extends NonstaticSno
     val newNewStore = state.stmt.sootStmt match {
       case stmt : DefinitionStmt =>
         Snowflakes.createArray(at, sizes, state.addrsOf(stmt.getLeftOp), state.malloc())
-      case stmt : InvokeStmt => Store(Map[Addr, D]())
+      case stmt : InvokeStmt => Store(mutable.Map[Addr, D]())
     }
     state.store.join(newNewStore)
     Set(state.copyState(stmt=nextStmt))
@@ -462,7 +464,7 @@ object Snowflakes {
     Log.warn("Using generic snowflake for Java library in state "+id+". May be unsound. stmt = " + stmt + " method = " + meth)
   }
 
-  val table = scala.collection.mutable.Map.empty[MethodDescription, SnowflakeHandler]
+  val table = mutable.Map.empty[MethodDescription, SnowflakeHandler]
   var initializedObjectValues = Map.empty[String, Store]
 
   def get(meth : SootMethod) : Option[SnowflakeHandler] =
@@ -482,11 +484,11 @@ object Snowflakes {
     sizes match {
       case Nil => {
         t match {
-          case pt: PrimType => Store(Map(addrs.zipWithIndex.map{case(a,i) => (a, D.atomicTop)}.toMap.toSeq: _*))
+          case pt: PrimType => Store(mutable.Map(addrs.zipWithIndex.map{case(a,i) => (a, D.atomicTop)}.toMap.toSeq: _*))
           case rt: RefType => {
             val className = rt.getClassName
             val sootClass = Soot.getSootClass(className)
-            Store(Map(addrs.zipWithIndex.map{case(a,i) => (a, D(Set(ObjectValue(sootClass, bp))))}.toMap.toSeq: _*))
+            Store(mutable.Map(addrs.zipWithIndex.map{case(a,i) => (a, D(Set(ObjectValue(sootClass, bp))))}.toMap.toSeq: _*))
           }
         }
       }
@@ -512,7 +514,7 @@ object Snowflakes {
 
     val sootClass = Soot.getSootClass(className)
     val fields = sootClass.getFields
-    var store = Store(Map[Addr, D]())
+    val store = Store(mutable.Map[Addr, D]())
 
     if (sootClass.hasSuperclass) {
       val newStore = createObject(sootClass.getSuperclass.getName, processing++List(className))

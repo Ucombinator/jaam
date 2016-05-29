@@ -13,12 +13,8 @@ package org.ucombinator.jaam.interpreter
 // TODO: invoke main method so we can initialize the parameters to main
 
 import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.collection.mutable.{Map, TreeSet}
-import scala.language.postfixOps
 import scala.reflect.ClassTag
-import xml.Utility
 
 import java.io.FileOutputStream
 
@@ -27,23 +23,14 @@ import com.esotericsoftware.minlog.Log
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
 // fix this when we build the Scala wrapper for Soot.)
-import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, Type => SootType, _}
+import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
+import soot.jimple.{Stmt => SootStmt, _}
 
-import soot.jimple._
-import soot.jimple.{Stmt => SootStmt}
 import soot.jimple.internal.JStaticInvokeExpr
-import soot.tagkit._
 import soot.jimple.toolkits.invoke.AccessManager
+import soot.tagkit._
 
-// JGraphX
-import javax.swing.JFrame
-import javax.swing.SwingUtilities
-import javax.swing.ToolTipManager
-
-import java.io.FileOutputStream
-import java.io.FileInputStream
 import org.ucombinator.jaam.serializer
-
 import org.ucombinator.jaam.interpreter.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
 
 // Possibly thrown during transition between states.
@@ -53,8 +40,8 @@ case class UndefinedAddrsException[A <: Addr](addrs : Set[A]) extends RuntimeExc
 
 // A continuation store paired with a continuation
 case class KontStack(k : Kont) {
-  var store : KontStore = KontStore(Map())
-  def setStore(store : KontStore) : scala.Unit = {
+  var store : KontStore = KontStore(mutable.Map())
+  def setStore(store : KontStore) : Unit = {
     this.store = store
   }
   def getStore() = store
@@ -124,7 +111,7 @@ case class KontStack(k : Kont) {
 
       // TODO/interface we should log this sort of thing
       val nextFrames = kontStack.pop()
-      if (nextFrames isEmpty) {
+      if (nextFrames.isEmpty) {
         return Set(ErrorState)
       }
       (for ((frame, kontStack) <- nextFrames) yield { stackWalk(frame.stmt, frame.fp, kontStack) }).flatten
@@ -162,7 +149,7 @@ case object AnyAtomicValue extends AtomicValue
 
 case class ObjectValue(val sootClass : SootClass, val bp : BasePointer) extends Value
 
-case class ArrayValue(val sootType : SootType, val bp : BasePointer) extends Value
+case class ArrayValue(val sootType : Type, val bp : BasePointer) extends Value
 
 //case class SnowflakeInterfaceValue(val sootClass : SootClass, val bp : BasePointer) extends Value
 
@@ -234,25 +221,25 @@ object D {
 
 abstract sealed class AbstractState {
   def next() : Set[AbstractState]
-  def setStore(store: Store) : scala.Unit
+  def setStore(store: Store) : Unit
   def getStore() : Store
 
-  def setKontStore(store : KontStore) : scala.Unit
+  def setKontStore(store : KontStore) : Unit
   def getKontStore() : KontStore
 
   def getReadAddrs: Set[Addr]
-  def setReadAddrs(s: Set[Addr]): scala.Unit
+  def setReadAddrs(s: Set[Addr]): Unit
 
   def getKReadAddrs: Set[KontAddr]
-  def setKReadAddrs(s: Set[KontAddr]): scala.Unit
+  def setKReadAddrs(s: Set[KontAddr]): Unit
 
   def getWriteAddrs: Set[Addr]
-  def setWriteAddrs(s: Set[Addr]): scala.Unit
+  def setWriteAddrs(s: Set[Addr]): Unit
 
   def getKWriteAddrs: Set[KontAddr]
-  def setKWriteAddrs(s: Set[KontAddr]): scala.Unit
+  def setKWriteAddrs(s: Set[KontAddr]): Unit
 
-  def setInitializedClasses(classes: Set[SootClass]) : scala.Unit
+  def setInitializedClasses(classes: Set[SootClass]) : Unit
   def getInitializedClasses() : Set[SootClass]
 
   def toPacket() : serializer.AbstractState
@@ -262,26 +249,26 @@ abstract sealed class AbstractState {
 
 object AbstractState {
   type Id = Int
-  val idMap = scala.collection.mutable.Map[AbstractState, Id]()
+  val idMap = mutable.Map[AbstractState, Id]()
   var nextId_ = 0
   def nextId() : Id = { nextId_ += 1; nextId_ }
 }
 
 case object ErrorState extends AbstractState {
   override def next() : Set[AbstractState] = Set.empty
-  override def setStore(store : Store) = scala.Unit
-  override def getStore() = Store(Map())
-  override def setKontStore(store : KontStore) = scala.Unit
-  override def getKontStore() = KontStore(Map())
+  override def setStore(store : Store) = Unit
+  override def getStore() = Store(mutable.Map())
+  override def setKontStore(store : KontStore) = Unit
+  override def getKontStore() = KontStore(mutable.Map())
   override def getReadAddrs = Set()
-  override def setReadAddrs(s: Set[Addr]) = scala.Unit
+  override def setReadAddrs(s: Set[Addr]) = Unit
   override def getKReadAddrs: Set[KontAddr] = Set()
-  override def setKReadAddrs(s: Set[KontAddr]) = scala.Unit
+  override def setKReadAddrs(s: Set[KontAddr]) = Unit
   override def getWriteAddrs = Set()
-  override def setWriteAddrs(s: Set[Addr]) = scala.Unit
+  override def setWriteAddrs(s: Set[Addr]) = Unit
   override def getKWriteAddrs: Set[KontAddr] = Set()
-  override def setKWriteAddrs(s: Set[KontAddr]) = scala.Unit
-  override def setInitializedClasses(classes: Set[SootClass]) = scala.Unit
+  override def setKWriteAddrs(s: Set[KontAddr]) = Unit
+  override def setInitializedClasses(classes: Set[SootClass]) = Unit
   override def getInitializedClasses() : Set[SootClass] = Set()
   override def toPacket() = serializer.ErrorState(serializer.Id[serializer.Node](id))
 }
@@ -299,9 +286,9 @@ case class State(val stmt : Stmt,
   //      case _ => false
   //   }
 
-  var store: Store = Store(Map())
+  var store: Store = Store(mutable.Map())
 
-  override def setStore(store : Store) : scala.Unit = this.store = store
+  override def setStore(store : Store) : Unit = this.store = store
   override def getStore(): Store = store
   override def getKontStore = kontStack.getStore()
   override def setKontStore(store : KontStore) = kontStack.setStore(store)
@@ -361,7 +348,7 @@ case class State(val stmt : Stmt,
       throw new UninitializedClassException(c)
     }
   }
-  def checkInitializedClasses(t : SootType) {
+  def checkInitializedClasses(t : Type) {
     t match {
       case at : ArrayType => checkInitializedClasses(at.baseType)
       case pt : PrimType => {}
@@ -500,13 +487,13 @@ case class State(val stmt : Stmt,
       case v : CastExpr =>
         // TODO: cast from a SnowflakeObject to another SnowflakeObject
         val castedExpr : SootValue = v.getOp
-        val castedType : SootType = v.getType
+        val castedType : Type = v.getType
         checkInitializedClasses(castedType)
         val d = eval(castedExpr)
         // TODO: filter out elements of "d" that are not of the
         // expression's type (should be done in general inside "eval"
         // (and maybe already is))
-        def isCastableTo(v : Value, t : SootType) : Boolean = {
+        def isCastableTo(v : Value, t : Type) : Boolean = {
           v match {
             case _ : AtomicValue => t.isInstanceOf[PrimType]
             case ObjectValue(sootClass, _) => Soot.isSubType(sootClass.getType, t)
@@ -651,7 +638,7 @@ case class State(val stmt : Stmt,
   }
 
   // If you reference an unititialized field, what should it be?
-  def defaultInitialValue(t : SootType) : D = {
+  def defaultInitialValue(t : Type) : D = {
     t match {
       case t : RefLikeType => eval(NullConstant.v())
       case t : PrimType => D.atomicTop // TODO/precision: should eval based on specific type
@@ -673,10 +660,10 @@ case class State(val stmt : Stmt,
   }
 
   // Returns a Store containing the possibly nested arrays described
-  // by the SootType t with dimension sizes 'sizes'
-  def createArray(t : SootType, sizes : List[D], addrs : Set[Addr]) : Store = sizes match {
+  // by the Type t with dimension sizes 'sizes'
+  def createArray(t : Type, sizes : List[D], addrs : Set[Addr]) : Store = sizes match {
     // Should only happen on recursive calls. (createArray should never be called by a user with an empty list of sizes).
-    case Nil => Store(Map()).update(addrs, defaultInitialValue(t)).asInstanceOf[Store]
+    case Nil => Store(mutable.Map()).update(addrs, defaultInitialValue(t)).asInstanceOf[Store]
     case (s :: ss) => {
       val bp : BasePointer = malloc()
       // TODO/soundness: exception for a negative length
@@ -714,7 +701,7 @@ case class State(val stmt : Stmt,
             val staticUpdates = for {
               f <- sootClass.getFields(); if f.isStatic
             } yield (StaticFieldAddr(f) -> staticInitialValue(f))
-            store.update(Map(staticUpdates.toMap.toSeq: _*))
+            store.update(mutable.Map(staticUpdates.toMap.toSeq: _*))
             val newState = this.copyState(initializedClasses = initializedClasses+sootClass)
             newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
               java.util.Collections.emptyList()), None, stmt)
@@ -870,7 +857,7 @@ object State {
   val initialFramePointer = InitialFramePointer
   val initialBasePointer = InitialBasePointer
   val stringClass : SootClass = Soot.classes.String
-  val initial_map : Map[Addr, D] = Map(
+  val initial_map : mutable.Map[Addr, D] = mutable.Map(
     ParameterFrameAddr(initialFramePointer, 0) ->
       D(Set(ArrayValue(stringClass.getType(), initialBasePointer))),
     ArrayRefAddr(initialBasePointer) -> D(Set(ObjectValue(stringClass, initialBasePointer))),
@@ -878,16 +865,16 @@ object State {
 
   def inject(stmt : Stmt) : State = {
     val ks = KontStack(HaltKont)
-    ks.setStore(KontStore(Map()))
+    ks.setStore(KontStore(mutable.Map()))
     State(stmt, initialFramePointer, ks)
   }
 }
 
 object System {
   val store: Store = Store(State.initial_map)
-  val kstore: KontStore = KontStore(Map[KontAddr, KontD]())
-  val readTable: mutable.Map[Addr, Set[AbstractState]] = Map[Addr, Set[AbstractState]]()
-  val readKTable: mutable.Map[KontAddr, Set[AbstractState]] = Map[KontAddr, Set[AbstractState]]()
+  val kstore: KontStore = KontStore(mutable.Map[KontAddr, KontD]())
+  val readTable: mutable.Map[Addr, Set[AbstractState]] = mutable.Map[Addr, Set[AbstractState]]()
+  val readKTable: mutable.Map[KontAddr, Set[AbstractState]] = mutable.Map[KontAddr, Set[AbstractState]]()
 
   private def addToMultiMap[K, V](table: mutable.Map[K, Set[V]])(key: K, value: V) = {
     table.get(key) match {
@@ -998,7 +985,7 @@ object Main {
 
     outSerializer.write(initialState.toPacket)
 
-    while (todo nonEmpty) {
+    while (todo.nonEmpty) {
       //TODO refactor store widening code
       val current = todo.head
       Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
