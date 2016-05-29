@@ -979,7 +979,7 @@ object Main {
     var todo: List[AbstractState] = List(initialState)
     var done: Set[AbstractState] = Set()
     var globalInitClasses: Set[SootClass] = Set()
-    var doneEdges: Map[Pair[Int, Int], Int] = Map()
+    var doneEdges: Map[(Int, Int), Int] = Map()
 
     outSerializer.write(initialState.toPacket)
 

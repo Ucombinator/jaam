@@ -1,7 +1,7 @@
 // TODO: error if sbt called directly on a sub-project
 
 organization in ThisBuild := "org.ucombinator"
-scalaVersion in ThisBuild := "2.10.6"
+scalaVersion in ThisBuild := "2.11.8"
 
 resolvers += "Ucombinator maven repository on github" at "https://ucombinator.github.io/maven-repo"
 resolvers += Resolver.sonatypeRepo("public")
@@ -46,7 +46,8 @@ lazy val commonSettings = Seq(
     // Generates faster bytecode by applying optimisations to the program
     "-optimise",
     // Enable additional warnings where generated code depends on assumptions.
-    "-unchecked"
+    "-unchecked",
+    "-Xlint:_"
   ),
 
   // Discard META-INF, but deduplicate everything else

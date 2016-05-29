@@ -108,13 +108,13 @@ class PacketOutput(private val output : OutputStream) {
 
 private[this] object Signatures {
   // File signature using the same style as PNG
-  // \212 = 0x8a = 'J' + 0x40: High bit set so 'file' knows we are binary
-  // "JAAM": Help humans figure out what format the file is
-  // "\r\n": Detect bad line conversion
-  // \032 = 0x1a = "^Z": Stops output on DOS
-  // "\n": Detect bad line conversion
-  val formatSignature = "\212JAAM\r\n\032\n".getBytes(java.nio.charset.StandardCharsets.ISO_8859_1)
-  val formatVersion = java.nio.ByteBuffer.allocate(4).putInt(1 /* this is the version number */).array()
+  // \x008a = 'J' + 0x40: High bit set so 'file' knows we are binary
+  // JAAM: Help humans figure out what format the file is
+  // \r\n: Detect bad line conversion
+  // \x001a = '^Z': Stops output on DOS
+  // \n: Detect bad line conversion
+  val formatSignature = "\u008aJAAM\r\n\u001a\n".getBytes(java.nio.charset.StandardCharsets.ISO_8859_1)
+  val formatVersion = { val version = 1; java.nio.ByteBuffer.allocate(4).putInt(version).array() }
 }
 
 
