@@ -804,7 +804,8 @@ case class State(val stmt : Stmt,
 
       case sootStmt : SwitchStmt =>
         //TODO/prrecision dont take all the switches
-        sootStmt.getTargets().map(t => this.copyState(stmt = stmt.copy(sootStmt = t))).toSet
+        (sootStmt.getTargets().toList ::: List[SootUnit](sootStmt.getDefaultTarget()))
+          .map(t => this.copyState(stmt = stmt.copy(sootStmt = t))).toSet
 
       case sootStmt : ReturnStmt => {
         val evaled = eval(sootStmt.getOp())
