@@ -925,7 +925,8 @@ case class Config(
                    sootClassPath: String = null,
                    className: String = null,
                    methodName: String = null,
-                   outputFile: String = null)
+                   outputFile: String = null,
+                   logLevel: String = "info")
 
 object Main {
   def main(args : Array[String]) {
@@ -950,6 +951,16 @@ object Main {
         (x, c) => c.copy(outputFile = x)
       } text("the output file for the serialized data")
 
+      opt[String]('l', "log") action {
+        (x, c) => c.copy(logLevel = x)
+      } validate {
+        x =>
+          if (List("none", "error", "warn", "info", "debug", "trace").contains(x.toLowerCase))
+            success
+          else
+            failure("Logging level must be one of 'none', 'error', 'warn', 'info', 'debug', or 'trace'")
+      } text ("the level of logging verbosity; one of 'none', 'error', 'warn', 'info', 'debug', 'trace'")
+
       help("help") text("prints this usage text")
 
       override def showUsageOnError = true
@@ -962,6 +973,7 @@ object Main {
       case Some(config) =>
         Log.setLogger(new JaamLogger)
         Soot.initialize(config)
+        setLogging(config.logLevel)
         defaultMode(config)
     }
   }
@@ -1034,6 +1046,17 @@ object Main {
 
     outSerializer.close()
     Log.info("Done!")
+  }
+
+  def setLogging(level : String) = {
+    level.toLowerCase match {
+      case "none" => Log.set(Log.LEVEL_NONE)
+      case "error" => Log.set(Log.LEVEL_ERROR)
+      case "warn" => Log.set(Log.LEVEL_WARN)
+      case "info" => Log.set(Log.LEVEL_INFO)
+      case "debug" => Log.set(Log.LEVEL_DEBUG)
+      case "trace" => Log.set(Log.LEVEL_TRACE)
+    }
   }
 
   class JaamLogger extends Log.Logger {

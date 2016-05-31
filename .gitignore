@@ -8,5 +8,6 @@ project/project/target
 sootOutput
 .*.sw?
 .idea
+*.iml
 *.class
 *.jaam
