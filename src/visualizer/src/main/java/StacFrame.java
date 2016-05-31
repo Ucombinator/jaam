@@ -81,7 +81,7 @@ public class StacFrame extends JFrame
 		//File menu
 		menuFile = new JMenu("File");
 		menuBar.add(menuFile);
-		JMenuItem loadGraph = new JMenuItem("Load graph from JSON"); //Will be removed soon
+		/*JMenuItem loadGraph = new JMenuItem("Load graph from JSON"); //Will be removed soon
 		menuFile.add(loadGraph);
 		loadGraph.addActionListener(
 				new ActionListener()
@@ -91,7 +91,7 @@ public class StacFrame extends JFrame
 						loadGraph(false);
 					}
 				}
-		);
+		);*/
 
 		JMenuItem loadMessages = new JMenuItem("Load graph from message file");
 		menuFile.add(loadMessages);
