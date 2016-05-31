@@ -15,10 +15,14 @@ package org.ucombinator.jaam.interpreter
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.reflect.ClassTag
-
 import java.io.FileOutputStream
 
 import com.esotericsoftware.minlog.Log
+import org.json4s._
+import org.json4s.JsonDSL._
+import org.json4s.jackson.JsonMethods._
+
+import scala.collection.mutable.ListBuffer
 
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
@@ -926,7 +930,8 @@ case class Config(
                    className: String = null,
                    methodName: String = null,
                    outputFile: String = null,
-                   logLevel: String = "info")
+                   logLevel: String = "info",
+                   analysisOutput: Boolean = false)
 
 object Main {
   def main(args : Array[String]) {
@@ -961,6 +966,10 @@ object Main {
             failure("Logging level must be one of 'none', 'error', 'warn', 'info', 'debug', or 'trace'")
       } text ("the level of logging verbosity; one of 'none', 'error', 'warn', 'info', 'debug', 'trace'")
 
+      opt[Unit]('A', "analysis") action {
+        (_, c) => c.copy(analysisOutput = true)
+      } text("outputs information for analysis; suppressing logging information")
+
       help("help") text("prints this usage text")
 
       override def showUsageOnError = true
@@ -973,7 +982,13 @@ object Main {
       case Some(config) =>
         Log.setLogger(new JaamLogger)
         Soot.initialize(config)
-        setLogging(config.logLevel)
+        // Set logging level
+        if (config.analysisOutput) {
+          // The analysis output suppresses logging
+          Log.set(Log.LEVEL_NONE)
+        } else {
+          setLogging(config.logLevel)
+        }
         defaultMode(config)
     }
   }
@@ -1012,15 +1027,21 @@ object Main {
         outSerializer.write(n.toPacket)
       }
 
+      var edges = new ListBuffer[(Int, Int, Int)]()
       for (n <- nexts) {
         if (!doneEdges.contains((current.id, n.id))) {
           val id = doneEdges.size
+          edges += ((id, current.id, n.id))
           Log.info("Writing edge "+id+": "+current.id+" -> "+n.id)
           doneEdges += (current.id, n.id) -> id
           outSerializer.write(serializer.Edge(serializer.Id[serializer.Edge](id), serializer.Id[serializer.AbstractState](current.id), serializer.Id[serializer.AbstractState](n.id)))
         } else {
           Log.info("Skipping edge "+current.id+" -> "+n.id)
         }
+      }
+
+      if (config.analysisOutput) {
+        printJSONForState(current, edges.toList)
       }
 
       for (w <- current.getWriteAddrs; s <- System.readTable(w)) {
@@ -1048,7 +1069,33 @@ object Main {
     Log.info("Done!")
   }
 
-  def setLogging(level : String) = {
+  def printJSONForState(aState : AbstractState, edges : List[(Int, Int, Int)]): Unit = {
+    aState match {
+      case s : State =>
+        val json =
+          "state" ->
+            ("id" -> s.id) ~
+            ("class" -> s.stmt.sootMethod.getDeclaringClass.toString) ~
+            ("method" -> s.stmt.sootMethod.getName) ~
+            ("index" -> s.stmt.index)
+        Console.println(pretty(render(json)))
+      case s =>
+        val json =
+          "abstract" ->
+            ("id" -> s.id)
+        Console.println(pretty(render(json)))
+    }
+  }
+
+//  def jsonForEdges(edges : List[(Int, Int, Int)]): JsonAST.JObject = {
+//    var json: JsonAST.JObject = "edges" -> ()
+//    for (edge <- edges) {
+//      json = json ~ ()
+//    }
+//    return json
+//  }
+
+  def setLogging(level : String): Unit = {
     level.toLowerCase match {
       case "none" => Log.set(Log.LEVEL_NONE)
       case "error" => Log.set(Log.LEVEL_ERROR)
