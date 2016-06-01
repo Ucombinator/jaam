@@ -54,32 +54,66 @@ Note that you must have completed [building Jaam](#Building) before proceeding.
 To run the abstract interpreter, use the `bin/jaam-interpreter` script. You can
 supply a few options:
 
-| Option            | Effect                                                                |
-|-------------------|-----------------------------------------------------------------------|
-| `--classpath`     | Give a classpath to analyze within.                                   |
-| `-c`, `--class`   | Give a specific class within the classpath.                           |
-| `-m`, `--method`  | Give a specific method within the class from which to start analysis. |
-| `-o`, `--outfile` | Where to save the output from the analysis for use in the visualizer. |
+| Option            | Argument                                                |
+|-------------------|---------------------------------------------------------|
+| `--classpath`     | The classpath for the application to be analyzed.       |
+| `-c`, `--class`   | Fully qualified name of the main class to be analyzed.  |
+| `-m`, `--method`  | Method name of the main method to be analyzed.          |
+| `-o`, `--outfile` | Filename at which to save analysis output.              |
+| `-l`, `--log`     | Specify the logging level.                              |
 
-If you give no `--outfile` specification, the interpreter will use the fully
-qualified class name as a filename.
+The `--classpath` option takes a `:`-delimited list of directories or `.jar`
+files that are the classpath of the application to be analyzed.
 
-For example, to analyze the `Factorial` class located in the `examples` directory in this
-repository, first compile it to a .class file by running `javac *.java` in the `examples`
-directory. Then run the provided script from the top-level directory of the repository:
+The `--class` option takes the fully qualified name (e.g.
+`com.example.project.Main`) of the class containing the `main` method from
+which to start analyzing.
+
+The `--method` option takes the name of the `main` method from which to start
+analyzing. It is usually `main`.
+
+The `--outfile` option takes a filename at which to save the analysis output.
+This file is in a binary format and is conventionally named with a `.jaam`
+suffix. If you give no `--outfile` specification, the interpreter will use the
+fully qualified class name for the filename
+(e.g. `com.example.project.Main.jaam").
+
+The `--log` option takes a logging level to determine how much information to
+output to `stdout`. The levels are (in increasing order of verbosity): `none`,
+`error`, `warn`, `info`, `debug`, and `trace`. The default level is `info`.
+
+#### Example Usage for a `.class` File
+
+To analyze the `Factorial` class located in the `examples` directory in this
+repository, first compile it to a `.class` file by running `javac *.java` in
+the `examples` directory. Then run the interpreter from the top-level directory
+of the repository:
 
 ```
 ./bin/jaam-interpreter --classpath examples -c Factorial -m main
 ```
 
-It may take a moment. You will see some output to the console, and a file named
-`Factorial.jaam` will be created inside your current working directory. This
-file contains the raw output that will be used by the visualizer.
+You will see some output to the console, and a file named `Factorial.jaam` will
+be created inside your current working directory. This file contains the raw
+output that will be used by the visualizer.
 
-You can try this with most of the class files in `examples/`. `Static`
-currently generates an error when run. `Fib` and `Fibonacci` currently produce
-huge (and incorrect) graphs. The remaining tests work correctly, to our
+You can try this with most of the files in `examples/`. However, `Static`
+currently generates an error when run, and `Fib` and `Fibonacci` currently
+produce huge (and incorrect) graphs. The remaining tests work correctly, to our
 knowledge.
+
+#### Example Usage for a `.jar` File
+
+As another example, suppose `test.jar` contains the code to be analyzed and
+that the main class is `com.example.project.Main` with a main method named
+`main`.  You would then invoke the interpreter with:
+
+```
+./bin/jaam-interpreter --classpath test.jar -c com.example.project.Main -m main
+```
+
+This would generate a file named `com.example.project.Main.jaam` that contains
+the analysis results.
 
 #### Out-of-Memory Errors
 
@@ -93,16 +127,6 @@ JAVA_OPTS="-Xmx8g" {jaam-interpreter invocation}
 You can change '8g' to whatever amount of memory you need. You can also add
 other Java options for controlling stack size, etc.
 
-#### Analyzing JAR Files
-
-To analyze a `.jar` file, you must know the fully-qualified classpath of the
-main class, e.g. `com.company.project.Main`. Given a JAR file named `test.jar`
-and a Main class at `com.company.test.Main`, you would invoke the interpreter
-with:
-
-```
-./bin/jaam-interpreter --classpath test.jar -c com.company.project.Main -m main
-```
 
 ### Visualizer
 
