@@ -1014,6 +1014,12 @@ object Main {
     while (todo.nonEmpty) {
       //TODO refactor store widening code
       val current = todo.head
+
+      // Print out current state, if analysis is required.
+      if (config.analysisOutput) {
+        printJSONForState(current)
+      }
+
       Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
       val (nexts, initClasses) = System.next(current, globalInitClasses)
       //for (next <- nexts) {
@@ -1027,21 +1033,19 @@ object Main {
         outSerializer.write(n.toPacket)
       }
 
-      var edges = new ListBuffer[(Int, Int, Int)]()
       for (n <- nexts) {
         if (!doneEdges.contains((current.id, n.id))) {
           val id = doneEdges.size
-          edges += ((id, current.id, n.id))
+          // If analysis is needed, print the edge.
+          if (config.analysisOutput) {
+            printJSONForEdge(id, current.id, n.id)
+          }
           Log.info("Writing edge "+id+": "+current.id+" -> "+n.id)
           doneEdges += (current.id, n.id) -> id
           outSerializer.write(serializer.Edge(serializer.Id[serializer.Edge](id), serializer.Id[serializer.AbstractState](current.id), serializer.Id[serializer.AbstractState](n.id)))
         } else {
           Log.info("Skipping edge "+current.id+" -> "+n.id)
         }
-      }
-
-      if (config.analysisOutput) {
-        printJSONForState(current, edges.toList)
       }
 
       for (w <- current.getWriteAddrs; s <- System.readTable(w)) {
@@ -1069,7 +1073,16 @@ object Main {
     Log.info("Done!")
   }
 
-  def printJSONForState(aState : AbstractState, edges : List[(Int, Int, Int)]): Unit = {
+  def printJSONForEdge(id : Int, fromState : Int, toState : Int): Unit = {
+    val json =
+      "edge" ->
+        ("id" -> id) ~
+        ("from" -> fromState) ~
+        ("to" -> toState)
+    Console.println(pretty(render(json)))
+  }
+
+  def printJSONForState(aState : AbstractState): Unit = {
     aState match {
       case s : State =>
         val json =
@@ -1087,12 +1100,39 @@ object Main {
     }
   }
 
-//  def jsonForEdges(edges : List[(Int, Int, Int)]): JsonAST.JObject = {
-//    var json: JsonAST.JObject = "edges" -> ()
-//    for (edge <- edges) {
-//      json = json ~ ()
+// These methods were for the original implementation, where `edge` objects
+// appeared in a list inside the `state` objects.
+//
+//  def printJSONForState(aState : AbstractState, edges : List[(Int, Int, Int)]): Unit = {
+//    aState match {
+//      case s : State =>
+//        val json =
+//          "state" ->
+//            ("id" -> s.id) ~
+//            ("class" -> s.stmt.sootMethod.getDeclaringClass.toString) ~
+//            ("method" -> s.stmt.sootMethod.getName) ~
+//            ("index" -> s.stmt.index) ~
+//            ("edges" -> jsonForEdges(edges))
+//        Console.println(pretty(render(json)))
+//      case s =>
+//        val json =
+//          "abstract" ->
+//            ("id" -> s.id)
+//        Console.println(pretty(render(json)))
 //    }
-//    return json
+//  }
+//
+//  def jsonForEdges(edges : List[(Int, Int, Int)]): List[JsonAST.JObject] = {
+//    val jsonEdges = List[JsonAST.JObject]()
+//    for (edge <- edges) {
+//      val jsonEdge : JsonAST.JObject =
+//        ("id" -> edge._1) ~
+//        ("from" -> edge._2) ~
+//        ("to" -> edge._3)
+//      jsonEdges :+ jsonEdge
+//    }
+//    Console.println("edges: " + jsonEdges.toString)
+//    return jsonEdges
 //  }
 
   def setLogging(level : String): Unit = {
