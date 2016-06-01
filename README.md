@@ -60,6 +60,7 @@ supply a few options:
 | `-c`, `--class`   | Fully qualified name of the main class to be analyzed.  |
 | `-m`, `--method`  | Method name of the main method to be analyzed.          |
 | `-o`, `--outfile` | Filename at which to save analysis output.              |
+| `-l`, `--log`     | Specify the logging level.                              |
 
 The `--classpath` option takes a `:`-delimited list of directories or `.jar`
 files that are the classpath of the application to be analyzed.
@@ -71,11 +72,15 @@ which to start analyzing.
 The `--method` option takes the name of the `main` method from which to start
 analyzing. It is usually `main`.
 
-The `--outfile` options takes a filename at which to save the analysis output.
+The `--outfile` option takes a filename at which to save the analysis output.
 This file is in a binary format and is conventionally named with a `.jaam`
 suffix. If you give no `--outfile` specification, the interpreter will use the
 fully qualified class name for the filename
 (e.g. `com.example.project.Main.jaam").
+
+The `--log` option takes a logging level to determine how much information to
+output to `stdout`. The levels are (in increasing order of verbosity): `none`,
+`error`, `warn`, `info`, `debug`, and `trace`. The default level is `info`.
 
 #### Example Usage for a `.class` File
 
