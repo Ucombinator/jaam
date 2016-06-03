@@ -15,14 +15,10 @@ package org.ucombinator.jaam.interpreter
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.reflect.ClassTag
+
 import java.io.FileOutputStream
 
 import com.esotericsoftware.minlog.Log
-import org.json4s._
-import org.json4s.JsonDSL._
-import org.json4s.jackson.JsonMethods._
-
-import scala.collection.mutable.ListBuffer
 
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
@@ -574,9 +570,9 @@ case class State(val stmt : Stmt,
         case Some(h) => h(this, nextStmt, self, args)
         case None =>
           if (meth.getDeclaringClass.isJavaLibraryClass ||
-            self.isDefined &&
-            self.get.isInstanceOf[ObjectValue] &&
-            self.get.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
+              self.isDefined &&
+              self.get.isInstanceOf[ObjectValue] &&
+              self.get.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
             Snowflakes.warn(this.id, stmt, meth)
             val rtType = meth.getReturnType
             rtType match {
@@ -930,8 +926,7 @@ case class Config(
                    className: String = null,
                    methodName: String = null,
                    outputFile: String = null,
-                   logLevel: String = "info",
-                   analysisOutput: Boolean = false)
+                   logLevel: String = "info")
 
 object Main {
   def main(args : Array[String]) {
@@ -966,10 +961,6 @@ object Main {
             failure("Logging level must be one of 'none', 'error', 'warn', 'info', 'debug', or 'trace'")
       } text ("the level of logging verbosity; one of 'none', 'error', 'warn', 'info', 'debug', 'trace'")
 
-      opt[Unit]('A', "analysis") action {
-        (_, c) => c.copy(analysisOutput = true)
-      } text("outputs information for analysis; suppressing logging information")
-
       help("help") text("prints this usage text")
 
       override def showUsageOnError = true
@@ -982,13 +973,7 @@ object Main {
       case Some(config) =>
         Log.setLogger(new JaamLogger)
         Soot.initialize(config)
-        // Set logging level
-        if (config.analysisOutput) {
-          // The analysis output suppresses logging
-          Log.set(Log.LEVEL_NONE)
-        } else {
-          setLogging(config.logLevel)
-        }
+        setLogging(config.logLevel)
         defaultMode(config)
     }
   }
@@ -1014,12 +999,6 @@ object Main {
     while (todo.nonEmpty) {
       //TODO refactor store widening code
       val current = todo.head
-
-      // Print out current state, if analysis is required.
-      if (config.analysisOutput) {
-        printJSONForState(current)
-      }
-
       Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
       val (nexts, initClasses) = System.next(current, globalInitClasses)
       //for (next <- nexts) {
@@ -1036,10 +1015,6 @@ object Main {
       for (n <- nexts) {
         if (!doneEdges.contains((current.id, n.id))) {
           val id = doneEdges.size
-          // If analysis is needed, print the edge.
-          if (config.analysisOutput) {
-            printJSONForEdge(id, current.id, n.id)
-          }
           Log.info("Writing edge "+id+": "+current.id+" -> "+n.id)
           doneEdges += (current.id, n.id) -> id
           outSerializer.write(serializer.Edge(serializer.Id[serializer.Edge](id), serializer.Id[serializer.AbstractState](current.id), serializer.Id[serializer.AbstractState](n.id)))
@@ -1073,69 +1048,7 @@ object Main {
     Log.info("Done!")
   }
 
-  def printJSONForEdge(id : Int, fromState : Int, toState : Int): Unit = {
-    val json =
-      "edge" ->
-        ("id" -> id) ~
-        ("from" -> fromState) ~
-        ("to" -> toState)
-    Console.println(pretty(render(json)))
-  }
-
-  def printJSONForState(aState : AbstractState): Unit = {
-    aState match {
-      case s : State =>
-        val json =
-          "state" ->
-            ("id" -> s.id) ~
-            ("class" -> s.stmt.sootMethod.getDeclaringClass.toString) ~
-            ("method" -> s.stmt.sootMethod.getName) ~
-            ("index" -> s.stmt.index)
-        Console.println(pretty(render(json)))
-      case s =>
-        val json =
-          "abstract" ->
-            ("id" -> s.id)
-        Console.println(pretty(render(json)))
-    }
-  }
-
-// These methods were for the original implementation, where `edge` objects
-// appeared in a list inside the `state` objects.
-//
-//  def printJSONForState(aState : AbstractState, edges : List[(Int, Int, Int)]): Unit = {
-//    aState match {
-//      case s : State =>
-//        val json =
-//          "state" ->
-//            ("id" -> s.id) ~
-//            ("class" -> s.stmt.sootMethod.getDeclaringClass.toString) ~
-//            ("method" -> s.stmt.sootMethod.getName) ~
-//            ("index" -> s.stmt.index) ~
-//            ("edges" -> jsonForEdges(edges))
-//        Console.println(pretty(render(json)))
-//      case s =>
-//        val json =
-//          "abstract" ->
-//            ("id" -> s.id)
-//        Console.println(pretty(render(json)))
-//    }
-//  }
-//
-//  def jsonForEdges(edges : List[(Int, Int, Int)]): List[JsonAST.JObject] = {
-//    val jsonEdges = List[JsonAST.JObject]()
-//    for (edge <- edges) {
-//      val jsonEdge : JsonAST.JObject =
-//        ("id" -> edge._1) ~
-//        ("from" -> edge._2) ~
-//        ("to" -> edge._3)
-//      jsonEdges :+ jsonEdge
-//    }
-//    Console.println("edges: " + jsonEdges.toString)
-//    return jsonEdges
-//  }
-
-  def setLogging(level : String): Unit = {
+  def setLogging(level : String) = {
     level.toLowerCase match {
       case "none" => Log.set(Log.LEVEL_NONE)
       case "error" => Log.set(Log.LEVEL_ERROR)
