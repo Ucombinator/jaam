@@ -11,7 +11,7 @@ Jaam analyzes JVM bytecode to try to discover vulnerabilities and side channels.
 * [Usage](#usage) -- how to use Jaam
   * [Abstract Interpreter](#abstract-interpreter)
   * [Visualizer](#visualizer)
-  * [JSONifier](#jsonifier)
+  * [JSON Exporter](#json-exporter)
 * [Developers](#developers) -- more about Jaam's internals
 
 ## Disclaimer
@@ -144,16 +144,17 @@ example).
 By default, all possible nodes are collapsed. Double-click on them to expand the
 visualization graph.
 
-### JSONifier
+### JSON Exporter
 
-The JSONifier exists to help people looking to interface with our interpreter's
-results without the ability to interact with our serialization library.
+The JSON exporter exists to help people looking to interface with our
+interpreter's results without the ability to interact with our serialization
+library.
 
 After [building](#building) the project and [producing a `.jaam` file with the
 interpreter](#abstract-interpreter), produce JSON with:
 
 ```
-./bin/jaam-jsonifier $file
+./bin/jaam-json_exporter $file
 ```
 
 where `$file` is the path to your `.jaam` file. A JSON serialization will be

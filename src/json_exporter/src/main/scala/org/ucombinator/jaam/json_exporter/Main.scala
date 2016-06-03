@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.jsonifier
+package org.ucombinator.jaam.json_exporter
 
 /*****************************************
  * Reads .jaam files and outputs the information as JSON.

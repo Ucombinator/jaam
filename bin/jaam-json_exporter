@@ -3,7 +3,7 @@
 # Handles execution of JAAM's JSONifier for you!
 
 : ${JAAM_dir:="$(cd $(dirname $(dirname $0)); pwd -P)"}
-: ${JAAM_jsonifier:="${JAAM_dir}/jars/jaam-jsonifier.jar"}
+: ${JAAM_json_exporter:="${JAAM_dir}/jars/jaam-json_exporter.jar"}
 : ${JAAM_java:="java"}
 : ${JAAM_java_opts:=""}
 
@@ -12,4 +12,4 @@ chosen_java_opts=${JAVA_OPTS:-"${JAAM_java_opts}"}
 JAVA_OPTS="${chosen_java_opts}"
 
 # Do the execution.
-exec "${JAAM_java}" -jar "${JAAM_jsonifier}" "$@"
+exec "${JAAM_java}" -jar "${JAAM_json_exporter}" "$@"
