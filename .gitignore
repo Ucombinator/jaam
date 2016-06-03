@@ -1,5 +1,6 @@
 *~
 jars/jaam-interpreter.jar
+jars/jaam-jsonifier.jar
 jars/jaam-visualizer.jar
 target
 project/target
