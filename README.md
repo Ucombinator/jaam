@@ -11,6 +11,7 @@ Jaam analyzes JVM bytecode to try to discover vulnerabilities and side channels.
 * [Usage](#usage) -- how to use Jaam
   * [Abstract Interpreter](#abstract-interpreter)
   * [Visualizer](#visualizer)
+  * [JSONifier](#jsonifier)
 * [Developers](#developers) -- more about Jaam's internals
 
 ## Disclaimer
@@ -127,7 +128,6 @@ JAVA_OPTS="-Xmx8g" {jaam-interpreter invocation}
 You can change '8g' to whatever amount of memory you need. You can also add
 other Java options for controlling stack size, etc.
 
-
 ### Visualizer
 
 To run the visualizer, simply do:
@@ -143,6 +143,22 @@ example).
 
 By default, all possible nodes are collapsed. Double-click on them to expand the
 visualization graph.
+
+### JSONifier
+
+The JSONifier exists to help people looking to interface with our interpreter's
+results without the ability to interact with our serialization library.
+
+After [building](#building) the project and [producing a `.jaam` file with the
+interpreter](#abstract-interpreter), produce JSON with:
+
+```
+./bin/jaam-jsonifier $file
+```
+
+where `$file` is the path to your `.jaam` file. A JSON serialization will be
+output to the console's `stdout`. The serialization is a list containing JSON
+objects of types `state`, `errorState`, `abstractState`, and `edge`.
 
 ## Developers
 
