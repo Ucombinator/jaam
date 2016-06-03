@@ -11,7 +11,7 @@ import org.json4s._
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ListBuffer, Set}
 import scala.collection.JavaConversions._
 
 object Main {
@@ -20,12 +20,16 @@ object Main {
       // We need something to read in.
       System.err.println("Takes one argument: a .jaam file to read in.")
     }
-    // Iterate over each argument, assuming it to be a file name and jsonify
-    // that file.
+    // Assume the argument is the name of a file.
+    // TODO: Should probably do some error handling here.
     val jaamFile = args.head
     val jsonList = readJsonsFromFile(jaamFile)
     println(pretty(render(jsonList)))
   }
+
+  // These are used to keep track of unique objects (prevents duplication).
+  val uniqueNodes : Set[Id[Node]] = Set.empty[Id[Node]]
+  val uniqueEdges : Set[Id[Edge]] = Set.empty[Id[Edge]]
 
   /**
     * Opens a file (assumed to be a .jaam file) and converts its contents into a
@@ -41,18 +45,53 @@ object Main {
     val buffer = ListBuffer.empty[JValue]
     while ({packet = pi.read(); !packet.isInstanceOf[EOF]}) {
       packet match {
-        case s : State =>
-          buffer += jsonForState(s)
-        case es : ErrorState =>
-          buffer += jsonForErrorState(es)
-        case as : AbstractState =>
-          buffer += jsonForAbstractState(as)
-        case e : Edge =>
-          buffer += jsonForEdge(e)
+        case p : Node => processNode(p) match {
+          case Some(json) => buffer += json
+          case None => ()
+        }
+        case p : Edge => processEdge(p) match {
+          case Some(json) => buffer += json
+          case None => ()
+        }
       }
     }
     pi.close()
     buffer.toList
+  }
+
+  /**
+    * Takes a node and checks whether that node's ID exists already within this
+    * serialization. If it does not, this method returns the JSON serialization
+    * of the node. If the ID does exist, this method returns a None.
+    *
+    * @param node a JAAM Node
+    * @return An Option of a JValue (if the Node is unique) or a None.
+    */
+  def processNode(node : Node) : Option[JValue] = {
+    if (uniqueNodes.contains(node.id)) {
+      return None
+    }
+    uniqueNodes.add(node.id)
+    node match {
+      case n : State => Some(jsonForState(n))
+      case n : ErrorState => Some(jsonForErrorState(n))
+    }
+  }
+
+  /**
+    * Takes an edge and checks whether that edge's ID exists already within this
+    * serialization. If it does not, this method returns the JSON serialization
+    * of the edge. If the ID does exist, this method returns a None.
+    *
+    * @param edge a JAAM Edge
+    * @return An Option of a JValue (if the Edge is unique) or a None.
+    */
+  def processEdge(edge : Edge) : Option[JValue] = {
+    if (uniqueEdges.contains(edge.id)) {
+      return None
+    }
+    uniqueEdges.add(edge.id)
+    Some(jsonForEdge(edge))
   }
 
   /**
@@ -69,7 +108,7 @@ object Main {
       ("method"         -> state.stmt.method.getName) ~
       ("returns"        -> state.stmt.method.getReturnType.toString) ~
       ("parameterCount" -> state.stmt.method.getParameterCount) ~
-      ("parameters"     -> getJsonForStmtParameters(state.stmt)) ~
+      ("parameters"     -> jsonForStmtParameters(state.stmt)) ~
       ("sootMethod"     -> state.stmt.method.toString) ~
       ("sootStmt"       -> state.stmt.stmt.toString())
   }
@@ -82,7 +121,7 @@ object Main {
     * @param stmt a JAAM Serializer Stmt to get parameter types from
     * @return The list of parameter types as JValues.
     */
-  def getJsonForStmtParameters(stmt : Stmt) : List[JValue] = {
+  def jsonForStmtParameters(stmt : Stmt) : List[JValue] = {
     val buffer = ListBuffer[JValue]()
     val parameters = stmt.method.getParameterTypes
     for (parameter <- parameters) {
@@ -100,17 +139,6 @@ object Main {
   def jsonForErrorState(errorState : ErrorState) : JValue = {
     "errorState" ->
       ("id" -> errorState.id.id)
-  }
-
-  /**
-    * Converts a JAAM Serializer AbstractState into JSON.
-    *
-    * @param abstractState a JAAM AbstractState
-    * @return A JSON serialization.
-    */
-  def jsonForAbstractState(abstractState : AbstractState) : JValue = {
-    "abstractState" ->
-      ("id" -> abstractState.id.id)
   }
 
   /**
