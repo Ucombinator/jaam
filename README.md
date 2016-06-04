@@ -77,7 +77,7 @@ The `--outfile` option takes a filename at which to save the analysis output.
 This file is in a binary format and is conventionally named with a `.jaam`
 suffix. If you give no `--outfile` specification, the interpreter will use the
 fully qualified class name for the filename
-(e.g. `com.example.project.Main.jaam").
+(e.g. `com.example.project.Main.jaam`).
 
 The `--log` option takes a logging level to determine how much information to
 output to `stdout`. The levels are (in increasing order of verbosity): `none`,
