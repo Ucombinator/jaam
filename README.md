@@ -11,6 +11,7 @@ Jaam analyzes JVM bytecode to try to discover vulnerabilities and side channels.
 * [Usage](#usage) -- how to use Jaam
   * [Abstract Interpreter](#abstract-interpreter)
   * [Visualizer](#visualizer)
+  * [JSON Exporter](#json-exporter)
 * [Developers](#developers) -- more about Jaam's internals
 
 ## Disclaimer
@@ -76,7 +77,7 @@ The `--outfile` option takes a filename at which to save the analysis output.
 This file is in a binary format and is conventionally named with a `.jaam`
 suffix. If you give no `--outfile` specification, the interpreter will use the
 fully qualified class name for the filename
-(e.g. `com.example.project.Main.jaam").
+(e.g. `com.example.project.Main.jaam`).
 
 The `--log` option takes a logging level to determine how much information to
 output to `stdout`. The levels are (in increasing order of verbosity): `none`,
@@ -127,7 +128,6 @@ JAVA_OPTS="-Xmx8g" {jaam-interpreter invocation}
 You can change '8g' to whatever amount of memory you need. You can also add
 other Java options for controlling stack size, etc.
 
-
 ### Visualizer
 
 To run the visualizer, simply do:
@@ -143,6 +143,23 @@ example).
 
 By default, all possible nodes are collapsed. Double-click on them to expand the
 visualization graph.
+
+### JSON Exporter
+
+The JSON exporter exists to help people looking to interface with our
+interpreter's results without the ability to interact with our serialization
+library.
+
+After [building](#building) the project and [producing a `.jaam` file with the
+interpreter](#abstract-interpreter), produce JSON with:
+
+```
+./bin/jaam-json_exporter $file
+```
+
+where `$file` is the path to your `.jaam` file. A JSON serialization will be
+output to the console's `stdout`. The serialization is a list containing JSON
+objects of types `state`, `errorState`, `abstractState`, and `edge`.
 
 ## Developers
 

@@ -19,6 +19,8 @@ lazy val interpreter = (project in file("src/interpreter")).settings(commonSetti
 
 lazy val visualizer = (project in file("src/visualizer")).settings(commonSettings).dependsOn(serializer)
 
+lazy val json_exporter = (project in file("src/json_exporter")).settings(commonSettings).dependsOn(serializer)
+
 ////////////////////////////////////////
 // Global settings
 ////////////////////////////////////////

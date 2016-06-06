@@ -1,6 +1,6 @@
 *~
-jars/jaam-interpreter.jar
-jars/jaam-visualizer.jar
+jars/*.jar
+!jars/sbt-launch.jar
 target
 project/target
 project/project/target

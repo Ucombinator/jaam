@@ -574,9 +574,9 @@ case class State(val stmt : Stmt,
         case Some(h) => h(this, nextStmt, self, args)
         case None =>
           if (meth.getDeclaringClass.isJavaLibraryClass ||
-            self.isDefined &&
-            self.get.isInstanceOf[ObjectValue] &&
-            self.get.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
+              self.isDefined &&
+              self.get.isInstanceOf[ObjectValue] &&
+              self.get.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
             Snowflakes.warn(this.id, stmt, meth)
             DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
           } else if (meth.isNative) {
