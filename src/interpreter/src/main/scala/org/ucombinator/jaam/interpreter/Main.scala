@@ -172,7 +172,11 @@ case class OneCFABasePointer(stmt : Stmt, fp : FramePointer, from : From) extend
 case object InitialBasePointer extends BasePointer
 // Note that due to interning, strings and classes may share base pointers with each other
 // Oh, and class loaders are a headache(!)
-case class StringBasePointer(val string : String) extends BasePointer
+case class StringBasePointer(val string : String) extends BasePointer {
+  override def toString = {
+    "StringBasePointer(" + string.replace("\n", "\\n") + ")"
+  }
+}
 // we remvoe the argument of ClassBasePointer, to make all ClassBasePointer points to the same
 case class ClassBasePointer(val name : String) extends BasePointer
 //case object ClassBasePointer extends BasePointer
@@ -574,16 +578,7 @@ case class State(val stmt : Stmt,
             self.get.isInstanceOf[ObjectValue] &&
             self.get.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
             Snowflakes.warn(this.id, stmt, meth)
-            val rtType = meth.getReturnType
-            rtType match {
-              case _ : VoidType => NoOpSnowflake(this, nextStmt, self, args)
-              case _ : PrimType => ReturnSnowflake(D.atomicTop)(this, nextStmt, self, args)
-              case t : ArrayType =>
-                ReturnArraySnowflake(t.baseType.toString, t.numDimensions)
-                  .apply(this, nextStmt, self, args)
-              case rt: RefType =>
-                ReturnObjectSnowflake(rt.getClassName)(this, nextStmt, self, args)
-            }
+            DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
           } else if (meth.isNative) {
             Log.warn("Native method without a snowflake in state "+this.id+". May be unsound. stmt = " + stmt)
             meth.getReturnType match {
@@ -900,6 +895,21 @@ object System {
     val nexts = state.next()
     store.on = false
     kstore.on = false
+  
+    Log.debug("readAddr: " + store.readAddrs)
+    for (addr <- store.readAddrs) {
+      if (store.contains(addr))
+        Log.debug("read content: " + addr + " " + store(addr))
+      else
+        Log.debug("no content for " + addr)
+    }
+    Log.debug("writeAddr: " + store.writeAddrs)
+    for (addr <- store.writeAddrs) {
+      if (store.contains(addr))
+        Log.debug("write content: " + addr + " " + store(addr))
+      else
+        Log.debug("no content for " + addr)
+    }
 
     for (addr <- store.readAddrs) {
       addToReadTable(addr, state)
@@ -1001,10 +1011,6 @@ object Main {
       val current = todo.head
       Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
       val (nexts, initClasses) = System.next(current, globalInitClasses)
-      //for (next <- nexts) {
-      //  window.addNext(current, next)
-      //}
-
       val newTodo = nexts.toList.filter(!done.contains(_))
 
       for (n <- newTodo) {

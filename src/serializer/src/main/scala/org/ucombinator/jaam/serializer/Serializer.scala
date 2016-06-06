@@ -265,7 +265,6 @@ class JaamKryo extends KryoBase {
     val found = input.readString()
 
     if (r == null) { return null }
-
     if (found != null) {
       val expected = classSignature(r.getType)
 
