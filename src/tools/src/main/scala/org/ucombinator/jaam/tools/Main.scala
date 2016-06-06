@@ -34,7 +34,10 @@ object Main {
       note("")
       cmd("info") action { (_, c) =>
         c.copy(mode = "info")
-      } text("Get simple information about a JAAM interpretation.")
+      } text("Get simple information about a JAAM interpretation.") children(
+        arg[String]("<file>") action { (x, c) => c.copy(targetFile = x) }
+          text("a .jaam file to be analyzed")
+      )
     }
 
     parser.parse(args, Config()) match {
@@ -48,7 +51,7 @@ object Main {
             case Some(state) => Print.printStateFromFile(config.targetFile, state)
           }
           case "truncate" => Truncate.truncateFile(config.targetFile)
-          case "info" => println("info")
+          case "info" => Info.analyzeForInfo(config.targetFile)
           case _ => println("Invalid command given: " + config.mode)
         }
     }
