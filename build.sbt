@@ -15,6 +15,8 @@ disablePlugins(sbtassembly.AssemblyPlugin)
 
 lazy val serializer = (project in file("src/serializer")).settings(commonSettings)
 
+lazy val tools = (project in file("src/tools")).settings(commonSettings).dependsOn(serializer)
+
 lazy val interpreter = (project in file("src/interpreter")).settings(commonSettings).dependsOn(serializer)
 
 lazy val visualizer = (project in file("src/visualizer")).settings(commonSettings).dependsOn(serializer)
