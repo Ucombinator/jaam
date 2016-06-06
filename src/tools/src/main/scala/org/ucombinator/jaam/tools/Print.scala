@@ -16,12 +16,31 @@ object Print {
     var packet: Packet = null
     while ({packet = pi.read(); !packet.isInstanceOf[EOF]}) {
       packet match {
-        case p : Node =>
-          currentID = p.id.id
-          printNode(p)
-        case p : Edge =>
-          currentID = p.id.id
-          printEdge(p)
+        case p : Node => printNode(p)
+        case p : Edge => printEdge(p)
+      }
+    }
+    pi.close()
+  }
+
+  object FoundNode extends Exception {}
+
+  def printStateFromFile(jaamFile : String, stateID : Int) = {
+    val stream = new FileInputStream(jaamFile)
+    val pi = new PacketInput(stream)
+    var packet: Packet = null
+    try {
+      while ({packet = pi.read(); !packet.isInstanceOf[EOF]}) {
+        packet match {
+          case p: Node => if (p.id.id == stateID) {
+            throw FoundNode
+          }
+          case _ => ()
+        }
+      }
+    } catch {
+      case FoundNode => packet match {
+        case p : Node => printNode(p)
       }
     }
     pi.close()
@@ -39,6 +58,7 @@ object Print {
   }
 
   def printState(state : State) = {
+    currentID = state.id.id
     printIndentedLine(0, "State")
     printIndentedLine(1, "id: " + state.id.id)
     printIndentedLine(1, "index: " + state.stmt.index)
@@ -56,6 +76,7 @@ object Print {
   }
 
   def printErrorState(errorState : ErrorState) = {
+    currentID = errorState.id.id
     printIndentedLine(0, "ErrorState")
     printIndentedLine(1, "id: " + errorState.id.id)
   }
@@ -63,6 +84,7 @@ object Print {
   def printEdge(edge : Edge) = {
     if (! uniqueEdges.contains(edge.id)) {
       uniqueEdges.add(edge.id)
+      currentID = edge.id.id
 
       printIndentedLine(0, "Edge")
       printIndentedLine(1, "id: " + edge.id.id)

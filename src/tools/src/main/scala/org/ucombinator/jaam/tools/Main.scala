@@ -1,8 +1,9 @@
 package org.ucombinator.jaam.tools
 
 case class Config(
-                 mode : String = null,
-                 target : String = null
+                   mode : String = null,
+                   targetFile : String = null,
+                   targetState : Integer = null
                  )
 
 object Main {
@@ -16,7 +17,9 @@ object Main {
       cmd("print") action { (_, c) =>
         c.copy(mode = "print")
       } text("Print a JAAM file in human-readable format") children(
-        arg[String]("<file>") action { (x, c) => c.copy(target = x) }
+        opt[Int]("state") action { (x, c) => c.copy(targetState = x) }
+          text("a specific state ID to print"),
+        arg[String]("<file>") action { (x, c) => c.copy(targetFile = x) }
           text("a .jaam file to be printed")
       )
 
@@ -37,7 +40,10 @@ object Main {
 
       case Some(config) =>
         config.mode match {
-          case "print" => Print.printFile(config.target)
+          case "print" => Option(config.targetState) match {
+            case None => Print.printFile(config.targetFile)
+            case Some(state) => Print.printStateFromFile(config.targetFile, state)
+          }
           case "truncate" => println("truncate")
           case "info" => println("info")
           case _ => println("Invalid command given: " + config.mode)
