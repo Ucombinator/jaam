@@ -26,7 +26,10 @@ object Main {
       note("")
       cmd("truncate") action { (_, c) =>
         c.copy(mode = "truncate")
-      } text("Amend an aborted JAAM serialization to allow reading.")
+      } text("Amend an aborted JAAM serialization to allow reading.") children(
+        arg[String]("<file>") action { (x, c) => c.copy(targetFile = x) }
+          text("a .jaam file to be truncated")
+      )
 
       note("")
       cmd("info") action { (_, c) =>
@@ -44,7 +47,7 @@ object Main {
             case None => Print.printFile(config.targetFile)
             case Some(state) => Print.printStateFromFile(config.targetFile, state)
           }
-          case "truncate" => println("truncate")
+          case "truncate" => Truncate.truncateFile(config.targetFile)
           case "info" => println("info")
           case _ => println("Invalid command given: " + config.mode)
         }
