@@ -84,7 +84,8 @@ case class KontStack(k : Kont) {
                       store : Store,
                       initializedClasses : Set[SootClass]) : Set[AbstractState] = {
     if (!exception.isInstanceOf[ObjectValue])
-      throw new Exception("Impossible throw: stmt = " + stmt + "; value = " + exception)
+      Log.warn("Impossible throw: stmt = " + stmt + "; value = " + exception)
+      //throw new Exception("Impossible throw: stmt = " + stmt + "; value = " + exception)
 
     var visited = Set[(Stmt, FramePointer, KontStack)]()
 
@@ -553,8 +554,10 @@ case class State(val stmt : Stmt,
     //
     // Note that Hierarchy.resolveConcreteDispath should be able to do this, but seems to be implemented wrong
     def overrides(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
+      Log.debug("curr: " + curr.toString)
       val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
       if (curr_m == null) {
+        Log.debug("root_m: " + root_m.toString)
         overrides(curr.getSuperclass(), root_m)
       }
       else if (root_m.getDeclaringClass.isInterface || AccessManager.isAccessLegal(curr_m, root_m)) { List(curr_m) }
@@ -618,6 +621,10 @@ case class State(val stmt : Stmt,
       case expr : InstanceInvokeExpr =>
         ((for (v <- eval(expr.getBase()).values) yield {
           v match {
+            case ObjectValue(_, SnowflakeBasePointer(_)) => {
+              val meth = expr.getMethod()
+              dispatch(Some(v), meth)
+            }
             case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, expr.getMethod.getDeclaringClass) => {
               val objectClass = if (expr.isInstanceOf[SpecialInvokeExpr]) null else sootClass
               val meth = (if (expr.isInstanceOf[SpecialInvokeExpr]) expr.getMethod() else overrides(objectClass, expr.getMethod()).head)
