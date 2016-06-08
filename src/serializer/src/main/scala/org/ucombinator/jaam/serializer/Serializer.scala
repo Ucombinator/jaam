@@ -130,7 +130,7 @@ abstract class Packet {}
 case class EOF () extends Packet {}
 
 // Declare a transition edge between two 'State' nodes
-case class Edge(id : Id[Edge], src : Id[AbstractState], dst : Id[AbstractState]) extends Packet {}
+case class Edge(id : Id[Edge], src : Id[Node], dst : Id[Node]) extends Packet {}
 
 // Declare 'AbstractState' nodes
 abstract class Node(val id : Id[Node]) extends Packet {}
@@ -265,7 +265,6 @@ class JaamKryo extends KryoBase {
     val found = input.readString()
 
     if (r == null) { return null }
-
     if (found != null) {
       val expected = classSignature(r.getType)
 

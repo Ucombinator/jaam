@@ -80,6 +80,42 @@ case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
   }
 }
 
+object GlobalSnowflakeAddr extends Addr
+
+case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
+  override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
+    for (arg <- args) 
+      state.store.update(GlobalSnowflakeAddr, arg)
+
+    self match {
+      case Some(target) => state.store.update(GlobalSnowflakeAddr, D(Set[Value](target)))
+      case None =>
+    }
+
+    val rtType = meth.getReturnType
+    rtType match {
+      case _ : VoidType => NoOpSnowflake(state, nextStmt, self, args)
+      case _ : PrimType => 
+        state.store(GlobalSnowflakeAddr)
+        ReturnSnowflake(D.atomicTop)(state, nextStmt, self, args)
+      case at : ArrayType =>
+        val states = ReturnArraySnowflake(at.baseType.toString, at.numDimensions)(state, nextStmt, self, args)
+        val bp = state.malloc()
+        state.store.update(Set[Addr](ArrayRefAddr(bp)), state.store(GlobalSnowflakeAddr))
+        states
+      case rt : RefType => 
+        val states = ReturnObjectSnowflake(rt.getClassName)(state, nextStmt, self, args)
+        state.stmt.sootStmt match {
+          case stmt : DefinitionStmt =>
+            Log.debug(state.store(GlobalSnowflakeAddr).toString)
+            state.store.update(state.addrsOf(stmt.getLeftOp), state.store(GlobalSnowflakeAddr))
+          case _ =>
+        }
+        states
+    }
+  }
+}
+
 case class ReturnArraySnowflake(baseType: String, dim: Int) extends NonstaticSnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
     val sizes = List.fill(dim)(D.atomicTop)
@@ -289,7 +325,7 @@ object HashMapSnowflakes {
               // D.atomicTop is for the null returned when the key is not found
               // TODO: throw exception
               state.store.update(state.addrsOf(stmt.getLeftOp),
-                state.store(Set[Addr](ArrayListSnowflakes.RefAddr(bp))))
+                state.store(Set[Addr](ArrayRefAddr(bp))))
             case _ =>
               Snowflakes.warn(state.id, null, null)
               extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
@@ -353,10 +389,6 @@ object ArrayListSnowflakes {
   Snowflakes.table.put(MethodDescription("java.util.ArrayList", SootMethod.constructorName, List(), "void"), ArrayListSnowflakes.init())
   Snowflakes.table.put(MethodDescription("java.util.ArrayList", "add", List("java.lang.Object"), "boolean"), ArrayListSnowflakes.add())
   Snowflakes.table.put(MethodDescription("java.util.ArrayList", "iterator", List(), "java.util.Iterator"), ArrayListSnowflakes.iterator())
-  //  Snowflakes.table.put(MethodDescription("java.util.HashMap", "get", List("java.lang.Object"), "java.lang.Object"), HashMapSnowflakes.get())
-
-  case class LengthAddr(val bp : BasePointer) extends Addr
-  case class RefAddr(val bp : BasePointer) extends Addr
 
   case class init() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
@@ -366,8 +398,8 @@ object ArrayListSnowflakes {
       var extraStates = Set[AbstractState]()
       self match {
         case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
-          state.store.update(LengthAddr(bp), D.atomicTop)
-          state.store.update(RefAddr(bp), D.atomicTop) // D.atomicTop is so we don't get undefiend addrs exception
+          state.store.update(ArrayLengthAddr(bp), D.atomicTop)
+          state.store.update(ArrayRefAddr(bp), D.atomicTop) // D.atomicTop is so we don't get undefiend addrs exception
         case _ =>
           Snowflakes.warn(state.id, null, null)
           extraStates ++= NoOpSnowflake(state, nextStmt, Some(self), args)
@@ -399,7 +431,7 @@ object ArrayListSnowflakes {
       val value = args(0)
       self match {
         case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
-          state.store.update(RefAddr(bp), value)
+          state.store.update(ArrayRefAddr(bp), value)
         case _ => {} // already handled by the code in the first half of this function
       }
 
@@ -549,18 +581,18 @@ object Snowflakes {
   }
 
   // For running Image Processor
-  table.put(MethodDescription("java.lang.System", "getProperty", List("java.lang.String"), "java.lang.String"),
-    ReturnSnowflake(D(Set(ObjectValue(Soot.classes.String, StringBasePointer("returns from getProperty"))))))
+  //table.put(MethodDescription("java.lang.System", "getProperty", List("java.lang.String"), "java.lang.String"),
+  //  ReturnSnowflake(D(Set(ObjectValue(Soot.classes.String, StringBasePointer("returns from getProperty"))))))
   //table.put(MethodDescription("java.nio.file.Paths", "get", List("java.lang.String", "java.lang.String[]"), "java.nio.file.Path"), ReturnObjectSnowflake("java.nio.file.Path"))
   //table.put(MethodDescription("java.util.HashMap", SootMethod.constructorName, List(), "void"),
   //  ReturnObjectSnowflake("java.util.HashMap"))
 
   // java.io.PrintStream
-  table.put(MethodDescription("java.io.PrintStream", "println", List("int"), "void"), NoOpSnowflake)
-  table.put(MethodDescription("java.io.PrintStream", "println", List("java.lang.String"), "void"), NoOpSnowflake)
+  //table.put(MethodDescription("java.io.PrintStream", "println", List("int"), "void"), NoOpSnowflake)
+  //table.put(MethodDescription("java.io.PrintStream", "println", List("java.lang.String"), "void"), NoOpSnowflake)
 
-  HashMapSnowflakes // this triggers HashMapSnowflakes to add snowflake entries
-  ArrayListSnowflakes
+  //HashMapSnowflakes // this triggers HashMapSnowflakes to add snowflake entries
+  //ArrayListSnowflakes
   ClassSnowflakes
 
   // java.lang.Class
@@ -591,8 +623,9 @@ object Snowflakes {
   //private native java.lang.reflect.Method[] getDeclaredMethods0(boolean);
   //private native java.lang.reflect.Constructor<T>[] getDeclaredConstructors0(boolean);
   //private native java.lang.Class<?>[] getDeclaredClasses0();
-  table.put(MethodDescription("java.lang.Class", "desiredAssertionStatus", List(), "boolean"), ReturnSnowflake(D.atomicTop))
   //private static native boolean desiredAssertionStatus0(java.lang.Class<?>);
+
+  //table.put(MethodDescription("java.lang.Class", "desiredAssertionStatus", List(), "boolean"), ReturnSnowflake(D.atomicTop))
 
   private def updateStore(oldStore : Store, clas : String, field : String, typ : String) =
     oldStore.update(StaticFieldAddr(Soot.getSootClass(clas).getFieldByName(field)),
@@ -610,6 +643,7 @@ object Snowflakes {
       }
     })
 
+  /*
   table.put(MethodDescription("java.security.AccessController", "checkPermission", List("java.security.Permission"), "void"), NoOpSnowflake)
 
   table.put(MethodDescription("java.security.AccessController", "getStackAccessControlContext",
@@ -626,8 +660,8 @@ object Snowflakes {
     ReturnSnowflake(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer("TODO:unknown"))))))
   table.put(MethodDescription("java.lang.Class", "getComponentType", List(), "java.lang.Class"),
     ReturnSnowflake(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer("TODO:unknown"))))))
-
   table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"), ReturnObjectSnowflake("java.lang.Object"))
+  */
 
   table.put(MethodDescription("java.lang.System", "arraycopy",
     List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new StaticSnowflakeHandler {
@@ -654,6 +688,7 @@ object Snowflakes {
     })
 
   //private static native void registerNatives();
+  /*
   table.put(MethodDescription("java.lang.System", "setIn0", List("java.io.InputStream"), "void"),
     PutStaticSnowflake("java.lang.System", "in"))
   table.put(MethodDescription("java.lang.System", "setOut0", List("java.io.PrintStream"), "void"),
@@ -666,7 +701,6 @@ object Snowflakes {
   table.put(MethodDescription("java.lang.System", "identityHashCode", List("java.lang.Object"), "int"), ReturnSnowflake(D.atomicTop))
   //private static native java.util.Properties initProperties(java.util.Properties);
   //public static native java.lang.String mapLibraryName(java.lang.String);
-
   // java.lang.Throwable
   table.put(MethodDescription("java.lang.Throwable", SootMethod.constructorName, List(), "void"), NoOpSnowflake)
   //table.put(MethodDescription("java.lang.Throwable", SootMethod.staticInitializerName, List(), "void"), NoOpSnowflake)
@@ -678,4 +712,5 @@ object Snowflakes {
 
   // java.util.ArrayList
   //table.put(MethodDescription("java.util.ArrayList", SootMethod.constructorName, List("int"), "void"), NoOpSnowflake)
+  */
 }
