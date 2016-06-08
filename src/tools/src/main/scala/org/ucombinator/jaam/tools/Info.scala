@@ -6,9 +6,9 @@ import scala.collection.mutable
 import org.ucombinator.jaam.serializer._
 
 object Info {
-  private val uniqueNodes = mutable.Map.empty[Int, Node]
-  private val uniqueEdges = mutable.Map.empty[Int, Edge]
-  private val missingNodes = mutable.Set.empty[Int]
+  private val uniqueNodes = mutable.Map.empty[Id[Node], Node]
+  private val uniqueEdges = mutable.Map.empty[Id[Edge], Edge]
+  private val missingNodes = mutable.Set.empty[Id[Node]]
   private var hangingEdges = 0
 
   def analyzeForInfo(jaamFile : String) = {
@@ -19,21 +19,21 @@ object Info {
     while ({packet = pi.read(); !packet.isInstanceOf[EOF]}) {
       packet match {
         case p : Node =>
-          uniqueNodes(p.id.id) = p
+          uniqueNodes(p.id) = p
           if (firstState == null) {
             p match {
               case s : State => firstState = s
               case _ => ()
             }
           }
-        case p : Edge => uniqueEdges(p.id.id) = p
+        case p : Edge => uniqueEdges(p.id) = p
       }
     }
     countHangingEdgesAndFindMissingStates()
     printInfo(jaamFile, firstState)
   }
 
-  private def nodeExists(id : Int) : Boolean = {
+  private def nodeExists(id : Id[Node]) : Boolean = {
     if (! uniqueNodes.contains(id)) {
       missingNodes.add(id)
       return false
@@ -43,7 +43,7 @@ object Info {
 
   private def countHangingEdgesAndFindMissingStates() = {
     for (edge <- uniqueEdges.values) {
-      if (! nodeExists(edge.src.id) || ! nodeExists(edge.dst.id)) {
+      if (! nodeExists(edge.src) || ! nodeExists(edge.dst)) {
         hangingEdges += 1
       }
     }
