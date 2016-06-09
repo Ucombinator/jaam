@@ -132,11 +132,16 @@ case class EOF () extends Packet {}
 // Declare a transition edge between two 'State' nodes
 case class Edge(id : Id[Edge], src : Id[Node], dst : Id[Node]) extends Packet {}
 
-// Declare 'AbstractState' nodes
+// Declare the Node - the counterpart to the edge
 abstract class Node(val id : Id[Node]) extends Packet {}
+
+// Declare 'AbstractState' nodes
 abstract class AbstractState(override val id : Id[Node]) extends Node(id) {}
 case class ErrorState(override val id : Id[Node]) extends AbstractState(id) {}
 case class State(override val id : Id[Node], stmt : Stmt, framePointer : String, kontStack : String) extends AbstractState(id) {}
+
+// Declare 'MissingState' nodes, used by jaam.tools.Validate
+case class MissingState(override val id : Id[Node]) extends Node(id) {}
 
 //case class Group(id : Id[Node], states : java.util.List[Node], labels : String)
 
