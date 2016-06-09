@@ -88,7 +88,7 @@ class PacketOutput(private val output : OutputStream) {
   // Flushes output
   def flush() = out.flush()
 
-  // Closes this 'PacketInput'
+  // Closes this 'PacketOutput'
   def close() : Unit = {
     this.write(EOF())
     out.close()

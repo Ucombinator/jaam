@@ -8,7 +8,7 @@ import org.ucombinator.jaam.serializer._
 object Info {
   private val uniqueNodes = mutable.Map.empty[Id[Node], Node]
   private val uniqueEdges = mutable.Map.empty[Id[Edge], Edge]
-  private val missingNodes = mutable.Set.empty[Id[Node]]
+  private val missingNodes = mutable.Map.empty[Id[Node], Int]
   private var hangingEdges = 0
 
   def analyzeForInfo(jaamFile : String) = {
@@ -35,7 +35,7 @@ object Info {
 
   private def nodeExists(id : Id[Node]) : Boolean = {
     if (! uniqueNodes.contains(id)) {
-      missingNodes.add(id)
+      missingNodes(id) += 1
       return false
     }
     true
@@ -57,11 +57,14 @@ object Info {
     println("    # of States: " + states)
     println("    # of Edges: " + edges)
     println("    # of Missing States: " + missingStates)
+    if (missingStates > 0) {
+      println("        " +
+        (for ((missingNode, references) <- missingNodes)
+          yield missingNode.id + " (" + references + ")").toArray.mkString(", "))
+    }
     println("    # of Hanging Edges: " + hangingEdges)
     if (initialState != null) {
       println("    Initial State:")
-      println("        class: " + initialState.stmt.method.getDeclaringClass.toString)
-      println("        method: " + initialState.stmt.method.getName)
       println("        sootMethod: " + initialState.stmt.method.toString)
       println("        sootStmt: " + initialState.stmt.stmt.toString())
     }
