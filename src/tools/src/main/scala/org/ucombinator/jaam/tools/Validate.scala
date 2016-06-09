@@ -37,7 +37,9 @@ object Validate {
     } catch {
       case e : IOException => // Unable to pi.read() successfully
         endedPrematurely = true
-      case e => sys.error("Something unexpected went wrong.")
+      case e : Throwable =>
+        sys.error("Something unexpected went wrong.")
+        e.printStackTrace()
     }
 
     pi.close()

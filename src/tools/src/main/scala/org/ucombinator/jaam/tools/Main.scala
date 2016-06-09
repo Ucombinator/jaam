@@ -3,7 +3,10 @@ package org.ucombinator.jaam.tools
 case class Config(
                    mode : String = null,
                    targetFile : String = null,
-                   targetState : Integer = null
+                   targetState : Integer = null,
+                   fixEOF : Boolean = false,
+                   addMissingStates : Boolean = false,
+                   removeMissingStates : Boolean = false
                  )
 
 object Main {
@@ -27,6 +30,12 @@ object Main {
       cmd("validate") action { (_, c) =>
         c.copy(mode = "validate")
       } text("Amend an aborted JAAM serialization to allow reading.") children(
+        opt[Unit]("fixEOF") action { (_, c) => c.copy(fixEOF = true) }
+          text("whether to amend a JAAM file which ends abruptly"),
+        opt[Unit]("addMissingStates") action { (_, c) => c.copy(addMissingStates =  true) }
+          text("find hanging edges and add MissingState states so they go somewhere"),
+        opt[Unit]("removeMissingStates") action { (_, c) => c.copy(removeMissingStates = true) }
+          text("remove any MissingState states found in the serialization; overrides --addMissingStates"),
         arg[String]("<file>") action { (x, c) => c.copy(targetFile = x) }
           text("a .jaam file to be truncated")
       )
@@ -50,7 +59,11 @@ object Main {
             case None => Print.printFile(config.targetFile)
             case Some(state) => Print.printStateFromFile(config.targetFile, state)
           }
-          case "validate" => Validate.validateFile(config.targetFile)
+          case "validate" => Validate.validateFile(
+            jaamFile = config.targetFile,
+            shouldAppendMissingEOF = config.fixEOF,
+            addMissingStates = config.addMissingStates,
+            removeMissingStates = config.removeMissingStates)
           case "info" => Info.analyzeForInfo(config.targetFile)
           case _ => println("Invalid command given: " + config.mode)
         }
