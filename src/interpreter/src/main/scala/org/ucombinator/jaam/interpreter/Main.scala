@@ -1030,7 +1030,7 @@ object Main {
           val id = doneEdges.size
           Log.info("Writing edge "+id+": "+current.id+" -> "+n.id)
           doneEdges += (current.id, n.id) -> id
-          outSerializer.write(serializer.Edge(serializer.Id[serializer.Edge](id), serializer.Id[serializer.AbstractState](current.id), serializer.Id[serializer.AbstractState](n.id)))
+          outSerializer.write(serializer.Edge(serializer.Id[serializer.Edge](id), serializer.Id[serializer.Node](current.id), serializer.Id[serializer.Node](n.id)))
         } else {
           Log.info("Skipping edge "+current.id+" -> "+n.id)
         }
