@@ -576,7 +576,7 @@ case class State(val stmt : Stmt,
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, self, args)
         case None =>
-          if (meth.getDeclaringClass.isJavaLibraryClass ||
+          if (Soot.isJavaLibraryClass(meth.getDeclaringClass) ||
               self.isDefined &&
               self.get.isInstanceOf[ObjectValue] &&
               self.get.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
@@ -693,7 +693,7 @@ case class State(val stmt : Stmt,
         val meth = sootClass.getMethodByNameUnsafe(SootMethod.staticInitializerName)
 
         if (meth != null) {
-          if (meth.getDeclaringClass.isJavaLibraryClass) {
+          if (Soot.isJavaLibraryClass(meth.getDeclaringClass)) {
             val newState = this.copyState(initializedClasses=initializedClasses+sootClass)
             newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
               java.util.Collections.emptyList()), None, stmt)
@@ -738,7 +738,7 @@ case class State(val stmt : Stmt,
 
   def newExpr(lhsAddr : Set[Addr], sootClass : SootClass, store : Store) : Store = {
     val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
-    if (sootClass.isJavaLibraryClass || Snowflakes.contains(md)) {
+    if (Soot.isJavaLibraryClass(sootClass) || Snowflakes.contains(md)) {
       val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
       val d = D(Set(obj))
       store.update(lhsAddr, d)
