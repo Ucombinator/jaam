@@ -3,7 +3,7 @@ package org.ucombinator.jaam.tools
 case class Config(
                    mode : String = null,
                    targetFile : String = null,
-                   targetState : Integer = null,
+                   targetNode : Integer = null,
                    fixEOF : Boolean = false,
                    addMissingStates : Boolean = false,
                    removeMissingStates : Boolean = false,
@@ -21,7 +21,7 @@ object Main {
       cmd("print") action { (_, c) =>
         c.copy(mode = "print")
       } text("Print a JAAM file in human-readable format") children(
-        opt[Int]("state") action { (x, c) => c.copy(targetState = x) }
+        opt[Int]("node") action { (x, c) => c.copy(targetNode = x) }
           text("a specific state ID to print"),
         arg[String]("<file>") action { (x, c) => c.copy(targetFile = x) }
           text("a .jaam file to be printed")
@@ -67,9 +67,9 @@ object Main {
 
       case Some(config) =>
         config.mode match {
-          case "print" => Option(config.targetState) match {
+          case "print" => Option(config.targetNode) match {
             case None => Print.printFile(config.targetFile)
-            case Some(state) => Print.printStateFromFile(config.targetFile, state)
+            case Some(state) => Print.printNodeFromFile(config.targetFile, state)
           }
           case "validate" => Validate.validateFile(
             jaamFile = config.targetFile,

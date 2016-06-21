@@ -21,14 +21,15 @@ object Print {
 
   object FoundNode extends Exception {}
 
-  def printStateFromFile(jaamFile : String, stateID : Int) = {
+  def printNodeFromFile(jaamFile : String, nodeIDVal : Int) = {
+    val nodeID = Id[Node](nodeIDVal)
     val stream = new FileInputStream(jaamFile)
     val pi = new PacketInput(stream)
     var packet: Packet = null
     try {
       while ({packet = pi.read(); !packet.isInstanceOf[EOF]}) {
         packet match {
-          case p: Node => if (p.id.id == stateID) {
+          case p: Node => if (p.id == nodeID) {
             throw FoundNode
           }
           case _ => ()
