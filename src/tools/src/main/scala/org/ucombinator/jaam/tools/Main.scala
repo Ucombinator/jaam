@@ -6,7 +6,8 @@ case class Config(
                    targetState : Integer = null,
                    fixEOF : Boolean = false,
                    addMissingStates : Boolean = false,
-                   removeMissingStates : Boolean = false
+                   removeMissingStates : Boolean = false,
+                   sourceFiles : Seq[String] = Seq()
                  )
 
 object Main {
@@ -47,6 +48,17 @@ object Main {
         arg[String]("<file>") action { (x, c) => c.copy(targetFile = x) }
           text("a .jaam file to be analyzed")
       )
+
+      note("")
+      cmd("cat") action { (_, c) =>
+        c.copy(mode = "cat")
+      } text("Combine multile JAAM files into a single, cohesive file.") children(
+        arg[String]("<file>").required() action { (x, c) => c.copy(targetFile = x)
+        } text("The desired output filename"),
+        arg[Seq[String]]("<file>[,<file>,...]").required() action { (x, c) =>
+          c.copy(sourceFiles = x)
+        } text("The list of files to be concatenated.")
+      )
     }
 
     parser.parse(args, Config()) match {
@@ -65,6 +77,7 @@ object Main {
             addMissingStates = config.addMissingStates,
             removeMissingStates = config.removeMissingStates)
           case "info" => Info.analyzeForInfo(config.targetFile)
+          case "cat" => Cat.concatenateFiles(config.sourceFiles, config.targetFile)
           case _ => println("Invalid command given: " + config.mode)
         }
     }
