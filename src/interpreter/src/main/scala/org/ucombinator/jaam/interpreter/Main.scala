@@ -84,7 +84,8 @@ case class KontStack(k : Kont) {
                       store : Store,
                       initializedClasses : Set[SootClass]) : Set[AbstractState] = {
     if (!exception.isInstanceOf[ObjectValue])
-      throw new Exception("Impossible throw: stmt = " + stmt + "; value = " + exception)
+      Log.warn("Impossible throw: stmt = " + stmt + "; value = " + exception)
+      //throw new Exception("Impossible throw: stmt = " + stmt + "; value = " + exception)
 
     var visited = Set[(Stmt, FramePointer, KontStack)]()
 
@@ -553,8 +554,10 @@ case class State(val stmt : Stmt,
     //
     // Note that Hierarchy.resolveConcreteDispath should be able to do this, but seems to be implemented wrong
     def overrides(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
+      Log.debug("curr: " + curr.toString)
       val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
       if (curr_m == null) {
+        Log.debug("root_m: " + root_m.toString)
         overrides(curr.getSuperclass(), root_m)
       }
       else if (root_m.getDeclaringClass.isInterface || AccessManager.isAccessLegal(curr_m, root_m)) { List(curr_m) }
@@ -573,7 +576,7 @@ case class State(val stmt : Stmt,
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, self, args)
         case None =>
-          if (meth.getDeclaringClass.isJavaLibraryClass ||
+          if (Soot.isJavaLibraryClass(meth.getDeclaringClass) ||
               self.isDefined &&
               self.get.isInstanceOf[ObjectValue] &&
               self.get.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
@@ -618,6 +621,10 @@ case class State(val stmt : Stmt,
       case expr : InstanceInvokeExpr =>
         ((for (v <- eval(expr.getBase()).values) yield {
           v match {
+            case ObjectValue(_, SnowflakeBasePointer(_)) => {
+              val meth = expr.getMethod()
+              dispatch(Some(v), meth)
+            }
             case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, expr.getMethod.getDeclaringClass) => {
               val objectClass = if (expr.isInstanceOf[SpecialInvokeExpr]) null else sootClass
               val meth = (if (expr.isInstanceOf[SpecialInvokeExpr]) expr.getMethod() else overrides(objectClass, expr.getMethod()).head)
@@ -686,7 +693,7 @@ case class State(val stmt : Stmt,
         val meth = sootClass.getMethodByNameUnsafe(SootMethod.staticInitializerName)
 
         if (meth != null) {
-          if (meth.getDeclaringClass.isJavaLibraryClass) {
+          if (Soot.isJavaLibraryClass(meth.getDeclaringClass)) {
             val newState = this.copyState(initializedClasses=initializedClasses+sootClass)
             newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
               java.util.Collections.emptyList()), None, stmt)
@@ -731,7 +738,7 @@ case class State(val stmt : Stmt,
 
   def newExpr(lhsAddr : Set[Addr], sootClass : SootClass, store : Store) : Store = {
     val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
-    if (sootClass.isJavaLibraryClass || Snowflakes.contains(md)) {
+    if (Soot.isJavaLibraryClass(sootClass) || Snowflakes.contains(md)) {
       val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
       val d = D(Set(obj))
       store.update(lhsAddr, d)

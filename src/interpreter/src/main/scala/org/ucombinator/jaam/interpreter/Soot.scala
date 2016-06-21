@@ -109,6 +109,10 @@ object Soot {
     m.getActiveBody
   }
 
+  def isJavaLibraryClass(sootClass: SootClass) = {
+    sootClass.isJavaLibraryClass || sootClass.getName.startsWith("org.w3c")
+  }
+
   def getSootClass(s : String) = Scene.v().loadClass(s, SootClass.SIGNATURES)
 
   def getSootType(t : String): Type = t match {

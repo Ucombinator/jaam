@@ -4,6 +4,7 @@ Features to add (w/ priority):
 - Click on method name in left panel: 1
 - Create magnifier view option: 1
 
+- Highlight space vulnerabilities: 2
 - Search for merge vertices by ID: 2
 - Select merge root whenever a merge parent is selected: 2
 - Show expected format in search dialog boxes: 2
@@ -49,6 +50,8 @@ Features to add (w/ priority):
 
 - Multiple windows with different views: 5
 - Expandable view for hotkeys across bottom (similar to context view?): 5
+
+- Visualize DFA for call stack: 6
 
 Investigated, but probably won’t happen:
 - Check parser for subspace.out (Skip because we want to change to using messages anyway)
