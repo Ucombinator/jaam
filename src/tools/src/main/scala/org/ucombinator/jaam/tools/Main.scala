@@ -53,9 +53,9 @@ object Main {
       cmd("cat") action { (_, c) =>
         c.copy(mode = "cat")
       } text("Combine multile JAAM files into a single, cohesive file.") children(
-        arg[String]("<file>").required() action { (x, c) => c.copy(targetFile = x)
+        arg[String]("<outfile>").required() action { (x, c) => c.copy(targetFile = x)
         } text("The desired output filename"),
-        arg[Seq[String]]("<file>[,<file>,...]").required() action { (x, c) =>
+        arg[Seq[String]]("<infile1>[,<infile2>,...]").required() action { (x, c) =>
           c.copy(sourceFiles = x)
         } text("The list of files to be concatenated.")
       )

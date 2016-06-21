@@ -12,6 +12,7 @@ Jaam analyzes JVM bytecode to try to discover vulnerabilities and side channels.
   * [Abstract Interpreter](#abstract-interpreter)
   * [Visualizer](#visualizer)
   * [JSON Exporter](#json-exporter)
+  * [Tools](#tools)
 * [Developers](#developers) -- more about Jaam's internals
 
 ## Disclaimer
@@ -161,6 +162,89 @@ where `$file` is the path to your `.jaam` file. A JSON serialization will be
 output to the console's `stdout`. The serialization is a list containing JSON
 objects of types `state`, `errorState`, `abstractState`, and `edge`.
 
+### Tools
+
+We created a Tools package to help you interact with `.jaam` files a little
+better, which can be used via:
+
+```
+./bin/jaam-tools <command>
+```
+
+The supported commands are:
+
+- `print` -- outputs all of the packets
+- `info` -- provides a quick overview of a `.jaam` file
+- `validate` -- determines whether a `.jaam` file provides a valid set of nodes
+and edges which all connect properly
+- `cat` -- combines multiple `.jaam` files sequentially
+
+#### Print
+
+`print` provides the ability to output all of the packets in a `.jaam` file for
+reading. We foresee this mostly being used for human debugging purposes, since
+any program ought to simply interact with our serializer.
+
+```
+./bin/jaam-tools print [--node number] <file>
+```
+
+`<file>` is a `.jaam` file of an interpretation. If you want to see just the
+information for a specific node, you can either provide the `--node` option
+with a node ID number, or you can pipe the command through grep, e.g.:
+
+```
+./bin/jaam-tools print MyFile.jaam | grep '^node-3'
+./bin/jaam-tools print MyFile.jaam | grep '^edge-7'
+```
+
+#### Validate
+
+The `validate` command takes a `.jaam` file and determines whether all of the
+nodes and edges inside connect to everything they ought to. This command will
+return successfully if everything checks out, and it will return with a non-zero
+exit code if something goes wrong.
+
+```
+./bin/jaam-tools [--fixEOF] [--addMissingStates] [-removeMissingStates] <file>
+```
+
+- `--fixEOF` will ensure that the `.jaam` file terminates, even if the
+    interpretation ended prematurely
+- `--addMissingStates` checks all of the edges and nodes, and will insert
+    placeholder states wherever a state is referenced but doesn't exist
+- `--removeMissingStates` undoes the work of the previous command, in case you
+    wish to revert a `.jaam` file to its pre-`addMissingStates` form
+
+#### Info
+
+`info` provides a quick overview of a `.jaam` file's interpretation. Here is an
+example output, using the Factorial class in the `examples/` folder:
+
+```
+./bin/jaam-tools info Factorial.jaam
+
+Info for Factorial.jaam
+    # of States: 17
+    # of Edges: 21
+    # of Missing States: 0
+    # of Missing State References: 0
+    # of Hanging Edges: 0
+    Initial State:
+        sootMethod: <Factorial: void main(java.lang.String[])>
+        sootStmt: r0 := @parameter0: java.lang.String[]
+```
+
+#### Cat
+
+The `cat` command allows you to combine multiple `.jaam` files sequentially. To
+use it, simply give it an output filename (where your final product will go) and
+a list of input file names (separated by commas without spaces).
+
+```
+./bin/jaam-tools cat <outfile> <infile1>[,<infile2>,...]
+```
+
 ## Developers
 
 Some people may want to know more about how the project is organized or how it
@@ -187,3 +271,4 @@ We've split our project into a few subprojects:
 1. Interpreter: performs static analysis on Java classes
 2. Visualizer: shows the results of the analysis
 3. Serializer: defines the .jaam file format and allows interoperability between Interpreter and Visualizer
+4. Tools: helps you to manipulate/get data from .jaam files
