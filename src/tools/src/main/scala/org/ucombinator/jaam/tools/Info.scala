@@ -9,7 +9,7 @@ object Info {
   private val uniqueNodes = mutable.Map.empty[Id[Node], Node]
   private val uniqueEdges = mutable.Map.empty[Id[Edge], Edge]
   private val missingNodes = mutable.Map.empty[Id[Node], Int]
-  private var hangingEdges = 0
+  private var hangingEdges = mutable.MutableList.empty[Id[Edge]]
 
   def analyzeForInfo(jaamFile : String) = {
     val stream = new FileInputStream(jaamFile)
@@ -44,7 +44,7 @@ object Info {
   private def countHangingEdgesAndFindMissingStates() = {
     for (edge <- uniqueEdges.values) {
       if (! nodeExists(edge.src) || ! nodeExists(edge.dst)) {
-        hangingEdges += 1
+        hangingEdges += edge.id
       }
     }
   }
@@ -62,7 +62,11 @@ object Info {
         (for ((missingNode, references) <- missingNodes)
           yield missingNode.id + " (" + references + ")").toArray.mkString(", "))
     }
-    println("    # of Hanging Edges: " + hangingEdges)
+    println("    # of Missing State References: " + missingNodes.foldLeft(0)(_ + _._2))
+    println("    # of Hanging Edges: " + hangingEdges.size)
+    if (hangingEdges.size > 0) {
+      println("        " + hangingEdges.toArray.mkString(", "))
+    }
     if (initialState != null) {
       println("    Initial State:")
       println("        sootMethod: " + initialState.stmt.method.toString)
