@@ -73,7 +73,7 @@ object Validate {
     // Only write node if either
     //  a) it isn't a MissingState, or
     //  b) it is a MissingState, but we aren't removing MissingStates
-    if (! (shouldRemoveMissingStates && node.isInstanceOf[MissingState])) {
+    if (! (shouldRemoveMissingStates && node.isInstanceOf[MissingReferencedState])) {
       po.write(node)
     }
   }
@@ -85,11 +85,11 @@ object Validate {
     if (shouldAddMissingStates) {
       // Check if either of the edge's nodes are missing
       if (! uniqueNodes.contains(edge.src)) {
-        val missingState = MissingState(edge.src)
+        val missingState = MissingReferencedState(edge.src)
         handleNode(missingState, po)
       }
       if (! uniqueNodes.contains(edge.dst)) {
-        val missingState = MissingState(edge.dst)
+        val missingState = MissingReferencedState(edge.dst)
         handleNode(missingState, po)
       }
     }

@@ -141,7 +141,7 @@ case class ErrorState(override val id : Id[Node]) extends AbstractState(id) {}
 case class State(override val id : Id[Node], stmt : Stmt, framePointer : String, kontStack : String) extends AbstractState(id) {}
 
 // Declare 'MissingState' nodes, used by jaam.tools.Validate
-case class MissingState(override val id : Id[Node]) extends Node(id) {}
+case class MissingReferencedState(override val id : Id[Node]) extends Node(id) {}
 
 //case class Group(id : Id[Node], states : java.util.List[Node], labels : String)
 
