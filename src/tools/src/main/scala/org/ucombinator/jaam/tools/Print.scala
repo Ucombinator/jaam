@@ -14,6 +14,7 @@ object Print {
       packet match {
         case p : Node => printNode(p)
         case p : Edge => printEdge(p)
+        case p : NodeTag => printTag(p)
       }
     }
     pi.close()
@@ -78,6 +79,21 @@ object Print {
     printIndentedLine(identifier, 1, "from: " + edge.src.id)
     printIndentedLine(identifier, 1, "to: " + edge.dst.id)
   }
+
+  def printTag(tag : NodeTag) = {
+    tag.tag match {
+      case _ : AllocationTag => printAllocationTag(tag)
+      case _ => ()
+    }
+  }
+
+  def printAllocationTag(tag : NodeTag) = {
+    val identifier = "tag-" + tag.id.id
+    printIndentedLine(identifier, 0, "AllocationTag")
+    printIndentedLine(identifier, 1, "id: " + tag.id.id)
+    printIndentedLine(identifier, 1, "node: " + tag.node.id)
+  }
+
   def printIndentedLine(identifier : String, indent : Int, s : String = "") = {
     println(identifier + (if (s == "") "" else " " + ("    " * indent) + s))
   }
