@@ -4,6 +4,8 @@ import java.io.{FileInputStream, FileOutputStream}
 
 import org.ucombinator.jaam.serializer._
 
+import soot.jimple._
+
 case class Config(
                    sourceFile : String = null,
                    targetFile : String = null)
@@ -39,14 +41,22 @@ object Main {
 
     while ({packet = pi.read(); !packet.isInstanceOf[EOF]}) {
       packet match {
-        case p : Node =>
+        case p : Node => {
           p match {
-            case node : State =>
-              if(node.stmt.stmt.toString().contains(" = new")){
-                idList += node.id
+            case node: State => {
+              node.stmt.stmt match {
+                case sootStmt: DefinitionStmt =>
+                  sootStmt.getRightOp match {
+                    case rightOp: AnyNewExpr =>
+                      idList += node.id
+                    case _ => ()
+                  }
+                case _ => ()
               }
+            }
             case _ => ()
           }
+        }
         case _ => ()
       }
     }
