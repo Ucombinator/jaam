@@ -68,6 +68,7 @@ object Main {
         println("Bad arguments given.")
 
       case Some(config) =>
+        // This needs to be rewritten.
 //        writeOut(config.targetFile, analyzeFile(config.sourceFile))
     }
   }
