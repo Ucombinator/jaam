@@ -146,9 +146,9 @@ case class MissingReferencedState(override val id : Id[Node]) extends Node(id) {
 //case class Group(id : Id[Node], states : java.util.List[Node], labels : String)
 
 //tags for the analyzer
-case class NodeTag(val id : Id[Tag], val node : Id[Node], val tag : Tag) extends Packet {}
+case class NodeTag(id : Id[Tag], node : Id[Node], tag : Tag) extends Packet {}
 abstract class Tag {}
-case class AllocationTag(/*val sootType : soot.Type*/) extends Tag {}
+case class AllocationTag(val sootType : soot.Type) extends Tag {}
 
 
 ////////////////////////////////////////
