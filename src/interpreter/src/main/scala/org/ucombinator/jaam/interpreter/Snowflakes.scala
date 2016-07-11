@@ -116,8 +116,8 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
   }
 }
 
-case class ReturnArraySnowflake(baseType: String, dim: Int) extends NonstaticSnowflakeHandler {
-  override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
+case class ReturnArraySnowflake(baseType: String, dim: Int) extends SnowflakeHandler {
+  override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
     val sizes = List.fill(dim)(D.atomicTop)
     val sootBaseType = Soot.getSootType(baseType)
     val at = soot.ArrayType.v(sootBaseType, dim)
