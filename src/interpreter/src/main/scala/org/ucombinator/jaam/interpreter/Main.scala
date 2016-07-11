@@ -1027,7 +1027,7 @@ object Main {
 
       for (n <- nexts) {
         if (!doneEdges.contains((current.id, n.id))) {
-          val id = doneEdges.size
+          val id = doneEdges.size // TODO: Should create an creating object so these are consistent about 0 vs 1 based
           Log.info("Writing edge "+id+": "+current.id+" -> "+n.id)
           doneEdges += (current.id, n.id) -> id
           outSerializer.write(serializer.Edge(serializer.Id[serializer.Edge](id), serializer.Id[serializer.Node](current.id), serializer.Id[serializer.Node](n.id)))
