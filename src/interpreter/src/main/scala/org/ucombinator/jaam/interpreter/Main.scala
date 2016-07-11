@@ -573,10 +573,17 @@ case class State(val stmt : Stmt,
     def dispatch(self : Option[Value], meth : SootMethod) : Set[AbstractState] = {
       val args = for (a <- expr.getArgs().toList) yield eval(a)
 
+      // We end these with "." so we don't hit similarly named libraries
+      val libraries = List("org.apache.commons.", "org.mapdb.") 
+      def isLibraryClass(c : SootClass) : Boolean =
+        // We put a dot at the end in case the package name is an exact match
+        libraries.exists((c.getPackageName()+".").startsWith(_))
+
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, self, args)
         case None =>
           if (Soot.isJavaLibraryClass(meth.getDeclaringClass) ||
+              isLibraryClass(meth.getDeclaringClass) ||
               self.isDefined &&
               self.get.isInstanceOf[ObjectValue] &&
               self.get.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
