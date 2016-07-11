@@ -976,7 +976,7 @@ object Main {
             success
           else
             failure("Logging level must be one of 'none', 'error', 'warn', 'info', 'debug', or 'trace'")
-      } text ("the level of logging verbosity; one of 'none', 'error', 'warn', 'info', 'debug', 'trace'")
+      } text ("the level of logging verbosity; one of 'none', 'error', 'warn', 'info', 'debug', 'trace'; default: 'info'")
 
       help("help") text("prints this usage text")
 
