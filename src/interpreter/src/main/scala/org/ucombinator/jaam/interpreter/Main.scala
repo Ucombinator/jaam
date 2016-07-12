@@ -937,7 +937,7 @@ object System {
     state.setKReadAddrs(kstore.readAddrs)
     state.setKWriteAddrs(kstore.writeAddrs)
 
-    val newInitClasses = nexts.par.map(_.getInitializedClasses()).foldLeft(Set[SootClass]())(_.++(_))
+    val newInitClasses = nexts.map(_.getInitializedClasses()).foldLeft(Set[SootClass]())(_.++(_))
 
     (nexts, newInitClasses)
   }
