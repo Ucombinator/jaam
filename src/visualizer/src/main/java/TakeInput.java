@@ -189,6 +189,7 @@ public class TakeInput extends Thread
 				//Name collision with our own Edge class
 				if(packet instanceof org.ucombinator.jaam.serializer.Edge)
 				{
+                    System.out.println("edge");
 					org.ucombinator.jaam.serializer.Edge edgePacket = (org.ucombinator.jaam.serializer.Edge) packet;
 					int edgeId = edgePacket.id().id();
 					int srcId = edgePacket.src().id();
@@ -197,12 +198,14 @@ public class TakeInput extends Thread
 				}
 				else if(packet instanceof ErrorState)
 				{
+                    System.out.println("error");
 					int id = ((ErrorState) packet).id().id();
 					Main.graph.addErrorState(id);
 				}
 				//Name collision with java.lang.Thread.State
 				else if(packet instanceof org.ucombinator.jaam.serializer.State)
 				{
+                    System.out.println("node");
 					org.ucombinator.jaam.serializer.State statePacket = (org.ucombinator.jaam.serializer.State) packet;
 					int id = statePacket.id().id();
 					String methodName = statePacket.stmt().method().toString();
@@ -211,7 +214,9 @@ public class TakeInput extends Thread
 					Main.graph.addVertex(id, methodName, instruction, "", jimpleIndex, true);
 				}
 
-				packet = packetInput.read();
+                System.out.println(""+packet);
+
+                packet = packetInput.read();
 			}
 		}
 		catch(FileNotFoundException e)

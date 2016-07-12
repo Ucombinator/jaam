@@ -593,7 +593,7 @@ public class StacFrame extends JFrame
 	
 	public void setSplitScreen()
 	{
-		System.out.println("Setting split screen");
+//		System.out.println("Setting split screen");
 
 		centerSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
 		JSplitPane leftSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true);
