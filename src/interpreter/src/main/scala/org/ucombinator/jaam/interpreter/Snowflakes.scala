@@ -3,8 +3,6 @@ package org.ucombinator.jaam.interpreter
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 
-import com.esotericsoftware.minlog.Log
-
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.jimple.{Stmt => SootStmt, _}
 

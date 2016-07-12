@@ -18,8 +18,6 @@ import scala.reflect.ClassTag
 
 import java.io.FileOutputStream
 
-import com.esotericsoftware.minlog.Log
-
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
 // fix this when we build the Scala wrapper for Soot.)
@@ -995,9 +993,8 @@ object Main {
         println("Wrong arguments")
 
       case Some(config) =>
-        Log.setLogger(new JaamLogger)
         Soot.initialize(config)
-        setLogging(config.logLevel)
+        Log.setLogging(config.logLevel)
         defaultMode(config)
     }
   }
@@ -1066,33 +1063,5 @@ object Main {
 
     outSerializer.close()
     Log.info("Done!")
-  }
-
-  def setLogging(level : String) = {
-    level.toLowerCase match {
-      case "none" => Log.set(Log.LEVEL_NONE)
-      case "error" => Log.set(Log.LEVEL_ERROR)
-      case "warn" => Log.set(Log.LEVEL_WARN)
-      case "info" => Log.set(Log.LEVEL_INFO)
-      case "debug" => Log.set(Log.LEVEL_DEBUG)
-      case "trace" => Log.set(Log.LEVEL_TRACE)
-    }
-  }
-
-  class JaamLogger extends Log.Logger {
-    private var level = 0
-
-    override def log(level : Int, category : String, message : String, ex : Throwable) {
-      this.level = level
-      super.log(level, category, message, ex)
-    }
-
-    override def print(s : String) = {
-      this.level match {
-        case Log.LEVEL_ERROR => super.print(Console.RED + s + Console.RESET)
-        case Log.LEVEL_WARN => super.print(Console.YELLOW + s + Console.RESET)
-        case _ => super.print(s)
-      }
-    }
   }
 }
