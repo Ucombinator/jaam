@@ -1045,11 +1045,11 @@ object Main {
 
       for (w <- current.getWriteAddrs; s <- System.readTable(w)) {
         done -= s
-        todo :+= s
+        todo +:= s
       }
       for (w <- current.getKWriteAddrs; s <- System.readKTable(w)) {
         done -= s
-        todo :+= s
+        todo +:= s
       }
 
       if ((globalInitClasses++initClasses).size != globalInitClasses.size) {
