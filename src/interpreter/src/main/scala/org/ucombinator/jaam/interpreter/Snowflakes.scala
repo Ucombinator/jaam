@@ -82,7 +82,7 @@ object GlobalSnowflakeAddr extends Addr
 
 case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
-    for (arg <- args) 
+    for (arg <- args)
       state.store.update(GlobalSnowflakeAddr, arg)
 
     self match {
@@ -93,7 +93,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
     val rtType = meth.getReturnType
     rtType match {
       case _ : VoidType => NoOpSnowflake(state, nextStmt, self, args)
-      case _ : PrimType => 
+      case _ : PrimType =>
         state.store(GlobalSnowflakeAddr)
         ReturnSnowflake(D.atomicTop)(state, nextStmt, self, args)
       case at : ArrayType =>
@@ -101,7 +101,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
         val bp = state.malloc()
         state.store.update(Set[Addr](ArrayRefAddr(bp)), state.store(GlobalSnowflakeAddr))
         states
-      case rt : RefType => 
+      case rt : RefType =>
         val states = ReturnObjectSnowflake(rt.getClassName)(state, nextStmt, self, args)
         state.stmt.sootStmt match {
           case stmt : DefinitionStmt =>
