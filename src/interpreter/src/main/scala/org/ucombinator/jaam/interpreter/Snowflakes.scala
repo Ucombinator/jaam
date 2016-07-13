@@ -112,7 +112,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
                 state.store.update(Set[Addr](ArrayRefAddr(bp)), D(newValues))
               case _ => throw new RuntimeException("Can not assign ArrayType value to non-ArrayType")
             }
-          case _ => 
+          case _ =>
             state.store.update(Set[Addr](ArrayRefAddr(bp)), D(values))
         }
         states
