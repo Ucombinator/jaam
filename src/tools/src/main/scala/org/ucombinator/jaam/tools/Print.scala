@@ -57,13 +57,13 @@ object Print {
     printIndentedLine(identifier, 1, "id: " + state.id.id)
     printIndentedLine(identifier, 1, "index: " + state.stmt.index)
     printIndentedLine(identifier, 1, "sootMethod: " + state.stmt.method.toString)
-    printIndentedLine(identifier, 1, "sootStmt: " + state.stmt.stmt.toString())
     printIndentedLine(identifier, 2, "returns: " + state.stmt.method.getReturnType.toString)
     if (state.stmt.method.getParameterCount == 0) {
       printIndentedLine(identifier, 2, "takes: <none>")
     } else {
       printIndentedLine(identifier, 2, "takes: " + state.stmt.method.getParameterTypes.toArray.mkString(", "))
     }
+    printIndentedLine(identifier, 1, "sootStmt: " + state.stmt.stmt.toString())
   }
 
   def printErrorState(errorState : ErrorState) = {
