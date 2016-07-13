@@ -146,7 +146,10 @@ abstract class AtomicValue extends Value
 
 case object AnyAtomicValue extends AtomicValue
 
-case class ObjectValue(val sootClass : SootClass, val bp : BasePointer) extends Value
+case class ObjectValue(val sootClass : SootClass, val bp : BasePointer) extends Value {
+  lazy val cachedHashCode = scala.runtime.ScalaRunTime._hashCode(ObjectValue.this)
+  override def hashCode() : Int = cachedHashCode
+}
 
 // The sootType is the type with array wrapper
 case class ArrayValue(val sootType : Type, val bp : BasePointer) extends Value
@@ -158,7 +161,9 @@ case class ArrayValue(val sootType : Type, val bp : BasePointer) extends Value
 // FramePointers, when paired with variable names, yield the addresses of variables.
 abstract class FramePointer
 case object InvariantFramePointer extends FramePointer // TODO: delete this?  Is seems unused
-case class ZeroCFAFramePointer(val method : SootMethod) extends FramePointer
+case class ZeroCFAFramePointer(val method : SootMethod) extends FramePointer {
+  override def toString() = "ZeroCFAFramePointer(<hidden>)"
+}
 case class OneCFAFramePointer(val method : SootMethod, val nextStmt : Stmt) extends FramePointer
 case object InitialFramePointer extends FramePointer
 
@@ -208,19 +213,18 @@ case class ArrayLengthAddr(val bp : BasePointer) extends Addr
 
 case class StaticFieldAddr(val field : SootField) extends Addr
 
-abstract class AbstractDomain[T](val values: Set[T]) {
-  def join[M <: AbstractDomain[T] : ClassTag](d: M): M = {
-    implicitly[ClassTag[M]].runtimeClass.getConstructors.head.newInstance(values++d.values).asInstanceOf[M]
-  }
-}
+// TODO: replace KontD and D with AbstractDomain[...]
+// TODO: cache hashcode for Kont and Value
 
-case class KontD(override val values: Set[Kont]) extends AbstractDomain[Kont](values)
-
-case class D(override val values: Set[Value]) extends AbstractDomain[Value](values) {
+case class D(val values: Set[Value]) {
+  def join(that : D) = D(this.values ++ that.values)
   def maybeZero() : Boolean = values.exists(_.isInstanceOf[AtomicValue])
 }
 object D {
   val atomicTop = D(Set(AnyAtomicValue))
+}
+case class KontD(val values: Set[Kont]) {
+  def join(that : KontD) = KontD(this.values ++ that.values)
 }
 
 abstract sealed class AbstractState {
