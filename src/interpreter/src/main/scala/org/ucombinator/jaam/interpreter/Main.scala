@@ -150,6 +150,7 @@ case object AnyAtomicValue extends AtomicValue
 
 case class ObjectValue(val sootClass : SootClass, val bp : BasePointer) extends Value
 
+// The sootType is the type with array wrapper
 case class ArrayValue(val sootType : Type, val bp : BasePointer) extends Value
 
 //case class SnowflakeInterfaceValue(val sootClass : SootClass, val bp : BasePointer) extends Value
@@ -492,7 +493,7 @@ case class State(val stmt : Stmt,
       case v : CastExpr =>
         // TODO: cast from a SnowflakeObject to another SnowflakeObject
         val castedExpr : SootValue = v.getOp
-        val castedType : Type = v.getType
+        val castedType : Type = v.getCastType
         checkInitializedClasses(castedType)
         val d = eval(castedExpr)
         // TODO: filter out elements of "d" that are not of the
@@ -501,7 +502,12 @@ case class State(val stmt : Stmt,
         def isCastableTo(v : Value, t : Type) : Boolean = {
           v match {
             case _ : AtomicValue => t.isInstanceOf[PrimType]
-            case ObjectValue(sootClass, _) => Soot.isSubType(sootClass.getType, t)
+            case ObjectValue(sootClass, _) =>
+              t match {
+                case rt : RefType => Soot.isSubclass(sootClass, rt.getSootClass)
+                case _ => false
+              }
+              //Soot.isSubType(sootClass.getType, t)
             case ArrayValue(sootType, _) => Soot.isSubType(sootType, t)
             //            case SnowflakeInterfaceValue(sootClass, _) => Soot.isSubType(sootClass.getType, t)
           }
@@ -601,7 +607,8 @@ case class State(val stmt : Stmt,
                 Log.error("Native method returns an object. Aborting.")
                 Set()
             }
-          } else {
+          }
+          else {
             // TODO/optimize: filter out incorrect class types
             val newFP = alloca(expr, nextStmt)
             val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
@@ -637,7 +644,25 @@ case class State(val stmt : Stmt,
               val meth = (if (expr.isInstanceOf[SpecialInvokeExpr]) expr.getMethod() else overrides(objectClass, expr.getMethod()).head)
               dispatch(Some(v), meth)
             }
-            case ArrayValue(sootType, _) => {
+            case ArrayValue(sootType, bp) => {
+              /*
+              val values = eval(expr.getBase()).values
+              println("---------")
+              println("ArrayValue")
+              println("addrsOf: " + addrsOf(expr.getBase()))
+              println("values.size: " + values.size)
+              println("---")
+              for (v <- values) {
+                println(v)
+              }
+              println("---")
+              println("stmt: " + stmt)
+              println("expr: " + expr)
+              println("expr.getBase: " + expr.getBase)
+              println("sootType: " + sootType)
+              println("basepointer: " + bp)
+              println("expr.getMethod: " + expr.getMethod())
+              */
               dispatch(Some(v), expr.getMethod)
             }
             case _ => Set()
@@ -869,7 +894,7 @@ object State {
   val stringClass : SootClass = Soot.classes.String
   val initial_map : mutable.Map[Addr, D] = mutable.Map(
     ParameterFrameAddr(initialFramePointer, 0) ->
-      D(Set(ArrayValue(stringClass.getType(), initialBasePointer))),
+      D(Set(ArrayValue(ArrayType.v(stringClass.getType, 1), initialBasePointer))),
     ArrayRefAddr(initialBasePointer) -> D(Set(ObjectValue(stringClass, initialBasePointer))),
     ArrayLengthAddr(initialBasePointer) -> D.atomicTop)
 
