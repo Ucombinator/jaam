@@ -353,6 +353,9 @@ case class State(val stmt : Stmt,
   // If it isn't, the exception should be caught so the class can be initialized.
   def checkInitializedClasses(c : SootClass) {
     if (!initializedClasses.contains(c)) {
+      if (Soot.isJavaLibraryClass(c)) {
+        throw new UninitializedSnowflakeObjectException(c.getName)
+      }
       throw new UninitializedClassException(c)
     }
   }
@@ -727,12 +730,14 @@ case class State(val stmt : Stmt,
         val meth = sootClass.getMethodByNameUnsafe(SootMethod.staticInitializerName)
 
         if (meth != null) {
+          /*
           if (Soot.isJavaLibraryClass(meth.getDeclaringClass)) {
             val newState = this.copyState(initializedClasses=initializedClasses+sootClass)
             newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
               java.util.Collections.emptyList()), None, stmt)
           }
           else {
+          */
             // Initialize all static fields per JVM 5.4.2 and 5.5
             val staticUpdates = for {
               f <- sootClass.getFields(); if f.isStatic
@@ -741,7 +746,7 @@ case class State(val stmt : Stmt,
             val newState = this.copyState(initializedClasses = initializedClasses+sootClass)
             newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
               java.util.Collections.emptyList()), None, stmt)
-          }
+          //}
         } else {
           // TODO: Do we need to do newStore for static fields?
           Set(this.copyState(initializedClasses = initializedClasses + sootClass))
@@ -749,8 +754,9 @@ case class State(val stmt : Stmt,
 
       case UninitializedSnowflakeObjectException(className) =>
         Log.info("Initializing snowflake "+className)
+        val sootClass = Soot.getSootClass(className)
         store.join(Snowflakes.createObject(className, List()))
-        Set(this.copyState())
+        Set(this.copyState(initializedClasses = initializedClasses+sootClass))
 
       case StringConstantException(string) =>
         Log.info("Initializing string constant: \""+string+"\"")
