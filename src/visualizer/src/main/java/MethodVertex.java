@@ -64,6 +64,21 @@ public class MethodVertex extends AbstractVertex
 		return this.method.getInstructionList();
 	}
 	
+    
+    public void collectAllTagsFromChildren()
+    {
+        for(Vertex ver : this.mergeChildren)
+        {
+
+            for(Integer t : ver.tags)
+            {
+                this.addTag(t);
+            }
+        }
+    }
+    
+    
+    
 	public void mergePath()
 	{
 		AbstractVertex in = null, out = null;

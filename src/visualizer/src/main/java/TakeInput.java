@@ -28,6 +28,7 @@ public class TakeInput extends Thread
 		Main.graph.mergePaths();
 		Main.graph.computeInstLists();
 		Main.graph.setAllMethodHeight();
+        Main.graph.collectAllTags();
 		Main.graph.collapseAll();
 		Parameters.mouseLastTime = System.currentTimeMillis();
 		Parameters.repaintAll();
