@@ -94,19 +94,44 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
     rtType match {
       case _ : VoidType => NoOpSnowflake(state, nextStmt, self, args)
       case _ : PrimType =>
-        state.store(GlobalSnowflakeAddr)
+        // NOTE: if we eventually do something other than D.atomicTop, we need
+        // to track where in the store our return value comes from
         ReturnSnowflake(D.atomicTop)(state, nextStmt, self, args)
       case at : ArrayType =>
         val states = ReturnArraySnowflake(at.baseType.toString, at.numDimensions)(state, nextStmt, self, args)
         val bp = state.malloc()
-        state.store.update(Set[Addr](ArrayRefAddr(bp)), state.store(GlobalSnowflakeAddr))
+        val values = state.store(GlobalSnowflakeAddr).values
+        state.stmt.sootStmt match {
+          case stmt : DefinitionStmt =>
+            stmt.getLeftOp.getType match {
+              case leftAt : ArrayType =>
+                val newValues = values.filter(_ match {
+                  case ArrayValue(at, bp) => Soot.isSubType(at, leftAt)
+                  case _ => false
+                })
+                state.store.update(Set[Addr](ArrayRefAddr(bp)), D(newValues))
+              case _ => throw new RuntimeException("Can not assign ArrayType value to non-ArrayType")
+            }
+          case _ => 
+            state.store.update(Set[Addr](ArrayRefAddr(bp)), D(values))
+        }
         states
       case rt : RefType =>
         val states = ReturnObjectSnowflake(rt.getClassName)(state, nextStmt, self, args)
         state.stmt.sootStmt match {
           case stmt : DefinitionStmt =>
+            val defClass = stmt.getLeftOp.getType match {
+              case rt : RefType => rt.getSootClass
+              case _ => throw new RuntimeException("Can not assign RefType value to non-RefType")
+            }
+            val values: Set[Value] = state.store(GlobalSnowflakeAddr).values
+            val newValues = values.filter(_ match {
+              case ObjectValue(sootClass, bp) => Soot.isSubclass(sootClass, defClass)
+              case _ => false
+            })
+
             Log.debug(state.store(GlobalSnowflakeAddr).toString)
-            state.store.update(state.addrsOf(stmt.getLeftOp), state.store(GlobalSnowflakeAddr))
+            state.store.update(state.addrsOf(stmt.getLeftOp), D(newValues))
           case _ =>
         }
         states
