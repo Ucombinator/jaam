@@ -59,6 +59,17 @@ object Main {
           c.copy(sourceFiles = x)
         } text("The list of files to be concatenated.")
       )
+
+      note("")
+      cmd("coverage") action { (_, c) =>
+        c.copy(mode = "coverage")
+      } text("Analyze a JAAM file against target JAR files to find JAAM coverage.") children(
+        arg[String]("<jaamFile>").required() action { (x, c) => c.copy(targetFile = x)
+        } text("The JAAM file to analyze"),
+        arg[Seq[String]]("<jarfile1>[,<jarfile1>,...]").required() action { (x, c) =>
+          c.copy(sourceFiles = x)
+        } text("The list of JAR files to compare coverage against")
+      )
     }
 
     parser.parse(args, Config()) match {
@@ -78,6 +89,7 @@ object Main {
             removeMissingStates = config.removeMissingStates)
           case "info" => Info.analyzeForInfo(config.targetFile)
           case "cat" => Cat.concatenateFiles(config.sourceFiles, config.targetFile)
+          case "coverage" => Coverage.findCoverage(config.targetFile, config.sourceFiles)
           case _ => println("Invalid command given: " + config.mode)
         }
     }
