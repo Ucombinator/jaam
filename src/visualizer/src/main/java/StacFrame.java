@@ -105,6 +105,7 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
+        loadMessages.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, 0));
 
 		/*final JMenuItem loadJavaCode = new JMenuItem("Load matching decompiled code");
 		menuFile.add(loadJavaCode);
@@ -300,7 +301,7 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-		
+    
 		JMenuItem zoomOut = new JMenuItem("Zoom out      (Mouse wheel down)");
 		menuNavigation.add(zoomOut);
 		zoomOut.addActionListener

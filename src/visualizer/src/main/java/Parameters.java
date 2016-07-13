@@ -18,7 +18,7 @@ public class Parameters
 	public static StacFrame stFrame;
 	public static JTextArea rightArea;
 	public static CodeArea leftArea;
-	public static String pwd = "../..";
+	public static String pwd = "./";
 	public static Color colorFocus = new Color(Integer.parseInt("FFF7BC", 16)),
 			colorSelection = new Color(Integer.parseInt("A6BDDB", 16)),
 			colorHighlight = new Color(Integer.parseInt("2B8CBE", 16));
