@@ -81,7 +81,9 @@ abstract class AbstractStore[K <: Addr, V](val map: mutable.Map[K, V], abstractD
     readAddrs ++= addrs
     val ds = for (a <- addrs; if map.contains(a)) yield { map(a) }
     val res = ds.fold(abstractDomain.bot)(abstractDomain.join)
-    if (res == abstractDomain.bot) throw UndefinedAddrsException(addrs)
+    if (res == abstractDomain.bot) {
+      throw UndefinedAddrsException(addrs)
+    }
     res
   }
 

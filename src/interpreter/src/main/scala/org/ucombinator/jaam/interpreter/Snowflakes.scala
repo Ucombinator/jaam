@@ -603,6 +603,76 @@ object Snowflakes {
     store
   }
 
+  private def updateStore(oldStore : Store, clas : String, field : String, typ : String) =
+    oldStore.update(StaticFieldAddr(Soot.getSootClass(clas).getFieldByName(field)),
+      D(Set(ObjectValue(Soot.getSootClass(typ),
+        SnowflakeBasePointer(clas + "." + field))))).asInstanceOf[Store]
+
+  ClassSnowflakes
+
+  //System.arraycopy
+  table.put(MethodDescription("java.lang.System", "arraycopy",
+    List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new StaticSnowflakeHandler {
+    override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
+      assert(state.stmt.sootStmt.getInvokeExpr.getArgCount == 5)
+      val expr = state.stmt.sootStmt.getInvokeExpr
+      val newNewStore = state.store.update(state.addrsOf(expr.getArg(2)), state.eval(expr.getArg(0)))
+      Set(state.copyState(stmt = nextStmt/*store = newNewStore*/))
+    }
+  })
+
+  // java.lang.System
+  table.put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
+    new StaticSnowflakeHandler {
+      override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
+        var newNewStore = state.store
+        newNewStore = updateStore(newNewStore, "java.lang.System", "in", "java.io.InputStream")
+        newNewStore = updateStore(newNewStore, "java.lang.System", "out", "java.io.PrintStream")
+        newNewStore = updateStore(newNewStore, "java.lang.System", "err", "java.io.PrintStream")
+        newNewStore = updateStore(newNewStore, "java.lang.System", "security", "java.lang.SecurityManager")
+        newNewStore = updateStore(newNewStore, "java.lang.System", "cons", "java.io.Console")
+        Set(state.copyState(stmt = nextStmt, store = newNewStore))
+      }
+    })
+
+  table.put(MethodDescription("java.lang.Object", "clone", List(), "java.lang.Object"),
+    new NonstaticSnowflakeHandler {
+      override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
+        val newNewStore = state.stmt.sootStmt match {
+          case stmt : DefinitionStmt => state.store.update(state.addrsOf(stmt.getLeftOp), D(Set(self)))
+          case stmt : InvokeStmt => state.store
+        }
+        Set(state.copyState(stmt = nextStmt/*store = newNewStore*/))
+      }
+    })
+
+    table.put(MethodDescription("com.cyberpointllc.stac.webserver.WebServer", "createContext",
+      List("com.cyberpointllc.stac.webserver.handler.AbstractHttpHandler", "boolean"), "com.sun.net.httpserver.HttpContext"),
+      new SnowflakeHandler {
+        val httpExchange = "com.sun.net.httpserver.HttpExchange"
+        val absHttpHandlerClassName = "com.cyberpointllc.stac.webserver.handler.AbstractHttpHandler"
+        val absHttpHandler = Soot.getSootClass(absHtppHandlerClassName)
+
+        // self is None if this is a static call and Some otherwise
+        override def apply(state: State, nextStmt: Stmt, self: Option[Value], args: List[D]): Set[AbstractState] = {
+          val handlers = args.get(0).values
+          val newStore = Snowflakes.createObject(httpExchange, List())
+          state.store.join(newStore)
+
+          val handlerStates: Set[AbstractState] = for (ObjectValue(sootClass, bp) <- handlers) yield {
+            //TODO check sootClass is subclass of AbstractHttpHandler
+            val meth = absHttpHandler.getMethodByName("handle")
+            val newFP = ZeroCFAFramePointer(meth)
+            state.store.update(ThisFrameAddr(newFP), D(Set(ObjectValue(sootClass, bp))))
+            state.store.update(ParameterFrameAddr(newFP, 0),
+              D(Set(ObjectValue(Soot.getSootClass(httpExchange), SnowflakeBasePointer(httpExchange)))))
+            State(Stmt.methodEntry(meth), newFP, state.kontStack)
+          }
+
+          handlerStates
+        }
+      })
+
   // For running Image Processor
   //table.put(MethodDescription("java.lang.System", "getProperty", List("java.lang.String"), "java.lang.String"),
   //  ReturnSnowflake(D(Set(ObjectValue(Soot.classes.String, StringBasePointer("returns from getProperty"))))))
@@ -616,7 +686,6 @@ object Snowflakes {
 
   //HashMapSnowflakes // this triggers HashMapSnowflakes to add snowflake entries
   //ArrayListSnowflakes
-  ClassSnowflakes
 
   // java.lang.Class
   //private static native void registerNatives();
@@ -650,22 +719,6 @@ object Snowflakes {
 
   //table.put(MethodDescription("java.lang.Class", "desiredAssertionStatus", List(), "boolean"), ReturnSnowflake(D.atomicTop))
 
-  private def updateStore(oldStore : Store, clas : String, field : String, typ : String) =
-    oldStore.update(StaticFieldAddr(Soot.getSootClass(clas).getFieldByName(field)),
-      D(Set(ObjectValue(Soot.getSootClass(typ),
-        SnowflakeBasePointer(clas + "." + field))))).asInstanceOf[Store]
-
-  table.put(MethodDescription("java.lang.Object", "clone", List(), "java.lang.Object"),
-    new NonstaticSnowflakeHandler {
-      override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
-        val newNewStore = state.stmt.sootStmt match {
-          case stmt : DefinitionStmt => state.store.update(state.addrsOf(stmt.getLeftOp), D(Set(self)))
-          case stmt : InvokeStmt => state.store
-        }
-        Set(state.copyState(stmt = nextStmt/*store = newNewStore*/))
-      }
-    })
-
   /*
   table.put(MethodDescription("java.security.AccessController", "checkPermission", List("java.security.Permission"), "void"), NoOpSnowflake)
 
@@ -685,30 +738,6 @@ object Snowflakes {
     ReturnSnowflake(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer("TODO:unknown"))))))
   table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"), ReturnObjectSnowflake("java.lang.Object"))
   */
-
-  table.put(MethodDescription("java.lang.System", "arraycopy",
-    List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new StaticSnowflakeHandler {
-    override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
-      assert(state.stmt.sootStmt.getInvokeExpr.getArgCount == 5)
-      val expr = state.stmt.sootStmt.getInvokeExpr
-      val newNewStore = state.store.update(state.addrsOf(expr.getArg(2)), state.eval(expr.getArg(0)))
-      Set(state.copyState(stmt = nextStmt/*store = newNewStore*/))
-    }
-  })
-
-  // java.lang.System
-  table.put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
-    new StaticSnowflakeHandler {
-      override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
-        var newNewStore = state.store
-        newNewStore = updateStore(newNewStore, "java.lang.System", "in", "java.io.InputStream")
-        newNewStore = updateStore(newNewStore, "java.lang.System", "out", "java.io.PrintStream")
-        newNewStore = updateStore(newNewStore, "java.lang.System", "err", "java.io.PrintStream")
-        newNewStore = updateStore(newNewStore, "java.lang.System", "security", "java.lang.SecurityManager")
-        newNewStore = updateStore(newNewStore, "java.lang.System", "cons", "java.io.Console")
-        Set(state.copyState(stmt = nextStmt, store = newNewStore))
-      }
-    })
 
   //private static native void registerNatives();
   /*

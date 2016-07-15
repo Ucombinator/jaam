@@ -378,7 +378,12 @@ case class State(val stmt : Stmt,
       case lhs : Local => Set(LocalFrameAddr(fp, lhs))
       case lhs : InstanceFieldRef =>
         val b : SootValue = lhs.getBase // the x in x.y
-      val d : D = eval(b)
+        val d : D = eval(b)
+        /*
+        println("lhs: " + lhs)
+        println("lhs.getBase: " + b)
+        println("d.values: " + d.values)
+        */
         // TODO/optimize
         // filter out incorrect class types
         // TODO/bug
@@ -429,12 +434,24 @@ case class State(val stmt : Stmt,
         !op.getType.isInstanceOf[FloatType] &&
         !op.getType.isInstanceOf[DoubleType])
     }
-
     val result = v match {
       //TODO missing: CmplExpr, CmpgExpr, MethodHandle
       //TODO/precision actually do the calculations
-      case (_ : Local) | (_ : Ref) => store(addrsOf(v))
-      case _ : NullConstant => D.atomicTop
+      case (_ : Local) | (_ : Ref) => 
+        /*
+        println("---beg---")
+        println("Local or Ref")
+        println("v: " + v)
+        println("addrsOf(v): " + addrs)
+        println("store(addrs): " + values)
+        println("---end---")
+        //store(addrsOf(v))
+        */
+        val addrs = addrsOf(v)
+        val values= store(addrs)
+        values
+      case _ : NullConstant => 
+        D.atomicTop
       case _ : NumericConstant => D.atomicTop
       // TODO: Class and String objects are objects and so need their fields initialized
       // TODO/clarity: Add an example of Java code that can trigger this.
@@ -517,7 +534,7 @@ case class State(val stmt : Stmt,
             //            case SnowflakeInterfaceValue(sootClass, _) => Soot.isSubType(sootClass.getType, t)
           }
         }
-
+        //println("d.size: " + d.values.size)
         var d2 = D(Set())
         for (v <- d.values) {
           if (isCastableTo(v, castedType)) {
@@ -542,7 +559,12 @@ case class State(val stmt : Stmt,
             exceptions = exceptions.join(classCastException)
           }
         }
-
+        /*
+        println("d2.size: " + d2.values.size)
+        for (v <- d2.values) {
+          println("d2 value: " + v)
+        }
+        */
         d2
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
@@ -771,6 +793,7 @@ case class State(val stmt : Stmt,
         Set(this.copyState())
 
       case UndefinedAddrsException(addrs) =>
+        //An empty set of addrs may due to the over approximation of ifStmt.
         Log.error("Undefined Addrs in state "+this.id+" stmt = "+stmt+" addrs = "+addrs)
         Set()
     }
@@ -831,6 +854,11 @@ case class State(val stmt : Stmt,
             Set(this.copyState(stmt = stmt.nextSyntactic))
           }
           case rhs => {
+            /*
+            println("lhsAddr: " + lhsAddr)
+            println("rhs: " + rhs)
+            println("rhs.getType: " + rhs.getType)
+            */
             store.update(lhsAddr, eval(rhs))
             Set(this.copyState(stmt = stmt.nextSyntactic))
           }
