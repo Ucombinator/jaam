@@ -31,6 +31,10 @@ import soot.tagkit._
 import org.ucombinator.jaam.serializer
 import org.ucombinator.jaam.interpreter.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
 
+trait CachedHashCode extends Product {
+  override lazy val hashCode = scala.runtime.ScalaRunTime._hashCode(this)
+}
+
 // Possibly thrown during transition between states.
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
 case class StringConstantException(string : String) extends RuntimeException
@@ -140,16 +144,13 @@ object HaltKont extends Kont
 
 // TODO/precision D needs to have an interface that allows eval to use it
 
-abstract class Value
+abstract class Value extends CachedHashCode
 
 abstract class AtomicValue extends Value
 
 case object AnyAtomicValue extends AtomicValue
 
-case class ObjectValue(val sootClass : SootClass, val bp : BasePointer) extends Value {
-  lazy val cachedHashCode = scala.runtime.ScalaRunTime._hashCode(ObjectValue.this)
-  override def hashCode() : Int = cachedHashCode
-}
+case class ObjectValue(val sootClass : SootClass, val bp : BasePointer) extends Value
 
 // The sootType is the type with array wrapper
 case class ArrayValue(val sootType : Type, val bp : BasePointer) extends Value
@@ -161,9 +162,7 @@ case class ArrayValue(val sootType : Type, val bp : BasePointer) extends Value
 // FramePointers, when paired with variable names, yield the addresses of variables.
 abstract class FramePointer
 case object InvariantFramePointer extends FramePointer // TODO: delete this?  Is seems unused
-case class ZeroCFAFramePointer(val method : SootMethod) extends FramePointer {
-  override def toString() = "ZeroCFAFramePointer(<hidden>)"
-}
+case class ZeroCFAFramePointer(val method : SootMethod) extends FramePointer
 case class OneCFAFramePointer(val method : SootMethod, val nextStmt : Stmt) extends FramePointer
 case object InitialFramePointer extends FramePointer
 
@@ -178,8 +177,11 @@ case object InitialBasePointer extends BasePointer
 // Note that due to interning, strings and classes may share base pointers with each other
 // Oh, and class loaders are a headache(!)
 case class StringBasePointer(val string : String) extends BasePointer {
-  override def toString = {
-    "StringBasePointer(" + string.replace("\n", "\\n") + ")"
+  // Use escape codes (e.g., `\n`) in the string.  We do this by getting a
+  // representation of a string constant and then printing that.
+  override lazy val toString = {
+    import scala.reflect.runtime.universe._
+    "StringBasePointer(" + Literal(Constant(string)).toString + ")"
   }
 }
 // we remvoe the argument of ClassBasePointer, to make all ClassBasePointer points to the same
@@ -286,7 +288,7 @@ case class State(val stmt : Stmt,
                  val fp : FramePointer,
                  //val store : Store,
                  val kontStack : KontStack
-                 /*val initializedClasses : Set[SootClass]*/) extends AbstractState {
+                 /*val initializedClasses : Set[SootClass]*/) extends AbstractState with CachedHashCode {
   // Needed because different "stores" should lead to different objects
   //  override def equals(that: Any): Boolean =
   //    that match {
@@ -353,6 +355,9 @@ case class State(val stmt : Stmt,
   // If it isn't, the exception should be caught so the class can be initialized.
   def checkInitializedClasses(c : SootClass) {
     if (!initializedClasses.contains(c)) {
+      if (Soot.isJavaLibraryClass(c)) {
+        throw new UninitializedSnowflakeObjectException(c.getName)
+      }
       throw new UninitializedClassException(c)
     }
   }
@@ -727,12 +732,14 @@ case class State(val stmt : Stmt,
         val meth = sootClass.getMethodByNameUnsafe(SootMethod.staticInitializerName)
 
         if (meth != null) {
+          /*
           if (Soot.isJavaLibraryClass(meth.getDeclaringClass)) {
             val newState = this.copyState(initializedClasses=initializedClasses+sootClass)
             newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
               java.util.Collections.emptyList()), None, stmt)
           }
           else {
+          */
             // Initialize all static fields per JVM 5.4.2 and 5.5
             val staticUpdates = for {
               f <- sootClass.getFields(); if f.isStatic
@@ -741,7 +748,7 @@ case class State(val stmt : Stmt,
             val newState = this.copyState(initializedClasses = initializedClasses+sootClass)
             newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
               java.util.Collections.emptyList()), None, stmt)
-          }
+          //}
         } else {
           // TODO: Do we need to do newStore for static fields?
           Set(this.copyState(initializedClasses = initializedClasses + sootClass))
@@ -749,8 +756,9 @@ case class State(val stmt : Stmt,
 
       case UninitializedSnowflakeObjectException(className) =>
         Log.info("Initializing snowflake "+className)
+        val sootClass = Soot.getSootClass(className)
         store.join(Snowflakes.createObject(className, List()))
-        Set(this.copyState())
+        Set(this.copyState(initializedClasses = initializedClasses+sootClass))
 
       case StringConstantException(string) =>
         Log.info("Initializing string constant: \""+string+"\"")
