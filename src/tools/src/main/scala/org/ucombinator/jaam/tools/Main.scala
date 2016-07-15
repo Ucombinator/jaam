@@ -7,7 +7,8 @@ case class Config(
                    fixEOF : Boolean = false,
                    addMissingStates : Boolean = false,
                    removeMissingStates : Boolean = false,
-                   sourceFiles : Seq[String] = Seq()
+                   sourceFiles : Seq[String] = Seq(),
+                   additionalFiles : Seq[String] = Seq()
                  )
 
 object Main {
@@ -64,11 +65,15 @@ object Main {
       cmd("coverage") action { (_, c) =>
         c.copy(mode = "coverage")
       } text("Analyze a JAAM file against target JAR files to find JAAM coverage.") children(
-        arg[String]("<jaamFile>").required() action { (x, c) => c.copy(targetFile = x)
+        arg[String]("<jaamFile>").required() action {
+          (x, c) => c.copy(targetFile = x)
         } text("The JAAM file to analyze"),
-        arg[Seq[String]]("<jarfile1>[,<jarfile1>,...]").required() action { (x, c) =>
-          c.copy(sourceFiles = x)
-        } text("The list of JAR files to compare coverage against")
+        arg[Seq[String]]("<inspection jarfile>[,<inspection jarfile>...]").required() action {
+          (x, c) => c.copy(sourceFiles = x)
+        } text("One or more JAR files to direclty compare coverage against"),
+        arg[Seq[String]]("<additional jarfile>[,<additional jarfile>...]") action {
+          (x, c) => c.copy(additionalFiles = x)
+        } text("One or more JAR files to complete class loading for inspeciton JAR files")
       )
     }
 
@@ -89,7 +94,7 @@ object Main {
             removeMissingStates = config.removeMissingStates)
           case "info" => Info.analyzeForInfo(config.targetFile)
           case "cat" => Cat.concatenateFiles(config.sourceFiles, config.targetFile)
-          case "coverage" => Coverage.findCoverage(config.targetFile, config.sourceFiles)
+          case "coverage" => Coverage.findCoverage(config.targetFile, config.sourceFiles, config.additionalFiles)
           case _ => println("Invalid command given: " + config.mode)
         }
     }
