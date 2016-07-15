@@ -161,9 +161,7 @@ case class ArrayValue(val sootType : Type, val bp : BasePointer) extends Value
 // FramePointers, when paired with variable names, yield the addresses of variables.
 abstract class FramePointer
 case object InvariantFramePointer extends FramePointer // TODO: delete this?  Is seems unused
-case class ZeroCFAFramePointer(val method : SootMethod) extends FramePointer {
-  override def toString() = "ZeroCFAFramePointer(<hidden>)"
-}
+case class ZeroCFAFramePointer(val method : SootMethod) extends FramePointer
 case class OneCFAFramePointer(val method : SootMethod, val nextStmt : Stmt) extends FramePointer
 case object InitialFramePointer extends FramePointer
 
