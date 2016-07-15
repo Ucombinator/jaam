@@ -122,6 +122,7 @@ object Coverage {
     var count = 0
     for ((method, stmtSet) <- methodMap) {
       if (stmtSet.isEmpty) {
+        println(method)
         count += 1
       }
     }
