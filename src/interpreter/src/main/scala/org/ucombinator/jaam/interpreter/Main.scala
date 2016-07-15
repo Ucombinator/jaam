@@ -176,8 +176,11 @@ case object InitialBasePointer extends BasePointer
 // Note that due to interning, strings and classes may share base pointers with each other
 // Oh, and class loaders are a headache(!)
 case class StringBasePointer(val string : String) extends BasePointer {
-  override def toString = {
-    "StringBasePointer(" + string.replace("\n", "\\n") + ")"
+  // Use escape codes (e.g., `\n`) in the string.  We do this by getting a
+  // representation of a string constant and then printing that.
+  override lazy val toString = {
+    import scala.reflect.runtime.universe._
+    "StringBasePointer(" + Literal(Constant(string)).toString + ")"
   }
 }
 // we remvoe the argument of ClassBasePointer, to make all ClassBasePointer points to the same
