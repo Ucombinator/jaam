@@ -70,10 +70,10 @@ object Main {
         } text("The JAAM file to analyze"),
         arg[Seq[String]]("<inspection jarfile>[,<inspection jarfile>...]").required() action {
           (x, c) => c.copy(sourceFiles = x)
-        } text("One or more JAR files to direclty compare coverage against"),
+        } text("One or more JAR files to directly compare coverage against"),
         arg[Seq[String]]("<additional jarfile>[,<additional jarfile>...]") action {
           (x, c) => c.copy(additionalFiles = x)
-        } text("One or more JAR files to complete class loading for inspeciton JAR files")
+        } text("One or more JAR files to complete class loading for inspection JAR files")
       )
     }
 
