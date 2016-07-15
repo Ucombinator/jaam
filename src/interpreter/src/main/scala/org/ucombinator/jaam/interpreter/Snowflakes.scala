@@ -19,7 +19,7 @@ case class SnowflakeBasePointer(val name : String) extends BasePointer
 case class MethodDescription(val className : String,
                              val methodName : String,
                              val parameterTypes : List[String],
-                             val returnType : String)
+                             val returnType : String) extends CachedHashCode
 
 // Snowflakes are special-cased methods
 abstract class SnowflakeHandler {
