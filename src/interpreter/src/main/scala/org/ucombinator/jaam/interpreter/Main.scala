@@ -1057,8 +1057,8 @@ object Main {
     while (todo.nonEmpty) {
       //TODO refactor store widening code
       val current = todo.head
-      Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
       todo = todo.tail
+      Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
       val (nexts, initClasses) = System.next(current, globalInitClasses)
       val newTodo = nexts.toList.filter(!done.contains(_))
 
