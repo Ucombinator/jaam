@@ -1058,6 +1058,7 @@ object Main {
       //TODO refactor store widening code
       val current = todo.head
       Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
+      todo = todo.tail
       val (nexts, initClasses) = System.next(current, globalInitClasses)
       val newTodo = nexts.toList.filter(!done.contains(_))
 
@@ -1087,11 +1088,11 @@ object Main {
       }
 
       if ((globalInitClasses++initClasses).size != globalInitClasses.size) {
-        todo = newTodo ++ List(current) ++ todo.tail
+        todo = newTodo ++ List(current) ++ todo
       }
       else {
         done += current
-        todo = newTodo ++ todo.tail
+        todo = newTodo ++ todo
       }
 
       globalInitClasses ++= initClasses
