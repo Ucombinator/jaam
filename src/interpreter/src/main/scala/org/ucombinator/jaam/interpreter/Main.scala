@@ -616,7 +616,8 @@ case class State(val stmt : Stmt,
       val args = for (a <- expr.getArgs().toList) yield eval(a)
 
       // We end these with "." so we don't hit similarly named libraries
-      val libraries = List("org.apache.commons.", "org.mapdb.") 
+      val libraries = List("org.apache.commons.", "org.mapdb.")
+                           //"org.apache.http", "jline", "org.fusesource", "com.lambdaworks")
       def isLibraryClass(c : SootClass) : Boolean =
         // We put a dot at the end in case the package name is an exact match
         libraries.exists((c.getPackageName()+".").startsWith(_))
