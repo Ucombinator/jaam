@@ -35,25 +35,41 @@ class ComparableMethod(val originalMethod: OriginalRepresentation) {
   }
 
   override def toString: String = {
-    originalMethod match {
+    def className(c: Class[_]): String = {
+      if (c.isArray) {
+        className(c.getComponentType) + "[]"
+      } else {
+        val canonicalName = c.getCanonicalName
+        if (canonicalName == null) {
+//          println("className: No canonical name for: " + c.getName)
+          c.getName.replace("$", ".")
+        } else {
+          c.getCanonicalName.replace("$", ".")
+        }
+      }
+    }
+
+    val result = originalMethod match {
       case SootMethod(s) =>
         s.getDeclaringClass.toString.replace("$", ".") +
-          " " + s.getReturnType.toString +
+          " " + s.getReturnType.toString.replace("$", ".") +
           " " + s.getName +
-          "(" + s.getParameterTypes.map(t => t.toString).mkString(", ") + ")"
+          "(" + s.getParameterTypes.map(t => t.toString.replace("$", ".")).mkString(", ") + ")"
       case ReflectMethod(r) =>
-        r.getDeclaringClass.getName.replace("$", ".") +
-          " " + r.getReturnType.getName.replace("$", ".") +
+        className(r.getDeclaringClass) +
+          " " + className(r.getReturnType) +
           " " + r.getName +
-          "(" + r.getParameterTypes.map(t => t.getName.replace("$", ".")).mkString(", ")  + ")"
+          "(" + r.getParameterTypes.map(className).mkString(", ") + ")"
       case ReflectConstructor(c) =>
-        c.getDeclaringClass.getName.replace("$", ".") +
+        className(c.getDeclaringClass) +
           " " + "void <init>" +
-          "(" + c.getParameterTypes.map(t => t.getName.replace("$", ".")).mkString(", ") + ")"
+          "(" + c.getParameterTypes.map(className).mkString(", ") + ")"
       case ClassStaticInitializer(i) =>
-        i.getName.replace("$", ".") +
+        className(i) +
           " " + "void <clinit>()"
     }
+//    println("toString " + originalMethod + ":" + result)
+    result
   }
 }
 
@@ -64,6 +80,8 @@ object Coverage {
   def StmtSet(stmts: Stmt*) = mutable.Set[Stmt](stmts: _*)
 
   private val methodMap = mutable.Map[ComparableMethod, StmtSet]()
+  private val jarOnlyMethods  = mutable.Set[ComparableMethod]()
+  private val jaamOnlyMethods = mutable.Set[ComparableMethod]()
   private val classEnding = ".class"
 
   def findCoverage(jaamFile: String, jarFileNames: Seq[String], additionalJarFileNames: Seq[String]) = {
@@ -106,11 +124,13 @@ object Coverage {
     while ({packet = pi.read(); !packet.isInstanceOf[EOF]}) {
       packet match {
         case s: State =>
-          val comparable = new ComparableMethod(s.stmt)
-          methodMap get comparable match {
-            case Some(_) => methodMap(comparable) += s.stmt
+          val method = new ComparableMethod(s.stmt)
+          methodMap get method match {
+            case Some(_) => methodMap(method) += s.stmt
             case None => () // No corresponding value in map from JAR reading.
               //TODO: Do something with this?
+//              println("only in jaam: " + method)
+              jaamOnlyMethods += method
           }
         case _ => () // Ignore anything else.
       }
@@ -119,13 +139,18 @@ object Coverage {
   }
 
   def compareMethods() = {
-    var count = 0
+//    var count = 0
     for ((method, stmtSet) <- methodMap) {
       if (stmtSet.isEmpty) {
-        println(method)
-        count += 1
+        jarOnlyMethods += method
+//        println("only in jar:  " + method)
+//        count += 1
       }
     }
-    println("Missing " + count + " of " + methodMap.size)
+    jaamOnlyMethods.toList.sortBy(_.toString).foreach(m => println("only in jaam: " + m))
+    jarOnlyMethods.toList.sortBy(_.toString).foreach( m => println("only in jar:  " + m))
+    println("Missing in JAR: " + jaamOnlyMethods.size + " of " + (methodMap.size - jarOnlyMethods.size + jaamOnlyMethods.size))
+    println("Missing in JAAM: " + jarOnlyMethods.size + " of " + methodMap.size)
+//    println("Missing " + count + " of " + methodMap.size)
   }
 }
