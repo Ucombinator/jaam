@@ -1101,7 +1101,6 @@ object Main {
       val current = todo.head
       todo = todo.tail
       Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
-      todo = todo.tail
       val (nexts, initClasses) = System.next(current, globalInitClasses)
       val newTodo = nexts.toList.filter(!done.contains(_))
 
