@@ -61,6 +61,13 @@ case class KontStack(k : Kont) {
   def push(frame : Frame) : KontStack = {
     val kAddr = kalloca(frame)
     val newKontStore = store.update(kAddr, KontD(Set(k))).asInstanceOf[KontStore]
+    //Log.info("---new k store---: " + store(kAddr).values.size)
+    /*
+    for (k <- store(kAddr).values) {
+      Log.info("k: " + k)
+    }
+    Log.info("---new k store---")
+    */
     val newKontStack = KontStack(RetKont(frame, kAddr))
     newKontStack.setStore(newKontStore)
     newKontStack
@@ -640,14 +647,25 @@ case class State(val stmt : Stmt,
           else {
             // TODO/optimize: filter out incorrect class types
             val newFP = alloca(expr, nextStmt)
+            //Log.info("newFP: " + newFP)
             val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
+            //Log.info("new frame: " + Frame(nextStmt, fp, destAddr))
             var newStore = store // TODO: currently update the store directly, not using newStore
             self match {
               case Some(s) => newStore.update(ThisFrameAddr(newFP), D(Set(s)))
               case None => {} // TODO: throw exception here?
             }
-            for (i <- 0 until expr.getArgCount())
-              newStore.update(ParameterFrameAddr(newFP, i), args(i))
+            for (i <- 0 until expr.getArgCount()) {
+              /*
+              Log.info("args(" + i + "): ")
+              Log.info("---")
+              for (v <- args(i).values) {
+                Log.info("" + v)
+              }
+              Log.info("---")
+              */
+              store.update(ParameterFrameAddr(newFP, i), args(i))
+            }
 
             val newState = State(Stmt.methodEntry(meth), newFP, newKontStack)
             newState.setInitializedClasses(initializedClasses)
@@ -655,14 +673,24 @@ case class State(val stmt : Stmt,
           }
       }
     }
-
+    
     expr match {
       case expr : DynamicInvokeExpr => ??? // TODO: Could only come from non-Java sources
       case expr : StaticInvokeExpr =>
         checkInitializedClasses(expr.getMethod().getDeclaringClass())
         dispatch(None, expr.getMethod())
       case expr : InstanceInvokeExpr =>
-        ((for (v <- eval(expr.getBase()).values) yield {
+        val values = eval(expr.getBase()).values
+        /*
+        Log.info("expr.getBase: " + expr.getBase)
+        Log.info("---")
+        Log.info("expr.getBase values:")
+        for (v <- values) {
+          Log.info("" + v)
+        }
+        Log.info("---")
+        */
+        ((for (v <- values) yield {
           v match {
             case ObjectValue(_, SnowflakeBasePointer(_)) => {
               val meth = expr.getMethod()
@@ -674,24 +702,6 @@ case class State(val stmt : Stmt,
               dispatch(Some(v), meth)
             }
             case ArrayValue(sootType, bp) => {
-              /*
-              val values = eval(expr.getBase()).values
-              println("---------")
-              println("ArrayValue")
-              println("addrsOf: " + addrsOf(expr.getBase()))
-              println("values.size: " + values.size)
-              println("---")
-              for (v <- values) {
-                println(v)
-              }
-              println("---")
-              println("stmt: " + stmt)
-              println("expr: " + expr)
-              println("expr.getBase: " + expr.getBase)
-              println("sootType: " + sootType)
-              println("basepointer: " + bp)
-              println("expr.getMethod: " + expr.getMethod())
-              */
               dispatch(Some(v), expr.getMethod)
             }
             case _ => Set()
@@ -834,6 +844,7 @@ case class State(val stmt : Stmt,
       case sootStmt : InvokeStmt => handleInvoke(sootStmt.getInvokeExpr, None)
 
       case sootStmt : DefinitionStmt => {
+        //Log.info("DefinitionStmt: " + sootStmt)
         val lhsAddr = addrsOf(sootStmt.getLeftOp())
         sootStmt.getRightOp() match {
           case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
@@ -970,6 +981,9 @@ object System {
     store.on = true
     kstore.on = true
     val nexts = state.next()
+    if (nexts.size == 0) {
+      Log.warn("state " + state.id + " has no successors")
+    }
     store.on = false
     kstore.on = false
   
@@ -1086,6 +1100,7 @@ object Main {
       //TODO refactor store widening code
       val current = todo.head
       Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
+      todo = todo.tail
       val (nexts, initClasses) = System.next(current, globalInitClasses)
       val newTodo = nexts.toList.filter(!done.contains(_))
 
@@ -1115,11 +1130,11 @@ object Main {
       }
 
       if ((globalInitClasses++initClasses).size != globalInitClasses.size) {
-        todo = newTodo ++ List(current) ++ todo.tail
+        todo = newTodo ++ List(current) ++ todo
       }
       else {
         done += current
-        todo = newTodo ++ todo.tail
+        todo = newTodo ++ todo
       }
 
       globalInitClasses ++= initClasses
