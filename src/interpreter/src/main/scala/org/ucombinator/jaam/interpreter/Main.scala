@@ -1099,6 +1099,7 @@ object Main {
     while (todo.nonEmpty) {
       //TODO refactor store widening code
       val current = todo.head
+      todo = todo.tail
       Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
       todo = todo.tail
       val (nexts, initClasses) = System.next(current, globalInitClasses)
