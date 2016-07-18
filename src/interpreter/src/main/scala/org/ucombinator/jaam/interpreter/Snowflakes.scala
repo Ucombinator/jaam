@@ -646,36 +646,40 @@ object Snowflakes {
       }
     })
 
-    table.put(MethodDescription("com.cyberpointllc.stac.webserver.WebServer", "createContext",
-      List("com.cyberpointllc.stac.webserver.handler.AbstractHttpHandler", "boolean"), "com.sun.net.httpserver.HttpContext"),
-      new SnowflakeHandler {
-        val httpExchange = "com.sun.net.httpserver.HttpExchange"
-        val absHttpHandlerClassName = "com.cyberpointllc.stac.webserver.handler.AbstractHttpHandler"
-        val absHttpHandler = Soot.getSootClass(absHtppHandlerClassName)
+    table.put(MethodDescription("com.cyberpointllc.stac.hashmap.Node", "hash",
+      List("java.lang.Object", "int"), "int"), ReturnSnowflake(D.atomicTop))
 
-        // self is None if this is a static call and Some otherwise
+    table.put(MethodDescription("com.sun.net.httpserver.HttpServer", "createContext",
+      List("java.lang.String", "com.sun.net.httpserver.HttpHandler"), "com.sun.net.httpserver.HttpContext"),
+      new SnowflakeHandler {
+        val httpsExchange = "com.sun.net.httpserver.HttpsExchangeImpl"
+        val absHttpHandler = Soot.getSootClass("com.cyberpointllc.stac.webserver.handler.AbstractHttpHandler")
         override def apply(state: State, nextStmt: Stmt, self: Option[Value], args: List[D]): Set[AbstractState] = {
-          val handlers = args.get(0).values
-          val newStore = Snowflakes.createObject(httpExchange, List())
+          val handlers = args.get(1).values
+          val newStore = Snowflakes.createObject(httpsExchange, List())
           state.store.join(newStore)
 
-          val handlerStates: Set[AbstractState] = for (ObjectValue(sootClass, bp) <- handlers) yield {
-            //TODO check sootClass is subclass of AbstractHttpHandler
-            val meth = absHttpHandler.getMethodByName("handle")
-            val newFP = ZeroCFAFramePointer(meth)
-            state.store.update(ThisFrameAddr(newFP), D(Set(ObjectValue(sootClass, bp))))
-            state.store.update(ParameterFrameAddr(newFP, 0),
-              D(Set(ObjectValue(Soot.getSootClass(httpExchange), SnowflakeBasePointer(httpExchange)))))
-            State(Stmt.methodEntry(meth), newFP, state.kontStack)
+          val meth = absHttpHandler.getMethodByName("handle")
+          val newFP = ZeroCFAFramePointer(meth)
+          val handlerStates: Set[AbstractState] =
+            for (ObjectValue(sootClass, bp) <- handlers 
+                 //if (Soot.isSubclass(sootClass, absHttpHandler) && sootClass.isConcrete)) yield {
+                 if Soot.isSubclass(sootClass, absHttpHandler)) yield {
+              state.store.update(ThisFrameAddr(newFP), D(Set(ObjectValue(sootClass, bp))))
+              state.store.update(ParameterFrameAddr(newFP, 0),
+                D(Set(ObjectValue(Soot.getSootClass(httpsExchange), SnowflakeBasePointer(httpsExchange)))))
+              State(Stmt.methodEntry(meth), newFP, state.kontStack)
           }
 
-          handlerStates
+          val retStates = ReturnObjectSnowflake("sun.net.httpserver.HttpContextImpl").apply(state, nextStmt, self, args)
+          retStates ++ handlerStates
         }
       })
 
   // For running Image Processor
   //table.put(MethodDescription("java.lang.System", "getProperty", List("java.lang.String"), "java.lang.String"),
   //  ReturnSnowflake(D(Set(ObjectValue(Soot.classes.String, StringBasePointer("returns from getProperty"))))))
+  //
   //table.put(MethodDescription("java.nio.file.Paths", "get", List("java.lang.String", "java.lang.String[]"), "java.nio.file.Path"), ReturnObjectSnowflake("java.nio.file.Path"))
   //table.put(MethodDescription("java.util.HashMap", SootMethod.constructorName, List(), "void"),
   //  ReturnObjectSnowflake("java.util.HashMap"))
