@@ -1,7 +1,7 @@
 package org.ucombinator.jaam.tools
 
 import java.io.{File, FileInputStream}
-import java.lang.reflect.{Constructor, Method}
+import java.lang.reflect.{Constructor, Method, Modifier}
 import java.net.URLClassLoader
 import java.util.jar.JarFile
 
@@ -107,7 +107,9 @@ object Coverage {
         try {
           val loadedClass = classLoader.loadClass(binaryName)
           methodMap(new ComparableMethod(loadedClass)) = StmtSet()
-          loadedClass.getDeclaredMethods.foreach(m => methodMap(new ComparableMethod(m)) = StmtSet())
+          // Exclude abstract classes, since interpretation cannot possibly
+          // visit an abstract class.
+          loadedClass.getDeclaredMethods.filter(t => (t.getModifiers & Modifier.ABSTRACT) == 0).foreach(m => methodMap(new ComparableMethod(m)) = StmtSet())
           loadedClass.getDeclaredConstructors.foreach(m => methodMap(new ComparableMethod(m)) = StmtSet())
         } catch {
           //TODO: Decide whether to catch these exceptions explicitly.
