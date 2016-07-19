@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.HashMap;
 import java.util.StringTokenizer;
+import java.util.LinkedList;
 
 
 public class Graph
@@ -14,6 +15,8 @@ public class Graph
 	public ArrayList<Vertex> vertices;
 	public ArrayList<MethodVertex> methodVertices;
 	public ArrayList<MethodPathVertex> methodPathVertices;
+    public ArrayList<String> tagsList;
+    public ArrayList<Boolean> highlightedTags;
 	public HashMap<String, Method> methods;
 	public HashMap<String, Class> classes;
 	public AbstractVertex root;
@@ -36,6 +39,9 @@ public class Graph
 		root = new Vertex(-1,-1);
 		this.maxIndex = -1;
 
+        this.tagsList = new ArrayList<String>();
+        this.highlightedTags = new ArrayList<Boolean>();
+        
 		currWindow = new View(true);
 		hotkeyedViews = new View[numHotkeys];
 		for(int i = 0; i < numHotkeys; i++)
@@ -314,6 +320,38 @@ public class Graph
 				System.out.println("Cannot find class: " + className);
 		}
 	}
+    
+    
+    public void addTag(int nodeId, String tag)
+    {
+        Vertex ver = this.containsVertex(nodeId);
+        if(ver==null)
+            return;
+        
+        int t = this.tagPresent(tag);
+        
+        if(t<0)
+        {
+            t = this.tagsList.size();
+            this.tagsList.add(tag);
+            this.highlightedTags.add(new Boolean(true));
+        }
+        ver.addTag(t);
+    }
+    
+    
+    public int tagPresent(String tag)
+    {
+        int i=0;
+        for(String t : this.tagsList)
+        {
+            if(t.equalsIgnoreCase(tag))
+                return i;
+            i++;
+        }
+        return -1;
+    }
+    
 
 	public void clearHighlights()
 	{
@@ -655,6 +693,16 @@ public class Graph
 		for(MethodPathVertex v : this.methodPathVertices)
 			v.collectMethodsAndInstructions();
 	}
+    
+    
+    public void collectAllTags()
+    {
+        for(MethodVertex v : this.methodVertices)
+            v.collectAllTagsFromChildren();
+        
+        for(MethodPathVertex v : this.methodPathVertices)
+            v.collectAllTagsFromChildren();
+    }
 
 	public void finalizeParentsForRootChildren()
 	{

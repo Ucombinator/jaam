@@ -11,7 +11,9 @@ import java.util.ArrayList;
 
 public abstract class AbstractVertex
 {
-	public enum VertexType
+    public ArrayList<Integer> tags;
+
+    public enum VertexType
 	{
 		LINE, METHOD, METHOD_PATH
 	}
@@ -52,6 +54,7 @@ public abstract class AbstractVertex
 	{
 		this.incoming = new ArrayList<AbstractVertex>();
 		this.children = new ArrayList<AbstractVertex>();
+        this.tags = new ArrayList<Integer>();
 		
 		this.width = 1;
 		this.height = 1;
@@ -63,6 +66,16 @@ public abstract class AbstractVertex
 		this.y = -0.5;
 	}
 	
+    public void addTag(int t)
+    {
+        for(Integer i : this.tags)
+        {
+            if(i.intValue()==t)
+                return;
+        }
+        this.tags.add(new Integer(t));
+    }
+    
 	public double distTo(double x, double y)
 	{
 		return Math.sqrt((x - this.x)*(x - this.x) + (y - this.y)*(y - this.y));

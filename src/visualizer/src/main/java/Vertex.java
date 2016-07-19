@@ -89,6 +89,7 @@ public class Vertex extends AbstractVertex
 		return new ArrayList<AbstractVertex>();
 	}
 	
+    
 	public void addNeighbor(Vertex dest)
 	{
 		if(Parameters.debug)
