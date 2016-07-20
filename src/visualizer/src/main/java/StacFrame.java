@@ -761,14 +761,16 @@ public class StacFrame extends JFrame
 								AbstractVertex ver = Main.graph.getVertexNearestCoordinate(x, y);
 								if(ver != null)
 								{
-									if(ver.isHighlighted())
+//									if(ver.isHighlighted())
+									if(ver.isSelected())
 									{
-										ver.clearAllHighlights();
+//										ver.clearAllHighlights();
+										ver.clearAllSelect();
 										Main.graph.redoCycleHighlights();
 									}
 									else
 									{
-										ver.addHighlight(true, true, true);
+										ver.addHighlight(true, false, true, true);
 										if(ver.vertexType == AbstractVertex.VertexType.LINE)
 											((Vertex) ver).highlightCycles();
 									}
@@ -778,14 +780,16 @@ public class StacFrame extends JFrame
 							{
 								AbstractVertex ver = Main.graph.getVertexNearestCoordinate(x, y);
 								Parameters.leftArea.clear();
-								Main.graph.clearHighlights();
+                                //System.out.println("testing...");
+								//Main.graph.clearHighlights();
+                                Main.graph.clearSelects();
 
 								if(ver != null)
 								{
 									Parameters.highlightIncoming = true;
 									Parameters.highlightOutgoing = true;
 									Parameters.vertexHighlight = true;
-									ver.addHighlight(true, true, true);
+									ver.addHighlight(true, false, true, true);
 									if(ver.vertexType == AbstractVertex.VertexType.LINE)
 										((Vertex) ver).highlightCycles();
 								}

@@ -20,7 +20,7 @@ public class CodeArea extends JTextArea
 	public CodeArea()
 	{
 		this.setFont(Parameters.font);
-		System.out.println("Initializing empty code area");
+//		System.out.println("Initializing empty code area");
 		this.setEditable(false);
 		description = new ArrayList<Instruction>();
 		rowToIndex = new ArrayList<Integer>();
@@ -41,7 +41,7 @@ public class CodeArea extends JTextArea
 						if(row >= 0 && row < rowToIndex.size())
 						{
 							Instruction line = description.get(rowToIndex.get(row));
-							System.out.println("Instruction selected on row " + row + ", " + line.str);
+							//System.out.println("Instruction selected on row " + row + ", " + line.str);
 							if(line.isInstr)
 							{
 								if(line.isHighlighted)
@@ -60,7 +60,8 @@ public class CodeArea extends JTextArea
 					{
 						Highlighter h = CodeArea.this.getHighlighter();
 						h.removeAllHighlights();
-						Main.graph.clearHighlights();
+						//Main.graph.clearHighlights();
+                        Main.graph.clearSelects();
 					
 						if(row >= 0 && row < rowToIndex.size())
 						{
@@ -101,9 +102,10 @@ public class CodeArea extends JTextArea
 			if(v.getMethodName().contains(method) && v.jimpleIndex == index)
 			{
 				if(addHighlight)
-					v.addHighlight(true, true, true);
+					v.addHighlight(true, false, true, true);
 				else
-					v.clearAllHighlights();
+					v.clearAllSelect();
+//					v.clearAllHighlights();
 			}
 		}
 	}
@@ -147,7 +149,7 @@ public class CodeArea extends JTextArea
 		
 		this.computeDescriptionIndex();
 		this.writeText();
-		this.drawHighlights(Parameters.colorSelection, Parameters.colorFocus);
+		this.drawHighlights(Parameters.colorSelection, Parameters.colorFocus, Parameters.colorHighlight);
 		this.setCaretPosition(0);
 	}
 	
@@ -175,13 +177,15 @@ public class CodeArea extends JTextArea
 		this.setText(fullText.toString());
 	}
 	
-	private void drawHighlights(Color c1, Color c2)
+	private void drawHighlights(Color c1, Color c2, Color c3)
 	{
 		for(int i = 0; i < this.description.size(); i++)
 		{
 			//TODO: Find new color for applying both highlights?
 			Instruction line = this.description.get(i);
-			if(line.isHighlighted)
+            if(line.isSelected)
+                this.drawLineHighlight(i, c3);
+			else if(line.isHighlighted)
 				this.drawLineHighlight(i, c1);
 			else if(line.isCycleHighlighted)
 				this.drawLineHighlight(i, c2);

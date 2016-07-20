@@ -38,9 +38,9 @@ public abstract class AbstractVertex
 	//to create its incoming edges.
 	protected AbstractVertex parent, mergeRoot;
 	protected boolean isVisible, mergeable;
-	protected boolean isHighlighted, isIncomingHighlighted, isOutgoingHighlighted; //Highlight this vertex, incoming edges, or outgoing edges
+	protected boolean isSelected, isHighlighted, isIncomingHighlighted, isOutgoingHighlighted; //Select or Highlight this vertex, incoming edges, or outgoing edges
 	protected boolean drawEdges;
-	protected int numChildrenHighlighted;
+	protected int numChildrenHighlighted, numChildrenSelected;
 	protected int loopHeight;
 	
 	//Subclasses must override these so that we have descriptions for each of them,
@@ -383,9 +383,11 @@ public abstract class AbstractVertex
 		}
 	}
 	
-	public void addHighlight(boolean vertex, boolean to, boolean from)
+	public void addHighlight(boolean select, boolean vertex, boolean to, boolean from)
 	{
 		//System.out.println("Highlighting vertex: " + this.getFullName());
+		if(select)
+			this.isSelected = true;
 		if(vertex)
 			this.isHighlighted = true;
 		if(to)
@@ -396,6 +398,10 @@ public abstract class AbstractVertex
 		AbstractVertex v = this.getMergeParent();
 		while(v != null)
 		{
+			if(select)
+			{
+				v.numChildrenSelected++;
+			}
 			if(vertex)
 			{
 				v.numChildrenHighlighted++;
@@ -420,10 +426,21 @@ public abstract class AbstractVertex
 		return this.isHighlighted;
 	}
 	
+	
 	public boolean isChildHighlighted()
 	{
 		//System.out.println("Highlighted children for vertex: " + this.getFullName() + " = " + this.numChildrenHighlighted);
 		return this.numChildrenHighlighted > 0;
+	}
+	
+	public boolean isSelected()
+	{
+		return this.isSelected;
+	}
+	
+	public boolean isChildSelected()
+	{
+		return this.numChildrenSelected > 0;
 	}
 	
 	public void clearAllHighlights()
@@ -439,6 +456,23 @@ public abstract class AbstractVertex
 		}
 
 		this.isHighlighted = false;
+		this.isIncomingHighlighted = false;
+		this.isOutgoingHighlighted = false;
+	}
+	
+	public void clearAllSelect()
+	{
+		if(this.isSelected)
+		{
+			AbstractVertex v = this.getMergeParent();
+			while(v != null)
+			{
+				v.numChildrenSelected--;
+				v = v.getMergeParent();
+			}
+		}
+
+		this.isSelected = false;
 		this.isIncomingHighlighted = false;
 		this.isOutgoingHighlighted = false;
 	}

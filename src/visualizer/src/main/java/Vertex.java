@@ -39,6 +39,7 @@ public class Vertex extends AbstractVertex
 		
 		this.isVisible = addC;
 		this.numChildrenHighlighted = 0;
+		this.numChildrenSelected = 0;
 
 		if(addC)
 		{
@@ -223,19 +224,19 @@ public class Vertex extends AbstractVertex
 		if(this.loopHeader != null)
 		{
 			Vertex header = this.loopHeader;
-			header.addHighlight(false, true, true);
+			header.addHighlight(false, false, true, true);
 			
 			for(Vertex v : header.loopChildren)
-				v.addHighlight(false, true, true);
+				v.addHighlight(false, false, true, true);
 		}
 		
 		//Otherwise try to highlight the loop that this vertex starts
 		else if(this.loopChildren.size() > 0)
 		{
-			this.addHighlight(false, true, true);
+			this.addHighlight(false, false, true, true);
 			
 			for(Vertex v : this.loopChildren)
-				v.addHighlight(false, true, true);
+				v.addHighlight(false, false, true, true);
 		}
 	}
 	

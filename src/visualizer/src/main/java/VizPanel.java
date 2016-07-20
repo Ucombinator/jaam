@@ -154,10 +154,16 @@ public class VizPanel extends JPanel
 		y1 = (int) this.getPixelYFromIndex(y1temp);
 		y2 = (int) this.getPixelYFromIndex(y2temp);
 		
-		if(Parameters.vertexHighlight && (ver.isHighlighted() || ver.isChildHighlighted()))
+		if(Parameters.vertexHighlight && (ver.isSelected() || ver.isChildSelected()))
 		{
 			//System.out.println("Drawing highlighted vertex: " + ver.id);
 			g.setColor(Parameters.colorHighlight);
+			g.fillRect(x1, y1, x2 - x1, y2 - y1);
+		}
+		else if(Parameters.vertexHighlight && (ver.isHighlighted() || ver.isChildHighlighted()))
+		{
+			//System.out.println("Drawing highlighted vertex: " + ver.id);
+			g.setColor(Parameters.colorSelection);
 			g.fillRect(x1, y1, x2 - x1, y2 - y1);
 		}
 		else
@@ -174,7 +180,8 @@ public class VizPanel extends JPanel
 			g.setColor(c);
 			g.fillRect(x1, y1, x2 - x1, y2 - y1);
 		}
-		
+
+/*		
         for(Integer tg : ver.tags)
         {
             int t = tg.intValue();
@@ -190,7 +197,7 @@ public class VizPanel extends JPanel
                 drawStar(g,x1+(x2-x1)/6,(y1+y2)/2,l);
             }
         }
-
+*/
         
         Font ff = new Font("Serif", Font.BOLD, Parameters.font.getSize());
 		if(!this.context)
@@ -206,6 +213,8 @@ public class VizPanel extends JPanel
 		//if(!this.context)
 		{
 			g.setStroke(new BasicStroke(1));
+            if(Parameters.vertexHighlight && (ver.isSelected() || ver.isChildSelected() || ver.isHighlighted() || ver.isChildHighlighted()))
+                g.setStroke(new BasicStroke(3));
 			g.drawRect(x1, y1, x2 - x1, y2 - y1);
 		}
         

@@ -162,23 +162,26 @@ public class Graph
 	{
 		for(Vertex v : this.vertices)
 		{
-			v.clearAllHighlights();
+//			v.clearAllHighlights();
+			v.clearAllSelect();
 			if(v.isVisible && x1 < v.x && v.x < x2 && y1 < v.y && v.y < y2)
-				v.addHighlight(true, true, true);
+				v.addHighlight(true, false, true, true);
 		}
 		
 		for(MethodVertex v : this.methodVertices)
 		{
-			v.clearAllHighlights();
+//			v.clearAllHighlights();
+			v.clearAllSelect();
 			if(v.isVisible && x1 < v.x && v.x < x2 && y1 < v.y && v.y < y2)
-				v.addHighlight(true, true, true);
+				v.addHighlight(true, false, true, true);
 		}
 		
 		for(MethodPathVertex v: this.methodPathVertices)
 		{
-			v.clearAllHighlights();
+//			v.clearAllHighlights();
+			v.clearAllSelect();
 			if(v.isVisible && x1 < v.x && v.x < x2 && y1 < v.y && v.y < y2)
-				v.addHighlight(true, true, true);
+				v.addHighlight(true, false, true, true);
 		}
 	}
 	
@@ -365,6 +368,18 @@ public class Graph
 			v.clearAllHighlights();
 	}
 	
+	public void clearSelects()
+	{
+		for(Vertex v : this.vertices)
+			v.clearAllSelect();
+		
+		for(MethodVertex v : this.methodVertices)
+			v.clearAllSelect();
+
+		for(MethodPathVertex v : this.methodPathVertices)
+			v.clearAllSelect();
+	}
+	
 	public HashSet<Method> collectHighlightedMethods()
 	{
 		HashSet<Method> highlightedMethods = new HashSet<Method>();
@@ -508,7 +523,7 @@ public class Graph
 		{
 			//System.out.println(v.neighbors.size());
 			if(v.neighbors.size() == 0)
-				v.addHighlight(true, false, false);
+				v.addHighlight(false, true, false, false);
 		}
 	}
 
@@ -519,7 +534,7 @@ public class Graph
 		{
 			//System.out.println(v.incoming.size());
 			if(v.incoming.size() == 0)
-				v.addHighlight(true, false, false);
+				v.addHighlight(false, true, false, false);
 		}
 	}
 	
@@ -530,9 +545,9 @@ public class Graph
 		{
 			if(v.id == id)
 			{
-				v.addHighlight(true, false, true);
+				v.addHighlight(false, true, false, true);
 				for(AbstractVertex w : v.neighbors)
-					w.addHighlight(true, true, false);
+					w.addHighlight(false, true, true, false);
 			}
 		}
 	}
@@ -544,9 +559,9 @@ public class Graph
 		{
 			if(v.id >= startID && v.id <= endID)
 			{
-				v.addHighlight(true, false, true);
+				v.addHighlight(false, true, false, true);
 				for(AbstractVertex w : v.neighbors)
-					w.addHighlight(true, true, false);
+					w.addHighlight(false, true, true, false);
 			}
 		}
 	}
@@ -558,9 +573,9 @@ public class Graph
 		{
 			if(v.id == id)
 			{
-				v.addHighlight(true, false, true);
+				v.addHighlight(false, true, false, true);
 				for(AbstractVertex w : v.incoming)
-					w.addHighlight(true, true, false);
+					w.addHighlight(false, true, true, false);
 			}
 		}
 	}
@@ -572,9 +587,9 @@ public class Graph
 		{
 			if(v.id >= startID && v.id <= endID)
 			{
-				v.addHighlight(true, false, true);
+				v.addHighlight(false, true, false, true);
 				for(AbstractVertex w : v.incoming)
-					w.addHighlight(true, true, false);
+					w.addHighlight(false, true, true, false);
 			}
 		}
 	}
@@ -589,7 +604,7 @@ public class Graph
 				AbstractVertex ver = v;
 				while(ver != this.root)
 				{
-					ver.addHighlight(true, true, true);
+					ver.addHighlight(false, true, true, true);
 					ver = ver.parent;
 				}
 			}
@@ -606,7 +621,7 @@ public class Graph
 				AbstractVertex ver = v;
 				while(ver != this.root)
 				{
-					ver.addHighlight(true, true, true);
+					ver.addHighlight(false, true, true, true);
 					ver = ver.parent;
 				}
 			}
@@ -619,7 +634,7 @@ public class Graph
 		for(Vertex v : this.vertices)
 		{
 			if(v.id == id)
-				v.addHighlight(true, true, true);
+				v.addHighlight(false, true, true, true);
 		}
 	}
 	
@@ -629,7 +644,7 @@ public class Graph
 		for(Vertex v : this.vertices)
 		{
 			if(v.id >= startID && v.id <= endID)
-				v.addHighlight(true, true, true);
+				v.addHighlight(false, true, true, true);
 		}
 	}
 	
@@ -639,7 +654,7 @@ public class Graph
 		for(Vertex v : this.vertices)
 		{
 			if(v.getInstruction().contains(match))
-				v.addHighlight(true, true, true);
+				v.addHighlight(false, true, true, true);
 		}
 	}
 	
@@ -649,7 +664,7 @@ public class Graph
 		for(Vertex v : this.vertices)
 		{
 			if(v.getMethodName().contains(match))
-				v.addHighlight(true, true, true);
+				v.addHighlight(false, true, true, true);
 		}
 	}
 	
