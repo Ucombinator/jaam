@@ -78,6 +78,16 @@ public abstract class AbstractVertex
         this.tags.add(new Integer(t));
     }
     
+    public boolean hasTag(int t)
+    {
+        for(Integer i : this.tags)
+        {
+            if(i.intValue()==t)
+                return true;
+        }
+        return false;
+    }
+    
 	public double distTo(double x, double y)
 	{
 		return Math.sqrt((x - this.x)*(x - this.x) + (y - this.y)*(y - this.y));

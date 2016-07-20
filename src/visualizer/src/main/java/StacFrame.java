@@ -57,7 +57,7 @@ public class StacFrame extends JFrame
 	
 	public enum searchType
 	{
-		ID, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
+		ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
 	}
 	
 	public StacFrame()
@@ -138,7 +138,7 @@ public class StacFrame extends JFrame
 				}
 		);
 
-		JMenuItem searchByInst = new JMenuItem("by Instruction");
+		JMenuItem searchByInst = new JMenuItem("by Statement");
 		menuSearch.add(searchByInst);
 		searchByInst.addActionListener
 		(
@@ -166,6 +166,21 @@ public class StacFrame extends JFrame
 				}
 		);
 
+        JMenuItem searchTags = new JMenuItem("Allocation Tags");
+        menuSearch.add(searchTags);
+        searchTags.addActionListener
+        (
+         new ActionListener()
+         {
+            public void actionPerformed(ActionEvent ev)
+            {
+                searchAndHighlight(searchType.TAG);
+                Parameters.repaintAll();
+            }
+        }
+         );
+        
+        
 		JMenuItem searchLeaves = new JMenuItem("All leaves");
 		menuSearch.add(searchLeaves);
 		searchLeaves.addActionListener
@@ -776,7 +791,7 @@ public class StacFrame extends JFrame
 		}
 
 		String input = "";
-		if(search != searchType.ALL_LEAVES && search != searchType.ALL_SOURCES)
+		if(search != searchType.ALL_LEAVES && search != searchType.ALL_SOURCES && search != searchType.TAG)
 		{
 			input = JOptionPane.showInputDialog(null, title);
 			if(input == null)

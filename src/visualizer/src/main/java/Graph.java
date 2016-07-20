@@ -478,6 +478,10 @@ public class Graph
 			}
 			
 		}
+        else if(search == StacFrame.searchType.TAG)
+        {
+            this.searchByTag(0);
+        }
 		else if(search == StacFrame.searchType.INSTRUCTION)
 		{
 			this.searchByInst(searchStr);
@@ -651,6 +655,16 @@ public class Graph
 		}
 	}
 	
+    //Highlight vertices with a given tag
+    public void searchByTag(int t)
+    {
+        for(Vertex v : this.vertices)
+        {
+            if(v.hasTag(t))
+                v.addHighlight(false, true, true, true);
+        }
+    }
+    
 	//Highlight vertices whose instruction contains the given search string
 	public void searchByInst(String match)
 	{
