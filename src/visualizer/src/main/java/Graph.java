@@ -386,19 +386,22 @@ public class Graph
 		
 		for(Vertex v : this.vertices)
 		{
-			if(v.isHighlighted)
+            if(v.isHighlighted || v.isSelected)
+//			if(v.isHighlighted)
 				highlightedMethods.add(v.getMethod());
 		}
 		
 		for(MethodVertex v : this.methodVertices)
 		{
-			if(v.isHighlighted)
+            if(v.isHighlighted || v.isSelected)
+//			if(v.isHighlighted)
 				highlightedMethods.add(v.getMethod());
 		}
 		
 		for(MethodPathVertex v : this.methodPathVertices)
 		{
-			if(v.isHighlighted)
+            if(v.isHighlighted || v.isSelected)
+//			if(v.isHighlighted)
 			{
 				for(MethodVertex w : v.getMergeChildren())
 					highlightedMethods.add(w.getMethod());

@@ -222,7 +222,7 @@ public class VizPanel extends JPanel
         
 	}
     
-    
+    //not needed anymore
     public void drawStar(Graphics2D g, double x, double y, double l)
     {
         double root3 = Math.sqrt(3);
