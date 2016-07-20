@@ -46,6 +46,7 @@ public abstract class AbstractVertex
 	//Subclasses must override these so that we have descriptions for each of them,
 	//and so that our generic collapsing can work for all of them
 	abstract String getRightPanelContent();
+    abstract String getShortDescription();
 	abstract AbstractVertex getMergeParent();
 	abstract ArrayList<? extends AbstractVertex> getMergeChildren();
 	abstract String getName();
@@ -66,6 +67,7 @@ public abstract class AbstractVertex
 		this.y = -0.5;
 	}
 	
+    
     public void addTag(int t)
     {
         for(Integer i : this.tags)

@@ -18,6 +18,7 @@ public class Parameters
 	public static StacFrame stFrame;
 	public static JTextArea rightArea;
 	public static CodeArea leftArea;
+    public static SearchArea searchArea;
 	public static String pwd = "./";
 	public static Color colorFocus = new Color(Integer.parseInt("FFF7BC", 16)),
 			colorSelection = new Color(Integer.parseInt("A6BDDB", 16)),
@@ -40,19 +41,22 @@ public class Parameters
 		StringBuilder text = new StringBuilder();
 		for(Vertex v : Main.graph.vertices)
 		{
-			if(v.isHighlighted)
+			//if(v.isHighlighted)
+            if(v.isSelected)
 				text.append(v.getRightPanelContent() + "\n\n");
 		}
 		
 		for(MethodVertex v : Main.graph.methodVertices)
 		{
-			if(v.isHighlighted)
+            //if(v.isHighlighted)
+            if(v.isSelected)
 				text.append(v.getRightPanelContent() + "\n\n");
 		}
 		
 		for(MethodPathVertex v : Main.graph.methodPathVertices)
 		{
-			if(v.isHighlighted)
+            //if(v.isHighlighted)
+            if(v.isSelected)
 				text.append(v.getRightPanelContent() + "\n\n");
 		}
 		
@@ -131,6 +135,7 @@ public class Parameters
 	{
 		leftArea.setDescription();
 		setRightText();
+        searchArea.writeText();
 		stFrame.repaint();
 	}
 	

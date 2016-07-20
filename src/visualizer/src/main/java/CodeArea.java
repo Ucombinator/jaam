@@ -46,12 +46,10 @@ public class CodeArea extends JTextArea
 							{
 								if(line.isSelected)
 								{
-                                    System.out.println("line Selected");
 									CodeArea.this.searchByJimpleIndex(line.methodName, line.jimpleIndex, false);
 								}
 								else
 								{
-                                    System.out.println("line not Selected");
 									Parameters.vertexHighlight = true;
 									CodeArea.this.searchByJimpleIndex(line.methodName, line.jimpleIndex, true);
 								}
@@ -79,6 +77,7 @@ public class CodeArea extends JTextArea
 					}
 					
 					Main.graph.redoCycleHighlights();
+                    Parameters.searchArea.getSearchVertices();
 					Parameters.repaintAll();
 				}
 				

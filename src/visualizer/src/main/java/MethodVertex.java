@@ -49,6 +49,12 @@ public class MethodVertex extends AbstractVertex
 		return str;
 	}
 	
+    public String getShortDescription()
+    {
+        String str = this.id+": Method Vertex\n        method: " + this.getMethodName() + "\n";
+        return ""+str;
+    }
+    
 	public MethodPathVertex getMergeParent()
 	{
 		return this.mergeParent;

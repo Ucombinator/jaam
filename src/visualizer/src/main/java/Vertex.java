@@ -62,7 +62,7 @@ public class Vertex extends AbstractVertex
 	{
 		String str = "Regular Vertex (loop height = " + this.loopHeight + ")\n"
 				+ "id: " + this.id + "\n"
-				+ "instruction: " + this.getInstruction() + "\n"
+				+ "statement: " + this.getInstruction() + "\n"
 				+ "method: " + this.getMethodName() + "\n"
 				+ " location (left, right, top, bottom): "
 				+ this.left + ", " + this.right + ", " + this.top + ", " + this.bottom + "\n"
@@ -70,6 +70,12 @@ public class Vertex extends AbstractVertex
 		return str;
 	}
 	
+    public String getShortDescription()
+    {
+        String str = this.id+": Regular Vertex\n        statement: " + this.getInstruction() + "\n";
+        return ""+str;
+    }
+    
 	public MethodVertex getMergeParent()
 	{
 		return this.mergeParent;
