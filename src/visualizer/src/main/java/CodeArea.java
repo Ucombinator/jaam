@@ -44,12 +44,14 @@ public class CodeArea extends JTextArea
 							//System.out.println("Instruction selected on row " + row + ", " + line.str);
 							if(line.isInstr)
 							{
-								if(line.isHighlighted)
+								if(line.isSelected)
 								{
+                                    System.out.println("line Selected");
 									CodeArea.this.searchByJimpleIndex(line.methodName, line.jimpleIndex, false);
 								}
 								else
 								{
+                                    System.out.println("line not Selected");
 									Parameters.vertexHighlight = true;
 									CodeArea.this.searchByJimpleIndex(line.methodName, line.jimpleIndex, true);
 								}
@@ -58,8 +60,8 @@ public class CodeArea extends JTextArea
 					}
 					else
 					{
-						Highlighter h = CodeArea.this.getHighlighter();
-						h.removeAllHighlights();
+//						Highlighter h = CodeArea.this.getHighlighter();
+//						h.removeAllHighlights();
 						//Main.graph.clearHighlights();
                         Main.graph.clearSelects();
 					
@@ -68,7 +70,7 @@ public class CodeArea extends JTextArea
 							Instruction line = description.get(rowToIndex.get(row));
 							if(line.isInstr)
 							{
-								CodeArea.this.drawLineHighlight(row, Parameters.colorSelection);
+//								CodeArea.this.drawLineHighlight(row, Parameters.colorSelection);
 								
 								Parameters.vertexHighlight = true;
 								CodeArea.this.searchByJimpleIndex(line.methodName, line.jimpleIndex, true);
@@ -179,6 +181,8 @@ public class CodeArea extends JTextArea
 	
 	private void drawHighlights(Color c1, Color c2, Color c3)
 	{
+        Highlighter h = CodeArea.this.getHighlighter();
+        h.removeAllHighlights();
 		for(int i = 0; i < this.description.size(); i++)
 		{
 			//TODO: Find new color for applying both highlights?
