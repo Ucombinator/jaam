@@ -809,8 +809,6 @@ public class StacFrame extends JFrame
 
 		Parameters.highlightOutgoing = search != searchType.OUT_OPEN;
 		Parameters.highlightIncoming = search != searchType.IN_OPEN;
-
-        Parameters.searchArea.getSearchVertices();
     
     }
 	
@@ -860,7 +858,6 @@ public class StacFrame extends JFrame
 											((Vertex) ver).highlightCycles();
 									}
 								}
-                                Parameters.searchArea.getSearchVertices();
 							}
 							else if(m.getClickCount() == 1)
 							{
@@ -879,7 +876,6 @@ public class StacFrame extends JFrame
 									if(ver.vertexType == AbstractVertex.VertexType.LINE)
 										((Vertex) ver).highlightCycles();
 								}
-                                Parameters.searchArea.getSearchVertices();
 							}
 							
 							else if(m.getClickCount() == 2)

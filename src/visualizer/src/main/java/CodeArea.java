@@ -77,7 +77,6 @@ public class CodeArea extends JTextArea
 					}
 					
 					Main.graph.redoCycleHighlights();
-                    Parameters.searchArea.getSearchVertices();
 					Parameters.repaintAll();
 				}
 				
