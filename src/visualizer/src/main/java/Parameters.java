@@ -130,6 +130,47 @@ public class Parameters
 		return path.substring(lastSlash+1);
 				
 	}
+    
+    public static String getHTMLVerbatim(String str)
+    {
+        int pos = -1;
+        String suf = ""+str;
+
+        String pre = "";
+        while(true)
+        {
+            pos = suf.indexOf('&');
+            if(pos<0)
+                break;
+            pre = pre + suf.substring(0,pos)+"&amp;";
+            suf = suf.substring(pos+1);
+        }
+        suf = pre + suf;
+        
+        pre = "";
+        while(true)
+        {
+            pos = suf.indexOf('<');
+            if(pos<0)
+                break;
+            pre = pre + suf.substring(0,pos)+"&lt;";
+            suf = suf.substring(pos+1);
+        }
+        suf = pre + suf;
+ 
+        pre = "";
+        while(true)
+        {
+            pos = suf.indexOf('>');
+            if(pos<0)
+                break;
+            pre = pre + suf.substring(0,pos)+"&gt;";
+            suf = suf.substring(pos+1);
+        }
+        suf = pre + suf;
+        
+        return "<code>"+suf+"</code>";
+    }
 
 	public static void repaintAll()
 	{

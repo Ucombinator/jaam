@@ -34,7 +34,7 @@ public class MethodVertex extends AbstractVertex
 	{
 		return this.method.getFullName();
 	}
-	
+    
 	public Method getMethod()
 	{
 		return this.method;
@@ -51,8 +51,10 @@ public class MethodVertex extends AbstractVertex
 	
     public String getShortDescription()
     {
-        String str = this.id+": Method Vertex\n        method: " + this.getMethodName() + "\n";
-        return ""+str;
+//        String str = this.id+": Method Vertex\n        method: " + this.getMethodName() + "\n";
+        String str = "<html>"+this.id+": Method Vertex<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+                    + "method: " + Parameters.getHTMLVerbatim(this.getMethodName()) + "</html>";
+        return str;
     }
     
 	public MethodPathVertex getMergeParent()
