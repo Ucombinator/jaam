@@ -36,6 +36,7 @@ import javax.swing.JComboBox;
 import javax.swing.KeyStroke;
 import javax.swing.JLabel;
 import javax.swing.JButton;
+import javax.swing.text.DefaultCaret;
 
 
 /**
@@ -156,29 +157,30 @@ public class StacFrame extends JFrame
 		menuSearch.add(searchByMethod);
 		searchByMethod.addActionListener
 		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						searchAndHighlight(searchType.METHOD);
-						Parameters.repaintAll();
-					}
-				}
+            new ActionListener()
+            {
+                public void actionPerformed(ActionEvent ev)
+                {
+                    searchAndHighlight(searchType.METHOD);
+                    Parameters.repaintAll();
+                }
+            }
 		);
 
         JMenuItem searchTags = new JMenuItem("Allocation Tags");
         menuSearch.add(searchTags);
         searchTags.addActionListener
         (
-         new ActionListener()
-         {
-            public void actionPerformed(ActionEvent ev)
+            new ActionListener()
             {
-                searchAndHighlight(searchType.TAG);
-                Parameters.repaintAll();
+                public void actionPerformed(ActionEvent ev)
+                {
+                    searchAndHighlight(searchType.TAG);
+                    Parameters.repaintAll();
+                }
             }
-        }
-         );
+        );
+        searchTags.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, 0));
         
         
 		JMenuItem searchLeaves = new JMenuItem("All leaves");
@@ -678,6 +680,7 @@ public class StacFrame extends JFrame
 		JLabel rightL = new JLabel("Description", JLabel.CENTER);
 		Parameters.rightArea = new JTextArea();
 		Parameters.rightArea.setEditable(false);
+        ((DefaultCaret)Parameters.rightArea.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 		rightPanel.setLayout(new BorderLayout());
 		rightPanel.add(rightL, BorderLayout.NORTH);
 		JScrollPane scrollR = new JScrollPane (Parameters.rightArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -856,6 +859,7 @@ public class StacFrame extends JFrame
 										ver.addHighlight(true, false, true, true);
 										if(ver.vertexType == AbstractVertex.VertexType.LINE)
 											((Vertex) ver).highlightCycles();
+                                        Parameters.ping();
 									}
 								}
 							}
@@ -863,8 +867,6 @@ public class StacFrame extends JFrame
 							{
 								AbstractVertex ver = Main.graph.getVertexNearestCoordinate(x, y);
 								Parameters.leftArea.clear();
-                                //System.out.println("testing...");
-								//Main.graph.clearHighlights();
                                 Main.graph.clearSelects();
 
 								if(ver != null)
@@ -875,6 +877,8 @@ public class StacFrame extends JFrame
 									ver.addHighlight(true, false, true, true);
 									if(ver.vertexType == AbstractVertex.VertexType.LINE)
 										((Vertex) ver).highlightCycles();
+                                    Parameters.ping();
+                                    Parameters.fixCaretPositions();
 								}
 							}
 							

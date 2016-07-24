@@ -3,6 +3,7 @@ import javax.swing.JTextArea;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
+import javax.swing.text.DefaultCaret;
 import java.awt.Font;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -16,6 +17,8 @@ public class CodeArea extends JTextArea
 	private HashSet<Method> methods = new HashSet<Method>();
 	ArrayList<Instruction> description;
 	ArrayList<Integer> rowToIndex; //Since some Jimple indices can be missing, we need to store an offset
+    
+    private int currentCaret=0;
 	
 	public CodeArea()
 	{
@@ -24,7 +27,10 @@ public class CodeArea extends JTextArea
 		this.setEditable(false);
 		description = new ArrayList<Instruction>();
 		rowToIndex = new ArrayList<Integer>();
-		
+        
+        
+        ((DefaultCaret)this.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+        
 		this.addMouseListener
 		(
 			new MouseListener()
@@ -35,7 +41,7 @@ public class CodeArea extends JTextArea
 					Font font = CodeArea.this.getFont();
 					int lineHeight = CodeArea.this.getFontMetrics(font).getHeight();
 					int row = y/lineHeight;
-
+                     
 					if(e.isShiftDown())
 					{
 						if(row >= 0 && row < rowToIndex.size())
@@ -58,8 +64,6 @@ public class CodeArea extends JTextArea
 					}
 					else
 					{
-//						Highlighter h = CodeArea.this.getHighlighter();
-//						h.removeAllHighlights();
 						//Main.graph.clearHighlights();
                         Main.graph.clearSelects();
 					
@@ -68,8 +72,6 @@ public class CodeArea extends JTextArea
 							Instruction line = description.get(rowToIndex.get(row));
 							if(line.isInstr)
 							{
-//								CodeArea.this.drawLineHighlight(row, Parameters.colorSelection);
-								
 								Parameters.vertexHighlight = true;
 								CodeArea.this.searchByJimpleIndex(line.methodName, line.jimpleIndex, true);
 							}
@@ -102,12 +104,16 @@ public class CodeArea extends JTextArea
 			if(v.getMethodName().contains(method) && v.jimpleIndex == index)
 			{
 				if(addHighlight)
+                {
 					v.addHighlight(true, false, true, true);
+                }
 				else
 					v.clearAllSelect();
 //					v.clearAllHighlights();
 			}
 		}
+        if(addHighlight)
+            Parameters.ping();
 	}
 
 	public void clear()
@@ -150,7 +156,9 @@ public class CodeArea extends JTextArea
 		this.computeDescriptionIndex();
 		this.writeText();
 		this.drawHighlights(Parameters.colorSelection, Parameters.colorFocus, Parameters.colorHighlight);
-		this.setCaretPosition(0);
+
+//		this.setCaretPosition(0);
+//        this.fixCaretPosition();
 	}
 	
 	private void computeDescriptionIndex()
@@ -176,6 +184,42 @@ public class CodeArea extends JTextArea
 		
 		this.setText(fullText.toString());
 	}
+    
+    
+    public void fixCaretPosition()
+    {
+        try
+        {
+            int line = this.getLineOfOffset(this.getCaretPosition());
+//            int line = this.getLineOfOffset(this.currentCaret);
+            int close = -1;
+            int dist1, dist2;
+            
+            for(int i = 0; i < this.description.size(); i++)
+            {
+                if(!this.description.get(i).isSelected)
+                    continue;
+                
+                dist1 = line - close;
+                dist2 = line - i;
+                
+                if(dist2*dist2 < dist1*dist1 || !this.description.get(line).isSelected)
+                    close = i;
+            }
+            
+            if(close>=0)
+            {
+                this.setCaretPosition(this.getLineStartOffset(close));
+            }
+        }
+        catch(BadLocationException ex)
+        {
+            System.out.println("doc = "+CodeArea.this.getText());
+            System.out.println(ex);
+        }
+
+    }
+    
 	
 	private void drawHighlights(Color c1, Color c2, Color c3)
 	{

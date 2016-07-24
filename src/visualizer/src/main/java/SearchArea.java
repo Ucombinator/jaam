@@ -4,6 +4,7 @@ import javax.swing.JLabel;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.Color;
+import java.awt.Rectangle;
 import java.awt.BorderLayout;
 
 
@@ -19,17 +20,18 @@ public class SearchArea extends JPanel
 {
     public JTree searchTree;
     private DefaultMutableTreeNode root;
+    public static int Node_Height = 40;
     
 	public SearchArea()
 	{
         this.setLayout(new BorderLayout());
         
-        this.root = new DefaultMutableTreeNode("Search\nResults");
+        this.root = new DefaultMutableTreeNode("Search Results");
         this.searchTree = new JTree(root);
 
         this.searchTree.setShowsRootHandles(true);
         this.searchTree.setRootVisible(false);
-        this.searchTree.setRowHeight(40);
+        this.searchTree.setRowHeight(SearchArea.Node_Height);
         this.searchTree.setCellRenderer(new SearchRenderer());
         
         this.add(this.searchTree, BorderLayout.CENTER);
@@ -57,6 +59,7 @@ public class SearchArea extends JPanel
                         {
                             Parameters.vertexHighlight = true;
                             ver.addHighlight(true, false, true, true);
+                            Parameters.ping();
                         }
 					}
 					else
@@ -64,6 +67,7 @@ public class SearchArea extends JPanel
                         Main.graph.clearSelects();
                         Parameters.vertexHighlight = true;
                         ver.addHighlight(true, false, true, true);
+                        Parameters.ping();
 					}
 					
 					Main.graph.redoCycleHighlights();
@@ -136,6 +140,52 @@ public class SearchArea extends JPanel
         this.expandAllNodes(this.searchTree);
 	}
 	
+    
+    
+    public void fixCaretPosition()
+    {
+        
+        Rectangle window = this.searchTree.getVisibleRect();
+        int first = this.searchTree.getClosestRowForLocation(window.x, window.y + SearchArea.Node_Height);
+        int last  = this.searchTree.getClosestRowForLocation(window.x, window.y + window.height - SearchArea.Node_Height);
+        
+        DefaultMutableTreeNode node;
+        AbstractVertex ver;
+        
+        for(int i=first; i<=last; i++)
+        {
+            node = (DefaultMutableTreeNode)(this.searchTree.getPathForRow(i).getLastPathComponent());
+            ver = (AbstractVertex)(node.getUserObject());
+            if(ver.isSelected())
+                return;
+        }
+        
+        for(int i=first-1, j=last+1; i>=0 || j<this.searchTree.getRowCount(); i--, j++)
+        {
+            if(i>=0)
+            {
+                node = (DefaultMutableTreeNode)(this.searchTree.getPathForRow(i).getLastPathComponent());
+                ver = (AbstractVertex)(node.getUserObject());
+                if(ver.isSelected())
+                {
+                    this.searchTree.scrollRowToVisible(i);
+                    return;
+                }
+            }
+            if(j<this.searchTree.getRowCount())
+            {
+                node = (DefaultMutableTreeNode)(this.searchTree.getPathForRow(j).getLastPathComponent());
+                ver = (AbstractVertex)(node.getUserObject());
+                if(ver.isSelected())
+                {
+                    this.searchTree.scrollRowToVisible(j);
+                    return;
+                }
+            }
+        }
+        
+    }
+    
     
     private class SearchRenderer extends DefaultTreeCellRenderer
     {

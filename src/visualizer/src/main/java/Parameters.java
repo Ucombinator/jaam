@@ -9,6 +9,11 @@ import javax.swing.JTextArea;
 import java.awt.Color;
 import java.awt.Font;
 
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+
+import javax.swing.Timer;
+
 public class Parameters
 {
 	public static int width = 1200, height = 800;
@@ -30,6 +35,10 @@ public class Parameters
 	public static long interval = 5000, startTime, lastInterval, refreshInterval = 200;
 	public static long mouseInterval = 100, mouseLastTime;
 	public static boolean highlightIncoming = false, highlightOutgoing = false, vertexHighlight = true;
+    
+    public static boolean pingStart=false, pingEnd=false, pingRespondedMain = false, pingRespondedContext = false;
+    public static Timer pinger;
+    public static boolean fixCaret = false;
 	
 	public static int debug1, debug2, val;
 	
@@ -178,8 +187,52 @@ public class Parameters
 		setRightText();
         searchArea.writeText();
 		stFrame.repaint();
+        
+        if(Parameters.fixCaret)
+        {
+            Parameters.fixCaret = false;
+            Parameters.fixCaretPositions();
+        }
 	}
 	
+    
+    public static void fixCaretPositions()
+    {
+        leftArea.fixCaretPosition();
+        searchArea.fixCaretPosition();
+    }
+    
+    
+    public static void ping()
+    {
+        Parameters.pingStart = true;
+        Parameters.pingEnd = false;
+        Parameters.fixCaret = true;
+
+        int delay = 1000;
+        ActionListener pingListener = new ActionListener()
+        {
+            public void actionPerformed(ActionEvent e)
+            {
+                if(Parameters.pingEnd)
+                {
+                    Parameters.pinger.stop();
+                    Parameters.pingEnd = false;
+                }
+                else
+                {
+                    Parameters.pingEnd = true;
+                }
+                Parameters.repaintAll();
+            }
+        };
+        
+        Parameters.pinger = new Timer(delay, pingListener);
+        Parameters.pinger.setRepeats(true);
+        Parameters.pinger.start();
+    }
+    
+    
 	public static void test()
 	{
 //		String desc ="\"sootStmt\":\"b0 = 3\",\n        \"sootMethod\":{          \"$type\":\"soot.SootMethod\",          \"declaringClass\":\"Loop\",          \"name\":\"main\",          \"parameterTypes\":[            \"java.lang.String[]\"          ],          \"returnType\":\"void\",          \"modifiers\":9,          \"exceptions\":[                      ]        },        \"index\":1,        \"line\":3,        \"column\":-1,        \"sourceFile\":\"Loop.java\" ";
