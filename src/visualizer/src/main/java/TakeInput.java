@@ -28,6 +28,7 @@ public class TakeInput extends Thread
 		Main.graph.mergePaths();
 		Main.graph.computeInstLists();
 		Main.graph.setAllMethodHeight();
+        Main.graph.collectAllTags();
 		Main.graph.collapseAll();
 		Parameters.mouseLastTime = System.currentTimeMillis();
 		Parameters.repaintAll();
@@ -189,6 +190,7 @@ public class TakeInput extends Thread
 				//Name collision with our own Edge class
 				if(packet instanceof org.ucombinator.jaam.serializer.Edge)
 				{
+//                    System.out.println("edge");
 					org.ucombinator.jaam.serializer.Edge edgePacket = (org.ucombinator.jaam.serializer.Edge) packet;
 					int edgeId = edgePacket.id().id();
 					int srcId = edgePacket.src().id();
@@ -197,12 +199,14 @@ public class TakeInput extends Thread
 				}
 				else if(packet instanceof ErrorState)
 				{
+//                    System.out.println("error");
 					int id = ((ErrorState) packet).id().id();
 					Main.graph.addErrorState(id);
 				}
 				//Name collision with java.lang.Thread.State
 				else if(packet instanceof org.ucombinator.jaam.serializer.State)
 				{
+//                    System.out.println("node");
 					org.ucombinator.jaam.serializer.State statePacket = (org.ucombinator.jaam.serializer.State) packet;
 					int id = statePacket.id().id();
 					String methodName = statePacket.stmt().method().toString();
@@ -210,8 +214,27 @@ public class TakeInput extends Thread
 					int jimpleIndex = statePacket.stmt().index();
 					Main.graph.addVertex(id, methodName, instruction, "", jimpleIndex, true);
 				}
+                
+                else if(packet instanceof org.ucombinator.jaam.serializer.NodeTag)
+                {
+//                    System.out.println("NodeTag");
+//                    System.out.println(""+packet);
+                    
+                    org.ucombinator.jaam.serializer.NodeTag tag = (org.ucombinator.jaam.serializer.NodeTag) packet;
+                    
+                    int tagId = tag.id().id();
+                    int nodeId = tag.node().id();
+                    String tagStr = ((org.ucombinator.jaam.serializer.Tag)tag.tag()).toString();
+                    
+//                    System.out.println("new tag: id="+tagId+", node="+nodeId+", tag="+tagStr);
+                    
+//                    if(tagStr.equalsIgnoreCase("AllocationTag()"))
+                    Main.graph.addTag(nodeId,tagStr);
+                    
+                }
 
-				packet = packetInput.read();
+
+                packet = packetInput.read();
 			}
 		}
 		catch(FileNotFoundException e)

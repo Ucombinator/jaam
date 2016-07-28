@@ -32,6 +32,7 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import javax.swing.JTextArea;
+import javax.swing.JComboBox;
 import javax.swing.KeyStroke;
 import javax.swing.JLabel;
 import javax.swing.JButton;
@@ -105,6 +106,7 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
+        loadMessages.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, 0));
 
 		/*final JMenuItem loadJavaCode = new JMenuItem("Load matching decompiled code");
 		menuFile.add(loadJavaCode);
@@ -300,7 +302,7 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-		
+    
 		JMenuItem zoomOut = new JMenuItem("Zoom out      (Mouse wheel down)");
 		menuNavigation.add(zoomOut);
 		zoomOut.addActionListener
@@ -518,11 +520,22 @@ public class StacFrame extends JFrame
 		this.addMouseToContext();
 		this.addKeyboard(contextPanel);
 		
+        
+        JPanel topPanel = new JPanel();
+        topPanel.setBorder(BorderFactory.createEtchedBorder());
+        topPanel.setLayout(new BorderLayout());
+//        topPanel.setLayout(new GridLayout(2,1));
+        this.getContentPane().add(topPanel, BorderLayout.NORTH);
+        
+        
+        
 		//menuPanel
 		this.menuPanel = new JPanel();
 		this.menuPanel.setBorder(BorderFactory.createEtchedBorder());
 		this.menuPanel.setLayout(new FlowLayout());
-		this.getContentPane().add(this.menuPanel, BorderLayout.NORTH);
+//		this.getContentPane().add(this.menuPanel, BorderLayout.NORTH);
+        topPanel.add(this.menuPanel, BorderLayout.CENTER);
+        
 		
 		JPanel contextPanel = new JPanel();
 		contextPanel.setBorder(BorderFactory.createEtchedBorder());
@@ -583,6 +596,26 @@ public class StacFrame extends JFrame
 			}
 		);
 		sizePanel.add(sizePlus);
+        
+        
+        //////********************** tag Panel ******************//////
+        
+/*
+        JPanel tagPanel = new JPanel();
+        tagPanel.setBorder(BorderFactory.createEtchedBorder());
+        tagPanel.setLayout(new FlowLayout());
+        topPanel.add(tagPanel, BorderLayout.SOUTH);
+        
+        JLabel tLab = new JLabel("Search for Tags: ");
+        tagPanel.add(tLab);
+        
+        JComboBox combo = new JComboBox(new Object[]{"Ester", "Jordi", "Jordina", "Jorge", "Sergi"});
+        combo.setEditable(true);
+        tagPanel.add(combo);
+ */
+        
+        //////******************** tag Panel end ****************//////
+        
 		
 		
 		this.setJMenuBar(menuBar);
@@ -593,7 +626,7 @@ public class StacFrame extends JFrame
 	
 	public void setSplitScreen()
 	{
-		System.out.println("Setting split screen");
+//		System.out.println("Setting split screen");
 
 		centerSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
 		JSplitPane leftSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true);

@@ -24,7 +24,7 @@ Features to add (w/ priority):
 - After expanding a single node, select all of its children: 2
 - Change undo/redo to apply to other operations (searching, selecting, etc.): 2
 
-- Rearrange children to remove edge crossings: 3
+x- Rearrange children to remove edge crossings: 3
 - Selection rectangle should be transparent: 3
 - Show only selected edges? Or shade by graph theoretic distance? 3
 - Tabbed interface: 3

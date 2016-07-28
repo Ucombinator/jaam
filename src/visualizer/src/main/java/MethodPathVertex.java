@@ -57,6 +57,19 @@ public class MethodPathVertex extends AbstractVertex
 		this.writeName();
 	}
 	
+    public void collectAllTagsFromChildren()
+    {
+        for(MethodVertex ver : this.mergeChildren)
+        {
+            
+            for(Integer t : ver.tags)
+            {
+                this.addTag(t);
+            }
+        }
+    }
+    
+    
 	public void collectMethodsAndInstructions()
 	{	
 		for(MethodVertex v : this.mergeChildren)

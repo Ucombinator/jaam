@@ -89,7 +89,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
 
     self match {
       case Some(target) => state.store.update(GlobalSnowflakeAddr, D(Set[Value](target)))
-      case None =>
+      case None => {}
     }
 
     val rtType = meth.getReturnType

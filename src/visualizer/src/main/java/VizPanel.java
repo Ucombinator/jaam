@@ -9,6 +9,7 @@ import java.awt.Graphics2D;
 import javax.swing.JPanel;
 
 import java.awt.geom.GeneralPath;
+import java.awt.geom.Path2D;
 
 
 public class VizPanel extends JPanel
@@ -174,7 +175,24 @@ public class VizPanel extends JPanel
 			g.fillRect(x1, y1, x2 - x1, y2 - y1);
 		}
 		
-		Font ff = new Font("Serif", Font.BOLD, Parameters.font.getSize());
+        for(Integer tg : ver.tags)
+        {
+            int t = tg.intValue();
+            
+            if(Main.graph.highlightedTags.get(t).booleanValue())
+            {
+                double l=0;
+                if((x2-x1)/6.0 > (y2-y1)/4.0)
+                    l = (y2-y1)/4.0;
+                else
+                    l = (x2-x1)/6.0;
+                
+                drawStar(g,x1+(x2-x1)/6,(y1+y2)/2,l);
+            }
+        }
+
+        
+        Font ff = new Font("Serif", Font.BOLD, Parameters.font.getSize());
 		if(!this.context)
 			this.drawCenteredString(g, ver.getName(), (int) (this.getPixelXFromIndex(ver.x - graph.currWindow.left*graph.getWidth())),
 					(int) (this.getPixelYFromIndex(ver.y-graph.currWindow.top*graph.getHeight())), ff, Color.BLACK);
@@ -185,12 +203,45 @@ public class VizPanel extends JPanel
 			g.setColor(Color.BLACK);
 
 		//Draw outline of boxes only in main window
-		if(!this.context)
+		//if(!this.context)
 		{
 			g.setStroke(new BasicStroke(1));
 			g.drawRect(x1, y1, x2 - x1, y2 - y1);
 		}
+        
+        
+        
 	}
+    
+    
+    public void drawStar(Graphics2D g, double x, double y, double l)
+    {
+        double root3 = Math.sqrt(3);
+        double l1=l;
+        double l2=l/root3;
+        Path2D.Double star = new Path2D.Double();
+        star.moveTo(x+l2,y);
+        star.lineTo(x+l1*root3/2,y-l/2);
+        star.lineTo(x+l2/2,y-l2*root3/2);
+        star.lineTo(x,y-l1);
+        star.lineTo(x-l2/2,y-l2*root3/2);
+        star.lineTo(x-l1*root3/2,y-l1/2);
+        star.lineTo(x-l2,y);
+        star.lineTo(x-l1*root3/2,y+l1/2);
+        star.lineTo(x-l2/2,y+l2*root3/2);
+        star.lineTo(x,y+l1);
+        star.lineTo(x+l2/2,y+l2*root3/2);
+        star.lineTo(x+l1*root3/2,y+l1/2);
+        star.lineTo(x+l2,y);
+        
+        
+        Color c = new Color(128,0,128);
+        g.setColor(c);
+        g.fill(star);
+        g.setColor(Color.BLACK);
+        g.draw(star);
+        
+    }
 	
 	//If edges are turned on, draw all visible graph edges.
 	public void drawEdges(Graphics2D g)
