@@ -130,7 +130,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
               case _ => false
             })
 
-            Log.debug(state.store(GlobalSnowflakeAddr).toString)
+            //Log.debug(state.store(GlobalSnowflakeAddr).toString)
             state.store.update(state.addrsOf(stmt.getLeftOp), D(newValues))
           case _ =>
         }

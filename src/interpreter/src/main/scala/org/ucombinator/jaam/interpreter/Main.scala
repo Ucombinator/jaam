@@ -61,13 +61,6 @@ case class KontStack(k : Kont) {
   def push(frame : Frame) : KontStack = {
     val kAddr = kalloca(frame)
     val newKontStore = store.update(kAddr, KontD(Set(k))).asInstanceOf[KontStore]
-    //Log.info("---new k store---: " + store(kAddr).values.size)
-    /*
-    for (k <- store(kAddr).values) {
-      Log.info("k: " + k)
-    }
-    Log.info("---new k store---")
-    */
     val newKontStack = KontStack(RetKont(frame, kAddr))
     newKontStack.setStore(newKontStore)
     newKontStack
@@ -93,8 +86,8 @@ case class KontStack(k : Kont) {
                       store : Store,
                       initializedClasses : Set[SootClass]) : Set[AbstractState] = {
     if (!exception.isInstanceOf[ObjectValue])
-      Log.warn("Impossible throw: stmt = " + stmt + "; value = " + exception)
-      //throw new Exception("Impossible throw: stmt = " + stmt + "; value = " + exception)
+      //Log.warn("Impossible throw: stmt = " + stmt + "; value = " + exception)
+      throw new Exception("Impossible throw: stmt = " + stmt + "; value = " + exception)
 
     var visited = Set[(Stmt, FramePointer, KontStack)]()
 
@@ -293,9 +286,7 @@ case object ErrorState extends AbstractState {
 // State abstracts a collection of concrete states of execution.
 case class State(val stmt : Stmt,
                  val fp : FramePointer,
-                 //val store : Store,
-                 val kontStack : KontStack
-                 /*val initializedClasses : Set[SootClass]*/) extends AbstractState with CachedHashCode {
+                 val kontStack : KontStack) extends AbstractState with CachedHashCode {
   // Needed because different "stores" should lead to different objects
   //  override def equals(that: Any): Boolean =
   //    that match {
@@ -428,7 +419,6 @@ case class State(val stmt : Stmt,
   // This does not evaluate complex expressions like method-calls.
   // TODO/soundness: properly initialize exceptions
   def eval(v: SootValue) : D = {
-
     def assertNumeric(op : SootValue) {
       assert(op.getType.isInstanceOf[PrimType] && !op.getType.isInstanceOf[BooleanType])
     }
@@ -447,15 +437,6 @@ case class State(val stmt : Stmt,
       //TODO missing: CmplExpr, CmpgExpr, MethodHandle
       //TODO/precision actually do the calculations
       case (_ : Local) | (_ : Ref) => 
-        /*
-        println("---beg---")
-        println("Local or Ref")
-        println("v: " + v)
-        println("addrsOf(v): " + addrs)
-        println("store(addrs): " + values)
-        println("---end---")
-        //store(addrsOf(v))
-        */
         val addrs = addrsOf(v)
         val values= store(addrs)
         values
@@ -538,12 +519,9 @@ case class State(val stmt : Stmt,
                 case rt : RefType => Soot.isSubclass(sootClass, rt.getSootClass)
                 case _ => false
               }
-              //Soot.isSubType(sootClass.getType, t)
             case ArrayValue(sootType, _) => Soot.isSubType(sootType, t)
-            //            case SnowflakeInterfaceValue(sootClass, _) => Soot.isSubType(sootClass.getType, t)
           }
         }
-        //println("d.size: " + d.values.size)
         var d2 = D(Set())
         for (v <- d.values) {
           if (isCastableTo(v, castedType)) {
@@ -568,12 +546,6 @@ case class State(val stmt : Stmt,
             exceptions = exceptions.join(classCastException)
           }
         }
-        /*
-        println("d2.size: " + d2.values.size)
-        for (v <- d2.values) {
-          println("d2 value: " + v)
-        }
-        */
         d2
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
@@ -616,8 +588,8 @@ case class State(val stmt : Stmt,
       val args = for (a <- expr.getArgs().toList) yield eval(a)
 
       // We end these with "." so we don't hit similarly named libraries
-      val libraries = List("org.apache.commons.", "org.mapdb.")
-                           //"org.apache.http", "jline", "org.fusesource", "com.lambdaworks")
+      val libraries = List("org.apache.commons.", "org.mapdb.",
+                           "org.apache.http", "jline", "org.fusesource", "com.lambdaworks")
       def isLibraryClass(c : SootClass) : Boolean =
         // We put a dot at the end in case the package name is an exact match
         libraries.exists((c.getPackageName()+".").startsWith(_))
@@ -648,23 +620,13 @@ case class State(val stmt : Stmt,
           else {
             // TODO/optimize: filter out incorrect class types
             val newFP = alloca(expr, nextStmt)
-            //Log.info("newFP: " + newFP)
             val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
-            //Log.info("new frame: " + Frame(nextStmt, fp, destAddr))
             var newStore = store // TODO: currently update the store directly, not using newStore
             self match {
               case Some(s) => newStore.update(ThisFrameAddr(newFP), D(Set(s)))
               case None => {} // TODO: throw exception here?
             }
             for (i <- 0 until expr.getArgCount()) {
-              /*
-              Log.info("args(" + i + "): ")
-              Log.info("---")
-              for (v <- args(i).values) {
-                Log.info("" + v)
-              }
-              Log.info("---")
-              */
               store.update(ParameterFrameAddr(newFP, i), args(i))
             }
 
@@ -682,15 +644,6 @@ case class State(val stmt : Stmt,
         dispatch(None, expr.getMethod())
       case expr : InstanceInvokeExpr =>
         val values = eval(expr.getBase()).values
-        /*
-        Log.info("expr.getBase: " + expr.getBase)
-        Log.info("---")
-        Log.info("expr.getBase values:")
-        for (v <- values) {
-          Log.info("" + v)
-        }
-        Log.info("---")
-        */
         ((for (v <- values) yield {
           v match {
             case ObjectValue(_, SnowflakeBasePointer(_)) => {
@@ -765,30 +718,21 @@ case class State(val stmt : Stmt,
         val meth = sootClass.getMethodByNameUnsafe(SootMethod.staticInitializerName)
 
         if (meth != null) {
-          /*
-          if (Soot.isJavaLibraryClass(meth.getDeclaringClass)) {
-            val newState = this.copyState(initializedClasses=initializedClasses+sootClass)
-            newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
-              java.util.Collections.emptyList()), None, stmt)
-          }
-          else {
-          */
-            // Initialize all static fields per JVM 5.4.2 and 5.5
-            val staticUpdates = for {
-              f <- sootClass.getFields(); if f.isStatic
-            } yield (StaticFieldAddr(f) -> staticInitialValue(f))
-            store.update(mutable.Map(staticUpdates.toMap.toSeq: _*))
-            val newState = this.copyState(initializedClasses = initializedClasses+sootClass)
-            newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
-              java.util.Collections.emptyList()), None, stmt)
-          //}
+          // Initialize all static fields per JVM 5.4.2 and 5.5
+          val staticUpdates = for {
+            f <- sootClass.getFields(); if f.isStatic
+          } yield (StaticFieldAddr(f) -> staticInitialValue(f))
+          store.update(mutable.Map(staticUpdates.toMap.toSeq: _*))
+          val newState = this.copyState(initializedClasses = initializedClasses+sootClass)
+          newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
+            java.util.Collections.emptyList()), None, stmt)
         } else {
           // TODO: Do we need to do newStore for static fields?
           Set(this.copyState(initializedClasses = initializedClasses + sootClass))
         }
 
       case UninitializedSnowflakeObjectException(className) =>
-        Log.info("Initializing snowflake "+className)
+        Log.info("Initializing snowflake class "+className)
         val sootClass = Soot.getSootClass(className)
         store.join(Snowflakes.createObject(className, List()))
         Set(this.copyState(initializedClasses = initializedClasses+sootClass))
@@ -845,7 +789,6 @@ case class State(val stmt : Stmt,
       case sootStmt : InvokeStmt => handleInvoke(sootStmt.getInvokeExpr, None)
 
       case sootStmt : DefinitionStmt => {
-        //Log.info("DefinitionStmt: " + sootStmt)
         val lhsAddr = addrsOf(sootStmt.getLeftOp())
         sootStmt.getRightOp() match {
           case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
@@ -868,11 +811,6 @@ case class State(val stmt : Stmt,
             Set(this.copyState(stmt = stmt.nextSyntactic))
           }
           case rhs => {
-            /*
-            println("lhsAddr: " + lhsAddr)
-            println("rhs: " + rhs)
-            println("rhs.getType: " + rhs.getType)
-            */
             store.update(lhsAddr, eval(rhs))
             Set(this.copyState(stmt = stmt.nextSyntactic))
           }
