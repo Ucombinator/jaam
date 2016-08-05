@@ -9,9 +9,16 @@ import soot.Type
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class AnalysisNode(var node : Node) {
+class AnalysisNode(var node : Node = null, val manualIndex : Int = null) {
   val inNodes = mutable.MutableList[Id[AnalysisNode]]()
   val outNodes = mutable.MutableList[Id[AnalysisNode]]()
+
+  def inDegree() : Int = {
+    inNodes.size
+  }
+  def outDegree() : Int = {
+    outNodes.size
+  }
 
   var abstractionLvl = 0
   val abstractNodes = mutable.MutableList[Id[AnalysisNode]]()
@@ -25,7 +32,71 @@ class AnalysisNode(var node : Node) {
   def addAbstractNodeID(id : Id[AnalysisNode]): Unit = {
     abstractNodes += id
   }
+  def getIndex(): Int = {
+    if(manualIndex != null)
+      return manualIndex
+    else if(node != null)
+      return node.id.id
+    else
+      return null
+  }
+}
 
+class AnalysisGraph() {
+  //todo
+  var rootId : Id[AnalysisNode] = Id[AnalysisNode](1)
+
+  private var index = 0
+
+  val graph = mutable.Map[Id[AnalysisNode], AnalysisNode]()
+
+  var abstractMap = mutable.Map[Id[AnalysisNode], Id[AnalysisNode]]()
+
+  def addBlankNode(): Id[AnalysisNode] = {
+    index += 1
+    val node = new AnalysisNode(manualIndex = index)
+    val id = Id[AnalysisNode](index)
+    graph(id) = node
+
+    id
+  }
+
+  def readPacket(packet : Packet): Unit = {
+    packet match {
+
+      case n: Node =>
+        val id = Id[AnalysisNode](n.id.id)
+        if(id.id > index) {
+          index = id.id
+        }
+        graph get id match {
+          case Some(node) =>
+            node.node = n
+          case None =>
+            graph(id) = new AnalysisNode(n)
+        }
+      case e: Edge =>
+        val in = Id[AnalysisNode](e.src.id)
+        val out = Id[AnalysisNode](e.dst.id)
+        graph get in match {
+          case Some(node) =>
+            node.addOutNodeID(out)
+          case None =>
+            val node = new AnalysisNode(null)
+            node.addOutNodeID(out)
+            graph(in) = node
+        }
+        graph get out match {
+          case Some(node) =>
+            node.addInNodeID(in)
+          case None =>
+            val node = new AnalysisNode(null)
+            node.addInNodeID(in)
+            graph(out) = node
+        }
+      case _ => ()
+    }
+  }
 }
 
 case class Config(
@@ -61,46 +132,19 @@ object Main {
   }
 
   //def analyzeFile(file : String) : scala.collection.mutable.MutableList[Id[Node]] = {
-  def analyzeFile(file : String) = {
+  def analyzeFile(file : String) : AnalysisGraph = {
     val stream = new FileInputStream(file)
     val pi = new PacketInput(stream)
     var packet : Packet = null
     //val idList = scala.collection.mutable.MutableList.empty[Id[Node]]
 //    val nodeList = scala.collection.mutable.MutableList.empty[AnalysisNode]
 
-    val graph = mutable.Map[Id[AnalysisNode], AnalysisNode]()
+    //val graph = mutable.Map[Id[AnalysisNode], AnalysisNode]()
+    val graph = new AnalysisGraph()
 
     while ({packet = pi.read(); !packet.isInstanceOf[EOF]}) {
-      packet match {
 
-        case n : Node =>
-          val id = Id[AnalysisNode](n.id.id)
-          graph get id match {
-            case Some(node) =>
-              node.node = n
-            case None =>
-              graph(id) = new AnalysisNode(n)
-          }
-        case e : Edge =>
-          val in = Id[AnalysisNode](e.src.id)
-          val out = Id[AnalysisNode](e.dst.id)
-          graph get in match {
-            case Some(node) =>
-              node.addOutNodeID(out)
-            case None =>
-              val node = new AnalysisNode(null)
-              node.addOutNodeID(out)
-              graph(in) = node
-          }
-          graph get out match {
-            case Some(node) =>
-              node.addInNodeID(in)
-            case None =>
-              val node = new AnalysisNode(null)
-              node.addInNodeID(in)
-              graph(out) = node
-          }
-        case _ => ()
+      graph.readPacket(packet)
 
         /*case p : Node => {
           p match {
@@ -124,11 +168,12 @@ object Main {
         }
         case p : Edge => println("EDGE")
         case _ => println("nothing")*/
-      }
     }
 
     pi.close()
     //idList
+
+    graph
   }
 
 //  def writeOut(file : String, idList : scala.collection.mutable.MutableList[Id[Node]]) = {
