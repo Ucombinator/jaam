@@ -4,45 +4,28 @@ import java.io.{FileInputStream, FileOutputStream}
 
 import org.ucombinator.jaam.serializer._
 import soot.jimple._
+import soot.Type
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class AnalysisNode(node: Node) {
-  private val inNodesBuffer = ListBuffer[Id[AnalysisNode]]()
-  private val outNodesBuffer = ListBuffer[Id[AnalysisNode]]()
+class AnalysisNode(var node : Node) {
+  val inNodes = mutable.MutableList[Id[AnalysisNode]]()
+  val outNodes = mutable.MutableList[Id[AnalysisNode]]()
 
-  def inDegree() : Int = {inNodes().size}
-  def outDegree() : Int = {outNodes().size}
+  var abstractionLvl = 0
+  val abstractNodes = mutable.MutableList[Id[AnalysisNode]]()
 
-  // Conversion from ListBuffer to List is constant-time.
-  def inNodes() : List[Id[AnalysisNode]] = {inNodesBuffer.toList}
-  def outNodes() : List[Id[AnalysisNode]] = {outNodesBuffer.toList}
-
-  def addEdgeReferences(edge: Edge) = {
-    if (edge.src == node.id) {
-      outNodesBuffer.append(Id[AnalysisNode](edge.dst.id))
-    } else if (edge.dst == node.id) {
-      inNodesBuffer.append(Id[AnalysisNode](edge.src.id))
-    } else {
-      // Why did you give me this edge?
-      throw new IllegalArgumentException("Unrelated edge.")
-    }
+  def addInNodeID(id : Id[AnalysisNode]): Unit = {
+    inNodes += id
+  }
+  def addOutNodeID(id : Id[AnalysisNode]): Unit = {
+    outNodes += id
+  }
+  def addAbstractNodeID(id : Id[AnalysisNode]): Unit = {
+    abstractNodes += id
   }
 
-  def allocationTag() : Option[AllocationTag] = {
-    node match {
-      case state: State =>
-        state.stmt.stmt match {
-          case sootStmt: DefinitionStmt =>
-            sootStmt.getRightOp match {
-              case rightOp: AnyNewExpr =>
-                return Some(AllocationTag(rightOp.getType))
-            }
-        }
-    }
-    // Not an allocation node.
-    None
-  }
 }
 
 case class Config(
@@ -50,6 +33,9 @@ case class Config(
                    targetFile : String = null)
 
 object Main {
+  //type AnalysisGraph = mutable.Map[Id[AnalysisNode], AnalysisNode]
+  //def AnalysisGraph()
+
   def main(args : Array[String]) = {
     val parser = new scopt.OptionParser[Config]("jaam-analyzer") {
       override def showUsageOnError = true
@@ -69,19 +55,54 @@ object Main {
 
       case Some(config) =>
         // This needs to be rewritten.
-//        writeOut(config.targetFile, analyzeFile(config.sourceFile))
+        //writeOut(config.targetFile, analyzeFile(config.sourceFile))
+        analyzeFile(config.sourceFile)
     }
   }
 
-  def analyzeFile(file : String) : scala.collection.mutable.MutableList[Id[Node]] = {
+  //def analyzeFile(file : String) : scala.collection.mutable.MutableList[Id[Node]] = {
+  def analyzeFile(file : String) = {
     val stream = new FileInputStream(file)
     val pi = new PacketInput(stream)
     var packet : Packet = null
-    val idList = scala.collection.mutable.MutableList.empty[Id[Node]]
+    //val idList = scala.collection.mutable.MutableList.empty[Id[Node]]
+//    val nodeList = scala.collection.mutable.MutableList.empty[AnalysisNode]
+
+    val graph = mutable.Map[Id[AnalysisNode], AnalysisNode]()
 
     while ({packet = pi.read(); !packet.isInstanceOf[EOF]}) {
       packet match {
-        case p : Node => {
+
+        case n : Node =>
+          val id = Id[AnalysisNode](n.id.id)
+          graph get id match {
+            case Some(node) =>
+              node.node = n
+            case None =>
+              graph(id) = new AnalysisNode(n)
+          }
+        case e : Edge =>
+          val in = Id[AnalysisNode](e.src.id)
+          val out = Id[AnalysisNode](e.dst.id)
+          graph get in match {
+            case Some(node) =>
+              node.addOutNodeID(out)
+            case None =>
+              val node = new AnalysisNode(null)
+              node.addOutNodeID(out)
+              graph(in) = node
+          }
+          graph get out match {
+            case Some(node) =>
+              node.addInNodeID(in)
+            case None =>
+              val node = new AnalysisNode(null)
+              node.addInNodeID(in)
+              graph(out) = node
+          }
+        case _ => ()
+
+        /*case p : Node => {
           p match {
             case node: State => {
               node.stmt.stmt match {
@@ -89,33 +110,45 @@ object Main {
                   sootStmt.getRightOp match {
                     case rightOp: AnyNewExpr =>
                       // add rightOp.getType() call to get the type
-                      idList += node.id
-                    case _ => ()
+                      println("Case reached")
+                      var n = new AnalysisNode(node, rightOp.getType())
+                      nodeList += n
+                      //idList += node.id
+                    case _ => println("Node not AnyNewExpr")
                   }
-                case _ => ()
+                case _ => println("Node not DefinitionStmt")
               }
             }
-            case _ => ()
+            case _ => println("Node NOT STATE")
           }
         }
-        case _ => ()
+        case p : Edge => println("EDGE")
+        case _ => println("nothing")*/
       }
     }
 
     pi.close()
-    idList
+    //idList
   }
 
 //  def writeOut(file : String, idList : scala.collection.mutable.MutableList[Id[Node]]) = {
-//    val stream = new FileOutputStream(file)
+//  def writeOut(file : String, nodeList : scala.collection.mutable.MutableList[AnalysisNode]) = {
+//  val stream = new FileOutputStream(file)
 //    val po = new PacketOutput(stream)
 //    var counter = 0
 //
-//    for(id <- idList){
-//      val packet = NodeTag(Id[Tag](counter), id, AllocationTag())
+//    //for(id <- idList){
+//    //  val packet = NodeTag(Id[Tag](counter), id, AllocationTag())
+//    //  po.write(packet)
+//    //  counter += 1
+//    //}
+//
+//    for(aNode <- nodeList) {
+//      val packet = NodeTag(Id[Tag](counter), aNode.getNode().id, AllocationTag(aNode.getType()))
 //      po.write(packet)
 //      counter += 1
 //    }
+//
 //    po.write(EOF())
 //    po.close()
 //  }
