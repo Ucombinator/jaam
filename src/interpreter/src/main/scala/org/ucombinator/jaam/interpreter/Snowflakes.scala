@@ -52,13 +52,13 @@ object NoOpSnowflake extends SnowflakeHandler {
     Set(state.copyState(stmt = nextStmt))
 }
 
-// TODO/soundness: Add JohnSnowflake for black-holes. Not everything becomes top, but an awful lot will.
+// TODO/soundness: Add JohnSnowflake for black-holes (i.e., you know nothing). Not everything becomes top, but an awful lot will.
 
 case class ReturnSnowflake(value : D) extends SnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
     state.stmt.sootStmt match {
       case sootStmt : DefinitionStmt => state.store.update(state.addrsOf(sootStmt.getLeftOp()), value)
-      case sootStmt : InvokeStmt => //state.store
+      case sootStmt : InvokeStmt => {}
     }
     Set(state.copyState(stmt = nextStmt))
   }
@@ -86,7 +86,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
       state.store.update(GlobalSnowflakeAddr, arg)
 
     self match {
-      case Some(target) => state.store.update(GlobalSnowflakeAddr, D(Set[Value](target)))
+      case Some(target) => state.store.update(GlobalSnowflakeAddr, D(Set[Value](target))) // TODO: unneeded?
       case None => {}
     }
 
@@ -555,6 +555,7 @@ object Snowflakes {
     }
   }
 
+  // TODO: createObjectOrThrow vs createObject
   def createObjectOrThrow(name : String) : D = {
     if (!initializedObjectValues.contains(name)) {
       throw UninitializedSnowflakeObjectException(name)
@@ -572,7 +573,7 @@ object Snowflakes {
     val store = Store(mutable.Map[Addr, D]())
 
     if (sootClass.hasSuperclass) {
-      val newStore = createObject(sootClass.getSuperclass.getName, processing++List(className))
+      val newStore = createObject(sootClass.getSuperclass.getName, processing++List(className)) // TODO: re-order ++ or document why this order
       store.join(newStore).asInstanceOf[Store]
     }
 
@@ -662,7 +663,7 @@ object Snowflakes {
           val meth = absHttpHandler.getMethodByName("handle")
           val newFP = ZeroCFAFramePointer(meth)
           val handlerStates: Set[AbstractState] =
-            for (ObjectValue(sootClass, bp) <- handlers 
+            for (ObjectValue(sootClass, bp) <- handlers
                  //if (Soot.isSubclass(sootClass, absHttpHandler) && sootClass.isConcrete)) yield {
                  if Soot.isSubclass(sootClass, absHttpHandler)) yield {
               state.store.update(ThisFrameAddr(newFP), D(Set(ObjectValue(sootClass, bp))))

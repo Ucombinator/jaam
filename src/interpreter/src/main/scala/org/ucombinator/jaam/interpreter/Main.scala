@@ -31,6 +31,13 @@ import soot.tagkit._
 import org.ucombinator.jaam.serializer
 import org.ucombinator.jaam.interpreter.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
 
+// TODO: remove `{` after `case`
+// TODO: some sets could just be lists until we sort them out at the end
+// TODO: `union` might be more efficient than `_++_`
+/*
+TODO: use FastSet to enforce use of CachedHashCode
+class FastSet[T <: CachedHashCode] extends Set[T]
+ */
 trait CachedHashCode extends Product {
   override lazy val hashCode = scala.runtime.ScalaRunTime._hashCode(this)
 }
