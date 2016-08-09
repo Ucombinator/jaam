@@ -26,6 +26,7 @@ class AnalysisNode(var node : Node = null, val manualIndex : Int = null) {
   def addInNodeID(id : Id[AnalysisNode]): Unit = {
     inNodes += id
   }
+
   def addOutNodeID(id : Id[AnalysisNode]): Unit = {
     outNodes += id
   }
