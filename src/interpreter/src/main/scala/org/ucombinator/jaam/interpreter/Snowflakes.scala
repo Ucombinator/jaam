@@ -501,12 +501,17 @@ object ClassSnowflakes {
           val sootClass = Soot.getSootClass(className)
           val state2 = state.copyState(store = state.newExpr(lhsAddr, sootClass, state.store))
 
+          try { // TODO: this is a bit of a hack
           val expr = new soot.jimple.internal.JSpecialInvokeExpr(
             local, //new soot.jimple.internal.JimpleLocal("newInstanceSnowflake", sootClass.getType()),
             sootClass.getMethod(SootMethod.constructorName, List()).makeRef(),
             List[soot.Value]())
 
           state2.handleInvoke(expr, None)
+          } catch {
+            // If it doesn't have a no argument, then we must be on a spurious flow
+            case _ => Set()
+          }
         case _ => Set()
       }
     }
@@ -522,12 +527,15 @@ object Snowflakes {
   val table = mutable.Map.empty[MethodDescription, SnowflakeHandler]
   var initializedObjectValues = Map.empty[String, Store]
 
-  def get(meth : SootMethod) : Option[SnowflakeHandler] =
-    table.get(MethodDescription(
+  def get(meth : SootMethod) : Option[SnowflakeHandler] = {
+    val x = MethodDescription(
       meth.getDeclaringClass.getName,
       meth.getName,
       meth.getParameterTypes.toList.map(_.toString()),
-      meth.getReturnType.toString()))
+      meth.getReturnType.toString())
+    Log.info("get.meth: "+meth)
+    table.get(x)
+  }
 
   def contains(meth : MethodDescription) : Boolean =
     table.contains(meth)

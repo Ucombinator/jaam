@@ -193,6 +193,7 @@ case object InitialBasePointer extends BasePointer
 case class StringBasePointer(val string : String) extends BasePointer {
   // Use escape codes (e.g., `\n`) in the string.  We do this by getting a
   // representation of a string constant and then printing that.
+//TODO:  override def toString = "X"
   override lazy val toString = {
     import scala.reflect.runtime.universe._
     "StringBasePointer(" + Literal(Constant(string)).toString + ")"
@@ -623,7 +624,7 @@ case class State(val stmt : Stmt,
       val args = for (a <- expr.getArgs().toList) yield eval(a)
 
       // We end these with "." so we don't hit similarly named libraries
-      val libraries = List("org.apache.commons.", "org.mapdb.")
+      val libraries = List("org.apache.commons.", "org.mapdb.") // TODO
                            //"org.apache.http", "jline", "org.fusesource", "com.lambdaworks")
       def isLibraryClass(c : SootClass) : Boolean =
         // We put a dot at the end in case the package name is an exact match
@@ -632,7 +633,7 @@ case class State(val stmt : Stmt,
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, self, args)
         case None =>
-          if (Soot.isJavaLibraryClass(meth.getDeclaringClass) ||
+          if (Soot.isJavaLibraryClass(meth.getDeclaringClass) && !meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver") ||
               isLibraryClass(meth.getDeclaringClass) ||
               self.isDefined &&
               self.get.isInstanceOf[ObjectValue] &&
@@ -786,6 +787,7 @@ case class State(val stmt : Stmt,
             } yield (StaticFieldAddr(f) -> staticInitialValue(f))
             store.update(mutable.Map(staticUpdates.toMap.toSeq: _*))
             val newState = this.copyState(initializedClasses = initializedClasses+sootClass)
+          // TODO: Do we need to use the same JStaticInvokeExpr for repeated calls?
             newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
               java.util.Collections.emptyList()), None, stmt)
           //}
