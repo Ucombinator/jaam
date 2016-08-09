@@ -75,6 +75,15 @@ object Main {
           (x, c) => c.copy(additionalFiles = x)
         } text("One or more JAR files to complete class loading for inspection JAR files")
       )
+
+      note("")
+      cmd("missing-returns") action { (_, c) =>
+        c.copy(mode = "missing-returns")
+      } text("Find calls with no matching return") children(
+        arg[String]("<jaamFile>").required() action {
+          (x, c) => c.copy(targetFile = x)
+        } text("The JAAM file to analyze")
+      )
     }
 
     parser.parse(args, Config()) match {
@@ -95,6 +104,7 @@ object Main {
           case "info" => Info.analyzeForInfo(config.targetFile)
           case "cat" => Cat.concatenateFiles(config.sourceFiles, config.targetFile)
           case "coverage" => Coverage.findCoverage(config.targetFile, config.sourceFiles, config.additionalFiles)
+          case "missing-returns" => MissingReturns.missingReturns(config.targetFile)
           case _ => println("Invalid command given: " + config.mode)
         }
     }

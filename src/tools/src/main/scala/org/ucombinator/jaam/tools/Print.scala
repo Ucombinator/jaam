@@ -64,6 +64,8 @@ object Print {
       printIndentedLine(identifier, 2, "takes: " + state.stmt.method.getParameterTypes.toArray.mkString(", "))
     }
     printIndentedLine(identifier, 1, "sootStmt: " + state.stmt.stmt.toString())
+    printIndentedLine(identifier, 1, "framePointer: " + state.framePointer)
+    printIndentedLine(identifier, 1, "kontStack: " + state.kontStack)
   }
 
   def printErrorState(errorState : ErrorState) = {
