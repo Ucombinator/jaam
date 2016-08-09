@@ -595,6 +595,34 @@ case class State(val stmt : Stmt,
   def handleInvoke(expr : InvokeExpr,
                    destAddr : Option[Set[Addr]],
                    nextStmt : Stmt = stmt.nextSyntactic) : Set[AbstractState] = {
+
+    val base = expr match {
+      case expr : DynamicInvokeExpr =>
+        ??? // TODO: Could only come from non-Java sources
+      case expr : StaticInvokeExpr =>
+        None
+      case expr : InstanceInvokeExpr =>
+        Some((eval(expr.getBase()), expr.isInstanceOf[SpecialInvokeExpr]))
+    }
+    Log.info("base: "+base)
+    val method = expr.getMethod()
+    val args = for (a <- expr.getArgs().toList) yield eval(a)
+    val newFP = alloca(expr, nextStmt)
+
+    handleInvoke2(base, method, args, newFP, destAddr, nextStmt)
+  }
+
+  // The last parameter of handleInvoke allows us to override what
+  // Stmt to execute after returning from this call.  We need this for
+  // static class initialization because in that case we want to
+  // return to the current statement instead of the next statement.
+  def handleInvoke2(base : Option[(D, Boolean)],
+                   method : SootMethod,
+                   args : List[D],
+                   newFP : FramePointer,
+                   destAddr : Option[Set[Addr]],
+    // TODO: use `Option` for nextStmt
+                   nextStmt : Stmt = stmt.nextSyntactic) : Set[AbstractState] = {
     // This function finds all methods that could override root_m.
     // These methods are returned with the root-most at the end of
     // the list and the leaf-most at the head.  Thus the caller
@@ -621,24 +649,27 @@ case class State(val stmt : Stmt,
     // o.f(3); // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
     def dispatch(self : Option[Value], meth : SootMethod) : Set[AbstractState] = {
-      val args = for (a <- expr.getArgs().toList) yield eval(a)
 
       // We end these with "." so we don't hit similarly named libraries
-      val libraries = List("org.apache.commons.", "org.mapdb.") // TODO
-                           //"org.apache.http", "jline", "org.fusesource", "com.lambdaworks")
+      val libraries = List("org.apache.commons.", "org.mapdb.", "com.cyberpointllc.stac.hashmap.") // TODO
+//      val libraries = List("org.apache.commons.", "org.mapdb.") // TODO
+//                           //"org.apache.http", "jline", "org.fusesource", "com.lambdaworks")
       def isLibraryClass(c : SootClass) : Boolean =
         // We put a dot at the end in case the package name is an exact match
         libraries.exists((c.getPackageName()+".").startsWith(_))
 
+      Log.info("meth: "+meth)
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, self, args)
         case None =>
-          if (Soot.isJavaLibraryClass(meth.getDeclaringClass) && !meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver") ||
+          if (Soot.isJavaLibraryClass(meth.getDeclaringClass) && (!meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver") || meth.isAbstract()) ||
               isLibraryClass(meth.getDeclaringClass) ||
               self.isDefined &&
               self.get.isInstanceOf[ObjectValue] &&
               self.get.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
             Snowflakes.warn(this.id, stmt, meth)
+            if (meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver"))
+              Log.warn("Snowflake due to Abstract: "+meth)
             DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
           } else if (meth.isNative) {
             Log.warn("Native method without a snowflake in state "+this.id+". May be unsound. stmt = " + stmt)
@@ -655,26 +686,14 @@ case class State(val stmt : Stmt,
           }
           else {
             // TODO/optimize: filter out incorrect class types
-            val newFP = alloca(expr, nextStmt)
-            //Log.info("newFP: " + newFP)
             val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
-            //Log.info("new frame: " + Frame(nextStmt, fp, destAddr))
             var newStore = store // TODO: currently update the store directly, not using newStore
             self match {
               case Some(s) => newStore.update(ThisFrameAddr(newFP), D(Set(s)))
               case None => {} // TODO: throw exception here?
             }
-            for (i <- 0 until expr.getArgCount()) {
-              /*
-              Log.info("args(" + i + "): ")
-              Log.info("---")
-              for (v <- args(i).values) {
-                Log.info("" + v)
-              }
-              Log.info("---")
-              */
-              store.update(ParameterFrameAddr(newFP, i), args(i))
-            }
+            for (i <- 0 until args.length)
+              newStore.update(ParameterFrameAddr(newFP, i), args(i))
 
             val newState = State(Stmt.methodEntry(meth), newFP, newKontStack)
             newState.setInitializedClasses(initializedClasses)
@@ -682,36 +701,24 @@ case class State(val stmt : Stmt,
           }
       }
     }
-    
-    expr match {
-      case expr : DynamicInvokeExpr => ??? // TODO: Could only come from non-Java sources
-      case expr : StaticInvokeExpr =>
-        checkInitializedClasses(expr.getMethod().getDeclaringClass())
-        dispatch(None, expr.getMethod())
-      case expr : InstanceInvokeExpr =>
-        val values = eval(expr.getBase()).values
-        /*
-        Log.info("expr.getBase: " + expr.getBase)
-        Log.info("---")
-        Log.info("expr.getBase values:")
-        for (v <- values) {
-          Log.info("" + v)
-        }
-        Log.info("---")
-        */
-        ((for (v <- values) yield {
+
+    base match {
+      case None =>
+        checkInitializedClasses(method.getDeclaringClass())
+        dispatch(None, method)
+      case Some((b, isSpecial)) =>
+        ((for (v <- b.values) yield {
           v match {
             case ObjectValue(_, SnowflakeBasePointer(_)) => {
-              val meth = expr.getMethod()
-              dispatch(Some(v), meth)
+              dispatch(Some(v), method)
             }
-            case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, expr.getMethod.getDeclaringClass) => {
-              val objectClass = if (expr.isInstanceOf[SpecialInvokeExpr]) null else sootClass
-              val meth = (if (expr.isInstanceOf[SpecialInvokeExpr]) expr.getMethod() else overrides(objectClass, expr.getMethod()).head)
+            case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, method.getDeclaringClass) => {
+              val objectClass = if (isSpecial) null else sootClass
+              val meth = (if (isSpecial) method else overrides(objectClass, method).head)
               dispatch(Some(v), meth)
             }
             case ArrayValue(sootType, bp) => {
-              dispatch(Some(v), expr.getMethod)
+              dispatch(Some(v), method)
             }
             case _ => Set()
           }
@@ -823,7 +830,7 @@ case class State(val stmt : Stmt,
 
   def newExpr(lhsAddr : Set[Addr], sootClass : SootClass, store : Store) : Store = {
     val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
-    if (Soot.isJavaLibraryClass(sootClass) || Snowflakes.contains(md)) {
+    if (Soot.isJavaLibraryClass(sootClass)  && !sootClass.getPackageName.startsWith("com.sun.net.httpserver") || Snowflakes.contains(md)) {
       val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
       val d = D(Set(obj))
       store.update(lhsAddr, d)
