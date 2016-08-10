@@ -11,6 +11,7 @@ object Chain {
   def MakeChain(graph : AnalysisGraph): AnalysisGraph = {
     val result = new AnalysisGraph()
     val seen = mutable.Map[Id[AnalysisNode], Boolean]()
+    DFS(graph.rootId, null)
 
     def DFS(current : Id[AnalysisNode], chainRoot : Id[AnalysisNode]): Unit = {
 
@@ -122,6 +123,15 @@ object Chain {
         }
 
       }
+    }
+
+    //todo print result
+    for((k,v) <- result.graph) {
+      printf("key: %s, value: %s\n", k, v)
+      //println node.Id.id + ": "
+      //for(neighbor <-node.outNodes()) {
+
+      //}
     }
 
     result

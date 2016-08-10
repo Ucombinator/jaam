@@ -5,7 +5,6 @@ import java.io.{FileInputStream, FileOutputStream}
 import org.ucombinator.jaam.serializer._
 import soot.jimple._
 import soot.Type
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
