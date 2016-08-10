@@ -9,7 +9,7 @@ import soot.Type
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class AnalysisNode(var node : Node = null, val manualIndex : Int = null) {
+class AnalysisNode(var node : Node = null, var manualIndex : Int = -1) {
   val inNodes = mutable.MutableList[Id[AnalysisNode]]()
   val outNodes = mutable.MutableList[Id[AnalysisNode]]()
 
@@ -34,12 +34,12 @@ class AnalysisNode(var node : Node = null, val manualIndex : Int = null) {
     abstractNodes += id
   }
   def getIndex(): Int = {
-    if(manualIndex != null)
-      return manualIndex
+    if(manualIndex != -1)
+      manualIndex
     else if(node != null)
-      return node.id.id
+      node.id.id
     else
-      return null
+      -1
   }
 }
 
@@ -101,24 +101,31 @@ class AnalysisGraph() {
 }
 
 case class Config(
-                   sourceFile : String = null,
-                   targetFile : String = null)
+                   mode : String        = null,
+                   sourceFile : String  = null,
+                   targetFile : String  = null)
 
 object Main {
   //type AnalysisGraph = mutable.Map[Id[AnalysisNode], AnalysisNode]
   //def AnalysisGraph()
 
-  def main(args : Array[String]) = {
+  def main(args : Array[String]) {
     val parser = new scopt.OptionParser[Config]("jaam-analyzer") {
       override def showUsageOnError = true
 
       help("help") text("prints this usage text")
-      arg[String]("<input file>") action {
-        (x, c) => c.copy(sourceFile = x)
-      } text("the input .jaam file to analyze")
-      arg[String]("<output file>") action {
-        (x, c) => c.copy(targetFile = x)
-      } text("the output .jaam file with tags")
+
+      note("")
+      cmd("chain") action { (_, c) =>
+        c.copy(mode = "chain")
+      } text("Collapse long chains into single nodes.") children (
+        arg[String]("<input file>") action {
+          (x, c) => c.copy(sourceFile = x)
+        } text ("the input .jaam file to analyze"),
+        arg[String]("<output file>") action {
+          (x, c) => c.copy(targetFile = x)
+        } text ("the output .jaam file to store the result")
+      )
     }
 
     parser.parse(args, Config()) match {
@@ -126,9 +133,13 @@ object Main {
         println("Bad arguments given.")
 
       case Some(config) =>
-        // This needs to be rewritten.
-        //writeOut(config.targetFile, analyzeFile(config.sourceFile))
-        analyzeFile(config.sourceFile)
+        // Create the AnalysisGraph from the source file.
+        val graph = analyzeFile(config.sourceFile)
+
+        config.mode match {
+          case "chain" =>
+            Chain.MakeChain(graph)
+        }
     }
   }
 
