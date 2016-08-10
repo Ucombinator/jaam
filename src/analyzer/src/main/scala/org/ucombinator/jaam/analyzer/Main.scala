@@ -126,6 +126,10 @@ object Main {
           (x, c) => c.copy(targetFile = x)
         } text ("the output .jaam file to store the result")
       )
+
+      // TODO
+      // Add new command here with cmd("<command name>"), imitating the code
+      // from above.
     }
 
     parser.parse(args, Config()) match {
@@ -139,6 +143,10 @@ object Main {
         config.mode match {
           case "chain" =>
             Chain.MakeChain(graph)
+
+            // TODO
+            // Add extra cases here as needed to add support for new sub-
+            // commands.
         }
     }
   }
