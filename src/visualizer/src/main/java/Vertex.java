@@ -72,7 +72,9 @@ public class Vertex extends AbstractVertex
 	
     public String getShortDescription()
     {
-        String str = this.id+": Regular Vertex\n        statement: " + this.getInstruction() + "\n";
+//        String str = this.id+": Regular Vertex\n        statement: " + this.getInstruction() + "\n";
+        String str = "<html>"+this.id+": Regular Vertex<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+                    + "statement: " + Parameters.getHTMLVerbatim(this.getInstruction()) + "</html>";
         return ""+str;
     }
     

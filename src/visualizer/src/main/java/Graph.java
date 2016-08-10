@@ -183,6 +183,7 @@ public class Graph
 			if(v.isVisible && x1 < v.x && v.x < x2 && y1 < v.y && v.y < y2)
 				v.addHighlight(true, false, true, true);
 		}
+        Parameters.ping();
 	}
 	
 	public AbstractVertex getVertexNearestCoordinate(double x, double y)

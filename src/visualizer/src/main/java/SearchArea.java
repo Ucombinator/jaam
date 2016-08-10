@@ -1,72 +1,76 @@
 
-import javax.swing.JTextArea;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.DefaultHighlighter;
-import javax.swing.text.Highlighter;
-import java.awt.Font;
+import javax.swing.JPanel;
+import javax.swing.JLabel;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.Color;
+import java.awt.Rectangle;
+import java.awt.BorderLayout;
 
-import java.util.ArrayList;
 
-public class SearchArea extends JTextArea
+import javax.swing.JTree;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
+import java.awt.Component;
+
+
+public class SearchArea extends JPanel
 {
-    private ArrayList<AbstractVertex> searchVertices;
-    private ArrayList<Integer> startIndex, endIndex;
-	
+    public JTree searchTree;
+    private DefaultMutableTreeNode root;
+    public static int Node_Height = 40;
+    
 	public SearchArea()
 	{
-		this.setFont(Parameters.font);
-		this.setEditable(false);
+        this.setLayout(new BorderLayout());
         
-        this.searchVertices = new ArrayList<AbstractVertex>();
-        this.startIndex = new ArrayList<Integer>();
-        this.endIndex = new ArrayList<Integer>();
+        this.root = new DefaultMutableTreeNode("Search Results");
+        this.searchTree = new JTree(root);
 
+        this.searchTree.setShowsRootHandles(true);
+        this.searchTree.setRootVisible(false);
+        this.searchTree.setRowHeight(SearchArea.Node_Height);
+        this.searchTree.setCellRenderer(new SearchRenderer());
         
-		this.addMouseListener
+        this.add(this.searchTree, BorderLayout.CENTER);
+
+        this.searchTree.addMouseListener
 		(
 			new MouseListener()
 			{
 				public void mouseClicked(MouseEvent e)
 				{
-					int y = e.getY();
-					Font font = SearchArea.this.getFont();
-					int lineHeight = SearchArea.this.getFontMetrics(font).getHeight();
-					int row = y/(2*lineHeight);
+                    TreePath path = searchTree.getPathForLocation(e.getX(), e.getY());
+                    DefaultMutableTreeNode node = (DefaultMutableTreeNode)(path.getLastPathComponent());
+                    AbstractVertex ver = (AbstractVertex)(node.getUserObject());
+                    
+                    if(!ver.isVisible)
+                        return;
 
 					if(e.isShiftDown())
 					{
-						if(row >= 0 && row < SearchArea.this.searchVertices.size())
-						{
-                            AbstractVertex ver = SearchArea.this.searchVertices.get(row);
-                            if(ver.isSelected())
-                            {
-                                ver.clearAllSelect();
-                            }
-                            else
-                            {
-                                Parameters.vertexHighlight = true;
-                                ver.addHighlight(true, false, true, true);
-                            }
-						}
+                        if(ver.isSelected())
+                        {
+                            ver.clearAllSelect();
+                        }
+                        else
+                        {
+                            Parameters.vertexHighlight = true;
+                            ver.addHighlight(true, false, true, true);
+                            Parameters.ping();
+                        }
 					}
 					else
 					{
                         Main.graph.clearSelects();
-					
-						if(row >= 0 && row < SearchArea.this.searchVertices.size())
-						{
-                            AbstractVertex ver = SearchArea.this.searchVertices.get(row);
-                            
-                            Parameters.vertexHighlight = true;
-                            ver.addHighlight(true, false, true, true);
-						}
+                        Parameters.vertexHighlight = true;
+                        ver.addHighlight(true, false, true, true);
+                        Parameters.ping();
 					}
 					
 					Main.graph.redoCycleHighlights();
-                    SearchArea.this.getSearchVertices();
 					Parameters.repaintAll();
 				}
 				
@@ -79,103 +83,144 @@ public class SearchArea extends JTextArea
 				public void mouseExited(MouseEvent e){}
 			}
 		);
-	}
+ 	}
 	
     
-    public void getSearchVertices()
+    
+    
+    private void expandAllNodes(JTree tree)
     {
-        this.searchVertices = new ArrayList<AbstractVertex>();
-        this.startIndex = new ArrayList<Integer>();
-        this.endIndex = new ArrayList<Integer>();
-        int count = 0;
-        
-        for(Vertex ver : Main.graph.vertices)
+        for (int i = 0; i < tree.getRowCount(); i++)
         {
-//            if(ver.isVisible && Parameters.vertexHighlight && (ver.isSelected() || ver.isChildSelected() || ver.isHighlighted() || ver.isChildHighlighted()))
-            if(ver.isVisible && Parameters.vertexHighlight && (ver.isSelected() || ver.isHighlighted()))
-            {
-                this.searchVertices.add(ver);
-                this.startIndex.add(new Integer(count));
-                count += ver.getShortDescription().length();
-                this.endIndex.add(new Integer(count));
-            }
+            tree.expandRow(i);
         }
-        
-        for(MethodVertex ver : Main.graph.methodVertices)
-        {
-//            if(ver.isVisible && Parameters.vertexHighlight && (ver.isSelected() || ver.isChildSelected() || ver.isHighlighted() || ver.isChildHighlighted()))
-            if(ver.isVisible && Parameters.vertexHighlight && (ver.isSelected() || ver.isHighlighted()))
-            {
-                this.searchVertices.add(ver);
-                this.startIndex.add(new Integer(count));
-                count += ver.getShortDescription().length();
-                this.endIndex.add(new Integer(count));
-            }
-        }
-        
-        for(MethodPathVertex ver : Main.graph.methodPathVertices)
-        {
-//            if(ver.isVisible && Parameters.vertexHighlight && (ver.isSelected() || ver.isChildSelected() || ver.isHighlighted() || ver.isChildHighlighted()))
-            if(ver.isVisible && Parameters.vertexHighlight && (ver.isSelected() || ver.isHighlighted()))
-            {
-                this.searchVertices.add(ver);
-                this.startIndex.add(new Integer(count));
-                count += ver.getShortDescription().length();
-                this.endIndex.add(new Integer(count));
-            }
-        }
-        
     }
-    
 
-	public void clear()
-	{
-        this.searchVertices = new ArrayList<AbstractVertex>();
-        this.startIndex = new ArrayList<Integer>();
-        this.endIndex = new ArrayList<Integer>();
-		this.writeText();
-	}
-		
-	
+    
+    
 	//Set the text for the area
 	public void writeText()
 	{
-		StringBuilder fullText = new StringBuilder();
-//        this.searchVertices = new ArrayList<AbstractVertex>();
+        this.root.removeAllChildren();
+
+        DefaultMutableTreeNode currentPNode = new DefaultMutableTreeNode();
+        DefaultMutableTreeNode currentMNode = new DefaultMutableTreeNode();
+        DefaultMutableTreeNode node = new DefaultMutableTreeNode();
         
-        for(AbstractVertex ver : this.searchVertices)
+        for(AbstractVertex pver : Main.graph.methodPathVertices)
         {
-            String str = ver.getShortDescription();
-			fullText.append(str);
+            if(Parameters.vertexHighlight && (pver.isBranchSelected() || pver.isBranchHighlighted()))
+            {
+                currentPNode = pver.toDefaultMutableTreeNode();
+                root.add(currentPNode);
+            }
+            
+            for(AbstractVertex mver : pver.getMergeChildren())
+            {
+                if(Parameters.vertexHighlight && (mver.isBranchSelected() || mver.isBranchHighlighted()))
+                {
+                    currentMNode = mver.toDefaultMutableTreeNode();
+                    currentPNode.add(currentMNode);
+                }
+                
+                for(AbstractVertex ver : mver.getMergeChildren())
+                {
+                    if(Parameters.vertexHighlight && (ver.isBranchSelected() || ver.isBranchHighlighted()))
+                    {
+                        node = ver.toDefaultMutableTreeNode();
+                        currentMNode.add(node);
+                    }
+                }
+            }
         }
-		
-		this.setText(fullText.toString());
-        this.drawHighlights(Parameters.colorHighlight);
-        this.setCaretPosition(0);
+        
+        this.expandAllNodes(this.searchTree);
+        DefaultTreeModel model = (DefaultTreeModel)this.searchTree.getModel();
+        model.reload(this.root);
+        this.expandAllNodes(this.searchTree);
 	}
 	
-	private void drawHighlights(Color c)
-	{
-		for(int i = 0; i < this.searchVertices.size(); i++)
-		{
-			AbstractVertex ver = this.searchVertices.get(i);
-            if(ver.isSelected())
-                this.drawLineHighlight(i, c);
-		}
-	}
-	
-    private void drawLineHighlight(int row, Color c)
+    
+    
+    public void fixCaretPosition()
     {
-        DefaultHighlighter.DefaultHighlightPainter highlightPainter = new DefaultHighlighter.DefaultHighlightPainter(c);
-        Highlighter h = this.getHighlighter();
         
-        try
+        Rectangle window = this.searchTree.getVisibleRect();
+        int first = this.searchTree.getClosestRowForLocation(window.x, window.y + SearchArea.Node_Height);
+        int last  = this.searchTree.getClosestRowForLocation(window.x, window.y + window.height - SearchArea.Node_Height);
+        
+        DefaultMutableTreeNode node;
+        AbstractVertex ver;
+        
+        for(int i=first; i<=last; i++)
         {
-            h.addHighlight(startIndex.get(row).intValue(), endIndex.get(row).intValue(), highlightPainter);
+            node = (DefaultMutableTreeNode)(this.searchTree.getPathForRow(i).getLastPathComponent());
+            ver = (AbstractVertex)(node.getUserObject());
+            if(ver.isSelected())
+                return;
         }
-        catch(BadLocationException e)
+        
+        for(int i=first-1, j=last+1; i>=0 || j<this.searchTree.getRowCount(); i--, j++)
         {
-            System.out.println(e);
+            if(i>=0)
+            {
+                node = (DefaultMutableTreeNode)(this.searchTree.getPathForRow(i).getLastPathComponent());
+                ver = (AbstractVertex)(node.getUserObject());
+                if(ver.isSelected())
+                {
+                    this.searchTree.scrollRowToVisible(i);
+                    return;
+                }
+            }
+            if(j<this.searchTree.getRowCount())
+            {
+                node = (DefaultMutableTreeNode)(this.searchTree.getPathForRow(j).getLastPathComponent());
+                ver = (AbstractVertex)(node.getUserObject());
+                if(ver.isSelected())
+                {
+                    this.searchTree.scrollRowToVisible(j);
+                    return;
+                }
+            }
+        }
+        
+    }
+    
+    
+    private class SearchRenderer extends DefaultTreeCellRenderer
+    {
+        private String text = "";
+        
+        public Component getTreeCellRendererComponent(JTree tree, Object obj, boolean selected, boolean expanded,
+                                                      boolean leaf, int row, boolean hasFocus)
+        {
+            JLabel label = (JLabel)super.getTreeCellRendererComponent(tree, obj, selected, expanded, leaf, row, hasFocus);
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode)obj;
+            
+            if(node==root)
+                return label;
+            AbstractVertex ver = (AbstractVertex)node.getUserObject();
+            
+            label.setText(ver.getShortDescription());
+            label.setFont(Parameters.font);
+            label.setOpaque(true);
+            if(ver.isSelected)
+            {
+                label.setBackground(Parameters.colorHighlight);
+                label.setForeground(Color.BLACK);
+            }
+            else if(ver.isHighlighted)
+            {
+                label.setBackground(Color.WHITE);
+                label.setForeground(Color.BLACK);
+            }
+            else
+            {
+                label.setBackground(Color.WHITE);
+                label.setForeground(Color.GRAY);
+            }
+            return label;
         }
     }
+    
 }

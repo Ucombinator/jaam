@@ -1,4 +1,5 @@
 
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.ArrayList;
 
 //The base class for the various kinds of vertices.
@@ -67,6 +68,12 @@ public abstract class AbstractVertex
 		this.y = -0.5;
 	}
 	
+    
+    public DefaultMutableTreeNode toDefaultMutableTreeNode()
+    {
+//        return new DefaultMutableTreeNode(this.getShortDescription());
+        return new DefaultMutableTreeNode(this);
+    }
     
     public void addTag(int t)
     {
@@ -445,6 +452,24 @@ public abstract class AbstractVertex
 		return this.numChildrenHighlighted > 0;
 	}
 	
+    public boolean isParentHighlighted()
+    {
+        AbstractVertex ver = this;
+        
+        while(ver !=null)
+        {
+            if(ver.isHighlighted)
+                return true;
+            ver = ver.getMergeParent();
+        }
+        return false;
+    }
+    
+    public boolean isBranchHighlighted()
+    {
+        return this.isHighlighted() | this.isParentHighlighted() | this.isChildHighlighted();
+    }
+    
 	public boolean isSelected()
 	{
 		return this.isSelected;
@@ -454,6 +479,24 @@ public abstract class AbstractVertex
 	{
 		return this.numChildrenSelected > 0;
 	}
+    
+    public boolean isParentSelected()
+    {
+        AbstractVertex ver = this;
+        
+        while(ver !=null)
+        {
+            if(ver.isSelected)
+                return true;
+            ver = ver.getMergeParent();
+        }
+        return false;
+    }
+    
+    public boolean isBranchSelected()
+    {
+        return this.isSelected() | this.isParentSelected() | this.isChildSelected();
+    }
 	
 	public void clearAllHighlights()
 	{
