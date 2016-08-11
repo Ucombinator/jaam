@@ -2,7 +2,7 @@ package org.ucombinator.jaam.analyzer
 
 class StronglyConnected {
 //    def StrongConnect(graph : AnalysisGraph): AnalysisGraph = {
-//      Vector S = null
+//      Vector  queue = null
 //      var index = 0
 //      var color = 0
 //      for(all v in graph.nodes()) {

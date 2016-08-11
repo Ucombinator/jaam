@@ -15,10 +15,12 @@ object Chain {
 
     def DFS(current : Id[AnalysisNode], chainRoot : Id[AnalysisNode]): Unit = {
 
+      println (current + " " + chainRoot)
       seen get current match{
         case Some(_) =>
           if(chainRoot != null) {
-            println("Error: set root to null")
+            //todo
+            //println("Error: set root to null")
             val id = result.abstractMap(current)
             result.graph(id).addAbstractNodeID(current)
             //chainRoot = null
@@ -48,6 +50,7 @@ object Chain {
           DFS(graph.graph(current).outNodes(0), current)
           return
         }
+
         //add all edges to graph
         //go to all children
         for(outNode <- graph.graph(current).outNodes) {
@@ -60,7 +63,7 @@ object Chain {
           }
 
           var childId : Id[AnalysisNode] = null
-          result.abstractMap get current match{
+          result.abstractMap get childId match{
             case Some(_) =>
               childId = result.abstractMap(outNode)
             case None =>
@@ -73,6 +76,7 @@ object Chain {
         }
       }
 
+      //ChainRoot != null
       else {
         val parentId = result.abstractMap(chainRoot)
 
@@ -110,7 +114,7 @@ object Chain {
           }
 
           var childId : Id[AnalysisNode] = null
-          result.abstractMap get current match{
+          result.abstractMap get childId match{
             case Some(_) =>
               childId = result.abstractMap(outNode)
             case None =>
@@ -127,9 +131,10 @@ object Chain {
 
     //todo print result
     for((k,v) <- result.graph) {
-      printf("key: %s, value: %s\n", k, v)
-      //println node.Id.id + ": "
-      //for(neighbor <-node.outNodes()) {
+      println(k + ":")
+      println("includes: " + v.abstractNodes)
+      println("goes to:" + v.outNodes)
+      //for(neighbor <- v.outNodes()) {
 
       //}
     }
