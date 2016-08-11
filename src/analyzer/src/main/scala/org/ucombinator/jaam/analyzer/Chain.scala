@@ -9,23 +9,53 @@ import scala.util.control.Breaks._
 object Chain {
 
   def MakeChain(graph : AnalysisGraph): AnalysisGraph = {
+
+    def lookupOrCreateNode(node : Id[AnalysisNode], graph : AnalysisGraph) : Id[AnalysisNode] = {
+
+      var newNode : Id[AnalysisNode] = null
+
+      graph.abstractMap get node match{
+        case Some(_) =>
+          newNode = graph.abstractMap(node)
+        case None =>
+          newNode = graph.addBlankNode()
+          graph.abstractMap(node) = newNode
+      }
+
+      newNode
+    }
+
+    def linkNode(node : Id[AnalysisNode]) : Boolean = {
+      if ((graph.graph(node).inDegree == 1) && (graph.graph(node).outDegree() == 1)) {
+        return true
+      } else {
+        return false
+      }
+    }
+
     val result = new AnalysisGraph()
     val seen = mutable.Map[Id[AnalysisNode], Boolean]()
     DFS(graph.rootId, null)
 
+    def addEdges(from : Id[AnalysisNode],  to : Id[AnalysisNode]) {
+      result.graph(from).outNodes += to
+      result.graph(to).inNodes += from
+    }
+
     def DFS(current : Id[AnalysisNode], chainRoot : Id[AnalysisNode]): Unit = {
 
       println (current + " " + chainRoot)
-      seen get current match{
-        case Some(_) =>
-          if(chainRoot != null) {
+      seen get current match {
+        case Some(_) => {
+          if (chainRoot != null) {
             //todo
-            //println("Error: set root to null")
             val id = result.abstractMap(current)
-            result.graph(id).addAbstractNodeID(current)
+            val parentId = result.abstractMap(chainRoot)
+            addEdges(id, parentId)
             //chainRoot = null
           }
           return
+        }
 
         case None =>
           seen (current) = true
@@ -34,19 +64,12 @@ object Chain {
       //add vertex to the new graph
       if(chainRoot == null) {
 
-        var id : Id[AnalysisNode] = null
-        result.abstractMap get current match{
-          case Some(_) =>
-            id = result.abstractMap(current)
-          case None =>
-            id = result.addBlankNode()
-            result.abstractMap(current) = id
-        }
+        var id : Id[AnalysisNode] = lookupOrCreateNode(current, result)
 
         result.graph(id).addAbstractNodeID(current)
 
         //check if its start node, then sets the root
-        if((graph.graph(current).inDegree == 1) && (graph.graph(current).outDegree() == 1)) {
+        if(linkNode(current)) {
           DFS(graph.graph(current).outNodes(0), current)
           return
         }
@@ -54,25 +77,16 @@ object Chain {
         //add all edges to graph
         //go to all children
         for(outNode <- graph.graph(current).outNodes) {
-          breakable {
-            if (current == outNode) {
-              result.graph(id).outNodes += id
-              result.graph(id).inNodes += id
-              break
-            }
+          if (current == outNode) {
+            addEdges(id, id)
+          }
+          else {
+            var childId : Id[AnalysisNode] = lookupOrCreateNode(outNode, result)
+
+            addEdges(id, childId)
+            DFS(outNode, null)
           }
 
-          var childId : Id[AnalysisNode] = null
-          result.abstractMap get childId match{
-            case Some(_) =>
-              childId = result.abstractMap(outNode)
-            case None =>
-              childId = result.addBlankNode()
-              result.abstractMap(outNode) = childId
-          }
-          result.graph(id).outNodes += childId
-          result.graph(childId).inNodes += id
-          DFS(outNode, null)
         }
       }
 
@@ -81,7 +95,7 @@ object Chain {
         val parentId = result.abstractMap(chainRoot)
 
         //merge it into the chainRoot
-        if((graph.graph(current).inDegree == 1) && (graph.graph(current).outDegree() == 1)) {
+        if(linkNode(current)) {
           result.graph(parentId).addAbstractNodeID(current)
           result.abstractMap(current) = parentId
           DFS(graph.graph(current).outNodes(0), chainRoot)
@@ -91,39 +105,21 @@ object Chain {
         //else: end of the chain
         //one more step is adding the back edge (we missed adding this edge in our process)
 
-        var id: Id[AnalysisNode] = null
-        result.abstractMap get current match{
-          case Some(_) =>
-            id = result.abstractMap(current)
-          case None =>
-            id = result.addBlankNode()
-            result.abstractMap(current) = id
-        }
+        var id: Id[AnalysisNode] = lookupOrCreateNode(current, result)
 
         result.graph(id).addAbstractNodeID(current)
-        result.graph(id).inNodes += parentId
-        result.graph(parentId).outNodes += id
+        addEdges(parentId, id)
         //chainRoot = null
         for(outNode <- graph.graph(current).outNodes) {
-          breakable {
-            if(current == outNode) {
-              result.graph(id).outNodes += id
-              result.graph(id).inNodes += id
-              break
-            }
+          if(current == outNode) {
+              addEdges(id, id)
           }
+          else{
+            var childId : Id[AnalysisNode] = lookupOrCreateNode(outNode, result)
 
-          var childId : Id[AnalysisNode] = null
-          result.abstractMap get childId match{
-            case Some(_) =>
-              childId = result.abstractMap(outNode)
-            case None =>
-              childId = result.addBlankNode()
-              result.abstractMap(outNode) = childId
+            addEdges(id, childId)
+            DFS(outNode, null)
           }
-          result.graph(id).inNodes += childId
-          result.graph(childId).outNodes += id
-          DFS(outNode, null)
         }
 
       }
