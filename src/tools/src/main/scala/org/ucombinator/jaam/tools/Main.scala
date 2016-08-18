@@ -77,6 +77,21 @@ object Main {
       )
 
       note("")
+      cmd("coverage2") action { (_, c) =>
+        c.copy(mode = "coverage2")
+      } text("Analyze a JAAM file against target JAR files to find JAAM coverage.") children(
+        arg[String]("<jaamFile>").required() action {
+          (x, c) => c.copy(targetFile = x)
+        } text("The JAAM file to analyze"),
+        arg[Seq[String]]("<inspection jarfile>[,<inspection jarfile>...]").required() action {
+          (x, c) => c.copy(sourceFiles = x)
+        } text("One or more JAR files to directly compare coverage against"),
+        arg[Seq[String]]("<additional jarfile>[,<additional jarfile>...]") action {
+          (x, c) => c.copy(additionalFiles = x)
+        } text("One or more JAR files to complete class loading for inspection JAR files")
+      )
+
+      note("")
       cmd("missing-returns") action { (_, c) =>
         c.copy(mode = "missing-returns")
       } text("Find calls with no matching return") children(
@@ -104,6 +119,7 @@ object Main {
           case "info" => Info.analyzeForInfo(config.targetFile)
           case "cat" => Cat.concatenateFiles(config.sourceFiles, config.targetFile)
           case "coverage" => Coverage.findCoverage(config.targetFile, config.sourceFiles, config.additionalFiles)
+          case "coverage2" => Coverage2.main(config.targetFile, config.sourceFiles, config.additionalFiles)
           case "missing-returns" => MissingReturns.missingReturns(config.targetFile)
           case _ => println("Invalid command given: " + config.mode)
         }
