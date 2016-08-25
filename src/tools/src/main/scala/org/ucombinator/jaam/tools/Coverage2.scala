@@ -100,9 +100,9 @@ object Coverage2 {
   }
  */
 
-  def main(jaamFile: String, jarFileNames: Seq[String], additionalJarFileNames: Seq[String]) = {
+  def main(jaamFile: String, jarFileNames: String) = {
     val rtJar = "/home/adamsmd/r/ucombinator/stac/jaam/jaam.git/resources/rt.jar"
-    val sootClassPath = jarFileNames.mkString(":") + additionalJarFileNames.mkString(":")
+    val sootClassPath = jarFileNames
 
     val sm = sootMethods(rtJar, sootClassPath, "com.cyberpointllc.stac.host.Main")
  //"com.stac.Main")

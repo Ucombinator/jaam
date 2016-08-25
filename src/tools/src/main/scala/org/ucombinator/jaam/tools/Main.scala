@@ -1,128 +1,118 @@
 package org.ucombinator.jaam.tools
 
-case class Config(
-                   mode : String = null,
-                   targetFile : String = null,
-                   targetNode : Integer = null,
-                   fixEOF : Boolean = false,
-                   addMissingStates : Boolean = false,
-                   removeMissingStates : Boolean = false,
-                   sourceFiles : Seq[String] = Seq(),
-                   additionalFiles : Seq[String] = Seq()
-                 )
+import org.rogach.scallop._
+
+object Conf {
+  class Print extends Main("print") {
+    banner("Print a JAAM file in human-readable format")
+    footer("")
+
+    val state = opt[Int](argName = "state id", descr = "a specific state ID to print")
+    val file = trailArg[java.io.File](descr = "a .jaam file to be printed")
+
+    def run(conf: Conf) {
+      state.toOption match {
+        case None => Print.printFile(file().toString)
+        case Some(state) => Print.printNodeFromFile(file().toString, state)
+      }
+    }
+  }
+
+  class Validate extends Main("validate") {
+    banner("Amend an aborted JAAM serialization to allow reading.")
+    footer("")
+    val fixEof = opt[Boolean](descr = "whether to amend a JAAM file that ends abruptly")
+    val addMissingStates = opt[Boolean](descr = "find hanging edges and add MissingState states so they go somewhere")
+    val removeMissingStates = opt[Boolean](descr = "remove any MissingState states found in the serialization; overrides --addMissingStates")
+    val file = trailArg[java.io.File](descr = "a .jaam file to be truncated")
+
+    def run(conf: Conf) {
+      Validate.validateFile(
+        jaamFile = file().toString,
+        shouldAppendMissingEOF = fixEof(),
+        addMissingStates = addMissingStates(),
+        removeMissingStates = removeMissingStates())
+    }
+  }
+
+  class Info extends Main("info") {
+    banner("Get simple information about a JAAM interpretation.")
+    footer("")
+    val file = trailArg[java.io.File](descr = "a .jaam file to be analyzed")
+
+    def run(conf: Conf) {
+      Info.analyzeForInfo(file().toString)
+    }
+  }
+
+  class Cat extends Main("cat") {
+    banner("Combine multile JAAM files into a single, cohesive file.")
+    footer("")
+    val outFile = trailArg[java.io.File](descr = "The desired output filename")
+    val inFiles = trailArg[List[String]](descr = "The list of files to be concatenated.")
+
+    def run(conf: Conf) {
+      Cat.concatenateFiles(inFiles(), outFile().toString)
+    }
+  }
+
+  class Coverage extends Main("coverage") {
+    banner("Analyze a JAAM file against target JAR files to find JAAM coverage.")
+    footer("")
+    val jaamFile = trailArg[java.io.File](descr = "The JAAM file to analyze")
+    val jars = trailArg[String](descr = "Colon separated list of JAR files to directly compare coverage against")
+    val additionalJars = trailArg[String](descr = "Colon separated list of JAR files to complete class loading for inspection JAR files")
+
+    def run(conf: Conf) {
+      Coverage.findCoverage(jaamFile().toString, jars().split(":"), additionalJars().split(":"))
+    }
+  }
+
+  class Coverage2 extends Main("coverage2") {
+    banner("Analyze a JAAM file against target JAR files to find JAAM coverage.")
+    footer("")
+    val jaamFile = trailArg[java.io.File](descr = "The JAAM file to analyze")
+    val jars = trailArg[String](descr = "Colon separated list of JAR files to directly compare coverage against")
+    //val additionalJars = trailArg[String](descr = "Colon separated list of JAR files to complete class loading for inspection JAR files")
+
+    def run(conf: Conf) {
+      Coverage2.main(jaamFile().toString, jars())
+    }
+  }
+
+  class MissingReturns extends Main("missing-returns") {
+    banner("Find calls with no matching return")
+    footer("")
+    val jaamFile = trailArg[java.io.File](descr = "The JAAM file to analyze")
+
+    def run(conf: Conf) {
+      MissingReturns.missingReturns(jaamFile().toString)
+    }
+  }
+}
+
+class Conf(args : Seq[String]) extends ScallopConf(args = args) {
+  banner("Usage: jaam-tools [options]")
+  addSubcommand(new Conf.Print)
+  addSubcommand(new Conf.Validate)
+  addSubcommand(new Conf.Info)
+  addSubcommand(new Conf.Cat)
+  addSubcommand(new Conf.Coverage)
+  addSubcommand(new Conf.Coverage2)
+  addSubcommand(new Conf.MissingReturns)
+  verify()
+}
+
+abstract class Main(name: String) extends Subcommand(name) {
+  def run(conf : Conf)
+}
 
 object Main {
-  def main(args : Array[String]) = {
-    val parser = new scopt.OptionParser[Config]("jaam-tools") {
-      override def showUsageOnError = true
-
-      help("help") text("prints this usage text")
-
-      note("")
-      cmd("print") action { (_, c) =>
-        c.copy(mode = "print")
-      } text("Print a JAAM file in human-readable format") children(
-        opt[Int]("node") action { (x, c) => c.copy(targetNode = x) }
-          text("a specific state ID to print"),
-        arg[String]("<file>") action { (x, c) => c.copy(targetFile = x) }
-          text("a .jaam file to be printed")
-      )
-
-      note("")
-      cmd("validate") action { (_, c) =>
-        c.copy(mode = "validate")
-      } text("Amend an aborted JAAM serialization to allow reading.") children(
-        opt[Unit]("fixEOF") action { (_, c) => c.copy(fixEOF = true) }
-          text("whether to amend a JAAM file which ends abruptly"),
-        opt[Unit]("addMissingStates") action { (_, c) => c.copy(addMissingStates =  true) }
-          text("find hanging edges and add MissingState states so they go somewhere"),
-        opt[Unit]("removeMissingStates") action { (_, c) => c.copy(removeMissingStates = true) }
-          text("remove any MissingState states found in the serialization; overrides --addMissingStates"),
-        arg[String]("<file>") action { (x, c) => c.copy(targetFile = x) }
-          text("a .jaam file to be truncated")
-      )
-
-      note("")
-      cmd("info") action { (_, c) =>
-        c.copy(mode = "info")
-      } text("Get simple information about a JAAM interpretation.") children(
-        arg[String]("<file>") action { (x, c) => c.copy(targetFile = x) }
-          text("a .jaam file to be analyzed")
-      )
-
-      note("")
-      cmd("cat") action { (_, c) =>
-        c.copy(mode = "cat")
-      } text("Combine multile JAAM files into a single, cohesive file.") children(
-        arg[String]("<outfile>").required() action { (x, c) => c.copy(targetFile = x)
-        } text("The desired output filename"),
-        arg[Seq[String]]("<infile1>[,<infile2>,...]").required() action { (x, c) =>
-          c.copy(sourceFiles = x)
-        } text("The list of files to be concatenated.")
-      )
-
-      note("")
-      cmd("coverage") action { (_, c) =>
-        c.copy(mode = "coverage")
-      } text("Analyze a JAAM file against target JAR files to find JAAM coverage.") children(
-        arg[String]("<jaamFile>").required() action {
-          (x, c) => c.copy(targetFile = x)
-        } text("The JAAM file to analyze"),
-        arg[Seq[String]]("<inspection jarfile>[,<inspection jarfile>...]").required() action {
-          (x, c) => c.copy(sourceFiles = x)
-        } text("One or more JAR files to directly compare coverage against"),
-        arg[Seq[String]]("<additional jarfile>[,<additional jarfile>...]") action {
-          (x, c) => c.copy(additionalFiles = x)
-        } text("One or more JAR files to complete class loading for inspection JAR files")
-      )
-
-      note("")
-      cmd("coverage2") action { (_, c) =>
-        c.copy(mode = "coverage2")
-      } text("Analyze a JAAM file against target JAR files to find JAAM coverage.") children(
-        arg[String]("<jaamFile>").required() action {
-          (x, c) => c.copy(targetFile = x)
-        } text("The JAAM file to analyze"),
-        arg[Seq[String]]("<inspection jarfile>[,<inspection jarfile>...]").required() action {
-          (x, c) => c.copy(sourceFiles = x)
-        } text("One or more JAR files to directly compare coverage against"),
-        arg[Seq[String]]("<additional jarfile>[,<additional jarfile>...]") action {
-          (x, c) => c.copy(additionalFiles = x)
-        } text("One or more JAR files to complete class loading for inspection JAR files")
-      )
-
-      note("")
-      cmd("missing-returns") action { (_, c) =>
-        c.copy(mode = "missing-returns")
-      } text("Find calls with no matching return") children(
-        arg[String]("<jaamFile>").required() action {
-          (x, c) => c.copy(targetFile = x)
-        } text("The JAAM file to analyze")
-      )
-    }
-
-    parser.parse(args, Config()) match {
-      case None =>
-        println("Bad arguments")
-
-      case Some(config) =>
-        config.mode match {
-          case "print" => Option(config.targetNode) match {
-            case None => Print.printFile(config.targetFile)
-            case Some(state) => Print.printNodeFromFile(config.targetFile, state)
-          }
-          case "validate" => Validate.validateFile(
-            jaamFile = config.targetFile,
-            shouldAppendMissingEOF = config.fixEOF,
-            addMissingStates = config.addMissingStates,
-            removeMissingStates = config.removeMissingStates)
-          case "info" => Info.analyzeForInfo(config.targetFile)
-          case "cat" => Cat.concatenateFiles(config.sourceFiles, config.targetFile)
-          case "coverage" => Coverage.findCoverage(config.targetFile, config.sourceFiles, config.additionalFiles)
-          case "coverage2" => Coverage2.main(config.targetFile, config.sourceFiles, config.additionalFiles)
-          case "missing-returns" => MissingReturns.missingReturns(config.targetFile)
-          case _ => println("Invalid command given: " + config.mode)
-        }
+  def main(args : Array[String]) {
+    val options = new Conf(args)
+    options.subcommand match {
+      case None => println("ERROR: No subcommand specified")
+      case Some(m : Main) => m.run(options)
     }
   }
 }
