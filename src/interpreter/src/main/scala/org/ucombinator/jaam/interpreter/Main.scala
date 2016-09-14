@@ -92,9 +92,11 @@ case class KontStack(k : Kont) {
                       fp : FramePointer,
                       store : Store,
                       initializedClasses : Set[SootClass]) : Set[AbstractState] = {
-    if (!exception.isInstanceOf[ObjectValue])
+    if (!exception.isInstanceOf[ObjectValue]) {
       Log.warn("Impossible throw: stmt = " + stmt + "; value = " + exception + ". May be unsound.")
       //throw new Exception("Impossible throw: stmt = " + stmt + "; value = " + exception)
+      return Set()
+    }
 
     var visited = Set[(Stmt, FramePointer, KontStack)]()
 
