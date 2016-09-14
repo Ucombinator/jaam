@@ -93,8 +93,8 @@ case class KontStack(k : Kont) {
                       store : Store,
                       initializedClasses : Set[SootClass]) : Set[AbstractState] = {
     if (!exception.isInstanceOf[ObjectValue])
-      //Log.warn("Impossible throw: stmt = " + stmt + "; value = " + exception)
-      throw new Exception("Impossible throw: stmt = " + stmt + "; value = " + exception)
+      Log.warn("Impossible throw: stmt = " + stmt + "; value = " + exception + ". May be unsound.")
+      //throw new Exception("Impossible throw: stmt = " + stmt + "; value = " + exception)
 
     var visited = Set[(Stmt, FramePointer, KontStack)]()
 
@@ -664,8 +664,9 @@ case class State(val stmt : Stmt,
               case Some(s) => newStore.update(ThisFrameAddr(newFP), D(Set(s)))
               case None => {} // TODO: throw exception here?
             }
-            for (i <- 0 until args.length)
+            for (i <- 0 until args.length) {
               newStore.update(ParameterFrameAddr(newFP, i), args(i))
+            }
 
             val newState = State(Stmt.methodEntry(meth), newFP, newKontStack)
             newState.setInitializedClasses(initializedClasses)
@@ -909,7 +910,11 @@ case class State(val stmt : Stmt,
       case sootStmt : ExitMonitorStmt => Set(this.copyState(stmt = stmt.nextSyntactic))
 
       // TODO: needs testing
-      case sootStmt : ThrowStmt => { exceptions = exceptions.join(eval(sootStmt.getOp())); Set() }
+      case sootStmt : ThrowStmt => { 
+        val v = eval(sootStmt.getOp())
+        exceptions = exceptions.join(v)
+        Set() 
+      }
 
       // TODO: We're missing BreakPointStmt and RetStmt (but these might not be used)
       case _ => {
