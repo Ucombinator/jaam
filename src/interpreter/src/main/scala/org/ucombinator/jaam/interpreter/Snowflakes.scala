@@ -90,8 +90,14 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
       case None => {}
     }
 
-    val rtType = meth.getReturnType
-    rtType match {
+    val exceptions = for (exception <- meth.getExceptions) yield {
+      ObjectValue(exception, SnowflakeBasePointer(exception.getName))
+    }
+    val exceptionStates = (exceptions map {
+      state.kontStack.handleException(_, state.stmt, state.fp, state.store, state.initializedClasses)
+    }).flatten
+
+    val normalStates = meth.getReturnType match {
       case _ : VoidType => NoOpSnowflake(state, nextStmt, self, args)
       case _ : PrimType =>
         // NOTE: if we eventually do something other than D.atomicTop, we need
@@ -136,6 +142,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
         }
         states
     }
+    normalStates ++ exceptionStates
   }
 }
 
