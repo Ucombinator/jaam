@@ -1,7 +1,6 @@
 package org.ucombinator.jaam.tools
 
 import java.io.FileInputStream
-import scala.collection.mutable
 
 import org.ucombinator.jaam.serializer._
 
@@ -12,9 +11,12 @@ object Print {
     var packet: Packet = null
     while ({packet = pi.read(); !packet.isInstanceOf[EOF]}) {
       packet match {
-        case p : Node => printNode(p)
-        case p : Edge => printEdge(p)
-        case p : NodeTag => printTag(p)
+        case p : Node =>
+          printNode(p)
+        case p : Edge =>
+          printEdge(p)
+        case p : NodeTag =>
+          printTag(p)
       }
     }
     pi.close()
@@ -44,11 +46,22 @@ object Print {
     pi.close()
   }
 
+
   def printNode(node : Node) = {
     node match {
       case n: State => printState(n)
       case n: ErrorState => printErrorState(n)
+      case n: AnalysisNode => printAnalysisNode(n)
     }
+  }
+
+  def printAnalysisNode(an : AnalysisNode) = {
+    val identifier = "analysis_node-" + an.id.id
+    printIndentedLine(identifier, 0, "AnalysisNode")
+    printIndentedLine(identifier, 1, "tag: " + an.tag)
+    printIndentedLine(identifier, 1, "contains: " + an.abstNodes.toArray.mkString(", "))
+    printIndentedLine(identifier, 1, "in edges: " + an.inEdges.toArray.mkString(", "))
+    printIndentedLine(identifier, 1, "out edges: " + an.outEdges.toArray.mkString(", "))
   }
 
   def printState(state : State) = {

@@ -1,14 +1,15 @@
 package org.ucombinator.jaam.analyzer
 
-import org.ucombinator.jaam.serializer.Id
+import org.ucombinator.jaam.serializer._
+import java.io.{FileOutputStream}
+
+import org.ucombinator.jaam.serializer
 
 import scala.collection.mutable
 
-import scala.util.control.Breaks._
-
 object Chain {
 
-  def MakeChain(graph : AnalysisGraph): AnalysisGraph = {
+  def MakeChain(graph : AnalysisGraph, file : String): AnalysisGraph = {
 
     def lookupOrCreateNode(node : Id[AnalysisNode], graph : AnalysisGraph) : Id[AnalysisNode] = {
 
@@ -44,7 +45,7 @@ object Chain {
 
     def DFS(current : Id[AnalysisNode], chainRoot : Id[AnalysisNode]): Unit = {
 
-      println (current + " " + chainRoot)
+      //println (current + " " + chainRoot)
       seen get current match {
         case Some(_) => {
           if (chainRoot != null) {
@@ -109,12 +110,11 @@ object Chain {
 
         result.graph(id).addAbstractNodeID(current)
         addEdges(parentId, id)
-        //chainRoot = null
         for(outNode <- graph.graph(current).outNodes) {
           if(current == outNode) {
               addEdges(id, id)
           }
-          else{
+          else {
             var childId : Id[AnalysisNode] = lookupOrCreateNode(outNode, result)
 
             addEdges(id, childId)
@@ -124,18 +124,24 @@ object Chain {
 
       }
     }
+    writeOut(file)
 
-    //todo print result
-    for((k,v) <- result.graph) {
-      println(k + ":")
-      println("includes: " + v.abstractNodes)
-      println("goes to:" + v.outNodes)
-      //for(neighbor <- v.outNodes()) {
+    /*
+      Write the output of Chain to a .jaam file
+     */
+    def writeOut(file : String) {
 
-      //}
+      val outSerializer = new serializer.PacketOutput(new FileOutputStream(file))
+
+      for((k,v) <- result.graph) {
+        outSerializer.write(v.toPacket())
+      }
+      outSerializer.write(EOF())
+      outSerializer.close()
     }
 
     result
   }
 
 }
+
