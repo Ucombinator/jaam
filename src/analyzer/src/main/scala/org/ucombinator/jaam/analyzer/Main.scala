@@ -1,6 +1,6 @@
 package org.ucombinator.jaam.analyzer
 
-import java.io.FileInputStream
+import java.io.{FileInputStream, FileOutputStream}
 
 import org.ucombinator.jaam.serializer
 import org.ucombinator.jaam.serializer._
@@ -48,12 +48,11 @@ class AnalysisNode(var node : Node = null, override val id : Id[Node]) extends N
   }
 
   // Wrap the analyzer AnalysisNode in a serializer AnalysisNode
-  def toPacket(): Packet = {
+  def toPacket(tag : Tag): Packet = {
     val abstractnodes = abstractNodes.map( x => x.id )
     val inedges = inNodes.map( x => x.id )
     val outedges = outNodes.map( x => x.id )
-    val chaintag = new serializer.ChainTag
-    serializer.AnalysisNode(node, id, abstractnodes, inedges, outedges, chaintag)
+    serializer.AnalysisNode(node, id, abstractnodes, inedges, outedges, tag)
   }
 }
 
@@ -158,7 +157,8 @@ object Main {
 
         config.mode match {
           case "chain" =>
-            Chain.MakeChain(graph, config.targetFile)
+            val result = Chain.MakeChain(graph)
+            writeOut(result, config.targetFile)
 
             // TODO
             // Add extra cases here as needed to add support for new sub-
@@ -181,6 +181,21 @@ object Main {
     pi.close()
 
     graph
+  }
+
+  /*
+  Write the output of analyzed file to a .jaam file
+ */
+  def writeOut(graph : AnalysisGraph, file : String) {
+
+    val outSerializer = new serializer.PacketOutput(new FileOutputStream(file))
+    val chaintag = new serializer.ChainTag
+
+    for((k,v) <- graph.graph) {
+      outSerializer.write(v.toPacket(chaintag))
+    }
+    outSerializer.write(EOF())
+    outSerializer.close()
   }
 
 //  def writeOut(file : String, idList : scala.collection.mutable.MutableList[Id[Node]]) = {

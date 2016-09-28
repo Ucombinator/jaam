@@ -9,7 +9,7 @@ import scala.collection.mutable
 
 object Chain {
 
-  def MakeChain(graph : AnalysisGraph, file : String): AnalysisGraph = {
+  def MakeChain(graph : AnalysisGraph): AnalysisGraph = {
 
     def lookupOrCreateNode(node : Id[AnalysisNode], graph : AnalysisGraph) : Id[AnalysisNode] = {
 
@@ -124,21 +124,9 @@ object Chain {
 
       }
     }
-    writeOut(file)
+    //writeOut(result, file)
 
-    /*
-      Write the output of Chain to a .jaam file
-     */
-    def writeOut(file : String) {
 
-      val outSerializer = new serializer.PacketOutput(new FileOutputStream(file))
-
-      for((k,v) <- result.graph) {
-        outSerializer.write(v.toPacket())
-      }
-      outSerializer.write(EOF())
-      outSerializer.close()
-    }
 
     result
   }
