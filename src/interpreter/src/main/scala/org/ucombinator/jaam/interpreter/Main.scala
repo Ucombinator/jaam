@@ -92,6 +92,10 @@ case class KontStack(k : Kont) {
                       fp : FramePointer,
                       store : Store,
                       initializedClasses : Set[SootClass]) : Set[AbstractState] = {
+    //TODO: if the JVM implementation does not enforce the rules on structured locking described in §2.11.10, 
+    //then if the method of the current frame is a synchronized method and the current thread is not the owner 
+    //of the monitor entered or reentered on invocation of the method, athrow throws an IllegalMonitorStateException 
+    //instead of the object previously being thrown.
     if (!exception.isInstanceOf[ObjectValue]) {
       Log.warn("Impossible throw: stmt = " + stmt + "; value = " + exception + ". May be unsound.")
       if (exception == AnyAtomicValue) {
