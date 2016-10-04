@@ -94,7 +94,12 @@ case class KontStack(k : Kont) {
                       initializedClasses : Set[SootClass]) : Set[AbstractState] = {
     if (!exception.isInstanceOf[ObjectValue]) {
       Log.warn("Impossible throw: stmt = " + stmt + "; value = " + exception + ". May be unsound.")
-      //throw new Exception("Impossible throw: stmt = " + stmt + "; value = " + exception)
+      if (exception == AnyAtomicValue) {
+        // if throws something might be a null pointer, then throw a NullPointerException
+        val nullPointerException = Soot.getSootClass("java.lang.NullPointerException");
+        return handleException(ObjectValue(nullPointerException, OneCFABasePointer(stmt, fp, FromJava)),
+                               stmt, fp, store, initializedClasses)
+      }
       return Set()
     }
 
