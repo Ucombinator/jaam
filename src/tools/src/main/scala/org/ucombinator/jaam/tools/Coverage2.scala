@@ -100,12 +100,12 @@ object Coverage2 {
   }
  */
 
-  def main(jaamFile: String, jarFileNames: Seq[String], additionalJarFileNames: Seq[String]) = {
-    val rtJar = "/home/adamsmd/r/ucombinator/stac/jaam/jaam.git/resources/rt.jar"
-    val sootClassPath = jarFileNames.mkString(":") + additionalJarFileNames.mkString(":")
-
-    val sm = sootMethods(rtJar, sootClassPath, "com.cyberpointllc.stac.host.Main")
- //"com.stac.Main")
+  def main(rtJar: String, jaamFile: String, mainClass: String, jarFileNames: Seq[String], additionalJarFileNames: Seq[String]) = {
+    val sootClassPath = jarFileNames.mkString(":") + ":" + additionalJarFileNames.mkString(":")
+    println("sootClassPath: " + sootClassPath)
+    val sm = sootMethods(rtJar, sootClassPath, mainClass)
+      //"com.cyberpointllc.stac.host.Main")
+      //"com.stac.Main")
     val jm = jaamMethods(jaamFile)
 
     // check that all methods present
