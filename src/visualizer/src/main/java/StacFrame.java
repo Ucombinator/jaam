@@ -1,5 +1,6 @@
 
 import java.io.File;
+import java.util.ArrayList;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
@@ -547,9 +548,49 @@ public class StacFrame extends JFrame
 		);
 		help.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, ActionEvent.CTRL_MASK));
 	}
-	
+
+	public void buildWindow(ArrayList<ArrayList<JPanel>> layout, ArrayList<ArrayList<Double>> layoutRowWeights, ArrayList<Double> layoutColumnWeights)
+	{
+		// Construct columns
+		System.out.println("Layout size: " + Integer.toString(layout.size()));
+		ArrayList<GUIPanelColumn> columns = new ArrayList<GUIPanelColumn>();
+		for(int i = 0; i < layout.size(); i++)
+		{
+			System.out.println("Constructing column: " + Integer.toString(i) + ", height " + Integer.toString(layout.get(i).size()));
+			ArrayList<JPanel> panelList = layout.get(i);
+			columns.add(new GUIPanelColumn(panelList, layoutRowWeights.get(i)));
+		}
+
+		// Connect columns with horizontal split panes
+		ArrayList<JSplitPane> horizontalSplits = new ArrayList<JSplitPane>();
+		for(int i = 0; i < layout.size() - 1; i++) {
+			JSplitPane nextSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
+			nextSplit.setOneTouchExpandable(true);
+			if (i == 0)
+				nextSplit.setLeftComponent(columns.get(0).getComponentLink());
+			else
+				nextSplit.setLeftComponent(horizontalSplits.get(i - 1));
+
+			nextSplit.setRightComponent(columns.get(i + 1).getComponentLink());
+			horizontalSplits.add(nextSplit);
+		}
+
+		for(int i = 0; i < horizontalSplits.size(); i++)
+		{
+			horizontalSplits.get(i).setResizeWeight(layoutColumnWeights.get(i));
+			horizontalSplits.get(i).resetToPreferredSizes();
+		}
+
+		// Add to GUI
+		if(layout.size() == 1)
+			this.getContentPane().add(columns.get(0).getComponentLink(), BorderLayout.CENTER);
+		else
+			this.getContentPane().add(horizontalSplits.get(horizontalSplits.size() - 1), BorderLayout.CENTER);
+	}
+
 	public void makeLayout()
 	{
+
 		//centerPanel and vizPanel
 		this.setLayout(new BorderLayout());
 		setSplitScreen();
@@ -672,32 +713,14 @@ public class StacFrame extends JFrame
 	
 	public void setSplitScreen()
 	{
-		centerSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
-		JSplitPane leftSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true);
-		JSplitPane vizSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
-        JSplitPane rightSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true);
-		centerSplitPane.setLeftComponent(leftSplitPane);
-		centerSplitPane.setRightComponent(vizSplitPane);
-        vizSplitPane.setRightComponent(rightSplitPane);
-		this.getContentPane().add(this.centerSplitPane, BorderLayout.CENTER);
-		
-		centerSplitPane.setOneTouchExpandable(true);
-		leftSplitPane.setOneTouchExpandable(true);
-        vizSplitPane.setOneTouchExpandable(true);
-		rightSplitPane.setOneTouchExpandable(true);
-		
+		// Declare each panel
 		leftPanel = new JPanel();
-		leftSplitPane.setLeftComponent(leftPanel);
 		rightPanel = new JPanel();
-        rightSplitPane.setLeftComponent(rightPanel);
         searchPanel = new JPanel();
-		rightSplitPane.setRightComponent(searchPanel);
-
 		this.vizPanel = new VizPanel(this, false);
-		vizSplitPane.setLeftComponent(this.vizPanel);
 		this.contextPanel = new VizPanel(this,true);
-		leftSplitPane.setRightComponent(this.contextPanel);
 
+		// Build each panel
 		JLabel leftL = new JLabel("Context", JLabel.CENTER);
 		Parameters.leftArea = new CodeArea();
 		leftPanel.setLayout(new BorderLayout());
@@ -723,17 +746,38 @@ public class StacFrame extends JFrame
         JScrollPane scrollS = new JScrollPane (Parameters.searchArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         searchPanel.add(scrollS, BorderLayout.CENTER);
         searchPanel.setFont(Parameters.font);
-        
-		double rw1 = 0.2, rw2 = 0.75, rw3 = 0.6, rw4 = 0.6;
-		centerSplitPane.setResizeWeight(rw1);
-		vizSplitPane.setResizeWeight(rw2);
-		leftSplitPane.setResizeWeight(rw3);
-        rightSplitPane.setResizeWeight(rw4);
-		
-		centerSplitPane.resetToPreferredSizes();
-        vizSplitPane.resetToPreferredSizes();
-		leftSplitPane.resetToPreferredSizes();
-        rightSplitPane.resetToPreferredSizes();
+
+		// Build data structure to hold panels
+		ArrayList<ArrayList<JPanel>> layout = new ArrayList<ArrayList<JPanel>>();
+		ArrayList<ArrayList<Double>> layoutRowWeights = new ArrayList<ArrayList<Double>>();
+		ArrayList<Double> layoutColumnWeights = new ArrayList<Double>();
+
+		ArrayList<JPanel> left = new ArrayList<JPanel>();
+		left.add(leftPanel);
+		left.add(contextPanel);
+
+		ArrayList<Double> leftWeights = new ArrayList<Double>();
+		leftWeights.add(0.6);
+		layoutRowWeights.add(leftWeights);
+
+		ArrayList<JPanel> center = new ArrayList<JPanel>();
+		center.add(vizPanel);
+		ArrayList<Double> centerWeights = new ArrayList<Double>();
+		layoutRowWeights.add(centerWeights);
+
+		ArrayList<JPanel> right = new ArrayList<JPanel>();
+		right.add(rightPanel);
+		right.add(searchPanel);
+		ArrayList<Double> rightWeights = new ArrayList<Double>();
+		rightWeights.add(0.6);
+		layoutRowWeights.add(rightWeights);
+
+		layout.add(left);
+		layoutColumnWeights.add(0.2);
+		layout.add(center);
+		layoutColumnWeights.add(0.75);
+		layout.add(right);
+		buildWindow(layout, layoutRowWeights, layoutColumnWeights);
 	}
 	
     
@@ -779,15 +823,6 @@ public class StacFrame extends JFrame
         JScrollPane scrollR = new JScrollPane (Parameters.rightArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         rightPanel.add(scrollR, BorderLayout.CENTER);
         rightPanel.setFont(Parameters.font);
-        
-        double rw1 = 0.2, rw2 = 0.75, rw3 = 0.6;
-        centerSplitPane.setResizeWeight(rw1);
-        rightSplitPane.setResizeWeight(rw2);
-        leftSplitPane.setResizeWeight(rw3);
-        
-        centerSplitPane.resetToPreferredSizes();
-        rightSplitPane.resetToPreferredSizes();
-        leftSplitPane.resetToPreferredSizes();
     }
     
 	public void loadGraph(boolean fromMessages)
