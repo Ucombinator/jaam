@@ -54,6 +54,7 @@ public class StacFrame extends JFrame
 	public VizPanel vizPanel, contextPanel;
 	private JPanel menuPanel, leftPanel, rightPanel, searchPanel;
 	public JCheckBox showContext, showEdge;
+    public SearchField searchF;
 	private boolean context = false, mouseDrag = false;
 	
 	public enum searchType
@@ -107,7 +108,7 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-        loadMessages.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, 0));
+        loadMessages.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
 
 		/*final JMenuItem loadJavaCode = new JMenuItem("Load matching decompiled code");
 		menuFile.add(loadJavaCode);
@@ -180,7 +181,7 @@ public class StacFrame extends JFrame
                 }
             }
         );
-        searchTags.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, 0));
+        searchTags.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK));
         
         
 		JMenuItem searchLeaves = new JMenuItem("All leaves");
@@ -334,6 +335,24 @@ public class StacFrame extends JFrame
 				}
 		);
 		
+        JMenuItem rearrange = new JMenuItem("Rearrange graph");
+        menuNavigation.add(rearrange);
+        rearrange.addActionListener
+        (
+         new ActionListener()
+         {
+            public void actionPerformed(ActionEvent ev)
+            {
+                Main.graph.root.rearrangeByWidth();
+//                Main.graph.root.rearrangeByLoopHeight();
+                Main.graph.root.centerizeXCoordinate();
+                Parameters.repaintAll();
+            }
+        }
+         );
+        rearrange.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, ActionEvent.CTRL_MASK));
+
+        
 		JMenuItem resetGraph = new JMenuItem("Reset view");
 		menuNavigation.add(resetGraph);
 		resetGraph.addActionListener
@@ -347,7 +366,7 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-		resetGraph.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, 0));
+		resetGraph.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.CTRL_MASK));
 		
 		JMenuItem collapse = new JMenuItem("Collapse nodes");
 		menuNavigation.add(collapse);
@@ -358,11 +377,12 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						Main.graph.collapseOnce();
+                        Main.graph.root.centerizeXCoordinate();
 						Parameters.repaintAll();
 					}
 				}
 		);
-		collapse.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, 0));
+		collapse.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.CTRL_MASK));
 
 		JMenuItem decollapse = new JMenuItem("Expand nodes");
 		menuNavigation.add(decollapse);
@@ -373,11 +393,12 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						Main.graph.deCollapseOnce();
+                        Main.graph.root.centerizeXCoordinate();
 						Parameters.repaintAll();
 					}
 				}
 		);
-		decollapse.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0));
+		decollapse.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, 0));
 		
 		JMenuItem previous = new JMenuItem("Previous view");
 		menuNavigation.add(previous);
@@ -395,7 +416,8 @@ public class StacFrame extends JFrame
 		previous.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, 0));
 		
 		
-		JMenuItem next = new JMenuItem("Return to next view");
+//		JMenuItem next = new JMenuItem("Return to next view");
+        JMenuItem next = new JMenuItem("Next view");
 		menuNavigation.add(next);
 		next.addActionListener
 		(
@@ -491,7 +513,7 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-		changeFont.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, 0));
+		changeFont.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, ActionEvent.CTRL_MASK));
 		
 		//Help menu
 		menuHelp = new JMenu("Help");
@@ -523,7 +545,7 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-		help.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, 0));
+		help.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, ActionEvent.CTRL_MASK));
 	}
 	
 	public void makeLayout()
@@ -613,6 +635,13 @@ public class StacFrame extends JFrame
 			}
 		);
 		sizePanel.add(sizePlus);
+        
+        
+        /// bottom panel
+        
+        this.searchF = new SearchField();
+        this.getContentPane().add(searchF, BorderLayout.SOUTH);
+//        topPanel.add(searchF, BorderLayout.SOUTH);
         
         
         //////********************** tag Panel ******************//////
@@ -828,10 +857,10 @@ public class StacFrame extends JFrame
 			{
 				public void mouseClicked(MouseEvent m)
 				{
+                    vizPanel.requestFocusInWindow();
 					if(!isGraphLoaded())
 						return;
 					
-					vizPanel.requestFocusInWindow();
 					context = false;
 					double x = vizPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(m))*Main.graph.getWidth();
 					double y = vizPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(m))*Main.graph.getHeight();
@@ -1178,6 +1207,8 @@ public class StacFrame extends JFrame
 				
 				public void keyPressed(KeyEvent ev)
 				{
+                    if(SearchField.focused)
+                        return;
 					int code = ev.getKeyCode();
 //					System.out.println("Key pressed: " + code);
 					
