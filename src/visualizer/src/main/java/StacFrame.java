@@ -382,7 +382,7 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-		collapse.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.CTRL_MASK));
+		collapse.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, 0));
 
 		JMenuItem decollapse = new JMenuItem("Expand nodes");
 		menuNavigation.add(decollapse);
