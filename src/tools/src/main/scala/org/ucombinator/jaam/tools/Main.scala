@@ -2,6 +2,8 @@ package org.ucombinator.jaam.tools
 
 case class Config(
                    mode : String = null,
+                   rtJar : String = null,
+                   mainClass : String = null,
                    targetFile : String = null,
                    targetNode : Integer = null,
                    fixEOF : Boolean = false,
@@ -80,9 +82,15 @@ object Main {
       cmd("coverage2") action { (_, c) =>
         c.copy(mode = "coverage2")
       } text("Analyze a JAAM file against target JAR files to find JAAM coverage.") children(
+        opt[String]('J', "rt_jar") action {
+          (x, c) => c.copy(rtJar = x)
+        } text("the rt.jar file"),
         arg[String]("<jaamFile>").required() action {
           (x, c) => c.copy(targetFile = x)
         } text("The JAAM file to analyze"),
+        arg[String]("<mainClass>").required() action {
+          (x, c) => c.copy(mainClass = x)
+        } text("The main class"),
         arg[Seq[String]]("<inspection jarfile>[,<inspection jarfile>...]").required() action {
           (x, c) => c.copy(sourceFiles = x)
         } text("One or more JAR files to directly compare coverage against"),
@@ -119,7 +127,7 @@ object Main {
           case "info" => Info.analyzeForInfo(config.targetFile)
           case "cat" => Cat.concatenateFiles(config.sourceFiles, config.targetFile)
           case "coverage" => Coverage.findCoverage(config.targetFile, config.sourceFiles, config.additionalFiles)
-          case "coverage2" => Coverage2.main(config.targetFile, config.sourceFiles, config.additionalFiles)
+          case "coverage2" => Coverage2.main(config.rtJar, config.targetFile, config.mainClass, config.sourceFiles, config.additionalFiles)
           case "missing-returns" => MissingReturns.missingReturns(config.targetFile)
           case _ => println("Invalid command given: " + config.mode)
         }
