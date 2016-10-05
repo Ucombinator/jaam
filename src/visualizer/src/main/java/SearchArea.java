@@ -149,6 +149,9 @@ public class SearchArea extends JPanel
         int first = this.searchTree.getClosestRowForLocation(window.x, window.y + SearchArea.Node_Height);
         int last  = this.searchTree.getClosestRowForLocation(window.x, window.y + window.height - SearchArea.Node_Height);
         
+        if(first < 0)
+            return;
+        
         DefaultMutableTreeNode node;
         AbstractVertex ver;
         
