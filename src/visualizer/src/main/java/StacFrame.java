@@ -1172,13 +1172,11 @@ public class StacFrame extends JFrame
 
 	}
 	
-	//Gets the x location of a mouse event in pixels, shifted so that the left side is 0.
+	//Gets the x location of a mouse event in pixels.
 	public double getRelativeXPixels(MouseEvent m)
 	{
-		if(this.context)
-			return m.getX() - contextPanel.getLocation().x;
-		else
-			return m.getX() - vizPanel.getLocation().x - this.leftPanel.getWidth() - horizontalSplitPanes.get(1).getDividerSize();
+		// TODO: Why does this not need to be shifted?
+		return m.getX();
 	}
 
 	//Gets the y location of a mouse event in pixels, shifted so that the top of the current panel is 0.
