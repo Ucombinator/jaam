@@ -645,8 +645,7 @@ case class State(val stmt : Stmt,
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, self, args)
         case None =>
-          if (Soot.isJavaLibraryClass(meth.getDeclaringClass) && (!meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver") || meth.isAbstract()) ||
-              isLibraryClass(meth.getDeclaringClass) ||
+          if (isLibraryClass(meth.getDeclaringClass) ||
               self.isDefined &&
               self.get.isInstanceOf[ObjectValue] &&
               self.get.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
