@@ -15,8 +15,12 @@ package org.ucombinator.jaam.interpreter
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.reflect.ClassTag
-
 import java.io.FileOutputStream
+
+import org.rogach.scallop._
+import org.rogach.scallop.exceptions.{Help, ScallopException, ScallopResult}
+
+import scala.collection.immutable.::
 
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
@@ -1004,72 +1008,87 @@ object System {
 }
 
 // Command option config
-case class Config(
-                   rtJar: String = null,
-                   sootClassPath: String = null,
-                   className: String = null,
-                   methodName: String = null,
-                   outputFile: String = null,
-                   logLevel: String = "info")
+class Conf(args : Seq[String]) extends ScallopConf(args = args) {
+
+//  val helpOpt = SimpleOption(
+//    name = "help",
+//    short = Some('h'),
+//    descr = "Show help message",
+//    required = false,
+//    converter = flagConverter,
+//    default = () => None,
+//    validator = (_,_) => true,
+//    argName = "",
+//    hidden = false,
+//    noshort = true
+//  )
+
+  val helpConverter = new ValueConverter[Unit] {
+    override def parse(s: List[(String, List[String])]): Either[String, Option[Unit]] = s match {
+      case Nil  => Right(None)
+      case _    => throw Help("")
+    }
+
+    val tag = scala.reflect.runtime.universe.typeTag[Unit]
+    val argType = org.rogach.scallop.ArgType.FLAG
+  }
+
+  val help      = opt[Unit](short = 'h', descr = "show this help message")(helpConverter)
+  val classpath = opt[String](required = true, short = 'P', descr = "the TODO class directory")
+  val rtJar     = opt[String](required = true, short = 'J', descr = "the rt.jar file")
+  val mainClass = opt[String](required = true, short = 'c', descr = "the main class")
+  val method    = opt[String](required = true, short = 'm', descr = "the main method", default = Some("main"))
+  val outfile   = opt[String](short = 'o', descr = "the output file for the serialized data")
+  val logLevel  = opt[String](
+    short = 'l',
+    descr = "the level of logging verbosity; one of 'none', 'error', 'warn', 'info', 'debug', 'trace'; default: 'info'",
+    default = Some("info"))
+  validate(logLevel) { logLevel =>
+    if (List("none", "error", "warn", "info", "debug", "trace").contains(logLevel)) Right(Unit)
+    else Left("incorrect logging level given")
+  }
+
+  override def onError(e: Throwable) = {
+    e.printStackTrace()
+    e match {
+      case ScallopException(_) => printHelp()
+      case _ => ()
+    }
+    super.onError(e)
+  }
+
+  verify()
+}
 
 object Main {
   def main(args : Array[String]) {
-    val parser = new scopt.OptionParser[Config]("jaam-interpreter") {
-      opt[String]("classpath") action {
-        (x, c) => c.copy(sootClassPath = x)
-      } text("the TODO class directory")
-
-      opt[String]('J', "rt_jar") action {
-        (x, c) => c.copy(rtJar = x)
-      } text("the rt.jar file")
-
-      opt[String]('c', "class") action {
-        (x, c) => c.copy(className = x)
-      } text("the main class")
-
-      opt[String]('m', "method") action {
-        (x, c) => c.copy(methodName = x)
-      } text("the main method")
-
-      opt[String]('o', "outfile") action {
-        (x, c) => c.copy(outputFile = x)
-      } text("the output file for the serialized data")
-
-      opt[String]('l', "log") action {
-        (x, c) => c.copy(logLevel = x)
-      } validate {
-        x =>
-          if (List("none", "error", "warn", "info", "debug", "trace").contains(x.toLowerCase))
-            success
-          else
-            failure("Logging level must be one of 'none', 'error', 'warn', 'info', 'debug', or 'trace'")
-      } text ("the level of logging verbosity; one of 'none', 'error', 'warn', 'info', 'debug', 'trace'; default: 'info'")
-
-      help("help") text("prints this usage text")
-
-      override def showUsageOnError = true
-    }
-
-    parser.parse(args, Config()) match {
-      case None =>
-        println("Wrong arguments")
-
-      case Some(config) =>
-        Soot.initialize(config)
-        Log.setLogging(config.logLevel)
-        defaultMode(config)
-    }
+    println(args.toList.toString())
+    val conf = new Conf(args)
+    println("configured")
+    println("classpath: " + conf.classpath().toString)
+    println("rtJar: " + conf.rtJar().toString)
+    println("mainClass: " + conf.mainClass().toString)
+    println("method: " + conf.method().toString)
+    println("outfile: " + conf.outfile().toString)
+    println("logLevel: " + conf.logLevel().toString)
+    Soot.initialize(conf)
+    println("initialized")
+    Log.setLogging(conf.logLevel().toString)
+    println("logging")
+    run(conf)
+    println("run")
   }
 
-  def defaultMode(config : Config) {
-    val outputFileOpt = Option(config.outputFile)
-    var outputFile: String = null
-    outputFileOpt match {
-      case None => outputFile = config.className + ".jaam"
-      case Some(x) => outputFile = x
+  def run(conf : Conf) {
+    val mainClass   = conf.mainClass().toString
+    val mainMethod  = conf.method().toString
+    val outfile     = conf.outfile.toOption match {
+      case None => mainClass + ".jaam"
+      case Some(s) => s
     }
-    val outSerializer = new serializer.PacketOutput(new FileOutputStream(outputFile))
-    val mainMainMethod : SootMethod = Soot.getSootClass(config.className).getMethodByName(config.methodName)
+
+    val outSerializer = new serializer.PacketOutput(new FileOutputStream(outfile))
+    val mainMainMethod : SootMethod = Soot.getSootClass(mainClass).getMethodByName(mainMethod)
     val initialState = State.inject(Stmt.methodEntry(mainMainMethod))
 
     var todo: List[AbstractState] = List(initialState)
@@ -1077,29 +1096,29 @@ object Main {
     var globalInitClasses: Set[SootClass] = Set()
     var doneEdges: Map[(Int, Int), Int] = Map()
 
-    outSerializer.write(initialState.toPacket)
+    outSerializer.write(initialState.toPacket())
 
     while (todo.nonEmpty) {
       //TODO refactor store widening code
       val current = todo.head
       todo = todo.tail
-      Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
+      Log.info("Processing state " + current.id + ": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
       val (nexts, initClasses) = System.next(current, globalInitClasses)
       val newTodo = nexts.toList.filter(!done.contains(_))
 
       for (n <- newTodo) {
-        Log.info("Writing state "+n.id)
-        outSerializer.write(n.toPacket)
+        Log.info("Writing state " + n.id)
+        outSerializer.write(n.toPacket())
       }
 
       for (n <- nexts) {
         if (!doneEdges.contains((current.id, n.id))) {
           val id = doneEdges.size // TODO: Should create an creating object so these are consistent about 0 vs 1 based
-          Log.info("Writing edge "+id+": "+current.id+" -> "+n.id)
+          Log.info("Writing edge " + id + ": " + current.id + " -> " + n.id)
           doneEdges += (current.id, n.id) -> id
           outSerializer.write(serializer.Edge(serializer.Id[serializer.Edge](id), serializer.Id[serializer.Node](current.id), serializer.Id[serializer.Node](n.id)))
         } else {
-          Log.info("Skipping edge "+current.id+" -> "+n.id)
+          Log.info("Skipping edge " + current.id + " -> " + n.id)
         }
       }
 
@@ -1121,7 +1140,7 @@ object Main {
       }
 
       globalInitClasses ++= initClasses
-      Log.info("Done processing state "+current.id)
+      Log.info("Done processing state " + current.id)
     }
 
     outSerializer.close()
