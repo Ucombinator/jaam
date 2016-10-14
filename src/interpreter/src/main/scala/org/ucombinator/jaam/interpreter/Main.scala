@@ -1007,28 +1007,27 @@ object System {
   }
 }
 
-// Command option config
+/**
+  * Command-line option parsing class, from Scallop.
+  *
+  * Provides all necessary functionality to parse the arguments we want.
+  *
+  * @param args list of command-line arguments as strings
+  */
 class Conf(args : Seq[String]) extends ScallopConf(args = args) {
 
-//  val helpOpt = SimpleOption(
-//    name = "help",
-//    short = Some('h'),
-//    descr = "Show help message",
-//    required = false,
-//    converter = flagConverter,
-//    default = () => None,
-//    validator = (_,_) => true,
-//    argName = "",
-//    hidden = false,
-//    noshort = true
-//  )
-
+  /**
+    * A manual converter to handle calls to `--help`. This implementation allows
+    * the `--help` option to be given at any point in the options -- not only at
+    * the very beginning of the list of arguments.
+    */
   val helpConverter = new ValueConverter[Unit] {
+    // Override the default `parse` method so that any instance of `--help` is
+    // handled appropriately, i.e. a `Help` is thrown.
     override def parse(s: List[(String, List[String])]): Either[String, Option[Unit]] = s match {
       case Nil  => Right(None)
       case _    => throw Help("")
     }
-
     val tag = scala.reflect.runtime.universe.typeTag[Unit]
     val argType = org.rogach.scallop.ArgType.FLAG
   }
@@ -1048,12 +1047,19 @@ class Conf(args : Seq[String]) extends ScallopConf(args = args) {
     else Left("incorrect logging level given")
   }
 
+  /**
+    * Override the built-in `onError` method to ensure that `--help` information
+    * is displayed every time there is an error during option parsing.
+    *
+    * @param e the error which was thrown during parsing
+    */
   override def onError(e: Throwable) = {
-    e.printStackTrace()
     e match {
       case ScallopException(_) => printHelp()
       case _ => ()
     }
+    // After printing the help information (if needed), allow the call to
+    // continue as it would have.
     super.onError(e)
   }
 
@@ -1062,21 +1068,10 @@ class Conf(args : Seq[String]) extends ScallopConf(args = args) {
 
 object Main {
   def main(args : Array[String]) {
-    println(args.toList.toString())
     val conf = new Conf(args)
-    println("configured")
-    println("classpath: " + conf.classpath().toString)
-    println("rtJar: " + conf.rtJar().toString)
-    println("mainClass: " + conf.mainClass().toString)
-    println("method: " + conf.method().toString)
-    println("outfile: " + conf.outfile().toString)
-    println("logLevel: " + conf.logLevel().toString)
     Soot.initialize(conf)
-    println("initialized")
     Log.setLogging(conf.logLevel().toString)
-    println("logging")
     run(conf)
-    println("run")
   }
 
   def run(conf : Conf) {

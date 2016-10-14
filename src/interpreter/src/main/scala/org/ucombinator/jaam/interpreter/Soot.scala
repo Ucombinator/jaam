@@ -84,8 +84,7 @@ object Soot {
     // Called methods without jar files or source are considered phantom
     Options.v().set_allow_phantom_refs(true)
     // Use the class path from the command line
-//    Options.v().set_soot_classpath(conf.rtJar().toString + ":" + conf.classpath().toString)
-    Options.v().set_soot_classpath("rt.jar" + ":" + "")
+    Options.v().set_soot_classpath(conf.rtJar().toString + ":" + conf.classpath().toString)
     // Use only the class path from the command line
     Options.v().set_prepend_classpath(false)
     // Take definitions only from class files
