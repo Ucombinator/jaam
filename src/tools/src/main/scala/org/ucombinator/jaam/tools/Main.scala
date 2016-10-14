@@ -13,7 +13,7 @@ object Conf {
     def run(conf: Conf) {
       state.toOption match {
         case None => Print.printFile(file().toString)
-        case Some(state) => Print.printNodeFromFile(file().toString, state)
+        case Some(st) => Print.printNodeFromFile(file().toString, st)
       }
     }
   }
@@ -60,11 +60,11 @@ object Conf {
     banner("Analyze a JAAM file against target JAR files to find JAAM coverage.")
     footer("")
     val jaamFile = trailArg[java.io.File](descr = "The JAAM file to analyze")
-    val jars = trailArg[String](descr = "Colon separated list of JAR files to directly compare coverage against")
-    val additionalJars = trailArg[String](descr = "Colon separated list of JAR files to complete class loading for inspection JAR files")
+    val jars = trailArg[String](descr = "Colon-separated list of JAR files to directly compare coverage against")
+    val additionalJars = opt[String](descr = "Colon-separated list of JAR files to complete class loading for inspection JAR files")
 
     def run(conf: Conf) {
-      Coverage.findCoverage(jaamFile().toString, jars().split(":"), additionalJars().split(":"))
+      Coverage.findCoverage(jaamFile().toString, jars().split(":"), additionalJars.toString().split(":"))
     }
   }
 
