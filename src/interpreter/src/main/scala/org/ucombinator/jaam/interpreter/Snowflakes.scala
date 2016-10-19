@@ -81,10 +81,22 @@ case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
 object GlobalSnowflakeAddr extends Addr
 
 case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
+  def typesToDs(types: List[Type]): List[D] = {
+    def typeToD(ty: Type): D = {
+      ty match {
+        case _ : PrimType => D.atomicTop
+        case at : ArrayType => D(Set(ArrayValue(at.getElementType, SnowflakeBasePointer("array")))) //TODO
+        case rt : RefType =>
+          D(Set(ObjectValue(Soot.getSootClass(rt.getClassName), SnowflakeBasePointer(rt.getClassName))))
+      }
+    }
+    types map typeToD
+  }
+
   override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
     for (arg <- args)
       state.store.update(GlobalSnowflakeAddr, arg)
-
+    
     self match {
       case Some(target) => state.store.update(GlobalSnowflakeAddr, D(Set[Value](target))) // TODO: unneeded?
       case None => {}
@@ -116,7 +128,9 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
                   case _ => false
                 })
                 state.store.update(Set[Addr](ArrayRefAddr(bp)), D(newValues))
-              case _ => throw new RuntimeException("Can not assign ArrayType value to non-ArrayType")
+              case _ => 
+                Log.warn("Can not assign an ArrayType value to non-ArrayType. stmt: " + stmt + " meth: " + meth) 
+                //throw new RuntimeException("Can not assign an ArrayType value to non-ArrayType. stmt: " + stmt + " meth: " + meth) 
             }
           case _ =>
             state.store.update(Set[Addr](ArrayRefAddr(bp)), D(values))
@@ -128,7 +142,9 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
           case stmt : DefinitionStmt =>
             val defClass = stmt.getLeftOp.getType match {
               case rt : RefType => rt.getSootClass
-              case _ => throw new RuntimeException("Can not assign RefType value to non-RefType")
+              case _ => 
+                //Log.warn("Can not assign a RefType value to non-RefType. stmt: " + stmt + " meth: " + meth)
+                throw new RuntimeException("Can not assign a RefType value to non-RefType. stmt: " + stmt + " meth: " + meth)
             }
             val values: Set[Value] = state.store(GlobalSnowflakeAddr).values
             val newValues = values.filter(_ match {
@@ -142,7 +158,34 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
         }
         states
     }
-    normalStates ++ exceptionStates
+  
+    // If the argument type is an interface or abstract class, then we try to call
+    // each method from the definition of interface/abstract class.
+    val methodsOfArgs = (for {
+      (arg, ty) <- args zip meth.getParameterTypes if ty.isInstanceOf[RefType];
+      sootClass = ty.asInstanceOf[RefType].getSootClass;
+      if (sootClass.isInterface || sootClass.isAbstract) && Soot.isJavaLibraryClass(sootClass)
+    } yield {
+      val newValues = arg.values.filter(_ match {
+        case ObjectValue(objClass, bp) =>
+          !Soot.isJavaLibraryClass(objClass) && Soot.isSubclass(objClass, sootClass)
+        case _ => false
+      })
+
+      (D(newValues), sootClass.getMethods) //TODO: maybe not include <init>?
+    })
+    //println("methodsOfArgs: " + methodsOfArgs)
+
+    val methStates = (for {
+      (base, meths) <- methodsOfArgs
+      meth <- meths
+    } yield {
+      val params = typesToDs(meth.getParameterTypes.toList)
+      state.handleInvoke2(Some((base, false)), meth, params, ZeroCFAFramePointer(meth), None, nextStmt)
+    }).flatten
+    ///////////////////////////////
+
+    normalStates ++ exceptionStates ++ methStates
   }
 }
 
@@ -170,6 +213,7 @@ case class PutStaticSnowflake(clas : String, field : String) extends StaticSnowf
   }
 }
 
+// Note: disabled
 object HashMapSnowflakes {
   lazy val HashMap = Soot.getSootClass("java.util.HashMap")
   lazy val EntrySet = Soot.getSootClass("java.util.Set")
@@ -412,6 +456,7 @@ object HashMapSnowflakes {
 
 }
 
+// Note: disabled
 object ArrayListSnowflakes {
   lazy val ArrayList = Soot.getSootClass("java.util.ArrayList")
   lazy val Iterator = Soot.getSootClass("java.util.Iterator")
@@ -494,6 +539,7 @@ object ArrayListSnowflakes {
   }
 }
 
+// Note: enabled
 object ClassSnowflakes {
   Snowflakes.table.put(MethodDescription("java.lang.Class", "newInstance", List(), "java.lang.Object"), newInstance())
   case class newInstance() extends NonstaticSnowflakeHandler {
@@ -665,6 +711,7 @@ object Snowflakes {
     table.put(MethodDescription("com.cyberpointllc.stac.hashmap.Node", "hash",
       List("java.lang.Object", "int"), "int"), ReturnSnowflake(D.atomicTop))
 
+    /*
     table.put(MethodDescription("com.sun.net.httpserver.HttpServer", "createContext",
       List("java.lang.String", "com.sun.net.httpserver.HttpHandler"), "com.sun.net.httpserver.HttpContext"),
       new SnowflakeHandler {
@@ -679,8 +726,8 @@ object Snowflakes {
           val newFP = ZeroCFAFramePointer(meth)
           val handlerStates: Set[AbstractState] =
             for (ObjectValue(sootClass, bp) <- handlers
-                 //if (Soot.isSubclass(sootClass, absHttpHandler) && sootClass.isConcrete)) yield {
-                 if Soot.isSubclass(sootClass, absHttpHandler)) yield {
+              //if (Soot.isSubclass(sootClass, absHttpHandler) && sootClass.isConcrete)) yield {
+              if Soot.isSubclass(sootClass, absHttpHandler)) yield {
               state.store.update(ThisFrameAddr(newFP), D(Set(ObjectValue(sootClass, bp))))
               state.store.update(ParameterFrameAddr(newFP, 0),
                 D(Set(ObjectValue(Soot.getSootClass(httpsExchange), SnowflakeBasePointer(httpsExchange)))))
@@ -691,6 +738,7 @@ object Snowflakes {
           retStates ++ handlerStates
         }
       })
+      */
 
   // For running Image Processor
   //table.put(MethodDescription("java.lang.System", "getProperty", List("java.lang.String"), "java.lang.String"),
@@ -704,6 +752,8 @@ object Snowflakes {
 //    118 Snowflake due to Abstract: <com.sun.net.httpserver.HttpContext: java.util.List getFilters()>
 //    656 Snowflake due to Abstract: <com.sun.net.httpserver.HttpServer: com.sun.net.httpserver.HttpContext createContext(java.lang.String,com.sun.net.httpserver.HttpHandler)>
 //    202 Snowflake due to Abstract: <com.sun.net.httpserver.HttpServer: void setExecutor(java.util.concurrent.Executor)>
+
+  /*
   table.put(MethodDescription("com.sun.net.httpserver.HttpServer", "createContext", List("java.lang.String", "com.sun.net.httpserver.HttpHandler"), "com.sun.net.httpserver.HttpContext"),
     new NonstaticSnowflakeHandler {
       lazy val method = Soot.getSootClass("com.sun.net.httpserver.HttpHandler").getMethodByName("handle")
@@ -721,7 +771,7 @@ object Snowflakes {
         s1 ++ s2
       }
     })
-
+  */
 
   // java.io.PrintStream
   //table.put(MethodDescription("java.io.PrintStream", "println", List("int"), "void"), NoOpSnowflake)
@@ -885,7 +935,6 @@ object Snowflakes {
 
 /*
 Not needed b/c the only comparator is over String
-
 
   table.put(MethodDescription("java.util.Collections", "sort", List("java.util.List", "java.util.Comparator"), "void"),
     new StaticSnowflakeHandler {
