@@ -292,7 +292,185 @@ public abstract class AbstractVertex
 		
 		this.isVisible = true;
 	}
-	
+
+
+
+    public void centerizeXCoordinate()
+    {
+        int num = this.children.size();
+        
+        for(int i=0; i<num; i++)
+            this.children.get(i).centerizeXCoordinate();
+        
+        if(this.children.size()>0)
+            this.x = (this.children.get(0).x+this.children.get(num-1).x)/2;
+    }
+    
+    
+    
+    public void rearrangeByLoopHeight()
+    {
+        int num = this.children.size(), pos, max;
+        AbstractVertex rearranged[] = new AbstractVertex[num];
+        boolean taken[] = new boolean[num];
+        int sorted[] = new int[num];
+        
+        
+        // MJA todo: the next sorting is currently done by selection sort, we should convert it to counting sort
+        
+        for(int i=0; i< num; i++)
+        {
+            taken[i]=false;
+        }
+
+        for(int i=0; i<num; i++)
+        {
+            pos = -1;
+            max = -1;
+            
+            for(int j=0; j<num; j++)
+            {
+                if(taken[j])
+                    continue;
+                if(this.children.get(j).loopHeight>=max)
+                {
+                    max = this.children.get(j).loopHeight;
+                    pos = j;
+                }
+            }
+            
+            if(pos>=0)
+            {
+                taken[pos] = true;
+                sorted[num-i-1] = pos;
+            }
+        }
+        
+        
+        // now rearrange
+        
+        pos = 0;
+        for(int j=num-2; j>=0; pos++)
+        {
+            rearranged[pos] = this.children.get(sorted[j]);
+            j=j-2;
+        }
+
+        int l = 0;
+        if(num%2==0)
+            l = 1;
+        while(pos<num)
+        {
+            rearranged[pos] = this.children.get(sorted[l]);
+            l = l + 2;
+            pos++;
+        }
+        
+        double left = this.left;
+        
+        for(int i=0; i<num; i++)
+        {
+            rearranged[i].shiftSubtree(left-rearranged[i].left);
+            left += rearranged[i].width;
+        }
+
+            
+        this.children = new ArrayList<AbstractVertex>();
+        
+        for(int i=0; i<num; i++)
+        {
+            rearranged[i].parentIndex = i;
+            this.children.add(rearranged[i]);
+        }
+        
+        for(int i=0; i< num; i++)
+            this.children.get(i).rearrangeByLoopHeight();
+        
+    }
+    
+
+    public void rearrangeByWidth()
+    {
+        int num = this.children.size(), pos;
+        double max;
+        AbstractVertex rearranged[] = new AbstractVertex[num];
+        boolean taken[] = new boolean[num];
+        int sorted[] = new int[num];
+        
+        
+        // MJA todo: the next sorting is currently done by selection sort, we should convert it to counting sort
+        
+        for(int i=0; i< num; i++)
+        {
+            taken[i]=false;
+        }
+        
+        for(int i=0; i<num; i++)
+        {
+            pos = -1;
+            max = -1;
+            
+            for(int j=0; j<num; j++)
+            {
+                if(taken[j])
+                    continue;
+                if(this.children.get(j).width>max)
+                {
+                    max = this.children.get(j).width;
+                    pos = j;
+                }
+            }
+            
+            if(pos>=0)
+            {
+                taken[pos] = true;
+                sorted[num-i-1] = pos;
+            }
+        }
+        
+        
+        // now rearrange
+        
+        pos = 0;
+        for(int j=num-2; j>=0; pos++)
+        {
+            rearranged[pos] = this.children.get(sorted[j]);
+            j=j-2;
+        }
+        
+        int l = 0;
+        if(num%2==0)
+            l = 1;
+        while(pos<num)
+        {
+            rearranged[pos] = this.children.get(sorted[l]);
+            l = l + 2;
+            pos++;
+        }
+        
+        double left = this.left;
+        
+        for(int i=0; i<num; i++)
+        {
+            rearranged[i].shiftSubtree(left-rearranged[i].left);
+            left += rearranged[i].width;
+        }
+        
+        
+        this.children = new ArrayList<AbstractVertex>();
+        
+        for(int i=0; i<num; i++)
+        {
+            rearranged[i].parentIndex = i;
+            this.children.add(rearranged[i]);
+        }
+        
+        for(int i=0; i< num; i++)
+            this.children.get(i).rearrangeByWidth();
+        
+    }
+    
+    
 	public void increaseWidth(AbstractVertex child, double inc)
 	{
 		AbstractVertex ver = this;

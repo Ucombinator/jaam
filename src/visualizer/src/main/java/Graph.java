@@ -432,6 +432,15 @@ public class Graph
 			}
 		}
 	}
+
+
+    public boolean[] processQuery(String query)
+    {
+        int total = Main.graph.vertices.size() + Main.graph.methodVertices.size() + Main.graph.methodPathVertices.size();
+        boolean selected[] = new boolean[total];
+        return selected;
+    }
+    
 	
 	public void searchNodes(StacFrame.searchType search, String searchStr)
 	{

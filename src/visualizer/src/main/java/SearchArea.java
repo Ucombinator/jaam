@@ -139,15 +139,16 @@ public class SearchArea extends JPanel
         model.reload(this.root);
         this.expandAllNodes(this.searchTree);
 	}
-	
-    
+
     
     public void fixCaretPosition()
     {
-        
         Rectangle window = this.searchTree.getVisibleRect();
         int first = this.searchTree.getClosestRowForLocation(window.x, window.y + SearchArea.Node_Height);
         int last  = this.searchTree.getClosestRowForLocation(window.x, window.y + window.height - SearchArea.Node_Height);
+        
+        if(first < 0)
+            return;
         
         DefaultMutableTreeNode node;
         AbstractVertex ver;
@@ -187,40 +188,32 @@ public class SearchArea extends JPanel
     }
     
     
-    private class SearchRenderer extends DefaultTreeCellRenderer
-    {
+    private class SearchRenderer extends DefaultTreeCellRenderer {
         private String text = "";
-        
+
         public Component getTreeCellRendererComponent(JTree tree, Object obj, boolean selected, boolean expanded,
-                                                      boolean leaf, int row, boolean hasFocus)
-        {
-            JLabel label = (JLabel)super.getTreeCellRendererComponent(tree, obj, selected, expanded, leaf, row, hasFocus);
-            DefaultMutableTreeNode node = (DefaultMutableTreeNode)obj;
-            
-            if(node==root)
+                                                      boolean leaf, int row, boolean hasFocus) {
+            JLabel label = (JLabel) super.getTreeCellRendererComponent(tree, obj, selected, expanded, leaf, row, hasFocus);
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) obj;
+
+            if (node == root)
                 return label;
-            AbstractVertex ver = (AbstractVertex)node.getUserObject();
-            
+            AbstractVertex ver = (AbstractVertex) node.getUserObject();
+
             label.setText(ver.getShortDescription());
             label.setFont(Parameters.font);
             label.setOpaque(true);
-            if(ver.isSelected)
-            {
+            if (ver.isSelected) {
                 label.setBackground(Parameters.colorHighlight);
                 label.setForeground(Color.BLACK);
-            }
-            else if(ver.isHighlighted)
-            {
+            } else if (ver.isHighlighted) {
                 label.setBackground(Color.WHITE);
                 label.setForeground(Color.BLACK);
-            }
-            else
-            {
+            } else {
                 label.setBackground(Color.WHITE);
                 label.setForeground(Color.GRAY);
             }
             return label;
         }
     }
-    
 }
