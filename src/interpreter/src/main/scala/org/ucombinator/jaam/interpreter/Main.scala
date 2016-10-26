@@ -791,7 +791,8 @@ case class State(val stmt : Stmt,
       case UninitializedSnowflakeObjectException(className) =>
         Log.info("Initializing snowflake class "+className)
         val sootClass = Soot.getSootClass(className)
-        store.join(Snowflakes.createObject(className, List()))
+        //store.join(Snowflakes.createObject(className, List()))
+        Snowflakes.createObject(store, className, List())
         Set(this.copyState(initializedClasses = initializedClasses+sootClass))
 
       case StringConstantException(string) =>
@@ -819,7 +820,8 @@ case class State(val stmt : Stmt,
       val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
       val d = D(Set(obj))
       store.update(lhsAddr, d)
-      store.join(Snowflakes.createObject(sootClass.getName, List()))
+      //store.join(Snowflakes.createObject(sootClass.getName, List()))
+      Snowflakes.createObject(store, sootClass.getName, List())
       store.asInstanceOf[Store]
     }
     else {

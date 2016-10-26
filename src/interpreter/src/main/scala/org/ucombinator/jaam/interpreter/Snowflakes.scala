@@ -73,7 +73,8 @@ case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
         D(Set(ObjectValue(Soot.getSootClass(name), SnowflakeBasePointer(name)))))
       case stmt : InvokeStmt => //state.store
     }
-    state.store.join(Snowflakes.createObject(name, List()))
+    //state.store.join(Snowflakes.createObject(name, List()))
+    Snowflakes.createObject(state.store, name, List())
     Set[AbstractState](state.copyState(stmt = nextStmt))
   }
 }
@@ -578,7 +579,8 @@ object Snowflakes {
   }
 
   val table = mutable.Map.empty[MethodDescription, SnowflakeHandler]
-  var initializedObjectValues = Map.empty[String, Store]
+  //var initializedObjectValues = Map.empty[String, Store]
+  var initializedObjectValues = List[String]()
 
   def get(meth : SootMethod) : Option[SnowflakeHandler] = {
     val x = MethodDescription(
@@ -624,18 +626,20 @@ object Snowflakes {
     D(Set(ObjectValue(Soot.getSootClass(name), SnowflakeBasePointer(name))))
   }
 
-  def createObject(className: String, processing : List[String]) : Store = {
+  def createObject(store: Store, className: String, processing : List[String]) : Store = {
     if (initializedObjectValues.contains(className)) {
-      return initializedObjectValues(className)
+      //return initializedObjectValues(className)
+      return store
     }
 
     val sootClass = Soot.getSootClass(className)
     val fields = sootClass.getFields
-    val store = Store(mutable.Map[Addr, D]())
+    //val store = Store(mutable.Map[Addr, D]())
 
     if (sootClass.hasSuperclass) {
-      val newStore = createObject(sootClass.getSuperclass.getName, processing++List(className)) // TODO: re-order ++ or document why this order
-      store.join(newStore).asInstanceOf[Store]
+      //val newStore = createObject(sootClass.getSuperclass.getName, processing++List(className)) // TODO: re-order ++ or document why this order
+      //store.join(newStore).asInstanceOf[Store]
+      createObject(store, sootClass.getSuperclass.getName, processing++List(className))
     }
 
     for (f <- fields) {
@@ -654,14 +658,16 @@ object Snowflakes {
           if (!processing.contains(fieldClassName)) {
             store.update(addrs,
               D(Set(ObjectValue(Soot.getSootClass(fieldClassName), SnowflakeBasePointer(className))))).asInstanceOf[Store]
-            val newStore = createObject(fieldClassName, processing++List(className))
-            store.join(newStore)
+            //val newStore = createObject(fieldClassName, processing++List(className))
+            //store.join(newStore)
+            createObject(store, fieldClassName, processing++List(className))
           }
         case _ =>
       }
     }
 
-    initializedObjectValues = initializedObjectValues + (className -> store)
+    //initializedObjectValues = initializedObjectValues + (className -> store)
+    initializedObjectValues = className::initializedObjectValues
     store
   }
 
