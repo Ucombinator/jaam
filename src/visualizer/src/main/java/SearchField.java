@@ -17,8 +17,9 @@ import javax.swing.AbstractAction;
 import javax.swing.SwingUtilities;
 import javax.swing.KeyStroke;
 
+import javafx.scene.layout.Pane;
 
-public class SearchField extends JPanel implements DocumentListener
+public class SearchField extends Pane implements DocumentListener
 {
     private static enum Mode
     {

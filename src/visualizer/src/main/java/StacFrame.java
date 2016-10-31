@@ -2,7 +2,7 @@
 import java.io.File;
 import java.util.ArrayList;
 
-import java.awt.BorderLayout;
+/*import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.FlowLayout;
 
@@ -37,7 +37,19 @@ import javax.swing.JComboBox;
 import javax.swing.KeyStroke;
 import javax.swing.JLabel;
 import javax.swing.JButton;
-import javax.swing.text.DefaultCaret;
+import javax.swing.text.DefaultCaret;*/
+
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
+import javafx.scene.layout.Pane;
+import javafx.stage.Stage;
+import javafx.scene.Scene;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.control.*;
 
 
 /**
@@ -46,15 +58,16 @@ import javax.swing.text.DefaultCaret;
  *
  */
 
-public class StacFrame extends JFrame
+public class StacFrame extends Stage
 {
-	private JMenuBar menuBar;
-	private JMenu menuFile, menuSearch, menuNavigation, menuCustomize, menuHelp;
+	private Scene rootScene;
+	private BorderPane rootPane;
+	private MenuBar menuBar;
+	private Menu menuFile, menuSearch, menuNavigation, menuCustomize, menuHelp;
 	private int width, height;
-	private JSplitPane centerSplitPane;
-	public VizPanel vizPanel, contextPanel;
-	private JPanel menuPanel, leftPanel, rightPanel, searchPanel;
-	public JCheckBox showContext, showEdge;
+	public VizPane vizPanel, contextPanel;
+	private Pane menuPanel, leftPanel, rightPanel, searchPanel;
+	public CheckBox showContext, showEdge;
     public SearchField searchF;
 	private boolean context = false, mouseDrag = false;
 	
@@ -65,51 +78,41 @@ public class StacFrame extends JFrame
 	
 	public StacFrame()
 	{
-		super("STAC Visualization");
-		width = Parameters.width;
-		height = Parameters.height;
-		this.setLocation(0, 0);
-		
-		setSize(this.width,this.height);
+		this.setTitle("STAC Visualization");
+		this.width = Parameters.width;
+		this.height = Parameters.height;
+
+		this.rootPane = new BorderPane();
+		this.rootScene = new Scene(this.rootPane, this.width, this.height);
+		this.setScene(rootScene);
 
 		makeMenuBar();
 		makeLayout();
-		
-		this.setVisible(true);
+		this.show();
 	}
 	
 	public void makeMenuBar()
 	{
-		menuBar = new JMenuBar();
+		menuBar = new MenuBar();
 		
 		//File menu
-		menuFile = new JMenu("File");
-		menuBar.add(menuFile);
-		/*JMenuItem loadGraph = new JMenuItem("Load graph from JSON"); //Will be removed soon
-		menuFile.add(loadGraph);
-		loadGraph.addActionListener(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						loadGraph(false);
-					}
-				}
-		);*/
-
-		JMenuItem loadMessages = new JMenuItem("Load graph from message file");
-		menuFile.add(loadMessages);
-		loadMessages.addActionListener(
-				new ActionListener()
+		menuFile = new Menu("File");
+		menuBar.getMenus().add(menuFile);
+		MenuItem loadMessages = new MenuItem("Load graph from message file");
+		loadMessages.setOnAction(
+				new EventHandler<ActionEvent>()
 				{
 					@Override
-					public void actionPerformed(ActionEvent e)
+					public void handle(ActionEvent e)
 					{
 						loadGraph(true);
 					}
 				}
 		);
-        loadMessages.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+		// TODO: Set up keyboard shortcuts
+		//loadMessages.acceleratorProperty(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+		//loadMessages.setAccelerator();
+		menuFile.getItems().addAll(loadMessages);
 
 		/*final JMenuItem loadJavaCode = new JMenuItem("Load matching decompiled code");
 		menuFile.add(loadJavaCode);
@@ -125,15 +128,15 @@ public class StacFrame extends JFrame
 		);*/
 		
 		//Search menu
-		menuSearch = new JMenu("Search");
-		menuBar.add(menuSearch);
-		JMenuItem searchByID = new JMenuItem("by ID");
-		menuSearch.add(searchByID);
-		searchByID.addActionListener
+		menuSearch = new Menu("Search");
+		menuBar.getMenus().add(menuSearch);
+		MenuItem searchByID = new MenuItem("by ID");
+		menuSearch.getItems().add(searchByID);
+		searchByID.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.ID);
 						Parameters.repaintAll();
@@ -141,13 +144,13 @@ public class StacFrame extends JFrame
 				}
 		);
 
-		JMenuItem searchByInst = new JMenuItem("by Statement");
-		menuSearch.add(searchByInst);
-		searchByInst.addActionListener
+		MenuItem searchByInst = new MenuItem("by Statement");
+		menuSearch.getItems().add(searchByInst);
+		searchByInst.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.INSTRUCTION);
 						Parameters.repaintAll();
@@ -155,13 +158,13 @@ public class StacFrame extends JFrame
 				}
 		);
 
-		JMenuItem searchByMethod = new JMenuItem("by Method");
-		menuSearch.add(searchByMethod);
-		searchByMethod.addActionListener
+		MenuItem searchByMethod = new MenuItem("by Method");
+		menuSearch.getItems().add(searchByMethod);
+		searchByMethod.setOnAction
 		(
-            new ActionListener()
+            new EventHandler<ActionEvent>()
             {
-                public void actionPerformed(ActionEvent ev)
+                public void handle(ActionEvent ev)
                 {
                     searchAndHighlight(searchType.METHOD);
                     Parameters.repaintAll();
@@ -169,29 +172,29 @@ public class StacFrame extends JFrame
             }
 		);
 
-        JMenuItem searchTags = new JMenuItem("Allocation Tags");
-        menuSearch.add(searchTags);
-        searchTags.addActionListener
+        MenuItem searchTags = new MenuItem("Allocation Tags");
+		menuSearch.getItems().add(searchTags);
+        searchTags.setOnAction
         (
-            new ActionListener()
+            new EventHandler<ActionEvent>()
             {
-                public void actionPerformed(ActionEvent ev)
+                public void handle(ActionEvent ev)
                 {
                     searchAndHighlight(searchType.TAG);
                     Parameters.repaintAll();
                 }
             }
         );
-        searchTags.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK));
+        //searchTags.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK));
         
         
-		JMenuItem searchLeaves = new JMenuItem("All leaves");
-		menuSearch.add(searchLeaves);
-		searchLeaves.addActionListener
+		MenuItem searchLeaves = new MenuItem("All leaves");
+		menuSearch.getItems().add(searchLeaves);
+		searchLeaves.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.ALL_LEAVES);
 						Parameters.repaintAll();
@@ -200,13 +203,13 @@ public class StacFrame extends JFrame
 		);
 
 		
-		JMenuItem searchSources = new JMenuItem("All sources");
-		menuSearch.add(searchSources);
-		searchSources.addActionListener
+		MenuItem searchSources = new MenuItem("All sources");
+		menuSearch.getItems().add(searchSources);
+		searchSources.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.ALL_SOURCES);
 						Parameters.repaintAll();
@@ -215,13 +218,13 @@ public class StacFrame extends JFrame
 		);
 
 		
-		JMenuItem searchOutgoing = new JMenuItem("Outgoing neighborhood (open)");
-		menuSearch.add(searchOutgoing);
-		searchOutgoing.addActionListener
+		MenuItem searchOutgoing = new MenuItem("Outgoing neighborhood (open)");
+		menuSearch.getItems().add(searchOutgoing);
+		searchOutgoing.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.OUT_OPEN);
 						Parameters.repaintAll();
@@ -230,13 +233,13 @@ public class StacFrame extends JFrame
 		);
 
 		
-		JMenuItem searchOutgoingclosed = new JMenuItem("Outgoing neighborhood (closed)");
-		menuSearch.add(searchOutgoingclosed);
-		searchOutgoingclosed.addActionListener
+		MenuItem searchOutgoingClosed = new MenuItem("Outgoing neighborhood (closed)");
+		menuSearch.getItems().add(searchOutgoingClosed);
+		searchOutgoingClosed.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.OUT_CLOSED);
 						Parameters.repaintAll();
@@ -245,13 +248,13 @@ public class StacFrame extends JFrame
 		);
 
 		
-		JMenuItem searchIncoming = new JMenuItem("Incoming neighborhood (open)");
-		menuSearch.add(searchIncoming);
-		searchIncoming.addActionListener
+		MenuItem searchIncoming = new MenuItem("Incoming neighborhood (open)");
+		menuSearch.getItems().add(searchIncoming);
+		searchIncoming.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.IN_OPEN);
 						Parameters.repaintAll();
@@ -260,13 +263,13 @@ public class StacFrame extends JFrame
 		);
 
 		
-		JMenuItem searchIncomingclosed = new JMenuItem("Incoming neighborhood (closed)");
-		menuSearch.add(searchIncomingclosed);
-		searchIncomingclosed.addActionListener
+		MenuItem searchIncomingClosed = new MenuItem("Incoming neighborhood (closed)");
+		menuSearch.getItems().add(searchIncomingClosed);
+		searchIncomingClosed.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.IN_CLOSED);
 						Parameters.repaintAll();
@@ -274,13 +277,13 @@ public class StacFrame extends JFrame
 				}
 		);
 
-		JMenuItem searchPathToRoot = new JMenuItem("Path to Root");
-		menuSearch.add(searchPathToRoot);
-		searchPathToRoot.addActionListener
+		MenuItem searchPathToRoot = new MenuItem("Path to Root");
+		menuSearch.getItems().add(searchPathToRoot);
+		searchPathToRoot.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						searchAndHighlight(searchType.ROOT_PATH);
 						Parameters.repaintAll();
@@ -289,13 +292,13 @@ public class StacFrame extends JFrame
 		);
 
 		
-		JMenuItem clearAll = new JMenuItem("Clear All");
-		menuSearch.add(clearAll);
-		clearAll.addActionListener
+		MenuItem clearAll = new MenuItem("Clear All");
+		menuSearch.getItems().add(clearAll);
+		clearAll.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						Main.graph.clearHighlights();
 						Parameters.leftArea.clear();
@@ -306,15 +309,15 @@ public class StacFrame extends JFrame
 		
 
 		//Navigation menu
-		menuNavigation = new JMenu("Navigation");
-		menuBar.add(menuNavigation);
-		JMenuItem zoomIn = new JMenuItem("Zoom in        (Mouse wheel up)");
-		menuNavigation.add(zoomIn);
-		zoomIn.addActionListener
+		menuNavigation = new Menu("Navigation");
+		menuBar.getMenus().add(menuNavigation);
+		MenuItem zoomIn = new MenuItem("Zoom in        (Mouse wheel up)");
+		menuNavigation.getItems().add(zoomIn);
+		zoomIn.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						Main.graph.increaseZoom(Parameters.zoomFactor, -1, -1);
 						Parameters.repaintAll();
@@ -322,13 +325,13 @@ public class StacFrame extends JFrame
 				}
 		);
     
-		JMenuItem zoomOut = new JMenuItem("Zoom out      (Mouse wheel down)");
-		menuNavigation.add(zoomOut);
-		zoomOut.addActionListener
+		MenuItem zoomOut = new MenuItem("Zoom out      (Mouse wheel down)");
+		menuNavigation.getItems().add(zoomOut);
+		zoomOut.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						Main.graph.increaseZoom(1/Parameters.zoomFactor, -1, -1);
 						Parameters.repaintAll();
@@ -336,46 +339,46 @@ public class StacFrame extends JFrame
 				}
 		);
 		
-        JMenuItem rearrange = new JMenuItem("Rearrange graph");
-        menuNavigation.add(rearrange);
-        rearrange.addActionListener
+        MenuItem rearrange = new MenuItem("Rearrange graph");
+        menuNavigation.getItems().add(rearrange);
+        rearrange.setOnAction
         (
-         new ActionListener()
-         {
-            public void actionPerformed(ActionEvent ev)
-            {
-                Main.graph.root.rearrangeByWidth();
-//                Main.graph.root.rearrangeByLoopHeight();
-                Main.graph.root.centerizeXCoordinate();
-                Parameters.repaintAll();
-            }
-        }
-         );
-        rearrange.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, ActionEvent.CTRL_MASK));
+         	new EventHandler<ActionEvent>()
+         	{
+				public void handle(ActionEvent ev)
+				{
+					Main.graph.root.rearrangeByWidth();
+					// Main.graph.root.rearrangeByLoopHeight();
+					Main.graph.root.centerizeXCoordinate();
+					Parameters.repaintAll();
+				}
+        	}
+		);
+        //rearrange.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, ActionEvent.CTRL_MASK));
 
         
-		JMenuItem resetGraph = new JMenuItem("Reset view");
-		menuNavigation.add(resetGraph);
-		resetGraph.addActionListener
+		MenuItem resetGraph = new MenuItem("Reset view");
+		menuNavigation.getItems().add(resetGraph);
+		resetGraph.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						Main.graph.resetZoom();
 						Parameters.repaintAll();
 					}
 				}
 		);
-		resetGraph.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.CTRL_MASK));
+		//resetGraph.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.CTRL_MASK));
 		
-		JMenuItem collapse = new JMenuItem("Collapse nodes");
-		menuNavigation.add(collapse);
-		collapse.addActionListener
+		MenuItem collapse = new MenuItem("Collapse nodes");
+		menuNavigation.getItems().add(collapse);
+		collapse.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						Main.graph.collapseOnce();
                         Main.graph.root.centerizeXCoordinate();
@@ -383,15 +386,15 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-		collapse.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, 0));
+		//collapse.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, 0));
 
-		JMenuItem decollapse = new JMenuItem("Expand nodes");
-		menuNavigation.add(decollapse);
-		decollapse.addActionListener
+		MenuItem decollapse = new MenuItem("Expand nodes");
+		menuNavigation.getItems().add(decollapse);
+		decollapse.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						Main.graph.deCollapseOnce();
                         Main.graph.root.centerizeXCoordinate();
@@ -399,135 +402,133 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-		decollapse.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, 0));
+		//decollapse.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, 0));
 		
-		JMenuItem previous = new JMenuItem("Previous view");
-		menuNavigation.add(previous);
-		previous.addActionListener
+		MenuItem previous = new MenuItem("Previous view");
+		menuNavigation.getItems().add(previous);
+		previous.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						Main.graph.loadPreviousView();
 						Parameters.repaintAll();
 					}
 				}
 		);
-		previous.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, 0));
-		
-		
-//		JMenuItem next = new JMenuItem("Return to next view");
-        JMenuItem next = new JMenuItem("Next view");
-		menuNavigation.add(next);
-		next.addActionListener
+		//previous.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, 0));
+
+        MenuItem next = new MenuItem("Next view");
+		menuNavigation.getItems().add(next);
+		next.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						Main.graph.restoreNewView();
 						Parameters.repaintAll();
 					}
 				}
 		);
-		next.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, 0));
+		//next.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, 0));
 		
-		JMenuItem panUp = new JMenuItem("Pan up");
-		menuNavigation.add(panUp);
-		panUp.addActionListener
+		MenuItem panUp = new MenuItem("Pan up");
+		menuNavigation.getItems().add(panUp);
+		panUp.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						Main.graph.shiftView(0, -1);
 						Parameters.repaintAll();
 					}
 				}
 		);
-		panUp.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0));
+		//panUp.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0));
 		
-		JMenuItem panDown = new JMenuItem("Pan down");
-		menuNavigation.add(panDown);
-		panDown.addActionListener
+		MenuItem panDown = new MenuItem("Pan down");
+		menuNavigation.getItems().add(panDown);
+		panDown.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						Main.graph.shiftView(0, 1);
 						Parameters.repaintAll();
 					}
 				}
 		);
-		panDown.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0));
+		//panDown.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0));
 		
-		JMenuItem panLeft = new JMenuItem("Pan left");
-		menuNavigation.add(panLeft);
-		panLeft.addActionListener
+		MenuItem panLeft = new MenuItem("Pan left");
+		menuNavigation.getItems().add(panLeft);
+		panLeft.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						Main.graph.shiftView(-1, 0);
 						Parameters.repaintAll();
 					}
 				}
 		);
-		panLeft.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0));
+		//panLeft.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0));
 		
-		JMenuItem panRight = new JMenuItem("Pan right");
-		menuNavigation.add(panRight);
-		panRight.addActionListener
+		MenuItem panRight = new MenuItem("Pan right");
+		menuNavigation.getItems().add(panRight);
+		panRight.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
 						Main.graph.shiftView(1, 0);
 						Parameters.repaintAll();
 					}
 				}
 		);
-		panRight.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0));
-		
-		
+		//panRight.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0));
+
 		//Customize display
-		menuCustomize = new JMenu("Customize");
-		menuBar.add(menuCustomize);
+		menuCustomize = new Menu("Customize");
+		menuBar.getMenus().add(menuCustomize);
 		
-		JMenuItem changeFont = new JMenuItem("Change font size");
-		menuCustomize.add(changeFont);
-		changeFont.addActionListener
+		MenuItem changeFont = new MenuItem("Change font size");
+		menuCustomize.getItems().add(changeFont);
+		changeFont.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
-						String newFontSize = JOptionPane.showInputDialog(null, "The current font size is: " + Parameters.font.getSize() + ". Please enter a new font size");
-						Parameters.font = new Font("Serif", Font.PLAIN, Integer.parseInt(newFontSize));
+						// TODO: Find JOPtionPane replacement
+						//String newFontSize = JOptionPane.showInputDialog(null, "The current font size is: " + Parameters.font.getSize() + ". Please enter a new font size");
+						//Parameters.font = new Font("Serif", Font.PLAIN, Integer.parseInt(newFontSize));
 						Parameters.leftArea.setFont(Parameters.font);
 						Parameters.rightArea.setFont(Parameters.font);
 						Parameters.repaintAll();
 					}
 				}
 		);
-		changeFont.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, ActionEvent.CTRL_MASK));
+		//changeFont.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, ActionEvent.CTRL_MASK));
 		
 		//Help menu
-		menuHelp = new JMenu("Help");
-		menuBar.add(menuHelp);
-		JMenuItem help = new JMenuItem("Shortcuts");
-		menuHelp.add(help);
-		help.addActionListener
+		menuHelp = new Menu("Help");
+		menuBar.getMenus().add(menuHelp);
+		MenuItem help = new MenuItem("Shortcuts");
+		menuHelp.getItems().add(help);
+		help.setOnAction
 		(
-				new ActionListener()
+				new EventHandler<ActionEvent>()
 				{
-					public void actionPerformed(ActionEvent ev)
+					public void handle(ActionEvent ev)
 					{
-						JOptionPane.showMessageDialog(getParent(), 
+						/*JOptionPane.showMessageDialog(getParent(),
 								"The following keyboard shortcuts are implemented.\n"
 								+ "R: Reset zoom level to show entire graph \n"
 								+ "C: Collapse all nodes by method \n"
@@ -542,173 +543,132 @@ public class StacFrame extends JFrame
 								+ "CTRL + <Digit>: Hotkey view with all vertices currently on screen to <Digit> \n"
 								+ "<Digit>: Go to hotkeyed view \n"
 								+ "H: Open this list of shortcuts"
-						);
+						);*/
 					}
 				}
 		);
-		help.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, ActionEvent.CTRL_MASK));
+		//help.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, ActionEvent.CTRL_MASK));
 	}
 
-	public void buildWindow(ArrayList<ArrayList<JPanel>> layout, ArrayList<ArrayList<Double>> layoutRowWeights, ArrayList<Double> layoutColumnWeights)
+	public void buildWindow(ArrayList<ArrayList<Pane>> layout, ArrayList<ArrayList<Double>> layoutRowWeights, ArrayList<Double> layoutColumnWeights)
 	{
 		// Construct columns
-		System.out.println("Layout size: " + Integer.toString(layout.size()));
 		ArrayList<GUIPanelColumn> columns = new ArrayList<GUIPanelColumn>();
 		for(int i = 0; i < layout.size(); i++)
 		{
-			System.out.println("Constructing column: " + Integer.toString(i) + ", height " + Integer.toString(layout.get(i).size()));
-			ArrayList<JPanel> panelList = layout.get(i);
+			ArrayList<Pane> panelList = layout.get(i);
 			columns.add(new GUIPanelColumn(panelList, layoutRowWeights.get(i)));
 		}
 
 		// Connect columns with horizontal split panes
-		ArrayList<JSplitPane> horizontalSplits = new ArrayList<JSplitPane>();
+		ArrayList<SplitPane> horizontalSplits = new ArrayList<SplitPane>();
 		for(int i = 0; i < layout.size() - 1; i++) {
-			JSplitPane nextSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
-			nextSplit.setOneTouchExpandable(true);
+			SplitPane nextSplit = new SplitPane();
+			nextSplit.setOrientation(Orientation.HORIZONTAL);
 			if (i == 0)
-				nextSplit.setLeftComponent(columns.get(0).getComponentLink());
+				nextSplit.getItems().add(columns.get(0).getComponentLink());
 			else
-				nextSplit.setLeftComponent(horizontalSplits.get(i - 1));
+				nextSplit.getItems().add(horizontalSplits.get(i - 1));
 
-			nextSplit.setRightComponent(columns.get(i + 1).getComponentLink());
+			nextSplit.getItems().add(columns.get(i + 1).getComponentLink());
 			horizontalSplits.add(nextSplit);
 		}
 
-		for(int i = 0; i < horizontalSplits.size(); i++)
+		// TODO: Set initial sizes
+		/*for(int i = 0; i < horizontalSplits.size(); i++)
 		{
 			horizontalSplits.get(i).setResizeWeight(layoutColumnWeights.get(i));
 			horizontalSplits.get(i).resetToPreferredSizes();
-		}
+		}*/
 
 		// Add to GUI
 		if(layout.size() == 1)
-			this.getContentPane().add(columns.get(0).getComponentLink(), BorderLayout.CENTER);
+			this.rootPane.setCenter(columns.get(0).getComponentLink());
 		else
-			this.getContentPane().add(horizontalSplits.get(horizontalSplits.size() - 1), BorderLayout.CENTER);
+			this.rootPane.setCenter(horizontalSplits.get(horizontalSplits.size() - 1));
 	}
 
 	public void makeLayout()
 	{
 
 		//centerPanel and vizPanel
-		this.setLayout(new BorderLayout());
 		setSplitScreen();
-		
 		this.addMouseToViz();
-		this.addKeyboard(vizPanel);
+		this.addKeyboard(vizPane);
 		this.addMouseToContext();
-		this.addKeyboard(contextPanel);
+		this.addKeyboard(contextPane);
 		
-        
-        JPanel topPanel = new JPanel();
-        topPanel.setBorder(BorderFactory.createEtchedBorder());
-        topPanel.setLayout(new BorderLayout());
-//        topPanel.setLayout(new GridLayout(2,1));
-        this.getContentPane().add(topPanel, BorderLayout.NORTH);
-        
-        
-        
-		//menuPanel
-		this.menuPanel = new JPanel();
-		this.menuPanel.setBorder(BorderFactory.createEtchedBorder());
-		this.menuPanel.setLayout(new FlowLayout());
-//		this.getContentPane().add(this.menuPanel, BorderLayout.NORTH);
-        topPanel.add(this.menuPanel, BorderLayout.CENTER);
-        
+
+		// TODO: Set etched border?
+        BorderPane topPane = new BorderPane();
+        this.rootPane.setTop(topPane);
+
+		// TODO: Set etched border?
+		this.menuPanel = new FlowPane();
+        topPane.setCenter(this.menuPanel);
+
+		GridPane contextPanel = new GridPane();
+		this.menuPanel.getChildren().add(contextPanel);
 		
-		JPanel contextPanel = new JPanel();
-		contextPanel.setBorder(BorderFactory.createEtchedBorder());
-		contextPanel.setLayout(new GridLayout(1,1));
-		this.menuPanel.add(contextPanel);
-		
-		showEdge = new JCheckBox("Show Edge");
-		showEdge.setEnabled(true);
+		showEdge = new CheckBox("Show Edge");
 		showEdge.setSelected(true);
-		showEdge.addItemListener
+		showEdge.setOnAction
 		(
-			new ItemListener()
+			new EventHandler<ActionEvent>()
 			{
-				public void itemStateChanged(ItemEvent e)
+				public void handle(ActionEvent e)
 				{
 					vizPanel.showEdge = showEdge.isSelected();					
 					StacFrame.this.repaint();
 				}
 			}
 		);
-		contextPanel.add(showEdge);
+		contextPanel.getChildren().add(showEdge);
+
+		// TODO: Set etched border?
+		GridPane sizePanel = new GridPane();
+		this.menuPanel.getChildren().add(sizePanel);
 		
-		JPanel sizePanel = new JPanel();
-		sizePanel.setBorder(BorderFactory.createEtchedBorder());
-		sizePanel.setLayout(new GridLayout(1,3));
-		this.menuPanel.add(sizePanel);
-		
-		JButton sizeMinus = new JButton("-");
-		sizeMinus.setEnabled(true);
-		sizeMinus.addActionListener
+		Button sizeMinus = new Button("-");
+		sizeMinus.setOnAction
 		(
-			new ActionListener()
+			new EventHandler<ActionEvent>()
 			{
-				public void actionPerformed(ActionEvent e)
+				public void handle(ActionEvent e)
 				{
 					vizPanel.boxSize *= Parameters.boxFactor;
 					Parameters.repaintAll();
 				}
 			}
 		);
-		sizePanel.add(sizeMinus);
+		sizePanel.getChildren().add(sizeMinus);
 		
-		JLabel sizeL = new JLabel("box size");
-		sizeL.setHorizontalAlignment(SwingConstants.CENTER);
-		sizePanel.add(sizeL);
+		Label sizeL = new Label("box size");
+		sizeL.setAlignment(Pos.CENTER);
+		sizePanel.getChildren().add(sizeL);
 		
-		JButton sizePlus = new JButton("+");
-		sizePlus.setEnabled(true);
-		sizePlus.addActionListener
+		Button sizePlus = new Button("+");
+		sizePlus.setOnAction
 		(
-			new ActionListener()
+			new EventHandler<ActionEvent>()
 			{
-				public void actionPerformed(ActionEvent e)
+				public void handle(ActionEvent e)
 				{
 					vizPanel.boxSize /= Parameters.boxFactor;
 					Parameters.repaintAll();
 				}
 			}
 		);
-		sizePanel.add(sizePlus);
+		sizePanel.getChildren().add(sizePlus);
         
         
         /// bottom panel
         
         this.searchF = new SearchField();
-        this.getContentPane().add(searchF, BorderLayout.SOUTH);
-//        topPanel.add(searchF, BorderLayout.SOUTH);
-        
-        
-        //////********************** tag Panel ******************//////
-        
-/*
-        JPanel tagPanel = new JPanel();
-        tagPanel.setBorder(BorderFactory.createEtchedBorder());
-        tagPanel.setLayout(new FlowLayout());
-        topPanel.add(tagPanel, BorderLayout.SOUTH);
-        
-        JLabel tLab = new JLabel("Search for Tags: ");
-        tagPanel.add(tLab);
-        
-        JComboBox combo = new JComboBox(new Object[]{"Ester", "Jordi", "Jordina", "Jorge", "Sergi"});
-        combo.setEditable(true);
-        tagPanel.add(combo);
- */
-        
-        //////******************** tag Panel end ****************//////
-        
-		
-		
-		this.setJMenuBar(menuBar);
-		this.setVisible(true);
+        this.rootPane.setBottom(searchF);
+
+		this.rootPane.getChildren().add(menuBar);
 		this.repaint();
-		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);	
 	}
 	
 	public void setSplitScreen()
@@ -779,51 +739,6 @@ public class StacFrame extends JFrame
 		layout.add(right);
 		buildWindow(layout, layoutRowWeights, layoutColumnWeights);
 	}
-	
-    
-    ///modified
-    public void setSplitScreenold()
-    {
-        //		System.out.println("Setting split screen");
-        
-        centerSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
-        JSplitPane leftSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true);
-        JSplitPane rightSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
-        centerSplitPane.setLeftComponent(leftSplitPane);
-        centerSplitPane.setRightComponent(rightSplitPane);
-        this.getContentPane().add(this.centerSplitPane, BorderLayout.CENTER);
-        
-        centerSplitPane.setOneTouchExpandable(true);
-        leftSplitPane.setOneTouchExpandable(true);
-        rightSplitPane.setOneTouchExpandable(true);
-        
-        leftPanel = new JPanel();
-        leftSplitPane.setLeftComponent(leftPanel);
-        rightPanel = new JPanel();
-        rightSplitPane.setRightComponent(rightPanel);
-        
-        this.vizPanel = new VizPanel(this, false);
-        rightSplitPane.setLeftComponent(this.vizPanel);
-        this.contextPanel = new VizPanel(this,true);
-        leftSplitPane.setRightComponent(this.contextPanel);
-        
-        JLabel leftL = new JLabel("Context", JLabel.CENTER);
-        Parameters.leftArea = new CodeArea();
-        leftPanel.setLayout(new BorderLayout());
-        leftPanel.add(leftL,BorderLayout.NORTH);
-        JScrollPane scrollL = new JScrollPane (Parameters.leftArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        leftPanel.add(scrollL, BorderLayout.CENTER);
-        leftPanel.setFont(Parameters.font);
-        
-        JLabel rightL = new JLabel("Description", JLabel.CENTER);
-        Parameters.rightArea = new JTextArea();
-        Parameters.rightArea.setEditable(false);
-        rightPanel.setLayout(new BorderLayout());
-        rightPanel.add(rightL, BorderLayout.NORTH);
-        JScrollPane scrollR = new JScrollPane (Parameters.rightArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        rightPanel.add(scrollR, BorderLayout.CENTER);
-        rightPanel.setFont(Parameters.font);
-    }
     
 	public void loadGraph(boolean fromMessages)
 	{

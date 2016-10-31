@@ -6,13 +6,14 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
-import javax.swing.JPanel;
+//import javax.swing.JPanel;
+import javafx.scene.layout.Pane;
 
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Path2D;
 
 
-public class VizPanel extends JPanel
+public class VizPane extends Pane
 {
 	private boolean context;
 	private StacFrame parent;

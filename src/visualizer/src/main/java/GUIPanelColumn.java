@@ -4,49 +4,50 @@
 // A column in our GUI is constructed from an array of panels
 // We automatically add expandable split panes between each adjacent pair of panels
 import java.util.ArrayList;
-import javax.swing.JPanel;
-import javax.swing.JSplitPane;
-import javax.swing.JComponent;
+
+import javafx.geometry.Orientation;
+import javafx.scene.layout.Pane;
+import javafx.scene.control.SplitPane;
+import javafx.scene.layout.Region;
 
 public class GUIPanelColumn
 {
-    ArrayList<JPanel> panels;
-    ArrayList<JSplitPane> splitPanes;
+    ArrayList<Pane> panes;
+    ArrayList<SplitPane> splitPanes;
 
-    public GUIPanelColumn(ArrayList<JPanel> panelList, ArrayList<Double> weights)
+    public GUIPanelColumn(ArrayList<Pane> paneList, ArrayList<Double> weights)
     {
-        assert(panelList.size() > 0);
-        this.panels = panelList;
-        splitPanes = new ArrayList<JSplitPane>();
+        assert(paneList.size() > 0);
+        this.panes = paneList;
+        splitPanes = new ArrayList<SplitPane>();
 
-        for(int i = 0; i < panels.size() - 1; i++)
+        for(int i = 0; i < panes.size() - 1; i++)
         {
-            JSplitPane newSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true);
-            newSplit.setOneTouchExpandable(true);
+            SplitPane newSplit = new SplitPane();
+            newSplit.setOrientation(Orientation.VERTICAL);
             if(i == 0)
-                newSplit.setTopComponent(panels.get(0));
+                newSplit.getItems().add(panes.get(0));
             else
-                newSplit.setTopComponent(splitPanes.get(splitPanes.size() - 1));
+                newSplit.getItems().add(splitPanes.get(splitPanes.size() - 1));
 
-            newSplit.setBottomComponent(panels.get(i + 1));
+            newSplit.getItems().add(panes.get(i + 1));
             splitPanes.add(newSplit);
         }
 
-        for(int i = 0; i < splitPanes.size(); i++)
+        // TODO: Set initial sizes of panes
+        /*for(int i = 0; i < splitPanes.size(); i++)
         {
             splitPanes.get(i).setResizeWeight(weights.get(i));
             splitPanes.get(i).resetToPreferredSizes();
-        }
-
-        System.out.println("Finished constructing column! Panels = " + Integer.toString(panels.size()) + ", split panes = " + Integer.toString(splitPanes.size()));
+        }*/
     }
 
-    // Returns our JPanel if there is only one panel,
-    // or the first JSplitPane if there are more panels.
-    public JComponent getComponentLink()
+    // Returns our Pane if there is only one pane,
+    // or the first SplitPane if there are more panes.
+    public Region getComponentLink()
     {
-        if(panels.size() == 1)
-            return panels.get(0);
+        if(panes.size() == 1)
+            return panes.get(0);
         else
             return splitPanes.get(0);
     }
