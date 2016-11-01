@@ -107,7 +107,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
       ObjectValue(exception, SnowflakeBasePointer(exception.getName))
     }
     val exceptionStates = (exceptions map {
-      state.kontStack.handleException(_, state.stmt, state.fp, state.store)//, state.initializedClasses)
+      state.kontStack.handleException(_, state.stmt, state.fp, state.store)
     }).flatten
 
     val normalStates = meth.getReturnType match {

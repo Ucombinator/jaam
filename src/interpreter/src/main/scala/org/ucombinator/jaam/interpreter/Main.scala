@@ -351,12 +351,10 @@ case class State(val stmt : Stmt,
                 kontStack: KontStack = kontStack,
                 store: Store = this.store,
                 kontStore: KontStore = this.kontStack.getStore()
-                //initializedClasses: Set[SootClass] = initializedClasses
                ): State = {
     val newState = this.copy(stmt, fp, kontStack)
     newState.setStore(store)
     newState.setKontStore(kontStore)
-    //newState.setInitializedClasses(initializedClasses)
     newState
   }
 
@@ -763,7 +761,6 @@ case class State(val stmt : Stmt,
             f <- sootClass.getFields(); if f.isStatic
           } yield (StaticFieldAddr(f) -> staticInitialValue(f))
           store.update(mutable.Map(staticUpdates.toMap.toSeq: _*))
-          //val newState = this.copyState(initializedClasses = initializedClasses+sootClass)
           System.addInitializedClass(sootClass)
           val newState = this.copyState()
           // TODO: Do we need to use the same JStaticInvokeExpr for repeated calls?
@@ -773,7 +770,6 @@ case class State(val stmt : Stmt,
           // TODO: Do we need to do newStore for static fields?
           System.addInitializedClass(sootClass)
           Set(this.copyState())
-          //Set(this.copyState(initializedClasses = initializedClasses + sootClass))
         }
 
       case UninitializedSnowflakeObjectException(className) =>
@@ -783,7 +779,6 @@ case class State(val stmt : Stmt,
         Snowflakes.createObject(store, className, List())
         System.addInitializedClass(sootClass)
         Set(this.copyState())
-        //Set(this.copyState(initializedClasses = initializedClasses+sootClass))
 
       case StringConstantException(string) =>
         Log.info("Initializing string constant: \""+string+"\"")
@@ -981,6 +976,8 @@ object System {
     }
   }
   private def trunOnRecording() = {
+    store.resetReadAddrsAndWriteAddrs
+    kstore.resetReadAddrsAndWriteAddrs
     store.on = true
     kstore.on = true
     isInitializedClassesChanged = false
@@ -996,15 +993,9 @@ object System {
   def addToReadTable = addToMultiMap(readTable)(_, _)
   def addToReadKTable = addToMultiMap(readKTable)(_, _)
 
-  def next(state: AbstractState
-           //initializedClasses: Set[SootClass]
-         ): Set[AbstractState] = {//(Set[AbstractState], Set[SootClass]) = {
+  def next(state: AbstractState): Set[AbstractState] = {
     state.setStore(store)
     state.setKontStore(kstore)
-    //state.setInitializedClasses(initializedClasses)
-
-    store.resetReadAddrsAndWriteAddrs
-    kstore.resetReadAddrsAndWriteAddrs
 
     trunOnRecording()
     val nexts = state.next()
@@ -1040,8 +1031,6 @@ object System {
     state.setKReadAddrs(kstore.readAddrs)
     state.setKWriteAddrs(kstore.writeAddrs)
 
-    //val newInitClasses = nexts.map(_.getInitializedClasses()).foldLeft(Set[SootClass]())(_.++(_))
-    //(nexts, newInitClasses)
     nexts
   }
 }
@@ -1117,7 +1106,6 @@ object Main {
 
     var todo: List[AbstractState] = List(initialState)
     var done: Set[AbstractState] = Set()
-    //var globalInitClasses: Set[SootClass] = Set()
     var doneEdges: Map[(Int, Int), Int] = Map()
 
     outSerializer.write(initialState.toPacket)
@@ -1127,7 +1115,6 @@ object Main {
       val current = todo.head
       todo = todo.tail
       Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
-      //val (nexts, initClasses) = System.next(current, globalInitClasses)
       val nexts = System.next(current)
       val newTodo = nexts.toList.filter(!done.contains(_))
 
@@ -1156,7 +1143,6 @@ object Main {
         todo +:= s
       }
 
-      //if ((globalInitClasses++initClasses).size != globalInitClasses.size) {
       if (System.isInitializedClassesChanged) {
         todo = newTodo ++ List(current) ++ todo
       }
@@ -1165,7 +1151,6 @@ object Main {
         todo = newTodo ++ todo
       }
 
-      //globalInitClasses ++= initClasses
       Log.info("Done processing state "+current.id)
     }
 
