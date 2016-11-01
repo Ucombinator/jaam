@@ -126,7 +126,6 @@ case class KontStack(k : Kont) {
         // TODO/soundness or performance?: use Hierarchy or FastHierarchy?
         if (Soot.isSubclass(exception.asInstanceOf[ObjectValue].sootClass, caughtType)) {
           val newState = State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, this.copyKontStack())
-          //newState.setInitializedClasses(initializedClasses)
           return Set(newState)
         }
       }
@@ -269,9 +268,6 @@ abstract sealed class AbstractState {
   def getKWriteAddrs: Set[KontAddr]
   def setKWriteAddrs(s: Set[KontAddr]): Unit
 
-  //def setInitializedClasses(classes: Set[SootClass]) : Unit
-  //def getInitializedClasses() : Set[SootClass]
-
   def toPacket() : serializer.AbstractState
 
   val id = AbstractState.idMap.getOrElseUpdate(this, AbstractState.nextId)
@@ -298,8 +294,6 @@ case object ErrorState extends AbstractState {
   override def setWriteAddrs(s: Set[Addr]) = Unit
   override def getKWriteAddrs: Set[KontAddr] = Set()
   override def setKWriteAddrs(s: Set[KontAddr]) = Unit
-  //override def setInitializedClasses(classes: Set[SootClass]) = Unit
-  //override def getInitializedClasses() : Set[SootClass] = Set()
   override def toPacket() = serializer.ErrorState(serializer.Id[serializer.Node](id))
 }
 
@@ -337,13 +331,6 @@ case class State(val stmt : Stmt,
   override def getKWriteAddrs = kWriteAddrs
   override def setKWriteAddrs(s: Set[KontAddr]) = kWriteAddrs = s
 
-  /*
-  var initializedClasses = Set[SootClass]()
-  override def setInitializedClasses(classes: Set[SootClass]) = {
-    initializedClasses = classes
-  }
-  override def getInitializedClasses() : Set[SootClass] = initializedClasses
-  */
   override def toPacket() = serializer.State(serializer.Id[serializer.Node](id), stmt.toPacket, fp.toString, kontStack.toString)
 
   def copyState(stmt: Stmt = stmt,
@@ -664,7 +651,6 @@ case class State(val stmt : Stmt,
             }
 
             val newState = State(Stmt.methodEntry(meth), newFP, newKontStack)
-            //newState.setInitializedClasses(initializedClasses)
             Set(newState)
           }
       }
