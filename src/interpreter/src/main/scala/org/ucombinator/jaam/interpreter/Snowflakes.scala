@@ -97,7 +97,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
     for (arg <- args)
       state.store.update(GlobalSnowflakeAddr, arg)
-    
+
     self match {
       case Some(target) => state.store.update(GlobalSnowflakeAddr, D(Set[Value](target))) // TODO: unneeded?
       case None => {}
@@ -107,7 +107,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
       ObjectValue(exception, SnowflakeBasePointer(exception.getName))
     }
     val exceptionStates = (exceptions map {
-      state.kontStack.handleException(_, state.stmt, state.fp, state.store, state.initializedClasses)
+      state.kontStack.handleException(_, state.stmt, state.fp, state.store)//, state.initializedClasses)
     }).flatten
 
     val normalStates = meth.getReturnType match {
@@ -129,9 +129,9 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
                   case _ => false
                 })
                 state.store.update(Set[Addr](ArrayRefAddr(bp)), D(newValues))
-              case _ => 
-                Log.warn("Can not assign an ArrayType value to non-ArrayType. stmt: " + stmt + " meth: " + meth) 
-                //throw new RuntimeException("Can not assign an ArrayType value to non-ArrayType. stmt: " + stmt + " meth: " + meth) 
+              case _ =>
+                Log.warn("Can not assign an ArrayType value to non-ArrayType. stmt: " + stmt + " meth: " + meth)
+                //throw new RuntimeException("Can not assign an ArrayType value to non-ArrayType. stmt: " + stmt + " meth: " + meth)
             }
           case _ =>
             state.store.update(Set[Addr](ArrayRefAddr(bp)), D(values))
@@ -143,7 +143,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
           case stmt : DefinitionStmt =>
             val defClass = stmt.getLeftOp.getType match {
               case rt : RefType => rt.getSootClass
-              case _ => 
+              case _ =>
                 //Log.warn("Can not assign a RefType value to non-RefType. stmt: " + stmt + " meth: " + meth)
                 throw new RuntimeException("Can not assign a RefType value to non-RefType. stmt: " + stmt + " meth: " + meth)
             }
@@ -159,7 +159,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
         }
         states
     }
-  
+
     // If the argument type is an interface or abstract class, then we try to call
     // each method from the definition of interface/abstract class.
     val methodsOfArgs = (for {
@@ -946,7 +946,7 @@ Not needed b/c the only comparator is over String
     new StaticSnowflakeHandler {
       override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
         () <- state.store(args(0)).values
-        val elems = 
+        val elems =
 //Collections.sort(stuffList, this.comparator);
 
         var states = Set(state.copyState(stmt = nextStmt))
