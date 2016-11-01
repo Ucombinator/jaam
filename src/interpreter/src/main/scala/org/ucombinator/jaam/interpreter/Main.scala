@@ -704,15 +704,16 @@ case class State(val stmt : Stmt,
 
   // Returns a Store containing the possibly nested arrays described
   // by the Type t with dimension sizes 'sizes'
-  def createArray(t : Type, sizes : List[D], addrs : Set[Addr]) : Store = sizes match {
+  def createArray(t : Type, sizes : List[D], addrs : Set[Addr], store: Store) : Store = sizes match {
     // Should only happen on recursive calls. (createArray should never be called by a user with an empty list of sizes).
-    case Nil => Store(mutable.Map()).update(addrs, defaultInitialValue(t)).asInstanceOf[Store]
+    //case Nil => Store(mutable.Map()).update(addrs, defaultInitialValue(t)).asInstanceOf[Store]
+    case Nil => store.update(addrs, defaultInitialValue(t)).asInstanceOf[Store]
     case (s :: ss) => {
       val bp : BasePointer = malloc()
       // TODO/soundness: exception for a negative length
       // TODO/precision: stop allocating if a zero length
       // TODO/precision: separately allocate each array element
-      createArray(t.asInstanceOf[ArrayType].getElementType(), ss, Set(ArrayRefAddr(bp)))
+      createArray(t.asInstanceOf[ArrayType].getElementType(), ss, Set(ArrayRefAddr(bp)), store)
         .update(addrs, D(Set(ArrayValue(t, bp))))
         .update(ArrayLengthAddr(bp), s).asInstanceOf[Store]
     }
@@ -761,7 +762,6 @@ case class State(val stmt : Stmt,
       case UninitializedSnowflakeObjectException(className) =>
         Log.info("Initializing snowflake class "+className)
         val sootClass = Soot.getSootClass(className)
-        //store.join(Snowflakes.createObject(className, List()))
         Snowflakes.createObject(store, className, List())
         System.addInitializedClass(sootClass)
         Set(this.copyState())
@@ -772,10 +772,10 @@ case class State(val stmt : Stmt,
         val hash = Soot.classes.String.getFieldByName("hash")
         val hash32 = Soot.classes.String.getFieldByName("hash32")
         val bp = StringBasePointer(string)
-        val newStore = createArray(ArrayType.v(CharType.v,1), List(D.atomicTop/*string.length*/), Set(InstanceFieldAddr(bp, value)))
+        createArray(ArrayType.v(CharType.v,1), List(D.atomicTop/*string.length*/),
+                    Set(InstanceFieldAddr(bp, value)), store)
           .update(InstanceFieldAddr(bp, hash), D.atomicTop)
           .update(InstanceFieldAddr(bp, hash32), D.atomicTop).asInstanceOf[Store]
-        store.join(newStore)
         Set(this.copyState())
 
       case UndefinedAddrsException(addrs) =>
@@ -791,7 +791,6 @@ case class State(val stmt : Stmt,
       val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
       val d = D(Set(obj))
       store.update(lhsAddr, d)
-      //store.join(Snowflakes.createObject(sootClass.getName, List()))
       Snowflakes.createObject(store, sootClass.getName, List())
       store.asInstanceOf[Store]
     }
@@ -831,13 +830,13 @@ case class State(val stmt : Stmt,
           case rhs : NewArrayExpr => {
             //TODO, if base type is Java library class, call Snowflake.createArray
             // Value of lhsAddr will be set to a pointer to the array. (as opposed to the array itself)
-            store.join(createArray(rhs.getType(), List(eval(rhs.getSize())), lhsAddr))
+            createArray(rhs.getType(), List(eval(rhs.getSize())), lhsAddr, store)
             Set(this.copyState(stmt = stmt.nextSyntactic))
           }
           case rhs : NewMultiArrayExpr => {
             //TODO, if base type is Java library class, call Snowflake.createArray
             //see comment above about lhs addr
-            store.join(createArray(rhs.getType(), rhs.getSizes().toList map eval, lhsAddr))
+            createArray(rhs.getType(), rhs.getSizes().toList map eval, lhsAddr, store)
             Set(this.copyState(stmt = stmt.nextSyntactic))
           }
           case rhs => {
@@ -1022,13 +1021,12 @@ object System {
 }
 
 // Command option config
-case class Config(
-                   rtJar: String = null,
-                   sootClassPath: String = null,
-                   className: String = null,
-                   methodName: String = null,
-                   outputFile: String = null,
-                   logLevel: String = "info")
+case class Config(rtJar: String = null,
+                  sootClassPath: String = null,
+                  className: String = null,
+                  methodName: String = null,
+                  outputFile: String = null,
+                  logLevel: String = "info")
 
 object Main {
   def main(args : Array[String]) {
