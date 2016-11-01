@@ -50,9 +50,7 @@ case class UndefinedAddrsException[A <: Addr](addrs : Set[A]) extends RuntimeExc
 // A continuation store paired with a continuation
 case class KontStack(k : Kont) {
   var store : KontStore = KontStore(mutable.Map())
-  def setStore(store : KontStore) : Unit = {
-    this.store = store
-  }
+  def setStore(store : KontStore) = this.store = store
   def getStore() = store
   def copyKontStack(store: KontStore = this.store): KontStack = {
     val ks = this.copy()
@@ -76,13 +74,12 @@ case class KontStack(k : Kont) {
   // Pop returns all possible frames beneath the current one.
   def pop() : Set[(Frame, KontStack)] = {
     k match {
-      case RetKont(frame, kontAddr) => {
+      case RetKont(frame, kontAddr) =>
         for (topk <- store(kontAddr).values) yield {
           val ks = KontStack(topk)
           ks.setStore(store)
           (frame, ks)
         }
-      }
       case HaltKont => Set()
     }
   }
@@ -91,7 +88,6 @@ case class KontStack(k : Kont) {
                       stmt : Stmt,
                       fp : FramePointer,
                       store : Store
-                      //initializedClasses : Set[SootClass]
                     ) : Set[AbstractState] = {
     //TODO: if the JVM implementation does not enforce the rules on structured locking described in §2.11.10,
     //then if the method of the current frame is a synchronized method and the current thread is not the owner
@@ -113,16 +109,13 @@ case class KontStack(k : Kont) {
     // TODO/performance: Make iterative.
     def stackWalk(stmt : Stmt, fp : FramePointer, kontStack : KontStack) : Set[AbstractState] = {
       if (visited.contains((stmt, fp, kontStack))) return Set()
-
       visited = visited + ((stmt, fp, kontStack)) // TODO: do we really need all of these in here?
-
       for (trap <- TrapManager.getTrapsAt(stmt.sootStmt, Soot.getBody(stmt.sootMethod))) {
         val caughtType = trap.getException()
         // The handler will expect the exception to be waiting at CaughtExceptionFrameAddr(fp).
         // It'll be referenced through CaughtExceptionRef.
 
         store.update(CaughtExceptionFrameAddr(fp), D(Set(exception)))
-
         // TODO/soundness or performance?: use Hierarchy or FastHierarchy?
         if (Soot.isSubclass(exception.asInstanceOf[ObjectValue].sootClass, caughtType)) {
           val newState = State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, this.copyKontStack())
@@ -132,9 +125,9 @@ case class KontStack(k : Kont) {
 
       // TODO/interface we should log this sort of thing
       val nextFrames = kontStack.pop()
-      if (nextFrames.isEmpty) {
+      if (nextFrames.isEmpty)
         return Set(ErrorState)
-      }
+
       (for ((frame, kontStack) <- nextFrames) yield { stackWalk(frame.stmt, frame.fp, kontStack) }).flatten
     }
 
@@ -151,8 +144,7 @@ case class Frame( val stmt : Stmt,
 
 abstract class Kont
 
-case class RetKont(
-                    val frame : Frame,
+case class RetKont( val frame : Frame,
                     val k : KontAddr
                   ) extends Kont
 
@@ -629,10 +621,9 @@ case class State(val stmt : Stmt,
             Log.warn("Native method without a snowflake in state "+this.id+". May be unsound. stmt = " + stmt)
             meth.getReturnType match {
               case _ : VoidType => Set(this.copyState(stmt = nextStmt))
-              case _ : PrimType => {
+              case _ : PrimType =>
                 store.update(destAddr, D.atomicTop)
                 Set(this.copyState(stmt = nextStmt))
-              }
               case _ =>
                 Log.error("Native method returns an object. Aborting.")
                 Set()
@@ -663,17 +654,14 @@ case class State(val stmt : Stmt,
       case Some((b, isSpecial)) =>
         ((for (v <- b.values) yield {
           v match {
-            case ObjectValue(_, SnowflakeBasePointer(_)) => {
+            case ObjectValue(_, SnowflakeBasePointer(_)) =>
               dispatch(Some(v), method)
-            }
-            case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, method.getDeclaringClass) => {
+            case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, method.getDeclaringClass) =>
               val objectClass = if (isSpecial) null else sootClass
               val meth = (if (isSpecial) method else overrides(objectClass, method).head)
               dispatch(Some(v), meth)
-            }
-            case ArrayValue(sootType, bp) => {
+            case ArrayValue(sootType, bp) =>
               dispatch(Some(v), method)
-            }
             case _ => Set()
           }
         }) :\ Set[AbstractState]())(_ ++ _) // TODO: better way to do this?
@@ -708,7 +696,7 @@ case class State(val stmt : Stmt,
     // Should only happen on recursive calls. (createArray should never be called by a user with an empty list of sizes).
     //case Nil => Store(mutable.Map()).update(addrs, defaultInitialValue(t)).asInstanceOf[Store]
     case Nil => store.update(addrs, defaultInitialValue(t)).asInstanceOf[Store]
-    case (s :: ss) => {
+    case (s :: ss) =>
       val bp : BasePointer = malloc()
       // TODO/soundness: exception for a negative length
       // TODO/precision: stop allocating if a zero length
@@ -716,7 +704,6 @@ case class State(val stmt : Stmt,
       createArray(t.asInstanceOf[ArrayType].getElementType(), ss, Set(ArrayRefAddr(bp)), store)
         .update(addrs, D(Set(ArrayValue(t, bp))))
         .update(ArrayLengthAddr(bp), s).asInstanceOf[Store]
-    }
   }
 
   // Returns the set of successor states to this state.
@@ -817,57 +804,50 @@ case class State(val stmt : Stmt,
     stmt.sootStmt match {
       case sootStmt : InvokeStmt => handleInvoke(sootStmt.getInvokeExpr, None)
 
-      case sootStmt : DefinitionStmt => {
+      case sootStmt : DefinitionStmt =>
         val lhsAddr = addrsOf(sootStmt.getLeftOp())
         sootStmt.getRightOp() match {
-          case rhs : InvokeExpr => handleInvoke(rhs, Some(lhsAddr))
-          case rhs : NewExpr => {
+          case rhs : InvokeExpr =>
+            handleInvoke(rhs, Some(lhsAddr))
+          case rhs : NewExpr =>
             val baseType : RefType = rhs.getBaseType()
             val sootClass = baseType.getSootClass()
             this.newExpr(lhsAddr, sootClass, store)
             Set(this.copyState(stmt = stmt.nextSyntactic))
-          }
-          case rhs : NewArrayExpr => {
+          case rhs : NewArrayExpr =>
             //TODO, if base type is Java library class, call Snowflake.createArray
             // Value of lhsAddr will be set to a pointer to the array. (as opposed to the array itself)
             createArray(rhs.getType(), List(eval(rhs.getSize())), lhsAddr, store)
             Set(this.copyState(stmt = stmt.nextSyntactic))
-          }
-          case rhs : NewMultiArrayExpr => {
+          case rhs : NewMultiArrayExpr =>
             //TODO, if base type is Java library class, call Snowflake.createArray
             //see comment above about lhs addr
             createArray(rhs.getType(), rhs.getSizes().toList map eval, lhsAddr, store)
             Set(this.copyState(stmt = stmt.nextSyntactic))
-          }
-          case rhs => {
+          case rhs =>
             store.update(lhsAddr, eval(rhs))
             Set(this.copyState(stmt = stmt.nextSyntactic))
-          }
         }
-      }
 
-      case sootStmt : IfStmt => {
+      case sootStmt : IfStmt =>
         eval(sootStmt.getCondition()) //in case of side effects //TODO/precision evaluate the condition
         val trueState = this.copyState(stmt = stmt.copy(sootStmt = sootStmt.getTarget()))
         val falseState = this.copyState(stmt = stmt.nextSyntactic)
         Set(trueState, falseState)
-      }
 
       case sootStmt : SwitchStmt =>
         //TODO/prrecision dont take all the switches
         (sootStmt.getDefaultTarget() :: sootStmt.getTargets().toList)
           .map(t => this.copyState(stmt = stmt.copy(sootStmt = t))).toSet
 
-      case sootStmt : ReturnStmt => {
+      case sootStmt : ReturnStmt =>
         val evaled = eval(sootStmt.getOp())
         for ((frame, newStack) <- kontStack.pop) yield {
           if (frame.acceptsReturnValue()) {
             store.update(frame.destAddr.get, evaled)
           }
-
           State(frame.stmt, frame.fp, newStack)
         }
-      }
 
       case sootStmt : ReturnVoidStmt =>
         for ((frame, newStack) <- kontStack.pop() if !frame.acceptsReturnValue()) yield {
@@ -894,16 +874,14 @@ case class State(val stmt : Stmt,
       case sootStmt : ExitMonitorStmt => Set(this.copyState(stmt = stmt.nextSyntactic))
 
       // TODO: needs testing
-      case sootStmt : ThrowStmt => {
+      case sootStmt : ThrowStmt =>
         val v = eval(sootStmt.getOp())
         exceptions = exceptions.join(v)
         Set()
-      }
 
       // TODO: We're missing BreakPointStmt and RetStmt (but these might not be used)
-      case _ => {
+      case _ =>
         throw new Exception("No match for " + stmt.sootStmt.getClass + " : " + stmt.sootStmt)
-      }
     }
   }
 }
@@ -940,9 +918,8 @@ object System {
   // If it isn't, the exception should be caught so the class can be initialized.
   def checkInitializedClasses(c : SootClass) {
     if (!initializedClasses.contains(c)) {
-      if (Soot.isJavaLibraryClass(c)) {
+      if (Soot.isJavaLibraryClass(c))
         throw new UninitializedSnowflakeObjectException(c.getName)
-      }
       throw new UninitializedClassException(c)
     }
   }
