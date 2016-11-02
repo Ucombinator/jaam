@@ -15,6 +15,7 @@ package org.ucombinator.jaam.interpreter
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.reflect.ClassTag
+import scala.io.Source
 
 import java.io.FileOutputStream
 
@@ -571,12 +572,9 @@ case class State(val stmt : Stmt,
     // TODO/dragons. Here they be.
     def dispatch(self : Option[Value], meth : SootMethod) : Set[AbstractState] = {
       // We end these with "." so we don't hit similarly named libraries
-      // TODO:
-      val libraries = List("org.apache.commons.", "org.mapdb.",
-                           "org.apache.http", "jline", "org.fusesource", "com.lambdaworks")
       def isLibraryClass(c : SootClass) : Boolean =
         // We put a dot at the end in case the package name is an exact match
-        libraries.exists((c.getPackageName()+".").startsWith(_))
+        System.libClasses.exists((c.getPackageName()+".").startsWith(_))
 
       Log.info("meth: "+meth)
       Snowflakes.get(meth) match {
@@ -906,24 +904,34 @@ object System {
     }
   }
 
-  private def addToMultiMap[K, V](table: mutable.Map[K, Set[V]])(key: K, value: V) = {
+  var libClasses: List[String] = List()
+  def setLibraryClasses(libClassesFile: String) {
+    if (libClassesFile != null && libClassesFile.size > 0)
+      libClasses = Source.fromFile(libClassesFile).getLines.toList.foldLeft(List[String]()) { (acc, l) =>
+        val line = l.trim
+        if (line(0) == '#') acc
+        else line::acc
+      }
+  }
+
+  private def addToMultiMap[K, V](table: mutable.Map[K, Set[V]])(key: K, value: V) {
     table.get(key) match {
       case Some(vals) => table += (key -> (vals+value))
       case None => table += (key -> Set(value))
     }
   }
-  private def trunOnRecording() = {
+  private def trunOnRecording() {
     store.resetReadAddrsAndWriteAddrs
     kstore.resetReadAddrsAndWriteAddrs
     store.on = true
     kstore.on = true
     isInitializedClassesChanged = false
   }
-  private def turnOffRecording() = {
+  private def turnOffRecording() {
     store.on = false
     kstore.on = false
   }
-  def addInitializedClass(sootClass: SootClass) = {
+  def addInitializedClass(sootClass: SootClass) {
     initializedClasses += sootClass
     isInitializedClassesChanged = true
   }
@@ -978,6 +986,7 @@ case class Config(rtJar: String = null,
                   className: String = null,
                   methodName: String = null,
                   outputFile: String = null,
+                  libClassesFile: String = null,
                   logLevel: String = "info")
 
 object Main {
@@ -990,6 +999,10 @@ object Main {
       opt[String]('J', "rt_jar") action {
         (x, c) => c.copy(rtJar = x)
       } text("the rt.jar file")
+
+      opt[String]('L', "lib_classes") action {
+        (x, c) => c.copy(libClassesFile = x)
+      } text("app's library classes")
 
       opt[String]('c', "class") action {
         (x, c) => c.copy(className = x)
@@ -1030,6 +1043,7 @@ object Main {
   }
 
   def defaultMode(config : Config) {
+    System.setLibraryClasses(config.libClassesFile)
     val outputFileOpt = Option(config.outputFile)
     var outputFile: String = null
     outputFileOpt match {
