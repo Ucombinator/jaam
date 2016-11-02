@@ -13,15 +13,46 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.lang.reflect.Type;
 
-import java.lang.reflect.Type;
-
 public class GuiJsonBuilder
 {
-    public static class GraphSerializer implements JsonSerializer<Graph> {
-        public JsonElement serialize(final Graph graph, final Type type, final JsonSerializationContext context) {
-            JsonObject result = new JsonObject();
-            result.add("vertices", new JsonPrimitive(graph.totalVertices));
-            return result;
+    public static class VertexSerializer implements JsonSerializer<Vertex>
+    {
+        public JsonElement serialize(final Vertex vertex, final Type type, final JsonSerializationContext context)
+        {
+            System.out.println("Serializing vertex: " + Integer.toString(vertex.id));
+            JsonObject jsonVertex = new JsonObject();
+            jsonVertex.add("id", new JsonPrimitive(vertex.id));
+            jsonVertex.add("label", new JsonPrimitive(vertex.getDescription()));
+            return jsonVertex;
+        }
+    }
+
+    public static class EdgeSerializer implements JsonSerializer<Edge>
+    {
+        public JsonElement serialize(final Edge edge, final Type type, final JsonSerializationContext context)
+        {
+            System.out.println("Serializing edge");
+            JsonObject jsonEdge = new JsonObject();
+            jsonEdge.add("id", new JsonPrimitive(0)); // TODO: Assign ID's to edges
+            jsonEdge.add("from", new JsonPrimitive(edge.source));
+            jsonEdge.add("to", new JsonPrimitive(edge.dest));
+            jsonEdge.add("label", new JsonPrimitive(""));
+            return jsonEdge;
+        }
+    }
+
+    public static class GraphSerializer implements JsonSerializer<Graph>
+    {
+        public JsonElement serialize(final Graph graph, final Type type, final JsonSerializationContext context)
+        {
+            System.out.println("Serializing graph");
+            Gson gson = new GsonBuilder().setPrettyPrinting()
+                    .registerTypeAdapter(Vertex.class, new VertexSerializer())
+                    .registerTypeAdapter(Edge.class, new EdgeSerializer()).create();
+            JsonObject jsonGraph = new JsonObject();
+            jsonGraph.addProperty("nodes", gson.toJson(graph.vertices));
+            jsonGraph.addProperty("edges", gson.toJson(graph.baseEdges));
+            return jsonGraph;
         }
     }
 
