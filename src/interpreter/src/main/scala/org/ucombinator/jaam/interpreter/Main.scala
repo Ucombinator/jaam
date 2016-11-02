@@ -31,7 +31,6 @@ import soot.tagkit._
 import org.ucombinator.jaam.serializer
 import org.ucombinator.jaam.interpreter.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
 
-// TODO: remove `{` after `case`
 // TODO: some sets could just be lists until we sort them out at the end
 // TODO: `union` might be more efficient than `_++_`
 /*
@@ -242,23 +241,19 @@ case class KontD(val values: Set[Kont]) {
 
 abstract sealed class AbstractState {
   def next() : Set[AbstractState]
-  def setStore(store: Store) : Unit
-  def getStore() : Store
 
-  def setKontStore(store : KontStore) : Unit
-  def getKontStore() : KontStore
-
-  def getReadAddrs: Set[Addr]
-  def setReadAddrs(s: Set[Addr]): Unit
-
-  def getKReadAddrs: Set[KontAddr]
-  def setKReadAddrs(s: Set[KontAddr]): Unit
-
-  def getWriteAddrs: Set[Addr]
-  def setWriteAddrs(s: Set[Addr]): Unit
-
-  def getKWriteAddrs: Set[KontAddr]
-  def setKWriteAddrs(s: Set[KontAddr]): Unit
+  def setStore(store : Store) = {}
+  def getStore() = Store(mutable.Map())
+  def setKontStore(store : KontStore) = {}
+  def getKontStore() = KontStore(mutable.Map())
+  def getReadAddrs: Set[Addr] = Set()
+  def setReadAddrs(s: Set[Addr]) = {}
+  def getKReadAddrs: Set[KontAddr] = Set()
+  def setKReadAddrs(s: Set[KontAddr]) = {}
+  def getWriteAddrs: Set[Addr] = Set()
+  def setWriteAddrs(s: Set[Addr]) = {}
+  def getKWriteAddrs: Set[KontAddr] = Set()
+  def setKWriteAddrs(s: Set[KontAddr]) = {}
 
   def toPacket() : serializer.AbstractState
 
@@ -274,18 +269,6 @@ object AbstractState {
 
 case object ErrorState extends AbstractState {
   override def next() : Set[AbstractState] = Set.empty
-  override def setStore(store : Store) = Unit
-  override def getStore() = Store(mutable.Map())
-  override def setKontStore(store : KontStore) = Unit
-  override def getKontStore() = KontStore(mutable.Map())
-  override def getReadAddrs = Set()
-  override def setReadAddrs(s: Set[Addr]) = Unit
-  override def getKReadAddrs: Set[KontAddr] = Set()
-  override def setKReadAddrs(s: Set[KontAddr]) = Unit
-  override def getWriteAddrs = Set()
-  override def setWriteAddrs(s: Set[Addr]) = Unit
-  override def getKWriteAddrs: Set[KontAddr] = Set()
-  override def setKWriteAddrs(s: Set[KontAddr]) = Unit
   override def toPacket() = serializer.ErrorState(serializer.Id[serializer.Node](id))
 }
 
