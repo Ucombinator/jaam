@@ -98,7 +98,7 @@ case class KontStack(k : Kont) {
         // if throws something might be a null pointer, then throw a NullPointerException
         val nullPointerException = Soot.getSootClass("java.lang.NullPointerException");
         return handleException(ObjectValue(nullPointerException, OneCFABasePointer(stmt, fp, FromJava)),
-                               stmt, fp, store)//, initializedClasses)
+                               stmt, fp, store)
       }
       return Set()
     }
@@ -330,7 +330,6 @@ case class State(val stmt : Stmt,
   def malloc() : BasePointer = OneCFABasePointer(stmt, fp, FromJava)
   def mallocFromNative() : BasePointer = OneCFABasePointer(stmt, fp, FromNative)
 
-
   // Returns all possible addresses of an assignable expression.
   // x = 3; // Should only return 1 address.
   // x[2] = 3; // May return more than one address because x might be multiple arrays.
@@ -343,11 +342,6 @@ case class State(val stmt : Stmt,
       case lhs : InstanceFieldRef =>
         val b : SootValue = lhs.getBase // the x in x.y
         val d : D = eval(b)
-        /*
-        println("lhs: " + lhs)
-        println("lhs.getBase: " + b)
-        println("d.values: " + d.values)
-        */
         // TODO/optimize
         // filter out incorrect class types
         // TODO/bug
@@ -523,7 +517,6 @@ case class State(val stmt : Stmt,
   def handleInvoke(expr : InvokeExpr,
                    destAddr : Option[Set[Addr]],
                    nextStmt : Stmt = stmt.nextSyntactic) : Set[AbstractState] = {
-
     val base = expr match {
       case expr : DynamicInvokeExpr =>
         ??? // TODO: Could only come from non-Java sources
@@ -577,7 +570,6 @@ case class State(val stmt : Stmt,
     // o.f(3); // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
     def dispatch(self : Option[Value], meth : SootMethod) : Set[AbstractState] = {
-
       // We end these with "." so we don't hit similarly named libraries
       // TODO:
       val libraries = List("org.apache.commons.", "org.mapdb.",
@@ -673,7 +665,7 @@ case class State(val stmt : Stmt,
     return defaultInitialValue(f.getType)
   }
 
-  // Returns a Store containing the possibly nested arrays described
+  // Update the store to contain the possibly nested arrays described
   // by the Type t with dimension sizes 'sizes'
   def createArray(t : Type, sizes : List[D], addrs : Set[Addr], store: Store) : Store = sizes match {
     // Should only happen on recursive calls. (createArray should never be called by a user with an empty list of sizes).
