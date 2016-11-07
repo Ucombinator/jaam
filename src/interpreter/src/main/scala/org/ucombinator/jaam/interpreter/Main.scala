@@ -49,12 +49,12 @@ case class UndefinedAddrsException[A <: Addr](addrs : Set[A]) extends RuntimeExc
 
 // A continuation store paired with a continuation
 case class KontStack(k : Kont) {
-  var store : KontStore = KontStore(mutable.Map())
-  def setStore(store : KontStore) = this.store = store
-  def getStore() = store
-  def copyKontStack(store: KontStore = this.store): KontStack = {
+  //var store : KontStore = KontStore(mutable.Map())
+  //def setStore(store : KontStore) = this.store = store
+  //def getStore() = store
+  def copyKontStack(/*store: KontStore = this.store*/): KontStack = {
     val ks = this.copy()
-    ks.setStore(store)
+    //ks.setStore(store)
     ks
   }
 
@@ -65,19 +65,23 @@ case class KontStack(k : Kont) {
   // TODO/generalize: Handle PDCFA
   def push(frame : Frame) : KontStack = {
     val kAddr = kalloca(frame)
+    System.kstore.update(kAddr, KontD(Set(k))).asInstanceOf[KontStore]
+    KontStack(RetKont(frame, kAddr))
+    /*
     val newKontStore = store.update(kAddr, KontD(Set(k))).asInstanceOf[KontStore]
     val newKontStack = KontStack(RetKont(frame, kAddr))
     newKontStack.setStore(newKontStore)
     newKontStack
+    */
   }
 
   // Pop returns all possible frames beneath the current one.
   def pop() : Set[(Frame, KontStack)] = {
     k match {
       case RetKont(frame, kontAddr) =>
-        for (topk <- store(kontAddr).values) yield {
+        for (topk <- System.kstore(kontAddr).values) yield {
           val ks = KontStack(topk)
-          ks.setStore(store)
+          //ks.setStore(store)
           (frame, ks)
         }
       case HaltKont => Set()
@@ -86,8 +90,8 @@ case class KontStack(k : Kont) {
 
   def handleException(exception : Value,
                       stmt : Stmt,
-                      fp : FramePointer,
-                      store : Store
+                      fp : FramePointer
+                      /*store : Store*/
                     ) : Set[AbstractState] = {
     //TODO: if the JVM implementation does not enforce the rules on structured locking described in §2.11.10,
     //then if the method of the current frame is a synchronized method and the current thread is not the owner
@@ -99,7 +103,7 @@ case class KontStack(k : Kont) {
         // if throws something might be a null pointer, then throw a NullPointerException
         val nullPointerException = Soot.getSootClass("java.lang.NullPointerException");
         return handleException(ObjectValue(nullPointerException, OneCFABasePointer(stmt, fp, FromJava)),
-                               stmt, fp, store)
+                               stmt, fp)//, store)
       }
       return Set()
     }
@@ -115,7 +119,7 @@ case class KontStack(k : Kont) {
         // The handler will expect the exception to be waiting at CaughtExceptionFrameAddr(fp).
         // It'll be referenced through CaughtExceptionRef.
 
-        store.update(CaughtExceptionFrameAddr(fp), D(Set(exception)))
+        System.store.update(CaughtExceptionFrameAddr(fp), D(Set(exception)))
         // TODO/soundness or performance?: use Hierarchy or FastHierarchy?
         if (Soot.isSubclass(exception.asInstanceOf[ObjectValue].sootClass, caughtType)) {
           val newState = State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, this.copyKontStack())
@@ -243,10 +247,12 @@ case class KontD(val values: Set[Kont]) {
 abstract sealed class AbstractState {
   def next() : Set[AbstractState]
 
+  /*
   def setStore(store : Store) = {}
   def getStore() = Store(mutable.Map())
   def setKontStore(store : KontStore) = {}
   def getKontStore() = KontStore(mutable.Map())
+  */
   def getReadAddrs: Set[Addr] = Set()
   def setReadAddrs(s: Set[Addr]) = {}
   def getKReadAddrs: Set[KontAddr] = Set()
@@ -284,12 +290,14 @@ case class State(val stmt : Stmt,
   //      case _ => false
   //   }
 
-  var store: Store = Store(mutable.Map())
+  //var store: Store = Store(mutable.Map())
 
+  /*
   override def setStore(store : Store) : Unit = this.store = store
   override def getStore(): Store = store
   override def getKontStore = kontStack.getStore()
   override def setKontStore(store : KontStore) = kontStack.setStore(store)
+  */
 
   var readAddrs = Set[Addr]()
   override def getReadAddrs = readAddrs
@@ -311,13 +319,13 @@ case class State(val stmt : Stmt,
 
   def copyState(stmt: Stmt = stmt,
                 fp: FramePointer = fp,
-                kontStack: KontStack = kontStack,
-                store: Store = this.store,
-                kontStore: KontStore = this.kontStack.getStore()
+                kontStack: KontStack = kontStack
+                /*store: Store = this.store,*/
+                /*kontStore: KontStore = this.kontStack.getStore()*/
                ): State = {
     val newState = this.copy(stmt, fp, kontStack)
-    newState.setStore(store)
-    newState.setKontStore(kontStore)
+    //newState.setStore(store)
+    //newState.setKontStore(kontStore)
     newState
   }
 
@@ -397,7 +405,7 @@ case class State(val stmt : Stmt,
       //TODO/precision actually do the calculations
       case (_ : Local) | (_ : Ref) =>
         val addrs = addrsOf(v)
-        val values= store(addrs)
+        val values= System.store(addrs)
         values
       case _ : NullConstant =>
         D.atomicTop
@@ -408,7 +416,7 @@ case class State(val stmt : Stmt,
       //D(Set(ObjectValue(stmt.classmap("java.lang.Class"), StringBasePointer(v.value))))
       case v : StringConstant =>
         val bp = StringBasePointer(v.value)
-        if (store.contains(InstanceFieldAddr(bp, Soot.classes.String.getFieldByName("value")))) {
+        if (System.store.contains(InstanceFieldAddr(bp, Soot.classes.String.getFieldByName("value")))) {
           D(Set(ObjectValue(Soot.classes.String, bp)))
         } else {
           throw StringConstantException(v.value)
@@ -456,7 +464,7 @@ case class State(val stmt : Stmt,
         val addrs : Set[Addr] = for {
           ArrayValue(_, bp) <- eval(v.getOp).values
         } yield ArrayLengthAddr(bp)
-        store(addrs)
+        System.store(addrs)
 
       // TODO/precision: implement the actual check
       case v : InstanceOfExpr => D.atomicTop
@@ -595,7 +603,7 @@ case class State(val stmt : Stmt,
             meth.getReturnType match {
               case _ : VoidType => Set(this.copyState(stmt = nextStmt))
               case _ : PrimType =>
-                store.update(destAddr, D.atomicTop)
+                System.store.update(destAddr, D.atomicTop)
                 Set(this.copyState(stmt = nextStmt))
               case _ =>
                 Log.error("Native method returns an object. Aborting.")
@@ -605,13 +613,15 @@ case class State(val stmt : Stmt,
           else {
             // TODO/optimize: filter out incorrect class types
             val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
-            var newStore = store // TODO: currently update the store directly, not using newStore
+            //var newStore = store // TODO: currently update the store directly, not using newStore
             self match {
-              case Some(s) => newStore.update(ThisFrameAddr(newFP), D(Set(s)))
+              //case Some(s) => newStore.update(ThisFrameAddr(newFP), D(Set(s)))
+              case Some(s) => System.store.update(ThisFrameAddr(newFP), D(Set(s)))
               case None => {} // TODO: throw exception here?
             }
             for (i <- 0 until args.length) {
-              newStore.update(ParameterFrameAddr(newFP, i), args(i))
+              //newStore.update(ParameterFrameAddr(newFP, i), args(i))
+              System.store.update(ParameterFrameAddr(newFP, i), args(i))
             }
 
             val newState = State(Stmt.methodEntry(meth), newFP, newKontStack)
@@ -665,16 +675,16 @@ case class State(val stmt : Stmt,
 
   // Update the store to contain the possibly nested arrays described
   // by the Type t with dimension sizes 'sizes'
-  def createArray(t : Type, sizes : List[D], addrs : Set[Addr], store: Store) : Store = sizes match {
+  def createArray(t : Type, sizes : List[D], addrs : Set[Addr]/*, store: Store*/) : Store = sizes match {
     // Should only happen on recursive calls. (createArray should never be called by a user with an empty list of sizes).
     //case Nil => Store(mutable.Map()).update(addrs, defaultInitialValue(t)).asInstanceOf[Store]
-    case Nil => store.update(addrs, defaultInitialValue(t)).asInstanceOf[Store]
+    case Nil => System.store.update(addrs, defaultInitialValue(t)).asInstanceOf[Store]
     case (s :: ss) =>
       val bp : BasePointer = malloc()
       // TODO/soundness: exception for a negative length
       // TODO/precision: stop allocating if a zero length
       // TODO/precision: separately allocate each array element
-      createArray(t.asInstanceOf[ArrayType].getElementType(), ss, Set(ArrayRefAddr(bp)), store)
+      createArray(t.asInstanceOf[ArrayType].getElementType(), ss, Set(ArrayRefAddr(bp)))//, store)
         .update(addrs, D(Set(ArrayValue(t, bp))))
         .update(ArrayLengthAddr(bp), s).asInstanceOf[Store]
   }
@@ -684,7 +694,7 @@ case class State(val stmt : Stmt,
     try {
       val nexts = true_next()
       val exceptionStates = (exceptions.values map {
-        kontStack.handleException(_, stmt, fp, store)//, initializedClasses)
+        kontStack.handleException(_, stmt, fp)//, store)
       }).flatten
       nexts ++ exceptionStates
     } catch {
@@ -707,7 +717,7 @@ case class State(val stmt : Stmt,
           val staticUpdates = for {
             f <- sootClass.getFields(); if f.isStatic
           } yield (StaticFieldAddr(f) -> staticInitialValue(f))
-          store.update(mutable.Map(staticUpdates.toMap.toSeq: _*))
+          System.store.update(mutable.Map(staticUpdates.toMap.toSeq: _*))
           System.addInitializedClass(sootClass)
           val newState = this.copyState()
           // TODO: Do we need to use the same JStaticInvokeExpr for repeated calls?
@@ -722,7 +732,8 @@ case class State(val stmt : Stmt,
       case UninitializedSnowflakeObjectException(className) =>
         Log.info("Initializing snowflake class "+className)
         val sootClass = Soot.getSootClass(className)
-        Snowflakes.createObject(store, className, List())
+        //Snowflakes.createObject(store, className, List())
+        Snowflakes.createObject(className, List())
         System.addInitializedClass(sootClass)
         Set(this.copyState())
 
@@ -733,7 +744,7 @@ case class State(val stmt : Stmt,
         val hash32 = Soot.classes.String.getFieldByName("hash32")
         val bp = StringBasePointer(string)
         createArray(ArrayType.v(CharType.v,1), List(D.atomicTop/*string.length*/),
-                    Set(InstanceFieldAddr(bp, value)), store)
+                    Set(InstanceFieldAddr(bp, value)))//, store)
           .update(InstanceFieldAddr(bp, hash), D.atomicTop)
           .update(InstanceFieldAddr(bp, hash32), D.atomicTop).asInstanceOf[Store]
         Set(this.copyState())
@@ -745,31 +756,31 @@ case class State(val stmt : Stmt,
     }
   }
 
-  def newExpr(lhsAddr : Set[Addr], sootClass : SootClass, store : Store) : Store = {
+  def newExpr(lhsAddr : Set[Addr], sootClass : SootClass/*, store : Store*/) : Store = {
     val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
     if (Soot.isJavaLibraryClass(sootClass)  && !sootClass.getPackageName.startsWith("com.sun.net.httpserver") || Snowflakes.contains(md)) {
       val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
       val d = D(Set(obj))
-      store.update(lhsAddr, d)
-      Snowflakes.createObject(store, sootClass.getName, List())
-      store.asInstanceOf[Store]
+      System.store.update(lhsAddr, d)
+      Snowflakes.createObject(/*store, */sootClass.getName, List())
+      System.store.asInstanceOf[Store]
     }
     else {
       val bp : BasePointer = malloc()
       val obj : Value = ObjectValue(sootClass, bp)
       val d = D(Set(obj))
-      store.update(lhsAddr, d)
+      System.store.update(lhsAddr, d)
       System.checkInitializedClasses(sootClass)
       // initialize instance fields to default values for their type
       def initInstanceFields(c : SootClass) {
         for (f <- c.getFields) {
-          store.update(InstanceFieldAddr(bp, f), defaultInitialValue(f.getType))
+          System.store.update(InstanceFieldAddr(bp, f), defaultInitialValue(f.getType))
         }
         // TODO: swap these lines?
         if(c.hasSuperclass) initInstanceFields(c.getSuperclass)
       }
       initInstanceFields(sootClass)
-      store.asInstanceOf[Store]
+      System.store.asInstanceOf[Store]
     }
   }
 
@@ -785,20 +796,20 @@ case class State(val stmt : Stmt,
           case rhs : NewExpr =>
             val baseType : RefType = rhs.getBaseType()
             val sootClass = baseType.getSootClass()
-            this.newExpr(lhsAddr, sootClass, store)
+            this.newExpr(lhsAddr, sootClass)//, store)
             Set(this.copyState(stmt = stmt.nextSyntactic))
           case rhs : NewArrayExpr =>
             //TODO, if base type is Java library class, call Snowflake.createArray
             // Value of lhsAddr will be set to a pointer to the array. (as opposed to the array itself)
-            createArray(rhs.getType(), List(eval(rhs.getSize())), lhsAddr, store)
+            createArray(rhs.getType(), List(eval(rhs.getSize())), lhsAddr)//, store)
             Set(this.copyState(stmt = stmt.nextSyntactic))
           case rhs : NewMultiArrayExpr =>
             //TODO, if base type is Java library class, call Snowflake.createArray
             //see comment above about lhs addr
-            createArray(rhs.getType(), rhs.getSizes().toList map eval, lhsAddr, store)
+            createArray(rhs.getType(), rhs.getSizes().toList map eval, lhsAddr)//, store)
             Set(this.copyState(stmt = stmt.nextSyntactic))
           case rhs =>
-            store.update(lhsAddr, eval(rhs))
+            System.store.update(lhsAddr, eval(rhs))
             Set(this.copyState(stmt = stmt.nextSyntactic))
         }
 
@@ -817,7 +828,7 @@ case class State(val stmt : Stmt,
         val evaled = eval(sootStmt.getOp())
         for ((frame, newStack) <- kontStack.pop) yield {
           if (frame.acceptsReturnValue()) {
-            store.update(frame.destAddr.get, evaled)
+            System.store.update(frame.destAddr.get, evaled)
           }
           State(frame.stmt, frame.fp, newStack)
         }
@@ -872,7 +883,7 @@ object State {
 
   def inject(stmt : Stmt) : State = {
     val ks = KontStack(HaltKont)
-    ks.setStore(KontStore(mutable.Map()))
+    //ks.setStore(KontStore(mutable.Map()))
     State(stmt, initialFramePointer, ks)
   }
 }
@@ -939,8 +950,8 @@ object System {
   def addToReadKTable = addToMultiMap(readKTable)(_, _)
 
   def next(state: AbstractState): Set[AbstractState] = {
-    state.setStore(store)
-    state.setKontStore(kstore)
+    //state.setStore(store)
+    //state.setKontStore(kstore)
 
     trunOnRecording()
     val nexts = state.next()

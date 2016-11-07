@@ -57,7 +57,7 @@ object NoOpSnowflake extends SnowflakeHandler {
 case class ReturnSnowflake(value : D) extends SnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
     state.stmt.sootStmt match {
-      case sootStmt : DefinitionStmt => state.store.update(state.addrsOf(sootStmt.getLeftOp()), value)
+      case sootStmt : DefinitionStmt => System.store.update(state.addrsOf(sootStmt.getLeftOp()), value)
       case sootStmt : InvokeStmt => {}
     }
     Set(state.copyState(stmt = nextStmt))
@@ -69,12 +69,12 @@ case class UninitializedSnowflakeObjectException(className : String) extends Run
 case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
     state.stmt.sootStmt match {
-      case stmt : DefinitionStmt => state.store.update(state.addrsOf(stmt.getLeftOp),
+      case stmt : DefinitionStmt => System.store.update(state.addrsOf(stmt.getLeftOp),
         D(Set(ObjectValue(Soot.getSootClass(name), SnowflakeBasePointer(name)))))
-      case stmt : InvokeStmt => //state.store
+      case stmt : InvokeStmt => //System.store
     }
-    //state.store.join(Snowflakes.createObject(name, List()))
-    Snowflakes.createObject(state.store, name, List())
+    //System.store.join(Snowflakes.createObject(name, List()))
+    Snowflakes.createObject(name, List())
     Set[AbstractState](state.copyState(stmt = nextStmt))
   }
 }
@@ -96,10 +96,10 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
 
   override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
     for (arg <- args)
-      state.store.update(GlobalSnowflakeAddr, arg)
+      System.store.update(GlobalSnowflakeAddr, arg)
 
     self match {
-      case Some(target) => state.store.update(GlobalSnowflakeAddr, D(Set[Value](target))) // TODO: unneeded?
+      case Some(target) => System.store.update(GlobalSnowflakeAddr, D(Set[Value](target))) // TODO: unneeded?
       case None => {}
     }
 
@@ -107,7 +107,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
       ObjectValue(exception, SnowflakeBasePointer(exception.getName))
     }
     val exceptionStates = (exceptions map {
-      state.kontStack.handleException(_, state.stmt, state.fp, state.store)
+      state.kontStack.handleException(_, state.stmt, state.fp)//, System.store)
     }).flatten
 
     val normalStates = meth.getReturnType match {
@@ -119,7 +119,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
       case at : ArrayType =>
         val states = ReturnArraySnowflake(at.baseType.toString, at.numDimensions)(state, nextStmt, self, args)
         val bp = state.malloc()
-        val values = state.store(GlobalSnowflakeAddr).values
+        val values = System.store(GlobalSnowflakeAddr).values
         state.stmt.sootStmt match {
           case stmt : DefinitionStmt =>
             stmt.getLeftOp.getType match {
@@ -128,13 +128,13 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
                   case ArrayValue(at, bp) => Soot.isSubType(at, leftAt)
                   case _ => false
                 })
-                state.store.update(Set[Addr](ArrayRefAddr(bp)), D(newValues))
+                System.store.update(Set[Addr](ArrayRefAddr(bp)), D(newValues))
               case _ =>
                 Log.warn("Can not assign an ArrayType value to non-ArrayType. stmt: " + stmt + " meth: " + meth)
                 //throw new RuntimeException("Can not assign an ArrayType value to non-ArrayType. stmt: " + stmt + " meth: " + meth)
             }
           case _ =>
-            state.store.update(Set[Addr](ArrayRefAddr(bp)), D(values))
+            System.store.update(Set[Addr](ArrayRefAddr(bp)), D(values))
         }
         states
       case rt : RefType =>
@@ -147,14 +147,14 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
                 //Log.warn("Can not assign a RefType value to non-RefType. stmt: " + stmt + " meth: " + meth)
                 throw new RuntimeException("Can not assign a RefType value to non-RefType. stmt: " + stmt + " meth: " + meth)
             }
-            val values: Set[Value] = state.store(GlobalSnowflakeAddr).values
+            val values: Set[Value] = System.store(GlobalSnowflakeAddr).values
             val newValues = values.filter(_ match {
               case ObjectValue(sootClass, bp) => Soot.isSubclass(sootClass, defClass)
               case _ => false
             })
 
-            //Log.debug(state.store(GlobalSnowflakeAddr).toString)
-            state.store.update(state.addrsOf(stmt.getLeftOp), D(newValues))
+            //Log.debug(System.store(GlobalSnowflakeAddr).toString)
+            System.store.update(state.addrsOf(stmt.getLeftOp), D(newValues))
           case _ =>
         }
         states
@@ -200,7 +200,7 @@ case class ReturnArraySnowflake(baseType: String, dim: Int) extends SnowflakeHan
         Snowflakes.createArray(at, sizes, state.addrsOf(stmt.getLeftOp), state.malloc())
       case stmt : InvokeStmt => Store(mutable.Map[Addr, D]())
     }
-    state.store.join(newNewStore)
+    System.store.join(newNewStore)
     Set(state.copyState(stmt=nextStmt))
   }
 }
@@ -209,7 +209,7 @@ case class PutStaticSnowflake(clas : String, field : String) extends StaticSnowf
   override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
     val sootField = Jimple.v.newStaticFieldRef(Soot.getSootClass(clas).getFieldByName(field).makeRef())
     val value = args(0)
-    state.store.update(state.addrsOf(sootField), value)
+    System.store.update(state.addrsOf(sootField), value)
     Set(state.copyState(stmt = nextStmt))
   }
 }
@@ -239,8 +239,8 @@ object HashMapSnowflakes {
       var extraStates = Set[AbstractState]()
       self match {
         case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
-          state.store.update(KeysAddr(bp), D(Set()))
-          state.store.update(ValuesAddr(bp), D(Set()))
+          System.store.update(KeysAddr(bp), D(Set()))
+          System.store.update(ValuesAddr(bp), D(Set()))
         case _ =>
           Snowflakes.warn(state.id, null, null)
           extraStates ++= NoOpSnowflake(state, nextStmt, Some(self), args)
@@ -264,8 +264,8 @@ object HashMapSnowflakes {
           self match {
             case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
               // D.atomicTop is for the null returned when the key had no previous assignment
-              state.store.update(state.addrsOf(stmt.getLeftOp),
-                state.store(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
+              System.store.update(state.addrsOf(stmt.getLeftOp),
+                System.store(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
             case _ =>
               Snowflakes.warn(state.id, null, null)
               extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
@@ -276,8 +276,8 @@ object HashMapSnowflakes {
       val value = args(1)
       self match {
         case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
-          state.store.update(KeysAddr(bp), key)
-          state.store.update(ValuesAddr(bp), value)
+          System.store.update(KeysAddr(bp), key)
+          System.store.update(ValuesAddr(bp), value)
         case _ => {} // Already taken care of in the first half of this function
       }
 
@@ -297,8 +297,8 @@ object HashMapSnowflakes {
           self match {
             case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
               // D.atomicTop is for the null returned when the key is not found
-              state.store.update(state.addrsOf(stmt.getLeftOp),
-                  state.store(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
+              System.store.update(state.addrsOf(stmt.getLeftOp),
+                  System.store(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
             case _ =>
               Snowflakes.warn(state.id, null, null)
               extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
@@ -321,7 +321,7 @@ object HashMapSnowflakes {
           self match {
             case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
               // D.atomicTop is for the null returned when the key is not found
-              state.store.update(state.addrsOf(stmt.getLeftOp),
+              System.store.update(state.addrsOf(stmt.getLeftOp),
                 D(Set(ObjectValue(EntrySet, EntrySetOfHashMap(bp)))))
             case _ =>
               Snowflakes.warn(state.id, null, null)
@@ -345,7 +345,7 @@ object HashMapSnowflakes {
           self match {
             case ObjectValue(sootClass, EntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, EntrySet) =>
               // D.atomicTop is for the null returned when the key is not found
-              state.store.update(state.addrsOf(stmt.getLeftOp),
+              System.store.update(state.addrsOf(stmt.getLeftOp),
                 D(Set(ObjectValue(Iterator, IteratorOfEntrySetOfHashMap(bp)))))
             case x =>
               Snowflakes.warn(state.id, null, null)
@@ -368,10 +368,10 @@ object HashMapSnowflakes {
           self match {
             case ObjectValue(sootClass, IteratorOfEntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, Iterator) =>
               // D.atomicTop is for the null returned when the key is not found
-              state.store.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
+              System.store.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
             case ObjectValue(sootClass, ArrayListSnowflakes.IteratorOfArrayList(bp)) if Soot.isSubclass(sootClass, Iterator) =>
               // D.atomicTop is for the null returned when the key is not found
-              state.store.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
+              System.store.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
             case _ =>
               Snowflakes.warn(state.id, null, null)
               extraStates ++= ReturnSnowflake(D.atomicTop)(state, nextStmt, Some(self), args)
@@ -394,13 +394,13 @@ object HashMapSnowflakes {
           self match {
             case ObjectValue(sootClass, IteratorOfEntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, Iterator) =>
               // D.atomicTop is for the null returned when the key is not found
-              state.store.update(state.addrsOf(stmt.getLeftOp),
+              System.store.update(state.addrsOf(stmt.getLeftOp),
                 D(Set(ObjectValue(Entry, EntryOfIteratorOfEntrySetOfHashMap(bp)))))
             case ObjectValue(sootClass, ArrayListSnowflakes.IteratorOfArrayList(bp)) if Soot.isSubclass(sootClass, Iterator) =>
               // D.atomicTop is for the null returned when the key is not found
               // TODO: throw exception
-              state.store.update(state.addrsOf(stmt.getLeftOp),
-                state.store(Set[Addr](ArrayRefAddr(bp))))
+              System.store.update(state.addrsOf(stmt.getLeftOp),
+                System.store(Set[Addr](ArrayRefAddr(bp))))
             case _ =>
               Snowflakes.warn(state.id, null, null)
               extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
@@ -421,8 +421,8 @@ object HashMapSnowflakes {
           self match {
             case ObjectValue(sootClass, EntryOfIteratorOfEntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, Entry) =>
               // D.atomicTop is for the null returned when the key is not found
-              state.store.update(state.addrsOf(stmt.getLeftOp),
-                state.store(Set[Addr](KeysAddr(bp))).join(D.atomicTop))
+              System.store.update(state.addrsOf(stmt.getLeftOp),
+                System.store(Set[Addr](KeysAddr(bp))).join(D.atomicTop))
             case _ =>
               Snowflakes.warn(state.id, null, null)
               extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
@@ -443,8 +443,8 @@ object HashMapSnowflakes {
           self match {
             case ObjectValue(sootClass, EntryOfIteratorOfEntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, Entry) =>
               // D.atomicTop is for the null returned when the key is not found
-              state.store.update(state.addrsOf(stmt.getLeftOp),
-                state.store(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
+              System.store.update(state.addrsOf(stmt.getLeftOp),
+                System.store(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
             case _ =>
               Snowflakes.warn(state.id, null, null)
               extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
@@ -474,8 +474,8 @@ object ArrayListSnowflakes {
       var extraStates = Set[AbstractState]()
       self match {
         case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
-          state.store.update(ArrayLengthAddr(bp), D.atomicTop)
-          state.store.update(ArrayRefAddr(bp), D.atomicTop) // D.atomicTop is so we don't get undefiend addrs exception
+          System.store.update(ArrayLengthAddr(bp), D.atomicTop)
+          System.store.update(ArrayRefAddr(bp), D.atomicTop) // D.atomicTop is so we don't get undefiend addrs exception
         case _ =>
           Snowflakes.warn(state.id, null, null)
           extraStates ++= NoOpSnowflake(state, nextStmt, Some(self), args)
@@ -497,7 +497,7 @@ object ArrayListSnowflakes {
         case stmt : DefinitionStmt =>
           self match {
             case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
-              state.store.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
+              System.store.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
             case _ =>
               Snowflakes.warn(state.id, null, null)
               extraStates ++= ReturnSnowflake(D.atomicTop)(state, nextStmt, Some(self), args)
@@ -507,7 +507,7 @@ object ArrayListSnowflakes {
       val value = args(0)
       self match {
         case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
-          state.store.update(ArrayRefAddr(bp), value)
+          System.store.update(ArrayRefAddr(bp), value)
         case _ => {} // already handled by the code in the first half of this function
       }
 
@@ -527,7 +527,7 @@ object ArrayListSnowflakes {
           self match {
             case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
               // D.atomicTop is for the null returned when the key is not found
-              state.store.update(state.addrsOf(stmt.getLeftOp),
+              System.store.update(state.addrsOf(stmt.getLeftOp),
                 D(Set(ObjectValue(Iterator, IteratorOfArrayList(bp)))))
             case _ =>
               Snowflakes.warn(state.id, null, null)
@@ -553,7 +553,8 @@ object ClassSnowflakes {
       self match {
         case ObjectValue(_, ClassBasePointer(className)) =>
           val sootClass = Soot.getSootClass(className)
-          val state2 = state.copyState(store = state.newExpr(lhsAddr, sootClass, state.store))
+          //val state2 = state.copyState(store = state.newExpr(lhsAddr, sootClass, System.store))
+          state.newExpr(lhsAddr, sootClass)
 
           try { // TODO: this is a bit of a hack
           val expr = new soot.jimple.internal.JSpecialInvokeExpr(
@@ -561,7 +562,8 @@ object ClassSnowflakes {
             sootClass.getMethod(SootMethod.constructorName, List()).makeRef(),
             List[soot.Value]())
 
-          state2.handleInvoke(expr, None)
+          //state2.handleInvoke(expr, None)
+          state.handleInvoke(expr, None)
           } catch {
             // If it doesn't have a no argument, then we must be on a spurious flow
             case _ => Set()
@@ -624,9 +626,9 @@ object Snowflakes {
     D(Set(ObjectValue(Soot.getSootClass(name), SnowflakeBasePointer(name))))
   }
 
-  def createObject(store: Store, className: String, processing : List[String]) : Store = {
+  def createObject(/*store: Store, */className: String, processing : List[String]) : Store = {
     if (initializedObjectValues.contains(className)) {
-      return store
+      return System.store
     }
 
     val sootClass = Soot.getSootClass(className)
@@ -634,7 +636,7 @@ object Snowflakes {
 
     if (sootClass.hasSuperclass) {
       // TODO: re-order ++ or document why this order
-      createObject(store, sootClass.getSuperclass.getName, processing++List(className))
+      createObject(/*store, */sootClass.getSuperclass.getName, processing++List(className))
     }
 
     for (f <- fields) {
@@ -644,16 +646,16 @@ object Snowflakes {
                               else { Set(InstanceFieldAddr(bp, f)) }
 
       fieldType match {
-        case pt: PrimType => store.update(addrs, D.atomicTop).asInstanceOf[Store]
+        case pt: PrimType => System.store.update(addrs, D.atomicTop).asInstanceOf[Store]
         case at: ArrayType =>
           val dim = List.fill(at.numDimensions)(D.atomicTop)
-          store.join(createArray(at, dim, addrs, bp)).asInstanceOf[Store]
+          System.store.join(createArray(at, dim, addrs, bp)).asInstanceOf[Store]
         case rt: RefType =>
           val fieldClassName = rt.getClassName
           if (!processing.contains(fieldClassName)) {
-            store.update(addrs, D(Set(ObjectValue(Soot.getSootClass(fieldClassName),
+            System.store.update(addrs, D(Set(ObjectValue(Soot.getSootClass(fieldClassName),
               SnowflakeBasePointer(className))))).asInstanceOf[Store]
-            createObject(store, fieldClassName, processing++List(className))
+            createObject(/*store, */fieldClassName, processing++List(className))
           }
         case _ =>
       }
@@ -661,7 +663,7 @@ object Snowflakes {
 
     //initializedObjectValues = initializedObjectValues + (className -> store)
     initializedObjectValues = className::initializedObjectValues
-    store
+    System.store
   }
 
   private def updateStore(oldStore : Store, clas : String, field : String, typ : String) =
@@ -677,7 +679,7 @@ object Snowflakes {
     override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
       assert(state.stmt.sootStmt.getInvokeExpr.getArgCount == 5)
       val expr = state.stmt.sootStmt.getInvokeExpr
-      val newNewStore = state.store.update(state.addrsOf(expr.getArg(2)), state.eval(expr.getArg(0)))
+      val newNewStore = System.store.update(state.addrsOf(expr.getArg(2)), state.eval(expr.getArg(0)))
       Set(state.copyState(stmt = nextStmt/*store = newNewStore*/))
     }
   })
@@ -686,13 +688,13 @@ object Snowflakes {
   table.put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
     new StaticSnowflakeHandler {
       override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
-        var newNewStore = state.store
+        var newNewStore = System.store
         newNewStore = updateStore(newNewStore, "java.lang.System", "in", "java.io.InputStream")
         newNewStore = updateStore(newNewStore, "java.lang.System", "out", "java.io.PrintStream")
         newNewStore = updateStore(newNewStore, "java.lang.System", "err", "java.io.PrintStream")
         newNewStore = updateStore(newNewStore, "java.lang.System", "security", "java.lang.SecurityManager")
         newNewStore = updateStore(newNewStore, "java.lang.System", "cons", "java.io.Console")
-        Set(state.copyState(stmt = nextStmt, store = newNewStore))
+        Set(state.copyState(stmt = nextStmt/*, store = newNewStore*/))
       }
     })
 
@@ -700,8 +702,8 @@ object Snowflakes {
     new NonstaticSnowflakeHandler {
       override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
         val newNewStore = state.stmt.sootStmt match {
-          case stmt : DefinitionStmt => state.store.update(state.addrsOf(stmt.getLeftOp), D(Set(self)))
-          case stmt : InvokeStmt => state.store
+          case stmt : DefinitionStmt => System.store.update(state.addrsOf(stmt.getLeftOp), D(Set(self)))
+          case stmt : InvokeStmt => System.store
         }
         Set(state.copyState(stmt = nextStmt/*store = newNewStore*/))
       }
@@ -719,7 +721,7 @@ object Snowflakes {
         override def apply(state: State, nextStmt: Stmt, self: Option[Value], args: List[D]): Set[AbstractState] = {
           val handlers = args.get(1).values
           val newStore = Snowflakes.createObject(httpsExchange, List())
-          state.store.join(newStore)
+          System.store.join(newStore)
 
           val meth = absHttpHandler.getMethodByName("handle")
           val newFP = ZeroCFAFramePointer(meth)
@@ -727,8 +729,8 @@ object Snowflakes {
             for (ObjectValue(sootClass, bp) <- handlers
               //if (Soot.isSubclass(sootClass, absHttpHandler) && sootClass.isConcrete)) yield {
               if Soot.isSubclass(sootClass, absHttpHandler)) yield {
-              state.store.update(ThisFrameAddr(newFP), D(Set(ObjectValue(sootClass, bp))))
-              state.store.update(ParameterFrameAddr(newFP, 0),
+              System.store.update(ThisFrameAddr(newFP), D(Set(ObjectValue(sootClass, bp))))
+              System.store.update(ParameterFrameAddr(newFP, 0),
                 D(Set(ObjectValue(Soot.getSootClass(httpsExchange), SnowflakeBasePointer(httpsExchange)))))
               State(Stmt.methodEntry(meth), newFP, state.kontStack)
           }
@@ -913,7 +915,7 @@ object Snowflakes {
     override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
       assert(state.stmt.sootStmt.getInvokeExpr.getArgCount == 5)
       val expr = state.stmt.sootStmt.getInvokeExpr
-      val newNewStore = state.store.update(state.addrsOf(expr.getArg(2)), state.eval(expr.getArg(0)))
+      val newNewStore = System.store.update(state.addrsOf(expr.getArg(2)), state.eval(expr.getArg(0)))
       Set(state.copyState(stmt = nextStmt/*store = newNewStore*/))
     }
   })
@@ -922,13 +924,13 @@ object Snowflakes {
   table.put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
     new StaticSnowflakeHandler {
       override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
-        var newNewStore = state.store
+        var newNewStore = System.store
         newNewStore = updateStore(newNewStore, "java.lang.System", "in", "java.io.InputStream")
         newNewStore = updateStore(newNewStore, "java.lang.System", "out", "java.io.PrintStream")
         newNewStore = updateStore(newNewStore, "java.lang.System", "err", "java.io.PrintStream")
         newNewStore = updateStore(newNewStore, "java.lang.System", "security", "java.lang.SecurityManager")
         newNewStore = updateStore(newNewStore, "java.lang.System", "cons", "java.io.Console")
-        Set(state.copyState(stmt = nextStmt, store = newNewStore))
+        Set(state.copyState(stmt = nextStmt/*, store = newNewStore*/))
       }
     })
 
@@ -938,7 +940,7 @@ Not needed b/c the only comparator is over String
   table.put(MethodDescription("java.util.Collections", "sort", List("java.util.List", "java.util.Comparator"), "void"),
     new StaticSnowflakeHandler {
       override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
-        () <- state.store(args(0)).values
+        () <- System.store(args(0)).values
         val elems =
 //Collections.sort(stuffList, this.comparator);
 
