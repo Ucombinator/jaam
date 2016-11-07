@@ -292,6 +292,4 @@ public class Vertex extends AbstractVertex
 	{
 		return this.neighbors.size();
 	}
-
-
 }
