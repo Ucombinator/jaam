@@ -102,8 +102,7 @@ case class KontStack(k : Kont) {
       if (exception == AnyAtomicValue) {
         // if throws something might be a null pointer, then throw a NullPointerException
         val nullPointerException = Soot.getSootClass("java.lang.NullPointerException");
-        return handleException(ObjectValue(nullPointerException, OneCFABasePointer(stmt, fp, FromJava)),
-                               stmt, fp)//, store)
+        return handleException(ObjectValue(nullPointerException, OneCFABasePointer(stmt, fp, FromJava)), stmt, fp)//, store)
       }
       return Set()
     }
@@ -762,7 +761,7 @@ case class State(val stmt : Stmt,
       val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
       val d = D(Set(obj))
       System.store.update(lhsAddr, d)
-      Snowflakes.createObject(/*store, */sootClass.getName, List())
+      Snowflakes.createObject(/*store, sootClass.getName, List())
       System.store.asInstanceOf[Store]
     }
     else {
