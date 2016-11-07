@@ -198,6 +198,9 @@ case class StringBasePointer(val string : String) extends BasePointer {
     "StringBasePointer(" + Literal(Constant(string)).toString + ")"
   }
 }
+
+case object StringBasePointerTop extends BasePointer
+
 // we remvoe the argument of ClassBasePointer, to make all ClassBasePointer points to the same
 case class ClassBasePointer(val name : String) extends BasePointer
 //case object ClassBasePointer extends BasePointer
@@ -414,7 +417,8 @@ case class State(val stmt : Stmt,
       case v : ClassConstant => D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer(v.value.replace('/', '.')))))
       //D(Set(ObjectValue(stmt.classmap("java.lang.Class"), StringBasePointer(v.value))))
       case v : StringConstant =>
-        val bp = StringBasePointer(v.value)
+        //val bp = StringBasePointer(v.value)
+        val bp = StringBasePointerTop
         if (System.store.contains(InstanceFieldAddr(bp, Soot.classes.String.getFieldByName("value")))) {
           D(Set(ObjectValue(Soot.classes.String, bp)))
         } else {
@@ -666,7 +670,8 @@ case class State(val stmt : Stmt,
         case t : FloatConstantValueTag => return D.atomicTop
         case t : IntegerConstantValueTag => return D.atomicTop
         case t : LongConstantValueTag => return D.atomicTop
-        case t : StringConstantValueTag => return D(Set(ObjectValue(Soot.classes.String, StringBasePointer(t.getStringValue()))))
+        //case t : StringConstantValueTag => return D(Set(ObjectValue(Soot.classes.String, StringBasePointer(t.getStringValue()))))
+        case t : StringConstantValueTag => return D(Set(ObjectValue(Soot.classes.String, StringBasePointerTop)))
         case _ => ()
       }
     return defaultInitialValue(f.getType)
@@ -741,7 +746,8 @@ case class State(val stmt : Stmt,
         val value = Soot.classes.String.getFieldByName("value")
         val hash = Soot.classes.String.getFieldByName("hash")
         val hash32 = Soot.classes.String.getFieldByName("hash32")
-        val bp = StringBasePointer(string)
+        //val bp = StringBasePointer(string)
+        val bp = StringBasePointerTop
         createArray(ArrayType.v(CharType.v,1), List(D.atomicTop/*string.length*/),
                     Set(InstanceFieldAddr(bp, value)))//, store)
           .update(InstanceFieldAddr(bp, hash), D.atomicTop)
@@ -761,7 +767,7 @@ case class State(val stmt : Stmt,
       val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
       val d = D(Set(obj))
       System.store.update(lhsAddr, d)
-      Snowflakes.createObject(/*store, sootClass.getName, List())
+      Snowflakes.createObject(/*store, */sootClass.getName, List())
       System.store.asInstanceOf[Store]
     }
     else {
