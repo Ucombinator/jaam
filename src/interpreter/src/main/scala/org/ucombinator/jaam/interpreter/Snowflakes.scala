@@ -49,7 +49,7 @@ abstract class NonstaticSnowflakeHandler extends SnowflakeHandler {
 
 object NoOpSnowflake extends SnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] =
-    Set(state.copyState(stmt = nextStmt))
+    Set(state.copy(stmt = nextStmt))
 }
 
 // TODO/soundness: Add JohnSnowflake for black-holes (i.e., you know nothing). Not everything becomes top, but an awful lot will.
@@ -60,7 +60,7 @@ case class ReturnSnowflake(value : D) extends SnowflakeHandler {
       case sootStmt : DefinitionStmt => System.store.update(state.addrsOf(sootStmt.getLeftOp()), value)
       case sootStmt : InvokeStmt => {}
     }
-    Set(state.copyState(stmt = nextStmt))
+    Set(state.copy(stmt = nextStmt))
   }
 }
 
@@ -75,7 +75,7 @@ case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
     }
     //System.store.join(Snowflakes.createObject(name, List()))
     Snowflakes.createObject(name, List())
-    Set[AbstractState](state.copyState(stmt = nextStmt))
+    Set[AbstractState](state.copy(stmt = nextStmt))
   }
 }
 
@@ -201,7 +201,7 @@ case class ReturnArraySnowflake(baseType: String, dim: Int) extends SnowflakeHan
       case stmt : InvokeStmt => Store(mutable.Map[Addr, D]())
     }
     System.store.join(newNewStore)
-    Set(state.copyState(stmt=nextStmt))
+    Set(state.copy(stmt=nextStmt))
   }
 }
 
@@ -210,7 +210,7 @@ case class PutStaticSnowflake(clas : String, field : String) extends StaticSnowf
     val sootField = Jimple.v.newStaticFieldRef(Soot.getSootClass(clas).getFieldByName(field).makeRef())
     val value = args(0)
     System.store.update(state.addrsOf(sootField), value)
-    Set(state.copyState(stmt = nextStmt))
+    Set(state.copy(stmt = nextStmt))
   }
 }
 
@@ -246,7 +246,7 @@ object HashMapSnowflakes {
           extraStates ++= NoOpSnowflake(state, nextStmt, Some(self), args)
       }
 
-      extraStates + state.copyState(stmt = nextStmt)
+      extraStates + state.copy(stmt = nextStmt)
     }
   }
 
@@ -281,7 +281,7 @@ object HashMapSnowflakes {
         case _ => {} // Already taken care of in the first half of this function
       }
 
-      extraStates + state.copyState(stmt = nextStmt)
+      extraStates + state.copy(stmt = nextStmt)
     }
   }
 
@@ -305,7 +305,7 @@ object HashMapSnowflakes {
           }
       }
 
-      extraStates + state.copyState(stmt = nextStmt)
+      extraStates + state.copy(stmt = nextStmt)
     }
   }
 
@@ -329,7 +329,7 @@ object HashMapSnowflakes {
           }
       }
 
-      extraStates + state.copyState(stmt = nextStmt)
+      extraStates + state.copy(stmt = nextStmt)
     }
   }
 
@@ -353,7 +353,7 @@ object HashMapSnowflakes {
           }
       }
 
-      extraStates + state.copyState(stmt = nextStmt)
+      extraStates + state.copy(stmt = nextStmt)
     }
   }
 
@@ -378,7 +378,7 @@ object HashMapSnowflakes {
           }
       }
 
-      extraStates + state.copyState(stmt = nextStmt)
+      extraStates + state.copy(stmt = nextStmt)
     }
   }
 
@@ -407,7 +407,7 @@ object HashMapSnowflakes {
           }
       }
 
-      extraStates + state.copyState(stmt = nextStmt)
+      extraStates + state.copy(stmt = nextStmt)
     }
   }
 
@@ -429,7 +429,7 @@ object HashMapSnowflakes {
           }
       }
 
-      extraStates + state.copyState(stmt = nextStmt)
+      extraStates + state.copy(stmt = nextStmt)
     }
   }
 
@@ -451,7 +451,7 @@ object HashMapSnowflakes {
           }
       }
 
-      extraStates + state.copyState(stmt = nextStmt)
+      extraStates + state.copy(stmt = nextStmt)
     }
   }
 
@@ -481,7 +481,7 @@ object ArrayListSnowflakes {
           extraStates ++= NoOpSnowflake(state, nextStmt, Some(self), args)
       }
 
-      extraStates + state.copyState(stmt = nextStmt)
+      extraStates + state.copy(stmt = nextStmt)
     }
   }
 
@@ -511,7 +511,7 @@ object ArrayListSnowflakes {
         case _ => {} // already handled by the code in the first half of this function
       }
 
-      extraStates + state.copyState(stmt = nextStmt)
+      extraStates + state.copy(stmt = nextStmt)
     }
   }
 
@@ -535,7 +535,7 @@ object ArrayListSnowflakes {
           }
       }
 
-      extraStates + state.copyState(stmt = nextStmt)
+      extraStates + state.copy(stmt = nextStmt)
     }
   }
 }
@@ -553,7 +553,7 @@ object ClassSnowflakes {
       self match {
         case ObjectValue(_, ClassBasePointer(className)) =>
           val sootClass = Soot.getSootClass(className)
-          //val state2 = state.copyState(store = state.newExpr(lhsAddr, sootClass, System.store))
+          //val state2 = state.copy(store = state.newExpr(lhsAddr, sootClass, System.store))
           state.newExpr(lhsAddr, sootClass)
 
           try { // TODO: this is a bit of a hack
@@ -683,7 +683,7 @@ object Snowflakes {
       assert(state.stmt.sootStmt.getInvokeExpr.getArgCount == 5)
       val expr = state.stmt.sootStmt.getInvokeExpr
       val newNewStore = System.store.update(state.addrsOf(expr.getArg(2)), state.eval(expr.getArg(0)))
-      Set(state.copyState(stmt = nextStmt/*store = newNewStore*/))
+      Set(state.copy(stmt = nextStmt))
     }
   })
 
@@ -697,7 +697,7 @@ object Snowflakes {
         newNewStore = updateStore(newNewStore, "java.lang.System", "err", "java.io.PrintStream")
         newNewStore = updateStore(newNewStore, "java.lang.System", "security", "java.lang.SecurityManager")
         newNewStore = updateStore(newNewStore, "java.lang.System", "cons", "java.io.Console")
-        Set(state.copyState(stmt = nextStmt/*, store = newNewStore*/))
+        Set(state.copy(stmt = nextStmt))
       }
     })
 
@@ -708,7 +708,7 @@ object Snowflakes {
           case stmt : DefinitionStmt => System.store.update(state.addrsOf(stmt.getLeftOp), D(Set(self)))
           case stmt : InvokeStmt => System.store
         }
-        Set(state.copyState(stmt = nextStmt/*store = newNewStore*/))
+        Set(state.copy(stmt = nextStmt))
       }
     })
 
@@ -874,7 +874,7 @@ object Snowflakes {
           case sootStmt : InvokeStmt => None
         }
 
-        state.handleInvoke2(Some((args(0), false)), method, List(), state.alloca(expr, nextStmt), dest, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/) + state.copyState(stmt = nextStmt)
+        state.handleInvoke2(Some((args(0), false)), method, List(), state.alloca(expr, nextStmt), dest, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/) + state.copy(stmt = nextStmt)
       }
     })
 
@@ -919,7 +919,7 @@ object Snowflakes {
       assert(state.stmt.sootStmt.getInvokeExpr.getArgCount == 5)
       val expr = state.stmt.sootStmt.getInvokeExpr
       val newNewStore = System.store.update(state.addrsOf(expr.getArg(2)), state.eval(expr.getArg(0)))
-      Set(state.copyState(stmt = nextStmt/*store = newNewStore*/))
+      Set(state.copy(stmt = nextStmt))
     }
   })
 
@@ -933,7 +933,7 @@ object Snowflakes {
         newNewStore = updateStore(newNewStore, "java.lang.System", "err", "java.io.PrintStream")
         newNewStore = updateStore(newNewStore, "java.lang.System", "security", "java.lang.SecurityManager")
         newNewStore = updateStore(newNewStore, "java.lang.System", "cons", "java.io.Console")
-        Set(state.copyState(stmt = nextStmt/*, store = newNewStore*/))
+        Set(state.copy(stmt = nextStmt))
       }
     })
 

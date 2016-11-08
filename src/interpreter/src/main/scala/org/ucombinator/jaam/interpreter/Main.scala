@@ -49,15 +49,6 @@ case class UndefinedAddrsException[A <: Addr](addrs : Set[A]) extends RuntimeExc
 
 // A continuation store paired with a continuation
 case class KontStack(k : Kont) {
-  //var store : KontStore = KontStore(mutable.Map())
-  //def setStore(store : KontStore) = this.store = store
-  //def getStore() = store
-  def copyKontStack(/*store: KontStore = this.store*/): KontStack = {
-    val ks = this.copy()
-    //ks.setStore(store)
-    ks
-  }
-
   // TODO/generalize: Add widening in push and pop (to support PDCFA)
   // TODO/generalize: We need the control pointer of the target state to HANDLE PDCFA.
   def kalloca(frame : Frame) = OneCFAKontAddr(frame.fp)
@@ -65,14 +56,8 @@ case class KontStack(k : Kont) {
   // TODO/generalize: Handle PDCFA
   def push(frame : Frame) : KontStack = {
     val kAddr = kalloca(frame)
-    System.kstore.update(kAddr, KontD(Set(k)))//.asInstanceOf[KontStore]
+    System.kstore.update(kAddr, KontD(Set(k)))
     KontStack(RetKont(frame, kAddr))
-    /*
-    val newKontStore = store.update(kAddr, KontD(Set(k))).asInstanceOf[KontStore]
-    val newKontStack = KontStack(RetKont(frame, kAddr))
-    newKontStack.setStore(newKontStore)
-    newKontStack
-    */
   }
 
   // Pop returns all possible frames beneath the current one.
@@ -81,7 +66,6 @@ case class KontStack(k : Kont) {
       case RetKont(frame, kontAddr) =>
         for (topk <- System.kstore(kontAddr).values) yield {
           val ks = KontStack(topk)
-          //ks.setStore(store)
           (frame, ks)
         }
       case HaltKont => Set()
@@ -91,7 +75,6 @@ case class KontStack(k : Kont) {
   def handleException(exception : Value,
                       stmt : Stmt,
                       fp : FramePointer
-                      /*store : Store*/
                     ) : Set[AbstractState] = {
     //TODO: if the JVM implementation does not enforce the rules on structured locking described in §2.11.10,
     //then if the method of the current frame is a synchronized method and the current thread is not the owner
@@ -121,7 +104,7 @@ case class KontStack(k : Kont) {
         System.store.update(CaughtExceptionFrameAddr(fp), D(Set(exception)))
         // TODO/soundness or performance?: use Hierarchy or FastHierarchy?
         if (Soot.isSubclass(exception.asInstanceOf[ObjectValue].sootClass, caughtType)) {
-          val newState = State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, this.copyKontStack())
+          val newState = State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, this.copy())
           return Set(newState)
         }
       }
@@ -249,12 +232,6 @@ case class KontD(val values: Set[Kont]) {
 abstract sealed class AbstractState {
   def next() : Set[AbstractState]
 
-  /*
-  def setStore(store : Store) = {}
-  def getStore() = Store(mutable.Map())
-  def setKontStore(store : KontStore) = {}
-  def getKontStore() = KontStore(mutable.Map())
-  */
   def getReadAddrs: Set[Addr] = Set()
   def setReadAddrs(s: Set[Addr]) = {}
   def getKReadAddrs: Set[KontAddr] = Set()
@@ -292,15 +269,6 @@ case class State(val stmt : Stmt,
   //      case _ => false
   //   }
 
-  //var store: Store = Store(mutable.Map())
-
-  /*
-  override def setStore(store : Store) : Unit = this.store = store
-  override def getStore(): Store = store
-  override def getKontStore = kontStack.getStore()
-  override def setKontStore(store : KontStore) = kontStack.setStore(store)
-  */
-
   var readAddrs = Set[Addr]()
   override def getReadAddrs = readAddrs
   override def setReadAddrs(s: Set[Addr]) = readAddrs = s
@@ -318,18 +286,6 @@ case class State(val stmt : Stmt,
   override def setKWriteAddrs(s: Set[KontAddr]) = kWriteAddrs = s
 
   override def toPacket() = serializer.State(serializer.Id[serializer.Node](id), stmt.toPacket, fp.toString, kontStack.toString)
-
-  def copyState(stmt: Stmt = stmt,
-                fp: FramePointer = fp,
-                kontStack: KontStack = kontStack
-                /*store: Store = this.store,*/
-                /*kontStore: KontStore = this.kontStack.getStore()*/
-               ): State = {
-    val newState = this.copy(stmt, fp, kontStack)
-    //newState.setStore(store)
-    //newState.setKontStore(kontStore)
-    newState
-  }
 
   // When you call next, you may realize you are going to end up throwing some exceptions
   // TODO/refactor: Consider turning this into a list of exceptions.
@@ -607,10 +563,10 @@ case class State(val stmt : Stmt,
           } else if (meth.isNative) {
             Log.warn("Native method without a snowflake in state "+this.id+". May be unsound. stmt = " + stmt)
             meth.getReturnType match {
-              case _ : VoidType => Set(this.copyState(stmt = nextStmt))
+              case _ : VoidType => Set(this.copy(stmt = nextStmt))
               case _ : PrimType =>
                 System.store.update(destAddr, D.atomicTop)
-                Set(this.copyState(stmt = nextStmt))
+                Set(this.copy(stmt = nextStmt))
               case _ =>
                 Log.error("Native method returns an object. Aborting.")
                 Set()
@@ -726,14 +682,14 @@ case class State(val stmt : Stmt,
           } yield (StaticFieldAddr(f) -> staticInitialValue(f))
           System.store.update(mutable.Map(staticUpdates.toMap.toSeq: _*))
           System.addInitializedClass(sootClass)
-          val newState = this.copyState()
+          val newState = this.copy()
           // TODO: Do we need to use the same JStaticInvokeExpr for repeated calls?
           newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
             java.util.Collections.emptyList()), None, stmt)
         } else {
           // TODO: Do we need to do newStore for static fields?
           System.addInitializedClass(sootClass)
-          Set(this.copyState())
+          Set(this.copy())
         }
 
       case UninitializedSnowflakeObjectException(className) =>
@@ -742,7 +698,7 @@ case class State(val stmt : Stmt,
         //Snowflakes.createObject(store, className, List())
         Snowflakes.createObject(className, List())
         System.addInitializedClass(sootClass)
-        Set(this.copyState())
+        Set(this.copy())
 
       case StringConstantException(string) =>
         Log.info("Initializing string constant: \""+string+"\"")
@@ -752,10 +708,10 @@ case class State(val stmt : Stmt,
         //val bp = StringBasePointer(string)
         val bp = StringBasePointerTop
         createArray(ArrayType.v(CharType.v,1), List(D.atomicTop/*string.length*/),
-                    Set(InstanceFieldAddr(bp, value)))//, store)
+                    Set(InstanceFieldAddr(bp, value)))
           .update(InstanceFieldAddr(bp, hash), D.atomicTop)
-          .update(InstanceFieldAddr(bp, hash32), D.atomicTop).asInstanceOf[Store]
-        Set(this.copyState())
+          .update(InstanceFieldAddr(bp, hash32), D.atomicTop)
+        Set(this.copy())
 
       case UndefinedAddrsException(addrs) =>
         //An empty set of addrs may due to the over approximation of ifStmt.
@@ -764,14 +720,13 @@ case class State(val stmt : Stmt,
     }
   }
 
-  def newExpr(lhsAddr : Set[Addr], sootClass : SootClass/*, store : Store*/) : Store = {
+  def newExpr(lhsAddr : Set[Addr], sootClass : SootClass) = {
     val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
     if (Soot.isJavaLibraryClass(sootClass)  && !sootClass.getPackageName.startsWith("com.sun.net.httpserver") || Snowflakes.contains(md)) {
       val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
       val d = D(Set(obj))
       System.store.update(lhsAddr, d)
-      Snowflakes.createObject(/*store, */sootClass.getName, List())
-      System.store.asInstanceOf[Store]
+      Snowflakes.createObject(sootClass.getName, List())
     }
     else {
       val bp : BasePointer = malloc()
@@ -788,7 +743,6 @@ case class State(val stmt : Stmt,
         if(c.hasSuperclass) initInstanceFields(c.getSuperclass)
       }
       initInstanceFields(sootClass)
-      System.store.asInstanceOf[Store]
     }
   }
 
@@ -804,33 +758,33 @@ case class State(val stmt : Stmt,
           case rhs : NewExpr =>
             val baseType : RefType = rhs.getBaseType()
             val sootClass = baseType.getSootClass()
-            this.newExpr(lhsAddr, sootClass)//, store)
-            Set(this.copyState(stmt = stmt.nextSyntactic))
+            this.newExpr(lhsAddr, sootClass)
+            Set(this.copy(stmt = stmt.nextSyntactic))
           case rhs : NewArrayExpr =>
             //TODO, if base type is Java library class, call Snowflake.createArray
             // Value of lhsAddr will be set to a pointer to the array. (as opposed to the array itself)
             createArray(rhs.getType(), List(eval(rhs.getSize())), lhsAddr)//, store)
-            Set(this.copyState(stmt = stmt.nextSyntactic))
+            Set(this.copy(stmt = stmt.nextSyntactic))
           case rhs : NewMultiArrayExpr =>
             //TODO, if base type is Java library class, call Snowflake.createArray
             //see comment above about lhs addr
             createArray(rhs.getType(), rhs.getSizes().toList map eval, lhsAddr)//, store)
-            Set(this.copyState(stmt = stmt.nextSyntactic))
+            Set(this.copy(stmt = stmt.nextSyntactic))
           case rhs =>
             System.store.update(lhsAddr, eval(rhs))
-            Set(this.copyState(stmt = stmt.nextSyntactic))
+            Set(this.copy(stmt = stmt.nextSyntactic))
         }
 
       case sootStmt : IfStmt =>
         eval(sootStmt.getCondition()) //in case of side effects //TODO/precision evaluate the condition
-        val trueState = this.copyState(stmt = stmt.copy(sootStmt = sootStmt.getTarget()))
-        val falseState = this.copyState(stmt = stmt.nextSyntactic)
+        val trueState = this.copy(stmt = stmt.copy(sootStmt = sootStmt.getTarget()))
+        val falseState = this.copy(stmt = stmt.nextSyntactic)
         Set(trueState, falseState)
 
       case sootStmt : SwitchStmt =>
         //TODO/precision dont take all the switches
         (sootStmt.getDefaultTarget() :: sootStmt.getTargets().toList)
-          .map(t => this.copyState(stmt = stmt.copy(sootStmt = t))).toSet
+          .map(t => this.copy(stmt = stmt.copy(sootStmt = t))).toSet
 
       case sootStmt : ReturnStmt =>
         val evaled = eval(sootStmt.getOp())
@@ -858,12 +812,12 @@ case class State(val stmt : Stmt,
       //   Set(State(stmt.nextSyntactic, fp, store, kontStack, initializedClasses))
       case sootStmt : NopStmt => throw new Exception("Impossible statement: " + sootStmt)
 
-      case sootStmt : GotoStmt => Set(this.copyState(stmt = stmt.copy(sootStmt = sootStmt.getTarget())))
+      case sootStmt : GotoStmt => Set(this.copy(stmt = stmt.copy(sootStmt = sootStmt.getTarget())))
 
       // For now we don't model monitor statements, so we just skip over them
       // TODO/soundness: In the event of multi-threaded code with precise interleaving, this is not sound.
-      case sootStmt : EnterMonitorStmt => Set(this.copyState(stmt = stmt.nextSyntactic))
-      case sootStmt : ExitMonitorStmt => Set(this.copyState(stmt = stmt.nextSyntactic))
+      case sootStmt : EnterMonitorStmt => Set(this.copy(stmt = stmt.nextSyntactic))
+      case sootStmt : ExitMonitorStmt => Set(this.copy(stmt = stmt.nextSyntactic))
 
       // TODO: needs testing
       case sootStmt : ThrowStmt =>
