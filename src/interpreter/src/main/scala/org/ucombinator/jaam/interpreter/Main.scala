@@ -102,7 +102,7 @@ case class KontStack(k : Kont) {
       if (exception == AnyAtomicValue) {
         // if throws something might be a null pointer, then throw a NullPointerException
         val nullPointerException = Soot.getSootClass("java.lang.NullPointerException");
-        return handleException(ObjectValue(nullPointerException, OneCFABasePointer(stmt, fp, FromJava)), stmt, fp)//, store)
+        return handleException(ObjectValue(nullPointerException, OneCFABasePointer(stmt, fp)), stmt, fp)//, store)
       }
       return Set()
     }
@@ -185,7 +185,7 @@ case object FromJava extends From
 
 // BasePointers, when paired with field names, yield the addresses of fields.
 abstract class BasePointer
-case class OneCFABasePointer(stmt : Stmt, fp : FramePointer, from : From) extends BasePointer
+case class OneCFABasePointer(stmt : Stmt, fp : FramePointer) extends BasePointer
 case object InitialBasePointer extends BasePointer
 // Note that due to interning, strings and classes may share base pointers with each other
 // Oh, and class loaders are a headache(!)
@@ -338,8 +338,8 @@ case class State(val stmt : Stmt,
   // Allocates a new frame pointer (currently uses 0CFA)
   def alloca(expr : InvokeExpr, nextStmt : Stmt) : FramePointer = ZeroCFAFramePointer(expr.getMethod)
   // Allocates objects
-  def malloc() : BasePointer = OneCFABasePointer(stmt, fp, FromJava)
-  def mallocFromNative() : BasePointer = OneCFABasePointer(stmt, fp, FromNative)
+  def malloc() : BasePointer = OneCFABasePointer(stmt, fp)
+  //def mallocFromNative() : BasePointer = OneCFABasePointer(stmt, fp)
 
   // Returns all possible addresses of an assignable expression.
   // x = 3; // Should only return 1 address.
@@ -578,15 +578,15 @@ case class State(val stmt : Stmt,
       }
     }
 
+    // Library package names is in resources/libclasses.txt
+    // We put a dot at the end in case the package name is an exact match
+    // We end these with "." so we don't hit similarly named libraries
+    def isLibraryClass(c : SootClass) : Boolean =
+      System.libClasses.exists((c.getPackageName()+".").startsWith(_))
 
     // o.f(3); // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
     def dispatch(self : Option[Value], meth : SootMethod) : Set[AbstractState] = {
-      // We end these with "." so we don't hit similarly named libraries
-      def isLibraryClass(c : SootClass) : Boolean =
-        // We put a dot at the end in case the package name is an exact match
-        System.libClasses.exists((c.getPackageName()+".").startsWith(_))
-
       Log.info("meth: "+meth)
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, self, args)
