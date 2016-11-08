@@ -242,7 +242,7 @@ object HashMapSnowflakes {
           System.store.update(KeysAddr(bp), D(Set()))
           System.store.update(ValuesAddr(bp), D(Set()))
         case _ =>
-          Snowflakes.warn(state.id, null, null)
+          Snowflakes.warn(state.id, None, null, null)
           extraStates ++= NoOpSnowflake(state, nextStmt, Some(self), args)
       }
 
@@ -267,7 +267,7 @@ object HashMapSnowflakes {
               System.store.update(state.addrsOf(stmt.getLeftOp),
                 System.store(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
             case _ =>
-              Snowflakes.warn(state.id, null, null)
+              Snowflakes.warn(state.id, None, null, null)
               extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
           }
       }
@@ -300,7 +300,7 @@ object HashMapSnowflakes {
               System.store.update(state.addrsOf(stmt.getLeftOp),
                   System.store(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
             case _ =>
-              Snowflakes.warn(state.id, null, null)
+              Snowflakes.warn(state.id, None, null, null)
               extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
           }
       }
@@ -324,7 +324,7 @@ object HashMapSnowflakes {
               System.store.update(state.addrsOf(stmt.getLeftOp),
                 D(Set(ObjectValue(EntrySet, EntrySetOfHashMap(bp)))))
             case _ =>
-              Snowflakes.warn(state.id, null, null)
+              Snowflakes.warn(state.id, None, null, null)
               extraStates ++= ReturnObjectSnowflake("java.util.Set")(state, nextStmt, Some(self), args)
           }
       }
@@ -348,7 +348,7 @@ object HashMapSnowflakes {
               System.store.update(state.addrsOf(stmt.getLeftOp),
                 D(Set(ObjectValue(Iterator, IteratorOfEntrySetOfHashMap(bp)))))
             case x =>
-              Snowflakes.warn(state.id, null, null)
+              Snowflakes.warn(state.id, None, null, null)
               extraStates ++= ReturnObjectSnowflake("java.util.Set")(state, nextStmt, Some(self), args)
           }
       }
@@ -373,7 +373,7 @@ object HashMapSnowflakes {
               // D.atomicTop is for the null returned when the key is not found
               System.store.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
             case _ =>
-              Snowflakes.warn(state.id, null, null)
+              Snowflakes.warn(state.id, None, null, null)
               extraStates ++= ReturnSnowflake(D.atomicTop)(state, nextStmt, Some(self), args)
           }
       }
@@ -402,7 +402,7 @@ object HashMapSnowflakes {
               System.store.update(state.addrsOf(stmt.getLeftOp),
                 System.store(Set[Addr](ArrayRefAddr(bp))))
             case _ =>
-              Snowflakes.warn(state.id, null, null)
+              Snowflakes.warn(state.id, None, null, null)
               extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
           }
       }
@@ -424,7 +424,7 @@ object HashMapSnowflakes {
               System.store.update(state.addrsOf(stmt.getLeftOp),
                 System.store(Set[Addr](KeysAddr(bp))).join(D.atomicTop))
             case _ =>
-              Snowflakes.warn(state.id, null, null)
+              Snowflakes.warn(state.id, None, null, null)
               extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
           }
       }
@@ -446,7 +446,7 @@ object HashMapSnowflakes {
               System.store.update(state.addrsOf(stmt.getLeftOp),
                 System.store(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
             case _ =>
-              Snowflakes.warn(state.id, null, null)
+              Snowflakes.warn(state.id, None, null, null)
               extraStates ++= ReturnObjectSnowflake("java.lang.Object")(state, nextStmt, Some(self), args)
           }
       }
@@ -477,7 +477,7 @@ object ArrayListSnowflakes {
           System.store.update(ArrayLengthAddr(bp), D.atomicTop)
           System.store.update(ArrayRefAddr(bp), D.atomicTop) // D.atomicTop is so we don't get undefiend addrs exception
         case _ =>
-          Snowflakes.warn(state.id, null, null)
+          Snowflakes.warn(state.id, None, null, null)
           extraStates ++= NoOpSnowflake(state, nextStmt, Some(self), args)
       }
 
@@ -499,7 +499,7 @@ object ArrayListSnowflakes {
             case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
               System.store.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
             case _ =>
-              Snowflakes.warn(state.id, null, null)
+              Snowflakes.warn(state.id, None, null, null)
               extraStates ++= ReturnSnowflake(D.atomicTop)(state, nextStmt, Some(self), args)
           }
       }
@@ -530,7 +530,7 @@ object ArrayListSnowflakes {
               System.store.update(state.addrsOf(stmt.getLeftOp),
                 D(Set(ObjectValue(Iterator, IteratorOfArrayList(bp)))))
             case _ =>
-              Snowflakes.warn(state.id, null, null)
+              Snowflakes.warn(state.id, None, null, null)
               extraStates ++= ReturnObjectSnowflake("java.util.Iterator")(state, nextStmt, Some(self), args)
           }
       }
@@ -576,8 +576,11 @@ object ClassSnowflakes {
 
 object Snowflakes {
 
-  def warn(id : Int, stmt : Stmt, meth : SootMethod) {
-    Log.warn("Using generic snowflake for Java library in state "+id+". May be unsound. stmt = " + stmt + " method = " + meth)
+  def warn(id : Int, self: Option[Value], stmt : Stmt, meth : SootMethod) {
+    Log.warn("Using generic snowflake for Java library in state "+id+". May be unsound." +
+      " self = " + self +
+      " stmt = " + stmt +
+      " method = " + meth)
   }
 
   val table = mutable.Map.empty[MethodDescription, SnowflakeHandler]
@@ -646,15 +649,15 @@ object Snowflakes {
                               else { Set(InstanceFieldAddr(bp, f)) }
 
       fieldType match {
-        case pt: PrimType => System.store.update(addrs, D.atomicTop).asInstanceOf[Store]
+        case pt: PrimType => System.store.update(addrs, D.atomicTop)//.asInstanceOf[Store]
         case at: ArrayType =>
           val dim = List.fill(at.numDimensions)(D.atomicTop)
-          System.store.join(createArray(at, dim, addrs, bp)).asInstanceOf[Store]
+          System.store.join(createArray(at, dim, addrs, bp))//.asInstanceOf[Store]
         case rt: RefType =>
           val fieldClassName = rt.getClassName
           if (!processing.contains(fieldClassName)) {
             System.store.update(addrs, D(Set(ObjectValue(Soot.getSootClass(fieldClassName),
-              SnowflakeBasePointer(className))))).asInstanceOf[Store]
+              SnowflakeBasePointer(className)))))//.asInstanceOf[Store]
             createObject(/*store, */fieldClassName, processing++List(className))
           }
         case _ =>

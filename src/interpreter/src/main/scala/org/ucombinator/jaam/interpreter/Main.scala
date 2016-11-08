@@ -65,7 +65,7 @@ case class KontStack(k : Kont) {
   // TODO/generalize: Handle PDCFA
   def push(frame : Frame) : KontStack = {
     val kAddr = kalloca(frame)
-    System.kstore.update(kAddr, KontD(Set(k))).asInstanceOf[KontStore]
+    System.kstore.update(kAddr, KontD(Set(k)))//.asInstanceOf[KontStore]
     KontStack(RetKont(frame, kAddr))
     /*
     val newKontStore = store.update(kAddr, KontD(Set(k))).asInstanceOf[KontStore]
@@ -535,7 +535,10 @@ case class State(val stmt : Stmt,
       case expr : StaticInvokeExpr =>
         None
       case expr : InstanceInvokeExpr =>
-        Some((eval(expr.getBase()), expr.isInstanceOf[SpecialInvokeExpr]))
+        val d = eval(expr.getBase)
+        Log.info("expr.getBase: " + expr.getBase)
+        Log.info("base size: " + d.values.size)
+        Some((d, expr.isInstanceOf[SpecialInvokeExpr]))
     }
     Log.info("base: "+base)
     val method = expr.getMethod()
@@ -597,7 +600,7 @@ case class State(val stmt : Stmt,
               self.isDefined &&
               self.get.isInstanceOf[ObjectValue] &&
               self.get.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
-            Snowflakes.warn(this.id, stmt, meth)
+            Snowflakes.warn(this.id, self, stmt, meth)
             if (meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver"))
               Log.warn("Snowflake due to Abstract: "+meth)
             DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
@@ -825,7 +828,7 @@ case class State(val stmt : Stmt,
         Set(trueState, falseState)
 
       case sootStmt : SwitchStmt =>
-        //TODO/prrecision dont take all the switches
+        //TODO/precision dont take all the switches
         (sootStmt.getDefaultTarget() :: sootStmt.getTargets().toList)
           .map(t => this.copyState(stmt = stmt.copy(sootStmt = t))).toSet
 
