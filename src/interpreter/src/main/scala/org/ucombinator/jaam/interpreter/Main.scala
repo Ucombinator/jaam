@@ -768,7 +768,7 @@ case class State(val stmt : Stmt,
           case rhs : NewMultiArrayExpr =>
             //TODO, if base type is Java library class, call Snowflake.createArray
             //see comment above about lhs addr
-            createArray(rhs.getType(), rhs.getSizes().toList map eval, lhsAddr)//, store)
+            createArray(rhs.getType(), rhs.getSizes().toList map eval, lhsAddr)
             Set(this.copy(stmt = stmt.nextSyntactic))
           case rhs =>
             System.store.update(lhsAddr, eval(rhs))
@@ -845,7 +845,6 @@ object State {
 
   def inject(stmt : Stmt) : State = {
     val ks = KontStack(HaltKont)
-    //ks.setStore(KontStore(mutable.Map()))
     State(stmt, initialFramePointer, ks)
   }
 }
@@ -912,9 +911,6 @@ object System {
   def addToReadKTable = addToMultiMap(readKTable)(_, _)
 
   def next(state: AbstractState): Set[AbstractState] = {
-    //state.setStore(store)
-    //state.setKontStore(kstore)
-
     trunOnRecording()
     val nexts = state.next()
     if (nexts.size == 0) {
@@ -1034,7 +1030,6 @@ object Main {
     outSerializer.write(initialState.toPacket)
 
     while (todo.nonEmpty) {
-      //TODO refactor store widening code
       val current = todo.head
       todo = todo.tail
       Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
