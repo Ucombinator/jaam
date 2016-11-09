@@ -1073,6 +1073,18 @@ object Main {
     }
 
     outSerializer.close()
+
+    // Store summary, print out the number of values in a single address,
+    // and how many address have that number of values.
+    val summary = System.store.map.foldLeft(Map[Int, Int]()) {
+      case (acc, (k, v)) =>
+        val size = v.values.size
+        if (acc.contains(size)) acc + (size -> (acc(size)+1))
+        else acc + (size -> 1)
+    }
+    val sorted = summary.toList.sortWith(_._1 > _._1)
+    sorted.foreach { case (size, n) => println(size + " \t " + n) }
+
     Log.info("Done!")
   }
 }
