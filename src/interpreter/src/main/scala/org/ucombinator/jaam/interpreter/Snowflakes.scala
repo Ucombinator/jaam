@@ -564,7 +564,7 @@ object ClassSnowflakes {
           state2.handleInvoke(expr, None)
           } catch {
             // If it doesn't have a no argument, then we must be on a spurious flow
-            case _ => Set()
+            case _: Exception => Set()
           }
         case _ => Set()
       }
