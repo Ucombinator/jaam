@@ -456,8 +456,6 @@ case class State(val stmt : Stmt,
           } else if (v.isInstanceOf[ObjectValue] && v.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer] &&
             Soot.isSubType(castedType, v.asInstanceOf[ObjectValue].sootClass.getType)
           ) {
-            //          } else if (v.isInstanceOf[SnowflakeInterfaceValue]
-            //            && Soot.isSubType(castedType, v.asInstanceOf[SnowflakeInterfaceValue].sootClass.getType)) {
             // Snowflakes can be down cast, but they might throw an exception
             val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
             exceptions = exceptions.join(classCastException)
@@ -543,7 +541,8 @@ case class State(val stmt : Stmt,
     def isLibraryClass(c : SootClass) : Boolean =
       System.libClasses.exists((c.getPackageName()+".").startsWith(_))
 
-    // o.f(3); // In this case, c is the type of o. m is f. receivers is the result of eval(o).
+    // o.f(3);
+    // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
     def dispatch(self : Option[Value], meth : SootMethod) : Set[AbstractState] = {
       Log.info("meth: "+meth)
@@ -560,7 +559,8 @@ case class State(val stmt : Stmt,
             if (meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver"))
               Log.warn("Snowflake due to Abstract: "+meth)
             DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
-          } else if (meth.isNative) {
+          }
+          else if (meth.isNative) {
             Log.warn("Native method without a snowflake in state "+this.id+". May be unsound. stmt = " + stmt)
             meth.getReturnType match {
               case _ : VoidType => Set(this.copy(stmt = nextStmt))
@@ -575,14 +575,11 @@ case class State(val stmt : Stmt,
           else {
             // TODO/optimize: filter out incorrect class types
             val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
-            //var newStore = store // TODO: currently update the store directly, not using newStore
             self match {
-              //case Some(s) => newStore.update(ThisFrameAddr(newFP), D(Set(s)))
               case Some(s) => System.store.update(ThisFrameAddr(newFP), D(Set(s)))
               case None => {} // TODO: throw exception here?
             }
             for (i <- 0 until args.length) {
-              //newStore.update(ParameterFrameAddr(newFP, i), args(i))
               System.store.update(ParameterFrameAddr(newFP, i), args(i))
             }
 
@@ -668,14 +665,6 @@ case class State(val stmt : Stmt,
         val meth = sootClass.getMethodByNameUnsafe(SootMethod.staticInitializerName)
 
         if (meth != null) {
-          /*
-          if (Soot.isJavaLibraryClass(meth.getDeclaringClass)) {
-            val newState = this.copyState(initializedClasses=initializedClasses+sootClass)
-            newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
-              java.util.Collections.emptyList()), None, stmt)
-          }
-          else {
-          */
           // Initialize all static fields per JVM 5.4.2 and 5.5
           val staticUpdates = for {
             f <- sootClass.getFields(); if f.isStatic
@@ -695,7 +684,6 @@ case class State(val stmt : Stmt,
       case UninitializedSnowflakeObjectException(className) =>
         Log.info("Initializing snowflake class "+className)
         val sootClass = Soot.getSootClass(className)
-        //Snowflakes.createObject(store, className, List())
         Snowflakes.createObject(className, List())
         System.addInitializedClass(sootClass)
         Set(this.copy())
@@ -705,7 +693,6 @@ case class State(val stmt : Stmt,
         val value = Soot.classes.String.getFieldByName("value")
         val hash = Soot.classes.String.getFieldByName("hash")
         val hash32 = Soot.classes.String.getFieldByName("hash32")
-        //val bp = StringBasePointer(string)
         val bp = StringBasePointerTop
         createArray(ArrayType.v(CharType.v,1), List(D.atomicTop/*string.length*/),
                     Set(InstanceFieldAddr(bp, value)))
