@@ -39,7 +39,7 @@ class AnalysisNode(var node : Node = null, override val id : Id[Node]) extends N
   }
 
   def getIndex(): Int = {
-    if(id != -1)
+    if(id.asInstanceOf[Int] != -1)
       id.asInstanceOf[Int]
     else if(node != null)
       node.id.id
