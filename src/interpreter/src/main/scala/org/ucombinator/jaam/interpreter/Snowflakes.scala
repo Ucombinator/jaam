@@ -73,7 +73,6 @@ case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
         D(Set(ObjectValue(Soot.getSootClass(name), SnowflakeBasePointer(name)))))
       case stmt : InvokeStmt => //System.store
     }
-    //System.store.join(Snowflakes.createObject(name, List()))
     Snowflakes.createObject(name, List())
     Set[AbstractState](state.copy(stmt = nextStmt))
   }
@@ -131,7 +130,6 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
                 System.store.update(Set[Addr](ArrayRefAddr(bp)), D(newValues))
               case _ =>
                 Log.warn("Can not assign an ArrayType value to non-ArrayType. stmt: " + stmt + " meth: " + meth)
-                //throw new RuntimeException("Can not assign an ArrayType value to non-ArrayType. stmt: " + stmt + " meth: " + meth)
             }
           case _ =>
             System.store.update(Set[Addr](ArrayRefAddr(bp)), D(values))
@@ -144,9 +142,9 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
             val defClass = stmt.getLeftOp.getType match {
               case rt : RefType => rt.getSootClass
               case _ =>
-                //Log.warn("Can not assign a RefType value to non-RefType. stmt: " + stmt + " meth: " + meth)
                 throw new RuntimeException("Can not assign a RefType value to non-RefType. stmt: " + stmt + " meth: " + meth)
             }
+
             val values: Set[Value] = System.store(GlobalSnowflakeAddr).values
             val newValues = values.filter(_ match {
               case ObjectValue(sootClass, bp) => Soot.isSubclass(sootClass, defClass)
@@ -629,7 +627,7 @@ object Snowflakes {
     D(Set(ObjectValue(Soot.getSootClass(name), SnowflakeBasePointer(name))))
   }
 
-  def createObject(/*store: Store, */className: String, processing : List[String]) : Store = {
+  def createObject(className: String, processing : List[String]) : Store = {
     if (initializedObjectValues.contains(className)) {
       return System.store
     }
@@ -639,7 +637,7 @@ object Snowflakes {
 
     if (sootClass.hasSuperclass) {
       // TODO: re-order ++ or document why this order
-      createObject(/*store, */sootClass.getSuperclass.getName, processing++List(className))
+      createObject(sootClass.getSuperclass.getName, processing++List(className))
     }
 
     for (f <- fields) {
@@ -649,22 +647,21 @@ object Snowflakes {
                               else { Set(InstanceFieldAddr(bp, f)) }
 
       fieldType match {
-        case pt: PrimType => System.store.update(addrs, D.atomicTop)//.asInstanceOf[Store]
+        case pt: PrimType => System.store.update(addrs, D.atomicTop)
         case at: ArrayType =>
           val dim = List.fill(at.numDimensions)(D.atomicTop)
-          System.store.join(createArray(at, dim, addrs, bp))//.asInstanceOf[Store]
+          System.store.join(createArray(at, dim, addrs, bp))
         case rt: RefType =>
           val fieldClassName = rt.getClassName
           if (!processing.contains(fieldClassName)) {
             System.store.update(addrs, D(Set(ObjectValue(Soot.getSootClass(fieldClassName),
-              SnowflakeBasePointer(className)))))//.asInstanceOf[Store]
-            createObject(/*store, */fieldClassName, processing++List(className))
+              SnowflakeBasePointer(className)))))
+            createObject(fieldClassName, processing++List(className))
           }
         case _ =>
       }
     }
 
-    //initializedObjectValues = initializedObjectValues + (className -> store)
     initializedObjectValues = className::initializedObjectValues
     System.store
   }
