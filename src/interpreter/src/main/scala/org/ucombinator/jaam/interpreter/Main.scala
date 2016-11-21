@@ -248,8 +248,7 @@ object GlobalD extends D(Set[Value]()) {
   def update(vs: Set[Value]): D = {
     val oldSize = globalValues.size
     globalValues ++= vs
-    if (oldSize == globalValues.size) { modified = false }
-    else { modified = true }
+    modified = (oldSize != globalValues.size)
 
     /*
     val keys = map.keys
