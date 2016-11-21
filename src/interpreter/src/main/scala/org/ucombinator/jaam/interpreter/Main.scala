@@ -232,8 +232,18 @@ object D {
 object GlobalD extends D(Set[Value]()) {
   val globalValues: mutable.Set[Value] = mutable.Set[Value]()
   val map = mutable.Map[SootClass, mutable.Set[Value]]()
-  override def getValues: Set[Value] = globalValues.toSet
   var modified: Boolean = false
+
+  var size: Int = 0
+  var cachedValues: Set[Value] = Set[Value]()
+
+  override def getValues: Set[Value] = {
+    if (size != globalValues.size) {
+      cachedValues = globalValues.toSet
+      size = cachedValues.size
+    }
+    cachedValues
+  }
 
   def update(vs: Set[Value]): D = {
     val oldSize = globalValues.size
