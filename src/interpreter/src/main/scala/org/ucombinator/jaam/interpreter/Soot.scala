@@ -128,7 +128,7 @@ object Soot {
   def isPrimitive(t : Type) : Boolean = !t.isInstanceOf[RefLikeType]
 
   def canStoreClass(child: SootClass, parent: SootClass): Boolean = {
-    Scene.v().getOrMakeFastHierarchy().canStoreClass(child, parent)
+    Scene.v().getOrMakeFastHierarchy().canStoreType(child.getType, parent.getType)
   }
 
   def isSubclass(sub : SootClass, sup : SootClass) : Boolean = {

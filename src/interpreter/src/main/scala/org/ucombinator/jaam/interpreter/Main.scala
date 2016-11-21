@@ -264,6 +264,7 @@ object GlobalD extends D(Set[Value]()) {
     this
   }
 
+  // Not being used
   def get(baseClass: SootClass): Set[Value] = {
     val newValues = map.get(baseClass) match {
       case None =>

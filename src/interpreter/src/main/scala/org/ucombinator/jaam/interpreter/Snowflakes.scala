@@ -142,7 +142,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
         val states = ReturnObjectSnowflake(rt.getClassName)(state, nextStmt, self, args)
         state.stmt.sootStmt match {
           case stmt : DefinitionStmt =>
-            val defClass = stmt.getLeftOp.getType match {
+            val parentClass = stmt.getLeftOp.getType match {
               case rt : RefType => rt.getSootClass
               case _ =>
                 throw new RuntimeException("Can not assign a RefType value to non-RefType. stmt: " + stmt + " meth: " + meth)
@@ -150,10 +150,10 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
 
             val values: Set[Value] = System.store(GlobalSnowflakeAddr).getValues
             val newValues = values.filter(_ match {
-              case ObjectValue(sootClass, bp) => Soot.isSubclass(sootClass, defClass)
+              case ObjectValue(sootClass, bp) => Soot.isSubclass(sootClass, parentClass)
               case _ => false
             })
-            //val newValues = GlobalD.get(defClass)
+            //val newValues = GlobalD.get(parentClass)
 
             //Log.debug(System.store(GlobalSnowflakeAddr).toString)
             System.store.update(state.addrsOf(stmt.getLeftOp), D(newValues))
