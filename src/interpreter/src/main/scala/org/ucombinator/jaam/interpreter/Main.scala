@@ -48,7 +48,7 @@ case class StringConstantException(string : String) extends RuntimeException
 case class UndefinedAddrsException[A <: Addr](addrs : Set[A]) extends RuntimeException
 
 // A continuation store paired with a continuation
-case class KontStack(k : Kont) {
+case class KontStack(k : Kont) extends CachedHashCode {
   // TODO/generalize: Add widening in push and pop (to support PDCFA)
   // TODO/generalize: We need the control pointer of the target state to HANDLE PDCFA.
   def kalloca(frame : Frame) = OneCFAKontAddr(frame.fp)
@@ -124,17 +124,17 @@ case class KontStack(k : Kont) {
 
 case class Frame( val stmt : Stmt,
                   val fp : FramePointer,
-                  val destAddr : Option[Set[Addr]]) {
+                  val destAddr : Option[Set[Addr]]) extends CachedHashCode {
   def acceptsReturnValue() : Boolean = !destAddr.isEmpty
 }
 
-abstract class Kont
+abstract class Kont extends CachedHashCode
 
 case class RetKont( val frame : Frame,
                     val k : KontAddr
                   ) extends Kont
 
-object HaltKont extends Kont
+case object HaltKont extends Kont
 
 //----------- ABSTRACT VALUES -----------------
 
@@ -156,7 +156,7 @@ case class ArrayValue(val sootType : Type, val bp : BasePointer) extends Value
 //----------------- POINTERS ------------------
 
 // FramePointers, when paired with variable names, yield the addresses of variables.
-abstract class FramePointer
+abstract class FramePointer extends CachedHashCode
 case object InvariantFramePointer extends FramePointer // TODO: delete this?  Is seems unused
 case class ZeroCFAFramePointer(val method : SootMethod) extends FramePointer
 case class OneCFAFramePointer(val method : SootMethod, val nextStmt : Stmt) extends FramePointer
@@ -194,8 +194,10 @@ case class ClassBasePointer(val name : String) extends BasePointer
 abstract class KontAddr extends Addr
 case class OneCFAKontAddr(val fp : FramePointer) extends KontAddr
 
-abstract class Addr
+abstract class Addr extends CachedHashCode
 abstract class FrameAddr extends Addr
+
+case object GlobalSnowflakeAddr extends Addr
 
 // For local variables
 case class LocalFrameAddr(val fp : FramePointer, val register : Local) extends FrameAddr

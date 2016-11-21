@@ -78,8 +78,6 @@ case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
   }
 }
 
-object GlobalSnowflakeAddr extends Addr
-
 case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
   def typesToDs(types: List[Type]): List[D] = {
     def typeToD(ty: Type): D = {
