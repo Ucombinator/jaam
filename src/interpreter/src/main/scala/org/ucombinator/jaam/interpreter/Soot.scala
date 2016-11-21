@@ -128,12 +128,13 @@ object Soot {
   def isPrimitive(t : Type) : Boolean = !t.isInstanceOf[RefLikeType]
 
   def isSubclass(sub : SootClass, sup : SootClass) : Boolean = {
+    val v = Scene.v()
     return sub == sup ||
      ((sub.isInterface, sup.isInterface) match {
-      case (false, false) => Scene.v().getActiveHierarchy.isClassSubclassOf(sub, sup)
-      case (true, true) => Scene.v().getActiveHierarchy.isInterfaceSubinterfaceOf(sub, sup)
+      case (false, false) => v.getActiveHierarchy.isClassSubclassOf(sub, sup)
+      case (true, true) => v.getActiveHierarchy.isInterfaceSubinterfaceOf(sub, sup)
       case (false, true) => {
-        val h = Scene.v().getActiveHierarchy()
+        val h = v.getActiveHierarchy()
         h.getSuperclassesOfIncluding(sub)
           .exists(_.getInterfaces().exists(h.getSuperinterfacesOfIncluding(_).exists(_ == sup)))
       }
