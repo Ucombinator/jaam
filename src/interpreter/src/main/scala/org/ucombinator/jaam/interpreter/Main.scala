@@ -637,10 +637,24 @@ case class State(val stmt : Stmt,
         System.checkInitializedClasses(method.getDeclaringClass())
         dispatch(None, method)
       case Some((b, isSpecial)) =>
-        ((for (v <- b.getValues) yield {
+        // SnowflakeBasePointer objects only need to dispatch once,
+        // because eventually they will be handle by DefaultReturnSnowflake
+        val (sfBpObjects, normalObjects) = b.getValues.partition(_ match {
+          case ObjectValue(_, SnowflakeBasePointer(_)) => true
+          case _ => false
+        })
+
+        val sfStates = if (sfBpObjects.nonEmpty) {
+          val d = GlobalD.update(sfBpObjects)
+          System.store.strongUpdate(GlobalSnowflakeAddr, d, GlobalD.modified)
+          dispatch(Some(sfBpObjects.head), method)
+        } else { Set () }
+
+        ((for (v <- normalObjects) yield {
           v match {
-            case ObjectValue(_, SnowflakeBasePointer(_)) =>
-              dispatch(Some(v), method)
+            //case ObjectValue(_, SnowflakeBasePointer(_)) =>
+            //dispatch(Some(v), method)
+            //  Set()
             case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, method.getDeclaringClass) =>
               val objectClass = if (isSpecial) null else sootClass
               val meth = (if (isSpecial) method else overrides(objectClass, method).head)
@@ -649,7 +663,7 @@ case class State(val stmt : Stmt,
               dispatch(Some(v), method)
             case _ => Set()
           }
-        }) :\ Set[AbstractState]())(_ ++ _) // TODO: better way to do this?
+        }) :\ Set[AbstractState]())(_ ++ _) ++ sfStates// TODO: better way to do this?
     }
   }
 
