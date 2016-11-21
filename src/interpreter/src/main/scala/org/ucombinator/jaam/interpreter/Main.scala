@@ -103,9 +103,8 @@ case class KontStack(k : Kont) extends CachedHashCode {
 
         System.store.update(CaughtExceptionFrameAddr(fp), D(Set(exception)))
         // TODO/soundness or performance?: use Hierarchy or FastHierarchy?
-        if (Soot.isSubclass(exception.asInstanceOf[ObjectValue].sootClass, caughtType)) {
-          val newState = State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, this.copy())
-          return Set(newState)
+        if (Soot.canStoreClass(exception.asInstanceOf[ObjectValue].sootClass, caughtType)) {
+          return Set(State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, this.copy()))
         }
       }
 
@@ -255,7 +254,7 @@ object GlobalD extends D(Set[Value]()) {
     for (v <- vs) {
       v match {
         case ObjectValue(sootClass, bp) =>
-          for (k <- keys if (Soot.isSubclass(sootClass, k)))
+          for (k <- keys if (Soot.canStoreClass(sootClass, k)))
             map(k) += v
         case _ =>
       }
@@ -269,7 +268,7 @@ object GlobalD extends D(Set[Value]()) {
     val newValues = map.get(baseClass) match {
       case None =>
         val valuesOfSootClass = globalValues.filter(_ match {
-          case ObjectValue(sootClass, bp) => Soot.isSubclass(sootClass, baseClass)
+          case ObjectValue(sootClass, bp) => Soot.canStoreClass(sootClass, baseClass)
           case _ => false
         })
         map += (baseClass -> valuesOfSootClass)
@@ -497,10 +496,10 @@ case class State(val stmt : Stmt,
             case _ : AtomicValue => t.isInstanceOf[PrimType]
             case ObjectValue(sootClass, _) =>
               t match {
-                case rt : RefType => Soot.isSubclass(sootClass, rt.getSootClass)
+                case rt : RefType => Soot.canStoreClass(sootClass, rt.getSootClass)
                 case _ => false
               }
-            case ArrayValue(sootType, _) => Soot.isSubType(sootType, t)
+            case ArrayValue(sootType, _) => Soot.canStoreType(sootType, t)
           }
         }
         var d2 = D(Set())
@@ -509,7 +508,7 @@ case class State(val stmt : Stmt,
             // Up casts are always legal
             d2 = d2.join(D(Set((v))))
           } else if (v.isInstanceOf[ObjectValue] && v.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer] &&
-            Soot.isSubType(castedType, v.asInstanceOf[ObjectValue].sootClass.getType)
+            Soot.canStoreType(castedType, v.asInstanceOf[ObjectValue].sootClass.getType)
           ) {
             // Snowflakes can be down cast, but they might throw an exception
             val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
@@ -667,7 +666,7 @@ case class State(val stmt : Stmt,
             //case ObjectValue(_, SnowflakeBasePointer(_)) =>
             //dispatch(Some(v), method)
             //  Set()
-            case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, method.getDeclaringClass) =>
+            case ObjectValue(sootClass, bp) if Soot.canStoreClass(sootClass, method.getDeclaringClass) =>
               val objectClass = if (isSpecial) null else sootClass
               val meth = (if (isSpecial) method else overrides(objectClass, method).head)
               dispatch(Some(v), meth)

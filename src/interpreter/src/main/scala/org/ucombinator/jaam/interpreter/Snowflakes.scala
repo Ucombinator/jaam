@@ -150,7 +150,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
 
             val values: Set[Value] = System.store(GlobalSnowflakeAddr).getValues
             val newValues = values.filter(_ match {
-              case ObjectValue(sootClass, bp) => Soot.isSubclass(sootClass, parentClass)
+              case ObjectValue(sootClass, bp) => Soot.canStoreClass(sootClass, parentClass)
               case _ => false
             })
             //val newValues = GlobalD.get(parentClass)
@@ -171,7 +171,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
     } yield {
       val newValues = arg.getValues.filter(_ match {
         case ObjectValue(objClass, bp) =>
-          !Soot.isJavaLibraryClass(objClass) && Soot.isSubclass(objClass, sootClass)
+          !Soot.isJavaLibraryClass(objClass) && Soot.canStoreClass(objClass, sootClass)
         case _ => false
       })
 
@@ -240,7 +240,7 @@ object HashMapSnowflakes {
 
       var extraStates = Set[AbstractState]()
       self match {
-        case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
+        case ObjectValue(sootClass, bp) if Soot.canStoreClass(sootClass, HashMap) =>
           System.store.update(KeysAddr(bp), D(Set()))
           System.store.update(ValuesAddr(bp), D(Set()))
         case _ =>
@@ -264,7 +264,7 @@ object HashMapSnowflakes {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
-            case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
+            case ObjectValue(sootClass, bp) if Soot.canStoreClass(sootClass, HashMap) =>
               // D.atomicTop is for the null returned when the key had no previous assignment
               System.store.update(state.addrsOf(stmt.getLeftOp),
                 System.store(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
@@ -277,7 +277,7 @@ object HashMapSnowflakes {
       val key = args(0)
       val value = args(1)
       self match {
-        case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
+        case ObjectValue(sootClass, bp) if Soot.canStoreClass(sootClass, HashMap) =>
           System.store.update(KeysAddr(bp), key)
           System.store.update(ValuesAddr(bp), value)
         case _ => {} // Already taken care of in the first half of this function
@@ -297,7 +297,7 @@ object HashMapSnowflakes {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
-            case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
+            case ObjectValue(sootClass, bp) if Soot.canStoreClass(sootClass, HashMap) =>
               // D.atomicTop is for the null returned when the key is not found
               System.store.update(state.addrsOf(stmt.getLeftOp),
                   System.store(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
@@ -321,7 +321,7 @@ object HashMapSnowflakes {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
-            case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, HashMap) =>
+            case ObjectValue(sootClass, bp) if Soot.canStoreClass(sootClass, HashMap) =>
               // D.atomicTop is for the null returned when the key is not found
               System.store.update(state.addrsOf(stmt.getLeftOp),
                 D(Set(ObjectValue(EntrySet, EntrySetOfHashMap(bp)))))
@@ -345,7 +345,7 @@ object HashMapSnowflakes {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
-            case ObjectValue(sootClass, EntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, EntrySet) =>
+            case ObjectValue(sootClass, EntrySetOfHashMap(bp)) if Soot.canStoreClass(sootClass, EntrySet) =>
               // D.atomicTop is for the null returned when the key is not found
               System.store.update(state.addrsOf(stmt.getLeftOp),
                 D(Set(ObjectValue(Iterator, IteratorOfEntrySetOfHashMap(bp)))))
@@ -368,10 +368,10 @@ object HashMapSnowflakes {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
-            case ObjectValue(sootClass, IteratorOfEntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, Iterator) =>
+            case ObjectValue(sootClass, IteratorOfEntrySetOfHashMap(bp)) if Soot.canStoreClass(sootClass, Iterator) =>
               // D.atomicTop is for the null returned when the key is not found
               System.store.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
-            case ObjectValue(sootClass, ArrayListSnowflakes.IteratorOfArrayList(bp)) if Soot.isSubclass(sootClass, Iterator) =>
+            case ObjectValue(sootClass, ArrayListSnowflakes.IteratorOfArrayList(bp)) if Soot.canStoreClass(sootClass, Iterator) =>
               // D.atomicTop is for the null returned when the key is not found
               System.store.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
             case _ =>
@@ -394,11 +394,11 @@ object HashMapSnowflakes {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
-            case ObjectValue(sootClass, IteratorOfEntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, Iterator) =>
+            case ObjectValue(sootClass, IteratorOfEntrySetOfHashMap(bp)) if Soot.canStoreClass(sootClass, Iterator) =>
               // D.atomicTop is for the null returned when the key is not found
               System.store.update(state.addrsOf(stmt.getLeftOp),
                 D(Set(ObjectValue(Entry, EntryOfIteratorOfEntrySetOfHashMap(bp)))))
-            case ObjectValue(sootClass, ArrayListSnowflakes.IteratorOfArrayList(bp)) if Soot.isSubclass(sootClass, Iterator) =>
+            case ObjectValue(sootClass, ArrayListSnowflakes.IteratorOfArrayList(bp)) if Soot.canStoreClass(sootClass, Iterator) =>
               // D.atomicTop is for the null returned when the key is not found
               // TODO: throw exception
               System.store.update(state.addrsOf(stmt.getLeftOp),
@@ -421,7 +421,7 @@ object HashMapSnowflakes {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
-            case ObjectValue(sootClass, EntryOfIteratorOfEntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, Entry) =>
+            case ObjectValue(sootClass, EntryOfIteratorOfEntrySetOfHashMap(bp)) if Soot.canStoreClass(sootClass, Entry) =>
               // D.atomicTop is for the null returned when the key is not found
               System.store.update(state.addrsOf(stmt.getLeftOp),
                 System.store(Set[Addr](KeysAddr(bp))).join(D.atomicTop))
@@ -443,7 +443,7 @@ object HashMapSnowflakes {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
-            case ObjectValue(sootClass, EntryOfIteratorOfEntrySetOfHashMap(bp)) if Soot.isSubclass(sootClass, Entry) =>
+            case ObjectValue(sootClass, EntryOfIteratorOfEntrySetOfHashMap(bp)) if Soot.canStoreClass(sootClass, Entry) =>
               // D.atomicTop is for the null returned when the key is not found
               System.store.update(state.addrsOf(stmt.getLeftOp),
                 System.store(Set[Addr](ValuesAddr(bp))).join(D.atomicTop))
@@ -475,7 +475,7 @@ object ArrayListSnowflakes {
       //  this.refs = {}
       var extraStates = Set[AbstractState]()
       self match {
-        case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
+        case ObjectValue(sootClass, bp) if Soot.canStoreClass(sootClass, ArrayList) =>
           System.store.update(ArrayLengthAddr(bp), D.atomicTop)
           System.store.update(ArrayRefAddr(bp), D.atomicTop) // D.atomicTop is so we don't get undefiend addrs exception
         case _ =>
@@ -498,7 +498,7 @@ object ArrayListSnowflakes {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
-            case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
+            case ObjectValue(sootClass, bp) if Soot.canStoreClass(sootClass, ArrayList) =>
               System.store.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
             case _ =>
               Snowflakes.warn(state.id, None, null, null)
@@ -508,7 +508,7 @@ object ArrayListSnowflakes {
 
       val value = args(0)
       self match {
-        case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
+        case ObjectValue(sootClass, bp) if Soot.canStoreClass(sootClass, ArrayList) =>
           System.store.update(ArrayRefAddr(bp), value)
         case _ => {} // already handled by the code in the first half of this function
       }
@@ -527,7 +527,7 @@ object ArrayListSnowflakes {
         case stmt : InvokeStmt => {}
         case stmt : DefinitionStmt =>
           self match {
-            case ObjectValue(sootClass, bp) if Soot.isSubclass(sootClass, ArrayList) =>
+            case ObjectValue(sootClass, bp) if Soot.canStoreClass(sootClass, ArrayList) =>
               // D.atomicTop is for the null returned when the key is not found
               System.store.update(state.addrsOf(stmt.getLeftOp),
                 D(Set(ObjectValue(Iterator, IteratorOfArrayList(bp)))))
@@ -731,8 +731,8 @@ object Snowflakes {
           val newFP = ZeroCFAFramePointer(meth)
           val handlerStates: Set[AbstractState] =
             for (ObjectValue(sootClass, bp) <- handlers
-              //if (Soot.isSubclass(sootClass, absHttpHandler) && sootClass.isConcrete)) yield {
-              if Soot.isSubclass(sootClass, absHttpHandler)) yield {
+              //if (Soot.canStoreClass(sootClass, absHttpHandler) && sootClass.isConcrete)) yield {
+              if Soot.canStoreClass(sootClass, absHttpHandler)) yield {
               System.store.update(ThisFrameAddr(newFP), D(Set(ObjectValue(sootClass, bp))))
               System.store.update(ParameterFrameAddr(newFP, 0),
                 D(Set(ObjectValue(Soot.getSootClass(httpsExchange), SnowflakeBasePointer(httpsExchange)))))
