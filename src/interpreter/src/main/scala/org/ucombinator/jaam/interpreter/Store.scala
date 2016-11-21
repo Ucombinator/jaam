@@ -73,6 +73,15 @@ abstract class AbstractStore[K <: Addr, V](val map: mutable.Map[K, V], abstractD
     this
   }
 
+  def strongUpdate(addr: K, d: V, modified: Boolean): AbstractStore[K, V] = {
+    if (modified) {
+      if (on) writeAddrs += addr
+      readAddrs += addr
+      map += (addr -> d)
+    }
+    this
+  }
+
   def apply(addr: K): V = {
     readAddrs += addr
     map(addr)
@@ -96,7 +105,7 @@ object ValueDomain extends AbstractDomain[D] {
   // TODO: use a more efficient algorithm
   def joinLeft(d1 : D, d2 : D) = {
     val d3 = d1.join(d2)
-    if (d3.values.size == d1.values.size) None
+    if (d3.getValues.size == d1.getValues.size) None
     else Some(d3)
   }
 

@@ -94,11 +94,16 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
   }
 
   override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
-    for (arg <- args)
-      System.store.update(GlobalSnowflakeAddr, arg)
+    for (arg <- args) {
+      val d = GlobalD.update(arg.getValues)
+      System.store.strongUpdate(GlobalSnowflakeAddr, d, GlobalD.modified)
+    }
 
     self match {
-      case Some(target) => System.store.update(GlobalSnowflakeAddr, D(Set[Value](target))) // TODO: unneeded?
+      //case Some(target) => System.store.update(GlobalSnowflakeAddr, D(Set[Value](target))) // TODO: unneeded?
+      case Some(target) =>
+        val d = GlobalD.update(Set[Value](target))
+        System.store.strongUpdate(GlobalSnowflakeAddr, d, GlobalD.modified) // TODO: unneeded?
       case None => {}
     }
 
@@ -118,7 +123,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
       case at : ArrayType =>
         val states = ReturnArraySnowflake(at.baseType.toString, at.numDimensions)(state, nextStmt, self, args)
         val bp = state.malloc()
-        val values = System.store(GlobalSnowflakeAddr).values
+        val values = System.store(GlobalSnowflakeAddr).getValues
         state.stmt.sootStmt match {
           case stmt : DefinitionStmt =>
             stmt.getLeftOp.getType match {
@@ -145,11 +150,12 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
                 throw new RuntimeException("Can not assign a RefType value to non-RefType. stmt: " + stmt + " meth: " + meth)
             }
 
-            val values: Set[Value] = System.store(GlobalSnowflakeAddr).values
+            val values: Set[Value] = System.store(GlobalSnowflakeAddr).getValues
             val newValues = values.filter(_ match {
               case ObjectValue(sootClass, bp) => Soot.isSubclass(sootClass, defClass)
               case _ => false
             })
+            //val newValues = GlobalD.get(defClass)
 
             //Log.debug(System.store(GlobalSnowflakeAddr).toString)
             System.store.update(state.addrsOf(stmt.getLeftOp), D(newValues))
@@ -165,7 +171,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
       sootClass = ty.asInstanceOf[RefType].getSootClass;
       if (sootClass.isInterface || sootClass.isAbstract) && Soot.isJavaLibraryClass(sootClass)
     } yield {
-      val newValues = arg.values.filter(_ match {
+      val newValues = arg.getValues.filter(_ match {
         case ObjectValue(objClass, bp) =>
           !Soot.isJavaLibraryClass(objClass) && Soot.isSubclass(objClass, sootClass)
         case _ => false

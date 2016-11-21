@@ -218,13 +218,56 @@ case class StaticFieldAddr(val field : SootField) extends Addr
 // TODO: replace KontD and D with AbstractDomain[...]
 // TODO: cache hashcode for Kont and Value
 
-case class D(val values: Set[Value]) {
-  def join(that : D) = D(this.values ++ that.values)
-  def maybeZero() : Boolean = values.exists(_.isInstanceOf[AtomicValue])
+case class D(private val values: Set[Value]) {
+  def getValues: Set[Value] = values
+  def join(that : D) = D(this.getValues ++ that.getValues)
+  def maybeZero() : Boolean = getValues.exists(_.isInstanceOf[AtomicValue])
 }
 object D {
   val atomicTop = D(Set(AnyAtomicValue))
 }
+
+object GlobalD extends D(Set[Value]()) {
+  val globalValues: mutable.Set[Value] = mutable.Set[Value]()
+  val map = mutable.Map[SootClass, mutable.Set[Value]]()
+  override def getValues: Set[Value] = globalValues.toSet
+  var modified: Boolean = false
+
+  def update(vs: Set[Value]): D = {
+    val oldSize = globalValues.size
+    globalValues ++= vs
+    if (oldSize == globalValues.size) { modified = false }
+    else { modified = true }
+
+    /*
+    val keys = map.keys
+    for (v <- vs) {
+      v match {
+        case ObjectValue(sootClass, bp) =>
+          for (k <- keys if (Soot.isSubclass(sootClass, k)))
+            map(k) += v
+        case _ =>
+      }
+    }
+    */
+    this
+  }
+
+  def get(baseClass: SootClass): Set[Value] = {
+    val newValues = map.get(baseClass) match {
+      case None =>
+        val valuesOfSootClass = globalValues.filter(_ match {
+          case ObjectValue(sootClass, bp) => Soot.isSubclass(sootClass, baseClass)
+          case _ => false
+        })
+        map += (baseClass -> valuesOfSootClass)
+        valuesOfSootClass
+      case Some(v) => v
+    }
+    newValues.toSet
+  }
+}
+
 case class KontD(val values: Set[Kont]) {
   def join(that : KontD) = KontD(this.values ++ that.values)
 }
@@ -313,7 +356,7 @@ case class State(val stmt : Stmt,
         // filter out incorrect class types
         // TODO/bug
         // Suppose a number flows to x in x.y = 3;
-        for (ObjectValue(_, bp) <- d.values)
+        for (ObjectValue(_, bp) <- d.getValues)
           yield InstanceFieldAddr(bp, lhs.getField)
       case lhs : StaticFieldRef =>
         val f : SootField = lhs.getField
@@ -331,7 +374,7 @@ case class State(val stmt : Stmt,
         // TODO/soundness: array ref out of bounds exception
         val i = eval(lhs.getIndex) // Unused but evaled in case we trigger a <clinit> or exception
         // TODO: filter out incorrect types
-        for (ArrayValue(_, bp) <- b.values) yield
+        for (ArrayValue(_, bp) <- b.getValues) yield
           ArrayRefAddr(bp)
     }
   }
@@ -421,7 +464,7 @@ case class State(val stmt : Stmt,
       // Every array has a distinguished field for its address.
       case v : LengthExpr =>
         val addrs : Set[Addr] = for {
-          ArrayValue(_, bp) <- eval(v.getOp).values
+          ArrayValue(_, bp) <- eval(v.getOp).getValues
         } yield ArrayLengthAddr(bp)
         System.store(addrs)
 
@@ -449,7 +492,7 @@ case class State(val stmt : Stmt,
           }
         }
         var d2 = D(Set())
-        for (v <- d.values) {
+        for (v <- d.getValues) {
           if (isCastableTo(v, castedType)) {
             // Up casts are always legal
             d2 = d2.join(D(Set((v))))
@@ -491,7 +534,7 @@ case class State(val stmt : Stmt,
       case expr : InstanceInvokeExpr =>
         val d = eval(expr.getBase)
         Log.info("expr.getBase: " + expr.getBase)
-        Log.info("base size: " + d.values.size)
+        Log.info("base size: " + d.getValues.size)
         Some((d, expr.isInstanceOf[SpecialInvokeExpr]))
     }
     Log.info("base: "+base)
@@ -594,7 +637,7 @@ case class State(val stmt : Stmt,
         System.checkInitializedClasses(method.getDeclaringClass())
         dispatch(None, method)
       case Some((b, isSpecial)) =>
-        ((for (v <- b.values) yield {
+        ((for (v <- b.getValues) yield {
           v match {
             case ObjectValue(_, SnowflakeBasePointer(_)) =>
               dispatch(Some(v), method)
@@ -653,7 +696,7 @@ case class State(val stmt : Stmt,
   override def next() : Set[AbstractState] = {
     try {
       val nexts = true_next()
-      val exceptionStates = (exceptions.values map {
+      val exceptionStates = (exceptions.getValues map {
         kontStack.handleException(_, stmt, fp)//, store)
       }).flatten
       nexts ++ exceptionStates
