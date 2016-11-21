@@ -127,16 +127,24 @@ object Soot {
 
   def isPrimitive(t : Type) : Boolean = !t.isInstanceOf[RefLikeType]
 
+  def canStoreClass(child: SootClass, parent: SootClass): Boolean = {
+    Scene.v().getOrMakeFastHierarchy().canStoreClass(child, parent)
+  }
+
   def isSubclass(sub : SootClass, sup : SootClass) : Boolean = {
-    val v = Scene.v()
+    val h = Scene.v().getOrMakeFastHierarchy()
     return sub == sup ||
      ((sub.isInterface, sup.isInterface) match {
-      case (false, false) => v.getActiveHierarchy.isClassSubclassOf(sub, sup)
-      case (true, true) => v.getActiveHierarchy.isInterfaceSubinterfaceOf(sub, sup)
+      //case (false, false) => Scene.v().getActiveHierarchy.isClassSubclassOf(sub, sup)
+      case (false, false) => h.isSubclass(sub, sup)
+      //case (true, true) => Scene.v().getActiveHierarchy.isInterfaceSubinterfaceOf(sub, sup)
+      case (true, true) => h.getAllSubinterfaces(sup).exists(_ == sub)
       case (false, true) => {
-        val h = v.getActiveHierarchy()
+        //TODO: using FastHierarchy
+        val h = Scene.v().getActiveHierarchy()
         h.getSuperclassesOfIncluding(sub)
           .exists(_.getInterfaces().exists(h.getSuperinterfacesOfIncluding(_).exists(_ == sup)))
+        //(h.getAllImplementersOfInterface(sup) ++ h.getAllSubinterfaces(sup)).exists(_ == sub)
       }
        case (true, false) => false
      })
