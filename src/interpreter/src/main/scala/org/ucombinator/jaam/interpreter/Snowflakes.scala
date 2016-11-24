@@ -644,9 +644,9 @@ object Snowflakes {
       createObject(sootClass.getSuperclass.getName, processing++List(className))
     }
 
+    val bp = SnowflakeBasePointer(className)
     for (f <- fields) {
       val fieldType = f.getType
-      val bp = SnowflakeBasePointer(className)
       val addrs : Set[Addr] = if (f.isStatic) { Set(StaticFieldAddr(f)) }
                               else { Set(InstanceFieldAddr(bp, f)) }
 

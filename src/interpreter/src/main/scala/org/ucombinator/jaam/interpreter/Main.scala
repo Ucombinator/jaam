@@ -362,12 +362,14 @@ case class State(val stmt : Stmt,
       case lhs : Local => Set(LocalFrameAddr(fp, lhs))
       case lhs : InstanceFieldRef =>
         val b : SootValue = lhs.getBase // the x in x.y
+        val baseSootClass = b.getType match {
+          case rt : RefType => rt.getSootClass
+          case _ => throw new RuntimeException("non-ref type can not have InstanceFieldRef")
+        }
         val d : D = eval(b)
-        // TODO/optimize
-        // filter out incorrect class types
         // TODO/bug
         // Suppose a number flows to x in x.y = 3;
-        for (ObjectValue(_, bp) <- d.getValues)
+        for (ObjectValue(sc, bp) <- d.getValues if Soot.canStoreClass(sc, baseSootClass))
           yield InstanceFieldAddr(bp, lhs.getField)
       case lhs : StaticFieldRef =>
         val f : SootField = lhs.getField
@@ -694,7 +696,6 @@ case class State(val stmt : Stmt,
         case t : FloatConstantValueTag => return D.atomicTop
         case t : IntegerConstantValueTag => return D.atomicTop
         case t : LongConstantValueTag => return D.atomicTop
-        //case t : StringConstantValueTag => return D(Set(ObjectValue(Soot.classes.String, StringBasePointer(t.getStringValue()))))
         case t : StringConstantValueTag => return D(Set(ObjectValue(Soot.classes.String, StringBasePointerTop)))
         case _ => ()
       }
@@ -777,7 +778,8 @@ case class State(val stmt : Stmt,
 
   def newExpr(lhsAddr : Set[Addr], sootClass : SootClass) = {
     val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
-    if (Soot.isJavaLibraryClass(sootClass)  && !sootClass.getPackageName.startsWith("com.sun.net.httpserver") || Snowflakes.contains(md)) {
+    if (Soot.isJavaLibraryClass(sootClass) && !sootClass.getPackageName.startsWith("com.sun.net.httpserver")
+        || Snowflakes.contains(md)) {
       val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
       val d = D(Set(obj))
       System.store.update(lhsAddr, d)
@@ -807,6 +809,7 @@ case class State(val stmt : Stmt,
 
       case sootStmt : DefinitionStmt =>
         val lhsAddr = addrsOf(sootStmt.getLeftOp())
+
         sootStmt.getRightOp() match {
           case rhs : InvokeExpr =>
             handleInvoke(rhs, Some(lhsAddr))
