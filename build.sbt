@@ -62,20 +62,6 @@ lazy val commonSettings = Seq(
     case x => MergeStrategy.deduplicate
   },
 
-  // https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
-  libraryDependencies += "org.ow2.asm" % "asm-tree" % "5.1",
-
-  // https://mvnrepository.com/artifact/org.ow2.asm/asm-commons
-  libraryDependencies += "org.ow2.asm" % "asm-commons" % "5.1",
-
-  // https://mvnrepository.com/artifact/com.google.guava/guava
-  libraryDependencies += "com.google.guava" % "guava" % "20.0",
-
-  libraryDependencies += "org.ucombinator.heros" % "heros" % "nightly.20161021",
-
-  // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-  libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.21",
-
   // Use shading to avoid file conflicts in some problematic dependencies
   assemblyShadeRules in assembly := Seq(
     ShadeRule.rename("com.esotericsoftware.**" -> "shaded-kryo.@0")
