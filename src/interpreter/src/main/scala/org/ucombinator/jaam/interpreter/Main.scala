@@ -429,13 +429,14 @@ case class State(val stmt : Stmt,
       case v : ClassConstant => D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer(v.value.replace('/', '.')))))
       //D(Set(ObjectValue(stmt.classmap("java.lang.Class"), StringBasePointer(v.value))))
       case v : StringConstant =>
-        //val bp = StringBasePointer(v.value)
-        val bp = StringBasePointerTop
+        D(Set(ObjectValue(Soot.classes.String, StringBasePointerTop)))
+        /*
         if (System.store.contains(InstanceFieldAddr(bp, Soot.classes.String.getFieldByName("value")))) {
           D(Set(ObjectValue(Soot.classes.String, bp)))
         } else {
           throw StringConstantException(v.value)
         }
+        */
       case v : NegExpr => D.atomicTop
       case v : BinopExpr =>
         v match {
@@ -756,7 +757,7 @@ case class State(val stmt : Stmt,
         Snowflakes.createObject(className, List())
         System.addInitializedClass(sootClass)
         Set(this.copy())
-
+      /*
       case StringConstantException(string) =>
         Log.info("Initializing string constant: \""+string+"\"")
         val value = Soot.classes.String.getFieldByName("value")
@@ -768,7 +769,7 @@ case class State(val stmt : Stmt,
           .update(InstanceFieldAddr(bp, hash), D.atomicTop)
           .update(InstanceFieldAddr(bp, hash32), D.atomicTop)
         Set(this.copy())
-
+      */
       case UndefinedAddrsException(addrs) =>
         //An empty set of addrs may due to the over approximation of ifStmt.
         Log.error("Undefined Addrs in state "+this.id+" stmt = "+stmt+" addrs = "+addrs)
@@ -892,14 +893,25 @@ case class State(val stmt : Stmt,
 
 // TODO/refactor: Maybe allow user-specified arguments.
 object State {
+  val stringClass : SootClass = Soot.classes.String
+  val value = stringClass.getFieldByName("value")
+  val hash = stringClass.getFieldByName("hash")
+  val hash32 = stringClass.getFieldByName("hash32")
+
   val initialFramePointer = InitialFramePointer
   val initialBasePointer = InitialBasePointer
-  val stringClass : SootClass = Soot.classes.String
   val initial_map : mutable.Map[Addr, D] = mutable.Map(
     ParameterFrameAddr(initialFramePointer, 0) ->
       D(Set(ArrayValue(ArrayType.v(stringClass.getType, 1), initialBasePointer))),
     ArrayRefAddr(initialBasePointer) -> D(Set(ObjectValue(stringClass, initialBasePointer))),
-    ArrayLengthAddr(initialBasePointer) -> D.atomicTop)
+    ArrayLengthAddr(initialBasePointer) -> D.atomicTop,
+
+    InstanceFieldAddr(StringBasePointerTop, value) ->
+      D(Set(ArrayValue(ArrayType.v(CharType.v, 1), StringBasePointerTop))),
+    ArrayRefAddr(StringBasePointerTop) -> D.atomicTop,
+    ArrayLengthAddr(StringBasePointerTop) ->  D.atomicTop,
+    InstanceFieldAddr(StringBasePointerTop, hash) -> D.atomicTop,
+    InstanceFieldAddr(StringBasePointerTop, hash32) -> D.atomicTop)
 
   def inject(stmt : Stmt) : State = {
     val ks = KontStack(HaltKont)
