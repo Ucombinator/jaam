@@ -1,4 +1,6 @@
 
+import javafx.embed.swing.JFXPanel;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -12,7 +14,7 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Path2D;
 
 
-public class VizPanel extends JPanel
+public class VizPanel extends JFXPanel
 {
 	private boolean context;
 	private StacFrame parent;

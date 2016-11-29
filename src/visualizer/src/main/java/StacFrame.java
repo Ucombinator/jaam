@@ -1,4 +1,6 @@
 
+import javafx.embed.swing.JFXPanel;
+
 import java.io.File;
 import java.util.ArrayList;
 
@@ -22,6 +24,7 @@ import java.awt.Font;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -33,7 +36,6 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import javax.swing.JTextArea;
-import javax.swing.JComboBox;
 import javax.swing.KeyStroke;
 import javax.swing.JLabel;
 import javax.swing.JButton;
@@ -506,7 +508,8 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						String newFontSize = JOptionPane.showInputDialog(null, "The current font size is: " + Parameters.font.getSize() + ". Please enter a new font size");
+						String newFontSize = JOptionPane.showInputDialog(null, "The current font size is: " +
+								Parameters.font.getSize() + ". Please enter a new font size");
 						Parameters.font = new Font("Serif", Font.PLAIN, Integer.parseInt(newFontSize));
 						Parameters.leftArea.setFont(Parameters.font);
 						Parameters.rightArea.setFont(Parameters.font);
@@ -549,15 +552,17 @@ public class StacFrame extends JFrame
 		help.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, ActionEvent.CTRL_MASK));
 	}
 
-	public void buildWindow(ArrayList<ArrayList<JPanel>> layout, ArrayList<ArrayList<Double>> layoutRowWeights, ArrayList<Double> layoutColumnWeights)
+	public void buildWindow(ArrayList<ArrayList<JComponent>> layout, ArrayList<ArrayList<Double>> layoutRowWeights,
+							ArrayList<Double> layoutColumnWeights)
 	{
 		// Construct columns
 		System.out.println("Layout size: " + Integer.toString(layout.size()));
 		ArrayList<GUIPanelColumn> columns = new ArrayList<GUIPanelColumn>();
 		for(int i = 0; i < layout.size(); i++)
 		{
-			System.out.println("Constructing column: " + Integer.toString(i) + ", height " + Integer.toString(layout.get(i).size()));
-			ArrayList<JPanel> panelList = layout.get(i);
+			System.out.println("Constructing column: " + Integer.toString(i) + ", height " +
+					Integer.toString(layout.get(i).size()));
+			ArrayList<JComponent> panelList = layout.get(i);
 			columns.add(new GUIPanelColumn(panelList, layoutRowWeights.get(i)));
 		}
 
@@ -725,7 +730,8 @@ public class StacFrame extends JFrame
 		Parameters.leftArea = new CodeArea();
 		leftPanel.setLayout(new BorderLayout());
 		leftPanel.add(leftL,BorderLayout.NORTH);
-		JScrollPane scrollL = new JScrollPane (Parameters.leftArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		JScrollPane scrollL = new JScrollPane (Parameters.leftArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		leftPanel.add(scrollL, BorderLayout.CENTER);
 		leftPanel.setFont(Parameters.font);
 		
@@ -735,7 +741,8 @@ public class StacFrame extends JFrame
         ((DefaultCaret)Parameters.rightArea.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 		rightPanel.setLayout(new BorderLayout());
 		rightPanel.add(rightL, BorderLayout.NORTH);
-		JScrollPane scrollR = new JScrollPane (Parameters.rightArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		JScrollPane scrollR = new JScrollPane (Parameters.rightArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		rightPanel.add(scrollR, BorderLayout.CENTER);
 		rightPanel.setFont(Parameters.font);
 		
@@ -743,16 +750,17 @@ public class StacFrame extends JFrame
         Parameters.searchArea = new SearchArea();
         searchPanel.setLayout(new BorderLayout());
         searchPanel.add(searchL,BorderLayout.NORTH);
-        JScrollPane scrollS = new JScrollPane (Parameters.searchArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        JScrollPane scrollS = new JScrollPane (Parameters.searchArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         searchPanel.add(scrollS, BorderLayout.CENTER);
         searchPanel.setFont(Parameters.font);
 
 		// Build data structure to hold panels
-		ArrayList<ArrayList<JPanel>> layout = new ArrayList<ArrayList<JPanel>>();
+		ArrayList<ArrayList<JComponent>> layout = new ArrayList<ArrayList<JComponent>>();
 		ArrayList<ArrayList<Double>> layoutRowWeights = new ArrayList<ArrayList<Double>>();
 		ArrayList<Double> layoutColumnWeights = new ArrayList<Double>();
 
-		ArrayList<JPanel> left = new ArrayList<JPanel>();
+		ArrayList<JComponent> left = new ArrayList<JComponent>();
 		left.add(leftPanel);
 		left.add(contextPanel);
 
@@ -760,12 +768,12 @@ public class StacFrame extends JFrame
 		leftWeights.add(0.6);
 		layoutRowWeights.add(leftWeights);
 
-		ArrayList<JPanel> center = new ArrayList<JPanel>();
+		ArrayList<JComponent> center = new ArrayList<JComponent>();
 		center.add(vizPanel);
 		ArrayList<Double> centerWeights = new ArrayList<Double>();
 		layoutRowWeights.add(centerWeights);
 
-		ArrayList<JPanel> right = new ArrayList<JPanel>();
+		ArrayList<JComponent> right = new ArrayList<JComponent>();
 		right.add(rightPanel);
 		right.add(searchPanel);
 		ArrayList<Double> rightWeights = new ArrayList<Double>();
@@ -807,7 +815,8 @@ public class StacFrame extends JFrame
 		{
 			title = "Method name contains ...";
 		}
-		else if(search == searchType.OUT_OPEN || search == searchType.OUT_CLOSED || search == searchType.IN_OPEN || search == searchType.IN_CLOSED)
+		else if(search == searchType.OUT_OPEN || search == searchType.OUT_CLOSED || search == searchType.IN_OPEN
+				|| search == searchType.IN_CLOSED)
 		{
 			title = "Enter node ID";
 		}
@@ -1187,7 +1196,7 @@ public class StacFrame extends JFrame
 		return m.getY() - (this.getHeight() - this.getContentPane().getSize().height) - vizPanel.getY() - this.menuPanel.getHeight();
 	}
 
-	public void addKeyboard(JPanel viz)
+	public void addKeyboard(JFXPanel viz)
 	{
 		viz.addKeyListener(new KeyListener()
 			{

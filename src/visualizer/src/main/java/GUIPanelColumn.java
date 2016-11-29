@@ -10,10 +10,10 @@ import javax.swing.JComponent;
 
 public class GUIPanelColumn
 {
-    ArrayList<JPanel> panels;
+    ArrayList<JComponent> panels;
     ArrayList<JSplitPane> splitPanes;
 
-    public GUIPanelColumn(ArrayList<JPanel> panelList, ArrayList<Double> weights)
+    public GUIPanelColumn(ArrayList<JComponent> panelList, ArrayList<Double> weights)
     {
         assert(panelList.size() > 0);
         this.panels = panelList;
