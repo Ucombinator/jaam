@@ -104,7 +104,7 @@ case class KontStack(k : Kont) extends CachedHashCode {
         System.store.update(CaughtExceptionFrameAddr(fp), D(Set(exception)))
         // TODO/soundness or performance?: use Hierarchy or FastHierarchy?
         if (Soot.canStoreClass(exception.asInstanceOf[ObjectValue].sootClass, caughtType)) {
-          return Set(State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, this.copy()))
+          return Set(State(stmt.copy(sootStmt = trap.getHandlerUnit()), fp, kontStack.copy()))
         }
       }
 
