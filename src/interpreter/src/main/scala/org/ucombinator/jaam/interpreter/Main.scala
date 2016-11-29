@@ -111,6 +111,7 @@ case class KontStack(k : Kont) extends CachedHashCode {
       }
       nextFrames -= ((frame, kontStack))
     }
+    Log.debug("exception: " + exception + " states.size: " + states.size)
     states
 
     /*
@@ -272,18 +273,6 @@ object GlobalD extends D(Set[Value]()) {
     val oldSize = globalValues.size
     globalValues ++= vs
     modified = (oldSize != globalValues.size)
-
-    /*
-    val keys = map.keys
-    for (v <- vs) {
-      v match {
-        case ObjectValue(sootClass, bp) =>
-          for (k <- keys if (Soot.canStoreClass(sootClass, k)))
-            map(k) += v
-        case _ =>
-      }
-    }
-    */
     this
   }
 
@@ -534,7 +523,7 @@ case class State(val stmt : Stmt,
           if (isCastableTo(v, castedType)) {
             // Up casts are always legal
             d2 = d2.join(D(Set((v))))
-          } else if (v.isInstanceOf[ObjectValue] && v.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer] &&
+          } else if (Snowflakes.isSnowflakeObject(v) &&
             Soot.canStoreType(castedType, v.asInstanceOf[ObjectValue].sootClass.getType)
           ) {
             // Snowflakes can be down cast, but they might throw an exception
@@ -633,9 +622,7 @@ case class State(val stmt : Stmt,
           if (Soot.isJavaLibraryClass(meth.getDeclaringClass) &&
               (!meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver") || meth.isAbstract()) ||
               isLibraryClass(meth.getDeclaringClass) ||
-              self.isDefined &&
-              self.get.isInstanceOf[ObjectValue] &&
-              self.get.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
+              self.isDefined && Snowflakes.isSnowflakeObject(self.get)) {
             Snowflakes.warn(this.id, self, stmt, meth)
             if (meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver"))
               Log.warn("Snowflake due to Abstract: "+meth)
@@ -690,9 +677,6 @@ case class State(val stmt : Stmt,
 
         ((for (v <- normalObjects) yield {
           v match {
-            //case ObjectValue(_, SnowflakeBasePointer(_)) =>
-            //dispatch(Some(v), method)
-            //  Set()
             case ObjectValue(sootClass, bp) if Soot.canStoreClass(sootClass, method.getDeclaringClass) =>
               val objectClass = if (isSpecial) null else sootClass
               val meth = (if (isSpecial) method else overrides(objectClass, method).head)
