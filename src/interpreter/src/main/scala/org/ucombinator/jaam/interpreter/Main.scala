@@ -85,13 +85,36 @@ case class KontStack(k : Kont) extends CachedHashCode {
       if (exception == AnyAtomicValue) {
         // if throws something might be a null pointer, then throw a NullPointerException
         val nullPointerException = Soot.getSootClass("java.lang.NullPointerException");
-        return handleException(ObjectValue(nullPointerException, OneCFABasePointer(stmt, fp)), stmt, fp)//, store)
+        return handleException(ObjectValue(nullPointerException, OneCFABasePointer(stmt, fp)), stmt, fp)
       }
       return Set()
     }
 
-    var visited = Set[(Stmt, FramePointer, KontStack)]()
+    val currentFrame = Frame(stmt, fp, None)
+    var states: Set[AbstractState] = Set()
+    var nextFrames: Set[(Frame, KontStack)] = Set((currentFrame, this))
 
+    while (nextFrames.nonEmpty) {
+      val (frame, kontStack) = nextFrames.last
+      val (stmt, fp) = (frame.stmt, frame.fp)
+      for (trap <- TrapManager.getTrapsAt(stmt.sootStmt, Soot.getBody(stmt.sootMethod))) {
+        val caughtType = trap.getException
+        if (Soot.canStoreClass(exception.asInstanceOf[ObjectValue].sootClass, caughtType)) {
+          System.store.update(CaughtExceptionFrameAddr(fp), D(Set(exception)))
+          states += State(stmt.copy(sootStmt = trap.getHandlerUnit), fp, kontStack)
+        }
+        else {
+          val fs = kontStack.pop
+          if (fs.isEmpty) states += ErrorState
+          else nextFrames ++= fs
+        }
+      }
+      nextFrames -= ((frame, kontStack))
+    }
+    states
+
+    /*
+    var visited = Set[(Stmt, FramePointer, KontStack)]()
     // TODO/performance: Make iterative.
     def stackWalk(stmt : Stmt, fp : FramePointer, kontStack : KontStack) : Set[AbstractState] = {
       if (visited.contains((stmt, fp, kontStack))) return Set()
@@ -118,6 +141,7 @@ case class KontStack(k : Kont) extends CachedHashCode {
 
     stackWalk(stmt, fp, this)
     // TODO/soundness: deal with unhandled exceptions
+    */
   }
 }
 
