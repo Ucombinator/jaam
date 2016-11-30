@@ -722,7 +722,7 @@ case class State(val stmt : Stmt,
       // TODO/soundness: exception for a negative length
       // TODO/precision: stop allocating if a zero length
       // TODO/precision: separately allocate each array element
-      createArray(t.asInstanceOf[ArrayType].getElementType(), ss, Set(ArrayRefAddr(bp)))//, store)
+      createArray(t.asInstanceOf[ArrayType].getElementType(), ss, Set(ArrayRefAddr(bp)))
         .update(addrs, D(Set(ArrayValue(t, bp))))
         .update(ArrayLengthAddr(bp), s).asInstanceOf[Store]
   }
@@ -762,7 +762,7 @@ case class State(val stmt : Stmt,
       case UninitializedSnowflakeObjectException(className) =>
         Log.info("Initializing snowflake class "+className)
         val sootClass = Soot.getSootClass(className)
-        Snowflakes.createObject(className, List())
+        Snowflakes.initStaticFields(sootClass)
         System.addInitializedClass(sootClass)
         Set(this.copy())
       /*
@@ -789,10 +789,10 @@ case class State(val stmt : Stmt,
     val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
     if (Soot.isJavaLibraryClass(sootClass) && !sootClass.getPackageName.startsWith("com.sun.net.httpserver")
         || Snowflakes.contains(md)) {
-      val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
-      val d = D(Set(obj))
-      System.store.update(lhsAddr, d)
-      Snowflakes.createObject(sootClass.getName, List())
+      //val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
+      //val d = D(Set(obj))
+      //System.store.update(lhsAddr, d)
+      Snowflakes.createObject(Some(lhsAddr), sootClass)
     }
     else {
       val bp : BasePointer = malloc()

@@ -68,12 +68,11 @@ case class UninitializedSnowflakeObjectException(className : String) extends Run
 
 case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
-    state.stmt.sootStmt match {
-      case stmt : DefinitionStmt => System.store.update(state.addrsOf(stmt.getLeftOp),
-        D(Set(ObjectValue(Soot.getSootClass(name), SnowflakeBasePointer(name)))))
-      case stmt : InvokeStmt => //System.store
+    val addrs: Option[Set[Addr]] = state.stmt.sootStmt match {
+      case stmt: DefinitionStmt => Some(state.addrsOf(stmt.getLeftOp))
+      case stmt: InvokeStmt => None
     }
-    Snowflakes.createObject(name, List())
+    Snowflakes.createObject(addrs, Soot.getSootClass(name))
     Set[AbstractState](state.copy(stmt = nextStmt))
   }
 }
@@ -120,19 +119,19 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
         ReturnSnowflake(D.atomicTop)(state, nextStmt, self, args)
       case at : ArrayType =>
         val states = ReturnArraySnowflake(at.baseType.toString, at.numDimensions)(state, nextStmt, self, args)
-        val bp = state.malloc()
         val values = System.store(GlobalSnowflakeAddr).getValues
+
+        val bp = SnowflakeBasePointer(at.toString)
         state.stmt.sootStmt match {
           case stmt : DefinitionStmt =>
             stmt.getLeftOp.getType match {
               case leftAt : ArrayType =>
                 val newValues = values.filter(_ match {
-                  case ArrayValue(at, bp) => Soot.isSubType(at, leftAt)
+                  case ArrayValue(at, bp) => Soot.canStoreType(at, leftAt)
                   case _ => false
                 })
                 System.store.update(Set[Addr](ArrayRefAddr(bp)), D(newValues))
-              case _ =>
-                Log.warn("Can not assign an ArrayType value to non-ArrayType. stmt: " + stmt + " meth: " + meth)
+              case _ => Log.warn("Can not assign an ArrayType value to non-ArrayType. stmt: " + stmt + " meth: " + meth)
             }
           case _ =>
             System.store.update(Set[Addr](ArrayRefAddr(bp)), D(values))
@@ -144,8 +143,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
           case stmt : DefinitionStmt =>
             val parentClass = stmt.getLeftOp.getType match {
               case rt : RefType => rt.getSootClass
-              case _ =>
-                throw new RuntimeException("Can not assign a RefType value to non-RefType. stmt: " + stmt + " meth: " + meth)
+              case _ => throw new RuntimeException("Can not assign a RefType value to non-RefType. stmt: " + stmt + " meth: " + meth)
             }
 
             val values: Set[Value] = System.store(GlobalSnowflakeAddr).getValues
@@ -153,8 +151,6 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
               case ObjectValue(sootClass, bp) => Soot.canStoreClass(sootClass, parentClass)
               case _ => false
             })
-
-            //Log.debug(System.store(GlobalSnowflakeAddr).toString)
             System.store.update(state.addrsOf(stmt.getLeftOp), D(newValues))
           case _ =>
         }
@@ -196,12 +192,10 @@ case class ReturnArraySnowflake(baseType: String, dim: Int) extends SnowflakeHan
     val sizes = List.fill(dim)(D.atomicTop)
     val sootBaseType = Soot.getSootType(baseType)
     val at = soot.ArrayType.v(sootBaseType, dim)
-    val newNewStore = state.stmt.sootStmt match {
-      case stmt : DefinitionStmt =>
-        Snowflakes.createArray(at, sizes, state.addrsOf(stmt.getLeftOp), state.malloc())
-      case stmt : InvokeStmt => Store(mutable.Map[Addr, D]())
+    state.stmt.sootStmt match {
+      case stmt : DefinitionStmt => Snowflakes.createArray(at, sizes, state.addrsOf(stmt.getLeftOp))
+      case stmt : InvokeStmt =>
     }
-    System.store.join(newNewStore)
     Set(state.copy(stmt=nextStmt))
   }
 }
@@ -588,8 +582,10 @@ object Snowflakes {
   }
 
   val table = mutable.Map.empty[MethodDescription, SnowflakeHandler]
-  //var initializedObjectValues = Map.empty[String, Store]
-  var initializedObjectValues = List[String]()
+  // A list contains statically initialized classes
+  var initializedClasses = List[String]()
+  // A list contains instantiated classes
+  var instantiatedClasses = List[String]()
 
   def get(meth : SootMethod) : Option[SnowflakeHandler] = {
     val x = MethodDescription(
@@ -604,72 +600,94 @@ object Snowflakes {
   def contains(meth : MethodDescription) : Boolean =
     table.contains(meth)
 
-  def createArray(t : soot.Type,
-                  sizes : List[D],
-                  addrs : Set[Addr],
-                  bp : BasePointer) : Store = {
+  def createArray(at: soot.Type, sizes: List[D], addrs: Set[Addr]) {
+    val bp = SnowflakeBasePointer(at.toString)
+    createArray(at, sizes, addrs, bp)
+  }
+
+  def createArray(at: soot.Type, sizes: List[D], addrs: Set[Addr], bp: BasePointer) {
     sizes match {
       case Nil =>
-        t match {
-          case pt: PrimType => Store(mutable.Map(addrs.zipWithIndex.map{case(a,i) => (a, D.atomicTop)}.toMap.toSeq: _*))
-          case rt: RefType => {
-            val className = rt.getClassName
-            val sootClass = Soot.getSootClass(className)
-            Store(mutable.Map(addrs.zipWithIndex.map{case(a,i) => (a, D(Set(ObjectValue(sootClass, bp))))}.toMap.toSeq: _*))
-          }
+        at match {
+          case pt: PrimType => System.store.update(addrs, D.atomicTop)
+          case rt: RefType => createObject(Some(addrs), Soot.getSootClass(rt.getClassName))
         }
       case (s :: ss) =>
-        createArray(t.asInstanceOf[ArrayType].getElementType, ss, Set(ArrayRefAddr(bp)), bp)
-          .update(addrs, D(Set(ArrayValue(t, bp))))
-          .update(ArrayLengthAddr(bp), s).asInstanceOf[Store]
+        createArray(at.asInstanceOf[ArrayType].getElementType, ss, Set(ArrayRefAddr(bp)))
+        System.store.update(addrs, D(Set(ArrayValue(at, bp))))
+        System.store.update(ArrayLengthAddr(bp), s)
     }
   }
 
   // TODO: createObjectOrThrow vs createObject
   def createObjectOrThrow(name : String) : D = {
-    if (!initializedObjectValues.contains(name)) {
+    if (!initializedClasses.contains(name)) {
       throw UninitializedSnowflakeObjectException(name)
     }
     D(Set(ObjectValue(Soot.getSootClass(name), SnowflakeBasePointer(name))))
   }
 
-  def createObject(className: String, processing : List[String]) : Store = {
-    if (initializedObjectValues.contains(className)) {
-      return System.store
+  private def initField(addrs: Set[Addr], field: SootField) {
+    field.getType match {
+      case pt: PrimType => System.store.update(addrs, D.atomicTop)
+      case at: ArrayType => createArray(at, List.fill(at.numDimensions)(D.atomicTop), addrs)
+      case rt: RefType => createObject(Some(addrs), Soot.getSootClass(rt.getClassName))
+      case t => Log.error("Unknown field type " + t)
+    }
+  }
+
+  def initStaticFields(sootClass: SootClass) {
+    if (initializedClasses.contains(sootClass.getName)) return
+    for (field <- sootClass.getFields; if field.isStatic) {
+      initField(Set(StaticFieldAddr(field)), field)
+    }
+    if (sootClass.hasSuperclass) initStaticFields(sootClass.getSuperclass)
+    initializedClasses = (sootClass.getName)::initializedClasses
+  }
+
+  def initInstanceFields(sootClass: SootClass, bp: BasePointer) {
+    val className = sootClass.getName
+    for (field <- sootClass.getFields; if !field.isStatic) {
+      val addrs: Set[Addr] = Set(InstanceFieldAddr(bp, field))
+      initField(addrs, field)
+    }
+  }
+
+  def createObject(destAddr: Option[Set[Addr]], sootClass: SootClass) {
+    def allSuperClasses(sootClass: SootClass, supers: Set[SootClass]): Set[SootClass] = {
+      if (sootClass.hasSuperclass) allSuperClasses(sootClass.getSuperclass, supers + sootClass.getSuperclass)
+      else supers
+    }
+    def allInterfaces(sootClass: SootClass): Set[SootClass] = {
+      val ifs = sootClass.getInterfaces().toSet
+      ifs.foldLeft(ifs)((acc, interfaceClass) => allInterfaces(interfaceClass)++acc)
     }
 
-    val sootClass = Soot.getSootClass(className)
-    val fields = sootClass.getFields
+    val className = sootClass.getName
+    if (sootClass.isInterface) { /*TODO*/ }
+    if (sootClass.isAbstract) { /*TODO*/ }
 
-    if (sootClass.hasSuperclass) {
-      // TODO: re-order ++ or document why this order
-      createObject(sootClass.getSuperclass.getName, processing++List(className))
+    val objectBP = SnowflakeBasePointer(className)
+    destAddr match {
+      case Some(addr) => System.store.update(destAddr, D(Set(ObjectValue(sootClass, objectBP))))
+      case None => {}
     }
 
-    val bp = SnowflakeBasePointer(className)
-    for (f <- fields) {
-      val fieldType = f.getType
-      val addrs : Set[Addr] = if (f.isStatic) { Set(StaticFieldAddr(f)) }
-                              else { Set(InstanceFieldAddr(bp, f)) }
+    if (instantiatedClasses.contains(className)) return
+    instantiatedClasses = className::instantiatedClasses
 
-      fieldType match {
-        case pt: PrimType => System.store.update(addrs, D.atomicTop)
-        case at: ArrayType =>
-          val dim = List.fill(at.numDimensions)(D.atomicTop)
-          System.store.join(createArray(at, dim, addrs, bp))
-        case rt: RefType =>
-          val fieldClassName = rt.getClassName
-          if (!processing.contains(fieldClassName)) {
-            System.store.update(addrs, D(Set(ObjectValue(Soot.getSootClass(fieldClassName),
-              SnowflakeBasePointer(fieldClassName)))))
-            createObject(fieldClassName, processing++List(className))
-          }
-        case _ =>
-      }
+    initInstanceFields(sootClass, objectBP)
+    for (superClass <- allSuperClasses(sootClass, Set())) {
+      initInstanceFields(superClass, objectBP)
     }
+    for (interface <- allInterfaces(sootClass)) {
+      initInstanceFields(interface, objectBP)
+    }
+  }
 
-    initializedObjectValues = className::initializedObjectValues
-    System.store
+  private def createInterfaceObject(sootClass: SootClass, bp: BasePointer) {
+    val impls = Scene.v.getOrMakeFastHierarchy.getAllImplementersOfInterface(sootClass)
+    initializedClasses = (sootClass.getName)::initializedClasses
   }
 
   private def updateStore(oldStore : Store, clas : String, field : String, typ : String) =
