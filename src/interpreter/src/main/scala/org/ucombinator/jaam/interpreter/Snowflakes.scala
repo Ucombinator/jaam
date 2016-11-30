@@ -78,14 +78,6 @@ case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
   }
 }
 
-/*
-case class DefaultReturnSnowflake(meth: SootMethod) extends SnowflakeHandler {
-  override def apply(state: State, nextStmt: Stmt, self: Option[Value], args: List[D]): Set[AbstractState] = {
-
-  }
-}
-*/
-
 case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
   def typesToDs(types: List[Type]): List[D] = {
     def typeToD(ty: Type): D = {
@@ -161,7 +153,6 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
               case ObjectValue(sootClass, bp) => Soot.canStoreClass(sootClass, parentClass)
               case _ => false
             })
-            //val newValues = GlobalD.get(parentClass)
 
             //Log.debug(System.store(GlobalSnowflakeAddr).toString)
             System.store.update(state.addrsOf(stmt.getLeftOp), D(newValues))
@@ -588,7 +579,7 @@ object Snowflakes {
   def isSnowflakeObject(v: Value): Boolean = {
     v.isInstanceOf[ObjectValue] && v.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]
   }
-  
+
   def warn(id : Int, self: Option[Value], stmt : Stmt, meth : SootMethod) {
     Log.warn("Using generic snowflake for Java library in state "+id+". May be unsound." +
       " self = " + self +
@@ -670,7 +661,7 @@ object Snowflakes {
           val fieldClassName = rt.getClassName
           if (!processing.contains(fieldClassName)) {
             System.store.update(addrs, D(Set(ObjectValue(Soot.getSootClass(fieldClassName),
-              SnowflakeBasePointer(className)))))
+              SnowflakeBasePointer(fieldClassName)))))
             createObject(fieldClassName, processing++List(className))
           }
         case _ =>
