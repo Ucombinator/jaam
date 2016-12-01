@@ -97,7 +97,6 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
     }
 
     self match {
-      //case Some(target) => System.store.update(GlobalSnowflakeAddr, D(Set[Value](target))) // TODO: unneeded?
       case Some(target) =>
         val d = GlobalD.update(Set[Value](target))
         System.store.strongUpdate(GlobalSnowflakeAddr, d, GlobalD.modified) // TODO: unneeded?
@@ -662,11 +661,34 @@ object Snowflakes {
       val ifs = sootClass.getInterfaces().toSet
       ifs.foldLeft(ifs)((acc, interfaceClass) => allInterfaces(interfaceClass)++acc)
     }
+    def allImplementers(sootClass: SootClass): Set[SootClass] = {
+      Scene.v.getOrMakeFastHierarchy.getAllImplementersOfInterface(sootClass).toSet
+    }
+    def allSubclasses(sootClass: SootClass): Set[SootClass] = {
+      val sub = Scene.v.getOrMakeFastHierarchy.getSubclassesOf(sootClass).toSet
+      sub.foldLeft(sub)((acc, subclass) => allSubclasses(subclass)++acc)
+    }
+
+    if (sootClass.isInterface) {
+      //Log.error("Can not instantiate interface " + sootClass.getName + ".")
+      val impls = allImplementers(sootClass)
+      for (impl <- impls) {
+        //Log.error("Use " + impl.getName + " instaed.")
+        createObject(destAddr, impl)
+      }
+      if (impls.nonEmpty) return
+      //Log.error("interface " + sootClass.getName + " has no implementers, continue.")
+    }
+    if (sootClass.isAbstract) {
+      val subs = allSubclasses(sootClass)
+      for (subclass <- subs) {
+        createObject(destAddr, subclass)
+      }
+      if (subs.nonEmpty) return
+      //Log.error("abstract class " + sootClass.getName + " has no subclass, continue.")
+    }
 
     val className = sootClass.getName
-    if (sootClass.isInterface) { /*TODO*/ }
-    if (sootClass.isAbstract) { /*TODO*/ }
-
     val objectBP = SnowflakeBasePointer(className)
     destAddr match {
       case Some(addr) => System.store.update(destAddr, D(Set(ObjectValue(sootClass, objectBP))))
@@ -683,11 +705,6 @@ object Snowflakes {
     for (interface <- allInterfaces(sootClass)) {
       initInstanceFields(interface, objectBP)
     }
-  }
-
-  private def createInterfaceObject(sootClass: SootClass, bp: BasePointer) {
-    val impls = Scene.v.getOrMakeFastHierarchy.getAllImplementersOfInterface(sootClass)
-    initializedClasses = (sootClass.getName)::initializedClasses
   }
 
   private def updateStore(oldStore : Store, clas : String, field : String, typ : String) =

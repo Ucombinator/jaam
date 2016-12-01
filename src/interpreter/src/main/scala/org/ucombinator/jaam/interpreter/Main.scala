@@ -780,7 +780,7 @@ case class State(val stmt : Stmt,
       */
       case UndefinedAddrsException(addrs) =>
         //An empty set of addrs may due to the over approximation of ifStmt.
-        Log.error("Undefined Addrs in state "+this.id+" stmt = "+stmt+" addrs = "+addrs)
+        Log.error("Undefined Addrs in state "+this.id+"; stmt = "+stmt+"; addrs = "+addrs)
         Set()
     }
   }
