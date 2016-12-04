@@ -523,18 +523,46 @@ case class State(val stmt : Stmt,
           if (isCastableTo(v, castedType)) {
             // Up casts are always legal
             d2 = d2.join(D(Set((v))))
-          } else if (Snowflakes.isSnowflakeObject(v) &&
-            Soot.canStoreType(castedType, v.asInstanceOf[ObjectValue].sootClass.getType)
-          ) {
+          }
+          else if (Snowflakes.isSnowflakeObject(v) &&
+            Soot.canStoreType(castedType, v.asInstanceOf[ObjectValue].sootClass.getType)) {
             // Snowflakes can be down cast, but they might throw an exception
             val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
             exceptions = exceptions.join(classCastException)
-            val name = castedType match {
-              case r : RefType => r.getClassName
+            val castedClass = castedType match {
+              case r : RefType => r.getSootClass
               case a : ArrayType => ???
             }
-            d2 = d2.join(Snowflakes.createObjectOrThrow(name))
-          } else {
+
+            if (Soot.isJavaLibraryClass(castedClass) || System.isLibraryClass(castedClass)) {
+              // Snowflake object cast to Snowflake object
+              //Log.error("casting snowflake object " + v.asInstanceOf[ObjectValue].castedClass.getName + " to " + sootClass.getName)
+              val bp = SnowflakeBasePointer(castedClass.getName)
+              d2 = d2.join(D(Set(ObjectValue(castedClass, bp))))
+              Snowflakes.createObject(None, castedClass)
+            }
+            else {
+              // Snowflake object cast to non-Snowflake object
+              // TODO: if castedType is not from Java library, then we need to instantiated one
+              // TODO: call <init>, interface/abstract class
+              d2 = d2.join(Snowflakes.createObjectOrThrow(castedClass.getName))
+              /*
+              val bp : BasePointer = malloc()
+              val obj : Value = ObjectValue(castedClass, bp)
+              d2 = d2.join(D(Set(obj)))
+              System.checkInitializedClasses(castedClass)
+              // initialize instance fields to default values for their type
+              def initInstanceFields(c : SootClass) {
+                for (f <- c.getFields) {
+                  System.store.update(InstanceFieldAddr(bp, f), defaultInitialValue(f.getType))
+                }
+                if(c.hasSuperclass) initInstanceFields(c.getSuperclass)
+              }
+              initInstanceFields(castedClass)
+              */
+            }
+          }
+          else {
             // Anything else would cause an exception
             val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
             exceptions = exceptions.join(classCastException)
@@ -554,17 +582,15 @@ case class State(val stmt : Stmt,
                    destAddr : Option[Set[Addr]],
                    nextStmt : Stmt = stmt.nextSyntactic) : Set[AbstractState] = {
     val base = expr match {
-      case expr : DynamicInvokeExpr =>
-        ??? // TODO: Could only come from non-Java sources
-      case expr : StaticInvokeExpr =>
-        None
+      case expr : DynamicInvokeExpr => ??? // TODO: Could only come from non-Java sources
+      case expr : StaticInvokeExpr => None
       case expr : InstanceInvokeExpr =>
+        //SpecialInvokeExpr
+        //InterfaceInvokeExpr
+        //VirtualInvokeExpr
         val d = eval(expr.getBase)
-        Log.info("expr.getBase: " + expr.getBase)
-        Log.info("base size: " + d.getValues.size)
         Some((d, expr.isInstanceOf[SpecialInvokeExpr]))
     }
-    Log.info("base: "+base)
     val method = expr.getMethod()
     val args = for (a <- expr.getArgs().toList) yield eval(a)
     val newFP = alloca(expr, nextStmt)
@@ -605,12 +631,6 @@ case class State(val stmt : Stmt,
       }
     }
 
-    // Library package names is in resources/libclasses.txt
-    // We put a dot at the end in case the package name is an exact match
-    // We end these with "." so we don't hit similarly named libraries
-    def isLibraryClass(c : SootClass) : Boolean =
-      System.libClasses.exists((c.getPackageName()+".").startsWith(_))
-
     // o.f(3);
     // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
@@ -619,13 +639,18 @@ case class State(val stmt : Stmt,
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, self, args)
         case None =>
+          /*
           if (Soot.isJavaLibraryClass(meth.getDeclaringClass) &&
               (!meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver") || meth.isAbstract()) ||
-              isLibraryClass(meth.getDeclaringClass) ||
+              System.isLibraryClass(meth.getDeclaringClass) ||
+              self.isDefined && Snowflakes.isSnowflakeObject(self.get)) {
+              */
+          if (Soot.isJavaLibraryClass(meth.getDeclaringClass) ||
+              System.isLibraryClass(meth.getDeclaringClass) ||
               self.isDefined && Snowflakes.isSnowflakeObject(self.get)) {
             Snowflakes.warn(this.id, self, stmt, meth)
-            if (meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver"))
-              Log.warn("Snowflake due to Abstract: "+meth)
+            //if (meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver"))
+            //  Log.warn("Snowflake due to Abstract: "+meth)
             DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
           }
           else if (meth.isNative) {
@@ -650,9 +675,7 @@ case class State(val stmt : Stmt,
             for (i <- 0 until args.length) {
               System.store.update(ParameterFrameAddr(newFP, i), args(i))
             }
-
-            val newState = State(Stmt.methodEntry(meth), newFP, newKontStack)
-            Set(newState)
+            Set(State(Stmt.methodEntry(meth), newFP, newKontStack))
           }
       }
     }
@@ -678,8 +701,8 @@ case class State(val stmt : Stmt,
         ((for (v <- normalObjects) yield {
           v match {
             case ObjectValue(sootClass, bp) if Soot.canStoreClass(sootClass, method.getDeclaringClass) =>
-              val objectClass = if (isSpecial) null else sootClass
-              val meth = (if (isSpecial) method else overrides(objectClass, method).head)
+              //val objectClass = if (isSpecial) null else sootClass
+              val meth = (if (isSpecial) method else overrides(sootClass, method).head)
               dispatch(Some(v), meth)
             case ArrayValue(sootType, bp) =>
               dispatch(Some(v), method)
@@ -787,11 +810,8 @@ case class State(val stmt : Stmt,
 
   def newExpr(lhsAddr : Set[Addr], sootClass : SootClass) = {
     val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
-    if (Soot.isJavaLibraryClass(sootClass) && !sootClass.getPackageName.startsWith("com.sun.net.httpserver")
-        || Snowflakes.contains(md)) {
-      //val obj = ObjectValue(sootClass, SnowflakeBasePointer(sootClass.getName))
-      //val d = D(Set(obj))
-      //System.store.update(lhsAddr, d)
+    //if (Soot.isJavaLibraryClass(sootClass) && !sootClass.getPackageName.startsWith("com.sun.net.httpserver")
+    if (Soot.isJavaLibraryClass(sootClass) || Snowflakes.contains(md)) {
       Snowflakes.createObject(Some(lhsAddr), sootClass)
     }
     else {
@@ -828,14 +848,17 @@ case class State(val stmt : Stmt,
             this.newExpr(lhsAddr, sootClass)
             Set(this.copy(stmt = stmt.nextSyntactic))
           case rhs : NewArrayExpr =>
-            //TODO, if base type is Java library class, call Snowflake.createArray
             // Value of lhsAddr will be set to a pointer to the array. (as opposed to the array itself)
-            createArray(rhs.getType(), List(eval(rhs.getSize())), lhsAddr)//, store)
+            rhs.getType match {
+              case rt: RefType if (Soot.isJavaLibraryClass(Soot.getSootClass(rt.getClassName))) =>
+                  Snowflakes.createArray(rt, List(eval(rhs.getSize)), lhsAddr)
+              case t => createArray(t, List(eval(rhs.getSize)), lhsAddr)
+            }
             Set(this.copy(stmt = stmt.nextSyntactic))
           case rhs : NewMultiArrayExpr =>
             //TODO, if base type is Java library class, call Snowflake.createArray
             //see comment above about lhs addr
-            createArray(rhs.getType(), rhs.getSizes().toList map eval, lhsAddr)
+            createArray(rhs.getType, rhs.getSizes.toList map eval, lhsAddr)
             Set(this.copy(stmt = stmt.nextSyntactic))
           case rhs =>
             System.store.update(lhsAddr, eval(rhs))
@@ -963,6 +986,12 @@ object System {
         else line::acc
       }
   }
+
+  // Library package names is in resources/libclasses.txt
+  // We put a dot at the end in case the package name is an exact match
+  // We end these with "." so we don't hit similarly named libraries
+  def isLibraryClass(c : SootClass) : Boolean =
+    System.libClasses.exists((c.getPackageName()+".").startsWith(_))
 
   private def addToMultiMap[K, V](table: mutable.Map[K, Set[V]])(key: K, value: V) {
     table.get(key) match {

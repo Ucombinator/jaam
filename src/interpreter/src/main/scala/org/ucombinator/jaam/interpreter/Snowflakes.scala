@@ -592,7 +592,6 @@ object Snowflakes {
       meth.getName,
       meth.getParameterTypes.toList.map(_.toString()),
       meth.getReturnType.toString())
-    Log.info("get.meth: "+meth)
     table.get(x)
   }
 
@@ -669,6 +668,20 @@ object Snowflakes {
       sub.foldLeft(sub)((acc, subclass) => allSubclasses(subclass)++acc)
     }
 
+    /*
+    Scene.v.loadClass(sootClass.getName, SootClass.HIERARCHY)
+    if (!Scene.v.containsClass(sootClass.getName)) {
+      Log.error("add " + sootClass.getName + " to Scene")
+      Scene.v.addClass(sootClass)
+    }
+    Scene.v.releaseFastHierarchy
+    */
+    if (!Soot.isJavaLibraryClass(sootClass) && !System.isLibraryClass(sootClass)) {
+      Log.error("Trying to use Snowflake to instantiate a non-Java library class: " + sootClass.getName + ", abort.")
+      throw new RuntimeException("")
+      return
+    }
+
     if (sootClass.isInterface) {
       //Log.error("Can not instantiate interface " + sootClass.getName + ".")
       val impls = allImplementers(sootClass)
@@ -679,7 +692,7 @@ object Snowflakes {
       if (impls.nonEmpty) return
       //Log.error("interface " + sootClass.getName + " has no implementers, continue.")
     }
-    if (sootClass.isAbstract) {
+    if (!sootClass.isInterface && sootClass.isAbstract) {
       val subs = allSubclasses(sootClass)
       for (subclass <- subs) {
         createObject(destAddr, subclass)
