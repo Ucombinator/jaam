@@ -765,7 +765,6 @@ case class State(val stmt : Stmt,
           System.addInitializedClass(sootClass)
         }
 
-        // TODO/soundness: needs to also initialize parent classes
         exceptions = D(Set())
         val meth = sootClass.getMethodByNameUnsafe(SootMethod.staticInitializerName)
         if (meth != null) {
@@ -779,9 +778,8 @@ case class State(val stmt : Stmt,
           Set(this.copy())
         }
 
-      case UninitializedSnowflakeObjectException(className) =>
-        Log.info("Initializing snowflake class "+className)
-        val sootClass = Soot.getSootClass(className)
+      case UninitializedSnowflakeObjectException(sootClass) =>
+        Log.info("Initializing snowflake class "+sootClass.getName)
         Snowflakes.initStaticFields(sootClass)
         System.addInitializedClass(sootClass)
         Set(this.copy())
@@ -962,7 +960,7 @@ object System {
   def checkInitializedClasses(c : SootClass) {
     if (!initializedClasses.contains(c)) {
       if (System.isLibraryClass(c))
-        throw new UninitializedSnowflakeObjectException(c.getName)
+        throw new UninitializedSnowflakeObjectException(c)
       throw new UninitializedClassException(c)
     }
   }

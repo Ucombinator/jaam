@@ -64,7 +64,7 @@ case class ReturnSnowflake(value : D) extends SnowflakeHandler {
   }
 }
 
-case class UninitializedSnowflakeObjectException(className : String) extends RuntimeException
+case class UninitializedSnowflakeObjectException(sootClass: SootClass) extends RuntimeException
 
 case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
@@ -620,7 +620,7 @@ object Snowflakes {
   // TODO: createObjectOrThrow vs createObject
   def createObjectOrThrow(name : String) : D = {
     if (!initializedClasses.contains(name)) {
-      throw UninitializedSnowflakeObjectException(name)
+      throw UninitializedSnowflakeObjectException(Soot.getSootClass(name))
     }
     D(Set(ObjectValue(Soot.getSootClass(name), SnowflakeBasePointer(name))))
   }
@@ -636,10 +636,10 @@ object Snowflakes {
 
   def initStaticFields(sootClass: SootClass) {
     if (initializedClasses.contains(sootClass.getName)) return
+    if (sootClass.hasSuperclass) initStaticFields(sootClass.getSuperclass)
     for (field <- sootClass.getFields; if field.isStatic) {
       initField(Set(StaticFieldAddr(field)), field)
     }
-    if (sootClass.hasSuperclass) initStaticFields(sootClass.getSuperclass)
     initializedClasses = (sootClass.getName)::initializedClasses
   }
 
