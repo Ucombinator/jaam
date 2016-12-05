@@ -161,11 +161,11 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
     val methodsOfArgs = (for {
       (arg, ty) <- args zip meth.getParameterTypes if ty.isInstanceOf[RefType];
       sootClass = ty.asInstanceOf[RefType].getSootClass;
-      if (sootClass.isInterface || sootClass.isAbstract) && Soot.isJavaLibraryClass(sootClass)
+      if (sootClass.isInterface || sootClass.isAbstract) && System.isLibraryClass(sootClass)
     } yield {
       val newValues = arg.getValues.filter(_ match {
         case ObjectValue(objClass, bp) =>
-          !Soot.isJavaLibraryClass(objClass) && Soot.canStoreClass(objClass, sootClass)
+          !System.isLibraryClass(objClass) && Soot.canStoreClass(objClass, sootClass)
         case _ => false
       })
 
@@ -651,6 +651,9 @@ object Snowflakes {
     }
   }
 
+  /* Snowflakes.createObject should only used for instantiating Java library or
+     application library classes.
+     */
   def createObject(destAddr: Option[Set[Addr]], sootClass: SootClass) {
     def allSuperClasses(sootClass: SootClass, supers: Set[SootClass]): Set[SootClass] = {
       if (sootClass.hasSuperclass) allSuperClasses(sootClass.getSuperclass, supers + sootClass.getSuperclass)
@@ -676,9 +679,9 @@ object Snowflakes {
     }
     Scene.v.releaseFastHierarchy
     */
-    if (!Soot.isJavaLibraryClass(sootClass) && !System.isLibraryClass(sootClass)) {
-      Log.error("Trying to use Snowflake to instantiate a non-Java library class: " + sootClass.getName + ", abort.")
-      throw new RuntimeException("")
+    if (!System.isLibraryClass(sootClass)) {
+      // TODO
+      //throw new RuntimeException("Trying to use Snowflake to instantiate a non-Java library class: " + sootClass.getName + ", abort.")
       return
     }
 

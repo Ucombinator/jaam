@@ -534,7 +534,7 @@ case class State(val stmt : Stmt,
               case a : ArrayType => ???
             }
 
-            if (Soot.isJavaLibraryClass(castedClass) || System.isLibraryClass(castedClass)) {
+            if (System.isLibraryClass(castedClass)) {
               // Snowflake object cast to Snowflake object
               //Log.error("casting snowflake object " + v.asInstanceOf[ObjectValue].castedClass.getName + " to " + sootClass.getName)
               val bp = SnowflakeBasePointer(castedClass.getName)
@@ -582,17 +582,15 @@ case class State(val stmt : Stmt,
                    destAddr : Option[Set[Addr]],
                    nextStmt : Stmt = stmt.nextSyntactic) : Set[AbstractState] = {
     val base = expr match {
-      case expr : DynamicInvokeExpr => ??? // TODO: Could only come from non-Java sources
+      // TODO: Could only come from non-Java sources
+      case expr : DynamicInvokeExpr => ???
       case expr : StaticInvokeExpr => None
       case expr : InstanceInvokeExpr =>
-        //SpecialInvokeExpr
-        //InterfaceInvokeExpr
-        //VirtualInvokeExpr
         val d = eval(expr.getBase)
         Some((d, expr.isInstanceOf[SpecialInvokeExpr]))
     }
-    val method = expr.getMethod()
-    val args = for (a <- expr.getArgs().toList) yield eval(a)
+    val method = expr.getMethod
+    val args = expr.getArgs.toList map eval
     val newFP = alloca(expr, nextStmt)
 
     handleInvoke2(base, method, args, newFP, destAddr, nextStmt)
@@ -639,14 +637,8 @@ case class State(val stmt : Stmt,
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, self, args)
         case None =>
-          /*
-          if (Soot.isJavaLibraryClass(meth.getDeclaringClass) &&
-              (!meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver") || meth.isAbstract()) ||
-              System.isLibraryClass(meth.getDeclaringClass) ||
-              self.isDefined && Snowflakes.isSnowflakeObject(self.get)) {
-              */
-          if (Soot.isJavaLibraryClass(meth.getDeclaringClass) ||
-              System.isLibraryClass(meth.getDeclaringClass) ||
+          /* (!meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver") || meth.isAbstract()) || */
+          if (System.isLibraryClass(meth.getDeclaringClass) ||
               self.isDefined && Snowflakes.isSnowflakeObject(self.get)) {
             Snowflakes.warn(this.id, self, stmt, meth)
             //if (meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver"))
@@ -810,8 +802,8 @@ case class State(val stmt : Stmt,
 
   def newExpr(lhsAddr : Set[Addr], sootClass : SootClass) = {
     val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
-    //if (Soot.isJavaLibraryClass(sootClass) && !sootClass.getPackageName.startsWith("com.sun.net.httpserver")
-    if (Soot.isJavaLibraryClass(sootClass) || Snowflakes.contains(md)) {
+    //if (System.isLibraryClass(sootClass) && !sootClass.getPackageName.startsWith("com.sun.net.httpserver")
+    if (System.isLibraryClass(sootClass) || Snowflakes.contains(md)) {
       Snowflakes.createObject(Some(lhsAddr), sootClass)
     }
     else {
@@ -850,7 +842,7 @@ case class State(val stmt : Stmt,
           case rhs : NewArrayExpr =>
             // Value of lhsAddr will be set to a pointer to the array. (as opposed to the array itself)
             rhs.getType match {
-              case rt: RefType if (Soot.isJavaLibraryClass(Soot.getSootClass(rt.getClassName))) =>
+              case rt: RefType if (System.isLibraryClass(Soot.getSootClass(rt.getClassName))) =>
                   Snowflakes.createArray(rt, List(eval(rhs.getSize)), lhsAddr)
               case t => createArray(t, List(eval(rhs.getSize)), lhsAddr)
             }
@@ -964,7 +956,7 @@ object System {
   // If it isn't, the exception should be caught so the class can be initialized.
   def checkInitializedClasses(c : SootClass) {
     if (!initializedClasses.contains(c)) {
-      if (Soot.isJavaLibraryClass(c))
+      if (System.isLibraryClass(c))
         throw new UninitializedSnowflakeObjectException(c.getName)
       throw new UninitializedClassException(c)
     }
@@ -977,21 +969,23 @@ object System {
     }
   }
 
-  var libClasses: List[String] = List()
-  def setLibraryClasses(libClassesFile: String) {
-    if (libClassesFile != null && libClassesFile.size > 0)
-      libClasses = Source.fromFile(libClassesFile).getLines.toList.foldLeft(List[String]()) { (acc, l) =>
-        val line = l.trim
-        if (line(0) == '#') acc
-        else line::acc
-      }
+  def isLibraryClass(c: SootClass): Boolean = {
+    isAppLibraryClass(c) || Soot.isJavaLibraryClass(c)
   }
 
-  // Library package names is in resources/libclasses.txt
+  // Application Library package names is in resources/libclasses.txt
   // We put a dot at the end in case the package name is an exact match
   // We end these with "." so we don't hit similarly named libraries
-  def isLibraryClass(c : SootClass) : Boolean =
-    System.libClasses.exists((c.getPackageName()+".").startsWith(_))
+  var appLibClasses: List[String] = List()
+  def setAppLibraryClasses(libClassesFile: String) {
+    if (libClassesFile != null && libClassesFile.size > 0)
+      appLibClasses = Source.fromFile(libClassesFile).getLines.toList.foldLeft(List[String]()) { (acc, l) =>
+        val line = l.trim
+        if (line(0) == '#') acc else line::acc
+      }
+  }
+  def isAppLibraryClass(c : SootClass) : Boolean =
+    System.appLibClasses.exists((c.getPackageName()+".").startsWith(_))
 
   private def addToMultiMap[K, V](table: mutable.Map[K, Set[V]])(key: K, value: V) {
     table.get(key) match {
@@ -1119,7 +1113,7 @@ object Main {
   }
 
   def defaultMode(config : Config) {
-    System.setLibraryClasses(config.libClassesFile)
+    System.setAppLibraryClasses(config.libClassesFile)
     val outputFileOpt = Option(config.outputFile)
     var outputFile: String = null
     outputFileOpt match {
