@@ -753,20 +753,25 @@ case class State(val stmt : Stmt,
     } catch {
       case UninitializedClassException(sootClass) =>
         Log.info("Static initializing "+sootClass)
+
+        def initializeClass(sootClass: SootClass) {
+          if (sootClass.hasSuperclass) {
+            initializeClass(sootClass.getSuperclass)
+          }
+          // Initialize all static fields per JVM 5.4.2 and 5.5
+          for (f <- sootClass.getFields if f.isStatic) {
+            System.store.update(StaticFieldAddr(f), staticInitialValue(f))
+          }
+          System.addInitializedClass(sootClass)
+        }
+
         // TODO/soundness: needs to also initialize parent classes
         exceptions = D(Set())
         val meth = sootClass.getMethodByNameUnsafe(SootMethod.staticInitializerName)
-
         if (meth != null) {
-          // Initialize all static fields per JVM 5.4.2 and 5.5
-          val staticUpdates = for {
-            f <- sootClass.getFields(); if f.isStatic
-          } yield (StaticFieldAddr(f) -> staticInitialValue(f))
-          System.store.update(mutable.Map(staticUpdates.toMap.toSeq: _*))
-          System.addInitializedClass(sootClass)
-          val newState = this.copy()
+          initializeClass(sootClass)
           // TODO: Do we need to use the same JStaticInvokeExpr for repeated calls?
-          newState.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
+          this.copy().handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
             java.util.Collections.emptyList()), None, stmt)
         } else {
           // TODO: Do we need to do newStore for static fields?
