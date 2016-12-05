@@ -428,7 +428,7 @@ case class State(val stmt : Stmt,
         !op.getType.isInstanceOf[DoubleType])
     }
     val result = v match {
-      //TODO missing: CmplExpr, CmpgExpr, MethodHandle
+      //TODO missing: MethodHandle
       //TODO/precision actually do the calculations
       case (_ : Local) | (_ : Ref) =>
         val addrs = addrsOf(v)
@@ -586,6 +586,9 @@ case class State(val stmt : Stmt,
       case expr : DynamicInvokeExpr => ???
       case expr : StaticInvokeExpr => None
       case expr : InstanceInvokeExpr =>
+      // SpecialInvokeExpr, <init>, private methods, and methods of superclass
+      // InterfaceInvokeExpr
+      // VirtualInvokeExpr
         val d = eval(expr.getBase)
         Some((d, expr.isInstanceOf[SpecialInvokeExpr]))
     }
