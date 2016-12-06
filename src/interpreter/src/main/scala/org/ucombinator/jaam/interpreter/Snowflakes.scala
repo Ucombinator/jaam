@@ -13,7 +13,11 @@ import soot.jimple.{Stmt => SootStmt, _}
 // TODO: this and params method
 // TODO: returns method
 
-case class SnowflakeBasePointer(val name : String) extends BasePointer
+abstract class AbstractSnowflakeBasePointer extends BasePointer
+case class SnowflakeBasePointer(name: String) extends AbstractSnowflakeBasePointer
+case class SnowflakeArrayBasePointer(at: ArrayType) extends AbstractSnowflakeBasePointer
+case class SnowflakeInterfaceBasePointer(name: String) extends AbstractSnowflakeBasePointer
+case class SnowflakeAbstractClassBasePointer(name: String) extends AbstractSnowflakeBasePointer
 
 // Uniquely identifies a particular method somewhere in the program.
 case class MethodDescription(val className : String,
@@ -78,13 +82,14 @@ case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
 }
 
 case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
+  //TODO
   def typesToDs(types: List[Type]): List[D] = {
     def typeToD(ty: Type): D = {
       ty match {
         case _ : PrimType => D.atomicTop
-        case at : ArrayType => D(Set(ArrayValue(at.getElementType, SnowflakeBasePointer("array")))) //TODO
+        case at : ArrayType => D(Set(ArrayValue(at.getElementType, Snowflakes.malloc(at))))
         case rt : RefType =>
-          D(Set(ObjectValue(Soot.getSootClass(rt.getClassName), SnowflakeBasePointer(rt.getClassName))))
+          D(Set(ObjectValue(Soot.getSootClass(rt.getClassName), Snowflakes.malloc(rt.getSootClass))))
       }
     }
     types map typeToD
@@ -104,7 +109,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
     }
 
     val exceptions = for (exception <- meth.getExceptions) yield {
-      ObjectValue(exception, SnowflakeBasePointer(exception.getName))
+      ObjectValue(exception, Snowflakes.malloc(exception))
     }
     val exceptionStates = (exceptions map {
       state.kontStack.handleException(_, state.stmt, state.fp)
@@ -120,7 +125,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
         val states = ReturnArraySnowflake(at.baseType.toString, at.numDimensions)(state, nextStmt, self, args)
         val values = System.store(GlobalSnowflakeAddr).getValues
 
-        val bp = SnowflakeBasePointer(at.toString)
+        val bp = Snowflakes.malloc(at)
         state.stmt.sootStmt match {
           case stmt : DefinitionStmt =>
             stmt.getLeftOp.getType match {
@@ -569,10 +574,6 @@ object ClassSnowflakes {
 }
 
 object Snowflakes {
-  def isSnowflakeObject(v: Value): Boolean = {
-    v.isInstanceOf[ObjectValue] && v.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]
-  }
-
   def warn(id : Int, self: Option[Value], stmt : Stmt, meth : SootMethod) {
     Log.warn("Using generic snowflake for Java library in state "+id+". May be unsound." +
       " self = " + self +
@@ -598,9 +599,25 @@ object Snowflakes {
   def contains(meth : MethodDescription) : Boolean =
     table.contains(meth)
 
-  def createArray(at: soot.Type, sizes: List[D], addrs: Set[Addr]) {
-    val bp = SnowflakeBasePointer(at.toString)
-    createArray(at, sizes, addrs, bp)
+  //////////////////////////
+
+  def malloc(sootClass: SootClass): AbstractSnowflakeBasePointer = {
+    if (sootClass.isInterface) SnowflakeInterfaceBasePointer(sootClass.getName)
+    else if (sootClass.isAbstract) SnowflakeAbstractClassBasePointer(sootClass.getName)
+    else SnowflakeBasePointer(sootClass.getName)
+  }
+  def malloc(at: ArrayType): AbstractSnowflakeBasePointer = { SnowflakeArrayBasePointer(at) }
+  def malloc(name: String): AbstractSnowflakeBasePointer = { SnowflakeBasePointer(name) }
+
+  def isSnowflakeObject(v: Value): Boolean = v.isInstanceOf[ObjectValue] && isSnowflakeObject(v.asInstanceOf[ObjectValue])
+  def isSnowflakeObject(v: ObjectValue): Boolean = v.bp.isInstanceOf[AbstractSnowflakeBasePointer]
+
+  def createArray(t: soot.Type, sizes: List[D], addrs: Set[Addr]) {
+    val bp = t match {
+      case at: ArrayType => Snowflakes.malloc(at)
+      case _ => Snowflakes.malloc(t.toString) //TODO
+    }
+    createArray(t, sizes, addrs, bp)
   }
 
   def createArray(at: soot.Type, sizes: List[D], addrs: Set[Addr], bp: BasePointer) {
@@ -622,7 +639,7 @@ object Snowflakes {
     if (!initializedClasses.contains(name)) {
       throw UninitializedSnowflakeObjectException(Soot.getSootClass(name))
     }
-    D(Set(ObjectValue(Soot.getSootClass(name), SnowflakeBasePointer(name))))
+    D(Set(ObjectValue(Soot.getSootClass(name), Snowflakes.malloc(Soot.getSootClass(name)))))
   }
 
   private def initField(addrs: Set[Addr], field: SootField) {
@@ -671,62 +688,56 @@ object Snowflakes {
       sub.foldLeft(sub)((acc, subclass) => allSubclasses(subclass)++acc)
     }
 
-    /*
-    Scene.v.loadClass(sootClass.getName, SootClass.HIERARCHY)
-    if (!Scene.v.containsClass(sootClass.getName)) {
-      Log.error("add " + sootClass.getName + " to Scene")
-      Scene.v.addClass(sootClass)
-    }
-    Scene.v.releaseFastHierarchy
-    */
     if (!System.isLibraryClass(sootClass)) {
-      // TODO
-      //throw new RuntimeException("Trying to use Snowflake to instantiate a non-Java library class: " + sootClass.getName + ", abort.")
+      //throw new RuntimeException("Trying to use Snowflake to instantiate a non-library class: " + sootClass.getName + ", abort.")
+      Log.error("Trying to use Snowflake to instantiate a non-library class: " + sootClass.getName)
       return
     }
 
-    if (sootClass.isInterface) {
-      //Log.error("Can not instantiate interface " + sootClass.getName + ".")
-      val impls = allImplementers(sootClass)
-      for (impl <- impls) {
-        //Log.error("Use " + impl.getName + " instaed.")
-        createObject(destAddr, impl)
-      }
-      if (impls.nonEmpty) return
-      //Log.error("interface " + sootClass.getName + " has no implementers, continue.")
-    }
-    if (!sootClass.isInterface && sootClass.isAbstract) {
-      val subs = allSubclasses(sootClass)
-      for (subclass <- subs) {
-        createObject(destAddr, subclass)
-      }
-      if (subs.nonEmpty) return
-      //Log.error("abstract class " + sootClass.getName + " has no subclass, continue.")
-    }
-
     val className = sootClass.getName
-    val objectBP = SnowflakeBasePointer(className)
+    val objectBP = Snowflakes.malloc(sootClass)
     destAddr match {
       case Some(addr) => System.store.update(destAddr, D(Set(ObjectValue(sootClass, objectBP))))
       case None => {}
     }
-
     if (instantiatedClasses.contains(className)) return
     instantiatedClasses = className::instantiatedClasses
 
-    initInstanceFields(sootClass, objectBP)
+    if (sootClass.isInterface) {
+      //Log.error("Can not instantiate interface " + sootClass.getName + ".")
+      val impls = allImplementers(sootClass)
+      for (impl <- impls) { createObject(destAddr, impl) }
+      if (impls.isEmpty) {
+        //Log.error("interface " + sootClass.getName + " has no implementers, continue.")
+        for (iface <- allInterfaces(sootClass)) {
+          initStaticFields(iface)
+        }
+        initStaticFields(sootClass)
+      }
+      return
+    }
+    if (!sootClass.isInterface && sootClass.isAbstract) {
+      val subs = allSubclasses(sootClass)
+      for (subclass <- subs) { createObject(destAddr, subclass) }
+      if (subs.nonEmpty) return
+      //Log.error("abstract class " + sootClass.getName + " has no subclass, continue.")
+    }
+
     for (superClass <- allSuperClasses(sootClass, Set())) {
       initInstanceFields(superClass, objectBP)
+      initStaticFields(superClass)
     }
-    for (interface <- allInterfaces(sootClass)) {
-      initInstanceFields(interface, objectBP)
+    for (iface <- allInterfaces(sootClass)) {
+      initStaticFields(iface)
     }
+    initInstanceFields(sootClass, objectBP)
+    initStaticFields(sootClass)
   }
 
   private def updateStore(oldStore : Store, clas : String, field : String, typ : String) =
     oldStore.update(StaticFieldAddr(Soot.getSootClass(clas).getFieldByName(field)),
       D(Set(ObjectValue(Soot.getSootClass(typ),
-        SnowflakeBasePointer(clas + "." + field))))).asInstanceOf[Store]
+        Snowflakes.malloc(clas + "." + field))))).asInstanceOf[Store]
 
   ClassSnowflakes
 
@@ -945,9 +956,9 @@ object Snowflakes {
       lazy val pathType = Soot.getSootClass("java.nio.file.Path")
       lazy val attributesType = Soot.getSootClass("java.nio.file.attribute.BasicFileAttributes")
       lazy val exceptionType = Soot.getSootClass("java.io.IOException")
-      lazy val pathParam = D(Set(ObjectValue(pathType, SnowflakeBasePointer("java.nio.file.Files.walkFileTree.Path"))))
-      lazy val attributesParam = D(Set(ObjectValue(attributesType, SnowflakeBasePointer("java.nio.file.Files.walkFileTree.BasicFileAttributes"))))
-      lazy val exceptionParam = D(Set(ObjectValue(exceptionType, SnowflakeBasePointer("java.nio.file.Files.walkFileTree.IOException"))))
+      lazy val pathParam = D(Set(ObjectValue(pathType, Snowflakes.malloc("java.nio.file.Files.walkFileTree.Path"))))
+      lazy val attributesParam = D(Set(ObjectValue(attributesType, Snowflakes.malloc("java.nio.file.Files.walkFileTree.BasicFileAttributes"))))
+      lazy val exceptionParam = D(Set(ObjectValue(exceptionType, Snowflakes.malloc("java.nio.file.Files.walkFileTree.IOException"))))
 
       override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
         // TODO: expr as argument to apply?

@@ -500,10 +500,12 @@ case class State(val stmt : Stmt,
 
       case v : CastExpr =>
         // TODO: cast from a SnowflakeObject to another SnowflakeObject
-        val castedExpr : SootValue = v.getOp
-        val castedType : Type = v.getCastType
+        val castedExpr: SootValue = v.getOp
+        //val fromType: Type = castedExpr.getType
+        val castedType: Type = v.getCastType
         System.checkInitializedClasses(castedType)
         val d = eval(castedExpr)
+
         // TODO: filter out elements of "d" that are not of the
         // expression's type (should be done in general inside "eval"
         // (and maybe already is))
@@ -537,7 +539,7 @@ case class State(val stmt : Stmt,
             if (System.isLibraryClass(castedClass)) {
               // Snowflake object cast to Snowflake object
               //Log.error("casting snowflake object " + v.asInstanceOf[ObjectValue].castedClass.getName + " to " + sootClass.getName)
-              val bp = SnowflakeBasePointer(castedClass.getName)
+              val bp = Snowflakes.malloc(castedClass)
               d2 = d2.join(D(Set(ObjectValue(castedClass, bp))))
               Snowflakes.createObject(None, castedClass)
             }
@@ -546,20 +548,6 @@ case class State(val stmt : Stmt,
               // TODO: if castedType is not from Java library, then we need to instantiated one
               // TODO: call <init>, interface/abstract class
               d2 = d2.join(Snowflakes.createObjectOrThrow(castedClass.getName))
-              /*
-              val bp : BasePointer = malloc()
-              val obj : Value = ObjectValue(castedClass, bp)
-              d2 = d2.join(D(Set(obj)))
-              System.checkInitializedClasses(castedClass)
-              // initialize instance fields to default values for their type
-              def initInstanceFields(c : SootClass) {
-                for (f <- c.getFields) {
-                  System.store.update(InstanceFieldAddr(bp, f), defaultInitialValue(f.getType))
-                }
-                if(c.hasSuperclass) initInstanceFields(c.getSuperclass)
-              }
-              initInstanceFields(castedClass)
-              */
             }
           }
           else {
@@ -680,30 +668,17 @@ case class State(val stmt : Stmt,
         System.checkInitializedClasses(method.getDeclaringClass())
         dispatch(None, method)
       case Some((b, isSpecial)) =>
-        // SnowflakeBasePointer objects only need to dispatch once,
-        // because eventually they will be handle by DefaultReturnSnowflake
-        val (sfBpObjects, normalObjects) = b.getValues.partition(_ match {
-          case ObjectValue(_, SnowflakeBasePointer(_)) => true
-          case _ => false
-        })
-
-        val sfStates = if (sfBpObjects.nonEmpty) {
-          val d = GlobalD.update(sfBpObjects)
-          System.store.strongUpdate(GlobalSnowflakeAddr, d, GlobalD.modified)
-          dispatch(Some(sfBpObjects.head), method)
-        } else { Set () }
-
-        ((for (v <- normalObjects) yield {
+        ((for (v <- b.getValues) yield {
           v match {
+            case ObjectValue(_, bp) if bp.isInstanceOf[AbstractSnowflakeBasePointer] => dispatch(Some(v), method)
             case ObjectValue(sootClass, bp) if Soot.canStoreClass(sootClass, method.getDeclaringClass) =>
-              //val objectClass = if (isSpecial) null else sootClass
-              val meth = (if (isSpecial) method else overrides(sootClass, method).head)
+              val meth = if (isSpecial) method else overrides(sootClass, method).head
               dispatch(Some(v), meth)
             case ArrayValue(sootType, bp) =>
               dispatch(Some(v), method)
             case _ => Set()
           }
-        }) :\ Set[AbstractState]())(_ ++ _) ++ sfStates// TODO: better way to do this?
+        }) :\ Set[AbstractState]())(_ ++ _) // TODO: better way to do this?
     }
   }
 

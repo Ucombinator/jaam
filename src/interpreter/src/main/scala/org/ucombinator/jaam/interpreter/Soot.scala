@@ -89,6 +89,8 @@ object Soot {
     // Take definitions only from class files
     Options.v().set_src_prec(Options.src_prec_only_class)
 
+    //Options.v.set_whole_program(true)
+
     // Compute dependent options
     soot.Main.v().autoSetOptions()
 
