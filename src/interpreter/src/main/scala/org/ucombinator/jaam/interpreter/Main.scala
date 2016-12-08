@@ -999,7 +999,7 @@ object System {
     trunOnRecording()
     val nexts = state.next()
     if (nexts.size == 0) {
-      Log.error("state [" + state.id + "] " + state + " has no successors")
+      Log.error("state[" + state.id + "] has no successors: " + state)
       System.noSucc += 1
     }
     turnOffRecording()
