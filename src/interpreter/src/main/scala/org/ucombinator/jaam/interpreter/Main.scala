@@ -926,6 +926,7 @@ object State {
 
 object System {
   var undefined: Int = 0
+  var noSucc: Int = 0
   val store: Store = Store(State.initial_map)
   val kstore: KontStore = KontStore(mutable.Map[KontAddr, KontD]())
 
@@ -999,6 +1000,7 @@ object System {
     val nexts = state.next()
     if (nexts.size == 0) {
       Log.error("state [" + state.id + "] " + state + " has no successors")
+      System.noSucc += 1
     }
     turnOffRecording()
 
@@ -1173,6 +1175,9 @@ object Main {
     Log.info("Done!")
     if (System.undefined != 0) {
       Log.error("Undefined address number: " + System.undefined)
+    }
+    if (System.noSucc != 0) {
+      Log.error("No successor state number: " + System.noSucc)
     }
   }
 }
