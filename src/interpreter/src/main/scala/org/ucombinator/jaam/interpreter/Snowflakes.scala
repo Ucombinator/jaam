@@ -690,7 +690,7 @@ object Snowflakes {
 
     if (!System.isLibraryClass(sootClass)) {
       //throw new RuntimeException("Trying to use Snowflake to instantiate a non-library class: " + sootClass.getName + ", abort.")
-      Log.error("Trying to use Snowflake to instantiate a non-library class: " + sootClass.getName)
+      //Log.error("Trying to use Snowflake to instantiate a non-library class: " + sootClass.getName)
       return
     }
 

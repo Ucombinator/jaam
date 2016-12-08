@@ -776,6 +776,7 @@ case class State(val stmt : Stmt,
       */
       case UndefinedAddrsException(addrs) =>
         //An empty set of addrs may due to the over approximation of ifStmt.
+        System.undefined += 1
         Log.error("Undefined Addrs in state "+this.id+"; stmt = "+stmt+"; addrs = "+addrs)
         Set()
     }
@@ -924,6 +925,7 @@ object State {
 }
 
 object System {
+  var undefined: Int = 0
   val store: Store = Store(State.initial_map)
   val kstore: KontStore = KontStore(mutable.Map[KontAddr, KontD]())
 
@@ -996,7 +998,7 @@ object System {
     trunOnRecording()
     val nexts = state.next()
     if (nexts.size == 0) {
-      Log.warn("state " + state.id + " has no successors")
+      Log.warn("state [" + state.id + "] " + state + " has no successors")
     }
     turnOffRecording()
 
@@ -1169,5 +1171,8 @@ object Main {
     sorted.foreach { case (size, n) => println(size + " \t " + n) }
     */
     Log.info("Done!")
+    if (System.undefined != 0) {
+      Log.error("Undefined address number: " + System.undefined)
+    }
   }
 }
