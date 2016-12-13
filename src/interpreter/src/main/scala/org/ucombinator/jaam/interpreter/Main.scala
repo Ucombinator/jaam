@@ -571,22 +571,17 @@ case class State(val stmt : Stmt,
     // o.f(3); // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
     def dispatch(self : Option[Value], meth : SootMethod) : Set[AbstractState] = {
-      // We end these with "." so we don't hit similarly named libraries
-      def isLibraryClass(c : SootClass) : Boolean =
-        // We put a dot at the end in case the package name is an exact match
-        System.libClasses.exists((c.getPackageName()+".").startsWith(_))
-
       Log.info("meth: "+meth)
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, self, args)
         case None =>
-          if (isLibraryClass(meth.getDeclaringClass) ||
-              self.isDefined &&
+          if (self.isDefined &&
               self.get.isInstanceOf[ObjectValue] &&
               self.get.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
             Snowflakes.warn(this.id, stmt, meth)
-            if (meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver"))
+            if (meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver")) {
               Log.warn("Snowflake due to Abstract: "+meth)
+            }
             DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
           } else if (meth.isNative) {
             Log.warn("Native method without a snowflake in state "+this.id+". May be unsound. stmt = " + stmt)
