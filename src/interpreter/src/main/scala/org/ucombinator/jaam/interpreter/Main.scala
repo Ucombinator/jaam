@@ -587,8 +587,9 @@ case class State(val stmt : Stmt,
               self.get.isInstanceOf[ObjectValue] &&
               self.get.asInstanceOf[ObjectValue].bp.isInstanceOf[SnowflakeBasePointer]) {
             Snowflakes.warn(this.id, stmt, meth)
-            if (meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver"))
+            if (meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver")) {
               Log.warn("Snowflake due to Abstract: "+meth)
+            }
             DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
           } else if (meth.isNative) {
             Log.warn("Native method without a snowflake in state "+this.id+". May be unsound. stmt = " + stmt)
