@@ -32,6 +32,7 @@ public class Vertex extends AbstractVertex
 		this.id = d;
 		this.name = nm;
 		this.index = i;
+		this.method = new Method();
 		
 		this.parent = null;
 		this.mergeParent = null;
@@ -65,15 +66,16 @@ public class Vertex extends AbstractVertex
 				+ "statement: " + this.getInstruction() + "\n"
 				+ "method: " + this.getMethodName() + "\n"
 				+ " location (left, right, top, bottom): "
-				+ this.left + ", " + this.right + ", " + this.top + ", " + this.bottom + "\n"
-				+ this.getDescription() + "\n";
+				+ this.location.left + ", " + this.location.right + ", " + this.location.top + ", " + this.location.bottom + "\n"
+				+ this.getDescription() + "\n"
+				+ "visibility = " + this.isVisible + "\n";
 		return str;
 	}
 	
     public String getShortDescription()
     {
 //        String str = this.id+": Regular Vertex\n        statement: " + this.getInstruction() + "\n";
-        String str = "<html>"+this.id+": Regular Vertex<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+        String str = "<html>" + this.id + ": Regular Vertex<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
                     + "statement: " + Parameters.getHTMLVerbatim(this.getInstruction()) + "</html>";
         return ""+str;
     }

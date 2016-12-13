@@ -6,6 +6,11 @@ import java.util.Map.Entry;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 
+import javafx.animation.Transition;
+import javafx.animation.ParallelTransition;
+import javafx.animation.ScaleTransition;
+import javafx.animation.FadeTransition;
+
 public class Graph
 {
 	public int totalVertices;
@@ -13,6 +18,7 @@ public class Graph
 	public ArrayList<Vertex> vertices;
 	public ArrayList<MethodVertex> methodVertices;
 	public ArrayList<MethodPathVertex> methodPathVertices;
+	public ArrayList<Edge> edges;
     public ArrayList<String> tagsList;
     public ArrayList<Boolean> highlightedTags;
 	public HashMap<String, Method> methods;
@@ -32,6 +38,8 @@ public class Graph
 		this.vertices = new ArrayList<Vertex>();
 		this.methodVertices = new ArrayList<MethodVertex>();
 		this.methodPathVertices = new ArrayList<MethodPathVertex>();
+		this.edges = new ArrayList<Edge>();
+
 		this.methods = new HashMap<String, Method>();
 		this.classes = new HashMap<String, Class>();
 		root = new Vertex(-1,-1);
@@ -162,7 +170,7 @@ public class Graph
 		{
 //			v.clearAllHighlights();
 			v.clearAllSelect();
-			if(v.isVisible && x1 < v.x && v.x < x2 && y1 < v.y && v.y < y2)
+			if(v.isVisible && x1 < v.location.x && v.location.x < x2 && y1 < v.location.y && v.location.y < y2)
 				v.addHighlight(true, false, true, true);
 		}
 		
@@ -170,7 +178,7 @@ public class Graph
 		{
 //			v.clearAllHighlights();
 			v.clearAllSelect();
-			if(v.isVisible && x1 < v.x && v.x < x2 && y1 < v.y && v.y < y2)
+			if(v.isVisible && x1 < v.location.x && v.location.x < x2 && y1 < v.location.y && v.location.y < y2)
 				v.addHighlight(true, false, true, true);
 		}
 		
@@ -178,7 +186,7 @@ public class Graph
 		{
 //			v.clearAllHighlights();
 			v.clearAllSelect();
-			if(v.isVisible && x1 < v.x && v.x < x2 && y1 < v.y && v.y < y2)
+			if(v.isVisible && x1 < v.location.x && v.location.x < x2 && y1 < v.location.y && v.location.y < y2)
 				v.addHighlight(true, false, true, true);
 		}
         Parameters.ping();
@@ -233,9 +241,9 @@ public class Graph
 		
 		if(ver == null)
 		{
-			totalVertices++;
-			ver = new Vertex(v, this.vertices.size());
+			ver = new Vertex(v, totalVertices);
 			this.vertices.add(ver);
+			totalVertices++;
 		}
 		
 		this.matchVertexToMethod(ver, methodName);
@@ -251,6 +259,7 @@ public class Graph
 
 	public void matchVertexToMethod(Vertex v, String methodName)
 	{
+		System.out.println("Setting method for vertex: " + v.getName());
 		Method currMethod;
 		if(this.methods.containsKey(methodName))
 		{
@@ -803,39 +812,30 @@ public class Graph
 		for(MethodVertex v : this.methodVertices)
 		{
 			if(v.isVisible)
-			{
 				v.deCollapse();
-			}
 		}
 		
 		for(MethodPathVertex v : this.methodPathVertices)
 		{
 			if(v.isVisible)
-			{
 				v.deCollapse();
-			}
 		}
 	}
 	
 	public void collapseAll()
 	{
 		boolean flag = true;
-		while(flag)
-		{
+		while(flag) {
 			flag = false;
-			for(MethodVertex v : this.methodVertices)
-			{
-				if(v.mergeRoot.isVisible)
-				{
+			for (MethodVertex v : this.methodVertices) {
+				if (v.mergeRoot.isVisible) {
 					flag = true;
 					v.collapse();
 				}
 			}
-			
-			for(MethodPathVertex v : this.methodPathVertices)
-			{
-				if(v.mergeRoot.isVisible)
-				{
+
+			for (MethodPathVertex v : this.methodPathVertices) {
+				if (v.mergeRoot.isVisible) {
 					flag = true;
 					v.collapse();
 				}
@@ -880,16 +880,16 @@ public class Graph
 	
 	public void printAdjacencyList()
 	{
-		for(int i=0; i<this.vertices.size(); i++)
+		for(int i = 0; i < this.vertices.size(); i++)
 		{
 			Vertex v = this.vertices.get(i);
 			
-			System.out.print(v.id+": ");
+			System.out.print(v.id + ": ");
 			int deg = v.getOutDegree();
 			
 			for(int j = 0; j < deg; j++)
 			{
-				System.out.print(v.neighbors.get(j).id+" ");
+				System.out.print(v.neighbors.get(j).id + " ");
 			}
 			System.out.println("");
 		}
@@ -903,7 +903,7 @@ public class Graph
 			
 			System.out.print(v.getName()+": ");
 			
-			for(int j=0; j<v.children.size(); j++)
+			for(int j = 0; j < v.children.size(); j++)
 			{
 				System.out.print(v.children.get(j).getName()+" ");
 			}
@@ -915,7 +915,7 @@ public class Graph
 	{
 		System.out.print(v.getName() + ": ");
 		
-		for(int j=0; j<v.children.size(); j++)
+		for(int j = 0; j < v.children.size(); j++)
 		{
 			System.out.print(v.children.get(j).getName() + " ");
 		}
@@ -936,25 +936,25 @@ public class Graph
 	public void printCoordinates()
 	{
 		AbstractVertex v = this.root;
-		System.out.println("root: " + v.x + ", " + v.y + ", left = " + v.left + ", right = " + v.right + ", width = " + v.width + ", top = " + v.top + ", bottom = " + v.bottom + ", height = " + v.height);
-		for(int i=0; i<this.vertices.size(); i++)
+		System.out.println(v.getName() + ": " + v.location);
+		for(int i = 0; i < this.vertices.size(); i++)
 		{
 			v = this.vertices.get(i);
 			
-			System.out.println(v.getName() + ": " + v.x + ", " + v.y + ", left = " + v.left + ", right = " + v.right + ", width = " + v.width + ", top = " + v.top + ", bottom = " + v.bottom + ", height = " + v.height);
+			System.out.println(v.getName() + ": " + v.location);
 		}
 	}
 
 	//Return the width of our graph in box units
 	public double getWidth()
 	{
-		return root.width;
+		return root.location.width;
 	}
 
 	//Return the height of our graph in box units
 	public double getHeight()
 	{
-		return root.height - 1;
+		return root.location.height - 1;
 	}
 	
 	//Next three methods modified from "A New Algorithm for Identifying Loops in Decompilation"

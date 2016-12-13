@@ -1,4 +1,6 @@
 
+import javafx.application.Platform;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.regex.Matcher;
@@ -6,17 +8,18 @@ import java.util.regex.Pattern;
 
 import javax.swing.JFileChooser;
 import javax.swing.JTextArea;
-import java.awt.Color;
-import java.awt.Font;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.Font;
+import java.awt.Color;
 
 import javax.swing.Timer;
 
 public class Parameters
 {
 	public static int width = 1200, height = 800;
+	public static int transitionTime = 500; // 500 milliseconds
 	public static double minBoxWidth = 20, minBoxHeight = 20;
 	public static double zoomFactor = 3.0/4.0, boxFactor = 3.0/4.0;
 	public static int boxLines = 3;
@@ -25,6 +28,9 @@ public class Parameters
 	public static CodeArea leftArea;
     public static SearchArea searchArea;
 	public static String pwd = "./";
+	public static javafx.scene.paint.Color fxColorFocus = javafx.scene.paint.Color.BLUE,
+			fxColorSelection = javafx.scene.paint.Color.ALICEBLUE,
+			fxColorHighlight = javafx.scene.paint.Color.YELLOW;
 	public static Color colorFocus = new Color(Integer.parseInt("FFF7BC", 16)),
 			colorSelection = new Color(Integer.parseInt("A6BDDB", 16)),
 			colorHighlight = new Color(Integer.parseInt("2B8CBE", 16));
@@ -183,16 +189,26 @@ public class Parameters
 
 	public static void repaintAll()
 	{
+		Platform.runLater(new Runnable() {
+			@Override
+			public void run() {
+				stFrame.vizPanel.updateVertices();
+				stFrame.contextPanel.updateVertices();
+			}
+		});
+
 		leftArea.setDescription();
 		setRightText();
         searchArea.writeText();
 		stFrame.repaint();
-        
+
         if(Parameters.fixCaret)
         {
             Parameters.fixCaret = false;
             Parameters.fixCaretPositions();
         }
+
+        // Main.graph.printCoordinates();
 	}
 	
     

@@ -2,6 +2,12 @@
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.ArrayList;
 
+import javafx.animation.*;
+import javafx.scene.layout.StackPane;
+import javafx.scene.shape.*;
+import javafx.scene.text.Text;
+import javafx.util.Duration;
+
 //The base class for the various kinds of vertices.
 //An abstract vertex is a box on the screen. The subclasses vary in
 //what kind of data the vertex represents.
@@ -31,9 +37,16 @@ public abstract class AbstractVertex
 	//The base graph is stored in the neighbors in the Vertex class.
 	protected ArrayList<AbstractVertex> children, incoming;
 
-	//These are the coordinates of a subtree (maybe?)
-	protected double left, right, top, bottom;
-	protected double x, y, width, height;
+	// A location stores coordinates for a subtree.
+	protected Location location;
+	boolean updateLocation;
+	protected StackPane mainRectPane, contextRectPane;
+	protected Rectangle mainRect, contextRect;
+	protected Text mainRectLabel, contextRectLabel;
+
+	// TODO: We're using straight lines for all of the edges. Some should be changed to be cubic curves.
+	protected ArrayList<Line> incomingEdges;
+	protected ArrayList<Line> outgoingEdges;
 	
 	//The merge start is the first vertex of the merge children for a merge vertex, and is used
 	//to create its incoming edges.
@@ -57,17 +70,40 @@ public abstract class AbstractVertex
 		this.incoming = new ArrayList<AbstractVertex>();
 		this.children = new ArrayList<AbstractVertex>();
         this.tags = new ArrayList<Integer>();
-		
-		this.width = 1;
-		this.height = 1;
-		this.left = 0;
-		this.right = 1;
-		this.top = -1;
-		this.bottom = 0;
-		this.x = 0.5;
-		this.y = -0.5;
+
+        this.location = new Location();
+        this.updateLocation = false;
+
+		this.mainRectPane = new StackPane();
+		this.contextRectPane = new StackPane();
+		this.mainRect = new Rectangle();
+		this.contextRect = new Rectangle();
+		this.mainRectLabel = new Text();
+		this.contextRectLabel = new Text();
+		this.mainRectPane.getChildren().addAll(this.mainRect, this.mainRectLabel);
+		this.contextRectPane.getChildren().addAll(this.contextRect, this.contextRectLabel);
+
+		this.mainRectPane.setLayoutX(0);
+		this.mainRectPane.setLayoutY(0);
+		this.contextRectPane.setLayoutX(0);
+		this.contextRectPane.setLayoutY(0);
+
+		this.incomingEdges = new ArrayList<Line>();
+		this.outgoingEdges = new ArrayList<Line>();
 	}
-	
+
+	public void setVisible(boolean isVisible)
+	{
+		System.out.println("Setting visibility for node " + this.id + " to " + isVisible);
+		System.out.println("Location: " + this.location);
+		this.isVisible = isVisible;
+		this.contextRectPane.setVisible(isVisible);
+		this.mainRectPane.setVisible(isVisible);
+		this.contextRect.setVisible(isVisible);
+		this.mainRect.setVisible(isVisible);
+		this.contextRectLabel.setVisible(isVisible);
+		this.mainRectLabel.setVisible(isVisible);
+	}
     
     public DefaultMutableTreeNode toDefaultMutableTreeNode()
     {
@@ -97,13 +133,15 @@ public abstract class AbstractVertex
     
 	public double distTo(double x, double y)
 	{
-		return Math.sqrt((x - this.x)*(x - this.x) + (y - this.y)*(y - this.y));
+		double xDiff = x - this.location.x;
+		double yDiff = y - this.location.y;
+		return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
 	}
 	
 	public void replaceChild(AbstractVertex ver)
 	{
 		int p = ver.parentIndex;
-		double inc = ver.width - this.children.get(p).width;
+		double inc = ver.location.width - this.children.get(p).location.width;
 		
 		this.children.remove(p);
 		this.children.add(p, ver);
@@ -117,14 +155,37 @@ public abstract class AbstractVertex
 		double h = 0;
 		for(int i = 0; i < this.children.size(); i++)
 		{
-			if(this.children.get(i).height > h)
-				h = this.children.get(i).height;
+			if(this.children.get(i).location.height > h)
+				h = this.children.get(i).location.height;
 		}
-		this.height = h + 1;
-		this.bottom = this.top + this.height;
+		this.location.height = h + 1;
+		this.location.bottom = this.location.top + this.location.height;
 		
 		if(this.parent != null)
 			this.parent.calculateHeight();
+	}
+
+	public PathTransition constructPathTransition(boolean context)
+	{
+		System.out.println("Path transition for vertex: " + this.getName());
+		System.out.println("x pixels: " + Parameters.minBoxWidth*this.location.x);
+		System.out.println("y pixels: " + Parameters.minBoxHeight*this.location.y);
+		Path path = new Path();
+		path.getElements().add(new MoveTo(0, 0));
+		path.getElements().add(new LineTo(Parameters.minBoxWidth*this.location.x, Parameters.minBoxHeight*this.location.y));
+
+		PathTransition pathTrans = new PathTransition();
+		pathTrans.setDuration(Duration.millis(Parameters.transitionTime));
+		pathTrans.setPath(path);
+		pathTrans.setInterpolator(Interpolator.LINEAR);
+		pathTrans.setAutoReverse(false);
+		pathTrans.setCycleCount(1);
+		if(context)
+			pathTrans.setNode(this.contextRectPane);
+		else
+			pathTrans.setNode(this.mainRectPane);
+
+		return pathTrans;
 	}
 
 	//Collapse a merge parent's vertices.
@@ -133,32 +194,33 @@ public abstract class AbstractVertex
 		//To collapse a vertex, first we check that it contains visible merge children.
 		if(this.mergeRoot != null && this.mergeRoot.isVisible)
 		{
+			this.updateLocation = true;
 			this.children = new ArrayList<AbstractVertex>();
 
 			//Set the location for our merge parent to be the same as its first child.
-			this.left = this.mergeRoot.left;
-			this.top = this.mergeRoot.top;
+			this.location.left = this.mergeRoot.location.left;
+			this.location.top = this.mergeRoot.location.top;
 			Main.graph.setMaxHeight(0);
 
 			//Remove the children of our merge parent and set them invisible.
-			double w = this.mergeRoot.disappear(this.left, this.top + 1, this);
+			double w = this.mergeRoot.disappear(this.location.left, this.location.top + 1, this);
 			if(w > 1)
-				this.width = w;
+				this.location.width = w;
 			else
-				this.width = 1;
+				this.location.width = 1;
 			
-			this.right = this.left + this.width;
-			this.x = (this.left + this.right)/2;
+			this.location.right = this.location.left + this.location.width;
+			this.location.x = (this.location.left + this.location.right)/2;
 			
-			this.height = Main.graph.getMaxHeight() + 1;
-			this.bottom = this.top + this.height;
-			this.y = this.top + 0.5;
+			this.location.height = Main.graph.getMaxHeight() + 1;
+			this.location.bottom = this.location.top + this.location.height;
+			this.location.y = this.location.top + 0.5;
 	
 			this.parent = this.mergeRoot.parent;
 			this.parentIndex = this.mergeRoot.parentIndex;
 			this.mergeRoot.parent.replaceChild(this);
 	
-			this.isVisible = true;
+			this.setVisible(true);
 		}
 	}
 
@@ -171,8 +233,15 @@ public abstract class AbstractVertex
 		for(int i = 0; i < this.children.size(); i++)
 		{
 			v = this.children.get(i);
+			v.updateLocation = true;
+
+			// If our current vertex has the same merge parent, then it also should be collapsed, and we
+			// recurse to its children.
 			if(v.getMergeParent() == mP)
+			{
 				w = w + v.disappear(left + w, top, mP);
+			}
+			// Otherwise, we need to shift v.
 			else
 			{
 				while(!v.isVisible && v.getMergeParent() != null)
@@ -181,19 +250,19 @@ public abstract class AbstractVertex
 				while(!v.isVisible)
 					v = v.mergeRoot;
 
-				v.shiftSubtree(left + w - v.left);
-				v.shiftSubtreeY(top - v.top);
+				v.shiftSubtree(left + w - v.location.left);
+				v.shiftSubtreeY(top - v.location.top);
 
-				if(v.height > Main.graph.getMaxHeight())
-					Main.graph.setMaxHeight(v.height);
+				if(v.location.height > Main.graph.getMaxHeight())
+					Main.graph.setMaxHeight(v.location.height);
 
 				v.parent = mP;
 				v.parentIndex = mP.children.size();
 				mP.children.add(v);
-				w += v.width;
+				w += v.location.width;
 			}
 		}
-		this.isVisible = false;
+		this.setVisible(false);
 		return w;
 	}
 
@@ -205,11 +274,11 @@ public abstract class AbstractVertex
 		if(this.isVisible || this.mergeRoot != null)
 		{
 			//If so, we set the merge start vertex to take its parent's location...
-			this.mergeRoot.left = this.left;
-			this.mergeRoot.top = this.top;
+			this.mergeRoot.location.left = this.location.left;
+			this.mergeRoot.location.top = this.location.top;
 
 			//Show it and its children in our graph...
-			this.mergeRoot.appear(this.left, this.top, this);
+			this.mergeRoot.appear(this.location.left, this.location.top, this);
 
 			//Connect its edges...
 			this.mergeRoot.parent = this.parent;
@@ -217,7 +286,7 @@ public abstract class AbstractVertex
 			this.parent.replaceChild(this.mergeRoot);
 
 			//And lastly, we set our current vertex to be invisible.
-			this.isVisible = false;
+			this.setVisible(false);
 		}
 	}
 
@@ -225,12 +294,14 @@ public abstract class AbstractVertex
 	//expanding merge parent.
 	private void appear(double left, double top, AbstractVertex mP)
 	{
+		System.out.println("Vertex appearing: " + this.getName());
 		double w = 0;
 		AbstractVertex v;
-		
-		this.left = left;
-		this.top = top;
-		this.y = this.top + 0.5;
+
+		this.updateLocation = true;
+		this.location.left = left;
+		this.location.top = top;
+		this.location.y = this.location.top + 0.5;
 		
 		for(int i = 0; i < this.children.size(); i++)
 		{
@@ -239,7 +310,7 @@ public abstract class AbstractVertex
 			if(v.getMergeParent() == mP)
 			{
 				v.appear(left + w, top + 1, mP);
-				w += v.width;
+				w += v.location.width;
 			}
 			//Vertices that do not have the same merge parent do not need to be changed,
 			//but we must recompute our edges to them.
@@ -265,34 +336,34 @@ public abstract class AbstractVertex
 				}
 
 				//We must shift our subtrees, since our children have changed.
-				v.shiftSubtree(left + w - v.left);
-				v.shiftSubtreeY(top + 1 - v.top);
+				v.shiftSubtree(left + w - v.location.left);
+				v.shiftSubtreeY(top + 1 - v.location.top);
 				v.parent = this;
 				v.parentIndex = i;
-				w += v.width;
+				w += v.location.width;
 			}
 		}
 		
 		if(w > 1)
-			this.width = w;
+			this.location.width = w;
 		else
-			this.width = 1;
+			this.location.width = 1;
 
-		this.right = this.left + this.width;
-		this.x = (this.left + this.right)/2;
+		this.location.right = this.location.left + this.location.width;
+		this.location.x = (this.location.left + this.location.right)/2;
 		
 		double h = 0;
 		for(int i = 0; i < this.children.size(); i++)
 		{
-			if(this.children.get(i).height > h)
-				h = this.children.get(i).height;
+			if(this.children.get(i).location.height > h)
+				h = this.children.get(i).location.height;
 		}
-		this.height = h + 1;
-		this.bottom = this.top + this.height;
-		
-		this.isVisible = true;
-	}
+		this.location.height = h + 1;
+		this.location.bottom = this.location.top + this.location.height;
 
+		this.setVisible(true);
+		System.out.println("Vertex has appeared!");
+	}
 
 
     public void centerizeXCoordinate()
@@ -303,9 +374,8 @@ public abstract class AbstractVertex
             this.children.get(i).centerizeXCoordinate();
         
         if(this.children.size()>0)
-            this.x = (this.children.get(0).x+this.children.get(num-1).x)/2;
+            this.location.x = (this.children.get(0).location.x + this.children.get(num-1).location.x)/2;
     }
-    
     
     
     public void rearrangeByLoopHeight()
@@ -366,12 +436,12 @@ public abstract class AbstractVertex
             pos++;
         }
         
-        double left = this.left;
+        double left = this.location.left;
         
         for(int i=0; i<num; i++)
         {
-            rearranged[i].shiftSubtree(left-rearranged[i].left);
-            left += rearranged[i].width;
+            rearranged[i].shiftSubtree(left-rearranged[i].location.left);
+            left += rearranged[i].location.width;
         }
 
             
@@ -414,14 +484,14 @@ public abstract class AbstractVertex
             {
                 if(taken[j])
                     continue;
-                if(this.children.get(j).width>max)
+                if(this.children.get(j).location.width > max)
                 {
-                    max = this.children.get(j).width;
+                    max = this.children.get(j).location.width;
                     pos = j;
                 }
             }
             
-            if(pos>=0)
+            if(pos >= 0)
             {
                 taken[pos] = true;
                 sorted[num-i-1] = pos;
@@ -448,12 +518,12 @@ public abstract class AbstractVertex
             pos++;
         }
         
-        double left = this.left;
+        double left = this.location.left;
         
         for(int i=0; i<num; i++)
         {
-            rearranged[i].shiftSubtree(left-rearranged[i].left);
-            left += rearranged[i].width;
+            rearranged[i].shiftSubtree(left-rearranged[i].location.left);
+            left += rearranged[i].location.width;
         }
         
         
@@ -477,9 +547,10 @@ public abstract class AbstractVertex
 		AbstractVertex ch = child;
 		while(ver != null)
 		{
-			ver.width += inc;
-			ver.right += inc;
-			ver.x = (ver.left + ver.right)/2;
+			ver.updateLocation = true;
+			ver.location.width += inc;
+			ver.location.right += inc;
+			ver.location.x = (ver.location.left + ver.location.right)/2;
 			
 			for(int i = ch.parentIndex + 1; i < ver.children.size(); i++)
 			{
@@ -496,9 +567,10 @@ public abstract class AbstractVertex
 		AbstractVertex ver = this;
 		while(true)
 		{
-			ver.left += inc;
-			ver.right += inc;
-			ver.x += inc;
+			ver.updateLocation = true;
+			ver.location.left += inc;
+			ver.location.right += inc;
+			ver.location.x += inc;
 
 			if(ver.children.size() > 0)
 				ver = ver.children.get(0);
@@ -519,9 +591,10 @@ public abstract class AbstractVertex
 	//TODO: Why not use DFS here?
 	public void shiftSubtreeY(double inc)
 	{
-		this.top += inc;
-		this.bottom += inc;
-		this.y += inc;
+		this.updateLocation = true;
+		this.location.top += inc;
+		this.location.bottom += inc;
+		this.location.y += inc;
 		
 		for(int i = 0; i < this.children.size(); i++)
 			this.children.get(i).shiftSubtreeY(inc);
@@ -529,12 +602,12 @@ public abstract class AbstractVertex
 	
 	public void increaseHeight(double inc)
 	{
-		this.height += inc;
+		this.location.height += inc;
 		
 		if(this.parent == null)
 			return;
-		if(this.height + 1 > this.parent.height)
-			this.parent.increaseHeight(this.height - this.parent.height + 1);
+		if(this.location.height + 1 > this.parent.location.height)
+			this.parent.increaseHeight(this.location.height - this.parent.location.height + 1);
 	}
 	
 	public void addChild(AbstractVertex child)
@@ -546,20 +619,20 @@ public abstract class AbstractVertex
 
 		if(this.children.size() == 1)
 		{
-			child.shiftSubtree(this.left - child.left);
-			if(child.width > 1)
-				this.increaseWidth(child, child.width - 1);
+			child.shiftSubtree(this.location.left - child.location.left);
+			if(child.location.width > 1)
+				this.increaseWidth(child, child.location.width - 1);
 		}
 		else
 		{
-			child.shiftSubtree(this.right - child.left);
-			this.increaseWidth(child, child.width);
+			child.shiftSubtree(this.location.right - child.location.left);
+			this.increaseWidth(child, child.location.width);
 		}
 
-		child.shiftSubtreeY(this.bottom - child.top);
+		child.shiftSubtreeY(this.location.bottom - child.location.top);
 		
-		if(child.height + 1 > this.height)
-			this.increaseHeight(child.height - this.height + 1);
+		if(child.location.height + 1 > this.location.height)
+			this.increaseHeight(child.location.height - this.location.height + 1);
 	}
 	
 	public boolean checkPotentialParent()
@@ -718,7 +791,7 @@ public abstract class AbstractVertex
 	
 	public void changeParent(AbstractVertex newParent)
 	{
-		this.parent.increaseWidth(this, -1*this.width);
+		this.parent.increaseWidth(this, -1*this.location.width);
 		for(int i = this.parentIndex + 1; i < this.parent.children.size(); i++)
 		{
 			this.parent.children.get(i).parentIndex--;
@@ -731,19 +804,13 @@ public abstract class AbstractVertex
 			double height = 0;
 			for(int i=0; i< ver.parent.children.size(); i++)
 			{
-				if(ver.parent.children.get(i).height>height)
-					height = ver.parent.children.get(i).height;
+				if(ver.parent.children.get(i).location.height>height)
+					height = ver.parent.children.get(i).location.height;
 			}
-			ver.parent.height = height + 1;
+			ver.parent.location.height = height + 1;
 			ver = ver.parent;
 		}
 		
 		newParent.addChild(this);
 	}
-	
-	/*public void printCoordinates()
-	{
-		System.out.println(this.getFullName() + ": " + this.x + ", " + this.y + ", left = " + this.left + ", right = " + this.right +
-				", width = " + this.width + ", top = " + this.top + ", bottom = " + this.bottom + ", height = " + this.height);
-	}*/
 }

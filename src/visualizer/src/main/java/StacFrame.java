@@ -387,9 +387,9 @@ public class StacFrame extends JFrame
 		);
 		collapse.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, 0));
 
-		JMenuItem decollapse = new JMenuItem("Expand nodes");
-		menuNavigation.add(decollapse);
-		decollapse.addActionListener
+		JMenuItem expand = new JMenuItem("Expand nodes");
+		menuNavigation.add(expand);
+		expand.addActionListener
 		(
 				new ActionListener()
 				{
@@ -401,7 +401,7 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-		decollapse.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, 0));
+		expand.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, 0));
 		
 		JMenuItem previous = new JMenuItem("Previous view");
 		menuNavigation.add(previous);
@@ -534,7 +534,7 @@ public class StacFrame extends JFrame
 								"The following keyboard shortcuts are implemented.\n"
 								+ "R: Reset zoom level to show entire graph \n"
 								+ "C: Collapse all nodes by method \n"
-								+ "D: Uncollapse all nodes \n"
+								+ "E: Expand all nodes \n"
 								+ "P: Return to previous view \n"
 								+ "N: Continue from previous to next view \n"
 								+ "F: Change font size \n"
@@ -600,9 +600,9 @@ public class StacFrame extends JFrame
 		this.setLayout(new BorderLayout());
 		setSplitScreen();
 		
-		this.addMouseToViz();
+		//this.addMouseToViz();
 		this.addKeyboard(vizPanel);
-		this.addMouseToContext();
+		//this.addMouseToContext();
 		this.addKeyboard(contextPanel);
 		
         
@@ -722,8 +722,8 @@ public class StacFrame extends JFrame
 		leftPanel = new JPanel();
 		rightPanel = new JPanel();
         searchPanel = new JPanel();
-		this.vizPanel = new VizPanel(this, false);
-		this.contextPanel = new VizPanel(this,true);
+		this.vizPanel = new VizPanel(false);
+		this.contextPanel = new VizPanel(true);
 
 		// Build each panel
 		JLabel leftL = new JLabel("Context", JLabel.CENTER);
@@ -867,7 +867,6 @@ public class StacFrame extends JFrame
 					if(System.currentTimeMillis() - Parameters.mouseLastTime > Parameters.mouseInterval)
 					{
 						Parameters.mouseLastTime = System.currentTimeMillis();
-						
 						if(SwingUtilities.isLeftMouseButton(m) && Main.graph != null)
 						{	
 							if(m.isShiftDown())

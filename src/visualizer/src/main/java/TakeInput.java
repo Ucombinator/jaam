@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Stack;
 import org.ucombinator.jaam.serializer.*;
 
+import javafx.application.Platform;
+
 public class TakeInput extends Thread
 {
 	BufferedReader parseInput;
@@ -30,6 +32,16 @@ public class TakeInput extends Thread
 		Main.graph.setAllMethodHeight();
         Main.graph.collectAllTags();
 		Main.graph.collapseAll();
+
+		// Run these panels on JavaFX thread instead of Swing thread
+		Platform.runLater(new Runnable() {
+			@Override
+			public void run() {
+				Parameters.stFrame.vizPanel.initDrawing();
+				Parameters.stFrame.contextPanel.initDrawing();
+			}
+		});
+
 		Parameters.mouseLastTime = System.currentTimeMillis();
 		Parameters.repaintAll();
 

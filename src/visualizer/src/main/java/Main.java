@@ -3,13 +3,15 @@ public class Main
 {
 	public static Graph graph;
 	
-	public static void main(String[] args) {
+	public static void main(String[] args)
+	{
 		Parameters.stFrame = new StacFrame();
 		boolean load = false;
 		TakeInput ti = new TakeInput();
 		String file = "";
 
-		for (int i = 0; i < args.length; i++) {
+		for (int i = 0; i < args.length; i++)
+		{
 			if (args[i].equalsIgnoreCase("--refresh") || args[i].equalsIgnoreCase("-r")) {
 				Parameters.interval = Long.parseLong(args[i].trim());
 			} else if (args[i].equalsIgnoreCase("--limit") || args[i].equalsIgnoreCase("-l")) {
