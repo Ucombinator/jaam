@@ -522,7 +522,7 @@ case class State(val stmt : Stmt,
         }
         var d2 = D(Set())
         for (v <- d.getValues) {
-          if (isCastableTo(v, castedType)) {
+          if (isCastableTo(v, castedType) || castedType.isInstanceOf[ArrayType]) {
             // Up casts are always legal
             d2 = d2.join(D(Set((v))))
           }
@@ -629,6 +629,7 @@ case class State(val stmt : Stmt,
         case Some(h) => h(this, nextStmt, self, args)
         case None =>
           /* (!meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver") || meth.isAbstract()) || */
+          /*
           if (System.isLibraryClass(meth.getDeclaringClass) ||
               self.isDefined && Snowflakes.isSnowflakeObject(self.get)) {
             Snowflakes.warn(this.id, self, stmt, meth)
@@ -636,29 +637,37 @@ case class State(val stmt : Stmt,
             //  Log.warn("Snowflake due to Abstract: "+meth)
             DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
           }
-          else if (meth.isNative) {
-            Log.warn("Native method without a snowflake in state "+this.id+". May be unsound. stmt = " + stmt)
-            meth.getReturnType match {
-              case _ : VoidType => Set(this.copy(stmt = nextStmt))
-              case _ : PrimType =>
-                System.store.update(destAddr, D.atomicTop)
-                Set(this.copy(stmt = nextStmt))
-              case _ =>
-                Log.error("Native method returns an object. Aborting.")
-                Set()
-            }
-          }
-          else {
-            // TODO/optimize: filter out incorrect class types
-            val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
-            self match {
-              case Some(s) => System.store.update(ThisFrameAddr(newFP), D(Set(s)))
-              case None => {} // TODO: throw exception here?
-            }
-            for (i <- 0 until args.length) {
-              System.store.update(ParameterFrameAddr(newFP, i), args(i))
-            }
-            Set(State(Stmt.methodEntry(meth), newFP, newKontStack))
+          */
+          self match {
+            case Some(v) => DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
+            case None =>
+              if (meth.isNative) {
+                DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
+                /*
+                Log.warn("Native method without a snowflake in state "+this.id+". May be unsound. stmt = " + stmt)
+                meth.getReturnType match {
+                  case _ : VoidType => Set(this.copy(stmt = nextStmt))
+                  case _ : PrimType =>
+                    System.store.update(destAddr, D.atomicTop)
+                    Set(this.copy(stmt = nextStmt))
+                  case _ =>
+                    Log.error("Native method returns an object. Aborting.")
+                    Set()
+                }
+                */
+              }
+              else {
+                // TODO/optimize: filter out incorrect class types
+                val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
+                self match {
+                  case Some(s) => System.store.update(ThisFrameAddr(newFP), D(Set(s)))
+                  case None => {} // TODO: throw exception here?
+                }
+                for (i <- 0 until args.length) {
+                  System.store.update(ParameterFrameAddr(newFP, i), args(i))
+                }
+                Set(State(Stmt.methodEntry(meth), newFP, newKontStack))
+              }
           }
       }
     }
