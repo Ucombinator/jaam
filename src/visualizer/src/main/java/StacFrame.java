@@ -51,7 +51,7 @@ public class StacFrame extends JFrame
 	private JMenuBar menuBar;
 	private JMenu menuFile, menuSearch, menuNavigation, menuCustomize, menuHelp;
 	private int width, height;
-	private JSplitPane centerSplitPane;
+	private ArrayList<JSplitPane> horizontalSplitPanes;
 	public VizPanel vizPanel, contextPanel;
 	private JPanel menuPanel, leftPanel, rightPanel, searchPanel;
 	public JCheckBox showContext, showEdge;
@@ -562,30 +562,30 @@ public class StacFrame extends JFrame
 		}
 
 		// Connect columns with horizontal split panes
-		ArrayList<JSplitPane> horizontalSplits = new ArrayList<JSplitPane>();
+		this.horizontalSplitPanes = new ArrayList<JSplitPane>();
 		for(int i = 0; i < layout.size() - 1; i++) {
 			JSplitPane nextSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
 			nextSplit.setOneTouchExpandable(true);
 			if (i == 0)
 				nextSplit.setLeftComponent(columns.get(0).getComponentLink());
 			else
-				nextSplit.setLeftComponent(horizontalSplits.get(i - 1));
+				nextSplit.setLeftComponent(horizontalSplitPanes.get(i - 1));
 
 			nextSplit.setRightComponent(columns.get(i + 1).getComponentLink());
-			horizontalSplits.add(nextSplit);
+			horizontalSplitPanes.add(nextSplit);
 		}
 
-		for(int i = 0; i < horizontalSplits.size(); i++)
+		for(int i = 0; i < horizontalSplitPanes.size(); i++)
 		{
-			horizontalSplits.get(i).setResizeWeight(layoutColumnWeights.get(i));
-			horizontalSplits.get(i).resetToPreferredSizes();
+			horizontalSplitPanes.get(i).setResizeWeight(layoutColumnWeights.get(i));
+			horizontalSplitPanes.get(i).resetToPreferredSizes();
 		}
 
 		// Add to GUI
 		if(layout.size() == 1)
 			this.getContentPane().add(columns.get(0).getComponentLink(), BorderLayout.CENTER);
 		else
-			this.getContentPane().add(horizontalSplits.get(horizontalSplits.size() - 1), BorderLayout.CENTER);
+			this.getContentPane().add(horizontalSplitPanes.get(horizontalSplitPanes.size() - 1), BorderLayout.CENTER);
 	}
 
 	public void makeLayout()
@@ -779,51 +779,6 @@ public class StacFrame extends JFrame
 		layout.add(right);
 		buildWindow(layout, layoutRowWeights, layoutColumnWeights);
 	}
-	
-    
-    ///modified
-    public void setSplitScreenold()
-    {
-        //		System.out.println("Setting split screen");
-        
-        centerSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
-        JSplitPane leftSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true);
-        JSplitPane rightSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
-        centerSplitPane.setLeftComponent(leftSplitPane);
-        centerSplitPane.setRightComponent(rightSplitPane);
-        this.getContentPane().add(this.centerSplitPane, BorderLayout.CENTER);
-        
-        centerSplitPane.setOneTouchExpandable(true);
-        leftSplitPane.setOneTouchExpandable(true);
-        rightSplitPane.setOneTouchExpandable(true);
-        
-        leftPanel = new JPanel();
-        leftSplitPane.setLeftComponent(leftPanel);
-        rightPanel = new JPanel();
-        rightSplitPane.setRightComponent(rightPanel);
-        
-        this.vizPanel = new VizPanel(this, false);
-        rightSplitPane.setLeftComponent(this.vizPanel);
-        this.contextPanel = new VizPanel(this,true);
-        leftSplitPane.setRightComponent(this.contextPanel);
-        
-        JLabel leftL = new JLabel("Context", JLabel.CENTER);
-        Parameters.leftArea = new CodeArea();
-        leftPanel.setLayout(new BorderLayout());
-        leftPanel.add(leftL,BorderLayout.NORTH);
-        JScrollPane scrollL = new JScrollPane (Parameters.leftArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        leftPanel.add(scrollL, BorderLayout.CENTER);
-        leftPanel.setFont(Parameters.font);
-        
-        JLabel rightL = new JLabel("Description", JLabel.CENTER);
-        Parameters.rightArea = new JTextArea();
-        Parameters.rightArea.setEditable(false);
-        rightPanel.setLayout(new BorderLayout());
-        rightPanel.add(rightL, BorderLayout.NORTH);
-        JScrollPane scrollR = new JScrollPane (Parameters.rightArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        rightPanel.add(scrollR, BorderLayout.CENTER);
-        rightPanel.setFont(Parameters.font);
-    }
     
 	public void loadGraph(boolean fromMessages)
 	{
@@ -1217,13 +1172,11 @@ public class StacFrame extends JFrame
 
 	}
 	
-	//Gets the x location of a mouse event in pixels, shifted so that the left side is 0.
+	//Gets the x location of a mouse event in pixels.
 	public double getRelativeXPixels(MouseEvent m)
 	{
-		if(this.context)
-			return m.getX() - contextPanel.getLocation().x;
-		else
-			return m.getX() - vizPanel.getLocation().x - this.leftPanel.getWidth() - centerSplitPane.getDividerSize();
+		// TODO: Why does this not need to be shifted?
+		return m.getX();
 	}
 
 	//Gets the y location of a mouse event in pixels, shifted so that the top of the current panel is 0.
