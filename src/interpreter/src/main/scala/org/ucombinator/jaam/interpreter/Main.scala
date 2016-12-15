@@ -526,6 +526,11 @@ case class State(val stmt : Stmt,
           }
           else if (Snowflakes.isSnowflakeObject(v) &&
             Soot.canStoreType(castedType, v.asInstanceOf[ObjectValue].sootClass.getType)) {
+
+            val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
+            exceptions = exceptions.join(classCastException)
+            
+            /*
             // Snowflakes can be down cast, but they might throw an exception
             val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
             exceptions = exceptions.join(classCastException)
@@ -553,6 +558,7 @@ case class State(val stmt : Stmt,
             val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
             exceptions = exceptions.join(classCastException)
           }
+          */
         }
         d2
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
@@ -636,36 +642,42 @@ case class State(val stmt : Stmt,
             DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
           }
           */
+          def aux(): Set[AbstractState] = {
+            if (meth.isNative) {
+              DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
+              /*
+              Log.warn("Native method without a snowflake in state "+this.id+". May be unsound. stmt = " + stmt)
+              meth.getReturnType match {
+                case _ : VoidType => Set(this.copy(stmt = nextStmt))
+                case _ : PrimType =>
+                  System.store.update(destAddr, D.atomicTop)
+                  Set(this.copy(stmt = nextStmt))
+                case _ =>
+                  Log.error("Native method returns an object. Aborting.")
+                  Set()
+              }
+              */
+            }
+            else {
+              // TODO/optimize: filter out incorrect class types
+              val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
+              self match {
+                case Some(s) => System.store.update(ThisFrameAddr(newFP), D(Set(s)))
+                case None => {} // TODO: throw exception here?
+              }
+              for (i <- 0 until args.length) {
+                System.store.update(ParameterFrameAddr(newFP, i), args(i))
+              }
+              Set(State(Stmt.methodEntry(meth), newFP, newKontStack))
+            }
+          }
           self match {
-            case Some(v) => DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
-            case None =>
-              if (meth.isNative) {
+            case Some(v) =>
+              if (Snowflakes.isSnowflakeObject(v))
                 DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
-                /*
-                Log.warn("Native method without a snowflake in state "+this.id+". May be unsound. stmt = " + stmt)
-                meth.getReturnType match {
-                  case _ : VoidType => Set(this.copy(stmt = nextStmt))
-                  case _ : PrimType =>
-                    System.store.update(destAddr, D.atomicTop)
-                    Set(this.copy(stmt = nextStmt))
-                  case _ =>
-                    Log.error("Native method returns an object. Aborting.")
-                    Set()
-                }
-                */
-              }
-              else {
-                // TODO/optimize: filter out incorrect class types
-                val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
-                self match {
-                  case Some(s) => System.store.update(ThisFrameAddr(newFP), D(Set(s)))
-                  case None => {} // TODO: throw exception here?
-                }
-                for (i <- 0 until args.length) {
-                  System.store.update(ParameterFrameAddr(newFP, i), args(i))
-                }
-                Set(State(Stmt.methodEntry(meth), newFP, newKontStack))
-              }
+              else
+                aux()
+            case None => aux()
           }
       }
     }
@@ -792,10 +804,12 @@ case class State(val stmt : Stmt,
   def newExpr(lhsAddr : Set[Addr], sootClass : SootClass) = {
     val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
     //if (System.isLibraryClass(sootClass) && !sootClass.getPackageName.startsWith("com.sun.net.httpserver")
+    /*
     if (System.isLibraryClass(sootClass) || Snowflakes.contains(md)) {
       Snowflakes.createObject(Some(lhsAddr), sootClass)
     }
     else {
+    */
       val bp : BasePointer = malloc()
       val obj : Value = ObjectValue(sootClass, bp)
       val d = D(Set(obj))
@@ -810,7 +824,7 @@ case class State(val stmt : Stmt,
         if(c.hasSuperclass) initInstanceFields(c.getSuperclass)
       }
       initInstanceFields(sootClass)
-    }
+    //}
   }
 
   def true_next() : Set[AbstractState] = {
@@ -830,11 +844,14 @@ case class State(val stmt : Stmt,
             Set(this.copy(stmt = stmt.nextSyntactic))
           case rhs : NewArrayExpr =>
             // Value of lhsAddr will be set to a pointer to the array. (as opposed to the array itself)
+            /*
             rhs.getType match {
               case rt: RefType if (System.isLibraryClass(Soot.getSootClass(rt.getClassName))) =>
                   Snowflakes.createArray(rt, List(eval(rhs.getSize)), lhsAddr)
               case t => createArray(t, List(eval(rhs.getSize)), lhsAddr)
             }
+            */
+            createArray(rhs.getType, List(eval(rhs.getSize)), lhsAddr)
             Set(this.copy(stmt = stmt.nextSyntactic))
           case rhs : NewMultiArrayExpr =>
             //TODO, if base type is Java library class, call Snowflake.createArray
@@ -947,8 +964,8 @@ object System {
   // If it isn't, the exception should be caught so the class can be initialized.
   def checkInitializedClasses(c : SootClass) {
     if (!initializedClasses.contains(c)) {
-      if (System.isLibraryClass(c))
-        throw new UninitializedSnowflakeObjectException(c)
+      //if (System.isLibraryClass(c))
+      //  throw new UninitializedSnowflakeObjectException(c)
       throw new UninitializedClassException(c)
     }
   }
