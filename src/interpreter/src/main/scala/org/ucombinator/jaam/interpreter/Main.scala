@@ -184,8 +184,6 @@ case class ObjectValue(val sootClass : SootClass, val bp : BasePointer) extends 
 // The sootType is the type with array wrapper
 case class ArrayValue(val sootType : Type, val bp : BasePointer) extends Value
 
-//case class SnowflakeInterfaceValue(val sootClass : SootClass, val bp : BasePointer) extends Value
-
 //----------------- POINTERS ------------------
 
 // FramePointers, when paired with variable names, yield the addresses of variables.
