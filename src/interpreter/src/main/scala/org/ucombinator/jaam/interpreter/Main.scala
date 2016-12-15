@@ -165,6 +165,15 @@ case object HaltKont extends Kont
 // TODO/precision D needs to have an interface that allows eval to use it
 
 abstract class Value extends CachedHashCode
+object Value {
+  def canStoreType(child : Value, parent : Type): Boolean = {
+    child match {
+      case AnyAtomicValue => true /* AnyAtomicValue includes null which can go in any object or array type */
+      case ObjectValue(sootClass, _) => Soot.canStoreType(sootClass.getType, parent)
+      case ArrayValue(sootType, _) => Soot.canStoreType(sootType, parent)
+    }
+  }
+}
 
 abstract class AtomicValue extends Value
 
@@ -429,9 +438,7 @@ case class State(val stmt : Stmt,
       //TODO missing: MethodHandle
       //TODO/precision actually do the calculations
       case (_ : Local) | (_ : Ref) =>
-        val addrs = addrsOf(v)
-        val values= System.store(addrs)
-        values
+        D(System.store(addrsOf(v)).getValues.filter(Value.canStoreType(_, v.getType())))
       case _ : NullConstant =>
         D.atomicTop
       case _ : NumericConstant => D.atomicTop
@@ -491,7 +498,7 @@ case class State(val stmt : Stmt,
         val addrs : Set[Addr] = for {
           ArrayValue(_, bp) <- eval(v.getOp).getValues
         } yield ArrayLengthAddr(bp)
-        System.store(addrs)
+        D(System.store(addrs).getValues.filter(Value.canStoreType(_, v.getType())))
 
       // TODO/precision: implement the actual check
       case v : InstanceOfExpr => D.atomicTop
@@ -630,7 +637,8 @@ case class State(val stmt : Stmt,
     // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
     def dispatch(self : Option[Value], meth : SootMethod) : Set[AbstractState] = {
-      Log.info("meth: "+meth)
+      // TODO: group multiple "self" together
+      //Log.info("dispatch: " + self + ":" + meth)
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, self, args)
         case None =>
@@ -745,10 +753,12 @@ case class State(val stmt : Stmt,
   override def next() : Set[AbstractState] = {
     try {
       val nexts = true_next()
-      val exceptionStates = (exceptions.getValues map {
+/*      val exceptionStates = (exceptions.getValues map {
         kontStack.handleException(_, stmt, fp)//, store)
       }).flatten
       nexts ++ exceptionStates
+ */
+      nexts
     } catch {
       case UninitializedClassException(sootClass) =>
         Log.info("Static initializing "+sootClass)
