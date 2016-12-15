@@ -1170,7 +1170,8 @@ object Main {
     val mainMainMethod : SootMethod = Soot.getSootClass(config.className).getMethodByName(config.methodName)
     val initialState = State.inject(Stmt.methodEntry(mainMainMethod))
 
-    var todo: List[AbstractState] = List(initialState)
+    //var todo: List[AbstractState] = List(initialState)
+    var todo: Set[AbstractState] = Set(initialState)
     var done: Set[AbstractState] = Set()
     var doneEdges: Map[(Int, Int), Int] = Map()
 
@@ -1181,7 +1182,7 @@ object Main {
       todo = todo.tail
       Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
       val nexts = System.next(current)
-      val newTodo = nexts.toList.filter(!done.contains(_))
+      val newTodo = nexts.filter(!done.contains(_))
 
       for (n <- newTodo) {
         Log.info("Writing state "+n.id)
@@ -1201,15 +1202,15 @@ object Main {
 
       for (w <- current.getWriteAddrs; s <- System.readTable(w)) {
         done -= s
-        todo +:= s
+        todo += s
       }
       for (w <- current.getKWriteAddrs; s <- System.readKTable(w)) {
         done -= s
-        todo +:= s
+        todo += s
       }
 
       if (System.isInitializedClassesChanged) {
-        todo = newTodo ++ List(current) ++ todo
+        todo = newTodo ++ Set(current) ++ todo
       }
       else {
         done += current
