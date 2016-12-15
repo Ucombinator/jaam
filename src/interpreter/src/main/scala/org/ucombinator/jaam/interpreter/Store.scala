@@ -76,6 +76,7 @@ abstract class AbstractStore[K <: Addr, V](val map: mutable.Map[K, V], abstractD
   def strongUpdate(addr: K, d: V, modified: Boolean): AbstractStore[K, V] = {
     if (modified) {
       if (on) writeAddrs += addr
+      readAddrs += addr
       map += (addr -> d)
     }
     this
