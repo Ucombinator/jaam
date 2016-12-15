@@ -642,7 +642,7 @@ object Snowflakes {
     D(Set(ObjectValue(Soot.getSootClass(name), Snowflakes.malloc(Soot.getSootClass(name)))))
   }
 
-  private def initField(addrs: Set[Addr], field: SootField) {
+  def initField(addrs: Set[Addr], field: SootField) {
     field.getType match {
       case pt: PrimType => System.store.update(addrs, D.atomicTop)
       case at: ArrayType => createArray(at, List.fill(at.numDimensions)(D.atomicTop), addrs)

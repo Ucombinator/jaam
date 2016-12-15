@@ -524,12 +524,13 @@ case class State(val stmt : Stmt,
             // Up casts are always legal
             d2 = d2.join(D(Set((v))))
           }
-          else if (Snowflakes.isSnowflakeObject(v) &&
-            Soot.canStoreType(castedType, v.asInstanceOf[ObjectValue].sootClass.getType)) {
+          else if (Snowflakes.isSnowflakeObject(v)) {
+            // && Soot.canStoreType(castedType, v.asInstanceOf[ObjectValue].sootClass.getType)) {
 
             val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
             exceptions = exceptions.join(classCastException)
-            
+            d2 = d2.join(D(Set(v)))
+
             /*
             // Snowflakes can be down cast, but they might throw an exception
             val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
@@ -559,6 +560,7 @@ case class State(val stmt : Stmt,
             exceptions = exceptions.join(classCastException)
           }
           */
+          }
         }
         d2
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
@@ -796,8 +798,18 @@ case class State(val stmt : Stmt,
       case UndefinedAddrsException(addrs) =>
         //An empty set of addrs may due to the over approximation of ifStmt.
         System.undefined += 1
-        Log.error("Undefined Addrs in state "+this.id+"; stmt = "+stmt+"; addrs = "+addrs)
-        Set()
+
+        for (addr <- addrs) {
+          addr match {
+            case InstanceFieldAddr(bp, field) =>
+              Snowflakes.initField(Set(addr), field)
+            case StaticFieldAddr(field) =>
+              Snowflakes.initField(Set(addr), field)
+            case _ =>
+              Log.error("Undefined Addrs in state "+this.id+"; stmt = "+stmt+"; addrs = "+addrs)
+          }
+        }
+        Set(this.copy())
     }
   }
 
@@ -940,7 +952,13 @@ object State {
     ArrayRefAddr(StringBasePointerTop) -> D.atomicTop,
     ArrayLengthAddr(StringBasePointerTop) ->  D.atomicTop,
     InstanceFieldAddr(StringBasePointerTop, hash) -> D.atomicTop,
-    InstanceFieldAddr(StringBasePointerTop, hash32) -> D.atomicTop)
+    InstanceFieldAddr(StringBasePointerTop, hash32) -> D.atomicTop,
+
+    InstanceFieldAddr(InitialBasePointer, value) ->
+      D(Set(ArrayValue(ArrayType.v(CharType.v, 1), StringBasePointerTop))),
+    InstanceFieldAddr(InitialBasePointer, hash) -> D.atomicTop,
+    InstanceFieldAddr(InitialBasePointer, hash32) -> D.atomicTop
+  )
 
   def inject(stmt : Stmt) : State = {
     val ks = KontStack(HaltKont)
