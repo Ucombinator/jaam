@@ -799,17 +799,20 @@ case class State(val stmt : Stmt,
         //An empty set of addrs may due to the over approximation of ifStmt.
         System.undefined += 1
 
-        for (addr <- addrs) {
+        val states = for (addr <- addrs) yield {
           addr match {
             case InstanceFieldAddr(bp, field) =>
               Snowflakes.initField(Set(addr), field)
+              Set(this.copy())
             case StaticFieldAddr(field) =>
               Snowflakes.initField(Set(addr), field)
+              Set(this.copy())
             case _ =>
               Log.error("Undefined Addrs in state "+this.id+"; stmt = "+stmt+"; addrs = "+addrs)
+              Set()
           }
         }
-        Set(this.copy())
+        states.foldLeft(Set[AbstractState]())(_++_)
     }
   }
 
