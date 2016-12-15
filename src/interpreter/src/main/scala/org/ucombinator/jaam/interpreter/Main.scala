@@ -165,6 +165,15 @@ case object HaltKont extends Kont
 // TODO/precision D needs to have an interface that allows eval to use it
 
 abstract class Value extends CachedHashCode
+object Value {
+  def canStoreType(child : Value, parent : Type): Boolean = {
+    child match {
+      case AnyAtomicValue => true /* AnyAtomicValue includes null which can go in any object or array type */
+      case ObjectValue(sootClass, _) => Soot.canStoreType(sootClass.getType, parent)
+      case ArrayValue(sootType, _) => Soot.canStoreType(sootType, parent)
+    }
+  }
+}
 
 abstract class AtomicValue extends Value
 
@@ -431,9 +440,7 @@ case class State(val stmt : Stmt,
       //TODO missing: MethodHandle
       //TODO/precision actually do the calculations
       case (_ : Local) | (_ : Ref) =>
-        val addrs = addrsOf(v)
-        val values= System.store(addrs)
-        values
+        D(System.store(addrsOf(v)).getValues.filter(Value.canStoreType(_, v.getType())))
       case _ : NullConstant =>
         D.atomicTop
       case _ : NumericConstant => D.atomicTop
@@ -493,7 +500,7 @@ case class State(val stmt : Stmt,
         val addrs : Set[Addr] = for {
           ArrayValue(_, bp) <- eval(v.getOp).getValues
         } yield ArrayLengthAddr(bp)
-        System.store(addrs)
+        D(System.store(addrs).getValues.filter(Value.canStoreType(_, v.getType())))
 
       // TODO/precision: implement the actual check
       case v : InstanceOfExpr => D.atomicTop
