@@ -639,7 +639,8 @@ case class State(val stmt : Stmt,
     // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
     def dispatch(self : Option[Value], meth : SootMethod) : Set[AbstractState] = {
-      Log.info("meth: "+meth)
+      // TODO: group multiple "self" together
+      //Log.info("dispatch: " + self + ":" + meth)
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, self, args)
         case None =>
@@ -754,10 +755,12 @@ case class State(val stmt : Stmt,
   override def next() : Set[AbstractState] = {
     try {
       val nexts = true_next()
-      val exceptionStates = (exceptions.getValues map {
+/*      val exceptionStates = (exceptions.getValues map {
         kontStack.handleException(_, stmt, fp)//, store)
       }).flatten
       nexts ++ exceptionStates
+ */
+      nexts
     } catch {
       case UninitializedClassException(sootClass) =>
         Log.info("Static initializing "+sootClass)
