@@ -90,6 +90,7 @@ case class KontStack(k : Kont) extends CachedHashCode {
       return Set()
     }
 
+    /*
     val currentFrame = Frame(stmt, fp, None)
     var states: Set[AbstractState] = Set()
     var nextFrames: Set[(Frame, KontStack)] = Set((currentFrame, this))
@@ -113,8 +114,8 @@ case class KontStack(k : Kont) extends CachedHashCode {
     }
     Log.debug("exception: " + exception + " states.size: " + states.size)
     states
+    */
 
-    /*
     var visited = Set[(Stmt, FramePointer, KontStack)]()
     // TODO/performance: Make iterative.
     def stackWalk(stmt : Stmt, fp : FramePointer, kontStack : KontStack) : Set[AbstractState] = {
@@ -142,7 +143,6 @@ case class KontStack(k : Kont) extends CachedHashCode {
 
     stackWalk(stmt, fp, this)
     // TODO/soundness: deal with unhandled exceptions
-    */
   }
 }
 
@@ -174,8 +174,6 @@ case class ObjectValue(val sootClass : SootClass, val bp : BasePointer) extends 
 
 // The sootType is the type with array wrapper
 case class ArrayValue(val sootType : Type, val bp : BasePointer) extends Value
-
-//case class SnowflakeInterfaceValue(val sootClass : SootClass, val bp : BasePointer) extends Value
 
 //----------------- POINTERS ------------------
 
