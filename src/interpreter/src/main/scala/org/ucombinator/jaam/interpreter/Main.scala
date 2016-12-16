@@ -1190,11 +1190,11 @@ object Main {
 try {
   var count = 0
     while (todo.nonEmpty && count < 10*1000) {
-count+=1
-// java.lang.System.getProperty("user.home")
-// java.lang.String.equalsIgnoreCase(...)
-// java.nio.file.Paths.get(String, String[])
-      //val current = todo.head
+      count+=1
+      // java.lang.System.getProperty("user.home")
+      // java.lang.String.equalsIgnoreCase(...)
+      // java.nio.file.Paths.get(String, String[])
+      // val current = todo.head
       val current = todo.dequeue
 
       if (!done.contains(current)) {
