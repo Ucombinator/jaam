@@ -621,7 +621,8 @@ object Snowflakes {
   def malloc(name: String): AbstractSnowflakeBasePointer = { SnowflakeBasePointer(name) }
 
   def isSnowflakeObject(v: Value): Boolean = v.isInstanceOf[ObjectValue] && isSnowflakeObject(v.asInstanceOf[ObjectValue])
-  def isSnowflakeObject(v: ObjectValue): Boolean = v.bp.isInstanceOf[AbstractSnowflakeBasePointer]
+  def isSnowflakeObject(v: ObjectValue): Boolean = isSnowflakeObject(v.bp)
+  def isSnowflakeObject(v: BasePointer): Boolean = v.isInstanceOf[AbstractSnowflakeBasePointer]
 
   def createArray(t: soot.Type, sizes: List[D], addrs: Set[Addr]) {
     val bp = t match {

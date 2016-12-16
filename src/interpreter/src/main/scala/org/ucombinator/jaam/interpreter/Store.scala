@@ -37,12 +37,14 @@ abstract class AbstractStore[K <: Addr, V](val map: mutable.Map[K, V], abstractD
     this
   }
 
-  def get(addr: K): Option[V] = {
-    readAddrs += addr
+  def get(addr: K, record : Boolean = true): Option[V] = {
+    if (record) {
+      readAddrs += addr
+    }
     map.get(addr)
   }
-  def getOrElseBot(addr: K): V = {
-    this.get(addr) match {
+  def getOrElseBot(addr: K, record : Boolean = true): V = {
+    this.get(addr, record) match {
       case Some(value) => value
       case None => abstractDomain.bot
     }
@@ -64,7 +66,7 @@ abstract class AbstractStore[K <: Addr, V](val map: mutable.Map[K, V], abstractD
     this
   }
   def update(addr: K, d: V): AbstractStore[K, V] = {
-    val oldd: V = this.getOrElseBot(addr)
+    val oldd: V = this.getOrElseBot(addr, false)
 
     abstractDomain.joinLeft(oldd, d) match {
       case None => {}
