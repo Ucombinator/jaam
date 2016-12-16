@@ -1175,15 +1175,30 @@ object Main {
     val initialState = State.inject(Stmt.methodEntry(mainMainMethod))
 
     //var todo: List[AbstractState] = List(initialState)
-    var todo: Set[AbstractState] = Set(initialState)
+    //var todo: Set[AbstractState] = Set(initialState)
+    def stateOrdering(s : AbstractState) = {
+      s.id
+    }
+    var todo: mutable.PriorityQueue[AbstractState] = mutable.PriorityQueue()(Ordering.by(stateOrdering))
+    todo.enqueue(initialState)
     var done: Set[AbstractState] = Set()
     var doneEdges: Map[(Int, Int), Int] = Map()
 
     outSerializer.write(initialState.toPacket)
 
-    while (todo.nonEmpty) {
-      val current = todo.head
-      todo = todo.tail
+try {
+  var count = 0
+    while (todo.nonEmpty && count < 10*1000) {
+count+=1
+// java.lang.System.getProperty("user.home")
+// java.lang.String.equalsIgnoreCase(...)
+// java.nio.file.Paths.get(String, String[])
+      //val current = todo.head
+      val current = todo.dequeue
+
+      if (!done.contains(current)) {
+
+      //todo = todo.tail
       Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
       val nexts = System.next(current)
       val newTodo = nexts.filter(!done.contains(_))
@@ -1216,17 +1231,21 @@ object Main {
       }
 
       if (System.isInitializedClassesChanged) {
-        todo = newTodo ++ Set(current) ++ todo
+        todo += current
+        todo ++= newTodo
       }
       else {
         done += current
-        todo = newTodo ++ todo
+        todo ++= newTodo
       }
 
       Log.info("Done processing state "+current.id)
+}
     }
 
+} finally {
     outSerializer.close()
+}
     /*
 
     // Store summary, print out the number of values in a single address,
