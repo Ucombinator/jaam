@@ -179,7 +179,11 @@ abstract class AtomicValue extends Value
 
 case object AnyAtomicValue extends AtomicValue
 
-case class ObjectValue(val sootClass : SootClass, val bp : BasePointer) extends Value
+case class ObjectValue(val sootClass : SootClass, val bp : BasePointer) extends Value {
+  if (!sootClass.isConcrete && !Snowflakes.isSnowflakeObject(bp)) {
+    throw new Exception("Created ObjectValue for non-concrete type: " + sootClass + " ; base pointer: " + bp)
+  }
+}
 
 // The sootType is the type with array wrapper
 case class ArrayValue(val sootType : Type, val bp : BasePointer) extends Value
