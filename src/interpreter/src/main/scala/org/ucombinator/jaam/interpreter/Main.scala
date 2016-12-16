@@ -409,6 +409,7 @@ case class State(val stmt : Stmt,
         // TODO: filter out incorrect types
         for (ArrayValue(_, bp) <- b.getValues) yield
           ArrayRefAddr(bp)
+
     }
   }
 
@@ -1200,14 +1201,20 @@ object Main {
         }
       }
 
+      val size1 = todo.size
+      var count = 0
       for (w <- current.getWriteAddrs; s <- System.readTable(w)) {
+        count += 1
         done -= s
         todo += s
       }
       for (w <- current.getKWriteAddrs; s <- System.readKTable(w)) {
+        count += 1
         done -= s
         todo += s
       }
+      val size2 = todo.size
+      //Log.error("todo size: " + size2 + " size increased: " + (size2 - size1) + ", loop count: " + count)
 
       if (System.isInitializedClassesChanged) {
         todo = newTodo ++ Set(current) ++ todo
