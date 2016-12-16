@@ -673,6 +673,11 @@ case class State(val stmt : Stmt,
               }
               */
             }
+            else if (System.isLibraryClass(meth.getDeclaringClass) && meth.getReturnType.isInstanceOf[PrimType]) {
+              //Log.error("return prim type: " + meth)
+              //ReturnSnowflake(D.atomicTop)(this, nextStmt, self, args)
+              DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
+            }
             else {
               // TODO/optimize: filter out incorrect class types
               val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
@@ -812,7 +817,6 @@ case class State(val stmt : Stmt,
       */
       case UndefinedAddrsException(addrs) =>
         //An empty set of addrs may due to the over approximation of ifStmt.
-        System.undefined += 1
 
         val states = for (addr <- addrs) yield {
           addr match {
@@ -823,6 +827,7 @@ case class State(val stmt : Stmt,
               Snowflakes.initField(Set(addr), field)
               Set(this.copy())
             case _ =>
+              System.undefined += 1
               Log.error("Undefined Addrs in state "+this.id+"; stmt = "+stmt+"; addrs = "+addrs)
               Set()
           }
@@ -1178,7 +1183,10 @@ object Main {
     //var todo: List[AbstractState] = List(initialState)
     //var todo: Set[AbstractState] = Set(initialState)
     def stateOrdering(s : AbstractState) = {
-      s.id
+      if (System.readTable.getOrElse(GlobalSnowflakeAddr, Set()).contains(s)) {
+        0
+      }
+      else s.id
     }
     var todo: mutable.PriorityQueue[AbstractState] = mutable.PriorityQueue()(Ordering.by(stateOrdering))
     todo.enqueue(initialState)
@@ -1187,66 +1195,65 @@ object Main {
 
     outSerializer.write(initialState.toPacket)
 
-try {
-  var count = 0
-    while (todo.nonEmpty && count < 10*1000) {
-      count+=1
-      // java.lang.System.getProperty("user.home")
-      // java.lang.String.equalsIgnoreCase(...)
-      // java.nio.file.Paths.get(String, String[])
-      // val current = todo.head
-      val current = todo.dequeue
+    try {
+      var count = 0
+      while (todo.nonEmpty) {// && count < 10*1000) {
+        count+=1
+        // java.lang.System.getProperty("user.home")
+        // java.lang.String.equalsIgnoreCase(...)
+        // java.nio.file.Paths.get(String, String[])
+        // val current = todo.head
+        val current = todo.dequeue
 
-      if (!done.contains(current)) {
+        if (!done.contains(current)) {
+          //todo = todo.tail
+          Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
+          val nexts = System.next(current)
+          val newTodo = nexts.filter(!done.contains(_))
 
-      //todo = todo.tail
-      Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
-      val nexts = System.next(current)
-      val newTodo = nexts.filter(!done.contains(_))
+          for (n <- newTodo) {
+            Log.info("Writing state "+n.id)
+            outSerializer.write(n.toPacket)
+          }
 
-      for (n <- newTodo) {
-        Log.info("Writing state "+n.id)
-        outSerializer.write(n.toPacket)
-      }
+          for (n <- nexts) {
+            if (!doneEdges.contains((current.id, n.id))) {
+              val id = doneEdges.size // TODO: Should create an creating object so these are consistent about 0 vs 1 based
+              Log.info("Writing edge "+id+": "+current.id+" -> "+n.id)
+              doneEdges += (current.id, n.id) -> id
+              outSerializer.write(serializer.Edge(serializer.Id[serializer.Edge](id), serializer.Id[serializer.Node](current.id), serializer.Id[serializer.Node](n.id)))
+            } else {
+              Log.info("Skipping edge "+current.id+" -> "+n.id)
+            }
+          }
 
-      for (n <- nexts) {
-        if (!doneEdges.contains((current.id, n.id))) {
-          val id = doneEdges.size // TODO: Should create an creating object so these are consistent about 0 vs 1 based
-          Log.info("Writing edge "+id+": "+current.id+" -> "+n.id)
-          doneEdges += (current.id, n.id) -> id
-          outSerializer.write(serializer.Edge(serializer.Id[serializer.Edge](id), serializer.Id[serializer.Node](current.id), serializer.Id[serializer.Node](n.id)))
-        } else {
-          Log.info("Skipping edge "+current.id+" -> "+n.id)
+          for (w <- current.getWriteAddrs; s <- System.readTable.getOrElse(w, Set())) {
+            done -= s
+            todo += s
+            Log.info("writeAddr(" + w + "): " + s)
+          }
+          for (w <- current.getKWriteAddrs; s <- System.readKTable.getOrElse(w, Set())) {
+            done -= s
+            todo += s
+            Log.info("kWriteAddr(" + w + "): " + s)
+          }
+
+          if (System.isInitializedClassesChanged) {
+            todo += current
+            todo ++= newTodo
+          }
+          else {
+            done += current
+            todo ++= newTodo
+          }
+
+          Log.info("Done processing state "+current.id)
         }
       }
-
-      for (w <- current.getWriteAddrs; s <- System.readTable.getOrElse(w, Set())) {
-        done -= s
-        todo += s
-        Log.info("writeAddr(" + w + "): " + s)
-      }
-      for (w <- current.getKWriteAddrs; s <- System.readKTable.getOrElse(w, Set())) {
-        done -= s
-        todo += s
-        Log.info("kWriteAddr(" + w + "): " + s)
-      }
-
-      if (System.isInitializedClassesChanged) {
-        todo += current
-        todo ++= newTodo
-      }
-      else {
-        done += current
-        todo ++= newTodo
-      }
-
-      Log.info("Done processing state "+current.id)
-}
     }
-
-} finally {
-    outSerializer.close()
-}
+    finally {
+      outSerializer.close()
+    }
     /*
 
     // Store summary, print out the number of values in a single address,
