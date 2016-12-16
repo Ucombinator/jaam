@@ -549,26 +549,34 @@ object ClassSnowflakes {
       }
       val lhsAddr = state.addrsOf(local)
 
+      val exceptionClass = Soot.getSootClass("java.lang.InstantiationException")
+      val instatiationException = ObjectValue(exceptionClass, Snowflakes.malloc(exceptionClass))
       self match {
         case ObjectValue(_, ClassBasePointer(className)) =>
-          try { // TODO: This is a bit of a hack
-          val sootClass = Soot.getSootClass(className)
-          //val state2 = state.copy(store = state.newExpr(lhsAddr, sootClass, System.store))
-          state.newExpr(lhsAddr, sootClass)
+          if (className.startsWith("[")) {
+            state.kontStack.handleException(instatiationException, state.stmt, state.fp)
+          }
+          else {
+            val sootClass = Soot.getSootClass(className)
+            if (sootClass.isInterface || sootClass.isAbstract) {
+              state.kontStack.handleException(instatiationException, state.stmt, state.fp)
+            }
+            else {
+              //val state2 = state.copy(store = state.newExpr(lhsAddr, sootClass, System.store))
+              state.newExpr(lhsAddr, sootClass)
 
-          val expr = new soot.jimple.internal.JSpecialInvokeExpr(
-            local, //new soot.jimple.internal.JimpleLocal("newInstanceSnowflake", sootClass.getType()),
-            sootClass.getMethod(SootMethod.constructorName, List()).makeRef(),
-            List[soot.Value]())
-
-          //state2.handleInvoke(expr, None)
-          state.handleInvoke(expr, None)
-          } catch {
-            // Several things can trigger this.  For example, the class name
-            // couldn't be loaded, the class is abstract, the class is an
-            // interface, or the class doesn't have a no-argument constructor.
-            // In any case we must be on a spurious flow
-            case _: Exception => Set()
+              try { // TODO: this is a bit of a hack
+                val expr = new soot.jimple.internal.JSpecialInvokeExpr(
+                  local, //new soot.jimple.internal.JimpleLocal("newInstanceSnowflake", sootClass.getType()),
+                  sootClass.getMethod(SootMethod.constructorName, List()).makeRef(),
+                  List[soot.Value]())
+                //state2.handleInvoke(expr, None)
+                state.handleInvoke(expr, None)
+              } catch {
+                // If it doesn't have a no argument, then we must be on a spurious flow
+                case _: Exception => Set()
+              }
+            }
           }
         case _ => Set()
       }
