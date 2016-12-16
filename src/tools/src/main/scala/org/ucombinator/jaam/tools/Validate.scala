@@ -4,6 +4,7 @@ import java.io.{FileInputStream, FileOutputStream, IOException}
 
 import scala.collection.mutable
 import org.ucombinator.jaam.serializer._
+import com.esotericsoftware.kryo.KryoException
 
 object Validate {
   private val uniqueNodes = mutable.Set[Id[Node]]()
@@ -37,9 +38,11 @@ object Validate {
     } catch {
       case e : IOException => // Unable to pi.read() successfully
         endedPrematurely = true
+      case ke: KryoException => // Unable to pi.read() successfully
+        endedPrematurely = true
       case e : Throwable =>
-        sys.error("Something unexpected went wrong.")
         e.printStackTrace()
+        sys.error("Something unexpected went wrong.")
     }
 
     pi.close()
