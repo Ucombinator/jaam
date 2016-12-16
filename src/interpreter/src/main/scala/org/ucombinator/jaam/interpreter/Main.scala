@@ -1220,9 +1220,7 @@ count+=1
         }
       }
 
-
       for (w <- current.getWriteAddrs; s <- System.readTable.getOrElse(w, Set())) {
-
         done -= s
         todo += s
         Log.info("writeAddr(" + w + "): " + s)
@@ -1232,8 +1230,6 @@ count+=1
         todo += s
         Log.info("kWriteAddr(" + w + "): " + s)
       }
-      val size2 = todo.size
-      //Log.error("todo size: " + size2 + " size increased: " + (size2 - size1) + ", loop count: " + count)
 
       if (System.isInitializedClassesChanged) {
         todo += current
