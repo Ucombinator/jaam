@@ -1204,13 +1204,15 @@ object Main {
         }
       }
 
-      for (w <- current.getWriteAddrs; s <- System.readTable(w)) {
+      for (w <- current.getWriteAddrs; s <- System.readTable.getOrElse(w, Set())) {
         done -= s
         todo += s
+        Log.info("writeAddr(" + w + "): " + s)
       }
-      for (w <- current.getKWriteAddrs; s <- System.readKTable(w)) {
+      for (w <- current.getKWriteAddrs; s <- System.readKTable.getOrElse(w, Set())) {
         done -= s
         todo += s
+        Log.info("kWriteAddr(" + w + "): " + s)
       }
 
       if (System.isInitializedClassesChanged) {
