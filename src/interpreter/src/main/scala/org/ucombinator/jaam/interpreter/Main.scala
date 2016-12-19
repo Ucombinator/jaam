@@ -1011,13 +1011,14 @@ class Conf(args : Seq[String]) extends ScallopConf(args = args) {
     val argType = org.rogach.scallop.ArgType.FLAG
   }
 
-  val help      = opt[Unit](short = 'h', descr = "show this help message")(helpConverter)
-  val classpath = opt[String](required = true, short = 'P', descr = "the TODO class directory")
-  val rtJar     = opt[String](required = true, short = 'J', descr = "the rt.jar file")
-  val mainClass = opt[String](required = true, short = 'c', descr = "the main class")
-  val method    = opt[String](required = true, short = 'm', descr = "the main method", default = Some("main"))
-  val outfile   = opt[String](short = 'o', descr = "the output file for the serialized data")
-  val logLevel  = opt[String](
+  val help        = opt[Unit](short = 'h', descr = "show this help message")(helpConverter)
+  val classpath   = opt[String](required = true, short = 'P', descr = "the TODO class directory")
+  val rtJar       = opt[String](required = true, short = 'J', descr = "the rt.jar file")
+  val mainClass   = opt[String](required = true, short = 'c', descr = "the main class")
+  val method      = opt[String](required = true, short = 'm', descr = "the main method", default = Some("main"))
+  val libClasses  = opt[String](short = 'L', descr = "app's library classes")
+  val outfile     = opt[String](short = 'o', descr = "the output file for the serialized data")
+  val logLevel    = opt[String](
     short = 'l',
     descr = "the level of logging verbosity; one of 'none', 'error', 'warn', 'info', 'debug', 'trace'; default: 'info'",
     default = Some("info"))
@@ -1054,6 +1055,7 @@ object Main {
   }
 
   def run(conf : Conf) {
+    System.setLibraryClasses(conf.libClasses())
     val mainClass   = conf.mainClass().toString
     val mainMethod  = conf.method().toString
     val outfile     = conf.outfile.toOption match {
