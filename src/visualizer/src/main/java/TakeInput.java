@@ -36,6 +36,7 @@ public class TakeInput extends Thread
 		System.out.println("number of vertices = " + Main.graph.vertices.size());
 		System.out.println("number of method vertices = " + Main.graph.methodVertices.size());
 		System.out.println("number of classes = " + Main.graph.classes.size());
+
 	}
 	
 	private void setFileInput(String file)

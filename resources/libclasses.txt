@@ -1,0 +1,7 @@
+# application's library
+org.apache.commons.
+org.mapdb.
+org.apache.http
+jline
+org.fusesource
+com.lambdaworks

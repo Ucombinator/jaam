@@ -9,6 +9,7 @@ import org.ucombinator.jaam.serializer._
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
+import scala.language.existentials
 
 sealed trait OriginalRepresentation
 case class SootMethod(method: soot.SootMethod)              extends OriginalRepresentation

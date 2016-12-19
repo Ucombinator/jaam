@@ -3,9 +3,6 @@
 organization in ThisBuild := "org.ucombinator"
 scalaVersion in ThisBuild := "2.11.8"
 
-resolvers += "Ucombinator maven repository on github" at "https://ucombinator.github.io/maven-repo"
-resolvers += Resolver.sonatypeRepo("public")
-
 // Create assemblies only if we explicitly ask for them
 disablePlugins(sbtassembly.AssemblyPlugin)
 
@@ -41,6 +38,9 @@ lazy val quietDiscard = new sbtassembly.MergeStrategy {
 
 // Settings shared between sub-projects
 lazy val commonSettings = Seq(
+  // Use repository containing soot-all-in-one nightly snapshot
+  resolvers += "Ucombinator maven repository on github" at "https://ucombinator.github.io/maven-repo",
+
   // Flags to 'scalac'.  Try to get as much error and warn detection as possible.
   scalacOptions ++= Seq(
     // Emit warning and location for usages of deprecated APIs.
@@ -64,10 +64,6 @@ lazy val commonSettings = Seq(
 
   // Use shading to avoid file conflicts in some problematic dependencies
   assemblyShadeRules in assembly := Seq(
-    ShadeRule.rename("org.objectweb.**" -> "shadedSoot.@0")
-      .inProject,
-    ShadeRule.rename("org.objectweb.**" -> "shadedSoot.@0")
-      .inLibrary("org.ucombinator.soot" % "soot-all-in-one" % "nightly.20150205"),
     ShadeRule.rename("com.esotericsoftware.**" -> "shaded-kryo.@0")
       .inLibrary("com.esotericsoftware" % "kryo-shaded" % "3.0.3")
   )

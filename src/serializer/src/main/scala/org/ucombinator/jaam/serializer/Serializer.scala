@@ -6,27 +6,24 @@ package org.ucombinator.jaam.serializer
  * ****************************************/
 
 import java.lang.Object
-import java.io.{InputStream, OutputStream, IOException}
+import java.io.{IOException, InputStream, OutputStream}
 import java.lang.reflect.Type
 import java.util.zip.{DeflaterOutputStream, InflaterInputStream}
 
 import scala.collection.JavaConversions._
-
 import soot.SootMethod
 import soot.jimple.{Stmt => SootStmt}
 import soot.util.Chain
-import org.objectweb.asm.tree.{InsnList, AbstractInsnNode}
-
+import org.objectweb.asm.tree.{AbstractInsnNode, InsnList}
 import com.esotericsoftware.minlog.Log
-
 import com.esotericsoftware.kryo.{Kryo, Registration, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.serializers.FieldSerializer
-
 import org.objenesis.strategy.StdInstantiatorStrategy
 import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer
 import com.twitter.chill.{AllScalaRegistrar, KryoBase, ScalaKryoInstantiator}
 
+import scala.collection.mutable
 
 ////////////////////////////////////////
 // 'PacketInput' is used to read a ".jaam" file
@@ -39,7 +36,8 @@ class PacketInput(private val input : InputStream) {
   // TODO: check for exceptions
   def read() : Packet = {
     this.kryo.readClassAndObject(in) match {
-      case o : Packet => o
+      case o : Packet =>
+        o
       case o => throw new IOException("Read object is not a Packet: " + o)
     }
   }
@@ -139,7 +137,16 @@ case class Edge(id : Id[Edge], src : Id[Node], dst : Id[Node]) extends Packet {}
 abstract class Node(val id : Id[Node]) extends Packet {}
 
 // Declare 'AbstractState' nodes
-abstract class AbstractState(override val id : Id[Node]) extends Node(id) {}
+class AbstractState(override val id : Id[Node]) extends Node(id) {}
+
+// AnalysisNodes from the analyzer
+case class AnalysisNode(var node : Node = null,
+                        override val id : Id[Node],
+                        val abstNodes : mutable.MutableList[Int],
+                        val inEdges : mutable.MutableList[Int],
+                        val outEdges : mutable.MutableList[Int],
+                        val tag : Tag) extends Node(id) {}
+
 case class ErrorState(override val id : Id[Node]) extends AbstractState(id) {}
 case class State(override val id : Id[Node], stmt : Stmt, framePointer : String, kontStack : String) extends AbstractState(id) {}
 
@@ -152,6 +159,9 @@ case class MissingReferencedState(override val id : Id[Node]) extends Node(id) {
 case class NodeTag(id : Id[Tag], node : Id[Node], tag : Tag) extends Packet {}
 abstract class Tag {}
 case class AllocationTag(val sootType : soot.Type) extends Tag {}
+case class ChainTag() extends Tag {}
+
+
 
 
 ////////////////////////////////////////
