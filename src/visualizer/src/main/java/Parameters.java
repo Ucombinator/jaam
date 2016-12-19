@@ -192,7 +192,7 @@ public class Parameters
 		Platform.runLater(new Runnable() {
 			@Override
 			public void run() {
-				stFrame.vizPanel.updateVertices();
+				stFrame.mainPanel.updateVertices();
 				stFrame.contextPanel.updateVertices();
 			}
 		});

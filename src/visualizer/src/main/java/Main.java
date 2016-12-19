@@ -1,13 +1,21 @@
+import java.awt.Dimension;
+import java.awt.GraphicsEnvironment;
+
+import javax.swing.JFrame;
+
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.stage.Stage;
 
 public class Main
 {
 	public static Graph graph;
-	
+
 	public static void main(String[] args)
 	{
 		Parameters.stFrame = new StacFrame();
-		boolean load = false;
 		TakeInput ti = new TakeInput();
+		boolean load = false;
 		String file = "";
 
 		for (int i = 0; i < args.length; i++)
@@ -40,11 +48,7 @@ public class Main
 				System.out.println("ignoring invalid input option:\"" + args[i] + "\"");
 			}
 		}
-
-		if (load) {
-			//From the command line, we can only load message file
-			ti.run(file, true);
-			Parameters.repaintAll();
-		}
+		
+		ti.run(file, true);
 	}
 }

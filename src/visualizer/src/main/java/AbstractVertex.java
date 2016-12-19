@@ -3,12 +3,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.ArrayList;
 
 import javafx.animation.*;
-import javafx.event.EventHandler;
-import javafx.scene.Node;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.StackPane;
 import javafx.scene.shape.*;
-import javafx.scene.text.Text;
 import javafx.util.Duration;
 
 //The base class for the various kinds of vertices.
@@ -19,9 +14,39 @@ import javafx.util.Duration;
 //We may also add other kinds of collapsing later, which will require
 //having new kinds of vertices.
 
-public abstract class AbstractVertex
+abstract class AbstractVertex implements Comparable<AbstractVertex>
 {
-    public ArrayList<Integer> tags;
+	public int compareTo(AbstractVertex o)
+	{
+		if(this.getMinInstructionLine() == o.getMinInstructionLine())
+		{
+			return 0;
+		}
+		else if(this.getMinInstructionLine() < o.getMinInstructionLine())
+		{
+			return -1;
+		} 
+
+		return 1;
+	}
+	
+	static int id_counter = 0;
+	
+	private int minInstructionLine = -1; //start with a negative value to be properly initialized later
+	
+	public int getMinInstructionLine() {
+		return minInstructionLine;
+	}
+
+	public void setMinInstructionLine(int smallest_instruction_line) {
+		this.minInstructionLine = smallest_instruction_line;
+	}
+	
+	protected AbstractGraph inner_graph = null;
+
+	private String label;
+
+	public ArrayList<Integer> tags;
 
     public enum VertexType
 	{
@@ -29,9 +54,12 @@ public abstract class AbstractVertex
 	}
 
 	protected int id;
+	protected String str_id;
 	protected VertexType vertexType;
 	protected String name;
 	protected int index, parentIndex;
+	protected ArrayList<Vertex> neighbors;
+	protected ArrayList<AbstractVertex> abstractNeighbors;
 
 	// A location stores coordinates for a subtree.
 	protected Location location;
@@ -44,11 +72,43 @@ public abstract class AbstractVertex
 	//the current display
 	//The base graph is stored in the neighbors in the Vertex class.
 	protected ArrayList<AbstractVertex> children, incoming;
-
-	// TODO: We're using straight lines for all of the edges. Some should be changed to be cubic curves.
-	protected ArrayList<Line> incomingEdges;
-	protected ArrayList<Line> outgoingEdges;
+	//These are the coordinates of a subtree (maybe?)
+	protected double left, right, top, bottom;
 	
+
+	protected double x = 0;
+	protected double y = 0;
+	protected double width = 1;	
+	protected double height = 1;
+	
+
+	public void setWidth(double width) {
+		this.width = width;
+	}
+	public void setHeight(double height) {
+		this.height = height;
+	}
+	
+	public void setX(double x) {
+		this.x = x;
+	}
+	public void setY(double y) {
+		this.y = y;
+	}
+	
+	public double getX() {
+		return x;
+	}
+	public double getY() {
+		return y;
+	}
+	public double getWidth() {
+		return width;
+	}
+	public double getHeight() {
+		return height;
+	}
+
 	//The merge start is the first vertex of the merge children for a merge vertex, and is used
 	//to create its incoming edges.
 	protected AbstractVertex parent, mergeRoot;
@@ -57,14 +117,43 @@ public abstract class AbstractVertex
 	protected boolean drawEdges;
 	protected int numChildrenHighlighted, numChildrenSelected;
 	protected int loopHeight;
+	protected String vertexStatus = "WHITE"; //WHITE, GRAY, BLACK
+	protected double[] subtreeBBOX = {width,height};
 	
 	//Subclasses must override these so that we have descriptions for each of them,
 	//and so that our generic collapsing can work for all of them
 	abstract String getRightPanelContent();
-    abstract String getShortDescription();
+	abstract String getShortDescription();
 	abstract AbstractVertex getMergeParent();
 	abstract ArrayList<? extends AbstractVertex> getMergeChildren();
 	abstract String getName();
+	
+	public AbstractVertex(){
+		this.abstractNeighbors = new ArrayList<AbstractVertex>();
+		this.id = id_counter++;
+		this.str_id = "vertex:"+this.id;
+	}
+	
+	public AbstractVertex(String label){
+		this();
+		this.label = label;
+		this.inner_graph = new AbstractGraph();
+	}
+	
+    public String getLabel() {
+		return this.label;
+	}
+	
+	public AbstractGraph getInnerGraph() {
+		return inner_graph;
+	}
+	public void setInnerGraph(AbstractGraph inner_graph) {
+		this.inner_graph = inner_graph;
+	}
+	
+	public String getID() {
+		return str_id;
+	}
 	
 	public void setDefaults()
 	{
@@ -77,8 +166,6 @@ public abstract class AbstractVertex
 		this.incoming = new ArrayList<AbstractVertex>();
 		this.children = new ArrayList<AbstractVertex>();
         this.tags = new ArrayList<Integer>();
-		this.incomingEdges = new ArrayList<Line>();
-		this.outgoingEdges = new ArrayList<Line>();
 	}
 
 	public void setVisible(boolean isVisible)
@@ -150,7 +237,7 @@ public abstract class AbstractVertex
 			this.parent.calculateHeight();
 	}
 
-	public PathTransition constructPathTransition(boolean context)
+	/*public PathTransition constructPathTransition(boolean context)
 	{
 		System.out.println("Path transition for vertex: " + this.getName());
 		System.out.println("x pixels: " + Parameters.minBoxWidth*this.location.x);
@@ -172,7 +259,7 @@ public abstract class AbstractVertex
 			pathTrans.setNode(this.mainNode);
 
 		return pathTrans;
-	}
+	}*/
 
 	//Collapse a merge parent's vertices.
 	public void collapse()
@@ -799,4 +886,20 @@ public abstract class AbstractVertex
 		
 		newParent.addChild(this);
 	}
+
+	public void addAbstractNeighbor(AbstractVertex neighbor)
+	{
+		this.abstractNeighbors.add(neighbor);
+	}
+	
+	public ArrayList<AbstractVertex> getAsbstractNeighbors()
+	{
+		return this.abstractNeighbors;
+	}
+
+	/*public void printCoordinates()
+	{
+		System.out.println(this.getFullName() + ": " + this.x + ", " + this.y + ", left = " + this.left + ", right = " + this.right +
+				", width = " + this.width + ", top = " + this.top + ", bottom = " + this.bottom + ", height = " + this.height);
+	}*/
 }

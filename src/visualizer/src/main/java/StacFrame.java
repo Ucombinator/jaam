@@ -54,7 +54,7 @@ public class StacFrame extends JFrame
 	private JMenu menuFile, menuSearch, menuNavigation, menuCustomize, menuHelp;
 	private int width, height;
 	private ArrayList<JSplitPane> horizontalSplitPanes;
-	public VizPanel vizPanel, contextPanel;
+	public VizPanel mainPanel, contextPanel;
 	private JPanel menuPanel, leftPanel, rightPanel, searchPanel;
 	public JCheckBox showContext, showEdge;
     public SearchField searchF;
@@ -596,12 +596,12 @@ public class StacFrame extends JFrame
 	public void makeLayout()
 	{
 
-		//centerPanel and vizPanel
+		//centerPanel and mainPanel
 		this.setLayout(new BorderLayout());
 		setSplitScreen();
 		
 		//this.addMouseToViz();
-		this.addKeyboard(vizPanel);
+		this.addKeyboard(mainPanel);
 		//this.addMouseToContext();
 		this.addKeyboard(contextPanel);
 		
@@ -636,7 +636,7 @@ public class StacFrame extends JFrame
 			{
 				public void itemStateChanged(ItemEvent e)
 				{
-					vizPanel.showEdge = showEdge.isSelected();					
+					mainPanel.showEdge = showEdge.isSelected();
 					StacFrame.this.repaint();
 				}
 			}
@@ -656,7 +656,7 @@ public class StacFrame extends JFrame
 			{
 				public void actionPerformed(ActionEvent e)
 				{
-					vizPanel.boxSize *= Parameters.boxFactor;
+					mainPanel.boxSize *= Parameters.boxFactor;
 					Parameters.repaintAll();
 				}
 			}
@@ -675,7 +675,7 @@ public class StacFrame extends JFrame
 			{
 				public void actionPerformed(ActionEvent e)
 				{
-					vizPanel.boxSize /= Parameters.boxFactor;
+					mainPanel.boxSize /= Parameters.boxFactor;
 					Parameters.repaintAll();
 				}
 			}
@@ -722,7 +722,7 @@ public class StacFrame extends JFrame
 		leftPanel = new JPanel();
 		rightPanel = new JPanel();
         searchPanel = new JPanel();
-		this.vizPanel = new VizPanel(false);
+		this.mainPanel = new VizPanel(false);
 		this.contextPanel = new VizPanel(true);
 
 		// Build each panel
@@ -769,7 +769,7 @@ public class StacFrame extends JFrame
 		layoutRowWeights.add(leftWeights);
 
 		ArrayList<JComponent> center = new ArrayList<JComponent>();
-		center.add(vizPanel);
+		center.add(mainPanel);
 		ArrayList<Double> centerWeights = new ArrayList<Double>();
 		layoutRowWeights.add(centerWeights);
 
@@ -850,19 +850,19 @@ public class StacFrame extends JFrame
 	
 	public void addMouseToViz()
 	{
-		vizPanel.addMouseListener
+		mainPanel.addMouseListener
 		(
 			new MouseListener()
 			{
 				public void mouseClicked(MouseEvent m)
 				{
-                    vizPanel.requestFocusInWindow();
+                    mainPanel.requestFocusInWindow();
 					if(!isGraphLoaded())
 						return;
 					
 					context = false;
-					double x = vizPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(m))*Main.graph.getWidth();
-					double y = vizPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(m))*Main.graph.getHeight();
+					double x = mainPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(m))*Main.graph.getWidth();
+					double y = mainPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(m))*Main.graph.getHeight();
 					
 					if(System.currentTimeMillis() - Parameters.mouseLastTime > Parameters.mouseInterval)
 					{
@@ -951,9 +951,9 @@ public class StacFrame extends JFrame
 					if(!isGraphLoaded())
 						return;
 					context = false;
-					vizPanel.selectLeft = getRelativeXPixels(m);
-					vizPanel.selectTop = getRelativeYPixels(m);
-					vizPanel.showSelection = true;
+					mainPanel.selectLeft = getRelativeXPixels(m);
+					mainPanel.selectTop = getRelativeYPixels(m);
+					mainPanel.showSelection = true;
 					
 					Parameters.startTime = System.currentTimeMillis();
 					Parameters.lastInterval = -1;
@@ -963,8 +963,8 @@ public class StacFrame extends JFrame
 				{
 					if(!isGraphLoaded())
 						return;
-					vizPanel.requestFocus();
-					vizPanel.showSelection = false;
+					mainPanel.requestFocus();
+					mainPanel.showSelection = false;
 					context = false;
 					
 					if(mouseDrag)
@@ -972,10 +972,10 @@ public class StacFrame extends JFrame
 						mouseDrag = false;
 						if(Main.graph != null)
 						{
-							double x1 = vizPanel.getIndexFromCurrentPixelX(vizPanel.selectLeft);
-							double x2 = vizPanel.getIndexFromCurrentPixelX(vizPanel.selectRight);
-							double y1 = vizPanel.getIndexFromCurrentPixelY(vizPanel.selectTop);
-							double y2 = vizPanel.getIndexFromCurrentPixelY(vizPanel.selectBottom);
+							double x1 = mainPanel.getIndexFromCurrentPixelX(mainPanel.selectLeft);
+							double x2 = mainPanel.getIndexFromCurrentPixelX(mainPanel.selectRight);
+							double y1 = mainPanel.getIndexFromCurrentPixelY(mainPanel.selectTop);
+							double y2 = mainPanel.getIndexFromCurrentPixelY(mainPanel.selectBottom);
 
 							Main.graph.selectVertices(x1, x2, y1, y2);
 						}
@@ -985,7 +985,7 @@ public class StacFrame extends JFrame
 			}
 		);
 		
-		vizPanel.addMouseMotionListener
+		mainPanel.addMouseMotionListener
 		(
 			new MouseMotionListener()
 			{
@@ -997,8 +997,8 @@ public class StacFrame extends JFrame
 						return;
 					context = false;
 					mouseDrag = true;
-					vizPanel.selectRight = getRelativeXPixels(m);
-					vizPanel.selectBottom = getRelativeYPixels(m);
+					mainPanel.selectRight = getRelativeXPixels(m);
+					mainPanel.selectBottom = getRelativeYPixels(m);
 
 					if((System.currentTimeMillis()-Parameters.startTime)/Parameters.refreshInterval > Parameters.lastInterval)
 					{
@@ -1009,7 +1009,7 @@ public class StacFrame extends JFrame
 			}
 		);
 
-		vizPanel.addMouseWheelListener
+		mainPanel.addMouseWheelListener
 		(
 			new MouseWheelListener()
 			{
@@ -1025,12 +1025,12 @@ public class StacFrame extends JFrame
 					{
 						if(e.isShiftDown())
 						{
-							vizPanel.boxSize /= Parameters.boxFactor;
+							mainPanel.boxSize /= Parameters.boxFactor;
 						}
 						else
 						{
-							double x = vizPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(e));
-							double y = vizPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(e));
+							double x = mainPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(e));
+							double y = mainPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(e));
 							Main.graph.increaseZoom(Parameters.zoomFactor, x, y);
 						}
 					}
@@ -1038,12 +1038,12 @@ public class StacFrame extends JFrame
 					{
 						if(e.isShiftDown())
 						{
-							vizPanel.boxSize *= Parameters.boxFactor;
+							mainPanel.boxSize *= Parameters.boxFactor;
 						}
 						else
 						{
-							double x = vizPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(e));
-							double y = vizPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(e));
+							double x = mainPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(e));
+							double y = mainPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(e));
 							Main.graph.increaseZoom(1/Parameters.zoomFactor, x, y);
 						}
 					}
@@ -1106,7 +1106,7 @@ public class StacFrame extends JFrame
 					if(!isGraphLoaded())
 						return;
 					context = true;
-//					vizPanel.requestFocus();
+//					mainPanel.requestFocus();
 					contextPanel.showSelection = false;
 					
 					if(mouseDrag)
@@ -1192,7 +1192,7 @@ public class StacFrame extends JFrame
 	{
 		//TODO: Why is this not different for the context menu?
 		//Subtract the top bar, the menu panel height, and the start height of the current panel
-		return m.getY() - (this.getHeight() - this.getContentPane().getSize().height) - vizPanel.getY() - this.menuPanel.getHeight();
+		return m.getY() - (this.getHeight() - this.getContentPane().getSize().height) - mainPanel.getY() - this.menuPanel.getHeight();
 	}
 
 	public void addKeyboard(JFXPanel viz)

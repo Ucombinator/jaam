@@ -3,6 +3,7 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -10,16 +11,18 @@ import javafx.geometry.Point2D;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Group;
-import javafx.scene.transform.Scale;
 
 import java.awt.Color;
+import java.util.Iterator;
 
 public class VizPanel extends JFXPanel
 {
@@ -36,6 +39,12 @@ public class VizPanel extends JFXPanel
 	private Rectangle currentView; // The current view is highlighted in the context window
 	private Rectangle selection; // While dragging, show the current selection in the main window.
 
+	private AbstractVertex main;
+	private javafx.scene.paint.Color[] colors = {javafx.scene.paint.Color.RED,
+			javafx.scene.paint.Color.GREEN, javafx.scene.paint.Color.AZURE,
+			javafx.scene.paint.Color.BLUEVIOLET, javafx.scene.paint.Color.DARKTURQUOISE};
+	private int index = 0;
+
 	public VizPanel(boolean cont)
 	{
 		super();
@@ -46,77 +55,103 @@ public class VizPanel extends JFXPanel
 		this.setBackground(Color.WHITE);
 	}
 
-	public void initDrawing()
+	public void initFX()
 	{
-		if(Main.graph == null)
+		Graph g = Main.graph;
+		this.main = LayerFactory.get2layer(g);
+		LayoutAlgorithm.defaultLayout(main, main.getInnerGraph());
+
+		draw(main, 0, 0);
+		System.out.println("Done!");
+	}
+
+	private int scaleX(double coordinate)
+	{
+		return (int) (coordinate * 500 / this.main.getWidth());
+	}
+
+	private int scaleY(double coordinate)
+	{
+		return (int) (coordinate * 500 / this.main.getHeight());
+	}
+
+	public void draw(AbstractVertex v, double left, double top)
+	{
+		Group gr = new Group();
+
+		gr.setLayoutX(scaleX(v.getX() + left));
+		gr.setLayoutY(scaleY(v.getY() + top));
+
+		Rectangle r_back = new Rectangle(0, 0, scaleX(v.getWidth()), scaleY(v.getHeight()));
+		r_back.setArcWidth(scaleX(0.5));
+		r_back.setArcHeight(scaleY(0.5));
+		r_back.setFill(javafx.scene.paint.Color.WHITE);
+		r_back.setStroke(javafx.scene.paint.Color.BLACK);
+		r_back.setStrokeWidth(0);
+		r_back.setOpacity(1);
+
+
+		Rectangle r = new Rectangle(0, 0, scaleX(v.getWidth()), scaleY(v.getHeight()));
+		r.setArcWidth(scaleX(0.5));
+		r.setArcHeight(scaleY(0.5));
+		Label label = new Label("  " + v.getLabel());
+		r.setFill(colors[index++ % colors.length]);
+		r.setStroke(javafx.scene.paint.Color.BLACK);
+		r.setStrokeWidth(0);
+		r.setOpacity(.3);
+
+		r.setOnMouseEntered(new javafx.event.EventHandler()
 		{
-			System.out.println("How did we get here? We should never initialize a drawing until a graph has been read.");
+			@Override
+			public void handle(Event event)
+			{
+				Rectangle obj = ((Rectangle) (event.getSource()));
+				obj.setOpacity(1);
+			}
+		});
+
+		r.setOnMouseExited(new javafx.event.EventHandler()
+		{
+			@Override
+			public void handle(Event event)
+			{
+				Rectangle obj = ((Rectangle) (event.getSource()));
+				obj.setOpacity(.3);
+			}
+		});
+
+		gr.getChildren().add(r_back);
+		gr.getChildren().add(r);
+		gr.getChildren().add(label);
+		contentGroup.getChildren().add(gr);
+
+		if (v.getInnerGraph().getVertices().size() == 0)
 			return;
+
+		Iterator<Edge> itEdge = v.getInnerGraph().getEdges().values().iterator();
+		while (itEdge.hasNext())
+		{
+			Edge e = itEdge.next();
+			AbstractVertex start = e.getSourceVertex();
+			AbstractVertex end = e.getDestVertex();
+
+			double startX = start.getX() + start.getWidth() / 2;
+			double startY = start.getY() + start.getHeight() / 2;
+			double endX = end.getX() + end.getWidth() / 2;
+			double endY = end.getY() + end.getHeight() / 2;
+
+			Line l = new Line(scaleX(startX), scaleY(startY), scaleX(endX), scaleY(endY));
+			if (e.getType() == Edge.EDGE_TYPE.EDGE_DUMMY)
+			{
+				l.getStrokeDashArray().addAll(5d, 4d);
+			}
+			gr.getChildren().add(l);
 		}
 
-		// Initially, the current view is everything, and nothing is selected.
-		if(this.context)
+		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
+		while (it.hasNext())
 		{
-			currentView = new Rectangle();
-			currentView.setVisible(false);
-		}
-		else
-		{
-			selection = new Rectangle();
-			selection.setVisible(false);
-		}
-
-		initParameters();
-		initVertices();
-		initEdges();
-		this.setVisible(true);
-
-		AbstractVertex v = Main.graph.methodPathVertices.get(0);
-		System.out.println(v.mainNode.toString());
-	}
-
-	public void initParameters()
-	{
-		this.minWidth = Parameters.minBoxWidth;
-		this.minHeight = Parameters.minBoxHeight;
-		this.maxWidth = this.getWidth();
-		this.maxHeight = this.getHeight();
-
-		if(this.maxWidth<this.minWidth)
-			this.maxWidth = this.minWidth;
-		if(this.maxHeight<this.minHeight)
-			this.maxHeight = this.minHeight;
-
-		Graph graph = Main.graph;
-		this.boxWidth = this.getWidth()/(graph.getWidth()*(graph.currWindow.right-graph.currWindow.left));
-		this.boxHeight = this.getHeight()/(graph.getHeight()*(graph.currWindow.bottom-graph.currWindow.top));
-
-		if(this.boxWidth > this.maxWidth)
-		{
-			this.boxWidth = this.maxWidth;
-		}
-
-		if(this.boxHeight > this.maxHeight)
-		{
-			this.boxHeight = this.maxHeight;
-		}
-	}
-
-	public void initVertices()
-	{
-		for(Vertex ver : Main.graph.vertices)
-		{
-			this.initVertex(ver);
-		}
-
-		for(MethodVertex ver : Main.graph.methodVertices)
-		{
-			this.initVertex(ver);
-		}
-
-		for(MethodPathVertex ver : Main.graph.methodPathVertices)
-		{
-			this.initVertex(ver);
+			draw(it.next(), v.getX() + left, v.getY() + top);
 		}
 	}
 
@@ -172,7 +207,8 @@ public class VizPanel extends JFXPanel
 		else
 		{
 			text = ver.mainNode.rectLabel;
-			//text.setText(ver.getName());
+			// TODO: Determine if we should use the full name of the vertex in the main panel
+			// text.setText(ver.getName());
 			text.setText(Integer.toString(ver.id));
 			contentGroup.getChildren().add(ver.mainNode);
 		}
@@ -377,7 +413,7 @@ public class VizPanel extends JFXPanel
 			y1 = (int) this.getPixelYFromIndex(y1temp);
 			y2 = (int) this.getPixelYFromIndex(y2temp);
 
-			e.line.setStartX(x1);
+			/*e.line.setStartX(x1);
 			e.line.setEndX(x2);
 			e.line.setStartY(y1);
 			e.line.setEndY(y2);
@@ -391,7 +427,7 @@ public class VizPanel extends JFXPanel
 			{
 				e.line.setFill(javafx.scene.paint.Color.BLACK);
 				e.line.setStrokeWidth(1);
-			}
+			}*/
 		}
 	}
 

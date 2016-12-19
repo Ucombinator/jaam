@@ -37,13 +37,16 @@ public class TakeInput extends Thread
 		Platform.runLater(new Runnable() {
 			@Override
 			public void run() {
-				Parameters.stFrame.vizPanel.initDrawing();
-				Parameters.stFrame.contextPanel.initDrawing();
+				/*Parameters.stFrame.mainPanel.initDrawing();
+				Parameters.stFrame.contextPanel.initDrawing();*/
+
+				Parameters.stFrame.mainPanel.initFX();
+				Parameters.stFrame.contextPanel.initFX();
 			}
 		});
 
 		Parameters.mouseLastTime = System.currentTimeMillis();
-		Parameters.repaintAll();
+		//Parameters.repaintAll();
 
 		System.out.println("number of vertices = " + Main.graph.vertices.size());
 		System.out.println("number of method vertices = " + Main.graph.methodVertices.size());
@@ -167,7 +170,7 @@ public class TakeInput extends Thread
 						if((System.currentTimeMillis()-Parameters.startTime)/Parameters.interval>Parameters.lastInterval)
 						{
 							System.out.println("number of vertices up to now = "+Main.graph.vertices.size());
-							Parameters.repaintAll();
+							//Parameters.repaintAll();
 							Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.interval;
 						}
 

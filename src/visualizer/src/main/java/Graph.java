@@ -6,11 +6,6 @@ import java.util.Map.Entry;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 
-import javafx.animation.Transition;
-import javafx.animation.ParallelTransition;
-import javafx.animation.ScaleTransition;
-import javafx.animation.FadeTransition;
-
 public class Graph
 {
 	public int totalVertices;
@@ -52,7 +47,9 @@ public class Graph
 		hotkeyedViews = new View[numHotkeys];
 		for(int i = 0; i < numHotkeys; i++)
 			hotkeyedViews[i] = new View(false);
-		
+
+
+
 		this.resetZoom();
 	}
 	
