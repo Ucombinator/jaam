@@ -15,7 +15,7 @@ public class MethodVertex extends AbstractVertex
 		this.index = index;
 		this.method = method;
 		this.name = method.getFullName();
-		this.isVisible = isVisible;
+		this.setVisible(isVisible);
 		this.numChildrenHighlighted = 0;
 		this.drawEdges = true;
 		

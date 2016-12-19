@@ -11,6 +11,7 @@ public class MethodPathVertex extends AbstractVertex
 	public MethodPathVertex(int d, int i)
 	{
 		this.setDefaults();
+		this.setVisible(true);
 		vertexType = VertexType.METHOD_PATH;
 		
 		this.id = d;

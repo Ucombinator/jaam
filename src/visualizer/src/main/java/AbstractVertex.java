@@ -3,6 +3,9 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.ArrayList;
 
 import javafx.animation.*;
+import javafx.event.EventHandler;
+import javafx.scene.Node;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.*;
 import javafx.scene.text.Text;
@@ -30,19 +33,17 @@ public abstract class AbstractVertex
 	protected String name;
 	protected int index, parentIndex;
 
+	// A location stores coordinates for a subtree.
+	protected Location location;
+	boolean updateLocation;
+	protected GUINode mainNode, contextNode;
+
 	//children stores all of the vertices to which we have edges from this vertex
 	//in the current display
 	//incoming stores all of the vertices that have edges into this vertex in
 	//the current display
 	//The base graph is stored in the neighbors in the Vertex class.
 	protected ArrayList<AbstractVertex> children, incoming;
-
-	// A location stores coordinates for a subtree.
-	protected Location location;
-	boolean updateLocation;
-	protected StackPane mainRectPane, contextRectPane;
-	protected Rectangle mainRect, contextRect;
-	protected Text mainRectLabel, contextRectLabel;
 
 	// TODO: We're using straight lines for all of the edges. Some should be changed to be cubic curves.
 	protected ArrayList<Line> incomingEdges;
@@ -67,42 +68,26 @@ public abstract class AbstractVertex
 	
 	public void setDefaults()
 	{
+		this.location = new Location();
+		this.updateLocation = false;
+		this.mainNode = new GUINode(this.contextNode);
+		this.contextNode = new GUINode(this.mainNode);
+		this.setVisible(false);
+
 		this.incoming = new ArrayList<AbstractVertex>();
 		this.children = new ArrayList<AbstractVertex>();
         this.tags = new ArrayList<Integer>();
-
-        this.location = new Location();
-        this.updateLocation = false;
-
-		this.mainRectPane = new StackPane();
-		this.contextRectPane = new StackPane();
-		this.mainRect = new Rectangle();
-		this.contextRect = new Rectangle();
-		this.mainRectLabel = new Text();
-		this.contextRectLabel = new Text();
-		this.mainRectPane.getChildren().addAll(this.mainRect, this.mainRectLabel);
-		this.contextRectPane.getChildren().addAll(this.contextRect, this.contextRectLabel);
-
-		this.mainRectPane.setLayoutX(0);
-		this.mainRectPane.setLayoutY(0);
-		this.contextRectPane.setLayoutX(0);
-		this.contextRectPane.setLayoutY(0);
-
 		this.incomingEdges = new ArrayList<Line>();
 		this.outgoingEdges = new ArrayList<Line>();
 	}
 
 	public void setVisible(boolean isVisible)
 	{
-		System.out.println("Setting visibility for node " + this.id + " to " + isVisible);
-		System.out.println("Location: " + this.location);
+		//System.out.println("Setting visibility for node " + this.id + " to " + isVisible);
+		//System.out.println("Location: " + this.location);
 		this.isVisible = isVisible;
-		this.contextRectPane.setVisible(isVisible);
-		this.mainRectPane.setVisible(isVisible);
-		this.contextRect.setVisible(isVisible);
-		this.mainRect.setVisible(isVisible);
-		this.contextRectLabel.setVisible(isVisible);
-		this.mainRectLabel.setVisible(isVisible);
+		this.mainNode.setVisible(isVisible);
+		this.contextNode.setVisible(isVisible);
 	}
     
     public DefaultMutableTreeNode toDefaultMutableTreeNode()
@@ -180,10 +165,11 @@ public abstract class AbstractVertex
 		pathTrans.setInterpolator(Interpolator.LINEAR);
 		pathTrans.setAutoReverse(false);
 		pathTrans.setCycleCount(1);
+
 		if(context)
-			pathTrans.setNode(this.contextRectPane);
+			pathTrans.setNode(this.contextNode);
 		else
-			pathTrans.setNode(this.mainRectPane);
+			pathTrans.setNode(this.mainNode);
 
 		return pathTrans;
 	}
@@ -294,7 +280,7 @@ public abstract class AbstractVertex
 	//expanding merge parent.
 	private void appear(double left, double top, AbstractVertex mP)
 	{
-		System.out.println("Vertex appearing: " + this.getName());
+		//System.out.println("Vertex appearing: " + this.getName());
 		double w = 0;
 		AbstractVertex v;
 
@@ -362,7 +348,7 @@ public abstract class AbstractVertex
 		this.location.bottom = this.location.top + this.location.height;
 
 		this.setVisible(true);
-		System.out.println("Vertex has appeared!");
+		//System.out.println("Vertex has appeared!");
 	}
 
 
