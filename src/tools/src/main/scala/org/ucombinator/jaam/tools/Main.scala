@@ -3,6 +3,10 @@ package org.ucombinator.jaam.tools
 import org.rogach.scallop._
 
 object Conf {
+  def extractSeqFromOptString(optString: ScallopOption[String], separator: String = ":"): Seq[String] = {
+    optString.toOption.getOrElse("").split(separator).filter(_.nonEmpty)
+  }
+
   class Print extends Main("print") {
     banner("Print a JAAM file in human-readable format")
     footer("")
@@ -83,12 +87,7 @@ object Conf {
     val additionalJars = opt[String](descr = "Colon-separated list of JAR files to complete class loading for inspection JAR files")
 
     def run(conf: Conf) {
-      val s_additionalJars: Seq[String] = additionalJars.toOption match {
-        case Some(s) => s.split(":")
-        case None => Seq[String]()
-      }
-
-      Coverage2.main(rtJar(), jaamFile().toString, mainClass(), jars().split(":"), s_additionalJars)
+      Coverage2.main(rtJar(), jaamFile().toString, mainClass(), jars().split(":"), extractSeqFromOptString(additionalJars))
     }
   }
 
