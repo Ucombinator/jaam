@@ -52,6 +52,9 @@ public class Main
 		}
 		
 		ti.run(file, true);
+
+		JandGioApp app = new JandGioApp();
+			app.start();
 //		JFrame frame = new JFrame("HelloWorldSwing");
 //		          frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 //		          
