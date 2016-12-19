@@ -72,7 +72,7 @@ object Conf {
     val additionalJars = opt[String](descr = "Colon-separated list of JAR files to complete class loading for inspection JAR files")
 
     def run(conf: Conf) {
-      Coverage.findCoverage(jaamFile().toString, jars().split(":"), additionalJars.toString().split(":"))
+      Coverage.findCoverage(jaamFile().toString, jars().split(":"), extractSeqFromOptString(additionalJars))
     }
   }
 
