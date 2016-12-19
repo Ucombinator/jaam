@@ -10,9 +10,35 @@ import java.util.ArrayList;
 //We may also add other kinds of collapsing later, which will require
 //having new kinds of vertices.
 
-public abstract class AbstractVertex
-{
-    public ArrayList<Integer> tags;
+abstract class AbstractVertex implements Comparable<AbstractVertex> {
+
+	public int compareTo(AbstractVertex o){
+		if(this.getSmallest_instruction_line()==o.getSmallest_instruction_line()){
+			return 0;
+		} else if(this.getSmallest_instruction_line()<o.getSmallest_instruction_line()){
+			return -1;
+		} 
+			return 1;
+	}
+	
+	static int id_counter = 0;
+	
+	private int smallest_instruction_line = -1; //start with a negative value to be properly initialized later
+	
+	public int getSmallest_instruction_line() {
+		return smallest_instruction_line;
+	}
+	public void setSmallest_instruction_line(int smallest_instruction_line) {
+		this.smallest_instruction_line = smallest_instruction_line;
+	}
+
+
+	
+	protected AbstractGraph inner_graph = null;
+
+	private String label;
+
+	public ArrayList<Integer> tags;
 
     public enum VertexType
 	{
@@ -20,9 +46,12 @@ public abstract class AbstractVertex
 	}
 
 	protected int id;
+	protected String str_id;
 	protected VertexType vertexType;
 	protected String name;
 	protected int index, parentIndex;
+	protected ArrayList<Vertex> neighbors;
+	protected ArrayList<AbstractVertex> abstractNeighbors;
 
 	//children stores all of the vertices to which we have edges from this vertex
 	//in the current display
@@ -33,7 +62,41 @@ public abstract class AbstractVertex
 
 	//These are the coordinates of a subtree (maybe?)
 	protected double left, right, top, bottom;
-	protected double x, y, width, height;
+	
+	
+
+	protected double x = 0;
+	protected double y = 0;
+	protected double width = 1;	
+	protected double height = 1;
+	
+
+	public void setWidth(double width) {
+		this.width = width;
+	}
+	public void setHeight(double height) {
+		this.height = height;
+	}
+	
+	public void setX(double x) {
+		this.x = x;
+	}
+	public void setY(double y) {
+		this.y = y;
+	}
+	
+	public double getX() {
+		return x;
+	}
+	public double getY() {
+		return y;
+	}
+	public double getWidth() {
+		return width;
+	}
+	public double getHeight() {
+		return height;
+	}
 	
 	//The merge start is the first vertex of the merge children for a merge vertex, and is used
 	//to create its incoming edges.
@@ -43,14 +106,44 @@ public abstract class AbstractVertex
 	protected boolean drawEdges;
 	protected int numChildrenHighlighted, numChildrenSelected;
 	protected int loopHeight;
+	protected String vertexStatus = "WHITE"; //WHITE, GRAY, BLACK
+	protected double[] subtreeBBOX = {width,height};
 	
 	//Subclasses must override these so that we have descriptions for each of them,
 	//and so that our generic collapsing can work for all of them
 	abstract String getRightPanelContent();
-    abstract String getShortDescription();
+	abstract String getShortDescription();
 	abstract AbstractVertex getMergeParent();
 	abstract ArrayList<? extends AbstractVertex> getMergeChildren();
 	abstract String getName();
+	
+	public AbstractVertex(){
+		this.abstractNeighbors = new ArrayList<AbstractVertex>();
+		this.id = id_counter++;
+		this.str_id = "vertex:"+this.id;
+	}
+	
+	public AbstractVertex(String label){
+		this();
+		this.label = label;
+		this.inner_graph = new AbstractGraph();
+	}
+	
+	
+    public String getLabel() {
+		return this.label;
+	}
+	
+	public AbstractGraph getInnerGraph() {
+		return inner_graph;
+	}
+	public void setInnerGraph(AbstractGraph inner_graph) {
+		this.inner_graph = inner_graph;
+	}
+	
+	public String getID() {
+		return str_id;
+	}
 	
 	public void setDefaults()
 	{
@@ -740,6 +833,17 @@ public abstract class AbstractVertex
 		
 		newParent.addChild(this);
 	}
+	
+	
+	public void addAbstractNeighbor(AbstractVertex neigh) {
+		this.abstractNeighbors.add(neigh);
+	}
+	
+	public ArrayList<AbstractVertex> getAsbstractNeighbors() {
+		return this.abstractNeighbors;
+	}
+	
+	
 	
 	/*public void printCoordinates()
 	{

@@ -8,6 +8,7 @@ public class MethodVertex extends AbstractVertex
 		
 	public MethodVertex(int id, int index, Method method, boolean isVisible)
 	{
+		super();
 		this.setDefaults();
 		vertexType = VertexType.METHOD;
 		

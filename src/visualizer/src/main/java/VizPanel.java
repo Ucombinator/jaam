@@ -6,7 +6,10 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
+import javax.swing.JFrame;
 import javax.swing.JPanel;
+
+import javafx.application.Platform;
 
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Path2D;

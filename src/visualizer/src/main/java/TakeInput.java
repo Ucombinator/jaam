@@ -31,7 +31,7 @@ public class TakeInput extends Thread
         Main.graph.collectAllTags();
 		Main.graph.collapseAll();
 		Parameters.mouseLastTime = System.currentTimeMillis();
-		Parameters.repaintAll();
+		//Parameters.repaintAll();
 
 		System.out.println("number of vertices = " + Main.graph.vertices.size());
 		System.out.println("number of method vertices = " + Main.graph.methodVertices.size());
@@ -155,7 +155,7 @@ public class TakeInput extends Thread
 						if((System.currentTimeMillis()-Parameters.startTime)/Parameters.interval>Parameters.lastInterval)
 						{
 							System.out.println("number of vertices up to now = "+Main.graph.vertices.size());
-							Parameters.repaintAll();
+							//Parameters.repaintAll();
 							Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.interval;
 						}
 

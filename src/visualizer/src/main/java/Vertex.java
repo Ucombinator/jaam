@@ -9,7 +9,7 @@ public class Vertex extends AbstractVertex
 	public Method method;
 
 	//neighbors stores the edges of the vertices in our base graph, before collapsing occurs
-	protected ArrayList<Vertex> neighbors;
+	
 
 	//Used for shading vertices based on the number of nested loops they contain
 	//loopHeight is stored for all vertices
@@ -18,6 +18,11 @@ public class Vertex extends AbstractVertex
 	public int dfsPathPos;
 	public boolean traversed;
 	
+	public Vertex(String label)
+	{
+		super(label);
+	}
+	
 	public Vertex(int d, int i)
 	{
 		this(d, i, Integer.toString(d), d >= 0 );
@@ -25,6 +30,7 @@ public class Vertex extends AbstractVertex
 	
 	public Vertex(int d, int i, String nm, boolean addC)
 	{
+		super();
 		this.setDefaults();
 		this.neighbors = new ArrayList<Vertex>();
 		vertexType = VertexType.LINE;
