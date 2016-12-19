@@ -71,12 +71,15 @@ object Conf {
   class Coverage2 extends Main("coverage2") {
     banner("Analyze a JAAM file against target JAR files to find JAAM coverage.")
     footer("")
+    val rtJar = trailArg[String](descr = "The RT.jar file to use for analysis")
     val jaamFile = trailArg[java.io.File](descr = "The JAAM file to analyze")
+    val mainClass = trailArg[String](descr = "The name of the main class in the JAAM file")
     val jars = trailArg[String](descr = "Colon separated list of JAR files to directly compare coverage against")
+    val additionalJars = opt[String](descr = "Colon-separated list of JAR files to complete class loading for inspection JAR files")
     //val additionalJars = trailArg[String](descr = "Colon separated list of JAR files to complete class loading for inspection JAR files")
 
     def run(conf: Conf) {
-      Coverage2.main(jaamFile().toString, jars())
+      Coverage2.main(rtJar.toString(), jaamFile().toString, mainClass.toString(), jars().split(":"), additionalJars.toString().split(":"))
     }
   }
 
