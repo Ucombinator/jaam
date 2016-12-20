@@ -774,6 +774,8 @@ object Snowflakes {
         newNewStore = updateStore(newNewStore, "java.lang.System", "err", "java.io.PrintStream")
         newNewStore = updateStore(newNewStore, "java.lang.System", "security", "java.lang.SecurityManager")
         newNewStore = updateStore(newNewStore, "java.lang.System", "cons", "java.io.Console")
+        newNewStore = updateStore(newNewStore, "java.lang.System", "props", "java.util.Properties")
+        newNewStore = updateStore(newNewStore, "java.lang.System", "lineSeparator", "java.lang.String")
         Set(state.copy(stmt = nextStmt))
       }
     })
