@@ -48,20 +48,28 @@ case class StringConstantException(string : String) extends RuntimeException
 case class UndefinedAddrsException[A <: Addr](addrs : Set[A]) extends RuntimeException
 
 // A continuation store paired with a continuation
-case class KontStack(k : Kont) extends CachedHashCode {
+case class KontStack(k : KontAddr) extends CachedHashCode {
   // TODO/generalize: Add widening in push and pop (to support PDCFA)
   // TODO/generalize: We need the control pointer of the target state to HANDLE PDCFA.
-  def kalloca(frame : Frame) = OneCFAKontAddr(frame.fp)
+  def kalloca(meth : SootMethod, newFP : FramePointer, frame : Frame) = ZeroCFAKontAddr(newFP)
 
   // TODO/generalize: Handle PDCFA
-  def push(frame : Frame) : KontStack = {
-    val kAddr = kalloca(frame)
-    System.kstore.update(kAddr, KontD(Set(k)))
-    KontStack(RetKont(frame, kAddr))
+  def push(meth : SootMethod, newFP : FramePointer, frame : Frame) : KontStack = {
+    val kAddr = kalloca(meth, newFP, frame)
+    System.kstore.update(kAddr, KontD(Set(RetKont(frame, k))))
+    KontStack(kAddr)
+    //KontStack(RetKont(frame, kAddr))
   }
 
   // Pop returns all possible frames beneath the current one.
   def pop() : Set[(Frame, KontStack)] = {
+    for (topk <- System.kstore(k).values) yield {
+      topk match {
+        case RetKont(frame, kontAddr) => (frame, KontStack(kontAddr))
+      }
+    }
+
+/*
     k match {
       case RetKont(frame, kontAddr) =>
         for (topk <- System.kstore(kontAddr).values) yield {
@@ -70,6 +78,7 @@ case class KontStack(k : Kont) extends CachedHashCode {
         }
       case HaltKont => Set()
     }
+ */
   }
 
   def handleException(exception : Value,
@@ -158,7 +167,7 @@ case class RetKont( val frame : Frame,
                     val k : KontAddr
                   ) extends Kont
 
-case object HaltKont extends Kont
+//case object HaltKont extends Kont
 
 //----------- ABSTRACT VALUES -----------------
 
@@ -227,7 +236,9 @@ case class ClassBasePointer(val name : String) extends BasePointer
 
 // Addresses of continuations on the stack
 abstract class KontAddr extends Addr
-case class OneCFAKontAddr(val fp : FramePointer) extends KontAddr
+//case class OneCFAKontAddr(val fp : FramePointer) extends KontAddr
+case class ZeroCFAKontAddr(val fp : FramePointer) extends KontAddr
+case object HaltKontAddr extends KontAddr // Should never be assigned a continuation
 
 abstract class Addr extends CachedHashCode
 abstract class FrameAddr extends Addr
@@ -680,7 +691,7 @@ case class State(val stmt : Stmt,
             }
             else {
               // TODO/optimize: filter out incorrect class types
-              val newKontStack = kontStack.push(Frame(nextStmt, fp, destAddr))
+              val newKontStack = kontStack.push(meth, newFP, Frame(nextStmt, fp, destAddr))
               self match {
                 case Some(s) => System.store.update(ThisFrameAddr(newFP), D(Set(s)))
                 case None => {} // TODO: throw exception here?
@@ -984,7 +995,7 @@ object State {
   )
 
   def inject(stmt : Stmt) : State = {
-    val ks = KontStack(HaltKont)
+    val ks = KontStack(HaltKontAddr)
     State(stmt, initialFramePointer, ks)
   }
 }
@@ -993,7 +1004,7 @@ object System {
   var undefined: Int = 0
   var noSucc: Int = 0
   val store: Store = Store(State.initial_map)
-  val kstore: KontStore = KontStore(mutable.Map[KontAddr, KontD]())
+  val kstore: KontStore = KontStore(mutable.Map[KontAddr, KontD](HaltKontAddr -> KontD(Set())))
 
   var isInitializedClassesChanged: Boolean = false
   val initializedClasses: mutable.Set[SootClass] = mutable.Set[SootClass]()
@@ -1067,7 +1078,7 @@ object System {
       state match {
         case ErrorState => {}
         case state : State =>
-          if (state.kontStack.k != HaltKont) {
+          if (state.kontStack.k != HaltKontAddr) {
             Log.error("state[" + state.id + "] has no successors: " + state)
             System.noSucc += 1
           }
