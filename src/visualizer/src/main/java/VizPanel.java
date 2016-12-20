@@ -59,7 +59,7 @@ public class VizPanel extends JFXPanel
 	{
 		Graph g = Main.graph;
 		this.main = LayerFactory.get2layer(g);
-		LayoutAlgorithm.defaultLayout(main, main.getInnerGraph());
+		LayoutAlgorithm.layout(main);
 		draw(null, main);
 	}
 

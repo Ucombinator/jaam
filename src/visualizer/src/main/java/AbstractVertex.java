@@ -1,5 +1,10 @@
 
 import javax.swing.tree.DefaultMutableTreeNode;
+
+import javafx.scene.Group;
+import javafx.scene.Node;
+import javafx.scene.layout.Pane;
+
 import java.util.ArrayList;
 
 //The base class for the various kinds of vertices.
@@ -34,12 +39,24 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		return minInstructionLine;
 	}
 
+
 	public void setMinInstructionLine(int smallest_instruction_line) {
 		this.minInstructionLine = smallest_instruction_line;
 	}
 	
 	protected AbstractGraph selfGraph = null;
 	protected AbstractGraph innerGraph = null;
+
+	protected Group graphics = null;
+	
+	public Group getGraphics() {
+		return graphics;
+	}
+	public void setGraphics(Group graphics) {
+		this.graphics = graphics;
+	}
+
+
 
 	private String label;
 	private boolean expanded = true;
@@ -73,8 +90,9 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 
 	protected double x = 0;
 	protected double y = 0;
-	protected double width = 1;	
-	protected double height = 1;
+	protected double width = -1; 	// we want this values to be initialized by the layout algorithm	
+	protected double height = -1;
+	
 
 	public void setWidth(double width) {
 		this.width = width;
@@ -918,8 +936,13 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		this.expanded = expanded;
 	}
 
+	
+	
 	public void printCoordinates()
+
 	{
 		System.out.println("Vertex " + this.id + ": " + this.x + ", " + this.y + ", width = " + this.width + ", height = " + this.height);
 	}
+
 }
+
