@@ -42,9 +42,11 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		this.minInstructionLine = smallest_instruction_line;
 	}
 	
+	protected AbstractGraph self_graph = null;
 	protected AbstractGraph inner_graph = null;
 
 	private String label;
+	private boolean expanded = true;
 
 	public ArrayList<Integer> tags;
 
@@ -113,7 +115,17 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	protected boolean drawEdges;
 	protected int numChildrenHighlighted, numChildrenSelected;
 	protected int loopHeight;
-	protected String vertexStatus = "WHITE"; //WHITE, GRAY, BLACK
+
+	// TODO: Can we just use white for unvisited and black for visited?
+	public enum VertexStatus
+	{
+		WHITE,
+		GRAY,
+		BLACK,
+		VISITED,
+		UNVISITED
+	}
+	protected VertexStatus vertexStatus = VertexStatus.WHITE;
 	protected double[] subtreeBBOX = {width,height};
 	
 	//Subclasses must override these so that we have descriptions for each of them,
@@ -143,6 +155,11 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	public AbstractGraph getInnerGraph() {
 		return inner_graph;
 	}
+	
+	public AbstractGraph getSelf_graph() {
+		return self_graph;
+	}
+	
 	public void setInnerGraph(AbstractGraph inner_graph) {
 		this.inner_graph = inner_graph;
 	}
@@ -888,9 +905,20 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		this.abstractNeighbors.add(neighbor);
 	}
 	
-	public ArrayList<AbstractVertex> getAsbstractNeighbors()
+	public ArrayList<AbstractVertex> getAbstractNeighbors()
 	{
 		return this.abstractNeighbors;
+	}
+
+	public void setSelfGraph(AbstractGraph abstractGraph) {
+		this.self_graph = abstractGraph;
+	}
+	
+	public boolean isExpanded() {
+		return expanded;
+	}
+	public void setExpanded(boolean expanded) {
+		this.expanded = expanded;
 	}
 
 	/*public void printCoordinates()

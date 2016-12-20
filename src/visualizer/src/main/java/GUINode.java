@@ -7,9 +7,7 @@ import javafx.scene.text.Text;
 
 import javafx.scene.paint.Color;
 
-/**
- * Created by timothyjohnson on 12/12/16.
- */
+// TODO: Use GUINodes instead of rectangles for drawing
 public class GUINode extends StackPane
 {
     double dragX, dragY;
