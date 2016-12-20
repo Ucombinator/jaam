@@ -55,7 +55,7 @@ public class GUINode extends Pane
 
     public void setLabel(String text)
     {
-        this.rectLabel.setText(text);
+        //this.rectLabel.setText(text);
     }
 
     // Next several methods: Pass on calls to underlying rectangle
