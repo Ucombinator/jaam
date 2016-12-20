@@ -9,18 +9,36 @@ public class LayoutAlgorithm
 	final static double MARGIN_PADDING = .25;
 	final static double NODES_PADDING = .5;
 
-	public static void defaultLayout(AbstractVertex parentVertex, AbstractGraph graph)
-	{
-		Iterator<AbstractVertex> itAbstract = graph.getVertices().values().iterator();
-		while(itAbstract.hasNext()){
-			AbstractVertex v = itAbstract.next();
-			AbstractGraph innerGraph = v.getInnerGraph();
-			if(innerGraph.getVertices().size() != 0)
-			{
+	
+	final static double DEFAULT_WIDTH = 1;
+	final static double DEFAULT_HEIGHT = 1;
+	
+	public static void layout(AbstractVertex parenteVertex){
+		initializeSizes(parenteVertex);
+		defaultLayout(parenteVertex,parenteVertex.getInnerGraph());
+	}
+	
+	private static void initializeSizes(AbstractVertex parenteVertex){
+		parenteVertex.setWidth(DEFAULT_WIDTH);
+		parenteVertex.setHeight(DEFAULT_HEIGHT);
+		Iterator<AbstractVertex> it = parenteVertex.getInnerGraph().getVertices().values().iterator();
+		while(it.hasNext()){
+			initializeSizes(it.next());
+		}
+	}
+	
+	public static void defaultLayout(AbstractVertex parentVertex, AbstractGraph graph){
+		
+		Iterator<AbstractVertex> it = graph.getVertices().values().iterator();
+		while(it.hasNext()){
+			AbstractVertex v = it.next();
+			AbstractGraph inner_graph = v.getInnerGraph();
+			if(inner_graph.getVertices().size()!=0){
+
 				//Layout the inner graphs of each node and assign width and height to each node
 				//coordinates are RELATIVE to the parent
 				if(v.isExpanded())
-					defaultLayout(v, innerGraph);
+					defaultLayout(v, v.getInnerGraph());
 			}
 		}
 
@@ -44,9 +62,11 @@ public class LayoutAlgorithm
 		Collections.sort(arrayList);
 		AbstractVertex root = arrayList.get(0);
 		
+
 		double[] xyPair = visit(root, MARGIN_PADDING, MARGIN_PADDING);
 		parentVertex.setWidth(xyPair[0] + 2 * MARGIN_PADDING);
 		parentVertex.setHeight(xyPair[1] + 2 * MARGIN_PADDING);
+
 	}
 	
 	public static double[] visit(AbstractVertex root, double left, double top)
