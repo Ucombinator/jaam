@@ -50,12 +50,12 @@ public class GraphExplorer extends JFXPanel {
 	
 	private int scaleX(double coordinate)
 	{
-		return (int)(coordinate*500/this.main.getWidth());
+		return (int)(coordinate*1000/this.main.getWidth());
 	}
 	
 	private int scaleY(double coordinate)
 	{
-		return (int)(coordinate*500/this.main.getHeight());
+		return (int)(coordinate*1000/this.main.getHeight());
 	}
 	
     private void initFX() {
@@ -162,7 +162,7 @@ public class GraphExplorer extends JFXPanel {
     	
     	gr.getChildren().add(r_back);
     	gr.getChildren().add(r);
-    	gr.getChildren().add(label);
+    	//gr.getChildren().add(label);
     	root.getChildren().add(gr);
     	
     	

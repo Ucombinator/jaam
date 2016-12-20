@@ -9,9 +9,11 @@ import java.util.Map.Entry;
 
 public class LayerFactory {
 
+	static HashMap<String, Vertex> id_to_vertex = new HashMap<String, Vertex>();
+	static HashMap<String, AbstractVertex> id_to_abs_vertex = new HashMap<String, AbstractVertex>();
+	
 	static AbstractVertex get2layer(Graph graph){
 		AbstractGraph methodGraph = new AbstractGraph();
-		
 		
 		/* We partion the vertex set of Main.graph into buckets corresponding to the methods*/
 		HashMap<String, HashSet<Vertex>> buckets = new HashMap<String, HashSet<Vertex>>();
@@ -70,6 +72,10 @@ public class LayerFactory {
 			while(it.hasNext()){
 			Vertex oldV = it.next();
 			Vertex newV = new Vertex("instruction:"+oldV.getID());
+			
+			id_to_vertex.put(oldV.getID(), oldV);
+			id_to_abs_vertex.put(oldV.getID(), newV);
+			
 			newV.setSmallest_instruction_line(oldV.id);
 			idMapping.put(oldV.getID(), newV.getID());
 				innerGraph.addVertex(newV);
@@ -112,6 +118,21 @@ public class LayerFactory {
 					methodVertex.setSmallest_instruction_line(Math.min(methodVertex.getSmallest_instruction_line(),innerIt.next().getSmallest_instruction_line()));
 				}
 			}
+		}
+		
+		
+		
+		ArrayList<Edge> dummies = graph.computeDummyEdges();
+		Iterator<Edge> itEdge = dummies.iterator();
+		while(itEdge.hasNext()){
+			Edge e = itEdge.next();
+			AbstractVertex startOringal = e.getSourceVertex();
+			AbstractVertex endOriginal = e.getDestVertex();
+			
+			AbstractVertex start = id_to_abs_vertex.get(startOringal.getID());
+			AbstractVertex end = id_to_abs_vertex.get(endOriginal.getID());
+			
+			start.getSelf_graph().addEdge(new Edge(start,end,Edge.EDGE_TYPE.EDGE_DUMMY));
 		}
 		
 		AbstractVertex root = new Vertex("root");

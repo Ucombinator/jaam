@@ -20,7 +20,9 @@ public class LayoutAlgorithm {
 			if(inner_graph.getVertices().size()!=0){
 				//Layout the inner graphs of each node and assign width and height to each node
 				//coordinates are RELATIVE to the parent
-				defaultLayout(v, inner_graph);
+				if(v.isExpanded()){
+					defaultLayout(v, inner_graph);
+				}
 			}
 		}
 		//Layout the current graph

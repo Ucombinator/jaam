@@ -2,7 +2,9 @@
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map.Entry;
+
 import java.util.HashMap;
 import java.util.StringTokenizer;
 
@@ -1107,4 +1109,35 @@ public class Graph
 		System.out.println("Loop heights found!");
 		VizPanel.computeHues();
 	}
+	
+	
+	public ArrayList<Edge> computeDummyEdges(){
+		ArrayList<Edge> dummies = new ArrayList<Edge>();
+		HashMap<String, Vertex> hash = new HashMap<String, Vertex>();
+		Iterator<Vertex> it = this.vertices.iterator();
+		while(it.hasNext()){
+			it.next().vertexStatus = "UNVISITED";
+		}
+		
+		visit((Vertex)(root.children.get(0).mergeRoot.mergeRoot),hash, dummies);
+		return dummies;
+	}
+	
+	private void visit(Vertex root, HashMap<String, Vertex> hash,ArrayList<Edge> dummies){
+		Iterator<Vertex> it = root.neighbors.iterator();
+		root.vertexStatus = "VISITED";
+		while(it.hasNext()){
+			Vertex v  = it.next();
+			if(!v.getMethodName().equals(root.getMethodName())){
+				if(hash.containsKey(v.getMethodName())){
+					dummies.add(new Edge(hash.get(v.getMethodName()), v, Edge.EDGE_TYPE.EDGE_DUMMY));
+				}
+			}
+			hash.put(v.getMethodName(), v);
+			if(v.vertexStatus.equals("UNVISITED")){
+				visit(v,hash,dummies);
+			}
+		}
+	}
+	
 }

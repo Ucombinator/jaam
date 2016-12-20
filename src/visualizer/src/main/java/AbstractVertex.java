@@ -34,9 +34,11 @@ abstract class AbstractVertex implements Comparable<AbstractVertex> {
 
 
 	
+	protected AbstractGraph self_graph = null;
 	protected AbstractGraph inner_graph = null;
 
 	private String label;
+	private boolean expanded = true;
 
 	public ArrayList<Integer> tags;
 
@@ -137,6 +139,11 @@ abstract class AbstractVertex implements Comparable<AbstractVertex> {
 	public AbstractGraph getInnerGraph() {
 		return inner_graph;
 	}
+	
+	public AbstractGraph getSelf_graph() {
+		return self_graph;
+	}
+	
 	public void setInnerGraph(AbstractGraph inner_graph) {
 		this.inner_graph = inner_graph;
 	}
@@ -842,7 +849,16 @@ abstract class AbstractVertex implements Comparable<AbstractVertex> {
 	public ArrayList<AbstractVertex> getAsbstractNeighbors() {
 		return this.abstractNeighbors;
 	}
+	public void setSelfGraph(AbstractGraph abstractGraph) {
+		this.self_graph = abstractGraph;
+	}
 	
+	public boolean isExpanded() {
+		return expanded;
+	}
+	public void setExpanded(boolean expanded) {
+		this.expanded = expanded;
+	}
 	
 	
 	/*public void printCoordinates()
