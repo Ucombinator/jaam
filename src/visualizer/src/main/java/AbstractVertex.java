@@ -938,5 +938,11 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 
 	
 	
+	public void printCoordinates()
+
+	{
+		System.out.println("Vertex " + this.id + ": " + this.x + ", " + this.y + ", width = " + this.width + ", height = " + this.height);
+	}
+
 }
 
