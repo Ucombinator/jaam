@@ -990,30 +990,6 @@ object Snowflakes {
       }
     })
 
-  table.put(MethodDescription("java.lang.System", "arraycopy",
-    List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new StaticSnowflakeHandler {
-    override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
-      assert(state.stmt.sootStmt.getInvokeExpr.getArgCount == 5)
-      val expr = state.stmt.sootStmt.getInvokeExpr
-      val newNewStore = System.store.update(state.addrsOf(expr.getArg(2)), state.eval(expr.getArg(0)))
-      Set(state.copy(stmt = nextStmt))
-    }
-  })
-
-  // java.lang.System
-  table.put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
-    new StaticSnowflakeHandler {
-      override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
-        var newNewStore = System.store
-        newNewStore = updateStore(newNewStore, "java.lang.System", "in", "java.io.InputStream")
-        newNewStore = updateStore(newNewStore, "java.lang.System", "out", "java.io.PrintStream")
-        newNewStore = updateStore(newNewStore, "java.lang.System", "err", "java.io.PrintStream")
-        newNewStore = updateStore(newNewStore, "java.lang.System", "security", "java.lang.SecurityManager")
-        newNewStore = updateStore(newNewStore, "java.lang.System", "cons", "java.io.Console")
-        Set(state.copy(stmt = nextStmt))
-      }
-    })
-
 /*
 Not needed b/c the only comparator is over String
 
