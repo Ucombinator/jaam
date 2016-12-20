@@ -2,10 +2,6 @@
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.ArrayList;
 
-import javafx.animation.*;
-import javafx.scene.shape.*;
-import javafx.util.Duration;
-
 //The base class for the various kinds of vertices.
 //An abstract vertex is a box on the screen. The subclasses vary in
 //what kind of data the vertex represents.
@@ -42,8 +38,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		this.minInstructionLine = smallest_instruction_line;
 	}
 	
-	protected AbstractGraph self_graph = null;
-	protected AbstractGraph inner_graph = null;
+	protected AbstractGraph selfGraph = null;
+	protected AbstractGraph innerGraph = null;
 
 	private String label;
 	private boolean expanded = true;
@@ -56,7 +52,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	}
 
 	protected int id;
-	protected String str_id;
+	protected String strId;
 	protected VertexType vertexType;
 	protected String name;
 	protected int index, parentIndex;
@@ -139,13 +135,13 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	public AbstractVertex(){
 		this.abstractNeighbors = new ArrayList<AbstractVertex>();
 		this.id = id_counter++;
-		this.str_id = "vertex:"+this.id;
+		this.strId = "vertex:"+this.id;
 	}
 	
 	public AbstractVertex(String label){
 		this();
 		this.label = label;
-		this.inner_graph = new AbstractGraph();
+		this.innerGraph = new AbstractGraph();
 	}
 	
     public String getLabel() {
@@ -153,19 +149,20 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	}
 	
 	public AbstractGraph getInnerGraph() {
-		return inner_graph;
+		return innerGraph;
 	}
 	
-	public AbstractGraph getSelf_graph() {
-		return self_graph;
+	public AbstractGraph getSelfGraph() {
+		return selfGraph;
 	}
 	
-	public void setInnerGraph(AbstractGraph inner_graph) {
-		this.inner_graph = inner_graph;
+	public void setInnerGraph(AbstractGraph innerGraph) {
+		this.innerGraph = innerGraph;
 	}
 	
-	public String getID() {
-		return str_id;
+	public String getStrID()
+	{
+		return strId;
 	}
 	
 	public void setDefaults()
@@ -911,7 +908,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	}
 
 	public void setSelfGraph(AbstractGraph abstractGraph) {
-		this.self_graph = abstractGraph;
+		this.selfGraph = abstractGraph;
 	}
 	
 	public boolean isExpanded() {
@@ -921,9 +918,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		this.expanded = expanded;
 	}
 
-	/*public void printCoordinates()
+	public void printCoordinates()
 	{
-		System.out.println(this.getFullName() + ": " + this.x + ", " + this.y + ", left = " + this.left + ", right = " + this.right +
-				", width = " + this.width + ", top = " + this.top + ", bottom = " + this.bottom + ", height = " + this.height);
-	}*/
+		System.out.println("Vertex " + this.id + ": " + this.x + ", " + this.y + ", width = " + this.width + ", height = " + this.height);
+	}
 }

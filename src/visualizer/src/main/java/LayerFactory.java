@@ -75,12 +75,12 @@ public class LayerFactory
 			while(it.hasNext())
 			{
 				Vertex oldV = it.next();
-				Vertex newV = new Vertex("instruction:" + oldV.getID());
+				Vertex newV = new Vertex("instruction:" + oldV.getStrID());
 				newV.setMinInstructionLine(oldV.id);
 
-				id_to_vertex.put(oldV.getID(), oldV);
-				id_to_abs_vertex.put(oldV.getID(), newV);
-				idMapping.put(oldV.getID(), newV.getID());
+				id_to_vertex.put(oldV.getStrID(), oldV);
+				id_to_abs_vertex.put(oldV.getStrID(), newV);
+				idMapping.put(oldV.getStrID(), newV.getStrID());
 				innerGraph.addVertex(newV);
 			}
 			
@@ -98,10 +98,10 @@ public class LayerFactory
 								new Edge(
 										innerGraph.getVertices().get(
 												idMapping.get(
-												v.getID()))
+												v.getStrID()))
 										, innerGraph.getVertices().get(
 								idMapping.get(
-								neighbor.getID())),
+								neighbor.getStrID())),
 										Edge.EDGE_TYPE.EDGE_REGULAR)
 								);
 					}
@@ -137,10 +137,10 @@ public class LayerFactory
 			AbstractVertex startOringal = e.getSourceVertex();
 			AbstractVertex endOriginal = e.getDestVertex();
 			
-			AbstractVertex start = id_to_abs_vertex.get(startOringal.getID());
-			AbstractVertex end = id_to_abs_vertex.get(endOriginal.getID());
+			AbstractVertex start = id_to_abs_vertex.get(startOringal.getStrID());
+			AbstractVertex end = id_to_abs_vertex.get(endOriginal.getStrID());
 			
-			start.getSelf_graph().addEdge(new Edge(start,end,Edge.EDGE_TYPE.EDGE_DUMMY));
+			start.getSelfGraph().addEdge(new Edge(start,end,Edge.EDGE_TYPE.EDGE_DUMMY));
 		}
 		
 		AbstractVertex root = new Vertex("root");

@@ -36,7 +36,7 @@ public class AbstractGraph {
 	}
 
 	public void addVertex(AbstractVertex vertex) {
-		this.vertices.put(vertex.getID(), vertex);
+		this.vertices.put(vertex.getStrID(), vertex);
 		vertex.setSelfGraph(this);
 	}
 	

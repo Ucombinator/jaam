@@ -611,9 +611,9 @@ public class StacFrame extends JFrame
         topPanel.setLayout(new BorderLayout());
 //        topPanel.setLayout(new GridLayout(2,1));
         this.getContentPane().add(topPanel, BorderLayout.NORTH);
-        
-        
-        
+
+
+
 		//menuPanel
 		this.menuPanel = new JPanel();
 		this.menuPanel.setBorder(BorderFactory.createEtchedBorder());

@@ -29,7 +29,7 @@ public class VizPanel extends JFXPanel
 	private boolean context;
 	private Group contentGroup;
 	private ScrollPane scrollPane;
-	private double maxWidth, maxHeight, minWidth, minHeight, boxWidth, boxHeight;
+	double minWidth, minHeight, boxWidth, boxHeight;
 
 	public boolean showSelection = false;
 	public double selectLeft, selectRight, selectTop, selectBottom;
@@ -60,69 +60,42 @@ public class VizPanel extends JFXPanel
 		Graph g = Main.graph;
 		this.main = LayerFactory.get2layer(g);
 		LayoutAlgorithm.defaultLayout(main, main.getInnerGraph());
-
-		draw(main, 0, 0);
-		System.out.println("Done!");
+		draw(null, main);
 	}
 
 	private int scaleX(double coordinate)
 	{
-		return (int) (coordinate * 500 / this.main.getWidth());
+		return (int) (coordinate * 500.0 / this.main.getWidth());
 	}
 
 	private int scaleY(double coordinate)
 	{
-		return (int) (coordinate * 500 / this.main.getHeight());
+		return (int) (coordinate * 500.0 / this.main.getHeight());
 	}
 
-	public void draw(AbstractVertex v, double left, double top)
+	public void draw(GUINode parent, AbstractVertex v)
 	{
-		Group gr = new Group();
+		GUINode node = new GUINode(parent, v);
 
-		gr.setLayoutX(scaleX(v.getX() + left));
-		gr.setLayoutY(scaleY(v.getY() + top));
+		if (parent == null)
+			contentGroup.getChildren().add(node);
+		else
+			parent.getChildren().add(node);
 
-		Rectangle r_back = new Rectangle(0, 0, scaleX(v.getWidth()), scaleY(v.getHeight()));
-		r_back.setArcWidth(scaleX(0.5));
-		r_back.setArcHeight(scaleY(0.5));
-		r_back.setFill(javafx.scene.paint.Color.WHITE);
-		r_back.setStroke(javafx.scene.paint.Color.BLACK);
-		r_back.setStrokeWidth(0);
-		r_back.setOpacity(1);
+		v.printCoordinates();
+		double layoutX = scaleX(v.getX());
+		double layoutY = scaleY(v.getY());
+		double width = scaleX(v.getWidth());
+		double height = scaleY(v.getHeight());
+		node.setLocation(layoutX, layoutY, width, height);
 
-		Rectangle r = new Rectangle(0, 0, scaleX(v.getWidth()), scaleY(v.getHeight()));
-		r.setArcWidth(scaleX(0.5));
-		r.setArcHeight(scaleY(0.5));
-		Label label = new Label("  " + v.getLabel());
-		r.setFill(colors[index++ % colors.length]);
-		r.setStroke(javafx.scene.paint.Color.BLACK);
-		r.setStrokeWidth(0);
-		r.setOpacity(.3);
-
-		r.setOnMouseEntered(new javafx.event.EventHandler()
-		{
-			@Override
-			public void handle(Event event)
-			{
-				Rectangle obj = ((Rectangle) (event.getSource()));
-				obj.setOpacity(1);
-			}
-		});
-
-		r.setOnMouseExited(new javafx.event.EventHandler()
-		{
-			@Override
-			public void handle(Event event)
-			{
-				Rectangle obj = ((Rectangle) (event.getSource()));
-				obj.setOpacity(.3);
-			}
-		});
-
-		gr.getChildren().add(r_back);
-		gr.getChildren().add(r);
-		gr.getChildren().add(label);
-		contentGroup.getChildren().add(gr);
+		node.setArcWidth(scaleX(0.5));
+		node.setArcHeight(scaleY(0.5));
+		node.setLabel("  " + v.getLabel());
+		node.setFill(colors[index++ % colors.length]);
+		node.setStroke(javafx.scene.paint.Color.BLACK);
+		node.setStrokeWidth(0);
+		node.setOpacity(1);
 
 		if (v.getInnerGraph().getVertices().size() == 0)
 			return;
@@ -144,13 +117,14 @@ public class VizPanel extends JFXPanel
 			{
 				l.getStrokeDashArray().addAll(5d, 4d);
 			}
-			gr.getChildren().add(l);
+
+			node.getChildren().add(l);
 		}
 
 		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
 		while (it.hasNext())
 		{
-			draw(it.next(), v.getX() + left, v.getY() + top);
+			draw(node, it.next());
 		}
 	}
 

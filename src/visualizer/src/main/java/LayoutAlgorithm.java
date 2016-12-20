@@ -14,13 +14,13 @@ public class LayoutAlgorithm
 		Iterator<AbstractVertex> itAbstract = graph.getVertices().values().iterator();
 		while(itAbstract.hasNext()){
 			AbstractVertex v = itAbstract.next();
-			AbstractGraph inner_graph = v.getInnerGraph();
-			if(inner_graph.getVertices().size() != 0)
+			AbstractGraph innerGraph = v.getInnerGraph();
+			if(innerGraph.getVertices().size() != 0)
 			{
 				//Layout the inner graphs of each node and assign width and height to each node
 				//coordinates are RELATIVE to the parent
 				if(v.isExpanded())
-					defaultLayout(v, inner_graph);
+					defaultLayout(v, innerGraph);
 			}
 		}
 
