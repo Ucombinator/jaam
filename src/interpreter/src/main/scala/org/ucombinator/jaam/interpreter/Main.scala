@@ -1212,8 +1212,8 @@ object Main {
 
     outSerializer.write(initialState.toPacket)
 
+    var count = 0
     try {
-      var count = 0
       while (todo.nonEmpty) {// && count < 10*1000) {
         count+=1
         // java.lang.System.getProperty("user.home")
@@ -1284,6 +1284,7 @@ object Main {
     val sorted = summary.toList.sortWith(_._1 > _._1)
     sorted.foreach { case (size, n) => println(size + " \t " + n) }
     */
+    Log.info("Count = " + count)
     Log.info("Done!")
     if (System.undefined != 0) {
       Log.error("Undefined address number: " + System.undefined)
