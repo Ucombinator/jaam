@@ -1001,11 +1001,17 @@ object State {
 }
 
 object System {
+  // TODO: record the state numbers not just how many undefined (needed to avoid double counting)
+  // TODO: more statistics on what kind of statement and why.  Also, remove from list if it later gets a successor?
   var undefined: Int = 0
   var noSucc: Int = 0
   val store: Store = Store(State.initial_map)
   val kstore: KontStore = KontStore(mutable.Map[KontAddr, KontD](HaltKontAddr -> KontD(Set())))
 
+  // TODO: possible bug if we attempt to eval a state that is waiting for a class to be initialized
+  // Possible solutions:
+  //   Keep a set of classing being initialized
+  //   A more general dependancy
   var isInitializedClassesChanged: Boolean = false
   val initializedClasses: mutable.Set[SootClass] = mutable.Set[SootClass]()
 
