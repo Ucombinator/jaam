@@ -684,11 +684,11 @@ case class State(val stmt : Stmt,
               }
               */
             }
-            else if (System.isLibraryClass(meth.getDeclaringClass) && meth.getReturnType.isInstanceOf[PrimType]) {
+            /*else if (System.isLibraryClass(meth.getDeclaringClass) && meth.getReturnType.isInstanceOf[PrimType]) {
               //Log.error("return prim type: " + meth)
               //ReturnSnowflake(D.atomicTop)(this, nextStmt, self, args)
               DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
-            }
+            }*/
             else {
               // TODO/optimize: filter out incorrect class types
               val newKontStack = kontStack.push(meth, newFP, Frame(nextStmt, fp, destAddr))
@@ -1214,7 +1214,7 @@ object Main {
 
     var count = 0
     try {
-      while (todo.nonEmpty) {// && count < 10*1000) {
+      while (todo.nonEmpty && count < 1000*1000) {
         count+=1
         // java.lang.System.getProperty("user.home")
         // java.lang.String.equalsIgnoreCase(...)
