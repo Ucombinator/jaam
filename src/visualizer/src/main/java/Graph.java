@@ -256,7 +256,7 @@ public class Graph
 
 	public void matchVertexToMethod(Vertex v, String methodName)
 	{
-		System.out.println("Setting method for vertex: " + v.getName());
+		//System.out.println("Setting method for vertex: " + v.getName());
 		Method currMethod;
 		if(this.methods.containsKey(methodName))
 		{

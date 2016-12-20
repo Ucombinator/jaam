@@ -72,15 +72,11 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	//the current display
 	//The base graph is stored in the neighbors in the Vertex class.
 	protected ArrayList<AbstractVertex> children, incoming;
-	//These are the coordinates of a subtree (maybe?)
-	protected double left, right, top, bottom;
-	
 
 	protected double x = 0;
 	protected double y = 0;
 	protected double width = 1;	
 	protected double height = 1;
-	
 
 	public void setWidth(double width) {
 		this.width = width;

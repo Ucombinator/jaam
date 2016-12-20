@@ -90,7 +90,6 @@ public class VizPanel extends JFXPanel
 		r_back.setStrokeWidth(0);
 		r_back.setOpacity(1);
 
-
 		Rectangle r = new Rectangle(0, 0, scaleX(v.getWidth()), scaleY(v.getHeight()));
 		r.setArcWidth(scaleX(0.5));
 		r.setArcHeight(scaleY(0.5));

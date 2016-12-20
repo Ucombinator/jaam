@@ -19,7 +19,7 @@ public class Method
 
 	public Method(String methodName)
 	{
-		System.out.println("Creating method: " + methodName);
+		//System.out.println("Creating method: " + methodName);
 		this.methodName = methodName;
 
 		if(!methodName.equals("ErrorState"))
