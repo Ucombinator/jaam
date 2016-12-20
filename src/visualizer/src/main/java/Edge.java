@@ -6,8 +6,7 @@ public class Edge implements Comparable<Edge>
 	int source, dest;
 	final static int EDGE_REGULAR = 0;
 	final static int EDGE_DUMMY = 1;
-	public static enum EDGE_TYPE {EDGE_REGULAR, EDGE_DUMMY};
-	
+	public enum EDGE_TYPE {EDGE_REGULAR, EDGE_DUMMY};
 
 	private AbstractVertex sourceVertex, destVertex;
 	private EDGE_TYPE type;
@@ -20,7 +19,8 @@ public class Edge implements Comparable<Edge>
 		this.dest = dest;
 	}
 	
-	public Edge(AbstractVertex sourceVertex, AbstractVertex destVertex, EDGE_TYPE edge_type) {
+	public Edge(AbstractVertex sourceVertex, AbstractVertex destVertex, EDGE_TYPE edge_type)
+	{
 		this(sourceVertex.id, destVertex.id);
 		this.type = edge_type;
 		this.sourceVertex = sourceVertex;
@@ -51,5 +51,21 @@ public class Edge implements Comparable<Edge>
 
 	public AbstractVertex getDestVertex() {
 		return destVertex;
+	}
+
+	public void draw(VizPanel panel, GUINode node)
+	{
+		double startX = sourceVertex.getX() + sourceVertex.getWidth() / 2;
+		double startY = sourceVertex.getY() + sourceVertex.getHeight() / 2;
+		double endX = destVertex.getX() + destVertex.getWidth() / 2;
+		double endY = destVertex.getY() + destVertex.getHeight() / 2;
+
+		Line l = new Line(panel.scaleX(startX), panel.scaleY(startY), panel.scaleX(endX), panel.scaleY(endY));
+		if (this.getType() == Edge.EDGE_TYPE.EDGE_DUMMY)
+		{
+			l.getStrokeDashArray().addAll(5d, 4d);
+		}
+
+		node.getChildren().add(l);
 	}
 }

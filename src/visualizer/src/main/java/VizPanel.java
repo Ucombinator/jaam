@@ -63,12 +63,12 @@ public class VizPanel extends JFXPanel
 		draw(null, main);
 	}
 
-	private int scaleX(double coordinate)
+	public int scaleX(double coordinate)
 	{
 		return (int) (coordinate * 500.0 / this.main.getWidth());
 	}
 
-	private int scaleY(double coordinate)
+	public int scaleY(double coordinate)
 	{
 		return (int) (coordinate * 500.0 / this.main.getHeight());
 	}
@@ -82,7 +82,7 @@ public class VizPanel extends JFXPanel
 		else
 			parent.getChildren().add(node);
 
-		v.printCoordinates();
+		// v.printCoordinates();
 		double layoutX = scaleX(v.getX());
 		double layoutY = scaleY(v.getY());
 		double width = scaleX(v.getWidth());
@@ -104,21 +104,7 @@ public class VizPanel extends JFXPanel
 		while (itEdge.hasNext())
 		{
 			Edge e = itEdge.next();
-			AbstractVertex start = e.getSourceVertex();
-			AbstractVertex end = e.getDestVertex();
-
-			double startX = start.getX() + start.getWidth() / 2;
-			double startY = start.getY() + start.getHeight() / 2;
-			double endX = end.getX() + end.getWidth() / 2;
-			double endY = end.getY() + end.getHeight() / 2;
-
-			Line l = new Line(scaleX(startX), scaleY(startY), scaleX(endX), scaleY(endY));
-			if (e.getType() == Edge.EDGE_TYPE.EDGE_DUMMY)
-			{
-				l.getStrokeDashArray().addAll(5d, 4d);
-			}
-
-			node.getChildren().add(l);
+			e.draw(this, node);
 		}
 
 		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();

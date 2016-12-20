@@ -1,6 +1,4 @@
-/**
- * Created by timothyjohnson on 12/6/16.
- */
+
 public class Location
 {
     protected double left, right, top, bottom;
