@@ -17,6 +17,8 @@ import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseButton;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.CubicCurveTo;
 import javafx.scene.shape.Line;
@@ -33,7 +35,7 @@ public class GraphExplorer extends JFXPanel {
 	private Frame parent;
 	private AbstractVertex main;
 	private Group root;
-	private Color[] colors = {Color.RED,Color.GREEN,Color.AZURE, Color.BLUEVIOLET, Color.DARKTURQUOISE};
+	private Color[] colors = {Color.LIGHTBLUE,Color.GREEN,Color.AZURE, Color.BLUEVIOLET, Color.DARKTURQUOISE};
 	private int index = 0;
 	
 	public GraphExplorer(Group root) {
@@ -104,18 +106,20 @@ public class GraphExplorer extends JFXPanel {
 //    	
     	g = Main.graph;
         this.main = LayerFactory.get2layer(g);
-        LayoutAlgorithm.defaultLayout(main, main.getInnerGraph());
+        LayoutAlgorithm.layout(main);
                 
-        draw(main,0,0);
+        draw(main,root);
 
         System.out.println("Done!");
     }
     
-    public void draw(AbstractVertex v, double left, double top){
+    public void draw(AbstractVertex v, Group parentGroup){
     	Group gr = new Group();
+    	v.setGraphics(gr);
+    	parentGroup.getChildren().add(gr);
     	
-    	gr.setLayoutX(scaleX(v.getX()+left));
-    	gr.setLayoutY(scaleY(v.getY()+top));
+    	gr.setLayoutX(scaleX(v.getX()));
+    	gr.setLayoutY(scaleY(v.getY()));
     	
     
     	
@@ -124,7 +128,7 @@ public class GraphExplorer extends JFXPanel {
     	r_back.setArcHeight(scaleY(0.5));
     	r_back.setFill(Color.WHITE);
     	r_back.setStroke(Color.BLACK);
-    	r_back.setStrokeWidth(0);
+    	r_back.setStrokeWidth(.5);
     	r_back.setOpacity(1);
     	
     	
@@ -134,36 +138,39 @@ public class GraphExplorer extends JFXPanel {
     	Label label = new Label("  "+v.getLabel());
     	r.setFill(colors[index++ % colors.length]);
     	r.setStroke(Color.BLACK);
-    	r.setStrokeWidth(0);
+    	r.setStrokeWidth(.5);
     	r.setOpacity(.3);
     	
-    	r.setOnMouseEntered(new javafx.event.EventHandler() {
-
-			@Override
-			public void handle(Event event) {
-				Rectangle obj = ((Rectangle)(event.getSource()));
-				obj.setOpacity(1);
-//				obj.setScaleX(1);
-//				obj.setScaleY(1.1);
-				
-			}
-		});
+//    	r.setOnMouseEntered(new javafx.event.EventHandler() {
+//
+//			@Override
+//			public void handle(Event event) {
+//				Rectangle obj = ((Rectangle)(event.getSource()));
+//				obj.setOpacity(1);
+////				obj.setScaleX(1);
+////				obj.setScaleY(1.1);
+//				
+//			}
+//		});
+//    	
+//    	r.setOnMouseExited(new javafx.event.EventHandler() {
+//
+//			@Override
+//			public void handle(Event event) {
+//				Rectangle obj = ((Rectangle)(event.getSource()));
+//				obj.setOpacity(.3);
+////				obj.setScaleX(0.9090909091);
+////				obj.setScaleY(0.9090909091);
+//			}
+//		});
     	
-    	r.setOnMouseExited(new javafx.event.EventHandler() {
-
-			@Override
-			public void handle(Event event) {
-				Rectangle obj = ((Rectangle)(event.getSource()));
-				obj.setOpacity(.3);
-//				obj.setScaleX(0.9090909091);
-//				obj.setScaleY(0.9090909091);
-			}
-		});
+    	
+    	gr.setOnMouseClicked(new AnimationHandler(v));
     	
     	gr.getChildren().add(r_back);
     	gr.getChildren().add(r);
     	//gr.getChildren().add(label);
-    	root.getChildren().add(gr);
+    	
     	
     	
     	if(v.getInnerGraph().getVertices().size()==0){
@@ -191,7 +198,7 @@ public class GraphExplorer extends JFXPanel {
     
     	Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
 	    	while(it.hasNext()){
-    		draw(it.next(), v.getX()+left, v.getY()+top);
+    		draw(it.next(), gr);
 	    	}
     	}
 }

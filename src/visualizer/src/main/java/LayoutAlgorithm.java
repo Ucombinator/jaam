@@ -11,6 +11,24 @@ public class LayoutAlgorithm {
 	// This works on a graph whose vertices have been assigned a bounding box
 	final static double MARGIN_PADDING = .25;
 	final static double NODES_PADDING = .5;
+	
+	final static double DEFAULT_WIDTH = 1;
+	final static double DEFAULT_HEIGHT = 1;
+	
+	public static void layout(AbstractVertex parenteVertex){
+		initializeSizes(parenteVertex);
+		defaultLayout(parenteVertex,parenteVertex.getInnerGraph());
+	}
+	
+	private static void initializeSizes(AbstractVertex parenteVertex){
+		parenteVertex.setWidth(DEFAULT_WIDTH);
+		parenteVertex.setHeight(DEFAULT_HEIGHT);
+		Iterator<AbstractVertex> it = parenteVertex.getInnerGraph().getVertices().values().iterator();
+		while(it.hasNext()){
+			initializeSizes(it.next());
+		}
+	}
+	
 	public static void defaultLayout(AbstractVertex parenteVertex, AbstractGraph graph){
 		
 		Iterator<AbstractVertex> it = graph.getVertices().values().iterator();
@@ -43,6 +61,8 @@ public class LayoutAlgorithm {
 		arrayList.addAll(graph.getVertices().values());
 		Collections.sort(arrayList);
 		AbstractVertex root =arrayList.get(0);
+		
+		System.out.println(arrayList.size());
 		
 		double[] xy = visit(root,MARGIN_PADDING,MARGIN_PADDING);
 		partentVertex.setWidth(xy[0]+2*MARGIN_PADDING);
