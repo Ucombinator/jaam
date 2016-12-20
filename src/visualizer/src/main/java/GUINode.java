@@ -8,6 +8,7 @@ import javafx.scene.input.MouseEvent;
 
 import javafx.scene.paint.Color;
 
+// TODO: Stack vertex labels on top of vertices.
 public class GUINode extends Pane
 {
     double dragX, dragY;

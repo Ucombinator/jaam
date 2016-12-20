@@ -53,14 +53,18 @@ public class Edge implements Comparable<Edge>
 		return destVertex;
 	}
 
+	// TODO: Make lines thinner when zoomed in.
 	public void draw(VizPanel panel, GUINode node)
 	{
-		double startX = sourceVertex.getX() + sourceVertex.getWidth() / 2;
-		double startY = sourceVertex.getY() + sourceVertex.getHeight() / 2;
-		double endX = destVertex.getX() + destVertex.getWidth() / 2;
-		double endY = destVertex.getY() + destVertex.getHeight() / 2;
+		double centerStartX = sourceVertex.getX() + sourceVertex.getWidth() / 2;
+		double centerStartY = sourceVertex.getY() + sourceVertex.getHeight() / 2;
+		double centerDestX = destVertex.getX() + destVertex.getWidth() / 2;
+		double centerDestY = destVertex.getY() + destVertex.getHeight() / 2;
 
-		Line l = new Line(panel.scaleX(startX), panel.scaleY(startY), panel.scaleX(endX), panel.scaleY(endY));
+		// double startDiagSlope = sourceVertex.getHeight() / sourceVertex.getWidth();
+
+
+		Line l = new Line(panel.scaleX(centerStartX), panel.scaleY(centerStartY), panel.scaleX(centerDestX), panel.scaleY(centerDestY));
 		if (this.getType() == Edge.EDGE_TYPE.EDGE_DUMMY)
 		{
 			l.getStrokeDashArray().addAll(5d, 4d);
