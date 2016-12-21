@@ -20,7 +20,7 @@ public class GUINode extends Pane
     boolean isDragging;
     private AbstractVertex vertex;
     
-    boolean labels_enabled = true;
+    boolean labels_enabled = false;
 
 	GUINode parent;
 
