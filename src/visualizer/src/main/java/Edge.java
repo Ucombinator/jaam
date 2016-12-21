@@ -65,8 +65,13 @@ public class Edge implements Comparable<Edge>
 	public void draw(VizPanel panel, GUINode node)
 	{
 
-		if (this.source == this.dest)
+		if (this.source == this.dest){
+			System.out.println("NOOOOOOOOOOOOOOOO!!!!");
+			System.out.println(this.source +"---"+ this.dest);
+			System.out.println(this.sourceVertex.getLabel() +"---"+ this.destVertex.getLabel());
+			System.out.println(this.getType());
 			return;
+		}
 
 		double exitStartX, exitStartY, enterDestX, enterDestY;
 		double centerStartX = sourceVertex.getX() + sourceVertex.getWidth() / 2.0;
@@ -152,6 +157,8 @@ public class Edge implements Comparable<Edge>
 		double destInterceptNeg = centerDestY + centerDestX * destDiagSlope;
 		boolean aboveDestPosDiag = (centerStartX * destDiagSlope + destInterceptPos > centerStartY);
 		boolean aboveDestNegDiag = (-centerStartX * destDiagSlope + destInterceptNeg > centerStartY);
+		
+		
 		// System.out.println(aboveDestPosDiag + ", " + aboveDestNegDiag);
 
 		if (aboveDestPosDiag && aboveDestNegDiag)
@@ -218,7 +225,9 @@ public class Edge implements Comparable<Edge>
 		/*System.out.println(source + ", " + dest);
 		System.out.println("Start: " + exitStartX + ", " + exitStartY);
 		System.out.println("End: " + enterDestX + ", " + enterDestY + "\n");*/
+		
 		Line l = new Line(panel.scaleX(exitStartX), panel.scaleY(exitStartY), panel.scaleX(enterDestX), panel.scaleY(enterDestY));
+
 		if (this.getType() == Edge.EDGE_TYPE.EDGE_DUMMY)
 		{
 			l.getStrokeDashArray().addAll(5d, 4d);

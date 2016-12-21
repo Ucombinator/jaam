@@ -182,11 +182,13 @@ public class GUINode extends Pane
         @Override
         public void handle(Event event)
         {
+        	System.out.println("onMouseEnteredEventHandler");
         	if(vertex.getSelfGraph()!=null){
 	        	Iterator<Edge> it = vertex.getSelfGraph().getEdges().values().iterator();
 	        	while(it.hasNext()){
 	        		Edge e = it.next();
 	        		if(e.getSourceVertex() == vertex || e.getDestVertex() == vertex){
+	        			System.out.println("Graphis: "+ e.getGraphics());
 	        			((Line)(e.getGraphics())).setStroke(Color.GREENYELLOW);
 	        			((Line)(e.getGraphics())).setStrokeWidth(2);
 	        		}
@@ -198,6 +200,7 @@ public class GUINode extends Pane
             if(obj.parent != null)
                 obj.parent.rect.setOpacity(0.3);
             //System.out.println("Setting high opacity: " + obj.vertex.id);
+            event.consume();
         }
     };
 
@@ -224,6 +227,7 @@ public class GUINode extends Pane
             if(obj.parent != null)
                 obj.parent.rect.setOpacity(1);
             //System.out.println("Setting low opacity: " + obj.vertex.id);
+            event.consume();
         }
     };
 }
