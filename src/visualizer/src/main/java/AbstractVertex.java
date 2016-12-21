@@ -56,8 +56,6 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		this.graphics = graphics;
 	}
 
-
-
 	private String label;
 	private boolean expanded = true;
 
