@@ -40,8 +40,8 @@ public class TakeInput extends Thread
 				/*Parameters.stFrame.mainPanel.initDrawing();
 				Parameters.stFrame.contextPanel.initDrawing();*/
 
-				Parameters.stFrame.mainPanel.initFX();
-				Parameters.stFrame.contextPanel.initFX();
+				Parameters.stFrame.mainPanel.initFX(null);
+				Parameters.stFrame.contextPanel.initFX(Parameters.stFrame.mainPanel.getRoot());
 			}
 		});
 

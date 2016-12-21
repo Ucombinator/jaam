@@ -45,23 +45,38 @@ public class VizPanel extends JFXPanel
 			javafx.scene.paint.Color.BLUEVIOLET, javafx.scene.paint.Color.DARKTURQUOISE};
 	private int index = 0;
 
+	
+	
+	public AbstractVertex getRoot() {
+		return this.main;
+	}
+
 	public VizPanel(boolean cont)
 	{
 		super();
-		this.context = cont;
+		this.context = cont; 
 		contentGroup = new Group();
 		scrollPane = createZoomPane(contentGroup);
 		this.setScene(new Scene(scrollPane));
 		this.setBackground(Color.WHITE);
 	}
 
-	public void initFX()
+	public void initFX(AbstractVertex root)
 	{
-		Graph g = Main.graph;
-		this.main = LayerFactory.get2layer(g);
-		LayoutAlgorithm.layout(main);
-		draw(null, main);
+		if(this.context==true){
+			return;
+		}
+		if(root==null){
+			Graph g = Main.graph;			
+			this.main = LayerFactory.get2layer(g);
+			LayoutAlgorithm.layout(this.main);
+		} else{
+			this.main = root;
+		}
+		draw(null, this.main);
 	}
+	
+	
 
 	public double scaleX(double coordinate)
 	{
@@ -92,6 +107,7 @@ public class VizPanel extends JFXPanel
 		node.setArcWidth(scaleX(0.5));
 		node.setArcHeight(scaleY(0.5));
 		node.setLabel("  " + v.getLabel());
+		//node.setLabel("  " + v.getStrID());
 		node.setFill(colors[index++ % colors.length]);
 		node.setStroke(javafx.scene.paint.Color.BLACK);
 		node.setStrokeWidth(0);

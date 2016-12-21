@@ -19,6 +19,8 @@ public class GUINode extends Pane
     protected Text rectLabel;
     boolean isDragging;
     private AbstractVertex vertex;
+    
+    boolean labels_enabled = true;
 
 	GUINode parent;
 
@@ -48,7 +50,11 @@ public class GUINode extends Pane
         this.back_rect = new Rectangle();
         this.rect = new Rectangle();
         this.rectLabel = new Text();
-        this.getChildren().addAll(this.back_rect, this.rect, this.rectLabel);
+        if(labels_enabled){
+        	this.getChildren().addAll(this.back_rect, this.rect, this.rectLabel);
+        }else{
+        	this.getChildren().addAll(this.back_rect, this.rect);
+        }
 
         this.rect.setOpacity(0.2);
         this.makeDraggable();

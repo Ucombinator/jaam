@@ -722,7 +722,10 @@ public class StacFrame extends JFrame
 		leftPanel = new JPanel();
 		rightPanel = new JPanel();
         searchPanel = new JPanel();
+        System.out.println("****************************************MAIN PANEL*************************************************");
 		this.mainPanel = new VizPanel(false);
+		System.out.println("****************************************CONTEXT PANEL*************************************************");
+		System.out.println("CONTEXT PANEL");
 		this.contextPanel = new VizPanel(true);
 
 		// Build each panel
