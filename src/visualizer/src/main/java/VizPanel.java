@@ -40,7 +40,7 @@ public class VizPanel extends JFXPanel
 	private Rectangle selection; // While dragging, show the current selection in the main window.
 
 	private AbstractVertex main;
-	private javafx.scene.paint.Color[] colors = {javafx.scene.paint.Color.RED,
+	private javafx.scene.paint.Color[] colors = {javafx.scene.paint.Color.AQUAMARINE,
 			javafx.scene.paint.Color.GREEN, javafx.scene.paint.Color.AZURE,
 			javafx.scene.paint.Color.BLUEVIOLET, javafx.scene.paint.Color.DARKTURQUOISE};
 	private int index = 0;
@@ -96,6 +96,7 @@ public class VizPanel extends JFXPanel
 		node.setStroke(javafx.scene.paint.Color.BLACK);
 		node.setStrokeWidth(0);
 		node.setOpacity(1);
+		
 
 		if (v.getInnerGraph().getVertices().size() == 0)
 			return;

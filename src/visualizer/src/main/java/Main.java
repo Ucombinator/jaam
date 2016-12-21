@@ -52,5 +52,7 @@ public class Main
 		
 		
 		ti.run(file, true);
+		
+//		(new JandGioApp()).start();
 	}
 }

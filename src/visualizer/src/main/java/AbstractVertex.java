@@ -17,6 +17,10 @@ import java.util.ArrayList;
 
 abstract class AbstractVertex implements Comparable<AbstractVertex>
 {
+	public static final double DEFAULT_WIDTH = 1.0;
+
+	public static final double DEFAULT_HEIGHT = 1.0;
+
 	public int compareTo(AbstractVertex o)
 	{
 		if(this.getMinInstructionLine() == o.getMinInstructionLine())
@@ -47,12 +51,12 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	protected AbstractGraph selfGraph = null;
 	protected AbstractGraph innerGraph = null;
 
-	protected Group graphics = null;
+	protected GUINode graphics = null;
 	
-	public Group getGraphics() {
+	public GUINode getGraphics() {
 		return graphics;
 	}
-	public void setGraphics(Group graphics) {
+	public void setGraphics(GUINode graphics) {
 		this.graphics = graphics;
 	}
 
@@ -187,8 +191,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	{
 		this.location = new Location();
 		this.updateLocation = false;
-		this.mainNode = new GUINode(this.contextNode);
-		this.contextNode = new GUINode(this.mainNode);
+//		this.mainNode = new GUINode(this.contextNode);
+//		this.contextNode = new GUINode(this.mainNode);
 		this.setVisible(false);
 
 		this.incoming = new ArrayList<AbstractVertex>();
@@ -201,8 +205,11 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		//System.out.println("Setting visibility for node " + this.id + " to " + isVisible);
 		//System.out.println("Location: " + this.location);
 		this.isVisible = isVisible;
-		this.mainNode.setVisible(isVisible);
-		this.contextNode.setVisible(isVisible);
+		if(this.getGraphics()!=null){
+			this.getGraphics().setVisible(isVisible);
+		}
+//		this.mainNode.setVisible(isVisible);
+//		this.contextNode.setVisible(isVisible);
 	}
     
     public DefaultMutableTreeNode toDefaultMutableTreeNode()

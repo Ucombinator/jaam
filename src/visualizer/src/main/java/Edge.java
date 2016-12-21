@@ -1,8 +1,13 @@
 
+import javafx.scene.Node;
 import javafx.scene.shape.Line;
 
 public class Edge implements Comparable<Edge>
 {
+	
+	Node graphics = null;
+
+
 	int source, dest;
 	final static int EDGE_REGULAR = 0;
 	final static int EDGE_DUMMY = 1;
@@ -56,10 +61,10 @@ public class Edge implements Comparable<Edge>
 	// TODO: Make lines thinner when zoomed in.
 	public void draw(VizPanel panel, GUINode node)
 	{
-		double centerStartX = sourceVertex.getX() + sourceVertex.getWidth() / 2;
-		double centerStartY = sourceVertex.getY() + sourceVertex.getHeight() / 2;
-		double centerDestX = destVertex.getX() + destVertex.getWidth() / 2;
-		double centerDestY = destVertex.getY() + destVertex.getHeight() / 2;
+		double centerStartX = sourceVertex.getX() + sourceVertex.getWidth() / 2.0;
+		double centerStartY = sourceVertex.getY() + sourceVertex.getHeight() / 2.0;
+		double centerDestX = destVertex.getX() + destVertex.getWidth() / 2.0;
+		double centerDestY = destVertex.getY() + destVertex.getHeight() / 2.0;
 
 		// double startDiagSlope = sourceVertex.getHeight() / sourceVertex.getWidth();
 
@@ -70,6 +75,16 @@ public class Edge implements Comparable<Edge>
 			l.getStrokeDashArray().addAll(5d, 4d);
 		}
 
+		this.setGraphics(l);
 		node.getChildren().add(l);
+		
+	}
+	
+	public Node getGraphics() {
+		return graphics;
+	}
+
+	public void setGraphics(Node graphics) {
+		this.graphics = graphics;
 	}
 }

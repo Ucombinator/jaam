@@ -10,8 +10,6 @@ public class LayoutAlgorithm
 	final static double NODES_PADDING = .5;
 
 	
-	final static double DEFAULT_WIDTH = 1;
-	final static double DEFAULT_HEIGHT = 1;
 	
 	public static void layout(AbstractVertex parenteVertex){
 		initializeSizes(parenteVertex);
@@ -19,8 +17,8 @@ public class LayoutAlgorithm
 	}
 	
 	private static void initializeSizes(AbstractVertex parenteVertex){
-		parenteVertex.setWidth(DEFAULT_WIDTH);
-		parenteVertex.setHeight(DEFAULT_HEIGHT);
+		parenteVertex.setWidth(AbstractVertex.DEFAULT_WIDTH);
+		parenteVertex.setHeight(AbstractVertex.DEFAULT_HEIGHT);
 		Iterator<AbstractVertex> it = parenteVertex.getInnerGraph().getVertices().values().iterator();
 		while(it.hasNext()){
 			initializeSizes(it.next());
