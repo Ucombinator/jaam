@@ -65,7 +65,13 @@ public class Edge implements Comparable<Edge>
 	public void draw(VizPanel panel, GUINode node)
 	{
 		if (this.source == this.dest)
+		{
+			System.out.println("NOOOOOOOOOOOOOOOO!!!!");
+			System.out.println(this.source +"---"+ this.dest);
+			System.out.println(this.sourceVertex.getLabel() +"---"+ this.destVertex.getLabel());
+			System.out.println(this.getType());
 			return;
+		}
 
 		double exitStartX, exitStartY, enterDestX, enterDestY;
 		double centerStartX = sourceVertex.getX() + sourceVertex.getWidth() / 2.0;
@@ -87,62 +93,26 @@ public class Edge implements Comparable<Edge>
 
 		if (aboveStartPosDiag && aboveStartNegDiag)
 		{
-			//exitStart = INTERSECT_TYPE.TOP;
-			exitStartY = sourceVertex.getY();
-
-			if (centerDestY == centerStartY)
-			{
-				System.out.println("Error! Invalid edge.");
-				System.out.println(source + ", " + dest);
-				return;
-			}
-
 			double invSlope = (centerDestX - centerStartX) / (centerDestY - centerStartY);
+			exitStartY = sourceVertex.getY();
 			exitStartX = centerStartX + invSlope * (exitStartY - centerStartY);
 		}
 		else if (!aboveStartPosDiag && aboveStartNegDiag)
 		{
-			//exitStart = INTERSECT_TYPE.LEFT;
-			exitStartX = sourceVertex.getX();
-
-			if (centerDestX == centerStartX)
-			{
-				System.out.println("Error! Invalid edge.");
-				System.out.println(source + ", " + dest);
-				return;
-			}
-
 			double slope = (centerDestY - centerStartY) / (centerDestX - centerStartX);
+			exitStartX = sourceVertex.getX();
 			exitStartY = centerStartY + slope * (exitStartX - centerStartX);
 		}
 		else if (aboveStartPosDiag && !aboveStartNegDiag)
 		{
-			//exitStart = INTERSECT_TYPE.RIGHT;
-			exitStartX = sourceVertex.getX() + sourceVertex.getWidth();
-
-			if (centerDestX == centerStartX)
-			{
-				System.out.println("Error! Invalid edge.");
-				System.out.println(source + ", " + dest);
-				return;
-			}
-
 			double slope = (centerDestY - centerStartY) / (centerDestX - centerStartX);
+			exitStartX = sourceVertex.getX() + sourceVertex.getWidth();
 			exitStartY = centerStartY + slope * (exitStartX - centerStartX);
 		}
 		else
 		{
-			//exitStart = INTERSECT_TYPE.BOTTOM;
-			exitStartY = sourceVertex.getY() + sourceVertex.getHeight();
-
-			if (centerDestY == centerStartY)
-			{
-				System.out.println("Error! Invalid edge.");
-				System.out.println(source + ", " + dest);
-				return;
-			}
-
 			double invSlope = (centerDestX - centerStartX) / (centerDestY - centerStartY);
+			exitStartY = sourceVertex.getY() + sourceVertex.getHeight();
 			exitStartX = centerStartX + invSlope * (exitStartY - centerStartY);
 		}
 
@@ -151,70 +121,34 @@ public class Edge implements Comparable<Edge>
 		double destInterceptNeg = centerDestY + centerDestX * destDiagSlope;
 		boolean aboveDestPosDiag = (centerStartX * destDiagSlope + destInterceptPos > centerStartY);
 		boolean aboveDestNegDiag = (-centerStartX * destDiagSlope + destInterceptNeg > centerStartY);
-		// System.out.println(aboveDestPosDiag + ", " + aboveDestNegDiag);
 
 		if (aboveDestPosDiag && aboveDestNegDiag)
 		{
-			//enterDest = INTERSECT_TYPE.TOP;
-			enterDestY = destVertex.getY();
-
-			if (centerDestY == centerStartY)
-			{
-				System.out.println("Error! Invalid edge.");
-				System.out.println(source + ", " + dest);
-				return;
-			}
-
 			double invSlope = (centerStartX - centerDestX) / (centerStartY - centerDestY);
+			enterDestY = destVertex.getY();
 			enterDestX = centerDestX + invSlope * (enterDestY - centerDestY);
 		}
 		else if(!aboveDestPosDiag && aboveDestNegDiag)
 		{
-			//enterDest = INTERSECT_TYPE.LEFT;
-			enterDestX = destVertex.getX();
-
-			if (centerDestX == centerStartX)
-			{
-				System.out.println("Error! Invalid edge.");
-				System.out.println(source + ", " + dest);
-				return;
-			}
-
 			double slope = (centerStartY - centerDestY) / (centerStartX - centerDestX);
+			enterDestX = destVertex.getX();
 			enterDestY = centerDestY + slope * (enterDestX - centerDestX);
 		}
 		else if (aboveDestPosDiag && !aboveDestNegDiag)
 		{
-			//enterDest = INTERSECT_TYPE.RIGHT;
-			enterDestX = destVertex.getX() + destVertex.getWidth();
-
-			if (centerDestX == centerStartX)
-			{
-				System.out.println("Error! Invalid edge.");
-				System.out.println(source + ", " + dest);
-				return;
-			}
-
 			double slope = (centerStartY - centerDestY) / (centerStartX - centerDestX);
+			enterDestX = destVertex.getX() + destVertex.getWidth();
 			enterDestY = centerDestY + slope * (enterDestX - centerDestX);
 		}
 		else
 		{
-			//enterDest = INTERSECT_TYPE.BOTTOM;
-			enterDestY = destVertex.getY() + destVertex.getHeight();
-
-			if (centerDestY == centerStartY)
-			{
-				System.out.println("Error! Invalid edge.");
-				System.out.println(source + ", " + dest);
-				return;
-			}
-
 			double invSlope = (centerStartX - centerDestX) / (centerStartY - centerDestY);
+			enterDestY = destVertex.getY() + destVertex.getHeight();
 			enterDestX = centerDestX + invSlope * (enterDestY - centerDestY);
 		}
 
-		this.line = new Line(panel.scaleX(exitStartX), panel.scaleY(exitStartY), panel.scaleX(enterDestX), panel.scaleY(enterDestY));
+		this.line = new Line(panel.scaleX(exitStartX), panel.scaleY(exitStartY),
+				panel.scaleX(enterDestX), panel.scaleY(enterDestY));
 		if (this.getType() == Edge.EDGE_TYPE.EDGE_DUMMY)
 		{
 			line.getStrokeDashArray().addAll(5d, 4d);

@@ -115,7 +115,7 @@ public class GUINode extends Pane
         {
             event.consume();
             GUINode node = (GUINode) event.getSource();
-            System.out.println("GUI node pressed: " + node.vertex.id);
+            // System.out.println("GUI node pressed: " + node.vertex.id);
 
             dragX = node.getBoundsInParent().getMinX() - event.getScreenX();
             dragY = node.getBoundsInParent().getMinY() - event.getScreenY();
@@ -129,7 +129,7 @@ public class GUINode extends Pane
         {
             event.consume();
             GUINode node = (GUINode) event.getSource();
-            System.out.println("GUI node dragged: " + node.vertex.id);
+            // System.out.println("GUI node dragged: " + node.vertex.id);
 
             node.isDragging = true;
             double offsetX = event.getScreenX() + dragX;
@@ -146,7 +146,7 @@ public class GUINode extends Pane
         {
             event.consume();
             GUINode node = (GUINode) event.getSource();
-            System.out.println("GUI node released: " + node.vertex.id);
+            // System.out.println("GUI node released: " + node.vertex.id);
 
             if(node.isDragging)
             {
@@ -164,9 +164,11 @@ public class GUINode extends Pane
         @Override
         public void handle(Event event)
         {
+        	// System.out.println("onMouseEnteredEventHandler");
         	if(vertex.getSelfGraph()!=null){
 	        	Iterator<Edge> it = vertex.getSelfGraph().getEdges().values().iterator();
-	        	while(it.hasNext()){
+	        	while(it.hasNext())
+                {
 	        		Edge e = it.next();
 	        		if(e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
 	        		{
@@ -181,6 +183,7 @@ public class GUINode extends Pane
             if(obj.parent != null)
                 obj.parent.rect.setOpacity(0.3);
             //System.out.println("Setting high opacity: " + obj.vertex.id);
+            event.consume();
         }
     };
 
@@ -208,6 +211,7 @@ public class GUINode extends Pane
             if(obj.parent != null)
                 obj.parent.rect.setOpacity(1);
             //System.out.println("Setting low opacity: " + obj.vertex.id);
+            event.consume();
         }
     };
 }

@@ -53,9 +53,12 @@ public class LayerFactory
 				{
 					AbstractVertex absVertex = methodVertices.get(vertex.getMethodName()); 
 					AbstractVertex absNeigh = methodVertices.get(neighbor.getMethodName());
-					Edge e = new Edge(absVertex, absNeigh, Edge.EDGE_TYPE.EDGE_REGULAR);
-					edges.put(tempID, e);
-					methodGraph.addEdge(e);
+					
+					if(absVertex!=absNeigh){	// We are not distinguishing recursive calls
+						Edge e = new Edge(absVertex, absNeigh, Edge.EDGE_TYPE.EDGE_REGULAR);
+						edges.put(tempID, e);
+						methodGraph.addEdge(e);
+					}
 				}
 			}
 		}

@@ -1126,16 +1126,19 @@ public class Graph
 		while(it.hasNext())
 		{
 			Vertex v  = it.next();
+			if(v.vertexStatus == AbstractVertex.VertexStatus.UNVISITED){
 			if(!v.getMethodName().equals(root.getMethodName()))
 			{
 				if(hash.containsKey(v.getMethodName())){
+					System.out.println("A: " + hash.get(v.getMethodName()).getStrID());
+					System.out.println("B: " + v.getStrID());
 					dummies.add(new Edge(hash.get(v.getMethodName()), v, Edge.EDGE_TYPE.EDGE_DUMMY));
 				}
 			}
 
 			hash.put(v.getMethodName(), v);
-			if(v.vertexStatus == AbstractVertex.VertexStatus.UNVISITED)
-			{
+//			if(v.vertexStatus == AbstractVertex.VertexStatus.UNVISITED)
+//			{
 				visit(v,hash,dummies);
 			}
 		}
