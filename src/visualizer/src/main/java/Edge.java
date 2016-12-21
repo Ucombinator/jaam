@@ -1,5 +1,7 @@
 
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Polygon;
 
 public class Edge implements Comparable<Edge>
 {
@@ -207,12 +209,33 @@ public class Edge implements Comparable<Edge>
 		/*System.out.println(source + ", " + dest);
 		System.out.println("Start: " + exitStartX + ", " + exitStartY);
 		System.out.println("End: " + enterDestX + ", " + enterDestY + "\n");*/
-		Line l = new Line(panel.scaleX(exitStartX), panel.scaleY(exitStartY), panel.scaleX(enterDestX), panel.scaleY(enterDestY));
+		Line line = new Line(panel.scaleX(exitStartX), panel.scaleY(exitStartY), panel.scaleX(enterDestX), panel.scaleY(enterDestY));
 		if (this.getType() == Edge.EDGE_TYPE.EDGE_DUMMY)
 		{
-			l.getStrokeDashArray().addAll(5d, 4d);
+			line.getStrokeDashArray().addAll(5d, 4d);
 		}
 
-		node.getChildren().add(l);
+		// Compute arrowhead
+		// TODO: Pick better length?
+		double angle = Math.PI + Math.atan2(panel.scaleY(enterDestY - exitStartY), panel.scaleX(enterDestX - exitStartX));
+		double angleDiff = 0.15 * Math.PI;
+		double length = 10.0;
+
+		double x1 = panel.scaleX(enterDestX);
+		double y1 = panel.scaleY(enterDestY);
+		double x2 = panel.scaleX(enterDestX) + length * Math.cos(angle + angleDiff);
+		double y2 = panel.scaleY(enterDestY) + length * Math.sin(angle + angleDiff);
+		double x3 = panel.scaleX(enterDestX) + length * Math.cos(angle - angleDiff);
+		double y3 = panel.scaleY(enterDestY) + length * Math.sin(angle - angleDiff);
+
+		Polygon arrowhead = new Polygon();
+		arrowhead.getPoints().addAll(new Double[]{
+				x1, y1,
+				x2, y2,
+				x3, y3 });
+		arrowhead.setFill(Color.BLACK);
+
+		node.getChildren().add(line);
+		node.getChildren().add(arrowhead);
 	}
 }
