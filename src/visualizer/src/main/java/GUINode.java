@@ -65,7 +65,6 @@ public class GUINode extends Pane
     	this.back_rect.setFill(Color.WHITE);
         this.rect.setFill(c);
     }
-    
 
     public void setStroke(Color c)
     {
@@ -115,7 +114,6 @@ public class GUINode extends Pane
         {
             event.consume();
             GUINode node = (GUINode) event.getSource();
-            // System.out.println("GUI node pressed: " + node.vertex.id);
 
             dragX = node.getBoundsInParent().getMinX() - event.getScreenX();
             dragY = node.getBoundsInParent().getMinY() - event.getScreenY();
@@ -129,7 +127,6 @@ public class GUINode extends Pane
         {
             event.consume();
             GUINode node = (GUINode) event.getSource();
-            // System.out.println("GUI node dragged: " + node.vertex.id);
 
             node.isDragging = true;
             double offsetX = event.getScreenX() + dragX;
@@ -146,15 +143,10 @@ public class GUINode extends Pane
         {
             event.consume();
             GUINode node = (GUINode) event.getSource();
-            // System.out.println("GUI node released: " + node.vertex.id);
 
-            if(node.isDragging)
+            if (node.isDragging)
             {
                 node.isDragging = false;
-            }
-            else
-            {
-                //TODO: Select node on click?
             }
         }
     };
@@ -164,8 +156,9 @@ public class GUINode extends Pane
         @Override
         public void handle(Event event)
         {
-        	// System.out.println("onMouseEnteredEventHandler");
-        	if(vertex.getSelfGraph()!=null){
+            event.consume();
+        	if (vertex.getSelfGraph()!=null)
+        	{
 	        	Iterator<Edge> it = vertex.getSelfGraph().getEdges().values().iterator();
 	        	while(it.hasNext())
                 {
@@ -180,10 +173,8 @@ public class GUINode extends Pane
         	
             GUINode obj = (GUINode) (event.getSource());
             obj.rect.setOpacity(1);
-            if(obj.parent != null)
+            if (obj.parent != null)
                 obj.parent.rect.setOpacity(0.3);
-            //System.out.println("Setting high opacity: " + obj.vertex.id);
-            event.consume();
         }
     };
 
@@ -192,13 +183,14 @@ public class GUINode extends Pane
         @Override
         public void handle(Event event)
         {
-        	if(vertex.getSelfGraph()!=null)
+            event.consume();
+        	if(vertex.getSelfGraph() != null)
         	{
 	        	Iterator<Edge> it = vertex.getSelfGraph().getEdges().values().iterator();
 	        	while(it.hasNext())
                 {
 	        		Edge e = it.next();
-	        		if(e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
+	        		if (e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
 	        		{
 	        			e.getLine().setStroke(Color.BLACK);
 	        			e.getLine().setStrokeWidth(1);
@@ -210,8 +202,6 @@ public class GUINode extends Pane
             obj.rect.setOpacity(0.3);
             if(obj.parent != null)
                 obj.parent.rect.setOpacity(1);
-            //System.out.println("Setting low opacity: " + obj.vertex.id);
-            event.consume();
         }
     };
 }

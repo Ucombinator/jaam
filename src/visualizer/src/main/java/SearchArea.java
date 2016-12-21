@@ -106,30 +106,21 @@ public class SearchArea extends JPanel
         DefaultMutableTreeNode currentPNode = new DefaultMutableTreeNode();
         DefaultMutableTreeNode currentMNode = new DefaultMutableTreeNode();
         DefaultMutableTreeNode node = new DefaultMutableTreeNode();
-        
-        for(AbstractVertex pver : Main.graph.methodPathVertices)
+
+        for(AbstractVertex mver : Main.graph.methodVertices)
         {
-            if(Parameters.vertexHighlight && (pver.isBranchSelected() || pver.isBranchHighlighted()))
+            if(Parameters.vertexHighlight && (mver.isBranchSelected() || mver.isBranchHighlighted()))
             {
-                currentPNode = pver.toDefaultMutableTreeNode();
-                root.add(currentPNode);
+                currentMNode = mver.toDefaultMutableTreeNode();
+                currentPNode.add(currentMNode);
             }
-            
-            for(AbstractVertex mver : pver.getMergeChildren())
+
+            for(AbstractVertex ver : mver.getMergeChildren())
             {
-                if(Parameters.vertexHighlight && (mver.isBranchSelected() || mver.isBranchHighlighted()))
+                if(Parameters.vertexHighlight && (ver.isBranchSelected() || ver.isBranchHighlighted()))
                 {
-                    currentMNode = mver.toDefaultMutableTreeNode();
-                    currentPNode.add(currentMNode);
-                }
-                
-                for(AbstractVertex ver : mver.getMergeChildren())
-                {
-                    if(Parameters.vertexHighlight && (ver.isBranchSelected() || ver.isBranchHighlighted()))
-                    {
-                        node = ver.toDefaultMutableTreeNode();
-                        currentMNode.add(node);
-                    }
+                    node = ver.toDefaultMutableTreeNode();
+                    currentMNode.add(node);
                 }
             }
         }
@@ -139,7 +130,6 @@ public class SearchArea extends JPanel
         model.reload(this.root);
         this.expandAllNodes(this.searchTree);
 	}
-
     
     public void fixCaretPosition()
     {
@@ -153,7 +143,7 @@ public class SearchArea extends JPanel
         DefaultMutableTreeNode node;
         AbstractVertex ver;
         
-        for(int i=first; i<=last; i++)
+        for(int i = first; i <= last; i++)
         {
             node = (DefaultMutableTreeNode)(this.searchTree.getPathForRow(i).getLastPathComponent());
             ver = (AbstractVertex)(node.getUserObject());
@@ -161,38 +151,36 @@ public class SearchArea extends JPanel
                 return;
         }
         
-        for(int i=first-1, j=last+1; i>=0 || j<this.searchTree.getRowCount(); i--, j++)
+        for(int i = first - 1, j = last + 1; i >= 0 || j < this.searchTree.getRowCount(); i--, j++)
         {
-            if(i>=0)
+            if (i >= 0)
             {
                 node = (DefaultMutableTreeNode)(this.searchTree.getPathForRow(i).getLastPathComponent());
                 ver = (AbstractVertex)(node.getUserObject());
-                if(ver.isSelected())
+                if (ver.isSelected())
                 {
                     this.searchTree.scrollRowToVisible(i);
                     return;
                 }
             }
-            if(j<this.searchTree.getRowCount())
+            if (j<this.searchTree.getRowCount())
             {
                 node = (DefaultMutableTreeNode)(this.searchTree.getPathForRow(j).getLastPathComponent());
                 ver = (AbstractVertex)(node.getUserObject());
-                if(ver.isSelected())
+                if (ver.isSelected())
                 {
                     this.searchTree.scrollRowToVisible(j);
                     return;
                 }
             }
         }
-        
     }
     
-    
-    private class SearchRenderer extends DefaultTreeCellRenderer {
-        private String text = "";
-
+    private class SearchRenderer extends DefaultTreeCellRenderer
+    {
         public Component getTreeCellRendererComponent(JTree tree, Object obj, boolean selected, boolean expanded,
-                                                      boolean leaf, int row, boolean hasFocus) {
+                                                      boolean leaf, int row, boolean hasFocus)
+        {
             JLabel label = (JLabel) super.getTreeCellRendererComponent(tree, obj, selected, expanded, leaf, row, hasFocus);
             DefaultMutableTreeNode node = (DefaultMutableTreeNode) obj;
 
@@ -203,13 +191,18 @@ public class SearchArea extends JPanel
             label.setText(ver.getShortDescription());
             label.setFont(Parameters.font);
             label.setOpaque(true);
-            if (ver.isSelected) {
+            if (ver.isSelected)
+            {
                 label.setBackground(Parameters.colorHighlight);
                 label.setForeground(Color.BLACK);
-            } else if (ver.isHighlighted) {
+            }
+            else if (ver.isHighlighted)
+            {
                 label.setBackground(Color.WHITE);
                 label.setForeground(Color.BLACK);
-            } else {
+            }
+            else
+            {
                 label.setBackground(Color.WHITE);
                 label.setForeground(Color.GRAY);
             }

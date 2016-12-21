@@ -14,7 +14,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Text;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Group;
 
@@ -26,7 +25,7 @@ public class VizPanel extends JFXPanel
 	private boolean context;
 	private Group contentGroup;
 	private ScrollPane scrollPane;
-	double minWidth, minHeight, boxWidth, boxHeight;
+	double boxWidth, boxHeight; // Are these initialized?
 
 	public boolean showSelection = false;
 	public double selectLeft, selectRight, selectTop, selectBottom;
@@ -42,10 +41,10 @@ public class VizPanel extends JFXPanel
 			javafx.scene.paint.Color.BLUEVIOLET, javafx.scene.paint.Color.DARKTURQUOISE};
 	private int index = 0;
 
-	public VizPanel(boolean cont)
+	public VizPanel(boolean isContextPanel)
 	{
 		super();
-		this.context = cont;
+		this.context = isContextPanel;
 		contentGroup = new Group();
 		scrollPane = createZoomPane(contentGroup);
 		this.setScene(new Scene(scrollPane));
@@ -146,13 +145,13 @@ public class VizPanel extends JFXPanel
 		else return !(Parameters.highlightIncoming && !Parameters.highlightOutgoing && nbr.isIncomingHighlighted);
 	}
 
-	//Convert a current pixel location to a horizontal value between 0 and 1
+	// Convert a current pixel location to a horizontal value between 0 and 1
 	public double getRelativeFracFromAbsolutePixelX(double x)
 	{
 		Graph graph = Main.graph;
 		if(this.context)
 		{
-			double xFrac = x / (this.boxWidth*graph.getWidth());
+			double xFrac = x / (this.boxWidth * graph.getWidth());
 			if(xFrac < 0)
 				return 0;
 			else if(xFrac > 1)
@@ -162,7 +161,7 @@ public class VizPanel extends JFXPanel
 		}
 		else
 		{
-			double xFrac = x / (this.boxWidth*graph.getWidth()) + graph.currWindow.left;
+			double xFrac = x / (this.boxWidth * graph.getWidth()) + graph.currWindow.left;
 			if(xFrac < 0)
 				return 0;
 			else if(xFrac > 1)

@@ -68,13 +68,6 @@ public class Parameters
 				text.append(v.getRightPanelContent() + "\n\n");
 		}
 		
-		for(MethodPathVertex v : Main.graph.methodPathVertices)
-		{
-            //if(v.isHighlighted)
-            if(v.isSelected)
-				text.append(v.getRightPanelContent() + "\n\n");
-		}
-		
 		rightArea.setText(text.toString());
 		rightArea.setCaretPosition(0);
 	}
@@ -189,14 +182,6 @@ public class Parameters
 
 	public static void repaintAll()
 	{
-		/*Platform.runLater(new Runnable() {
-			@Override
-			public void run() {
-				stFrame.mainPanel.updateVertices();
-				stFrame.contextPanel.updateVertices();
-			}
-		});*/
-
 		leftArea.setDescription();
 		setRightText();
         searchArea.writeText();

@@ -89,7 +89,6 @@ public class Edge implements Comparable<Edge>
 		double startInterceptNeg = centerStartY + centerStartX * startDiagSlope;
 		boolean aboveStartPosDiag = (centerDestX * startDiagSlope + startInterceptPos > centerDestY);
 		boolean aboveStartNegDiag = (-centerDestX * startDiagSlope + startInterceptNeg > centerDestY);
-		// System.out.println(aboveStartPosDiag + ", " + aboveStartNegDiag);
 
 		if (aboveStartPosDiag && aboveStartNegDiag)
 		{

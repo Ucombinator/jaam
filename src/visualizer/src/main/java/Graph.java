@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
-
 import java.util.HashMap;
 import java.util.StringTokenizer;
 
@@ -14,7 +13,6 @@ public class Graph
 	public int baseEdges;
 	public ArrayList<Vertex> vertices;
 	public ArrayList<MethodVertex> methodVertices;
-	public ArrayList<MethodPathVertex> methodPathVertices;
 	public ArrayList<Edge> edges;
     public ArrayList<String> tagsList;
     public ArrayList<Boolean> highlightedTags;
@@ -24,9 +22,8 @@ public class Graph
 	public View currWindow;
 	static int numHotkeys = 10;
 	public View[] hotkeyedViews;
-	private double maxH; // required for collapse method
+	private double maxHeight; // required for collapse method
 	public int maxIndex;
-
 
 	public Graph()
 	{
@@ -34,7 +31,6 @@ public class Graph
 		this.baseEdges = 0;
 		this.vertices = new ArrayList<Vertex>();
 		this.methodVertices = new ArrayList<MethodVertex>();
-		this.methodPathVertices = new ArrayList<MethodPathVertex>();
 		this.edges = new ArrayList<Edge>();
 
 		this.methods = new HashMap<String, Method>();
@@ -50,19 +46,17 @@ public class Graph
 		for(int i = 0; i < numHotkeys; i++)
 			hotkeyedViews[i] = new View(false);
 
-
-
 		this.resetZoom();
 	}
 	
 	public void setMaxHeight(double height)
 	{
-		this.maxH = height;
+		this.maxHeight = height;
 	}
 	
 	public double getMaxHeight()
 	{
-		return maxH;
+		return maxHeight;
 	}
 	
 	public void increaseZoom(double factor, double mouseX, double mouseY)
@@ -163,72 +157,6 @@ public class Graph
 		currWindow = newWindow;
 	}
 
-	public void selectVertices(double x1, double x2, double y1, double y2)
-	{
-		for(Vertex v : this.vertices)
-		{
-//			v.clearAllHighlights();
-			v.clearAllSelect();
-			if(v.isVisible && x1 < v.location.x && v.location.x < x2 && y1 < v.location.y && v.location.y < y2)
-				v.addHighlight(true, false, true, true);
-		}
-		
-		for(MethodVertex v : this.methodVertices)
-		{
-//			v.clearAllHighlights();
-			v.clearAllSelect();
-			if(v.isVisible && x1 < v.location.x && v.location.x < x2 && y1 < v.location.y && v.location.y < y2)
-				v.addHighlight(true, false, true, true);
-		}
-		
-		for(MethodPathVertex v: this.methodPathVertices)
-		{
-//			v.clearAllHighlights();
-			v.clearAllSelect();
-			if(v.isVisible && x1 < v.location.x && v.location.x < x2 && y1 < v.location.y && v.location.y < y2)
-				v.addHighlight(true, false, true, true);
-		}
-        Parameters.ping();
-	}
-	
-	public AbstractVertex getVertexNearestCoordinate(double x, double y)
-	{
-		AbstractVertex closest = null;
-		double closestDist = Double.MAX_VALUE;
-		
-		for(Vertex v : vertices)
-		{
-			double newDist = v.distTo(x,  y);
-			if(v.isVisible && newDist < closestDist)
-			{
-				closest = v;
-				closestDist = newDist;
-			}
-		}
-		
-		for(MethodVertex v : methodVertices)
-		{
-			double newDist = v.distTo(x,  y);
-			if(v.isVisible && newDist < closestDist)
-			{
-				closest = v;
-				closestDist = newDist;
-			}				
-		}
-		
-		for(MethodPathVertex v : methodPathVertices)
-		{
-			double newDist = v.distTo(x,  y);
-			if(v.isVisible && newDist < closestDist)
-			{
-				closest = v;
-				closestDist = newDist;
-			}
-		}
-		
-		return closest;
-	}
-
 	public void addErrorState(int id)
 	{
 		this.addVertex(id, "ErrorState", "", "ErrorState", -1, false);
@@ -258,7 +186,6 @@ public class Graph
 
 	public void matchVertexToMethod(Vertex v, String methodName)
 	{
-		//System.out.println("Setting method for vertex: " + v.getName());
 		Method currMethod;
 		if(this.methods.containsKey(methodName))
 		{
@@ -269,24 +196,9 @@ public class Graph
 			currMethod = new Method(methodName);
 			this.methods.put(methodName, currMethod);
 		}
+
 		v.setMethod(currMethod);
 		currMethod.addVertex(v);
-	}
-	
-	public void addEdge(String line)
-	{
-		int src, dest;
-		StringTokenizer token = new StringTokenizer(line);
-		
-		if(token.countTokens() == 3)
-		{
-			baseEdges++;
-			src = Integer.parseInt(token.nextToken());
-			token.nextToken();
-			dest = Integer.parseInt(token.nextToken());
-
-			addEdge(src, dest);
-		}
 	}
 
 	public void addEdge(int src, int dest)
@@ -330,8 +242,7 @@ public class Graph
 				System.out.println("Cannot find class: " + className);
 		}
 	}
-    
-    
+
     public void addTag(int nodeId, String tag)
     {
         Vertex ver = this.containsVertex(nodeId);
@@ -348,11 +259,10 @@ public class Graph
         }
         ver.addTag(t);
     }
-    
-    
+
     public int tagPresent(String tag)
     {
-        int i=0;
+        int i = 0;
         for(String t : this.tagsList)
         {
             if(t.equalsIgnoreCase(tag))
@@ -361,7 +271,6 @@ public class Graph
         }
         return -1;
     }
-    
 
 	public void clearHighlights()
 	{
@@ -369,9 +278,6 @@ public class Graph
 			v.clearAllHighlights();
 		
 		for(MethodVertex v : this.methodVertices)
-			v.clearAllHighlights();
-
-		for(MethodPathVertex v : this.methodPathVertices)
 			v.clearAllHighlights();
 	}
 	
@@ -382,9 +288,6 @@ public class Graph
 		
 		for(MethodVertex v : this.methodVertices)
 			v.clearAllSelect();
-
-		for(MethodPathVertex v : this.methodPathVertices)
-			v.clearAllSelect();
 	}
 	
 	public HashSet<Method> collectHighlightedMethods()
@@ -394,25 +297,13 @@ public class Graph
 		for(Vertex v : this.vertices)
 		{
             if(v.isHighlighted || v.isSelected)
-//			if(v.isHighlighted)
 				highlightedMethods.add(v.getMethod());
 		}
 		
 		for(MethodVertex v : this.methodVertices)
 		{
             if(v.isHighlighted || v.isSelected)
-//			if(v.isHighlighted)
 				highlightedMethods.add(v.getMethod());
-		}
-		
-		for(MethodPathVertex v : this.methodPathVertices)
-		{
-            if(v.isHighlighted || v.isSelected)
-//			if(v.isHighlighted)
-			{
-				for(MethodVertex w : v.getMergeChildren())
-					highlightedMethods.add(w.getMethod());
-			}
 		}
 		
 		return highlightedMethods;
@@ -439,14 +330,12 @@ public class Graph
 		}
 	}
 
-
     public boolean[] processQuery(String query)
     {
-        int total = Main.graph.vertices.size() + Main.graph.methodVertices.size() + Main.graph.methodPathVertices.size();
+        int total = Main.graph.vertices.size() + Main.graph.methodVertices.size();
         boolean selected[] = new boolean[total];
         return selected;
     }
-    
 	
 	public void searchNodes(StacFrame.searchType search, String searchStr)
 	{
@@ -492,7 +381,6 @@ public class Graph
 						this.searchPathToRoot(id1, id2);
 				}
 			}
-			
 		}
         else if(search == StacFrame.searchType.TAG)
         {
@@ -732,23 +620,10 @@ public class Graph
 			}
 		}
 	}
-	
-	public void mergePaths()
-	{
-		for(MethodVertex v : this.methodVertices)
-			v.mergePath();
-		
-		for(MethodPathVertex v : this.methodPathVertices)
-			v.collectMethodsAndInstructions();
-	}
-    
     
     public void collectAllTags()
     {
         for(MethodVertex v : this.methodVertices)
-            v.collectAllTagsFromChildren();
-        
-        for(MethodPathVertex v : this.methodPathVertices)
             v.collectAllTagsFromChildren();
     }
 
@@ -790,12 +665,6 @@ public class Graph
 	//so that we don't check the same vertex twice
 	public void collapseOnce()
 	{
-		for(MethodPathVertex v : this.methodPathVertices)
-		{
-			if(v.mergeRoot.isVisible)
-				v.collapse();
-		}
-		
 		for(MethodVertex v : this.methodVertices)
 		{
 			if(v.mergeRoot.isVisible)
@@ -813,28 +682,18 @@ public class Graph
 			if(v.isVisible)
 				v.deCollapse();
 		}
-		
-		for(MethodPathVertex v : this.methodPathVertices)
-		{
-			if(v.isVisible)
-				v.deCollapse();
-		}
 	}
 	
 	public void collapseAll()
 	{
 		boolean flag = true;
-		while(flag) {
+		while(flag)
+		{
 			flag = false;
-			for (MethodVertex v : this.methodVertices) {
-				if (v.mergeRoot.isVisible) {
-					flag = true;
-					v.collapse();
-				}
-			}
-
-			for (MethodPathVertex v : this.methodPathVertices) {
-				if (v.mergeRoot.isVisible) {
+			for (MethodVertex v : this.methodVertices)
+			{
+				if (v.mergeRoot.isVisible)
+				{
 					flag = true;
 					v.collapse();
 				}
@@ -856,24 +715,12 @@ public class Graph
 					v.deCollapse();
 				}
 			}
-			
-			for(MethodPathVertex v : this.methodPathVertices)
-			{
-				if(v.isVisible)
-				{
-					flag = true;
-					v.deCollapse();
-				}
-			}
 		}
 	}
 	
 	public void setAllMethodHeight()
 	{
 		for(MethodVertex v : this.methodVertices)
-			v.setLoopHeight();
-		
-		for(MethodPathVertex v : this.methodPathVertices)
 			v.setLoopHeight();
 	}
 	
@@ -1126,19 +973,19 @@ public class Graph
 		while(it.hasNext())
 		{
 			Vertex v  = it.next();
-			if(v.vertexStatus == AbstractVertex.VertexStatus.UNVISITED){
-			if(!v.getMethodName().equals(root.getMethodName()))
+			if(v.vertexStatus == AbstractVertex.VertexStatus.UNVISITED)
 			{
-				if(hash.containsKey(v.getMethodName())){
-					System.out.println("A: " + hash.get(v.getMethodName()).getStrID());
-					System.out.println("B: " + v.getStrID());
-					dummies.add(new Edge(hash.get(v.getMethodName()), v, Edge.EDGE_TYPE.EDGE_DUMMY));
+				if(!v.getMethodName().equals(root.getMethodName()))
+				{
+					if(hash.containsKey(v.getMethodName()))
+					{
+						//System.out.println("A: " + hash.get(v.getMethodName()).getStrID());
+						//System.out.println("B: " + v.getStrID());
+						dummies.add(new Edge(hash.get(v.getMethodName()), v, Edge.EDGE_TYPE.EDGE_DUMMY));
+					}
 				}
-			}
 
-			hash.put(v.getMethodName(), v);
-//			if(v.vertexStatus == AbstractVertex.VertexStatus.UNVISITED)
-//			{
+				hash.put(v.getMethodName(), v);
 				visit(v,hash,dummies);
 			}
 		}

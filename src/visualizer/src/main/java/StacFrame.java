@@ -56,9 +56,8 @@ public class StacFrame extends JFrame
 	private ArrayList<JSplitPane> horizontalSplitPanes;
 	public VizPanel mainPanel, contextPanel;
 	private JPanel menuPanel, leftPanel, rightPanel, searchPanel;
-	public JCheckBox showContext, showEdge;
+	public JCheckBox showEdge;
     public SearchField searchF;
-	private boolean context = false, mouseDrag = false;
 	
 	public enum searchType
 	{
@@ -87,18 +86,6 @@ public class StacFrame extends JFrame
 		//File menu
 		menuFile = new JMenu("File");
 		menuBar.add(menuFile);
-		/*JMenuItem loadGraph = new JMenuItem("Load graph from JSON"); //Will be removed soon
-		menuFile.add(loadGraph);
-		loadGraph.addActionListener(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						loadGraph(false);
-					}
-				}
-		);*/
-
 		JMenuItem loadMessages = new JMenuItem("Load graph from message file");
 		menuFile.add(loadMessages);
 		loadMessages.addActionListener(
@@ -342,17 +329,16 @@ public class StacFrame extends JFrame
         menuNavigation.add(rearrange);
         rearrange.addActionListener
         (
-         new ActionListener()
-         {
-            public void actionPerformed(ActionEvent ev)
-            {
-                Main.graph.root.rearrangeByWidth();
-//                Main.graph.root.rearrangeByLoopHeight();
-                Main.graph.root.centerizeXCoordinate();
-                Parameters.repaintAll();
-            }
-        }
-         );
+				new ActionListener()
+				{
+					public void actionPerformed(ActionEvent ev)
+					{
+						Main.graph.root.rearrangeByWidth();
+						Main.graph.root.centerizeXCoordinate();
+						Parameters.repaintAll();
+					}
+				}
+		);
         rearrange.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, ActionEvent.CTRL_MASK));
 
         
@@ -418,8 +404,7 @@ public class StacFrame extends JFrame
 		);
 		previous.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, 0));
 		
-		
-//		JMenuItem next = new JMenuItem("Return to next view");
+
         JMenuItem next = new JMenuItem("Next view");
 		menuNavigation.add(next);
 		next.addActionListener
@@ -434,7 +419,8 @@ public class StacFrame extends JFrame
 				}
 		);
 		next.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, 0));
-		
+
+
 		JMenuItem panUp = new JMenuItem("Pan up");
 		menuNavigation.add(panUp);
 		panUp.addActionListener
@@ -449,7 +435,7 @@ public class StacFrame extends JFrame
 				}
 		);
 		panUp.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0));
-		
+
 		JMenuItem panDown = new JMenuItem("Pan down");
 		menuNavigation.add(panDown);
 		panDown.addActionListener
@@ -524,27 +510,27 @@ public class StacFrame extends JFrame
 		menuBar.add(menuHelp);
 		JMenuItem help = new JMenuItem("Shortcuts");
 		menuHelp.add(help);
-		help.addActionListener
-		(
+		help.addActionListener(
 				new ActionListener()
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						JOptionPane.showMessageDialog(getParent(), 
+						JOptionPane.showMessageDialog(getParent(),
 								"The following keyboard shortcuts are implemented.\n"
-								+ "R: Reset zoom level to show entire graph \n"
-								+ "C: Collapse all nodes by method \n"
-								+ "E: Expand all nodes \n"
-								+ "P: Return to previous view \n"
-								+ "N: Continue from previous to next view \n"
-								+ "F: Change font size \n"
-								+ "Arrows: Pan up, down, left or right \n"
-								+ "Left-Click: Uncollapse a node \n"
-								+ "Right-Click: Collapse all nodes of a single method \n"
-								+ "Shift-click: Select/de-select multiple vertices \n"
-								+ "CTRL + <Digit>: Hotkey view with all vertices currently on screen to <Digit> \n"
-								+ "<Digit>: Go to hotkeyed view \n"
-								+ "H: Open this list of shortcuts"
+										+ "(Outdated, needs to be fixed)"
+										+ "R: Reset zoom level to show entire graph \n"
+										+ "C: Collapse all nodes by method \n"
+										+ "E: Expand all nodes \n"
+										+ "P: Return to previous view \n"
+										+ "N: Continue from previous to next view \n"
+										+ "F: Change font size \n"
+										+ "Arrows: Pan up, down, left or right \n"
+										+ "Left-Click: Uncollapse a node \n"
+										+ "Right-Click: Collapse all nodes of a single method \n"
+										+ "Shift-click: Select/de-select multiple vertices \n"
+										+ "CTRL + <Digit>: Hotkey view with all vertices currently on screen to <Digit> \n"
+										+ "<Digit>: Go to hotkeyed view \n"
+										+ "H: Open this list of shortcuts"
 						);
 					}
 				}
@@ -568,7 +554,8 @@ public class StacFrame extends JFrame
 
 		// Connect columns with horizontal split panes
 		this.horizontalSplitPanes = new ArrayList<JSplitPane>();
-		for(int i = 0; i < layout.size() - 1; i++) {
+		for(int i = 0; i < layout.size() - 1; i++)
+		{
 			JSplitPane nextSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
 			nextSplit.setOneTouchExpandable(true);
 			if (i == 0)
@@ -595,16 +582,12 @@ public class StacFrame extends JFrame
 
 	public void makeLayout()
 	{
-
 		//centerPanel and mainPanel
 		this.setLayout(new BorderLayout());
 		setSplitScreen();
-		
-		//this.addMouseToViz();
+
 		this.addKeyboard(mainPanel);
-		//this.addMouseToContext();
 		this.addKeyboard(contextPanel);
-		
         
         JPanel topPanel = new JPanel();
         topPanel.setBorder(BorderFactory.createEtchedBorder());
@@ -840,344 +823,11 @@ public class StacFrame extends JFrame
 
 		Parameters.highlightOutgoing = search != searchType.OUT_OPEN;
 		Parameters.highlightIncoming = search != searchType.IN_OPEN;
-    
     }
 	
 	public boolean isGraphLoaded()
 	{
 		return (Main.graph != null);
-	}
-	
-	public void addMouseToViz()
-	{
-		mainPanel.addMouseListener
-		(
-			new MouseListener()
-			{
-				public void mouseClicked(MouseEvent m)
-				{
-                    mainPanel.requestFocusInWindow();
-					if(!isGraphLoaded())
-						return;
-					
-					context = false;
-					double x = mainPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(m))*Main.graph.getWidth();
-					double y = mainPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(m))*Main.graph.getHeight();
-					
-					if(System.currentTimeMillis() - Parameters.mouseLastTime > Parameters.mouseInterval)
-					{
-						Parameters.mouseLastTime = System.currentTimeMillis();
-						if(SwingUtilities.isLeftMouseButton(m) && Main.graph != null)
-						{	
-							if(m.isShiftDown())
-							{
-								AbstractVertex ver = Main.graph.getVertexNearestCoordinate(x, y);
-								if(ver != null)
-								{
-//									if(ver.isHighlighted())
-									if(ver.isSelected())
-									{
-//										ver.clearAllHighlights();
-										ver.clearAllSelect();
-										Main.graph.redoCycleHighlights();
-									}
-									else
-									{
-										ver.addHighlight(true, false, true, true);
-										if(ver.vertexType == AbstractVertex.VertexType.LINE)
-											((Vertex) ver).highlightCycles();
-                                        Parameters.ping();
-									}
-								}
-							}
-							else if(m.getClickCount() == 1)
-							{
-								AbstractVertex ver = Main.graph.getVertexNearestCoordinate(x, y);
-								Parameters.leftArea.clear();
-                                Main.graph.clearSelects();
-
-								if(ver != null)
-								{
-									Parameters.highlightIncoming = true;
-									Parameters.highlightOutgoing = true;
-									Parameters.vertexHighlight = true;
-									ver.addHighlight(true, false, true, true);
-									if(ver.vertexType == AbstractVertex.VertexType.LINE)
-										((Vertex) ver).highlightCycles();
-                                    Parameters.ping();
-                                    Parameters.fixCaretPositions();
-								}
-							}
-							
-							else if(m.getClickCount() == 2)
-							{
-								AbstractVertex ver = Main.graph.getVertexNearestCoordinate(x, y);
-								if(ver != null)
-								{
-									if(ver.getMergeChildren().size() > 0) //We have a merge vertex
-									{
-										ver.deCollapse();
-										Parameters.repaintAll();
-									}
-								}
-							}
-						}
-						
-						if(SwingUtilities.isRightMouseButton(m) && Main.graph != null)
-						{
-							//if(m.getClickCount() == 1)
-							{
-								AbstractVertex ver = Main.graph.getVertexNearestCoordinate(x, y);
-								if(ver != null)
-								{
-									if(ver.getMergeParent() != null)
-									{
-										ver.getMergeParent().collapse();
-									}
-								}
-							}
-						}
-						
-						Parameters.repaintAll();
-					}
-				}
-				
-				public void mouseEntered(MouseEvent arg0){}
-				
-				public void mouseExited(MouseEvent arg0){}
-
-				public void mousePressed(MouseEvent m)
-				{
-					if(!isGraphLoaded())
-						return;
-					context = false;
-					mainPanel.selectLeft = getRelativeXPixels(m);
-					mainPanel.selectTop = getRelativeYPixels(m);
-					mainPanel.showSelection = true;
-					
-					Parameters.startTime = System.currentTimeMillis();
-					Parameters.lastInterval = -1;
-				}
-
-				public void mouseReleased(MouseEvent ev)
-				{
-					if(!isGraphLoaded())
-						return;
-					mainPanel.requestFocus();
-					mainPanel.showSelection = false;
-					context = false;
-					
-					if(mouseDrag)
-					{
-						mouseDrag = false;
-						if(Main.graph != null)
-						{
-							double x1 = mainPanel.getIndexFromCurrentPixelX(mainPanel.selectLeft);
-							double x2 = mainPanel.getIndexFromCurrentPixelX(mainPanel.selectRight);
-							double y1 = mainPanel.getIndexFromCurrentPixelY(mainPanel.selectTop);
-							double y2 = mainPanel.getIndexFromCurrentPixelY(mainPanel.selectBottom);
-
-							Main.graph.selectVertices(x1, x2, y1, y2);
-						}
-						Parameters.repaintAll();
-					}
-				}
-			}
-		);
-		
-		mainPanel.addMouseMotionListener
-		(
-			new MouseMotionListener()
-			{
-				public void mouseMoved(MouseEvent m){}				
-
-				public void mouseDragged(MouseEvent m)
-				{
-					if(!isGraphLoaded())
-						return;
-					context = false;
-					mouseDrag = true;
-					mainPanel.selectRight = getRelativeXPixels(m);
-					mainPanel.selectBottom = getRelativeYPixels(m);
-
-					if((System.currentTimeMillis()-Parameters.startTime)/Parameters.refreshInterval > Parameters.lastInterval)
-					{
-						StacFrame.this.repaint();
-						Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.refreshInterval;
-					}
-				}
-			}
-		);
-
-		mainPanel.addMouseWheelListener
-		(
-			new MouseWheelListener()
-			{
-				public void mouseWheelMoved(MouseWheelEvent e)
-				{
-					if(!isGraphLoaded())
-						return;
-
-					int notches = e.getWheelRotation();
-					
-					//Zoom in or box++ for mouse wheel up, zoom out or box-- for mouse wheel down
-					if(notches > 0)
-					{
-						if(e.isShiftDown())
-						{
-							mainPanel.boxSize /= Parameters.boxFactor;
-						}
-						else
-						{
-							double x = mainPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(e));
-							double y = mainPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(e));
-							Main.graph.increaseZoom(Parameters.zoomFactor, x, y);
-						}
-					}
-					else
-					{
-						if(e.isShiftDown())
-						{
-							mainPanel.boxSize *= Parameters.boxFactor;
-						}
-						else
-						{
-							double x = mainPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(e));
-							double y = mainPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(e));
-							Main.graph.increaseZoom(1/Parameters.zoomFactor, x, y);
-						}
-					}
-					
-					Parameters.repaintAll();
-				}
-			}
-		);
-		
-	}
-	
-	public void addMouseToContext()
-	{
-		contextPanel.addMouseListener
-		(
-			new MouseListener()
-			{
-				public void mouseClicked(MouseEvent m)
-				{
-					if(!isGraphLoaded())
-						return;
-					contextPanel.requestFocusInWindow();
-					context = true;
-					
-					double x = contextPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(m));
-					double y = contextPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(m));
-
-					Main.graph.zoomNPan(x, y, 1.0);
-					Parameters.repaintAll();
-
-					if(System.currentTimeMillis() - Parameters.mouseLastTime > Parameters.mouseInterval)
-					{
-						Parameters.mouseLastTime = System.currentTimeMillis();						
-					}
-				}
-				
-				public void mouseEntered(MouseEvent arg0)
-				{
-				}
-				
-				public void mouseExited(MouseEvent arg0)
-				{
-				}
-
-				public void mousePressed(MouseEvent m)
-				{
-					if(!isGraphLoaded())
-						return;
-					context = true;
-					contextPanel.selectLeft = getRelativeXPixels(m);
-					contextPanel.selectTop = getRelativeYPixels(m);
-					contextPanel.showSelection = true;
-					
-					Parameters.startTime = System.currentTimeMillis();
-					Parameters.lastInterval = -1;
-				}
-
-				public void mouseReleased(MouseEvent ev)
-				{
-					if(!isGraphLoaded())
-						return;
-					context = true;
-//					mainPanel.requestFocus();
-					contextPanel.showSelection = false;
-					
-					if(mouseDrag)
-					{
-						mouseDrag = false;
-						if(Main.graph != null)
-						{
-							double x1 = contextPanel.getRelativeFracFromAbsolutePixelX(contextPanel.selectLeft);
-							double x2 = contextPanel.getRelativeFracFromAbsolutePixelX(contextPanel.selectRight);
-							double y1 = contextPanel.getRelativeFracFromAbsolutePixelY(contextPanel.selectTop);
-							double y2 = contextPanel.getRelativeFracFromAbsolutePixelY(contextPanel.selectBottom);
-							Main.graph.zoomNPan(x1, x2, y1, y2);
-						}
-						Parameters.repaintAll();
-					}
-				}
-
-			}
-
-		);
-		
-		contextPanel.addMouseMotionListener
-		(
-			new MouseMotionListener()
-			{
-				public void mouseMoved(MouseEvent m){}
-				
-
-				public void mouseDragged(MouseEvent m)
-				{
-					if(!isGraphLoaded())
-						return;
-					context = true;
-					mouseDrag = true;
-					contextPanel.selectRight = getRelativeXPixels(m);
-					contextPanel.selectBottom = getRelativeYPixels(m);
-
-					if((System.currentTimeMillis()-Parameters.startTime)/Parameters.refreshInterval > Parameters.lastInterval)
-					{
-						StacFrame.this.repaint();
-						Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.refreshInterval;
-					}
-				}
-			}
-		);
-
-		
-		contextPanel.addMouseWheelListener
-		(
-			new MouseWheelListener()
-			{
-				public void mouseWheelMoved(MouseWheelEvent e)
-				{
-					if(!isGraphLoaded())
-						return;
-					int notches = e.getWheelRotation();
-					
-					//box++ for mouse wheel up, box-- for mouse wheel down
-					if(notches > 0)
-					{
-						contextPanel.boxSize /= Parameters.boxFactor;
-					}
-					else
-					{
-						contextPanel.boxSize *= Parameters.boxFactor;
-					}
-					Parameters.repaintAll();
-				}
-			}
-		);
-
 	}
 	
 	//Gets the x location of a mouse event in pixels.
@@ -1190,7 +840,7 @@ public class StacFrame extends JFrame
 	//Gets the y location of a mouse event in pixels, shifted so that the top of the current panel is 0.
 	public double getRelativeYPixels(MouseEvent m)
 	{
-		//TODO: Why is this not different for the context menu?
+		//TODO: Why is this not different for the context panel?
 		//Subtract the top bar, the menu panel height, and the start height of the current panel
 		return m.getY() - (this.getHeight() - this.getContentPane().getSize().height) - mainPanel.getY() - this.menuPanel.getHeight();
 	}
@@ -1198,47 +848,43 @@ public class StacFrame extends JFrame
 	public void addKeyboard(JFXPanel viz)
 	{
 		viz.addKeyListener(new KeyListener()
+		{
+			public void keyTyped(KeyEvent ev){}
+
+			public void keyPressed(KeyEvent ev)
 			{
-				public void keyTyped(KeyEvent ev){}
-				
-				public void keyPressed(KeyEvent ev)
+				if(SearchField.focused)
+					return;
+
+				int code = ev.getKeyCode();
+				if(code == 'L')
 				{
-                    if(SearchField.focused)
-                        return;
-					int code = ev.getKeyCode();
-//					System.out.println("Key pressed: " + code);
-					
-					if(code == 'L')
+					String lim = JOptionPane.showInputDialog(null, "Set Limit on the number of vertices:");
+					Parameters.limitV = Long.parseLong(lim);
+					Parameters.repaintAll();
+				}
+
+				if(Character.isDigit(code))
+				{
+					int digit = code - '0';
+					if(ev.isControlDown())
 					{
-						String lim = JOptionPane.showInputDialog(null, "Set Limit on the number of vertices:");
-						Parameters.limitV = Long.parseLong(lim);
+						//Assign hotkey to view
+						System.out.println("Assigning hotkey to " + digit);
+						Main.graph.addHotkeyedView(digit);
+					}
+					else
+					{
+						//Go to hotkeyed view
+						System.out.println("Loading hotkeyed view: " + digit);
+						Main.graph.loadHotkeyedView(digit);
 						Parameters.repaintAll();
 					}
+				}
+			}
 
-					if(Character.isDigit(code))
-					{
-						int digit = code - '0';
-						if(ev.isControlDown())
-						{
-							//Assign hotkey to view
-							System.out.println("Assigning hotkey to " + digit);
-							Main.graph.addHotkeyedView(digit);
-						}
-						else
-						{
-							//Go to hotkeyed view
-							System.out.println("Loading hotkeyed view: " + digit);
-							Main.graph.loadHotkeyedView(digit);
-							Parameters.repaintAll();
-						}
-					}
-				}
-					
-				public void keyReleased(KeyEvent ev)
-				{
-//					System.out.println("key released: "+ev.getKeyCode());
-				}
-			});
+			public void keyReleased(KeyEvent ev) {}
+		});
 		
 		viz.setFocusable(true);
 		viz.requestFocusInWindow();
