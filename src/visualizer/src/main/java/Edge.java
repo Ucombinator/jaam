@@ -175,6 +175,7 @@ public class Edge implements Comparable<Edge>
 
 		this.graphics.getChildren().add(line);
 		this.graphics.getChildren().add(arrowhead);
+		node.getChildren().add(this.graphics);
 	}
 
 	public Line getLine()

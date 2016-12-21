@@ -961,26 +961,26 @@ public class Graph
 		{
 			it.next().vertexStatus = AbstractVertex.VertexStatus.UNVISITED;
 		}
-		
-		visit((Vertex)(root.children.get(0).mergeRoot.mergeRoot),hash, dummies);
+
+		// Visit first vertex of root method
+		visit((Vertex)(root.children.get(0).mergeRoot), hash, dummies);
 		return dummies;
 	}
 	
-	private void visit(Vertex root, HashMap<String, Vertex> hash,ArrayList<Edge> dummies)
+	private void visit(Vertex root, HashMap<String, Vertex> hash, ArrayList<Edge> dummies)
 	{
+		System.out.println("Root: " + root);
 		Iterator<Vertex> it = root.neighbors.iterator();
 		root.vertexStatus = AbstractVertex.VertexStatus.VISITED;
+		System.out.println("Vertex: " + root.getStrID() + " has been visited!");
+		
 		while(it.hasNext())
 		{
 			Vertex v  = it.next();
-			if(v.vertexStatus == AbstractVertex.VertexStatus.UNVISITED)
-			{
+			if(v.vertexStatus == AbstractVertex.VertexStatus.UNVISITED){
 				if(!v.getMethodName().equals(root.getMethodName()))
 				{
-					if(hash.containsKey(v.getMethodName()))
-					{
-						//System.out.println("A: " + hash.get(v.getMethodName()).getStrID());
-						//System.out.println("B: " + v.getStrID());
+					if(hash.containsKey(v.getMethodName())){
 						dummies.add(new Edge(hash.get(v.getMethodName()), v, Edge.EDGE_TYPE.EDGE_DUMMY));
 					}
 				}

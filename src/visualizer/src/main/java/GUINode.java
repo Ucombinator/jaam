@@ -16,8 +16,10 @@ public class GUINode extends Pane
     protected Rectangle back_rect,rect;
     protected Text rectLabel;
     boolean isDragging;
-    private AbstractVertex vertex;
-	GUINode parent;
+    private AbstractVertex vertex;    
+    boolean labels_enabled = false;
+
+	private GUINode parent;
 
     // A node in the main visualization will keep track of its mirror in the context view, and vice versa.
     // This allows us to update the location of both when either one of them is dragged.
@@ -32,7 +34,14 @@ public class GUINode extends Pane
         this.back_rect = new Rectangle();
         this.rect = new Rectangle();
         this.rectLabel = new Text();
-        this.getChildren().addAll(this.back_rect, this.rect, this.rectLabel);
+        if(labels_enabled)
+        {
+        	this.getChildren().addAll(this.back_rect, this.rect, this.rectLabel);
+        }
+        else
+        {
+        	this.getChildren().addAll(this.back_rect, this.rect);
+        }
 
         this.rect.setOpacity(0.2);
         this.makeDraggable();

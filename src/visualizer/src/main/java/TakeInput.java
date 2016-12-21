@@ -32,8 +32,8 @@ public class TakeInput extends Thread
 			@Override
 			public void run()
 			{
-				Parameters.stFrame.mainPanel.initFX();
-				Parameters.stFrame.contextPanel.initFX();
+				Parameters.stFrame.mainPanel.initFX(null);
+				Parameters.stFrame.contextPanel.initFX(Parameters.stFrame.mainPanel.getRoot());
 			}
 		});
 
