@@ -18,7 +18,6 @@ import java.util.ArrayList;
 abstract class AbstractVertex implements Comparable<AbstractVertex>
 {
 	public static final double DEFAULT_WIDTH = 1.0;
-
 	public static final double DEFAULT_HEIGHT = 1.0;
 
 	public int compareTo(AbstractVertex o)
@@ -36,7 +35,6 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	}
 	
 	static int id_counter = 0;
-	
 	private int minInstructionLine = -1; //start with a negative value to be properly initialized later
 	
 	public int getMinInstructionLine() {
@@ -53,7 +51,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 
 	protected GUINode graphics = null;
 	
-	public GUINode getGraphics() {
+	public GUINode getGraphics()
+	{
 		return graphics;
 	}
 	public void setGraphics(GUINode graphics) {
@@ -81,7 +80,6 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	// A location stores coordinates for a subtree.
 	protected Location location;
 	boolean updateLocation;
-	protected GUINode mainNode, contextNode;
 
 	//children stores all of the vertices to which we have edges from this vertex
 	//in the current display
@@ -142,7 +140,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		UNVISITED
 	}
 	protected VertexStatus vertexStatus = VertexStatus.WHITE;
-	protected double[] subtreeBBOX = {width,height};
+	protected double[] subtreeBoundBox = {width,height};
 	
 	//Subclasses must override these so that we have descriptions for each of them,
 	//and so that our generic collapsing can work for all of them
@@ -269,30 +267,6 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		if(this.parent != null)
 			this.parent.calculateHeight();
 	}
-
-	/*public PathTransition constructPathTransition(boolean context)
-	{
-		System.out.println("Path transition for vertex: " + this.getName());
-		System.out.println("x pixels: " + Parameters.minBoxWidth*this.location.x);
-		System.out.println("y pixels: " + Parameters.minBoxHeight*this.location.y);
-		Path path = new Path();
-		path.getElements().add(new MoveTo(0, 0));
-		path.getElements().add(new LineTo(Parameters.minBoxWidth*this.location.x, Parameters.minBoxHeight*this.location.y));
-
-		PathTransition pathTrans = new PathTransition();
-		pathTrans.setDuration(Duration.millis(Parameters.transitionTime));
-		pathTrans.setPath(path);
-		pathTrans.setInterpolator(Interpolator.LINEAR);
-		pathTrans.setAutoReverse(false);
-		pathTrans.setCycleCount(1);
-
-		if(context)
-			pathTrans.setNode(this.contextNode);
-		else
-			pathTrans.setNode(this.mainNode);
-
-		return pathTrans;
-	}*/
 
 	//Collapse a merge parent's vertices.
 	public void collapse()
@@ -643,9 +617,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
         
         for(int i=0; i< num; i++)
             this.children.get(i).rearrangeByWidth();
-        
     }
-    
     
 	public void increaseWidth(AbstractVertex child, double inc)
 	{
