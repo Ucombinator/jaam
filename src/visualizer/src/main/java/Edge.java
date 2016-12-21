@@ -66,9 +66,17 @@ public class Edge implements Comparable<Edge>
 	{
 		if (this.source == this.dest)
 		{
-			System.out.println("NOOOOOOOOOOOOOOOO!!!!");
+			System.out.println("Error in Edge.draw(): The source and destination vertices are the same.");
 			System.out.println(this.source +"---"+ this.dest);
 			System.out.println(this.sourceVertex.getLabel() +"---"+ this.destVertex.getLabel());
+			System.out.println(this.getType());
+			return;
+		}
+		else if (sourceVertex.getX() == destVertex.getX() && sourceVertex.getY() == destVertex.getY())
+		{
+			System.out.println("Error in Edge.draw(): The two vertices are at the same location.");
+			System.out.println(this.source + " --- " + this.dest);
+			System.out.println(this.sourceVertex.getLabel() + " --- " + this.destVertex.getLabel());
 			System.out.println(this.getType());
 			return;
 		}
@@ -78,7 +86,6 @@ public class Edge implements Comparable<Edge>
 		double centerStartY = sourceVertex.getY() + sourceVertex.getHeight() / 2.0;
 		double centerDestX = destVertex.getX() + destVertex.getWidth() / 2.0;
 		double centerDestY = destVertex.getY() + destVertex.getHeight() / 2.0;
-
 
 		// To find which side a line exits from, we compute both diagonals of the rectangle and determine whether
 		// the other end lies above or below each diagonal. The positive diagonal uses the positive slope, and the
@@ -92,24 +99,28 @@ public class Edge implements Comparable<Edge>
 
 		if (aboveStartPosDiag && aboveStartNegDiag)
 		{
+			// Top
 			double invSlope = (centerDestX - centerStartX) / (centerDestY - centerStartY);
 			exitStartY = sourceVertex.getY();
 			exitStartX = centerStartX + invSlope * (exitStartY - centerStartY);
 		}
 		else if (!aboveStartPosDiag && aboveStartNegDiag)
 		{
+			// Left
 			double slope = (centerDestY - centerStartY) / (centerDestX - centerStartX);
 			exitStartX = sourceVertex.getX();
 			exitStartY = centerStartY + slope * (exitStartX - centerStartX);
 		}
 		else if (aboveStartPosDiag && !aboveStartNegDiag)
 		{
+			// Right
 			double slope = (centerDestY - centerStartY) / (centerDestX - centerStartX);
 			exitStartX = sourceVertex.getX() + sourceVertex.getWidth();
 			exitStartY = centerStartY + slope * (exitStartX - centerStartX);
 		}
 		else
 		{
+			// Bottom
 			double invSlope = (centerDestX - centerStartX) / (centerDestY - centerStartY);
 			exitStartY = sourceVertex.getY() + sourceVertex.getHeight();
 			exitStartX = centerStartX + invSlope * (exitStartY - centerStartY);
@@ -123,24 +134,28 @@ public class Edge implements Comparable<Edge>
 
 		if (aboveDestPosDiag && aboveDestNegDiag)
 		{
+			// Top
 			double invSlope = (centerStartX - centerDestX) / (centerStartY - centerDestY);
 			enterDestY = destVertex.getY();
 			enterDestX = centerDestX + invSlope * (enterDestY - centerDestY);
 		}
 		else if(!aboveDestPosDiag && aboveDestNegDiag)
 		{
+			// Left
 			double slope = (centerStartY - centerDestY) / (centerStartX - centerDestX);
 			enterDestX = destVertex.getX();
 			enterDestY = centerDestY + slope * (enterDestX - centerDestX);
 		}
 		else if (aboveDestPosDiag && !aboveDestNegDiag)
 		{
+			// Right
 			double slope = (centerStartY - centerDestY) / (centerStartX - centerDestX);
 			enterDestX = destVertex.getX() + destVertex.getWidth();
 			enterDestY = centerDestY + slope * (enterDestX - centerDestX);
 		}
 		else
 		{
+			// Bottom
 			double invSlope = (centerStartX - centerDestX) / (centerStartY - centerDestY);
 			enterDestY = destVertex.getY() + destVertex.getHeight();
 			enterDestX = centerDestX + invSlope * (enterDestY - centerDestY);
@@ -175,7 +190,7 @@ public class Edge implements Comparable<Edge>
 
 		this.graphics.getChildren().add(line);
 		this.graphics.getChildren().add(arrowhead);
-		node.getChildren().add(this.graphics);
+		node.getChildren().add(graphics);
 	}
 
 	public Line getLine()

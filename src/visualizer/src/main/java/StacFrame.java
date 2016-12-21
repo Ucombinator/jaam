@@ -14,11 +14,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseWheelListener;
-import java.awt.event.MouseWheelEvent;
 import java.awt.Font;
 
 import javax.swing.JCheckBox;
@@ -33,14 +28,12 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.BorderFactory;
 import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
 
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.JLabel;
 import javax.swing.JButton;
 import javax.swing.text.DefaultCaret;
-
 
 /**
  * JFrame showing a map
@@ -70,8 +63,7 @@ public class StacFrame extends JFrame
 		width = Parameters.width;
 		height = Parameters.height;
 		this.setLocation(0, 0);
-		
-		setSize(this.width,this.height);
+		setSize(this.width, this.height);
 
 		makeMenuBar();
 		makeLayout();
@@ -173,7 +165,6 @@ public class StacFrame extends JFrame
         );
         searchTags.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK));
         
-        
 		JMenuItem searchLeaves = new JMenuItem("All leaves");
 		menuSearch.add(searchLeaves);
 		searchLeaves.addActionListener
@@ -187,7 +178,6 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-
 		
 		JMenuItem searchSources = new JMenuItem("All sources");
 		menuSearch.add(searchSources);
@@ -202,7 +192,6 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-
 		
 		JMenuItem searchOutgoing = new JMenuItem("Outgoing neighborhood (open)");
 		menuSearch.add(searchOutgoing);
@@ -218,10 +207,9 @@ public class StacFrame extends JFrame
 				}
 		);
 
-		
-		JMenuItem searchOutgoingclosed = new JMenuItem("Outgoing neighborhood (closed)");
-		menuSearch.add(searchOutgoingclosed);
-		searchOutgoingclosed.addActionListener
+		JMenuItem searchOutgoingClosed = new JMenuItem("Outgoing neighborhood (closed)");
+		menuSearch.add(searchOutgoingClosed);
+		searchOutgoingClosed.addActionListener
 		(
 				new ActionListener()
 				{
@@ -233,7 +221,6 @@ public class StacFrame extends JFrame
 				}
 		);
 
-		
 		JMenuItem searchIncoming = new JMenuItem("Incoming neighborhood (open)");
 		menuSearch.add(searchIncoming);
 		searchIncoming.addActionListener
@@ -248,10 +235,9 @@ public class StacFrame extends JFrame
 				}
 		);
 
-		
-		JMenuItem searchIncomingclosed = new JMenuItem("Incoming neighborhood (closed)");
-		menuSearch.add(searchIncomingclosed);
-		searchIncomingclosed.addActionListener
+		JMenuItem searchIncomingClosed = new JMenuItem("Incoming neighborhood (closed)");
+		menuSearch.add(searchIncomingClosed);
+		searchIncomingClosed.addActionListener
 		(
 				new ActionListener()
 				{
@@ -276,7 +262,6 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-
 		
 		JMenuItem clearAll = new JMenuItem("Clear All");
 		menuSearch.add(clearAll);
@@ -292,7 +277,6 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-		
 
 		//Navigation menu
 		menuNavigation = new JMenu("Navigation");
@@ -305,7 +289,8 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						Main.graph.increaseZoom(Parameters.zoomFactor, -1, -1);
+						// TODO: Fill in correct function here
+						//Main.graph.increaseZoom(Parameters.zoomFactor, -1, -1);
 						Parameters.repaintAll();
 					}
 				}
@@ -319,7 +304,8 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						Main.graph.increaseZoom(1/Parameters.zoomFactor, -1, -1);
+						// TODO: Fill in correct function here
+						//Main.graph.increaseZoom(1/Parameters.zoomFactor, -1, -1);
 						Parameters.repaintAll();
 					}
 				}
@@ -350,7 +336,8 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						Main.graph.resetZoom();
+						// TODO: Write reset function
+						//Main.graph.resetZoom();
 						Parameters.repaintAll();
 					}
 				}
@@ -389,99 +376,6 @@ public class StacFrame extends JFrame
 		);
 		expand.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, 0));
 		
-		JMenuItem previous = new JMenuItem("Previous view");
-		menuNavigation.add(previous);
-		previous.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						Main.graph.loadPreviousView();
-						Parameters.repaintAll();
-					}
-				}
-		);
-		previous.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, 0));
-		
-
-        JMenuItem next = new JMenuItem("Next view");
-		menuNavigation.add(next);
-		next.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						Main.graph.restoreNewView();
-						Parameters.repaintAll();
-					}
-				}
-		);
-		next.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, 0));
-
-
-		JMenuItem panUp = new JMenuItem("Pan up");
-		menuNavigation.add(panUp);
-		panUp.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						Main.graph.shiftView(0, -1);
-						Parameters.repaintAll();
-					}
-				}
-		);
-		panUp.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0));
-
-		JMenuItem panDown = new JMenuItem("Pan down");
-		menuNavigation.add(panDown);
-		panDown.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						Main.graph.shiftView(0, 1);
-						Parameters.repaintAll();
-					}
-				}
-		);
-		panDown.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0));
-		
-		JMenuItem panLeft = new JMenuItem("Pan left");
-		menuNavigation.add(panLeft);
-		panLeft.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						Main.graph.shiftView(-1, 0);
-						Parameters.repaintAll();
-					}
-				}
-		);
-		panLeft.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0));
-		
-		JMenuItem panRight = new JMenuItem("Pan right");
-		menuNavigation.add(panRight);
-		panRight.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						Main.graph.shiftView(1, 0);
-						Parameters.repaintAll();
-					}
-				}
-		);
-		panRight.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0));
-		
-		
 		//Customize display
 		menuCustomize = new JMenu("Customize");
 		menuBar.add(menuCustomize);
@@ -505,32 +399,25 @@ public class StacFrame extends JFrame
 		);
 		changeFont.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, ActionEvent.CTRL_MASK));
 		
-		//Help menu
+		// Help menu
 		menuHelp = new JMenu("Help");
 		menuBar.add(menuHelp);
 		JMenuItem help = new JMenuItem("Shortcuts");
 		menuHelp.add(help);
-		help.addActionListener(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						JOptionPane.showMessageDialog(getParent(),
-								"The following keyboard shortcuts are implemented.\n"
-										+ "(Outdated, needs to be fixed)"
-										+ "R: Reset zoom level to show entire graph \n"
-										+ "C: Collapse all nodes by method \n"
-										+ "E: Expand all nodes \n"
-										+ "P: Return to previous view \n"
-										+ "N: Continue from previous to next view \n"
-										+ "F: Change font size \n"
-										+ "Arrows: Pan up, down, left or right \n"
-										+ "Left-Click: Uncollapse a node \n"
-										+ "Right-Click: Collapse all nodes of a single method \n"
-										+ "Shift-click: Select/de-select multiple vertices \n"
-										+ "CTRL + <Digit>: Hotkey view with all vertices currently on screen to <Digit> \n"
-										+ "<Digit>: Go to hotkeyed view \n"
-										+ "H: Open this list of shortcuts"
+		help.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent ev)
+			{
+				JOptionPane.showMessageDialog(getParent(),
+						"The following keyboard shortcuts are implemented.\n"
+								+ "(Outdated, needs to be fixed)"
+								+ "R: Reset zoom level to show entire graph \n"
+								+ "C: Collapse all nodes by method \n"
+								+ "E: Expand all nodes \n"
+								+ "F: Change font size \n"
+								+ "Left click: Select a vertex \n"
+								+ "Left double click: Collapse/Uncollapse a node \n"
+								+ "Shift-click: Select/de-select multiple vertices \n"
+								+ "H: Open this list of shortcuts"
 						);
 					}
 				}
@@ -592,25 +479,20 @@ public class StacFrame extends JFrame
         JPanel topPanel = new JPanel();
         topPanel.setBorder(BorderFactory.createEtchedBorder());
         topPanel.setLayout(new BorderLayout());
-//        topPanel.setLayout(new GridLayout(2,1));
         this.getContentPane().add(topPanel, BorderLayout.NORTH);
-
-
 
 		//menuPanel
 		this.menuPanel = new JPanel();
 		this.menuPanel.setBorder(BorderFactory.createEtchedBorder());
 		this.menuPanel.setLayout(new FlowLayout());
-//		this.getContentPane().add(this.menuPanel, BorderLayout.NORTH);
         topPanel.add(this.menuPanel, BorderLayout.CENTER);
-        
+
+		JPanel controlPanel = new JPanel();
+		controlPanel.setBorder(BorderFactory.createEtchedBorder());
+		controlPanel.setLayout(new GridLayout(1,1));
+		this.menuPanel.add(controlPanel);
 		
-		JPanel contextPanel = new JPanel();
-		contextPanel.setBorder(BorderFactory.createEtchedBorder());
-		contextPanel.setLayout(new GridLayout(1,1));
-		this.menuPanel.add(contextPanel);
-		
-		showEdge = new JCheckBox("Show Edge");
+		showEdge = new JCheckBox("Show edges");
 		showEdge.setEnabled(true);
 		showEdge.setSelected(true);
 		showEdge.addItemListener
@@ -619,12 +501,13 @@ public class StacFrame extends JFrame
 			{
 				public void itemStateChanged(ItemEvent e)
 				{
+					// TODO: Edges won't be added/removed by calling repaint. Do it yourself.
 					mainPanel.showEdge = showEdge.isSelected();
 					StacFrame.this.repaint();
 				}
 			}
 		);
-		contextPanel.add(showEdge);
+		controlPanel.add(showEdge);
 		
 		JPanel sizePanel = new JPanel();
 		sizePanel.setBorder(BorderFactory.createEtchedBorder());
@@ -639,14 +522,15 @@ public class StacFrame extends JFrame
 			{
 				public void actionPerformed(ActionEvent e)
 				{
-					mainPanel.boxSize *= Parameters.boxFactor;
+					// TODO: Use correct function here
+					//mainPanel.boxSize *= Parameters.boxFactor;
 					Parameters.repaintAll();
 				}
 			}
 		);
 		sizePanel.add(sizeMinus);
 		
-		JLabel sizeL = new JLabel("box size");
+		JLabel sizeL = new JLabel("Box size");
 		sizeL.setHorizontalAlignment(SwingConstants.CENTER);
 		sizePanel.add(sizeL);
 		
@@ -658,7 +542,8 @@ public class StacFrame extends JFrame
 			{
 				public void actionPerformed(ActionEvent e)
 				{
-					mainPanel.boxSize /= Parameters.boxFactor;
+					// TODO: Use correct function here
+					//mainPanel.boxSize /= Parameters.boxFactor;
 					Parameters.repaintAll();
 				}
 			}
@@ -666,32 +551,9 @@ public class StacFrame extends JFrame
 		sizePanel.add(sizePlus);
         
         
-        /// bottom panel
-        
+        // Search bar
         this.searchF = new SearchField();
         this.getContentPane().add(searchF, BorderLayout.SOUTH);
-//        topPanel.add(searchF, BorderLayout.SOUTH);
-        
-        
-        //////********************** tag Panel ******************//////
-        
-/*
-        JPanel tagPanel = new JPanel();
-        tagPanel.setBorder(BorderFactory.createEtchedBorder());
-        tagPanel.setLayout(new FlowLayout());
-        topPanel.add(tagPanel, BorderLayout.SOUTH);
-        
-        JLabel tLab = new JLabel("Search for Tags: ");
-        tagPanel.add(tLab);
-        
-        JComboBox combo = new JComboBox(new Object[]{"Ester", "Jordi", "Jordina", "Jorge", "Sergi"});
-        combo.setEditable(true);
-        tagPanel.add(combo);
- */
-        
-        //////******************** tag Panel end ****************//////
-        
-		
 		
 		this.setJMenuBar(menuBar);
 		this.setVisible(true);
@@ -827,26 +689,6 @@ public class StacFrame extends JFrame
 		Parameters.highlightOutgoing = search != searchType.OUT_OPEN;
 		Parameters.highlightIncoming = search != searchType.IN_OPEN;
     }
-	
-	public boolean isGraphLoaded()
-	{
-		return (Main.graph != null);
-	}
-	
-	//Gets the x location of a mouse event in pixels.
-	public double getRelativeXPixels(MouseEvent m)
-	{
-		// TODO: Why does this not need to be shifted?
-		return m.getX();
-	}
-
-	//Gets the y location of a mouse event in pixels, shifted so that the top of the current panel is 0.
-	public double getRelativeYPixels(MouseEvent m)
-	{
-		//TODO: Why is this not different for the context panel?
-		//Subtract the top bar, the menu panel height, and the start height of the current panel
-		return m.getY() - (this.getHeight() - this.getContentPane().getSize().height) - mainPanel.getY() - this.menuPanel.getHeight();
-	}
 
 	public void addKeyboard(JFXPanel viz)
 	{
@@ -862,27 +704,9 @@ public class StacFrame extends JFrame
 				int code = ev.getKeyCode();
 				if(code == 'L')
 				{
-					String lim = JOptionPane.showInputDialog(null, "Set Limit on the number of vertices:");
+					String lim = JOptionPane.showInputDialog(null, "Set limit on the number of vertices:");
 					Parameters.limitV = Long.parseLong(lim);
 					Parameters.repaintAll();
-				}
-
-				if(Character.isDigit(code))
-				{
-					int digit = code - '0';
-					if(ev.isControlDown())
-					{
-						//Assign hotkey to view
-						System.out.println("Assigning hotkey to " + digit);
-						Main.graph.addHotkeyedView(digit);
-					}
-					else
-					{
-						//Go to hotkeyed view
-						System.out.println("Loading hotkeyed view: " + digit);
-						Main.graph.loadHotkeyedView(digit);
-						Parameters.repaintAll();
-					}
 				}
 			}
 

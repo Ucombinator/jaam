@@ -1,10 +1,7 @@
-/**
- * Created by timothyjohnson on 10/5/16.
- */
+
 // A column in our GUI is constructed from an array of panels
 // We automatically add expandable split panes between each adjacent pair of panels
 import java.util.ArrayList;
-import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JComponent;
 

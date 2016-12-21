@@ -9,7 +9,7 @@ import javafx.event.EventHandler;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 
-// TODO: Stack vertex labels on top of vertices.
+// TODO: Place vertex labels on top of vertices.
 public class GUINode extends Pane
 {
     double dragX, dragY;

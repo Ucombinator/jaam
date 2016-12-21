@@ -13,7 +13,6 @@ import javafx.scene.Scene;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Group;
 
@@ -25,25 +24,19 @@ public class VizPanel extends JFXPanel
 	private boolean context;
 	private Group contentGroup;
 	private ScrollPane scrollPane;
-	double boxWidth, boxHeight; // Are these initialized?
 
-	public boolean showSelection = false;
-	public double selectLeft, selectRight, selectTop, selectBottom;
-	public double boxSize = 1.0;
 	public static float hues[]; //Used for shading nodes from green to red
 	public boolean showEdge = true;
-	private Rectangle currentView; // The current view is highlighted in the context window
-	private Rectangle selection; // While dragging, show the current selection in the main window.
 
-	private AbstractVertex main;
+	private AbstractVertex panelRoot;
 	private javafx.scene.paint.Color[] colors = {javafx.scene.paint.Color.AQUAMARINE,
 			javafx.scene.paint.Color.GREEN, javafx.scene.paint.Color.AZURE,
 			javafx.scene.paint.Color.BLUEVIOLET, javafx.scene.paint.Color.DARKTURQUOISE};
 	private int index = 0;
 
-	public AbstractVertex getRoot()
+	public AbstractVertex getPanelRoot()
 	{
-		return this.main;
+		return this.panelRoot;
 	}
 
 	public VizPanel(boolean isContextPanel)
@@ -65,24 +58,24 @@ public class VizPanel extends JFXPanel
 		if(root == null)
 		{
 			Graph g = Main.graph;			
-			this.main = LayerFactory.get2layer(g);
-			LayoutAlgorithm.layout(this.main);
+			this.panelRoot = LayerFactory.get2layer(g);
+			LayoutAlgorithm.layout(this.panelRoot);
 		}
 		else
 		{
-			this.main = root;
+			this.panelRoot = root;
 		}
-		draw(null, this.main);
+		draw(null, this.panelRoot);
 	}
 
 	public double scaleX(double coordinate)
 	{
-		return (coordinate * 500.0 / this.main.getWidth());
+		return (coordinate * 500.0 / this.panelRoot.getWidth());
 	}
 
 	public double scaleY(double coordinate)
 	{
-		return (coordinate * 500.0 / this.main.getHeight());
+		return (coordinate * 500.0 / this.panelRoot.getHeight());
 	}
 
 	public void draw(GUINode parent, AbstractVertex v)
@@ -109,16 +102,17 @@ public class VizPanel extends JFXPanel
 		node.setStroke(javafx.scene.paint.Color.BLACK);
 		node.setStrokeWidth(0);
 		node.setOpacity(1);
-		
 
 		if (v.getInnerGraph().getVertices().size() == 0)
 			return;
 
-		Iterator<Edge> itEdge = v.getInnerGraph().getEdges().values().iterator();
-		while (itEdge.hasNext())
+		if(this.showEdge)
 		{
-			Edge e = itEdge.next();
-			e.draw(this, node);
+			Iterator<Edge> itEdge = v.getInnerGraph().getEdges().values().iterator();
+			while (itEdge.hasNext()) {
+				Edge e = itEdge.next();
+				e.draw(this, node);
+			}
 		}
 
 		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
@@ -150,7 +144,7 @@ public class VizPanel extends JFXPanel
 		}
 	}
 
-	// Currently unused.
+	// Currently unused: Do we need it?
 	// Checks if an edge between two different vertices should be highlighted
 	// We highlight it only if the vertices on both ends want it to be highlighted
 	public boolean isHighlightedEdge(AbstractVertex v, AbstractVertex nbr)
@@ -160,82 +154,6 @@ public class VizPanel extends JFXPanel
 		else if(Parameters.highlightOutgoing && !Parameters.highlightIncoming && v.isOutgoingHighlighted)
 			return false;
 		else return !(Parameters.highlightIncoming && !Parameters.highlightOutgoing && nbr.isIncomingHighlighted);
-	}
-
-	// Convert a current pixel location to a horizontal value between 0 and 1
-	public double getRelativeFracFromAbsolutePixelX(double x)
-	{
-		Graph graph = Main.graph;
-		if(this.context)
-		{
-			double xFrac = x / (this.boxWidth * graph.getWidth());
-			if(xFrac < 0)
-				return 0;
-			else if(xFrac > 1)
-				return 1;
-			else
-				return xFrac;
-		}
-		else
-		{
-			double xFrac = x / (this.boxWidth * graph.getWidth()) + graph.currWindow.left;
-			if(xFrac < 0)
-				return 0;
-			else if(xFrac > 1)
-				return 1;
-			else
-				return xFrac;
-		}
-	}
-
-	//Convert an absolute pixel location to a vertical value between 0 and 1
-	public double getRelativeFracFromAbsolutePixelY(double y)
-	{
-		Graph graph = Main.graph;
-		if(this.context)
-		{
-			double yFrac = y / (this.boxHeight * graph.getHeight());
-			if(yFrac < 0)
-				return 0;
-			else if(yFrac > 1)
-				return 1;
-			else
-				return yFrac;
-		}
-		else
-		{
-			double yFrac = y / (this.boxHeight * graph.getHeight()) + graph.currWindow.top;
-			if(yFrac < 0)
-				return 0;
-			else if(yFrac > 1)
-				return 1;
-			else
-				return yFrac;
-		}
-	}
-
-	//Convert a horizontal box index to a current x pixel location
-	public double getPixelXFromIndex(double x)
-	{
-		return this.boxWidth * x;
-	}
-
-	//Convert a vertical box index to a current y pixel location
-	public double getPixelYFromIndex(double y)
-	{
-		return this.boxHeight * y;
-	}
-
-	public double getIndexFromCurrentPixelX(double currXPixel)
-	{
-		double xFrac = getRelativeFracFromAbsolutePixelX(currXPixel);
-		return xFrac * Main.graph.getWidth();
-	}
-
-	public double getIndexFromCurrentPixelY(double currYPixel)
-	{
-		double yFrac = getRelativeFracFromAbsolutePixelY(currYPixel);
-		return yFrac * Main.graph.getHeight();
 	}
 
 	// Next three methods copied from solution here: https://community.oracle.com/thread/2541811

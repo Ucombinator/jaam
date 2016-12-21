@@ -720,7 +720,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	
 	public void setLoopHeight()
 	{
-		if(this.mergeRoot ==null)
+		if(this.mergeRoot == null)
 			return;
 		
 		this.loopHeight = 0;
@@ -909,11 +909,10 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	public boolean isExpanded() {
 		return expanded;
 	}
+
 	public void setExpanded(boolean expanded) {
 		this.expanded = expanded;
 	}
-
-	
 	
 	public void printCoordinates()
 

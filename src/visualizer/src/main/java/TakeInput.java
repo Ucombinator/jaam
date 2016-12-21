@@ -1,7 +1,5 @@
 
 import java.io.*;
-import java.util.regex.*;
-import java.util.StringTokenizer;
 import java.util.ArrayList;
 import java.util.Stack;
 import org.ucombinator.jaam.serializer.*;
@@ -19,13 +17,9 @@ public class TakeInput extends Thread
 		this.parsePackets(file);
 
 		Main.graph.finalizeParentsForRootChildren();
-		Main.graph.identifyLoops();
-		Main.graph.calcLoopHeights();
 		Main.graph.mergeAllByMethod();
 		Main.graph.computeInstLists();
-		Main.graph.setAllMethodHeight();
-        Main.graph.collectAllTags();
-		Main.graph.collapseAll();
+		Main.graph.collectAllTags();
 
 		// Run these panels on JavaFX thread instead of Swing thread
 		Platform.runLater(new Runnable() {
@@ -33,7 +27,7 @@ public class TakeInput extends Thread
 			public void run()
 			{
 				Parameters.stFrame.mainPanel.initFX(null);
-				Parameters.stFrame.contextPanel.initFX(Parameters.stFrame.mainPanel.getRoot());
+				Parameters.stFrame.contextPanel.initFX(Parameters.stFrame.mainPanel.getPanelRoot());
 			}
 		});
 

@@ -20,9 +20,7 @@ public class Graph
 	public HashMap<String, Method> methods;
 	public HashMap<String, Class> classes;
 	protected AbstractVertex root;
-	public View currWindow;
-	static int numHotkeys = 10;
-	public View[] hotkeyedViews;
+
 	private double maxHeight; // required for collapse method
 	public int maxIndex;
 
@@ -41,13 +39,6 @@ public class Graph
 
         this.tagsList = new ArrayList<String>();
         this.highlightedTags = new ArrayList<Boolean>();
-        
-		currWindow = new View(true);
-		hotkeyedViews = new View[numHotkeys];
-		for(int i = 0; i < numHotkeys; i++)
-			hotkeyedViews[i] = new View(false);
-
-		this.resetZoom();
 	}
 	
 	public void setMaxHeight(double height)
@@ -58,104 +49,6 @@ public class Graph
 	public double getMaxHeight()
 	{
 		return maxHeight;
-	}
-	
-	public void increaseZoom(double factor, double mouseX, double mouseY)
-	{
-		//Don't allow zooming closer than this level
-		double currSize = this.currWindow.getFracArea();
-		if(factor > 1 || currSize > 1.0/Main.graph.vertices.size())
-		{
-			//Error values mean we don't have a valid mouse location, so we zoom to the center.
-			//This will most likely occur when someone decides to use the menu items.
-			if(mouseX < 0 || mouseX > 1 || mouseY < 0 || mouseY > 1)
-			{
-				System.out.println("Zooming in...");
-				double centerX = (this.currWindow.left + this.currWindow.right)/2;
-				double centerY = (this.currWindow.top + this.currWindow.bottom)/2;
-				this.zoomNPan(centerX, centerY, factor);
-			}
-			else
-			{
-				//Keep the current mouse location at the same relative position.
-				double width = this.currWindow.right - this.currWindow.left;
-				double height = this.currWindow.bottom - this.currWindow.top;
-				double mouseXFrac = (mouseX - this.currWindow.left)/width;
-				double mouseYFrac = (mouseY - this.currWindow.top)/height;
-
-				double newLeft = mouseX - mouseXFrac*factor*width;
-				double newRight = mouseX + (1 - mouseXFrac)*factor*width;
-				double newCenterX = (newLeft + newRight)/2;
-
-				double newTop = mouseY - mouseYFrac*factor*height;
-				double newBottom = mouseY + (1 - mouseYFrac)*factor*height;
-				double newCenterY = (newTop + newBottom)/2;
-				this.zoomNPan(newCenterX, newCenterY, factor);
-			}
-		}
-	}
-	
-	public void resetZoom()
-	{
-		View newWindow = new View(true);
-		currWindow.setNext(newWindow);
-		newWindow.setPrev(currWindow);
-		currWindow = newWindow;	
-	}
-	
-	public void loadPreviousView()
-	{
-		currWindow = currWindow.getPrev();
-	}	
-	
-	public void restoreNewView()
-	{
-		currWindow = currWindow.getNext();
-	}	
-	
-	public void shiftView(int hor, int ver)
-	{
-		View newWindow = new View(currWindow);
-		newWindow.shiftView(hor, ver);
-		newWindow.setPrev(currWindow);
-		currWindow.setNext(newWindow);
-		currWindow = newWindow;
-	}
-	
-	public void addHotkeyedView(int digit)
-	{
-		hotkeyedViews[digit] = new View(currWindow);
-	}
-
-	public void loadHotkeyedView(int digit)
-	{
-		if(hotkeyedViews[digit].initialized)
-			zoomNPan(hotkeyedViews[digit]);
-	}
-	
-	public void zoomNPan(double centerX, double centerY, double factor)
-	{
-		View newWindow = new View(currWindow);
-		newWindow.setPrev(currWindow);
-		currWindow.setNext(newWindow);
-		newWindow.zoomNPan(centerX, centerY, factor);
-		currWindow = newWindow;
-	}
-	
-	public void zoomNPan(double left, double right, double top, double bottom)
-	{
-		View newWindow = new View(left, right, top, bottom);
-		newWindow.setPrev(currWindow);
-		currWindow.setNext(newWindow);
-		currWindow = newWindow;
-	}
-	
-	public void zoomNPan(View v)
-	{
-		View newWindow = new View(v);
-		newWindow.setPrev(currWindow);
-		currWindow.setNext(newWindow);
-		currWindow = newWindow;
 	}
 
 	public void addErrorState(int id)
@@ -592,11 +485,12 @@ public class Graph
 	
 	public Vertex containsVertex(int id)
 	{
-		for(int i=0; i<this.vertices.size(); i++)
+		for(Vertex v : this.vertices)
 		{
-			if(this.vertices.get(i).id==id)
-				return this.vertices.get(i);
+			if(v.id == id)
+				return v;
 		}
+
 		return null;
 	}	
 	
@@ -651,7 +545,7 @@ public class Graph
 					ver = ver.parent;
 				}
 				
-				if(!flag) // if there is loop then, try to find potential point to break the loop 
+				if(!flag) // if there is a loop, then try to find potential point to break the loop
 				{
 					dest.changeParent(src);
 					i--;
@@ -661,9 +555,7 @@ public class Graph
 		}
 	}
 
-	//Collapse all visible vertices once.
-	//We check method path vertices and then method vertices,
-	//so that we don't check the same vertex twice
+	// Collapse all visible method vertices once.
 	public void collapseOnce()
 	{
 		for(MethodVertex v : this.methodVertices)
@@ -673,9 +565,7 @@ public class Graph
 		}
 	}
 
-	//Expand all visible vertices once.
-	//We must check method vertices and then method path vertices,
-	//so that no vertex is expanded twice.
+	//Expand all visible method vertices once.
 	public void deCollapseOnce()
 	{
 		for(MethodVertex v : this.methodVertices)
@@ -685,59 +575,15 @@ public class Graph
 		}
 	}
 	
-	public void collapseAll()
-	{
-		boolean flag = true;
-		while(flag)
-		{
-			flag = false;
-			for (MethodVertex v : this.methodVertices)
-			{
-				if (v.mergeRoot.isVisible)
-				{
-					flag = true;
-					v.collapse();
-				}
-			}
-		}
-	}
-	
-	public void deCollapseAll()
-	{
-		boolean flag = true;
-		while(flag)
-		{
-			flag = false;
-			for(MethodVertex v : this.methodVertices)
-			{
-				if(v.isVisible)
-				{
-					flag = true;
-					v.deCollapse();
-				}
-			}
-		}
-	}
-	
-	public void setAllMethodHeight()
-	{
-		for(MethodVertex v : this.methodVertices)
-			v.setLoopHeight();
-	}
-	
 	public void printAdjacencyList()
 	{
 		for(int i = 0; i < this.vertices.size(); i++)
 		{
 			Vertex v = this.vertices.get(i);
-			
 			System.out.print(v.id + ": ");
-			int deg = v.getOutDegree();
-			
-			for(int j = 0; j < deg; j++)
-			{
-				System.out.print(v.neighbors.get(j).id + " ");
-			}
+
+			for(AbstractVertex w : v.neighbors)
+				System.out.print(w.id + " ");
 			System.out.println("");
 		}
 	}
@@ -747,26 +593,12 @@ public class Graph
 		for(int i = 0; i < this.vertices.size(); i++)
 		{
 			Vertex v = this.vertices.get(i);
+			System.out.print(v.getName() + ": ");
 			
-			System.out.print(v.getName()+": ");
-			
-			for(int j = 0; j < v.children.size(); j++)
-			{
-				System.out.print(v.children.get(j).getName()+" ");
-			}
+			for(AbstractVertex w : v.children)
+				System.out.print(w.getName() + " ");
 			System.out.println("");
 		}
-	}
-	
-	public void printChildren(AbstractVertex v)
-	{
-		System.out.print(v.getName() + ": ");
-		
-		for(int j = 0; j < v.children.size(); j++)
-		{
-			System.out.print(v.children.get(j).getName() + " ");
-		}
-		System.out.println("");
 	}
 	
 	public void printAllParents()
@@ -782,14 +614,8 @@ public class Graph
 	
 	public void printCoordinates()
 	{
-		AbstractVertex v = this.root;
-		System.out.println(v.getName() + ": " + v.location);
-		for(int i = 0; i < this.vertices.size(); i++)
-		{
-			v = this.vertices.get(i);
-			
-			System.out.println(v.getName() + ": " + v.location);
-		}
+		for(AbstractVertex w : this.vertices)
+			System.out.println(w.getName() + ": " + w.location);
 	}
 
 	//Return the width of our graph in box units
@@ -802,154 +628,6 @@ public class Graph
 	public double getHeight()
 	{
 		return root.location.height - 1;
-	}
-	
-	//Next three methods modified from "A New Algorithm for Identifying Loops in Decompilation"
-	public void identifyLoops()
-	{
-		//Each vertex is already initialized
-		for(Vertex v : vertices)
-		{
-			if(!v.traversed)
-				travLoopsDFS(v, 1);
-		}
-		
-		/*for(Vertex v : vertices)
-		{
-			Vertex header = v.getLoopHeader();
-			if(header != null)
-				System.out.println(v.id + " --> " + v.getLoopHeader().id);
-		}*/
-	}
-	
-	public Vertex travLoopsDFS(Vertex v0, int dfsPathPos)
-	{
-		//System.out.println("Expanding vertex: " + Integer.toString(v0.id));
-		v0.traversed = true;
-		v0.dfsPathPos = dfsPathPos;
-		for(Vertex ver : v0.neighbors)
-		{
-			Vertex v = ver;
-			//System.out.println("New child: " + Integer.toString(v.id));
-			if(!v.traversed)
-			{
-				//Case A: v is not yet traversed
-				Vertex header = travLoopsDFS(v, dfsPathPos + 1);
-				tagLoopHeader(v0, header);
-			}
-			else
-			{
-				if(v.dfsPathPos > 0)
-				{
-					//Case B: Mark b as a loop header
-					tagLoopHeader(v0, v);
-				}
-				else if(v.getLoopHeader() == null)
-				{
-					//Case C: Do nothing
-				}
-				else
-				{
-					Vertex header = v.getLoopHeader();
-					if(header.dfsPathPos > 0)
-					{
-						//Case D
-						tagLoopHeader(v0, header);
-					}
-					else
-					{
-						//Case E: Re-entry
-						while(header.getLoopHeader() != null)
-						{
-							header = header.getLoopHeader();
-							if(header.dfsPathPos > 0)
-							{
-								tagLoopHeader(v0, header);
-								break;
-							}
-						}
-					}
-				}
-			}
-		}
-		
-		v0.dfsPathPos = 0;
-		return v0.getLoopHeader();
-	}
-	
-	public void tagLoopHeader(Vertex v, Vertex header)
-	{
-		if(v == header || header == null)
-			return;
-		
-		Vertex cur1 = v;
-		Vertex cur2 = header;
-		while(cur1.getLoopHeader() != null)
-		{
-			Vertex newHeader = cur1.getLoopHeader();
-			if(newHeader == cur2)
-				return;
-			
-			if(newHeader.dfsPathPos < cur2.dfsPathPos)
-			{
-				cur1.setLoopHeader(cur2);
-				cur1 = cur2;
-				cur2 = newHeader;
-			}
-			else
-				cur1 = newHeader;
-		}
-		cur1.setLoopHeader(cur2);
-	}
-	
-	public void calcLoopHeights()
-	{
-		//The loop height is -1 if it has not yet been calculated.
-		//We do a breadth-first search of the graph, since the vertices might not be in order in our list.
-
-		//We begin our search from the vertices that do not have a loop header.
-		ArrayList<Vertex> toSearch = new ArrayList<Vertex>();
-		ArrayList<Vertex> newSearch = new ArrayList<Vertex>();
-		for(Vertex v: vertices)
-		{
-			Vertex header = v.getLoopHeader();
-			if(header == null)
-			{
-				v.loopHeight = 0;
-				toSearch.add(v);
-			}
-			else
-			{
-				header.addLoopChild(v);
-			}
-		}
-		
-		//This loop should terminate because every vertex has exactly one loop header, and there should not
-		//be a loop in following header pointers. Each pass sets the height for the vertices at the next
-		//level.
-		int currLoopHeight = 1;
-		while(toSearch.size() > 0)
-		{
-			for(Vertex v : toSearch)
-			{
-				ArrayList<Vertex> loopChildren = v.getLoopChildren();
-				if(loopChildren.size() > 0)
-				{
-					v.loopHeight = currLoopHeight;
-					for(Vertex w : loopChildren)
-						newSearch.add(w);
-				}
-				else
-					v.loopHeight = currLoopHeight - 1;
-			}
-			
-			toSearch = newSearch;
-			newSearch = new ArrayList<Vertex>();
-			currLoopHeight++;
-		}
-		
-		System.out.println("Loop heights found!");
-		VizPanel.computeHues();
 	}
 	
 	public ArrayList<Edge> computeDummyEdges()
@@ -970,7 +648,7 @@ public class Graph
 	
 	private void visit(Vertex root, HashMap<String, Vertex> hash, ArrayList<Edge> dummies)
 	{
-		System.out.println("Root: " + root);
+		//System.out.println("Root: " + root);
 		Iterator<Vertex> it = root.neighbors.iterator();
 		root.vertexStatus = AbstractVertex.VertexStatus.VISITED;
 		//System.out.println("Vertex: " + root.getStrID() + " has been visited!");

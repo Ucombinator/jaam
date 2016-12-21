@@ -7,7 +7,6 @@ import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.BorderLayout;
 
-
 import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
@@ -15,12 +14,11 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.Component;
 
-
 public class SearchArea extends JPanel
 {
     public JTree searchTree;
     private DefaultMutableTreeNode root;
-    public static int Node_Height = 40;
+    public static int nodeHeight = 40;
     
 	public SearchArea()
 	{
@@ -28,14 +26,12 @@ public class SearchArea extends JPanel
         
         this.root = new DefaultMutableTreeNode("Search Results");
         this.searchTree = new JTree(root);
-
         this.searchTree.setShowsRootHandles(true);
         this.searchTree.setRootVisible(false);
-        this.searchTree.setRowHeight(SearchArea.Node_Height);
+        this.searchTree.setRowHeight(SearchArea.nodeHeight);
         this.searchTree.setCellRenderer(new SearchRenderer());
-        
-        this.add(this.searchTree, BorderLayout.CENTER);
 
+        this.add(this.searchTree, BorderLayout.CENTER);
         this.searchTree.addMouseListener
 		(
 			new MouseListener()
@@ -59,7 +55,6 @@ public class SearchArea extends JPanel
                         {
                             Parameters.vertexHighlight = true;
                             ver.addHighlight(true, false, true, true);
-                            Parameters.ping();
                         }
 					}
 					else
@@ -67,7 +62,6 @@ public class SearchArea extends JPanel
                         Main.graph.clearSelects();
                         Parameters.vertexHighlight = true;
                         ver.addHighlight(true, false, true, true);
-                        Parameters.ping();
 					}
 					
 					Main.graph.redoCycleHighlights();
@@ -84,9 +78,6 @@ public class SearchArea extends JPanel
 			}
 		);
  	}
-	
-    
-    
     
     private void expandAllNodes(JTree tree)
     {
@@ -95,8 +86,6 @@ public class SearchArea extends JPanel
             tree.expandRow(i);
         }
     }
-
-    
     
 	//Set the text for the area
 	public void writeText()
@@ -134,8 +123,8 @@ public class SearchArea extends JPanel
     public void fixCaretPosition()
     {
         Rectangle window = this.searchTree.getVisibleRect();
-        int first = this.searchTree.getClosestRowForLocation(window.x, window.y + SearchArea.Node_Height);
-        int last  = this.searchTree.getClosestRowForLocation(window.x, window.y + window.height - SearchArea.Node_Height);
+        int first = this.searchTree.getClosestRowForLocation(window.x, window.y + SearchArea.nodeHeight);
+        int last  = this.searchTree.getClosestRowForLocation(window.x, window.y + window.height - SearchArea.nodeHeight);
         
         if(first < 0)
             return;

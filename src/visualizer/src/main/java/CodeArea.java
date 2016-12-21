@@ -23,11 +23,9 @@ public class CodeArea extends JTextArea
 	public CodeArea()
 	{
 		this.setFont(Parameters.font);
-//		System.out.println("Initializing empty code area");
 		this.setEditable(false);
 		description = new ArrayList<Instruction>();
 		rowToIndex = new ArrayList<Integer>();
-        
         
         ((DefaultCaret)this.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
         
@@ -47,12 +45,11 @@ public class CodeArea extends JTextArea
 						if(row >= 0 && row < rowToIndex.size())
 						{
 							Instruction line = description.get(rowToIndex.get(row));
-							//System.out.println("Instruction selected on row " + row + ", " + line.str);
 							if(line.isInstr)
 							{
 								if(line.isSelected)
 								{
-									CodeArea.this.searchByJimpleIndex(line.methodName, line.jimpleIndex, false);
+									CodeArea.this.searchByJimpleIndex(line.methodName, line.jimpleIndex,false);
 								}
 								else
 								{
@@ -109,11 +106,8 @@ public class CodeArea extends JTextArea
                 }
 				else
 					v.clearAllSelect();
-//					v.clearAllHighlights();
 			}
 		}
-        if(addHighlight)
-            Parameters.ping();
 	}
 
 	public void clear()
@@ -156,9 +150,6 @@ public class CodeArea extends JTextArea
 		this.computeDescriptionIndex();
 		this.writeText();
 		this.drawHighlights(Parameters.colorSelection, Parameters.colorFocus, Parameters.colorHighlight);
-
-//		this.setCaretPosition(0);
-//        this.fixCaretPosition();
 	}
 	
 	private void computeDescriptionIndex()
@@ -185,13 +176,11 @@ public class CodeArea extends JTextArea
 		this.setText(fullText.toString());
 	}
     
-    
     public void fixCaretPosition()
     {
         try
         {
             int line = this.getLineOfOffset(this.getCaretPosition());
-//            int line = this.getLineOfOffset(this.currentCaret);
             int close = -1;
             int dist1, dist2;
             
@@ -203,7 +192,7 @@ public class CodeArea extends JTextArea
                 dist1 = line - close;
                 dist2 = line - i;
                 
-                if(dist2*dist2 < dist1*dist1 || !this.description.get(line).isSelected)
+                if((dist2 * dist2 < dist1 * dist1) || !this.description.get(line).isSelected)
                     close = i;
             }
             
@@ -219,7 +208,6 @@ public class CodeArea extends JTextArea
         }
 
     }
-    
 	
 	private void drawHighlights(Color c1, Color c2, Color c3)
 	{

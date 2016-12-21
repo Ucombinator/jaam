@@ -8,9 +8,6 @@ public class Vertex extends AbstractVertex
 	public MethodVertex mergeParent;
 	public Method method;
 
-	//neighbors stores the edges of the vertices in our base graph, before collapsing occurs
-	
-
 	//Used for shading vertices based on the number of nested loops they contain
 	//loopHeight is stored for all vertices
 	private Vertex loopHeader;
@@ -77,13 +74,13 @@ public class Vertex extends AbstractVertex
 				+ "visibility = " + this.isVisible + "\n";
 		return str;
 	}
-	
+
+	// TODO: Restore function getHTMLVerbatim
     public String getShortDescription()
     {
-//        String str = this.id+": Regular Vertex\n        statement: " + this.getInstruction() + "\n";
-        String str = "<html>" + this.id + ": Regular Vertex<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
-                    + "statement: " + Parameters.getHTMLVerbatim(this.getInstruction()) + "</html>";
-        return ""+str;
+        String str = "<html>" + this.id + ": Regular Vertex<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+                    //+ "statement: " + Parameters.getHTMLVerbatim(this.getInstruction()) + "</html>";
+        return str;
     }
     
 	public MethodVertex getMergeParent()
@@ -105,8 +102,7 @@ public class Vertex extends AbstractVertex
 	{
 		return new ArrayList<AbstractVertex>();
 	}
-	
-    
+
 	public void addNeighbor(Vertex dest)
 	{
 		if(Parameters.debug)
