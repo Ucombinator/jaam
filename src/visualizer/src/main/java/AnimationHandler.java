@@ -1,12 +1,18 @@
+import java.awt.Point;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Observable;
 
+
+
 import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
+import javafx.animation.TranslateTransition;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.event.EventType;
+import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.input.MouseButton;
@@ -47,6 +53,9 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	private void handlePrimaryDoubleClick(MouseEvent event)
 	{
 		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
+		if(false){
+		
+		//animate(Parameters.stFrame.mainPanel.getRoot());
 		Iterator<Node> it = v.getGraphics().getChildren().iterator();
 		while(it.hasNext())
 		{
@@ -73,6 +82,58 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		st.setFromY(1.0);
 		st.setToY(AbstractVertex.DEFAULT_HEIGHT/v.getHeight());
 		st.play();
+
+		
+		HashMap<String, Point2D> oldPositions = new HashMap<>();
+		savePositions(Parameters.stFrame.mainPanel.getRoot(),oldPositions);
+		
+		st.setOnFinished(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				v.setExpanded(false);
+				LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getRoot());
+				animate(Parameters.stFrame.mainPanel.getRoot(), oldPositions);
+			}
+		});
+		}else{
+			HashMap<String, Point2D> oldPositions = new HashMap<>();
+			savePositions(Parameters.stFrame.mainPanel.getRoot(),oldPositions);
+//					v.setExpanded(false);
+					LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getRoot());
+					animate(Parameters.stFrame.mainPanel.getRoot(), oldPositions);
+			
+		}	
+	}
+	
+	
+	private void savePositions(AbstractVertex v, HashMap<String, Point2D> oldPositions){
+		Point2D p = new Point2D(v.getX(), v.getY());
+		oldPositions.put(v.getStrID(), p);
+		
+		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
+		while (it.hasNext())
+		{
+			savePositions(it.next(),oldPositions);
+		}
+	}
+
+	
+
+	public void animate(AbstractVertex v, HashMap<String, Point2D> oldPositions)
+	{
+		
+		TranslateTransition tt = new TranslateTransition(Duration.millis(300), v.getGraphics());
+		Point2D p =  oldPositions.get(v.getStrID());
+		
+		tt.setByX(Parameters.stFrame.mainPanel.scaleX(1));
+		tt.setByY(Parameters.stFrame.mainPanel.scaleY(1));
+		tt.play();
+		
+		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
+		while (it.hasNext())
+		{
+			animate(it.next(),oldPositions);
+		}
 	}
 
 	private void handlePrimarySingleClick(MouseEvent event)
