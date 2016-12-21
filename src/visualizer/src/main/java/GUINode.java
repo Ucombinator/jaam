@@ -72,7 +72,7 @@ public class GUINode extends Pane
 
     public void setLabel(String text)
     {
-        //this.rectLabel.setText(text);
+        this.rectLabel.setText(text);
     }
 
     // Next several methods: Pass on calls to underlying rectangle
@@ -131,10 +131,10 @@ public class GUINode extends Pane
         @Override
         public void handle(MouseEvent event)
         {
-            System.out.println("GUI node pressed");
             event.consume();
-
             GUINode node = (GUINode) event.getSource();
+            System.out.println("GUI node pressed: " + node.vertex.id);
+
             dragX = node.getBoundsInParent().getMinX() - event.getScreenX();
             dragY = node.getBoundsInParent().getMinY() - event.getScreenY();
         }
@@ -145,10 +145,10 @@ public class GUINode extends Pane
         @Override
         public void handle(MouseEvent event)
         {
-            System.out.println("GUI node dragged");
             event.consume();
-
             GUINode node = (GUINode) event.getSource();
+            System.out.println("GUI node dragged: " + node.vertex.id);
+
             node.isDragging = true;
             double offsetX = event.getScreenX() + dragX;
             double offsetY = event.getScreenY() + dragY;
@@ -162,10 +162,10 @@ public class GUINode extends Pane
         @Override
         public void handle(MouseEvent event)
         {
-            System.out.println("GUI node released");
             event.consume();
-
             GUINode node = (GUINode) event.getSource();
+            System.out.println("GUI node released: " + node.vertex.id);
+
             if(node.isDragging)
             {
                 node.isDragging = false;
