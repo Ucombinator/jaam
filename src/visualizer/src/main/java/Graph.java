@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.HashMap;
 import java.util.StringTokenizer;
+import java.util.Collections;
 
 public class Graph
 {
@@ -18,7 +19,7 @@ public class Graph
     public ArrayList<Boolean> highlightedTags;
 	public HashMap<String, Method> methods;
 	public HashMap<String, Class> classes;
-	public AbstractVertex root;
+	protected AbstractVertex root;
 	public View currWindow;
 	static int numHotkeys = 10;
 	public View[] hotkeyedViews;
@@ -951,7 +952,6 @@ public class Graph
 		VizPanel.computeHues();
 	}
 	
-	
 	public ArrayList<Edge> computeDummyEdges()
 	{
 		ArrayList<Edge> dummies = new ArrayList<Edge>();
@@ -963,7 +963,8 @@ public class Graph
 		}
 
 		// Visit first vertex of root method
-		visit((Vertex)(root.children.get(0).mergeRoot), hash, dummies);
+		Collections.sort(Main.graph.vertices);
+		visit(Main.graph.vertices.get(0), hash, dummies);
 		return dummies;
 	}
 	
@@ -972,7 +973,7 @@ public class Graph
 		System.out.println("Root: " + root);
 		Iterator<Vertex> it = root.neighbors.iterator();
 		root.vertexStatus = AbstractVertex.VertexStatus.VISITED;
-		System.out.println("Vertex: " + root.getStrID() + " has been visited!");
+		//System.out.println("Vertex: " + root.getStrID() + " has been visited!");
 		
 		while(it.hasNext())
 		{
