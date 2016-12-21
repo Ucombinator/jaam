@@ -108,15 +108,21 @@ public class GraphExplorer extends JFXPanel {
         this.main = LayerFactory.get2layer(g);
         LayoutAlgorithm.layout(main);
                 
-        draw(main,root);
+        draw(main,null);
 
         System.out.println("Done!");
     }
     
-    public void draw(AbstractVertex v, Group parentGroup){
-    	Group gr = new Group();
+    public void draw(AbstractVertex v, GUINode parentGroup){
+
+    	GUINode gr = new GUINode(parentGroup,v);
     	v.setGraphics(gr);
-    	parentGroup.getChildren().add(gr);
+    	if(parentGroup !=null){
+    		parentGroup.getChildren().add(gr);
+    	}else{
+    		root.getChildren().add(gr);
+    	}
+    	
     	
     	gr.setLayoutX(scaleX(v.getX()));
     	gr.setLayoutY(scaleY(v.getY()));
@@ -165,7 +171,7 @@ public class GraphExplorer extends JFXPanel {
 //		});
     	
     	
-    	gr.setOnMouseClicked(new AnimationHandler(v));
+    	gr.setOnMouseClicked(new AnimationHandler());
     	
     	gr.getChildren().add(r_back);
     	gr.getChildren().add(r);

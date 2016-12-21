@@ -2,20 +2,23 @@
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
+import javafx.scene.Group;
 
 public class Edge implements Comparable<Edge>
 {
-	public enum EDGE_TYPE {EDGE_REGULAR, EDGE_DUMMY}
-	public enum INTERSECT_TYPE {LEFT, RIGHT, TOP, BOTTOM}
+	Group graphics;
+	Line line;
+	Polygon arrowhead;
+
+	public enum EDGE_TYPE {EDGE_REGULAR, EDGE_DUMMY};
+	private EDGE_TYPE type;
 
 	int source, dest;
 	private AbstractVertex sourceVertex, destVertex;
-	private EDGE_TYPE type;
-	private INTERSECT_TYPE exitStart;
-	private INTERSECT_TYPE enterDest;
 	protected String str_id;
 
-	public Edge(int source, int dest) {
+	public Edge(int source, int dest)
+	{
 		this.str_id = this.createID(source, dest);
 		this.source = source;
 		this.dest = dest;
@@ -28,6 +31,10 @@ public class Edge implements Comparable<Edge>
 		this.sourceVertex = sourceVertex;
 		this.destVertex = destVertex;
 		this.sourceVertex.addAbstractNeighbor(this.destVertex);
+
+		graphics = new Group();
+		line = new Line();
+		arrowhead = new Polygon();
 	}
 
 	public EDGE_TYPE getType() {
@@ -61,10 +68,11 @@ public class Edge implements Comparable<Edge>
 			return;
 
 		double exitStartX, exitStartY, enterDestX, enterDestY;
-		double centerStartX = sourceVertex.getX() + sourceVertex.getWidth() / 2;
-		double centerStartY = sourceVertex.getY() + sourceVertex.getHeight() / 2;
-		double centerDestX = destVertex.getX() + destVertex.getWidth() / 2;
-		double centerDestY = destVertex.getY() + destVertex.getHeight() / 2;
+		double centerStartX = sourceVertex.getX() + sourceVertex.getWidth() / 2.0;
+		double centerStartY = sourceVertex.getY() + sourceVertex.getHeight() / 2.0;
+		double centerDestX = destVertex.getX() + destVertex.getWidth() / 2.0;
+		double centerDestY = destVertex.getY() + destVertex.getHeight() / 2.0;
+
 
 		// To find which side a line exits from, we compute both diagonals of the rectangle and determine whether
 		// the other end lies above or below each diagonal. The positive diagonal uses the positive slope, and the
@@ -79,7 +87,7 @@ public class Edge implements Comparable<Edge>
 
 		if (aboveStartPosDiag && aboveStartNegDiag)
 		{
-			exitStart = INTERSECT_TYPE.TOP;
+			//exitStart = INTERSECT_TYPE.TOP;
 			exitStartY = sourceVertex.getY();
 
 			if (centerDestY == centerStartY)
@@ -94,7 +102,7 @@ public class Edge implements Comparable<Edge>
 		}
 		else if (!aboveStartPosDiag && aboveStartNegDiag)
 		{
-			exitStart = INTERSECT_TYPE.LEFT;
+			//exitStart = INTERSECT_TYPE.LEFT;
 			exitStartX = sourceVertex.getX();
 
 			if (centerDestX == centerStartX)
@@ -109,7 +117,7 @@ public class Edge implements Comparable<Edge>
 		}
 		else if (aboveStartPosDiag && !aboveStartNegDiag)
 		{
-			exitStart = INTERSECT_TYPE.RIGHT;
+			//exitStart = INTERSECT_TYPE.RIGHT;
 			exitStartX = sourceVertex.getX() + sourceVertex.getWidth();
 
 			if (centerDestX == centerStartX)
@@ -124,7 +132,7 @@ public class Edge implements Comparable<Edge>
 		}
 		else
 		{
-			exitStart = INTERSECT_TYPE.BOTTOM;
+			//exitStart = INTERSECT_TYPE.BOTTOM;
 			exitStartY = sourceVertex.getY() + sourceVertex.getHeight();
 
 			if (centerDestY == centerStartY)
@@ -147,7 +155,7 @@ public class Edge implements Comparable<Edge>
 
 		if (aboveDestPosDiag && aboveDestNegDiag)
 		{
-			enterDest = INTERSECT_TYPE.TOP;
+			//enterDest = INTERSECT_TYPE.TOP;
 			enterDestY = destVertex.getY();
 
 			if (centerDestY == centerStartY)
@@ -162,7 +170,7 @@ public class Edge implements Comparable<Edge>
 		}
 		else if(!aboveDestPosDiag && aboveDestNegDiag)
 		{
-			enterDest = INTERSECT_TYPE.LEFT;
+			//enterDest = INTERSECT_TYPE.LEFT;
 			enterDestX = destVertex.getX();
 
 			if (centerDestX == centerStartX)
@@ -177,7 +185,7 @@ public class Edge implements Comparable<Edge>
 		}
 		else if (aboveDestPosDiag && !aboveDestNegDiag)
 		{
-			enterDest = INTERSECT_TYPE.RIGHT;
+			//enterDest = INTERSECT_TYPE.RIGHT;
 			enterDestX = destVertex.getX() + destVertex.getWidth();
 
 			if (centerDestX == centerStartX)
@@ -192,7 +200,7 @@ public class Edge implements Comparable<Edge>
 		}
 		else
 		{
-			enterDest = INTERSECT_TYPE.BOTTOM;
+			//enterDest = INTERSECT_TYPE.BOTTOM;
 			enterDestY = destVertex.getY() + destVertex.getHeight();
 
 			if (centerDestY == centerStartY)
@@ -206,10 +214,7 @@ public class Edge implements Comparable<Edge>
 			enterDestX = centerDestX + invSlope * (enterDestY - centerDestY);
 		}
 
-		/*System.out.println(source + ", " + dest);
-		System.out.println("Start: " + exitStartX + ", " + exitStartY);
-		System.out.println("End: " + enterDestX + ", " + enterDestY + "\n");*/
-		Line line = new Line(panel.scaleX(exitStartX), panel.scaleY(exitStartY), panel.scaleX(enterDestX), panel.scaleY(enterDestY));
+		this.line = new Line(panel.scaleX(exitStartX), panel.scaleY(exitStartY), panel.scaleX(enterDestX), panel.scaleY(enterDestY));
 		if (this.getType() == Edge.EDGE_TYPE.EDGE_DUMMY)
 		{
 			line.getStrokeDashArray().addAll(5d, 4d);
@@ -235,7 +240,26 @@ public class Edge implements Comparable<Edge>
 				x3, y3 });
 		arrowhead.setFill(Color.BLACK);
 
-		node.getChildren().add(line);
-		node.getChildren().add(arrowhead);
+		this.graphics.getChildren().add(line);
+		this.graphics.getChildren().add(arrowhead);
+	}
+
+	public Line getLine()
+	{
+		return this.line;
+	}
+
+	public Polygon getArrowhead()
+	{
+		return this.arrowhead;
+	}
+
+	public Group getGraphics() {
+		return graphics;
+	}
+
+	public void setGraphics(Group graphics)
+	{
+		this.graphics = graphics;
 	}
 }

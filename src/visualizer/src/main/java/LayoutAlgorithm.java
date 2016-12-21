@@ -10,8 +10,6 @@ public class LayoutAlgorithm
 	final static double NODES_PADDING = .5;
 
 	
-	final static double DEFAULT_WIDTH = 1;
-	final static double DEFAULT_HEIGHT = 1;
 	
 	public static void layout(AbstractVertex parenteVertex){
 		initializeSizes(parenteVertex);
@@ -19,8 +17,8 @@ public class LayoutAlgorithm
 	}
 	
 	private static void initializeSizes(AbstractVertex parenteVertex){
-		parenteVertex.setWidth(DEFAULT_WIDTH);
-		parenteVertex.setHeight(DEFAULT_HEIGHT);
+		parenteVertex.setWidth(AbstractVertex.DEFAULT_WIDTH);
+		parenteVertex.setHeight(AbstractVertex.DEFAULT_HEIGHT);
 		Iterator<AbstractVertex> it = parenteVertex.getInnerGraph().getVertices().values().iterator();
 		while(it.hasNext()){
 			initializeSizes(it.next());
@@ -30,11 +28,12 @@ public class LayoutAlgorithm
 	public static void defaultLayout(AbstractVertex parentVertex, AbstractGraph graph){
 		
 		Iterator<AbstractVertex> it = graph.getVertices().values().iterator();
-		while(it.hasNext()){
+		while(it.hasNext())
+		{
 			AbstractVertex v = it.next();
 			AbstractGraph inner_graph = v.getInnerGraph();
-			if(inner_graph.getVertices().size()!=0){
-
+			if (inner_graph.getVertices().size() != 0)
+			{
 				//Layout the inner graphs of each node and assign width and height to each node
 				//coordinates are RELATIVE to the parent
 				if(v.isExpanded())
@@ -90,24 +89,24 @@ public class LayoutAlgorithm
 		while(itGray.hasNext())
 		{
 			AbstractVertex curVer = itGray.next();
-			double[] bbox = visit(curVer,currentWidth + left,NODES_PADDING + top + root.getHeight());
-			currentWidth += bbox[0] + NODES_PADDING;
-			currentHeight = Math.max(currentHeight, bbox[1]);
+			double[] boundBox = visit(curVer,currentWidth + left,NODES_PADDING + top + root.getHeight());
+			currentWidth += boundBox[0] + NODES_PADDING;
+			currentHeight = Math.max(currentHeight, boundBox[1]);
 		}
 		
-		root.subtreeBBOX[0] = Math.max(root.getWidth(), currentWidth - NODES_PADDING);
+		root.subtreeBoundBox[0] = Math.max(root.getWidth(), currentWidth - NODES_PADDING);
 		if(grayChildren.size() == 0)
 		{
-			root.subtreeBBOX[1] = root.getHeight();
+			root.subtreeBoundBox[1] = root.getHeight();
 		}
 		else
 		{
-			root.subtreeBBOX[1] = NODES_PADDING + root.getHeight() + currentHeight;
+			root.subtreeBoundBox[1] = NODES_PADDING + root.getHeight() + currentHeight;
 		}
 		
-		root.setX(left + ((root.subtreeBBOX[0] - root.getWidth()) / 2));  //left-most corner x
+		root.setX(left + ((root.subtreeBoundBox[0] - root.getWidth()) / 2));  //left-most corner x
 		root.setY(top);							    					//top-most corner y
 		root.vertexStatus = AbstractVertex.VertexStatus.BLACK;
-		return root.subtreeBBOX;
+		return root.subtreeBoundBox;
 	}
 }

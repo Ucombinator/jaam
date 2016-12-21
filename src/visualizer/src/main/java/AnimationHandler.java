@@ -2,6 +2,7 @@ import java.util.Iterator;
 import java.util.Observable;
 
 import javafx.animation.FadeTransition;
+import javafx.animation.ScaleTransition;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -15,10 +16,7 @@ import javafx.util.Duration;
 
 public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.input.MouseEvent>{
 
-	AbstractVertex vertex;
-	public AnimationHandler(AbstractVertex v){
-		this.vertex = v;
-	}
+	
 	@Override
 	public void handle(MouseEvent event) {
 		EventType<MouseEvent> type = (EventType<MouseEvent>)event.getEventType();
@@ -43,28 +41,44 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	}
 
 	private void handlePrimaryDoubleClick(MouseEvent event) {
-		
-		System.out.println("Vertex: "+this.vertex.getLabel() );
-		
-		
-				FadeTransition ft = new FadeTransition(Duration.millis(300), this.vertex.getGraphics());
+				
+				AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
+				Iterator<Node> it = v.getGraphics().getChildren().iterator();
+				while(it.hasNext()){
+					Node n = it.next();
+					if(!n.getClass().equals(Rectangle.class)){
+						FadeTransition ft = new FadeTransition(Duration.millis(300), n);	
+						ft.setToValue(0.0);
+						//ft.setCycleCount(Timeline.INDEFINITE);
+						//ft.setAutoReverse(true);
+						ft.play();
+						event.consume();
+						ft.setOnFinished(new EventHandler<ActionEvent>() {
+							@Override
+							public void handle(ActionEvent event) {
+								//v.getGraphics().setVisible(false);
+							}
+						});
+					}
+				}
+				
+				ScaleTransition st = new ScaleTransition(Duration.millis(300), v.getGraphics());
+
+				st.setFromX(1.0);
+				st.setToX(AbstractVertex.DEFAULT_WIDTH/v.getWidth());
+				st.setFromY(1.0);
+				st.setToY(AbstractVertex.DEFAULT_HEIGHT/v.getHeight());			    
+			     st.play();
+			     
+			  
+				
 //				System.out.println("Pane: " + this.vertex.getGraphics().getClass());
 //				Iterator<Node> it = this.vertex.getGraphics().getChildren().iterator();
 //				while(it.hasNext()){
 //					System.out.println(it.next().getClass());
 //				}
 				//ft.setFromValue(1.0);
-				ft.setToValue(0.0);
-				//ft.setCycleCount(Timeline.INDEFINITE);
-				//ft.setAutoReverse(true);
-				ft.play();
-				event.consume();
-				ft.setOnFinished(new EventHandler<ActionEvent>() {
-					@Override
-					public void handle(ActionEvent event) {
-						vertex.getGraphics().setVisible(false);
-					}
-				});
+
 				
 		
 	}

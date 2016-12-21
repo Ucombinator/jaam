@@ -189,13 +189,13 @@ public class Parameters
 
 	public static void repaintAll()
 	{
-		Platform.runLater(new Runnable() {
+		/*Platform.runLater(new Runnable() {
 			@Override
 			public void run() {
 				stFrame.mainPanel.updateVertices();
 				stFrame.contextPanel.updateVertices();
 			}
-		});
+		});*/
 
 		leftArea.setDescription();
 		setRightText();
