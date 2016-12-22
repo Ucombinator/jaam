@@ -101,7 +101,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		{
 			HashMap<String, Point2D> oldPositions = new HashMap<>();
 			savePositions(Parameters.stFrame.mainPanel.getPanelRoot(), oldPositions);
-//			v.setExpanded(false);
+			v.setExpanded(false);
 			LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
 			animate(Parameters.stFrame.mainPanel.getPanelRoot(), oldPositions);
 		}	
@@ -126,8 +126,8 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		TranslateTransition tt = new TranslateTransition(Duration.millis(300), v.getGraphics());
 		Point2D p =  oldPositions.get(v.getStrID());
 		
-		tt.setByX(Parameters.stFrame.mainPanel.scaleX(1));
-		tt.setByY(Parameters.stFrame.mainPanel.scaleY(1));
+		tt.setByX(Parameters.stFrame.mainPanel.scaleX(v.getX()-p.getX()));
+		tt.setByY(Parameters.stFrame.mainPanel.scaleY(v.getY()-p.getY()));
 		tt.play();
 		
 		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
