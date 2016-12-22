@@ -11,11 +11,10 @@ object Validate {
   private var shouldRemoveMissingStates = false
 
   def validateFile(jaamFile : String,
+                   targetFile : Option[String],
                    shouldAppendMissingEOF : Boolean = false,
-                   addMissingStates : Boolean = false,
-                   removeMissingStates : Boolean = false) = {
-    shouldAddMissingStates = addMissingStates
-    shouldRemoveMissingStates = removeMissingStates
+                   shouldAddMissingStates : Boolean = false,
+                   shouldRemoveMissingStates : Boolean = false) = {
     val packets = mutable.MutableList[Packet]()
     val willWrite = shouldAppendMissingEOF || shouldAddMissingStates || shouldRemoveMissingStates
     val stream = new FileInputStream(jaamFile)
@@ -44,29 +43,42 @@ object Validate {
 
     pi.close()
 
-    if (willWrite) {
-      //TODO: Maybe write to a temp file and move it after completion?
-      val outStream = new FileOutputStream(jaamFile)
-      val po = new PacketOutput(outStream)
-
-      for (packet <- packets) {
-        packet match {
-          case p : Node => handleNode(p, po)
-          case p : Edge => handleEdge(p, po)
+    if (endedAcceptably) {
+      println("No issues to fix; original file is valid.")
+    } else {
+      if (willWrite) {
+        targetFile match {
+          case Some(file) =>
+            println("Writing to file: " + file)
+            writeFile(file, packets, endedPrematurely, shouldAppendMissingEOF)
+          case None =>
+            println("No file to write to. Exiting.")
         }
+      } else {
+        println("Errors found but no fixes requested. Exiting.")
       }
-
-      if (endedPrematurely && shouldAppendMissingEOF) {
-        // Need to add the EOF
-        po.write(EOF())
-      }
-
-      po.close()
-    }
-
-    if (! endedAcceptably) {
       sys.exit(1)
     }
+  }
+
+  private def writeFile(outFile : String, packets : mutable.MutableList[Packet], endedPrematurely : Boolean, shouldAppendMissingEOF : Boolean) = {
+    //TODO: Maybe write to a temp file and move it after completion?
+    val outStream = new FileOutputStream(outFile)
+    val po = new PacketOutput(outStream)
+
+    for (packet <- packets) {
+      packet match {
+        case p : Node => handleNode(p, po)
+        case p : Edge => handleEdge(p, po)
+      }
+    }
+
+    if (endedPrematurely && shouldAppendMissingEOF) {
+      // Need to add the EOF
+      po.write(EOF())
+    }
+
+    po.close()
   }
 
   private def handleNode(node : Node, po : PacketOutput) = {
