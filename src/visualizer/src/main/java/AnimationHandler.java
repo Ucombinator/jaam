@@ -53,10 +53,10 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	private void handlePrimaryDoubleClick(MouseEvent event)
 	{
 		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
-		if(false){
-		
-		//animate(Parameters.stFrame.mainPanel.getRoot());
-		Iterator<Node> it = v.getGraphics().getChildren().iterator();
+		if(false)
+		{
+		//animate(Parameters.stFrame.mainPanel.getPanelRoot());
+		/*Iterator<Node> it = v.getGraphics().getChildren().iterator();
 		while(it.hasNext())
 		{
 			Node n = it.next();
@@ -85,26 +85,25 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 
 		
 		HashMap<String, Point2D> oldPositions = new HashMap<>();
-		savePositions(Parameters.stFrame.mainPanel.getRoot(),oldPositions);
+		savePositions(Parameters.stFrame.mainPanel.getPanelRoot(), oldPositions);
 		
 		st.setOnFinished(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
 				v.setExpanded(false);
-				LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getRoot());
-				animate(Parameters.stFrame.mainPanel.getRoot(), oldPositions);
+				LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+				animate(Parameters.stFrame.mainPanel.getPanelRoot(), oldPositions);
 			}
 		});
+		*/
 		}else{
 			HashMap<String, Point2D> oldPositions = new HashMap<>();
-			savePositions(Parameters.stFrame.mainPanel.getRoot(),oldPositions);
+			savePositions(Parameters.stFrame.mainPanel.getPanelRoot(),oldPositions);
 //					v.setExpanded(false);
-					LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getRoot());
-					animate(Parameters.stFrame.mainPanel.getRoot(), oldPositions);
-			
+					LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+					animate(Parameters.stFrame.mainPanel.getPanelRoot(), oldPositions);
 		}	
 	}
-	
 	
 	private void savePositions(AbstractVertex v, HashMap<String, Point2D> oldPositions){
 		Point2D p = new Point2D(v.getX(), v.getY());
