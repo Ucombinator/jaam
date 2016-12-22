@@ -94,16 +94,16 @@ public class Parameters
 
 	public static void repaintAll()
 	{
-		leftArea.setDescription();
-		setRightText();
-        searchArea.writeText();
+		//leftArea.setDescription();
+		//setRightText();
+        //searchArea.writeText();
 		stFrame.repaint();
 
-        if(Parameters.fixCaret)
+        /*if(Parameters.fixCaret)
         {
             Parameters.fixCaret = false;
             Parameters.fixCaretPositions();
-        }
+        }*/
 	}
     
     public static void fixCaretPositions()

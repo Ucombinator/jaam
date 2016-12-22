@@ -9,8 +9,6 @@ public class LayoutAlgorithm
 	final static double MARGIN_PADDING = .25;
 	final static double NODES_PADDING = .5;
 
-	
-	
 	public static void layout(AbstractVertex parenteVertex){
 		initializeSizes(parenteVertex);
 		defaultLayout(parenteVertex,parenteVertex.getInnerGraph());

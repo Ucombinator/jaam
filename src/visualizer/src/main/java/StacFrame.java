@@ -66,7 +66,8 @@ public class StacFrame extends JFrame
 		setSize(this.width, this.height);
 
 		makeMenuBar();
-		makeLayout();
+		//makeLayout();
+		makeSimpleLayout();
 		
 		this.setVisible(true);
 	}
@@ -423,6 +424,8 @@ public class StacFrame extends JFrame
 				}
 		);
 		help.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, ActionEvent.CTRL_MASK));
+
+		this.setJMenuBar(menuBar);
 	}
 
 	public void buildWindow(ArrayList<ArrayList<JComponent>> layout, ArrayList<ArrayList<Double>> layoutRowWeights,
@@ -554,13 +557,19 @@ public class StacFrame extends JFrame
         // Search bar
         this.searchF = new SearchField();
         this.getContentPane().add(searchF, BorderLayout.SOUTH);
-		
-		this.setJMenuBar(menuBar);
+
 		this.setVisible(true);
 		this.repaint();
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);	
 	}
-	
+
+	public void makeSimpleLayout()
+	{
+		this.mainPanel = new VizPanel(false);
+		this.setLayout(new BorderLayout());
+		this.getContentPane().add(this.mainPanel);
+	}
+
 	public void setSplitScreen()
 	{
 		// Declare each panel

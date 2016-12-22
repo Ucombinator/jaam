@@ -27,7 +27,7 @@ public class TakeInput extends Thread
 			public void run()
 			{
 				Parameters.stFrame.mainPanel.initFX(null);
-				Parameters.stFrame.contextPanel.initFX(Parameters.stFrame.mainPanel.getPanelRoot());
+				//Parameters.stFrame.contextPanel.initFX(Parameters.stFrame.mainPanel.getPanelRoot());
 			}
 		});
 

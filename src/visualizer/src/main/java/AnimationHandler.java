@@ -96,12 +96,14 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 			}
 		});
 		*/
-		}else{
+		}
+		else
+		{
 			HashMap<String, Point2D> oldPositions = new HashMap<>();
-			savePositions(Parameters.stFrame.mainPanel.getPanelRoot(),oldPositions);
-//					v.setExpanded(false);
-					LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-					animate(Parameters.stFrame.mainPanel.getPanelRoot(), oldPositions);
+			savePositions(Parameters.stFrame.mainPanel.getPanelRoot(), oldPositions);
+//			v.setExpanded(false);
+			LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+			animate(Parameters.stFrame.mainPanel.getPanelRoot(), oldPositions);
 		}	
 	}
 	

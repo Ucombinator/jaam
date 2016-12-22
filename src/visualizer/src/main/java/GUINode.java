@@ -48,6 +48,10 @@ public class GUINode extends Pane
         this.isDragging = false;
         
         this.setOnMouseClicked(new AnimationHandler());
+
+        this.setVisible(true);
+        System.out.println("Location of vertex:");
+        v.printCoordinates();
     }
     
     public AbstractVertex getVertex() {
@@ -105,6 +109,9 @@ public class GUINode extends Pane
         this.back_rect.setHeight(height);
         this.rect.setWidth(width);
         this.rect.setHeight(height);
+
+        System.out.println("Location of GUINode rectangle:");
+        System.out.println(x + ", " + y + ", " + width + ", " + height);
     }
 
     public void makeDraggable()

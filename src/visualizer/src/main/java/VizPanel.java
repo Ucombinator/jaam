@@ -13,8 +13,10 @@ import javafx.scene.Scene;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Group;
+import javafx.scene.shape.Rectangle;
 
 import java.awt.Color;
 import java.util.Iterator;
@@ -23,7 +25,7 @@ public class VizPanel extends JFXPanel
 {
 	private boolean context;
 	private Group contentGroup;
-	private ScrollPane scrollPane;
+	private Pane scrollPane;
 
 	public static float hues[]; //Used for shading nodes from green to red
 	public boolean showEdge = true;
@@ -44,7 +46,9 @@ public class VizPanel extends JFXPanel
 		super();
 		this.context = isContextPanel;
 		contentGroup = new Group();
-		scrollPane = createZoomPane(contentGroup);
+		scrollPane = new Pane();
+		scrollPane.getChildren().add(contentGroup);
+		//scrollPane = createZoomPane(contentGroup);
 		this.setScene(new Scene(scrollPane));
 		this.setBackground(Color.WHITE);
 	}
@@ -57,6 +61,7 @@ public class VizPanel extends JFXPanel
 
 		if(root == null)
 		{
+			System.out.println("Running layout...");
 			Graph g = Main.graph;			
 			this.panelRoot = LayerFactory.get2layer(g);
 			LayoutAlgorithm.layout(this.panelRoot);
@@ -70,16 +75,25 @@ public class VizPanel extends JFXPanel
 
 	public double scaleX(double coordinate)
 	{
-		return (coordinate * 100.0 / this.panelRoot.getWidth());
+		return (coordinate * 200.0 / this.panelRoot.getWidth());
 	}
 
 	public double scaleY(double coordinate)
 	{
-		return (coordinate * 100.0 / this.panelRoot.getHeight());
+		return (coordinate * 200.0 / this.panelRoot.getHeight());
 	}
 
 	public void draw(GUINode parent, AbstractVertex v)
 	{
+		/*Rectangle test = new Rectangle();
+		test.setLayoutX(0);
+		test.setLayoutY(0);
+		test.setWidth(100);
+		test.setHeight(100);
+		test.setFill(javafx.scene.paint.Color.BLACK);
+		test.setVisible(true);
+		contentGroup.getChildren().add(test);*/
+
 		GUINode node = new GUINode(parent, v);
 
 		if (parent == null)
