@@ -3,8 +3,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Observable;
 
-
-
 import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.TranslateTransition;
@@ -118,11 +116,8 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		}
 	}
 
-	
-
 	public void animate(AbstractVertex v, HashMap<String, Point2D> oldPositions)
 	{
-		
 		TranslateTransition tt = new TranslateTransition(Duration.millis(300), v.getGraphics());
 		Point2D p =  oldPositions.get(v.getStrID());
 		
