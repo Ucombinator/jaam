@@ -11,6 +11,7 @@ import java.awt.Color;
 // TODO: Remove stFrame variable and make StacFrame a singleton class
 public class Parameters
 {
+	public static boolean debugMode = false;
 	public static int width = 1200, height = 800;
 	public static int transitionTime = 500;
 	public static double zoomFactor = 3.0/4.0, boxFactor = 3.0/4.0;
@@ -81,22 +82,23 @@ public class Parameters
 	public static String folderFromPath (String path)
 	{
 		int lastSlash = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
-		
-		if(lastSlash==-1)
+		if(lastSlash == -1)
 			return "/";
-
 		
 		String folder = path.substring(0,lastSlash);
 				
 		return folder;
-	
 	}
 
 	public static void repaintAll()
 	{
-		//leftArea.setDescription();
-		//setRightText();
-        //searchArea.writeText();
+		if (!Parameters.debugMode)
+		{
+			leftArea.setDescription();
+			setRightText();
+			searchArea.writeText();
+		}
+
 		stFrame.repaint();
 
         /*if(Parameters.fixCaret)

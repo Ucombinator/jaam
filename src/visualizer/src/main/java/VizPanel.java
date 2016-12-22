@@ -25,7 +25,8 @@ public class VizPanel extends JFXPanel
 {
 	private boolean context;
 	private Group contentGroup;
-	private Pane scrollPane;
+	private Pane testPane;
+	private ScrollPane scrollPane;
 
 	public static float hues[]; //Used for shading nodes from green to red
 	public boolean showEdge = true;
@@ -46,10 +47,18 @@ public class VizPanel extends JFXPanel
 		super();
 		this.context = isContextPanel;
 		contentGroup = new Group();
-		scrollPane = new Pane();
-		scrollPane.getChildren().add(contentGroup);
-		//scrollPane = createZoomPane(contentGroup);
-		this.setScene(new Scene(scrollPane));
+
+		if (Parameters.debugMode)
+		{
+			testPane = new Pane();
+			testPane.getChildren().add(contentGroup);
+			this.setScene(new Scene(testPane));
+		}
+		else
+		{
+			scrollPane = createZoomPane(contentGroup);
+			this.setScene(new Scene(scrollPane));
+		}
 		this.setBackground(Color.WHITE);
 	}
 

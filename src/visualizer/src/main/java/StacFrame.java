@@ -66,9 +66,15 @@ public class StacFrame extends JFrame
 		setSize(this.width, this.height);
 
 		makeMenuBar();
-		//makeLayout();
-		makeSimpleLayout();
-		
+		if (Parameters.debugMode)
+		{
+			makeSimpleLayout();
+		}
+		else
+		{
+			makeLayout();
+		}
+
 		this.setVisible(true);
 	}
 	
