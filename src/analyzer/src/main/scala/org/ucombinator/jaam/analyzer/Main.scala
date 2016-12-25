@@ -7,6 +7,8 @@ import org.ucombinator.jaam.serializer._
 
 import scala.collection.mutable
 
+import org.rogach.scallop._
+
 class AnalysisNode(var node : Node = null, override val id : Id[Node]) extends Node(id){
   var abstractionLvl = 0
   var abstractNodes = mutable.MutableList[Id[AnalysisNode]]()
@@ -116,57 +118,31 @@ class AnalysisGraph() {
   }
 }
 
-case class Config(
-                   mode : String        = null,
-                   sourceFile : String  = null,
-                   targetFile : String  = null)
+object Conf {
+  class Chain extends Main("chain") {
+    banner("Collapse long chains into single nodes")
+    footer("")
 
-object Main {
+    val sourceFile = trailArg[java.io.File](descr = "the input .jaam file to analyze")
+    val targetFile = trailArg[String](descr = "the output .jaam file to store the result")
 
-  def main(args : Array[String]) {
-    val parser = new scopt.OptionParser[Config]("jaam-analyzer") {
-      override def showUsageOnError = true
-
-      help("help") text("prints this usage text")
-
-      note("")
-      cmd("chain") action { (_, c) =>
-        c.copy(mode = "chain")
-      } text("Collapse long chains into single nodes.") children (
-        arg[String]("<input file>") action {
-          (x, c) => c.copy(sourceFile = x)
-        } text ("the input .jaam file to analyze"),
-        arg[String]("<output file>") action {
-          (x, c) => c.copy(targetFile = x)
-        } text ("the output .jaam file to store the result")
-      )
-
-
-      // TODO
-      // Add new command here with cmd("<command name>"), imitating the code
-      // from above.
-    }
-
-    parser.parse(args, Config()) match {
-      case None =>
-        println("Bad arguments given.")
-
-      case Some(config) =>
-        // Create the AnalysisGraph from the source file.
-        val graph = analyzeFile(config.sourceFile)
-
-        config.mode match {
-          case "chain" =>
-            val result = Chain.MakeChain(graph)
-            writeOut(result, config.targetFile)
-
-            // TODO
-            // Add extra cases here as needed to add support for new sub-
-            // commands.
-        }
+    def run(conf: Conf): Unit = {
+      val graph = Common.analyzeFile(sourceFile().toString)
+      val result = Chain.MakeChain(graph)
+      Common.writeOut(result, targetFile())
     }
   }
+}
 
+class Conf(args : Seq[String]) extends ScallopConf(args = args) {
+
+}
+
+abstract class Main(name: String) extends Subcommand(name) {
+  def run(conf : Conf)
+}
+
+object Common {
   def analyzeFile(file : String) : AnalysisGraph = {
     val stream = new FileInputStream(file)
     val pi = new PacketInput(stream)
@@ -197,27 +173,15 @@ object Main {
     outSerializer.write(EOF())
     outSerializer.close()
   }
+}
 
-//  def writeOut(file : String, idList : scala.collection.mutable.MutableList[Id[Node]]) = {
-//  def writeOut(file : String, nodeList : scala.collection.mutable.MutableList[AnalysisNode]) = {
-//  val stream = new FileOutputStream(file)
-//    val po = new PacketOutput(stream)
-//    var counter = 0
-//
-//    //for(id <- idList){
-//      val packet = NodeTag(Id[Tag](counter), id, AllocationTag())
-//    //  po.write(packet)
-//    //  counter += 1
-//    //}
-//
-//    for(aNode <- nodeList) {
-//      val packet = NodeTag(Id[Tag](counter), aNode.getNode().id, AllocationTag(aNode.getType()))
-//      po.write(packet)
-//      counter += 1
-//    }
-//
-//    po.write(EOF())
-//    po.close()
-//  }
+object Main {
+  def main(args : Array[String]) {
+    val conf = new Conf(args)
+    conf.subcommand match {
+      case Some(m: Main) => m.run(conf)
+      case None => println("ERROR: No subcommand specified")
+    }
+  }
 }
 

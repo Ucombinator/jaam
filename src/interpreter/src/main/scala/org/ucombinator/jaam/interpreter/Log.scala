@@ -19,6 +19,7 @@ object Log {
       case "info" => minlog.Log.set(minlog.Log.LEVEL_INFO)
       case "debug" => minlog.Log.set(minlog.Log.LEVEL_DEBUG)
       case "trace" => minlog.Log.set(minlog.Log.LEVEL_TRACE)
+      case _ => throw new IllegalArgumentException("invalid logging level: " + level)
     }
   }
 

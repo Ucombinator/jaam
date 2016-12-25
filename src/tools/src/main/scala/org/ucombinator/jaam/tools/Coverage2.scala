@@ -110,7 +110,7 @@ object Coverage2 {
 
     // check that all methods present
     for (m <- sm; if !jm.contains(m)) {
-      if (!List("java.", "javax.", "sun.", "com.sun.").exists((m.getDeclaringClass.getPackageName()+".").startsWith(_))) {
+      if (!List("java.", "javax.", "sun.", "com.sun.").exists((m.getDeclaringClass.getPackageName + ".").startsWith(_))) {
         println("Method not covered: " + m)
       }
     }
@@ -125,14 +125,14 @@ object Coverage2 {
       if (m.isAbstract) {
         println("Method is abstract: " + m)
       } else {
-        if (!m.hasActiveBody()) {
+        if (!m.hasActiveBody) {
 //          Scene.v().forceResolve(m.getDeclaringClass.getName, SootClass.BODIES)
 //        }
 //        SootResolver.v().resolveClass(m.getDeclaringClass.getName, SootClass.BODIES)
         m.retrieveActiveBody()
         }
 
-        if (!m.hasActiveBody()) {
+        if (!m.hasActiveBody) {
           println("Method still has no active body: " + m)
         } else {
 //      for (s <- m.getActiveBody().getUnits; if !ss.contains(s)) {

@@ -72,7 +72,8 @@ case class Stmt(val sootStmt : SootStmt, val sootMethod : SootMethod) {
 }
 
 object Soot {
-  def initialize(config : Config) {
+  def initialize(conf : Conf) {
+    // We choose to not use Soot in verbose mode.
     Options.v().set_verbose(false)
     // Put class bodies in Jimple format
     Options.v().set_output_format(Options.output_format_jimple)
@@ -83,7 +84,7 @@ object Soot {
     // Called methods without jar files or source are considered phantom
     Options.v().set_allow_phantom_refs(true)
     // Use the class path from the command line
-    Options.v().set_soot_classpath(config.rtJar + ":" + config.sootClassPath)
+    Options.v().set_soot_classpath(conf.rtJar().toString + ":" + conf.classpath().toString)
     // Use only the class path from the command line
     Options.v().set_prepend_classpath(false)
     // Take definitions only from class files

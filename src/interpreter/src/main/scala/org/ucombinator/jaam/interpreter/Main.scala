@@ -19,6 +19,11 @@ import scala.io.Source
 
 import java.io.FileOutputStream
 
+import org.rogach.scallop._
+import org.rogach.scallop.exceptions.{Help, ScallopException, ScallopResult}
+
+import scala.collection.immutable.::
+
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
 // fix this when we build the Scala wrapper for Soot.)
@@ -663,8 +668,9 @@ case class State(val stmt : Stmt,
           if (System.isLibraryClass(meth.getDeclaringClass) ||
               self.isDefined && Snowflakes.isSnowflakeObject(self.get)) {
             Snowflakes.warn(this.id, self, stmt, meth)
-            //if (meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver"))
+            //if (meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver")) {
             //  Log.warn("Snowflake due to Abstract: "+meth)
+            //}
             DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
           }
           */
@@ -1123,78 +1129,85 @@ object System {
   }
 }
 
-// Command option config
-case class Config(rtJar: String = null,
-                  sootClassPath: String = null,
-                  className: String = null,
-                  methodName: String = null,
-                  outputFile: String = null,
-                  libClassesFile: String = null,
-                  logLevel: String = "info")
+/**
+  * Command-line option parsing class, from Scallop.
+  *
+  * Provides all necessary functionality to parse the arguments we want.
+  *
+  * @param args list of command-line arguments as strings
+  */
+class Conf(args : Seq[String]) extends ScallopConf(args = args) {
+
+  /**
+    * A manual converter to handle calls to `--help`. This implementation allows
+    * the `--help` option to be given at any point in the options -- not only at
+    * the very beginning of the list of arguments.
+    */
+  val helpConverter = new ValueConverter[Unit] {
+    // Override the default `parse` method so that any instance of `--help` is
+    // handled appropriately, i.e. a `Help` is thrown.
+    override def parse(s: List[(String, List[String])]): Either[String, Option[Unit]] = s match {
+      case Nil  => Right(None)
+      case _    => throw Help("")
+    }
+    val tag = scala.reflect.runtime.universe.typeTag[Unit]
+    val argType = org.rogach.scallop.ArgType.FLAG
+  }
+
+  val help        = opt[Unit](short = 'h', descr = "show this help message")(helpConverter)
+  val classpath   = opt[String](required = true, short = 'P', descr = "the TODO class directory")
+  val rtJar       = opt[String](required = true, short = 'J', descr = "the rt.jar file")
+  val mainClass   = opt[String](required = true, short = 'c', descr = "the main class")
+  val method      = opt[String](required = true, short = 'm', descr = "the main method", default = Some("main"))
+  val libClasses  = opt[String](short = 'L', descr = "app's library classes")
+  val outfile     = opt[String](short = 'o', descr = "the output file for the serialized data")
+  val logLevel    = opt[String](
+    short = 'l',
+    descr = "the level of logging verbosity; one of 'none', 'error', 'warn', 'info', 'debug', 'trace'; default: 'info'",
+    default = Some("info"))
+  validate(logLevel) { logLevel =>
+    if (List("none", "error", "warn", "info", "debug", "trace").contains(logLevel)) Right(Unit)
+    else Left("incorrect logging level given")
+  }
+
+  /**
+    * Override the built-in `onError` method to ensure that `--help` information
+    * is displayed every time there is an error during option parsing.
+    *
+    * @param e the error which was thrown during parsing
+    */
+  override def onError(e: Throwable) = {
+    e match {
+      case ScallopException(_) => printHelp()
+      case _ => ()
+    }
+    // After printing the help information (if needed), allow the call to
+    // continue as it would have.
+    super.onError(e)
+  }
+
+  verify()
+}
 
 object Main {
   def main(args : Array[String]) {
-    val parser = new scopt.OptionParser[Config]("jaam-interpreter") {
-      opt[String]("classpath") action {
-        (x, c) => c.copy(sootClassPath = x)
-      } text("the TODO class directory")
-
-      opt[String]('J', "rt_jar") action {
-        (x, c) => c.copy(rtJar = x)
-      } text("the rt.jar file")
-
-      opt[String]('L', "lib_classes") action {
-        (x, c) => c.copy(libClassesFile = x)
-      } text("app's library classes")
-
-      opt[String]('c', "class") action {
-        (x, c) => c.copy(className = x)
-      } text("the main class")
-
-      opt[String]('m', "method") action {
-        (x, c) => c.copy(methodName = x)
-      } text("the main method")
-
-      opt[String]('o', "outfile") action {
-        (x, c) => c.copy(outputFile = x)
-      } text("the output file for the serialized data")
-
-      opt[String]('l', "log") action {
-        (x, c) => c.copy(logLevel = x)
-      } validate {
-        x =>
-          if (List("none", "error", "warn", "info", "debug", "trace").contains(x.toLowerCase))
-            success
-          else
-            failure("Logging level must be one of 'none', 'error', 'warn', 'info', 'debug', or 'trace'")
-      } text ("the level of logging verbosity; one of 'none', 'error', 'warn', 'info', 'debug', 'trace'; default: 'info'")
-
-      help("help") text("prints this usage text")
-
-      override def showUsageOnError = true
-    }
-
-    parser.parse(args, Config()) match {
-      case None =>
-        println("Wrong arguments")
-
-      case Some(config) =>
-        Soot.initialize(config)
-        Log.setLogging(config.logLevel)
-        defaultMode(config)
-    }
+    val conf = new Conf(args)
+    Soot.initialize(conf)
+    Log.setLogging(conf.logLevel().toString)
+    run(conf)
   }
 
-  def defaultMode(config : Config) {
-    System.setAppLibraryClasses(config.libClassesFile)
-    val outputFileOpt = Option(config.outputFile)
-    var outputFile: String = null
-    outputFileOpt match {
-      case None => outputFile = config.className + ".jaam"
-      case Some(x) => outputFile = x
+  def run(conf : Conf) {
+    System.setAppLibraryClasses(conf.libClasses())
+    val mainClass   = conf.mainClass().toString
+    val mainMethod  = conf.method().toString
+    val outfile     = conf.outfile.toOption match {
+      case None => mainClass + ".jaam"
+      case Some(s) => s
     }
-    val outSerializer = new serializer.PacketOutput(new FileOutputStream(outputFile))
-    val mainMainMethod : SootMethod = Soot.getSootClass(config.className).getMethodByName(config.methodName)
+
+    val outSerializer = new serializer.PacketOutput(new FileOutputStream(outfile))
+    val mainMainMethod : SootMethod = Soot.getSootClass(mainClass).getMethodByName(mainMethod)
     val initialState = State.inject(Stmt.methodEntry(mainMainMethod))
 
     //var todo: List[AbstractState] = List(initialState)
@@ -1210,7 +1223,7 @@ object Main {
     var done: Set[AbstractState] = Set()
     var doneEdges: Map[(Int, Int), Int] = Map()
 
-    outSerializer.write(initialState.toPacket)
+    outSerializer.write(initialState.toPacket())
 
     var count = 0
     try {
