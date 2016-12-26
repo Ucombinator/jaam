@@ -5,12 +5,12 @@ the exception of the following files as they originate from external projects:
   - _External Project_: SBT 0.13.13 <http://www.scala-sbt.org/0.13/docs/Manual-Installation.html>
   - _Release URL_: <https://repo.typesafe.com/typesafe/ivy-releases/org.scala-sbt/sbt-launch/0.13.13/sbt-launch.jar>
   - _License Type_: Three-clause BSD License
-  - _License File_: `licenses/LICENE-sbt`
+  - _License File_: [`licenses/LICENSE-sbt`](LICENSE-sbt)
   - _License Origin_: <https://github.com/sbt/sbt/blob/v0.13.13/LICENSE>
 
 - [`resources/rt.jar`](../resources/rt.jar)
   - _External Project_: OpenJDK 1.7.0.85 from CentOS 7.1.1503 <http://vault.centos.org/7.1.1503/updates/x86_64>
   - _Release URL_: <http://vault.centos.org/7.1.1503/updates/x86_64/Packages/java-1.7.0-openjdk-headless-1.7.0.85-2.6.1.2.el7_1.x86_64.rpm>
   - _License Type_: GNU General Public License (GPL) version 2
-  - _License File_: `licenses/LICENSE-openjdk`
-  - _License Origin_: `usr/lib/jvm/java-1.7.0-openjdk-1.7.0.85-2.6.1.2.el7_1.x86_64/LICENSE` in the `openjdk` `headless` RPM
+  - _License File_: [`licenses/LICENSE-openjdk`](LICENSE-openjdk)
+  - _License Origin_: `usr/lib/jvm/java-1.7.0-openjdk-1.7.0.85-2.6.1.2.el7_1.x86_64/LICENSE` in the `openjdk-headless` RPM
