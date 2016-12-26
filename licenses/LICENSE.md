@@ -1,4 +1,4 @@
-Simplified BSD License
+Two-Clause BSD License
 ======================
 
 _Copyright © 2016, U Combinator_

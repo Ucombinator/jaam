@@ -21,10 +21,10 @@ This is an early work in progress. There are a lot of rough edges and bugs.
 
 ## License
 
-This project is licensed under the [BSD Two-Clause License](LICENSE.md) _with
-the exception of_ the [bundled `rt.jar` file](resources/rt.jar), which is
-distributed under the [GNU General Public License v. 2](LICENSE-GPLv2.md) as it
-originates from OpenJDK.
+This project is licensed under the [Two-Clause BSD License](licenses/LICENSE.md)
+with the exception of bundled files from external projects, which are
+distributed under the external project's license.  See
+[`licenses/README.md`](licenses/README.md] for details.
 
 ## Requirements
 
