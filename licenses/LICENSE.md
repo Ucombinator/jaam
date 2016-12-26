@@ -1,7 +1,7 @@
 Two-Clause BSD License
 ======================
 
-_Copyright © 2016, U Combinator_
+_Copyright © 2016, U Combinator_  
 _All rights reserved._
 
 Redistribution and use in source and binary forms, with or without
