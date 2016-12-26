@@ -24,7 +24,7 @@ This is an early work in progress. There are a lot of rough edges and bugs.
 This project is licensed under the [Two-Clause BSD License](licenses/LICENSE.md)
 with the exception of bundled files from external projects, which are
 distributed under the external project's license.  See
-[`licenses/README.md`](licenses/README.md] for details.
+[`licenses/README.md`](licenses/README.md) for details.
 
 ## Requirements
 
