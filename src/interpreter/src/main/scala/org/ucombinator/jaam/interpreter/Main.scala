@@ -1153,7 +1153,7 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
     if (List("none", "error", "warn", "info", "debug", "trace").contains(logLevel)) Right(Unit)
     else Left("incorrect logging level given")
   }
-  val waitForUser = opt[Boolean](descr = "wait for user to press enter before starting")
+  val waitForUser = toggle(descrYes = "wait for user to press enter before starting (default: off)", noshort = false, prefix = "no-")
 
   verify()
 }
