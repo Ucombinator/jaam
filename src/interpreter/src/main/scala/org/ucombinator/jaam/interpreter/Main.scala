@@ -1148,7 +1148,7 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
   val logLevel    = enum[Log.Level](
     short = 'l',
     descr = "the level of logging verbosity",
-    default = Some("none"),
+    default = Some("warn"),
     argType = "log level",
     elems = immutable.ListMap(
       "none" -> Log.LEVEL_NONE,
