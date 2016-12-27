@@ -38,6 +38,4 @@ class JaamConf(args : Seq[String]) extends ScallopConf(args = args) {
     // continue as it would have.
     super.onError(e)
   }
-
-  verify()
 }

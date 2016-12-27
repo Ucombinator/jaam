@@ -1153,6 +1153,8 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
     if (List("none", "error", "warn", "info", "debug", "trace").contains(logLevel)) Right(Unit)
     else Left("incorrect logging level given")
   }
+
+  verify()
 }
 
 object Main {
