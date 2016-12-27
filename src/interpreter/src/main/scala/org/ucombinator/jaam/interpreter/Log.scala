@@ -2,8 +2,6 @@ package org.ucombinator.jaam.interpreter
 
 import com.esotericsoftware.minlog
 
-// TODO: fix SLF4J error
-
 // Logging that does not evaluate its message unless it is actually printed
 object Log {
   type Level = Int
