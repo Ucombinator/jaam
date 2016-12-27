@@ -1175,6 +1175,8 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
         // TODO: state orderings: min insertion reverseInsertion
     ))
 
+  val maxSteps = opt[Int](descr = "maximum number of interpretation steps")
+
   verify()
 
   object StateOrdering {
@@ -1225,14 +1227,14 @@ object Main {
     todo.enqueue(initialState)
     outSerializer.write(initialState.toPacket())
 
-    var count = 0
+    var steps = 0
     try {
-      while (todo.nonEmpty && count < 1000*1000) {
-        count+=1
+      while (todo.nonEmpty && !conf.maxSteps.toOption.exists(steps >= _)) {
+        steps += 1
         val current = todo.dequeue
 
         if (!done.contains(current)) {
-          Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
+          Log.info(s"Processing state ${current.id} (step $steps): ${current match { case s : State => s.stmt.toString; case s => s.toString}}")
           val nexts = System.next(current)
           val newTodo = nexts.filter(!done.contains(_))
 
@@ -1272,7 +1274,7 @@ object Main {
             todo ++= newTodo
           }
 
-          Log.info("Done processing state "+current.id)
+          Log.info(s"Done processing state ${current.id} (step $steps)")
         }
       }
     }
@@ -1292,8 +1294,11 @@ object Main {
     val sorted = summary.toList.sortWith(_._1 > _._1)
     sorted.foreach { case (size, n) => println(size + " \t " + n) }
     */
-    Log.info("Count = " + count)
     Log.info("Done!")
+
+    if (conf.maxSteps.toOption.exists(steps >= _)) {
+      Log.error(s"Exceeded maximum state limit (${conf.maxSteps()})")
+    }
     if (System.undefined != 0) {
       Log.error(s"Undefined address number: ${System.undefined}")
     }
