@@ -1153,7 +1153,7 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
     if (List("none", "error", "warn", "info", "debug", "trace").contains(logLevel)) Right(Unit)
     else Left("incorrect logging level given")
   }
-  val waitForUser = toggle(descrYes = "wait for user to press enter before starting (default: off)", noshort = false, prefix = "no-")
+  val waitForUser = toggle(descrYes = "wait for user to press enter before starting (default: off)", noshort = true, prefix = "no-")
 
   verify()
 }
@@ -1171,8 +1171,8 @@ object Main {
     Log.setLogging(conf.logLevel())
 
     System.setAppLibraryClasses(conf.libClasses())
-    val mainClass   = conf.mainClass().toString
-    val mainMethod  = conf.method().toString
+    val mainClass   = conf.mainClass()
+    val mainMethod  = conf.method()
     val outfile     = conf.outfile.toOption match {
       case None => mainClass + ".jaam"
       case Some(s) => s
