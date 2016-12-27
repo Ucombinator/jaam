@@ -1,29 +1,19 @@
 // TODO: error if sbt called directly on a sub-project
 
-organization in ThisBuild := "org.ucombinator"
-scalaVersion in ThisBuild := "2.11.8"
+////////////////////////////////////////
+// Global settings
+////////////////////////////////////////
 
-// Create assemblies only if we explicitly ask for them
+version in Global := "0.1-SNAPSHOT"
+
+organization in Global := "org.ucombinator"
+scalaVersion in Global := "2.11.8"
+
+// Do not create assembly for default root project
 disablePlugins(sbtassembly.AssemblyPlugin)
 
 ////////////////////////////////////////
-// Sub-projects
-////////////////////////////////////////
-
-lazy val serializer = (project in file("src/serializer")).settings(commonSettings)
-
-lazy val tools = (project in file("src/tools")).settings(commonSettings).dependsOn(serializer)
-
-lazy val interpreter = (project in file("src/interpreter")).settings(commonSettings).dependsOn(serializer)
-
-lazy val visualizer = (project in file("src/visualizer")).settings(commonSettings).dependsOn(serializer)
-
-lazy val analyzer = (project in file("src/analyzer")).settings(commonSettings).dependsOn(serializer)
-
-lazy val json_exporter = (project in file("src/json_exporter")).settings(commonSettings).dependsOn(serializer)
-
-////////////////////////////////////////
-// Global settings
+// Settings shared between sub-projects
 ////////////////////////////////////////
 
 // A "discard" merge strategy that doesn't cause a warning
@@ -36,7 +26,6 @@ lazy val quietDiscard = new sbtassembly.MergeStrategy {
   override def notifyThreshold = 1
 }
 
-// Settings shared between sub-projects
 lazy val commonSettings = Seq(
   // Use repository containing soot-all-in-one nightly snapshot
   resolvers += "Ucombinator maven repository on github" at "https://ucombinator.github.io/maven-repo",
@@ -68,3 +57,30 @@ lazy val commonSettings = Seq(
       .inLibrary("com.esotericsoftware" % "kryo-shaded" % "3.0.3")
   )
 )
+
+////////////////////////////////////////
+// Sub-projects
+////////////////////////////////////////
+
+lazy val serializer = (project in file("src/serializer"))
+  .settings(commonSettings)
+
+lazy val tools = (project in file("src/tools"))
+  .settings(commonSettings)
+  .dependsOn(serializer)
+
+lazy val interpreter = (project in file("src/interpreter"))
+  .settings(commonSettings)
+  .dependsOn(serializer)
+
+lazy val visualizer = (project in file("src/visualizer"))
+  .settings(commonSettings)
+  .dependsOn(serializer)
+
+lazy val analyzer = (project in file("src/analyzer"))
+  .settings(commonSettings)
+  .dependsOn(serializer)
+
+lazy val json_exporter = (project in file("src/json_exporter"))
+  .settings(commonSettings)
+  .dependsOn(serializer)
