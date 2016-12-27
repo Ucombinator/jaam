@@ -68,6 +68,7 @@ case class Stmt(val sootStmt : SootStmt, val sootMethod : SootMethod) {
       case sootStmt => List(this.nextSyntactic)
     }
 
+  // TODO: print statement offset of target for "goto" and "if"
   override def toString : String = sootMethod + ":" + index + ":" + sootStmt
 }
 

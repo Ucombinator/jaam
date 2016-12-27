@@ -2,6 +2,8 @@ package org.ucombinator.jaam.interpreter
 
 import com.esotericsoftware.minlog
 
+// TODO: fix SLF4J error
+
 // Logging that does not evaluate its message unless it is actually printed
 object Log {
   // TODO: make these more efficient by making them macros

@@ -271,6 +271,7 @@ case class StaticFieldAddr(val field : SootField) extends Addr
 // TODO: replace KontD and D with AbstractDomain[...]
 // TODO: cache hashcode for Kont and Value
 
+// TODO: why is values private?
 case class D(private val values: Set[Value]) {
   def getValues: Set[Value] = values
   def join(that : D) = D(this.getValues ++ that.getValues)
@@ -1161,7 +1162,7 @@ class Conf(args : Seq[String]) extends ScallopConf(args = args) {
   val method      = opt[String](required = true, short = 'm', descr = "the main method", default = Some("main"))
   val libClasses  = opt[String](short = 'L', descr = "app's library classes")
   val outfile     = opt[String](short = 'o', descr = "the output file for the serialized data")
-  val logLevel    = opt[String](
+  val logLevel    = opt[String]( // TODO: use Log type instead of string
     short = 'l',
     descr = "the level of logging verbosity; one of 'none', 'error', 'warn', 'info', 'debug', 'trace'; default: 'info'",
     default = Some("info"))
@@ -1198,6 +1199,7 @@ object Main {
   }
 
   def run(conf : Conf) {
+    // TODO: wait for user before starting if requested
     System.setAppLibraryClasses(conf.libClasses())
     val mainClass   = conf.mainClass().toString
     val mainMethod  = conf.method().toString
