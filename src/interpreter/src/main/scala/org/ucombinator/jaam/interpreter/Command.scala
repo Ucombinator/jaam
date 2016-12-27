@@ -47,7 +47,7 @@ class JaamConf(args : Seq[String]) extends ScallopConf(args = args) {
   // TODO: push to upstream scallop project?
   def enumConverter[A](name: String, elems: Map[String, A])(implicit tt: TypeTag[A]) = {
     def conv(s: String): A =
-      elems.getOrElse(s, throw new IllegalArgumentException(s"bad $name `$s` (expected one of: %s)" format (elems.map(_._1).mkString(" "))))
+      elems.getOrElse(s, throw new IllegalArgumentException(s"bad $name `$s` (expected one of: %s)" format (elems.keys.mkString(" "))))
   // TODO: allow `handler` to be specified
     val handler: PartialFunction[Throwable, Either[String, Option[A]]] = {
       case e: IllegalArgumentException => Left(e.getMessage)

@@ -1188,7 +1188,7 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
         // TODO: use `b`
         if (x.id < y.id) { -1 }
         else if (x.id == y.id) { 0 }
-        else { +1}
+        else { +1 }
     }
   }
 }
@@ -1217,26 +1217,21 @@ object Main {
     val mainMainMethod : SootMethod = Soot.getSootClass(mainClass).getMethodByName(mainMethod)
     val initialState = State.inject(Stmt.methodEntry(mainMainMethod))
 
-    var todo: mutable.PriorityQueue[AbstractState] = mutable.PriorityQueue()(
-      conf.stateOrdering()(conf.globalSnowflakeAddrLast()))
-    todo.enqueue(initialState)
     var done: Set[AbstractState] = Set()
     var doneEdges: Map[(Int, Int), Int] = Map()
 
+    var todo: mutable.PriorityQueue[AbstractState] = mutable.PriorityQueue()(
+      conf.stateOrdering()(conf.globalSnowflakeAddrLast()))
+    todo.enqueue(initialState)
     outSerializer.write(initialState.toPacket())
 
     var count = 0
     try {
       while (todo.nonEmpty && count < 1000*1000) {
         count+=1
-        // java.lang.System.getProperty("user.home")
-        // java.lang.String.equalsIgnoreCase(...)
-        // java.nio.file.Paths.get(String, String[])
-        // val current = todo.head
         val current = todo.dequeue
 
         if (!done.contains(current)) {
-          //todo = todo.tail
           Log.info("Processing state " + current.id+": "+(current match { case s : State => s.stmt.toString; case s => s.toString}))
           val nexts = System.next(current)
           val newTodo = nexts.filter(!done.contains(_))
@@ -1300,10 +1295,10 @@ object Main {
     Log.info("Count = " + count)
     Log.info("Done!")
     if (System.undefined != 0) {
-      Log.error("Undefined address number: " + System.undefined)
+      Log.error(s"Undefined address number: ${System.undefined}")
     }
     if (System.noSucc != 0) {
-      Log.error("No successor state number: " + System.noSucc)
+      Log.error(s"No successor state number: ${System.noSucc}")
     }
   }
 }
