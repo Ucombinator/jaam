@@ -37,8 +37,8 @@ object Conf {
         jaamFile = file().toString,
         targetFile = targetFile.toOption,
         shouldAppendMissingEOF = fixEof(),
-        addMissingStates = addMissingStates(),
-        removeMissingStates = removeMissingStates())
+        shouldAddMissingStates = addMissingStates(),
+        shouldRemoveMissingStates = removeMissingStates())
     }
   }
 
