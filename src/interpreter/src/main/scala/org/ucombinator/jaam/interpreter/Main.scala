@@ -20,7 +20,6 @@ import scala.io.Source
 import java.io.FileOutputStream
 
 import org.rogach.scallop._
-import org.rogach.scallop.exceptions.{Help, ScallopException, ScallopResult}
 
 import scala.collection.immutable.::
 
@@ -1137,25 +1136,9 @@ object System {
   *
   * @param args list of command-line arguments as strings
   */
-class Conf(args : Seq[String]) extends ScallopConf(args = args) {
+class Conf(args : Seq[String]) extends JaamConf(args = args) {
+  // TODO: banner("")
 
-  /**
-    * A manual converter to handle calls to `--help`. This implementation allows
-    * the `--help` option to be given at any point in the options -- not only at
-    * the very beginning of the list of arguments.
-    */
-  val helpConverter = new ValueConverter[Unit] {
-    // Override the default `parse` method so that any instance of `--help` is
-    // handled appropriately, i.e. a `Help` is thrown.
-    override def parse(s: List[(String, List[String])]): Either[String, Option[Unit]] = s match {
-      case Nil  => Right(None)
-      case _    => throw Help("")
-    }
-    val tag = scala.reflect.runtime.universe.typeTag[Unit]
-    val argType = org.rogach.scallop.ArgType.FLAG
-  }
-
-  val help        = opt[Unit](short = 'h', descr = "show this help message")(helpConverter)
   val classpath   = opt[String](required = true, short = 'P', descr = "the TODO class directory")
   val rtJar       = opt[String](required = true, short = 'J', descr = "the rt.jar file")
   val mainClass   = opt[String](required = true, short = 'c', descr = "the main class")
@@ -1170,24 +1153,6 @@ class Conf(args : Seq[String]) extends ScallopConf(args = args) {
     if (List("none", "error", "warn", "info", "debug", "trace").contains(logLevel)) Right(Unit)
     else Left("incorrect logging level given")
   }
-
-  /**
-    * Override the built-in `onError` method to ensure that `--help` information
-    * is displayed every time there is an error during option parsing.
-    *
-    * @param e the error which was thrown during parsing
-    */
-  override def onError(e: Throwable) = {
-    e match {
-      case ScallopException(_) => printHelp()
-      case _ => ()
-    }
-    // After printing the help information (if needed), allow the call to
-    // continue as it would have.
-    super.onError(e)
-  }
-
-  verify()
 }
 
 object Main {
