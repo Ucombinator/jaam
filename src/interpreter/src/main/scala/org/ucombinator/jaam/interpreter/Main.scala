@@ -1153,6 +1153,7 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
     if (List("none", "error", "warn", "info", "debug", "trace").contains(logLevel)) Right(Unit)
     else Left("incorrect logging level given")
   }
+  val waitForUser = opt[Boolean](descr = "wait for user to press enter before starting")
 
   verify()
 }
@@ -1161,10 +1162,14 @@ object Main {
   def main(args : Array[String]) {
     val conf = new Conf(args)
 
-    Soot.initialize(conf)
-    Log.setLogging(conf.logLevel().toString)
+    if (conf.waitForUser()) {
+      print("Press enter to start.")
+      scala.io.StdIn.readLine()
+    }
 
-    // TODO: wait for user before starting if requested
+    Soot.initialize(conf)
+    Log.setLogging(conf.logLevel())
+
     System.setAppLibraryClasses(conf.libClasses())
     val mainClass   = conf.mainClass().toString
     val mainMethod  = conf.method().toString
