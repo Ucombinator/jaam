@@ -13,15 +13,15 @@ package org.ucombinator.jaam.interpreter
 // TODO: invoke main method so we can initialize the parameters to main
 
 import scala.collection.JavaConversions._
+import scala.collection.immutable
+import scala.collection.immutable.::
 import scala.collection.mutable
-import scala.reflect.ClassTag
 import scala.io.Source
+import scala.reflect.ClassTag
 
 import java.io.FileOutputStream
 
 import org.rogach.scallop._
-
-import scala.collection.immutable.::
 
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
@@ -1145,17 +1145,52 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
   val method      = opt[String](required = true, short = 'm', descr = "the main method", default = Some("main"))
   val libClasses  = opt[String](short = 'L', descr = "app's library classes")
   val outfile     = opt[String](short = 'o', descr = "the output file for the serialized data")
-  val logLevel    = opt[String]( // TODO: use Log type instead of string
+  val logLevel    = enum[Log.Level](
     short = 'l',
-    descr = "the level of logging verbosity; one of 'none', 'error', 'warn', 'info', 'debug', 'trace'; default: 'info'",
-    default = Some("info"))
-  validate(logLevel) { logLevel =>
-    if (List("none", "error", "warn", "info", "debug", "trace").contains(logLevel)) Right(Unit)
-    else Left("incorrect logging level given")
-  }
-  val waitForUser = toggle(descrYes = "wait for user to press enter before starting (default: off)", noshort = true, prefix = "no-")
+    descr = "the level of logging verbosity",
+    default = Some("none"),
+    argType = "log level",
+    elems = immutable.ListMap(
+      "none" -> Log.LEVEL_NONE,
+      "error" -> Log.LEVEL_ERROR,
+      "warn" -> Log.LEVEL_WARN,
+      "info" -> Log.LEVEL_INFO,
+      "debug" -> Log.LEVEL_DEBUG,
+      "trace" -> Log.LEVEL_TRACE))
+
+  val waitForUser = toggle(
+    descrYes = "wait for user to press enter before starting (default: off)",
+    noshort = true, prefix = "no-", default = Some(false))
+
+  val globalSnowflakeAddrLast = toggle(
+    descrYes = "process states that read from the `GlobalSnowflakeAddr` last (default: on)",
+    noshort = true, prefix = "no-", default = Some(true))
+
+  val stateOrdering = enum[Boolean => Ordering[AbstractState]](
+    default = Some("max"),
+    argType = "ordering",
+    elems = immutable.ListMap(
+      "none" -> StateOrdering.none,
+      "max" -> StateOrdering.max
+        // TODO: state orderings: min insertion reverseInsertion
+    ))
 
   verify()
+
+  object StateOrdering {
+    def none(b: Boolean) = new Ordering[AbstractState] {
+      override def compare(x: AbstractState, y: AbstractState): Int =
+        0
+    }
+
+    def max(b: Boolean) = new Ordering[AbstractState] {
+      override def compare(x: AbstractState, y: AbstractState): Int =
+        // TODO: use `b`
+        if (x.id < y.id) { -1 }
+        else if (x.id == y.id) { 0 }
+        else { +1}
+    }
+  }
 }
 
 object Main {
@@ -1182,15 +1217,8 @@ object Main {
     val mainMainMethod : SootMethod = Soot.getSootClass(mainClass).getMethodByName(mainMethod)
     val initialState = State.inject(Stmt.methodEntry(mainMainMethod))
 
-    //var todo: List[AbstractState] = List(initialState)
-    //var todo: Set[AbstractState] = Set(initialState)
-    def stateOrdering(s : AbstractState) = {
-      if (System.readTable.getOrElse(GlobalSnowflakeAddr, Set()).contains(s)) {
-        0
-      }
-      else s.id
-    }
-    var todo: mutable.PriorityQueue[AbstractState] = mutable.PriorityQueue()(Ordering.by(stateOrdering))
+    var todo: mutable.PriorityQueue[AbstractState] = mutable.PriorityQueue()(
+      conf.stateOrdering()(conf.globalSnowflakeAddrLast()))
     todo.enqueue(initialState)
     var done: Set[AbstractState] = Set()
     var doneEdges: Map[(Int, Int), Int] = Map()
