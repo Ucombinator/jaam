@@ -1193,12 +1193,10 @@ class Conf(args : Seq[String]) extends ScallopConf(args = args) {
 object Main {
   def main(args : Array[String]) {
     val conf = new Conf(args)
+
     Soot.initialize(conf)
     Log.setLogging(conf.logLevel().toString)
-    run(conf)
-  }
 
-  def run(conf : Conf) {
     // TODO: wait for user before starting if requested
     System.setAppLibraryClasses(conf.libClasses())
     val mainClass   = conf.mainClass().toString
