@@ -1,1 +1,1 @@
-jaam-interpreter --classpath . --class GetProperty -m main -o GetProperty.jaam >GetProperty.out 2>GetProperty.err
+jaam-interpreter --classpath . -c GetProperty -m main -o GetProperty.jaam >GetProperty.out 2>GetProperty.err
