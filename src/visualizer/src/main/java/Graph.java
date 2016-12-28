@@ -642,6 +642,7 @@ public class Graph
 
 		// Visit first vertex of root method
 		Collections.sort(Main.graph.vertices);
+		System.out.println("Num of vertices: " + Main.graph.vertices.size());
 		visit(Main.graph.vertices.get(0), hash, dummies);
 		return dummies;
 	}

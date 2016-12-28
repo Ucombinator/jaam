@@ -15,6 +15,7 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
@@ -51,10 +52,9 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	private void handlePrimaryDoubleClick(MouseEvent event)
 	{
 		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
-		if(false)
+		if(true)
 		{
-		//animate(Parameters.stFrame.mainPanel.getPanelRoot());
-		/*Iterator<Node> it = v.getGraphics().getChildren().iterator();
+		Iterator<Node> it = v.getGraphics().getChildren().iterator();
 		while(it.hasNext())
 		{
 			Node n = it.next();
@@ -84,25 +84,32 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		
 		HashMap<String, Point2D> oldPositions = new HashMap<>();
 		savePositions(Parameters.stFrame.mainPanel.getPanelRoot(), oldPositions);
+		v.setExpanded(false);
+		LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
 		
 		st.setOnFinished(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
-				v.setExpanded(false);
-				LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-				animate(Parameters.stFrame.mainPanel.getPanelRoot(), oldPositions);
-			}
+				Iterator<AbstractVertex> itMethodVertices = Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().getVertices().values().iterator();
+				while(itMethodVertices.hasNext()){
+					animate(itMethodVertices.next(), oldPositions);
+					}			
+				}
 		});
-		*/
+		
 		}
-		else
-		{
-			HashMap<String, Point2D> oldPositions = new HashMap<>();
-			savePositions(Parameters.stFrame.mainPanel.getPanelRoot(), oldPositions);
-			v.setExpanded(false);
-			LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-			animate(Parameters.stFrame.mainPanel.getPanelRoot(), oldPositions);
-		}	
+//		else
+//		{
+//			HashMap<String, Point2D> oldPositions = new HashMap<>();
+//			savePositions(Parameters.stFrame.mainPanel.getPanelRoot(), oldPositions);
+////			v.setExpanded(false);
+//			LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+//			
+//			Iterator<AbstractVertex> itMethodVertices = Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().getVertices().values().iterator();
+//			while(itMethodVertices.hasNext()){
+//				animate(itMethodVertices.next(), oldPositions);
+//			}
+//		}	
 	}
 	
 	private void savePositions(AbstractVertex v, HashMap<String, Point2D> oldPositions){
@@ -118,18 +125,23 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 
 	public void animate(AbstractVertex v, HashMap<String, Point2D> oldPositions)
 	{
+		
+		v.getGraphics().setFill(Color.ORANGE);
 		TranslateTransition tt = new TranslateTransition(Duration.millis(300), v.getGraphics());
 		Point2D p =  oldPositions.get(v.getStrID());
 		
-		tt.setByX(Parameters.stFrame.mainPanel.scaleX(v.getX()-p.getX()));
-		tt.setByY(Parameters.stFrame.mainPanel.scaleY(v.getY()-p.getY()));
+		System.out.println("Vertex: " + v.getStrID());
+		System.out.println("NewX: " + Parameters.stFrame.mainPanel.scaleX(v.getX()));
+		System.out.println("NewY: " + Parameters.stFrame.mainPanel.scaleX(v.getY()));
+		tt.setByX(Parameters.stFrame.mainPanel.scaleX(-v.getX()+oldPositions.get(v.getStrID()).getX()));
+		tt.setByY(Parameters.stFrame.mainPanel.scaleY(-v.getY()+oldPositions.get(v.getStrID()).getY()));
 		tt.play();
 		
-		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
-		while (it.hasNext())
-		{
-			animate(it.next(),oldPositions);
-		}
+//		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
+//		while (it.hasNext())
+//		{
+//			animate(it.next(),oldPositions);
+//		}
 	}
 
 	private void handlePrimarySingleClick(MouseEvent event)

@@ -34,8 +34,9 @@ public class LayoutAlgorithm
 			{
 				//Layout the inner graphs of each node and assign width and height to each node
 				//coordinates are RELATIVE to the parent
-				if(v.isExpanded())
+				if(v.isExpanded()){
 					defaultLayout(v, v.getInnerGraph());
+				}
 			}
 		}
 
