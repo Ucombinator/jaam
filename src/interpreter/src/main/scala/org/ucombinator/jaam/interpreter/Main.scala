@@ -1177,6 +1177,8 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
 
   val maxSteps = opt[Int](descr = "maximum number of interpretation steps")
 
+  val color = toggle(prefix = "no-", default = Some(true))
+
   verify()
 
   object StateOrdering {
@@ -1206,6 +1208,7 @@ object Main {
 
     Soot.initialize(conf)
     Log.setLogging(conf.logLevel())
+    Log.color = conf.color()
 
     System.setAppLibraryClasses(conf.libClasses())
     val mainClass   = conf.mainClass()

@@ -21,6 +21,8 @@ object Log {
 
   def setLogging(level : Level) = minlog.Log.set(level)
 
+  var color: Boolean = true
+
   minlog.Log.setLogger(new JaamLogger)
 
   class JaamLogger extends minlog.Log.Logger {
@@ -32,9 +34,12 @@ object Log {
     }
 
     override def print(s : String) = {
+      def ifColor(s: String) = if (color) { s } else { "" }
       this.level match {
-        case minlog.Log.LEVEL_ERROR => super.print(Console.RED + s + Console.RESET)
-        case minlog.Log.LEVEL_WARN => super.print(Console.YELLOW + s + Console.RESET)
+        case minlog.Log.LEVEL_ERROR =>
+          super.print(ifColor(Console.RED)  + s + ifColor(Console.RESET))
+        case minlog.Log.LEVEL_WARN =>
+          super.print(ifColor(Console.YELLOW) + s + ifColor(Console.RESET))
         case _ => super.print(s)
       }
     }
