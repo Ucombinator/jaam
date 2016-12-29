@@ -91,6 +91,7 @@ object Soot {
     // Take definitions only from class files
     Options.v().set_src_prec(Options.src_prec_only_class)
 
+    // TODO: when should we have this?
     //Options.v.set_whole_program(true)
 
     // Compute dependent options
@@ -141,6 +142,7 @@ object Soot {
   }
 
   def isSubclass(sub : SootClass, sup : SootClass) : Boolean = {
+    // TODO: remove commented code once we are sure we like the new code
     val h = Scene.v().getOrMakeFastHierarchy()
     return sub == sup ||
      ((sub.isInterface, sup.isInterface) match {

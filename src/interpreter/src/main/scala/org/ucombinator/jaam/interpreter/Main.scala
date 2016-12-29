@@ -72,17 +72,6 @@ case class KontStack(k : KontAddr) extends CachedHashCode {
         case RetKont(frame, kontAddr) => (frame, KontStack(kontAddr))
       }
     }
-
-/*
-    k match {
-      case RetKont(frame, kontAddr) =>
-        for (topk <- System.kstore(kontAddr).values) yield {
-          val ks = KontStack(topk)
-          (frame, ks)
-        }
-      case HaltKont => Set()
-    }
- */
   }
 
   def handleException(exception : Value,
@@ -171,8 +160,6 @@ case class RetKont( val frame : Frame,
                     val k : KontAddr
                   ) extends Kont
 
-//case object HaltKont extends Kont
-
 //----------- ABSTRACT VALUES -----------------
 
 // TODO/precision D needs to have an interface that allows eval to use it
@@ -223,7 +210,6 @@ case object InitialBasePointer extends BasePointer
 case class StringBasePointer(val string : String) extends BasePointer {
   // Use escape codes (e.g., `\n`) in the string.  We do this by getting a
   // representation of a string constant and then printing that.
-//TODO:  override def toString = "X"
   override lazy val toString = {
     import scala.reflect.runtime.universe._
     "StringBasePointer(" + Literal(Constant(string)).toString + ")"
@@ -238,6 +224,7 @@ case class ClassBasePointer(val name : String) extends BasePointer
 
 //----------------- ADDRESSES ------------------
 
+// TODO: implement p4f
 // Addresses of continuations on the stack
 abstract class KontAddr extends Addr
 //case class OneCFAKontAddr(val fp : FramePointer) extends KontAddr
@@ -527,7 +514,6 @@ case class State(val stmt : Stmt,
       case v : CastExpr =>
         // TODO: cast from a SnowflakeObject to another SnowflakeObject
         val castedExpr: SootValue = v.getOp
-        //val fromType: Type = castedExpr.getType
         val castedType: Type = v.getCastType
         System.checkInitializedClasses(castedType)
         val d = eval(castedExpr)
@@ -604,15 +590,16 @@ case class State(val stmt : Stmt,
                    destAddr : Option[Set[Addr]],
                    nextStmt : Stmt = stmt.nextSyntactic) : Set[AbstractState] = {
     val base = expr match {
-      // TODO: Could only come from non-Java sources
-      case expr : DynamicInvokeExpr => ???
+      case expr : DynamicInvokeExpr =>
+        // Could only come from non-Java sources
+        throw new Exception(s"Unexpected DynamicInvokeExpr: $expr")
       case expr : StaticInvokeExpr => None
       case expr : InstanceInvokeExpr =>
-      // SpecialInvokeExpr, <init>, private methods, and methods of superclass
-      // InterfaceInvokeExpr
-      // VirtualInvokeExpr
-        val d = eval(expr.getBase)
-        Some((d, expr.isInstanceOf[SpecialInvokeExpr]))
+        // Possibilities:
+        //  - SpecialInvokeExpr: <init>, private methods, and methods of superclass
+        //  - InterfaceInvokeExpr
+        //  - VirtualInvokeExpr
+        Some((eval(expr.getBase), expr.isInstanceOf[SpecialInvokeExpr]))
     }
     val method = expr.getMethod
     val args = expr.getArgs.toList map eval
@@ -1211,6 +1198,7 @@ object Main {
     Log.setLogging(conf.logLevel())
     Log.color = conf.color()
 
+    // TODO: libClasses option?
     System.setAppLibraryClasses(conf.libClasses())
     val mainClass   = conf.mainClass()
     val mainMethod  = conf.method()

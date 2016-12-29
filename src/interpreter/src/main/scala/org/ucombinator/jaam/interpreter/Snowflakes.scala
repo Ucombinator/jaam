@@ -585,6 +585,7 @@ object ClassSnowflakes {
 }
 
 object Snowflakes {
+  // TODO: take state as argument? (so id is clearly the state id)
   def warn(id : Int, self: Option[Value], stmt : Stmt, meth : SootMethod) {
     Log.warn("Using generic snowflake for Java library in state "+id+". May be unsound." +
       " self = " + self +
