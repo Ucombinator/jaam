@@ -207,16 +207,47 @@ case class OneCFABasePointer(stmt : Stmt, fp : FramePointer) extends BasePointer
 case object InitialBasePointer extends BasePointer
 // Note that due to interning, strings and classes may share base pointers with each other
 // Oh, and class loaders are a headache(!)
-case class StringBasePointer(val string : String) extends BasePointer {
+abstract class StringBasePointer extends BasePointer {}
+
+// TODO/soundness: how to mix literal string base pointer and string base pointer top?
+object StringBasePointer {
+  var constants = Map[String, StringBasePointer]()
+  lazy val value = Soot.classes.String.getFieldByName("value")
+  lazy val hash = Soot.classes.String.getFieldByName("hash")
+  lazy val hash32 = Soot.classes.String.getFieldByName("hash32")
+
+  def apply(string: String): StringBasePointer = {
+    if (Main.conf.stringTop()) { StringBasePointerTop }
+    else {
+      constants.get(string) match {
+        case Some(bp) => bp
+        case None =>
+        // TODO: should this go here or should we throw an exception for top level handling?
+        // TODO: we can reuse base pointers when strings are the same because all the fields are immutable. Research: can we generalize this idea?
+        Log.info("Initializing string constant: \""+string+"\"")
+        val bp = LiteralStringBasePointer(string)
+        Snowflakes.createArray(
+          ArrayType.v(CharType.v,1),
+          List(D.atomicTop/*string.length*/),
+          Set(InstanceFieldAddr(bp, value)))
+        System.store.update(InstanceFieldAddr(bp, hash), D.atomicTop)
+        System.store.update(InstanceFieldAddr(bp, hash32), D.atomicTop)
+        constants += string -> bp
+        bp
+      }
+    }
+  }
+}
+
+case object StringBasePointerTop extends StringBasePointer
+case class LiteralStringBasePointer(val string : String) extends StringBasePointer {
   // Use escape codes (e.g., `\n`) in the string.  We do this by getting a
   // representation of a string constant and then printing that.
   override lazy val toString = {
     import scala.reflect.runtime.universe._
-    "StringBasePointer(" + Literal(Constant(string)).toString + ")"
+    "LiteralStringBasePointer(" + Literal(Constant(string)).toString + ")"
   }
 }
-
-case object StringBasePointerTop extends BasePointer
 
 // we remvoe the argument of ClassBasePointer, to make all ClassBasePointer points to the same
 case class ClassBasePointer(val name : String) extends BasePointer
@@ -455,14 +486,7 @@ case class State(val stmt : Stmt,
       case v : ClassConstant => D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer(v.value.replace('/', '.')))))
       //D(Set(ObjectValue(stmt.classmap("java.lang.Class"), StringBasePointer(v.value))))
       case v : StringConstant =>
-        D(Set(ObjectValue(Soot.classes.String, StringBasePointerTop)))
-        /*
-        if (System.store.contains(InstanceFieldAddr(bp, Soot.classes.String.getFieldByName("value")))) {
-          D(Set(ObjectValue(Soot.classes.String, bp)))
-        } else {
-          throw StringConstantException(v.value)
-        }
-        */
+        D(Set(ObjectValue(Soot.classes.String, StringBasePointer(v.value))))
       case v : NegExpr => D.atomicTop
       case v : BinopExpr =>
         v match {
@@ -741,7 +765,7 @@ case class State(val stmt : Stmt,
         case t : FloatConstantValueTag => return D.atomicTop
         case t : IntegerConstantValueTag => return D.atomicTop
         case t : LongConstantValueTag => return D.atomicTop
-        case t : StringConstantValueTag => return D(Set(ObjectValue(Soot.classes.String, StringBasePointerTop)))
+        case t : StringConstantValueTag => return D(Set(ObjectValue(Soot.classes.String, StringBasePointer(t.getStringValue()))))
         case _ => ()
       }
     return defaultInitialValue(f.getType)
@@ -806,19 +830,6 @@ case class State(val stmt : Stmt,
         Snowflakes.initStaticFields(sootClass)
         System.addInitializedClass(sootClass)
         Set(this.copy())
-      /*
-      case StringConstantException(string) =>
-        Log.info("Initializing string constant: \""+string+"\"")
-        val value = Soot.classes.String.getFieldByName("value")
-        val hash = Soot.classes.String.getFieldByName("hash")
-        val hash32 = Soot.classes.String.getFieldByName("hash32")
-        val bp = StringBasePointerTop
-        createArray(ArrayType.v(CharType.v,1), List(D.atomicTop/*string.length*/),
-                    Set(InstanceFieldAddr(bp, value)))
-          .update(InstanceFieldAddr(bp, hash), D.atomicTop)
-          .update(InstanceFieldAddr(bp, hash32), D.atomicTop)
-        Set(this.copy())
-      */
       case UndefinedAddrsException(addrs) =>
         //An empty set of addrs may due to the over approximation of ifStmt.
 
@@ -1167,6 +1178,8 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
 
   val color = toggle(prefix = "no-", default = Some(true))
 
+  val stringTop = toggle(prefix = "no-", default = Some(true))
+
   verify()
 
   object StateOrdering {
@@ -1186,8 +1199,12 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
 }
 
 object Main {
+  // TODO: better way to have "final after initialization" (lazy?)
+  var conf : Conf = null;  // TODO: find a better place to put this
+
   def main(args : Array[String]) {
     val conf = new Conf(args)
+    Main.conf = conf;
 
     if (conf.waitForUser()) {
       print("Press enter to start.")
