@@ -12,7 +12,9 @@ import soot.jimple.{Stmt => SootStmt, _}
 // TODO: make SnowflakeHandler record its method description
 // TODO: this and params method
 // TODO: returns method
+// TODO: make SnowflakeBasePointer take a Class object instead of a String
 
+// TODO: why do we have different kinds of SnowflakeBasePointer? is there a better way?
 abstract class AbstractSnowflakeBasePointer extends BasePointer
 case class SnowflakeBasePointer(name: String) extends AbstractSnowflakeBasePointer
 case class SnowflakeArrayBasePointer(at: ArrayType) extends AbstractSnowflakeBasePointer
@@ -68,7 +70,7 @@ case class ReturnSnowflake(value : D) extends SnowflakeHandler {
   }
 }
 
-case class UninitializedSnowflakeObjectException(sootClass: SootClass) extends RuntimeException
+//case class UninitializedSnowflakeObjectException(sootClass: SootClass) extends RuntimeException
 
 case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
@@ -595,9 +597,9 @@ object Snowflakes {
 
   val table = mutable.Map.empty[MethodDescription, SnowflakeHandler]
   // A list contains statically initialized classes
-  var initializedClasses = List[String]()
+  var initializedClasses = List[SootClass]()
   // A list contains instantiated classes
-  var instantiatedClasses = List[String]()
+  var instantiatedClasses = List[SootClass]()
 
   def get(meth : SootMethod) : Option[SnowflakeHandler] = {
     val x = MethodDescription(
@@ -647,13 +649,15 @@ object Snowflakes {
     }
   }
 
+/*
   // TODO: createObjectOrThrow vs createObject
-  def createObjectOrThrow(name : String) : D = {
-    if (!initializedClasses.contains(name)) {
-      throw UninitializedSnowflakeObjectException(Soot.getSootClass(name))
+  def createObjectOrThrow(sootClass: SootClass) : D = {
+    if (!initializedClasses.contains(sootClass)) {
+      throw UninitializedSnowflakeObjectException(sootClass)
     }
-    D(Set(ObjectValue(Soot.getSootClass(name), Snowflakes.malloc(Soot.getSootClass(name)))))
+    D(Set(ObjectValue(sootClass, Snowflakes.malloc(sootClass))))
   }
+ */
 
   def initField(addrs: Set[Addr], field: SootField) {
     field.getType match {
@@ -665,12 +669,12 @@ object Snowflakes {
   }
 
   def initStaticFields(sootClass: SootClass) {
-    if (initializedClasses.contains(sootClass.getName)) return
+    if (initializedClasses.contains(sootClass)) return
     if (sootClass.hasSuperclass) initStaticFields(sootClass.getSuperclass)
     for (field <- sootClass.getFields; if field.isStatic) {
       initField(Set(StaticFieldAddr(field)), field)
     }
-    initializedClasses = (sootClass.getName)::initializedClasses
+    initializedClasses = sootClass::initializedClasses
   }
 
   def initInstanceFields(sootClass: SootClass, bp: BasePointer) {
@@ -707,14 +711,13 @@ object Snowflakes {
       //return
     }
 
-    val className = sootClass.getName
     val objectBP = Snowflakes.malloc(sootClass)
     destAddr match {
       case Some(addr) => System.store.update(destAddr, D(Set(ObjectValue(sootClass, objectBP))))
       case None => {}
     }
-    if (instantiatedClasses.contains(className)) return
-    instantiatedClasses = className::instantiatedClasses
+    if (instantiatedClasses.contains(sootClass)) return
+    instantiatedClasses = sootClass::instantiatedClasses
 
     if (sootClass.isInterface) {
       //Log.error("Can not instantiate interface " + sootClass.getName + ".")
@@ -760,7 +763,7 @@ object Snowflakes {
     override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
       assert(state.stmt.sootStmt.getInvokeExpr.getArgCount == 5)
       val expr = state.stmt.sootStmt.getInvokeExpr
-      val newNewStore = System.store.update(state.addrsOf(expr.getArg(2)), state.eval(expr.getArg(0)))
+      System.store.update(state.addrsOf(expr.getArg(2)), state.eval(expr.getArg(0)))
       Set(state.copy(stmt = nextStmt))
     }
   })

@@ -606,7 +606,7 @@ case class State(val stmt : Stmt,
               // Snowflake object cast to non-Snowflake object
               // TODO: if castedType is not from Java library, then we need to instantiated one
               // TODO: call <init>, interface/abstract class
-              d2 = d2.join(Snowflakes.createObjectOrThrow(castedClass.getName))
+              d2 = d2.join(Snowflakes.createObjectOrThrow(castedClass))
             }
           }
           else {
@@ -819,6 +819,9 @@ case class State(val stmt : Stmt,
         Log.info("Static initializing "+sootClass)
 
         def initializeClass(sootClass: SootClass) {
+          // TODO: stop if reach initialized class
+          // TODO: does `Object` hasSuperclass?
+          // TODO: handle initialize snowflake object
           if (sootClass.hasSuperclass) {
             initializeClass(sootClass.getSuperclass)
           }
@@ -832,7 +835,7 @@ case class State(val stmt : Stmt,
         exceptions = D(Set())
         val meth = sootClass.getMethodByNameUnsafe(SootMethod.staticInitializerName)
         if (meth != null) {
-          initializeClass(sootClass)
+          initializeClass(sootClass) // TODO: factor by moving before `if (meth != null)`
           // TODO: Do we need to use the same JStaticInvokeExpr for repeated calls?
           this.copy().handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
             java.util.Collections.emptyList()), None, stmt)
@@ -842,11 +845,13 @@ case class State(val stmt : Stmt,
           Set(this.copy())
         }
 
+/* TODO: remove (note, might be thrown by checkInitializedClasses?)
       case UninitializedSnowflakeObjectException(sootClass) =>
         Log.info("Initializing snowflake class "+sootClass.getName)
         Snowflakes.initStaticFields(sootClass)
         System.addInitializedClass(sootClass)
         Set(this.copy())
+ */
       case UndefinedAddrsException(addrs) =>
         //An empty set of addrs may due to the over approximation of ifStmt.
 
@@ -1047,7 +1052,7 @@ object System {
   // If it isn't, the exception should be caught so the class can be initialized.
   def checkInitializedClasses(c : SootClass) {
     if (!initializedClasses.contains(c)) {
-      //if (System.isLibraryClass(c))
+      //if (System.isLibraryClass(c)) // TOOD: remove
       //  throw new UninitializedSnowflakeObjectException(c)
       throw new UninitializedClassException(c)
     }
