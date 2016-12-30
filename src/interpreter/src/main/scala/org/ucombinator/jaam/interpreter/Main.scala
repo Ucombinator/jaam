@@ -229,7 +229,7 @@ object StringBasePointer {
   System.store.update(
     ArrayLengthAddr(StringArrayBasePointerTop), D.atomicTop)
 
-  def apply(string: String): StringBasePointer = {
+  def apply(string: String, state: State): StringBasePointer = {
     if (Main.conf.stringTop()) { StringBasePointerTop }
     else {
       constants.get(string) match {
@@ -239,7 +239,8 @@ object StringBasePointer {
         // TODO: we can reuse base pointers when strings are the same because all the fields are immutable. Research: can we generalize this idea?
         Log.info("Initializing string constant: \""+string+"\"")
         val bp = LiteralStringBasePointer(string)
-        Snowflakes.createArray(
+
+        state.createArray( // TODO: use 'current state' instead of state parameter
           ArrayType.v(CharType.v,1),
           List(D.atomicTop/*string.length*/),
           Set(InstanceFieldAddr(bp, value)))
@@ -502,7 +503,7 @@ case class State(val stmt : Stmt,
       case v : ClassConstant => D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer(v.value.replace('/', '.')))))
       //D(Set(ObjectValue(stmt.classmap("java.lang.Class"), StringBasePointer(v.value)))) // TODO: remove?
       case v : StringConstant =>
-        D(Set(ObjectValue(Soot.classes.String, StringBasePointer(v.value))))
+        D(Set(ObjectValue(Soot.classes.String, StringBasePointer(v.value, this))))
       case v : NegExpr => D.atomicTop
       case v : BinopExpr =>
         v match {
@@ -781,7 +782,7 @@ case class State(val stmt : Stmt,
         case t : FloatConstantValueTag => return D.atomicTop
         case t : IntegerConstantValueTag => return D.atomicTop
         case t : LongConstantValueTag => return D.atomicTop
-        case t : StringConstantValueTag => return D(Set(ObjectValue(Soot.classes.String, StringBasePointer(t.getStringValue()))))
+        case t : StringConstantValueTag => return D(Set(ObjectValue(Soot.classes.String, StringBasePointer(t.getStringValue(), this))))
         case _ => ()
       }
     return defaultInitialValue(f.getType)
