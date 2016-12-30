@@ -212,9 +212,22 @@ abstract class StringBasePointer extends BasePointer {}
 // TODO/soundness: how to mix literal string base pointer and string base pointer top?
 object StringBasePointer {
   var constants = Map[String, StringBasePointer]()
-  lazy val value = Soot.classes.String.getFieldByName("value")
-  lazy val hash = Soot.classes.String.getFieldByName("hash")
-  lazy val hash32 = Soot.classes.String.getFieldByName("hash32")
+  val value = Soot.classes.String.getFieldByName("value")
+  val hash = Soot.classes.String.getFieldByName("hash")
+  val hash32 = Soot.classes.String.getFieldByName("hash32")
+
+  // Fields of StringBasePointerTop
+  System.store.update(
+    InstanceFieldAddr(StringBasePointerTop, value),
+    D(Set(ArrayValue(ArrayType.v(CharType.v, 1), StringArrayBasePointerTop))))
+  System.store.update(
+    InstanceFieldAddr(StringBasePointerTop, hash), D.atomicTop)
+  System.store.update(
+    InstanceFieldAddr(StringBasePointerTop, hash32), D.atomicTop)
+  System.store.update(
+    ArrayRefAddr(StringArrayBasePointerTop), D.atomicTop)
+  System.store.update(
+    ArrayLengthAddr(StringArrayBasePointerTop), D.atomicTop)
 
   def apply(string: String): StringBasePointer = {
     if (Main.conf.stringTop()) { StringBasePointerTop }
@@ -240,6 +253,9 @@ object StringBasePointer {
 }
 
 case object StringBasePointerTop extends StringBasePointer
+case object StringArrayBasePointerTop extends BasePointer
+case object InitialStringBasePointer extends StringBasePointer
+case object InitialStringArrayBasePointer extends StringBasePointer
 case class LiteralStringBasePointer(val string : String) extends StringBasePointer {
   // Use escape codes (e.g., `\n`) in the string.  We do this by getting a
   // representation of a string constant and then printing that.
@@ -484,7 +500,7 @@ case class State(val stmt : Stmt,
       // TODO: Class and String objects are objects and so need their fields initialized
       // TODO/clarity: Add an example of Java code that can trigger this.
       case v : ClassConstant => D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer(v.value.replace('/', '.')))))
-      //D(Set(ObjectValue(stmt.classmap("java.lang.Class"), StringBasePointer(v.value))))
+      //D(Set(ObjectValue(stmt.classmap("java.lang.Class"), StringBasePointer(v.value)))) // TODO: remove?
       case v : StringConstant =>
         D(Set(ObjectValue(Soot.classes.String, StringBasePointer(v.value))))
       case v : NegExpr => D.atomicTop
@@ -970,33 +986,37 @@ case class State(val stmt : Stmt,
   }
 }
 
+// TODO: research idea: lazy but with known forced times (i.e. some code can always access the forced value)
+
 // TODO/refactor: Maybe allow user-specified arguments.
 object State {
-  val stringClass : SootClass = Soot.classes.String
-  val value = stringClass.getFieldByName("value")
-  val hash = stringClass.getFieldByName("hash")
-  val hash32 = stringClass.getFieldByName("hash32")
-
   val initialFramePointer = InitialFramePointer
-  val initialBasePointer = InitialBasePointer
-  val initial_map : mutable.Map[Addr, D] = mutable.Map(
-    ParameterFrameAddr(initialFramePointer, 0) ->
-      D(Set(ArrayValue(ArrayType.v(stringClass.getType, 1), initialBasePointer))),
-    ArrayRefAddr(initialBasePointer) -> D(Set(ObjectValue(stringClass, initialBasePointer))),
-    ArrayLengthAddr(initialBasePointer) -> D.atomicTop,
+  val initialArrayBasePointer = InitialBasePointer
+  val initialStringBasePointer = InitialStringBasePointer
+  val initialStringArrayBasePointer = InitialStringArrayBasePointer
 
-    InstanceFieldAddr(StringBasePointerTop, value) ->
-      D(Set(ArrayValue(ArrayType.v(CharType.v, 1), StringBasePointerTop))),
-    ArrayRefAddr(StringBasePointerTop) -> D.atomicTop,
-    ArrayLengthAddr(StringBasePointerTop) ->  D.atomicTop,
-    InstanceFieldAddr(StringBasePointerTop, hash) -> D.atomicTop,
-    InstanceFieldAddr(StringBasePointerTop, hash32) -> D.atomicTop,
+  // TODO: factor these into helpers
+  // `String[]` argument of `main(String[])`
+  System.store.update(
+    ParameterFrameAddr(initialFramePointer, 0),
+    D(Set(ArrayValue(ArrayType.v(Soot.classes.String.getType, 1), initialArrayBasePointer))))
+  System.store.update(
+    ArrayRefAddr(initialArrayBasePointer), D(Set(ObjectValue(Soot.classes.String, initialStringBasePointer))))
+  System.store.update(
+    ArrayLengthAddr(initialArrayBasePointer), D.atomicTop)
 
-    InstanceFieldAddr(InitialBasePointer, value) ->
-      D(Set(ArrayValue(ArrayType.v(CharType.v, 1), StringBasePointerTop))),
-    InstanceFieldAddr(InitialBasePointer, hash) -> D.atomicTop,
-    InstanceFieldAddr(InitialBasePointer, hash32) -> D.atomicTop
-  )
+  // `String` objects in `String[]` argument of `main(String[])`
+  System.store.update(
+    InstanceFieldAddr(initialStringBasePointer, StringBasePointer.value),
+    D(Set(ArrayValue(ArrayType.v(CharType.v, 1), initialStringArrayBasePointer))))
+  System.store.update(
+    InstanceFieldAddr(initialStringBasePointer, StringBasePointer.hash), D.atomicTop)
+  System.store.update(
+    InstanceFieldAddr(initialStringBasePointer, StringBasePointer.hash32), D.atomicTop)
+  System.store.update(
+    ArrayRefAddr(initialStringArrayBasePointer), D.atomicTop)
+  System.store.update(
+    ArrayLengthAddr(initialStringArrayBasePointer), D.atomicTop)
 
   def inject(stmt : Stmt) : State = {
     val ks = KontStack(HaltKontAddr)
@@ -1009,7 +1029,7 @@ object System {
   // TODO: more statistics on what kind of statement and why.  Also, remove from list if it later gets a successor?
   var undefined: Int = 0
   var noSucc: Int = 0
-  val store: Store = Store(State.initial_map)
+  val store: Store = Store(mutable.Map[Addr, D]())
   val kstore: KontStore = KontStore(mutable.Map[KontAddr, KontD](HaltKontAddr -> KontD(Set())))
 
   // TODO: possible bug if we attempt to eval a state that is waiting for a class to be initialized
