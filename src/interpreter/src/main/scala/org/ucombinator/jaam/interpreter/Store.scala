@@ -84,6 +84,7 @@ abstract class AbstractStore[K <: Addr, V](val map: mutable.Map[K, V], abstractD
     this
   }
 
+  // TODO: apply(addr: K, t: Type = null) = filtered to expected type
   def apply(addr: K): V = {
     readAddrs += addr
     map(addr)
