@@ -141,26 +141,6 @@ object Soot {
     Scene.v().getOrMakeFastHierarchy().canStoreType(child.getType, parent.getType)
   }
 
-  def isSubclass(sub : SootClass, sup : SootClass) : Boolean = {
-    // TODO: remove commented code once we are sure we like the new code
-    val h = Scene.v().getOrMakeFastHierarchy()
-    return sub == sup ||
-     ((sub.isInterface, sup.isInterface) match {
-      //case (false, false) => Scene.v().getActiveHierarchy.isClassSubclassOf(sub, sup)
-      case (false, false) => h.isSubclass(sub, sup)
-      //case (true, true) => Scene.v().getActiveHierarchy.isInterfaceSubinterfaceOf(sub, sup)
-      case (true, true) => h.getAllSubinterfaces(sup).exists(_ == sub)
-      case (false, true) => {
-        //TODO: using FastHierarchy
-        val h = Scene.v().getActiveHierarchy()
-        h.getSuperclassesOfIncluding(sub)
-          .exists(_.getInterfaces().exists(h.getSuperinterfacesOfIncluding(_).exists(_ == sup)))
-        //(h.getAllImplementersOfInterface(sup) ++ h.getAllSubinterfaces(sup)).exists(_ == sub)
-      }
-       case (true, false) => false
-     })
-  }
-
   object classes {
     lazy val Object = getSootClass("java.lang.Object")
     lazy val Class = getSootClass("java.lang.Class")
