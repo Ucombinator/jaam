@@ -1066,7 +1066,7 @@ object System {
   }
 
   def isLibraryClass(c: SootClass): Boolean = {
-    isAppLibraryClass(c) || Soot.isJavaLibraryClass(c)
+    isAppLibraryClass(c) || System.isJavaLibraryClass(c)
   }
 
   // Application Library package names is in resources/libclasses.txt
@@ -1077,11 +1077,17 @@ object System {
     if (libClassesFile != null && libClassesFile.size > 0)
       appLibClasses = Source.fromFile(libClassesFile).getLines.toList.foldLeft(List[String]()) { (acc, l) =>
         val line = l.trim
+        // TODO: post-pend "." if not already present
+        // TODO: trim after '#' anywhere
         if (line(0) == '#') acc else line::acc
       }
   }
   def isAppLibraryClass(c : SootClass) : Boolean =
     System.appLibClasses.exists((c.getPackageName()+".").startsWith(_))
+
+  def isJavaLibraryClass(sootClass: SootClass) = {
+    sootClass.isJavaLibraryClass || sootClass.getName.startsWith("org.w3c")
+  }
 
   private def addToMultiMap[K, V](table: mutable.Map[K, Set[V]])(key: K, value: V) {
     table.get(key) match {
