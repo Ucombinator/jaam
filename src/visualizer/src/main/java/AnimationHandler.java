@@ -52,33 +52,30 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	private void handlePrimaryDoubleClick(MouseEvent event)
 	{
 		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
-		if(true)
-		{
 		Iterator<Node> it = v.getGraphics().getChildren().iterator();
-		while(it.hasNext())
-		{
-			Node n = it.next();
-			if(!n.getClass().equals(Rectangle.class))
-			{
-				FadeTransition ft = new FadeTransition(Duration.millis(300), n);
-				ft.setToValue(0.0);
-				ft.play();
-				event.consume();
-				ft.setOnFinished(new EventHandler<ActionEvent>() {
-					@Override
-					public void handle(ActionEvent event) {
-						//v.getGraphics().setVisible(false);
-					}
-				});
-			}
-		}
-
+//		while(it.hasNext())
+//		{
+//			Node n = it.next();
+//			if(!n.getClass().equals(Rectangle.class))
+//			{
+//				FadeTransition ft = new FadeTransition(Duration.millis(300), n);
+//				ft.setToValue(0.0);
+//				ft.play();
+//				event.consume();
+//			}
+//		}
+		
+		TranslateTransition tt = new TranslateTransition(Duration.millis(300), v.getGraphics());
+		tt.setToY(Parameters.stFrame.mainPanel.scaleY(-v.getHeight()/2.0 + AbstractVertex.DEFAULT_HEIGHT/2.0));
+		tt.play();
+		
+		
 		ScaleTransition st = new ScaleTransition(Duration.millis(300), v.getGraphics());
 
-		st.setFromX(1.0);
-		st.setToX(AbstractVertex.DEFAULT_WIDTH/v.getWidth());
-		st.setFromY(1.0);
-		st.setToY(AbstractVertex.DEFAULT_HEIGHT/v.getHeight());
+		//st.setFromX(Parameters.stFrame.mainPanel.scaleX(1.0));
+		st.setByX(AbstractVertex.DEFAULT_WIDTH/v.getWidth() -1 );
+		//st.setFromY(Parameters.stFrame.mainPanel.scaleY(1.0));
+		st.setByY(AbstractVertex.DEFAULT_HEIGHT/v.getHeight() -1);
 		st.play();
 
 		
@@ -89,31 +86,22 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		
 		st.setOnFinished(new EventHandler<ActionEvent>() {
 			@Override
-			public void handle(ActionEvent event) {
+			public void handle(ActionEvent event) {		
 				Iterator<AbstractVertex> itMethodVertices = Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().getVertices().values().iterator();
+				
 				while(itMethodVertices.hasNext()){
-					animate(itMethodVertices.next(), oldPositions);
+					AbstractVertex vertex = itMethodVertices.next();
+					vertex.getGraphics().setFill(Color.ORANGE);
+					animate(vertex, oldPositions.get(vertex.getStrID()));
 					}			
 				}
 		});
 		
-		}
-//		else
-//		{
-//			HashMap<String, Point2D> oldPositions = new HashMap<>();
-//			savePositions(Parameters.stFrame.mainPanel.getPanelRoot(), oldPositions);
-////			v.setExpanded(false);
-//			LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-//			
-//			Iterator<AbstractVertex> itMethodVertices = Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().getVertices().values().iterator();
-//			while(itMethodVertices.hasNext()){
-//				animate(itMethodVertices.next(), oldPositions);
-//			}
-//		}	
+		event.consume();
 	}
 	
 	private void savePositions(AbstractVertex v, HashMap<String, Point2D> oldPositions){
-		Point2D p = new Point2D(v.getX(), v.getY());
+		Point2D p = new Point2D(Parameters.stFrame.mainPanel.scaleX(v.getX()), Parameters.stFrame.mainPanel.scaleY(v.getY()));
 		oldPositions.put(v.getStrID(), p);
 		
 		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
@@ -123,18 +111,14 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		}
 	}
 
-	public void animate(AbstractVertex v, HashMap<String, Point2D> oldPositions)
+	public void animate(AbstractVertex v, Point2D p)
 	{
 		
-		v.getGraphics().setFill(Color.ORANGE);
+		//v.getGraphics().setFill(Color.ORANGE);
 		TranslateTransition tt = new TranslateTransition(Duration.millis(300), v.getGraphics());
-		Point2D p =  oldPositions.get(v.getStrID());
 		
-		System.out.println("Vertex: " + v.getStrID());
-		System.out.println("NewX: " + Parameters.stFrame.mainPanel.scaleX(v.getX()));
-		System.out.println("NewY: " + Parameters.stFrame.mainPanel.scaleX(v.getY()));
-		tt.setByX(Parameters.stFrame.mainPanel.scaleX(-v.getX()+oldPositions.get(v.getStrID()).getX()));
-		tt.setByY(Parameters.stFrame.mainPanel.scaleY(-v.getY()+oldPositions.get(v.getStrID()).getY()));
+		tt.setByX(Parameters.stFrame.mainPanel.scaleX(v.getX())-p.getX());
+		tt.setByY(Parameters.stFrame.mainPanel.scaleY(v.getY())-p.getY());
 		tt.play();
 		
 //		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();

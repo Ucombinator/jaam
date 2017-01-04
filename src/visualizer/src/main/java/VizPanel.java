@@ -84,12 +84,14 @@ public class VizPanel extends JFXPanel
 
 	public double scaleX(double coordinate)
 	{
-		return (coordinate * 200.0 / this.panelRoot.getWidth());
+		//return (coordinate * 80.0);
+		return (coordinate * 500.0 / this.panelRoot.getWidth());
 	}
 
 	public double scaleY(double coordinate)
 	{
-		return (coordinate * 200.0 / this.panelRoot.getHeight());
+		//return (coordinate * 40.0);
+		return (coordinate * 500.0 / this.panelRoot.getHeight());
 	}
 
 	public void draw(GUINode parent, AbstractVertex v)
