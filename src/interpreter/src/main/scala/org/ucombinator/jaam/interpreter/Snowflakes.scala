@@ -98,6 +98,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
   }
 
   override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
+    // TODO: options for controlling which parts flow into the global address
     for (arg <- args) {
       val d = GlobalD.update(arg.getValues)
       System.store.strongUpdate(GlobalSnowflakeAddr, d, GlobalD.modified)
@@ -165,6 +166,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
 
     // If the argument type is an interface or abstract class, then we try to call
     // each method from the definition of interface/abstract class.
+    // TODO: options to control saturation
     val methodsOfArgs = (for {
       (arg, ty) <- args zip meth.getParameterTypes if ty.isInstanceOf[RefType];
       sootClass = ty.asInstanceOf[RefType].getSootClass;
@@ -588,8 +590,9 @@ object ClassSnowflakes {
 
 object Snowflakes {
   // TODO: take state as argument? (so id is clearly the state id)
+  // TODO: take reason as argument (e.g., native, java library, app library, etc.)
   def warn(id : Int, self: Option[Value], stmt : Stmt, meth : SootMethod) {
-    Log.warn("Using generic snowflake for Java library in state "+id+". May be unsound." +
+    Log.warn("Using generic snowflake in state "+id+". May be unsound." +
       " self = " + self +
       " stmt = " + stmt +
       " method = " + meth)

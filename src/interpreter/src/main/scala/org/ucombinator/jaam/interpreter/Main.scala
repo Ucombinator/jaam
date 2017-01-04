@@ -11,6 +11,10 @@ package org.ucombinator.jaam.interpreter
 // TODO: need to track exceptions that derefing a Null could cause
 // TODO: invoke main method instead of jumping to first instr so static init is done correctly
 // TODO: invoke main method so we can initialize the parameters to main
+// TODO: option for saturation or not
+// TODO: if(?) { C.f } else { C.f }
+//       Then C.<clinit> may be called on one branch but not the other
+// TODO: logging system that allows control of different sub-systems
 
 import scala.collection.JavaConversions._
 import scala.collection.immutable
@@ -687,43 +691,20 @@ case class State(val stmt : Stmt,
     // TODO/dragons. Here they be.
     def dispatch(self : Option[Value], meth : SootMethod) : Set[AbstractState] = {
       // TODO: group multiple "self" together
-      //Log.info("dispatch: " + self + ":" + meth)
       Snowflakes.get(meth) match {
         case Some(h) => h(this, nextStmt, self, args)
         case None =>
-          /* (!meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver") || meth.isAbstract()) || */
-          /*
-          if (System.isLibraryClass(meth.getDeclaringClass) ||
-              self.isDefined && Snowflakes.isSnowflakeObject(self.get)) {
+
+          // TODO: Independently control snowflaking of app vs java library
+          // TODO: Also, consider natives returning prim separate from those returning non-prim
+          // TODO: Also, allow option to abort instead of snowflake (i.e., return empty set of states with log message)
+          if (Main.conf.snowflakeLibrary() && System.isLibraryClass(meth.getDeclaringClass) ||
+              self.exists(Snowflakes.isSnowflakeObject(_)) ||
+              meth.isNative) {
             Snowflakes.warn(this.id, self, stmt, meth)
-            //if (meth.getDeclaringClass.getPackageName.startsWith("com.sun.net.httpserver")) {
-            //  Log.warn("Snowflake due to Abstract: "+meth)
-            //}
+            // TODO/optimize: do we need to filter out incorrect class types?
             DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
-          }
-          */
-          def aux(): Set[AbstractState] = {
-            if (meth.isNative) {
-              DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
-              /*
-              Log.warn("Native method without a snowflake in state "+this.id+". May be unsound. stmt = " + stmt)
-              meth.getReturnType match {
-                case _ : VoidType => Set(this.copy(stmt = nextStmt))
-                case _ : PrimType =>
-                  System.store.update(destAddr, D.atomicTop)
-                  Set(this.copy(stmt = nextStmt))
-                case _ =>
-                  Log.error("Native method returns an object. Aborting.")
-                  Set()
-              }
-              */
-            }
-            /*else if (System.isLibraryClass(meth.getDeclaringClass) && meth.getReturnType.isInstanceOf[PrimType]) {
-              //Log.error("return prim type: " + meth)
-              //ReturnSnowflake(D.atomicTop)(this, nextStmt, self, args)
-              DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
-            }*/
-            else {
+          } else {
               // TODO/optimize: filter out incorrect class types
               val newKontStack = kontStack.push(meth, newFP, Frame(nextStmt, fp, destAddr))
               self match {
@@ -735,15 +716,6 @@ case class State(val stmt : Stmt,
               }
               Set(State(Stmt.methodEntry(meth), newFP, newKontStack))
             }
-          }
-          self match {
-            case Some(v) =>
-              if (Snowflakes.isSnowflakeObject(v))
-                DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
-              else
-                aux()
-            case None => aux()
-          }
       }
     }
 
@@ -1169,6 +1141,7 @@ object System {
 class Conf(args : Seq[String]) extends JaamConf(args = args) {
   // TODO: banner("")
   // TODO: how do we turn off sorting of options by name?
+  // TODO: always print default setting
 
   val classpath   = opt[String](required = true, short = 'P', descr = "the TODO class directory")
   val rtJar       = opt[String](required = true, short = 'J', descr = "the rt.jar file")
@@ -1211,6 +1184,8 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
   val color = toggle(prefix = "no-", default = Some(true))
 
   val stringTop = toggle(prefix = "no-", default = Some(true))
+
+  val snowflakeLibrary = toggle(prefix = "no-", default = Some(true))
 
   verify()
 
