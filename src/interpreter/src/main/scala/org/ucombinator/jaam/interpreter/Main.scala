@@ -1256,7 +1256,8 @@ object Main {
         val current = todo.dequeue
 
         if (!done.contains(current)) {
-          Log.info(s"Processing state ${current.id} (step $steps): ${current match { case s : State => s.stmt.toString; case s => s.toString}}")
+          Log.info(s"Processing step $steps and state ${current.id} with ${todo.size} states remaining: " +
+            (current match { case s : State => s.stmt.toString; case s => s.toString}))
           val nexts = System.next(current)
           val newTodo = nexts.filter(!done.contains(_))
 
@@ -1296,7 +1297,7 @@ object Main {
             todo ++= newTodo
           }
 
-          Log.info(s"Done processing state ${current.id} (step $steps)")
+          Log.info(s"Done processing step $steps and state ${current.id}")
         }
       }
     }
