@@ -1214,6 +1214,8 @@ object Main {
   var conf : Conf = null;  // TODO: find a better place to put this
 
   def main(args : Array[String]) {
+    val startInstant = java.time.Instant.now()
+
     val conf = new Conf(args)
     Main.conf = conf;
 
@@ -1314,7 +1316,22 @@ object Main {
     val sorted = summary.toList.sortWith(_._1 > _._1)
     sorted.foreach { case (size, n) => println(size + " \t " + n) }
     */
-    Log.info("Done!")
+    Log.error(s"Done!")
+    val duration = java.time.Duration.between(startInstant, java.time.Instant.now())
+    Log.error(f"Steps: $steps")
+    Log.error(f"Time: ${duration.toHours}%d:${duration.toMinutes % 60}%02d:${duration.getSeconds%60}%02d.${duration.toMillis%1000}%03d")
+    Log.error("Total memory: " + Runtime.getRuntime.totalMemory/1024/1024 + " MB")
+    Log.error("Unused memory: " + Runtime.getRuntime.freeMemory/1024/1024 + " MB")
+    Log.error("Used memory: " + (Runtime.getRuntime.totalMemory - Runtime.getRuntime.freeMemory)/1024/1024 + " MB")
+/* TODO: if we need more precise info (e.g. peak memory)
+    for (mp <- java.lang.management.ManagementFactory.getMemoryPoolMXBeans()) {
+      Log.error("")
+      Log.error(f"Name: " + mp.getName)
+      Log.error(f"Memory: " + mp.getUsage) //${mp.getInit} ${mp.getUsed} ${mp.getCommitted} ${mp.getMax}")
+      Log.error(f"Peak: " + mp.getPeakUsage) //${mp.getInit} ${mp.getUsed} ${mp.getCommitted} ${mp.getMax}")
+      Log.error(f"Collection: " + mp.getCollectionUsage) //${mp.getInit} ${mp.getUsed} ${mp.getCommitted} ${mp.getMax}")
+    }
+ */
 
     if (conf.maxSteps.toOption.exists(steps >= _)) {
       Log.error(s"Exceeded maximum state limit (${conf.maxSteps()})")
