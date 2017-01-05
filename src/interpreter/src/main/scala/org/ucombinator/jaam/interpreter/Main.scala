@@ -96,7 +96,7 @@ case class KontStack(k : KontAddr) extends CachedHashCode {
       return Set()
     }
 
-    /*
+    /* TODO: can this iterative version of stack walking be deleted?
     val currentFrame = Frame(stmt, fp, None)
     var states: Set[AbstractState] = Set()
     var nextFrames: Set[(Frame, KontStack)] = Set((currentFrame, this))
@@ -1210,7 +1210,7 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
 }
 
 object Main {
-  // TODO: better way to have "final after initialization" (lazy?)
+  // TODO: better way to have "final after initialization" (lazy?) and populated from Runtime.args
   var conf : Conf = null;  // TODO: find a better place to put this
 
   def main(args : Array[String]) {
