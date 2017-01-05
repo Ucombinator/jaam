@@ -781,12 +781,17 @@ case class State(val stmt : Stmt,
     try {
       val nexts = true_next()
       if (!Main.conf.exceptions()) {
+        if (exceptions.getValues.size != 0) {
+          // TODO: put entry in jaam file
+          Log.info("Ignoring thrown exceptions: "+exceptions)
+        }
         nexts
       } else {
         val exceptionStates = (exceptions.getValues map {
           kontStack.handleException(_, stmt, fp)//, store)
         }).flatten
-        nexts ++ exceptionStates
+        // `exceptionStates` is usually empty so it is slightly faster to put that first
+        exceptionStates ++ nexts
       }
     } catch {
       case UninitializedClassException(sootClass) =>
