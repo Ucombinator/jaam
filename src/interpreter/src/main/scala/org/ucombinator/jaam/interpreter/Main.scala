@@ -780,12 +780,14 @@ case class State(val stmt : Stmt,
   override def next() : Set[AbstractState] = {
     try {
       val nexts = true_next()
-/*      val exceptionStates = (exceptions.getValues map {
-        kontStack.handleException(_, stmt, fp)//, store)
-      }).flatten
-      nexts ++ exceptionStates
- */
-      nexts
+      if (!Main.conf.exceptions()) {
+        nexts
+      } else {
+        val exceptionStates = (exceptions.getValues map {
+          kontStack.handleException(_, stmt, fp)//, store)
+        }).flatten
+        nexts ++ exceptionStates
+      }
     } catch {
       case UninitializedClassException(sootClass) =>
         Log.info("Static initializing "+sootClass)
@@ -1186,6 +1188,8 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
   val stringTop = toggle(prefix = "no-", default = Some(true))
 
   val snowflakeLibrary = toggle(prefix = "no-", default = Some(true))
+
+  val exceptions = toggle(prefix = "no-", default = Some(true))
 
   verify()
 
