@@ -707,6 +707,9 @@ case class State(val stmt : Stmt,
           if (Main.conf.snowflakeLibrary() && System.isLibraryClass(meth.getDeclaringClass) ||
               self.exists(Snowflakes.isSnowflakeObject(_)) ||
               meth.isNative) {
+            if (meth.isNative) {
+              Log.warn("Native snowflake: "+meth+" self: "+self)
+            }
             Snowflakes.warn(this.id, self, stmt, meth)
             // TODO/optimize: do we need to filter out incorrect class types?
             DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
