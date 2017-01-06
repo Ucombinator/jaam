@@ -572,7 +572,7 @@ object ClassSnowflakes {
               try { // TODO: this is a bit of a hack
                 val expr = new soot.jimple.internal.JSpecialInvokeExpr(
                   local, //new soot.jimple.internal.JimpleLocal("newInstanceSnowflake", sootClass.getType()),
-                  sootClass.getMethod(SootMethod.constructorName, List()).makeRef(),
+                  sootClass.getMethod(SootMethod.constructorName, List(), VoidType.v()).makeRef(),
                   List[soot.Value]())
                 //state2.handleInvoke(expr, None)
                 state.handleInvoke(expr, None)
