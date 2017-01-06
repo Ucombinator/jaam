@@ -53,7 +53,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 
     public enum VertexType
 	{
-		LINE, METHOD, METHOD_PATH
+		LINE, METHOD
 	}
 
 	protected int id;
@@ -889,6 +889,12 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 
 	public void setExpanded(boolean expanded) {
 		this.expanded = expanded;
+	}
+
+	public void setEdgeVisibility(boolean isEdgeVisible)
+	{
+		for(Edge e : this.innerGraph.getEdges().values())
+			e.setVisible(isEdgeVisible);
 	}
 	
 	public void printCoordinates()

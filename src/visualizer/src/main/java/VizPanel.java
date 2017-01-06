@@ -128,11 +128,8 @@ public class VizPanel extends JFXPanel
 
 		if(this.showEdge)
 		{
-			Iterator<Edge> itEdge = v.getInnerGraph().getEdges().values().iterator();
-			while (itEdge.hasNext()) {
-				Edge e = itEdge.next();
+			for(Edge e : v.getInnerGraph().getEdges().values())
 				e.draw(this, node);
-			}
 		}
 
 		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();

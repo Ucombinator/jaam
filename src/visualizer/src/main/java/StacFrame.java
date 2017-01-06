@@ -359,8 +359,9 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						Main.graph.collapseOnce();
-                        Main.graph.root.centerizeXCoordinate();
+						// TODO: Write new collapse function
+						//Main.graph.collapseOnce();
+                        //Main.graph.root.centerizeXCoordinate();
 						Parameters.repaintAll();
 					}
 				}
@@ -375,8 +376,9 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						Main.graph.deCollapseOnce();
-                        Main.graph.root.centerizeXCoordinate();
+						// TODO: Write new expand function
+						//Main.graph.deCollapseOnce();
+                        //Main.graph.root.centerizeXCoordinate();
 						Parameters.repaintAll();
 					}
 				}
@@ -510,9 +512,10 @@ public class StacFrame extends JFrame
 			{
 				public void itemStateChanged(ItemEvent e)
 				{
-					// TODO: Edges won't be added/removed by calling repaint. Do it yourself.
 					mainPanel.showEdge = showEdge.isSelected();
-					StacFrame.this.repaint();
+					mainPanel.getPanelRoot().setEdgeVisibility(showEdge.isSelected());
+					for(AbstractVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+						v.setEdgeVisibility(showEdge.isSelected());
 				}
 			}
 		);

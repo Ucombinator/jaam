@@ -211,4 +211,9 @@ public class Edge implements Comparable<Edge>
 	{
 		this.graphics = graphics;
 	}
+
+	public void setVisible(boolean isVisible)
+	{
+		this.graphics.setVisible(isVisible);
+	}
 }
