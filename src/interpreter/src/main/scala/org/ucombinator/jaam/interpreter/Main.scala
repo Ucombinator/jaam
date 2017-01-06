@@ -82,6 +82,12 @@ case class KontStack(k : KontAddr) extends CachedHashCode {
                       stmt : Stmt,
                       fp : FramePointer
                     ) : Set[AbstractState] = {
+
+    if (!Main.conf.exceptions()) {
+      Log.info("Ignoring thrown exception: "+exception)
+      return Set()
+    }
+
     //TODO: if the JVM implementation does not enforce the rules on structured locking described in §2.11.10,
     //then if the method of the current frame is a synchronized method and the current thread is not the owner
     //of the monitor entered or reentered on invocation of the method, athrow throws an IllegalMonitorStateException
@@ -1338,6 +1344,11 @@ object Main {
       Log.error(f"Collection: " + mp.getCollectionUsage) //${mp.getInit} ${mp.getUsed} ${mp.getCommitted} ${mp.getMax}")
     }
  */
+
+    Log.error(s"Initialized classes:")
+    for (c <- System.initializedClasses.map(_.getName).toSeq.sorted) {
+      Log.error(s"  " + c)
+    }
 
     if (conf.maxSteps.toOption.exists(steps >= _)) {
       Log.error(s"Exceeded maximum state limit (${conf.maxSteps()})")
