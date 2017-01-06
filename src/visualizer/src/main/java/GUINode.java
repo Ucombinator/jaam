@@ -1,11 +1,12 @@
 
 import javafx.scene.layout.Pane;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
 
 // TODO: Place vertex labels on top of vertices.
 public class GUINode extends Pane
@@ -16,7 +17,7 @@ public class GUINode extends Pane
     private AbstractVertex vertex;
 	private GUINode parent;
 
-    boolean labels_enabled = false;
+    boolean labelsEnabled = false;
     boolean isDragging;
 
     public GUINode(GUINode parent, AbstractVertex v)
@@ -27,7 +28,7 @@ public class GUINode extends Pane
         this.vertex.setGraphics(this);
         this.rect = new Rectangle();
         this.rectLabel = new Text();
-        if(labels_enabled)
+        if(labelsEnabled)
         {
         	this.getChildren().addAll(this.rect, this.rectLabel);
         }
@@ -37,10 +38,9 @@ public class GUINode extends Pane
         }
 
         this.rect.setOpacity(0.2);
-        this.makeDraggable();
         this.isDragging = false;
-        
-        this.setOnMouseClicked(new AnimationHandler());
+
+        this.addMouseEvents();
         this.setVisible(true);
     }
     
@@ -96,13 +96,20 @@ public class GUINode extends Pane
         this.rect.setHeight(height);
     }
 
-    public void makeDraggable()
+    // Divides the actual width in pixels by the width in vertex units
+    public double getWidthPerVertex()
+    {
+        return this.getWidth() / vertex.getWidth();
+    }
+
+    public void addMouseEvents()
     {
         this.setOnMousePressed(onMousePressedEventHandler);
         this.setOnMouseDragged(onMouseDraggedEventHandler);
         this.setOnMouseReleased(onMouseReleasedEventHandler);
         this.setOnMouseEntered(onMouseEnteredEventHandler);
         this.setOnMouseExited(onMouseExitedEventHandler);
+        this.setOnMouseClicked(new AnimationHandler());
     }
 
     EventHandler<MouseEvent> onMousePressedEventHandler = new EventHandler<MouseEvent>()
@@ -161,8 +168,9 @@ public class GUINode extends Pane
                 {
 	        		if(e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
 	        		{
-	        		    e.getLine().setStroke(Color.GREENYELLOW);
-	        		    e.getLine().setStrokeWidth(2);
+	        		    Line line = e.getLine();
+	        		    line.setStroke(Color.GREENYELLOW);
+	        		    line.setStrokeWidth(line.getStrokeWidth() * 2.0);
 	        		}
 	        	}
         	}
@@ -186,8 +194,9 @@ public class GUINode extends Pane
                 {
 	        		if (e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
 	        		{
-	        			e.getLine().setStroke(Color.BLACK);
-	        			e.getLine().setStrokeWidth(1);
+	        		    Line line = e.getLine();
+	        			line.setStroke(Color.BLACK);
+                        line.setStrokeWidth(line.getStrokeWidth() / 2.0);
 	        		}
 	        	}
         	}

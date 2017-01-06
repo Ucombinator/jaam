@@ -22,7 +22,6 @@ import java.util.Iterator;
 
 public class VizPanel extends JFXPanel
 {
-	private boolean context;
 	private Group contentGroup;
 	private Pane testPane;
 	private ScrollPane scrollPane;
@@ -47,10 +46,9 @@ public class VizPanel extends JFXPanel
 		return this.panelRoot;
 	}
 
-	public VizPanel(boolean isContextPanel)
+	public VizPanel()
 	{
 		super();
-		this.context = isContextPanel;
 		contentGroup = new Group();
 
 		if (Parameters.debugMode)
@@ -69,10 +67,6 @@ public class VizPanel extends JFXPanel
 
 	public void initFX(AbstractVertex root)
 	{
-		// TODO: Put something useful on the context panel.
-		if(this.context)
-			return;
-
 		if(root == null)
 		{
 			System.out.println("Running layout...");
@@ -97,6 +91,12 @@ public class VizPanel extends JFXPanel
 	public double scaleY(double coordinate)
 	{
 		return (coordinate * rootHeight / this.maxVertexHeight);
+	}
+
+	public double getZoomLevel()
+	{
+		// We assume that scaleX and scaleY are equal
+		return contentGroup.getScaleX();
 	}
 
 	public void draw(GUINode parent, AbstractVertex v)
@@ -207,19 +207,20 @@ public class VizPanel extends JFXPanel
 				if (event.getDeltaY() == 0)
 					return;
 
-				double scaleFactor = (event.getDeltaY() > 0) ? SCALE_DELTA
+				final double scaleFactor = (event.getDeltaY() > 0) ? SCALE_DELTA
 						: 1 / SCALE_DELTA;
 
-				// amount of scrolling in each direction in scrollContent coordinate
-				// units
-				Point2D scrollOffset = figureScrollOffset(scrollContent, scroller);
+				// amount of scrolling in each direction in scrollContent coordinate units
+				final Point2D scrollOffset = figureScrollOffset(scrollContent, scroller);
 
 				group.setScaleX(group.getScaleX() * scaleFactor);
 				group.setScaleY(group.getScaleY() * scaleFactor);
 
-				// move viewport so that old center remains in the center after the
-				// scaling
+				// move viewport so that old center remains in the center after the scaling
 				repositionScroller(scrollContent, scroller, scaleFactor, scrollOffset);
+
+				// Adjust stroke width of lines and length of arrows
+				VizPanel.this.scaleLines();
 			}
 		});
 
@@ -232,6 +233,7 @@ public class VizPanel extends JFXPanel
 			}
 		});
 
+		// Fix drag location when node is scaled
 		scrollContent.setOnMouseDragged(new EventHandler<MouseEvent>()
 		{
 			@Override
@@ -291,6 +293,19 @@ public class VizPanel extends JFXPanel
 		else
 		{
 			scroller.setHvalue(scroller.getHmin());
+		}
+	}
+
+	public void scaleLines()
+	{
+		//System.out.println("Scaling lines and arrowheads...");
+		for(Edge e : this.panelRoot.getInnerGraph().getEdges().values())
+			e.setScale();
+
+		for(AbstractVertex v : this.panelRoot.getInnerGraph().getVertices().values())
+		{
+			for(Edge e : v.getInnerGraph().getEdges().values())
+				e.setScale();
 		}
 	}
 }

@@ -1,5 +1,8 @@
 
+import javafx.animation.ParallelTransition;
+import javafx.animation.ScaleTransition;
 import javafx.embed.swing.JFXPanel;
+import javafx.util.Duration;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -47,8 +50,8 @@ public class StacFrame extends JFrame
 	private JMenu menuFile, menuSearch, menuNavigation, menuCustomize, menuHelp;
 	private int width, height;
 	private ArrayList<JSplitPane> horizontalSplitPanes;
-	public VizPanel mainPanel, contextPanel;
-	private JPanel menuPanel, leftPanel, rightPanel, searchPanel;
+	public VizPanel mainPanel;
+	private JPanel menuPanel, bytecodePanel, decompiledPanel, rightPanel, searchPanel;
 	public JCheckBox showEdge;
     public SearchField searchF;
 	
@@ -67,13 +70,9 @@ public class StacFrame extends JFrame
 
 		makeMenuBar();
 		if (Parameters.debugMode)
-		{
 			makeSimpleLayout();
-		}
 		else
-		{
 			makeLayout();
-		}
 
 		this.setVisible(true);
 	}
@@ -279,7 +278,7 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						Main.graph.clearHighlights();
-						Parameters.leftArea.clear();
+						Parameters.bytecodeArea.clear();
 						Parameters.repaintAll();
 					}
 				}
@@ -400,7 +399,7 @@ public class StacFrame extends JFrame
 						String newFontSize = JOptionPane.showInputDialog(null, "The current font size is: " +
 								Parameters.font.getSize() + ". Please enter a new font size");
 						Parameters.font = new Font("Serif", Font.PLAIN, Integer.parseInt(newFontSize));
-						Parameters.leftArea.setFont(Parameters.font);
+						Parameters.bytecodeArea.setFont(Parameters.font);
 						Parameters.rightArea.setFont(Parameters.font);
 						Parameters.repaintAll();
 					}
@@ -485,7 +484,6 @@ public class StacFrame extends JFrame
 		setSplitScreen();
 
 		this.addKeyboard(mainPanel);
-		this.addKeyboard(contextPanel);
         
         JPanel topPanel = new JPanel();
         topPanel.setBorder(BorderFactory.createEtchedBorder());
@@ -534,9 +532,16 @@ public class StacFrame extends JFrame
 			{
 				public void actionPerformed(ActionEvent e)
 				{
-					// TODO: Use correct function here
-					//mainPanel.boxSize *= Parameters.boxFactor;
-					Parameters.repaintAll();
+					ParallelTransition pt = new ParallelTransition();
+					for(AbstractVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+					{
+						GUINode node = v.getGraphics();
+						ScaleTransition st = new ScaleTransition(Duration.millis(300), node);
+						st.setToX(node.getScaleX() * Parameters.boxFactor);
+						st.setToY(node.getScaleY() * Parameters.boxFactor);
+						pt.getChildren().add(st);
+					}
+					pt.play();
 				}
 			}
 		);
@@ -554,9 +559,16 @@ public class StacFrame extends JFrame
 			{
 				public void actionPerformed(ActionEvent e)
 				{
-					// TODO: Use correct function here
-					//mainPanel.boxSize /= Parameters.boxFactor;
-					Parameters.repaintAll();
+					ParallelTransition pt = new ParallelTransition();
+					for(AbstractVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+					{
+						GUINode node = v.getGraphics();
+						ScaleTransition st = new ScaleTransition(Duration.millis(300), node);
+						st.setToX(node.getScaleX() * 1.0 / Parameters.boxFactor);
+						st.setToY(node.getScaleY() * 1.0 / Parameters.boxFactor);
+						pt.getChildren().add(st);
+					}
+					pt.play();
 				}
 			}
 		);
@@ -574,7 +586,7 @@ public class StacFrame extends JFrame
 
 	public void makeSimpleLayout()
 	{
-		this.mainPanel = new VizPanel(false);
+		this.mainPanel = new VizPanel();
 		this.setLayout(new BorderLayout());
 		this.getContentPane().add(this.mainPanel);
 	}
@@ -582,24 +594,28 @@ public class StacFrame extends JFrame
 	public void setSplitScreen()
 	{
 		// Declare each panel
-		leftPanel = new JPanel();
+		decompiledPanel = new JPanel();
+		bytecodePanel = new JPanel();
 		rightPanel = new JPanel();
         searchPanel = new JPanel();
-        System.out.println("****************************************MAIN PANEL*************************************************");
-		this.mainPanel = new VizPanel(false);
-		System.out.println("****************************************CONTEXT PANEL*************************************************");
-		System.out.println("CONTEXT PANEL");
-		this.contextPanel = new VizPanel(true);
+		this.mainPanel = new VizPanel();
 
 		// Build each panel
-		JLabel leftL = new JLabel("Context", JLabel.CENTER);
-		Parameters.leftArea = new CodeArea();
-		leftPanel.setLayout(new BorderLayout());
-		leftPanel.add(leftL,BorderLayout.NORTH);
-		JScrollPane scrollL = new JScrollPane (Parameters.leftArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+		JLabel leftL = new JLabel("Code", JLabel.CENTER);
+		Parameters.bytecodeArea = new CodeArea();
+		bytecodePanel.setLayout(new BorderLayout());
+		bytecodePanel.add(leftL,BorderLayout.NORTH);
+		JScrollPane bytecodeScroll = new JScrollPane (Parameters.bytecodeArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		leftPanel.add(scrollL, BorderLayout.CENTER);
-		leftPanel.setFont(Parameters.font);
+		bytecodePanel.add(bytecodeScroll, BorderLayout.CENTER);
+		bytecodePanel.setFont(Parameters.font);
+
+		decompiledPanel.setLayout(new BorderLayout());
+		Parameters.decompiledArea = new CodeArea();
+		JScrollPane decompiledScroll = new JScrollPane(Parameters.decompiledArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		decompiledPanel.add(decompiledScroll, BorderLayout.CENTER);
+		decompiledPanel.setFont(Parameters.font);
 		
 		JLabel rightL = new JLabel("Description", JLabel.CENTER);
 		Parameters.rightArea = new JTextArea();
@@ -627,8 +643,8 @@ public class StacFrame extends JFrame
 		ArrayList<Double> layoutColumnWeights = new ArrayList<Double>();
 
 		ArrayList<JComponent> left = new ArrayList<JComponent>();
-		left.add(leftPanel);
-		left.add(contextPanel);
+		left.add(bytecodePanel);
+		left.add(decompiledPanel);
 
 		ArrayList<Double> leftWeights = new ArrayList<Double>();
 		leftWeights.add(0.6);

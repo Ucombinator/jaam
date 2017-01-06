@@ -42,7 +42,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	{
 		return graphics;
 	}
-	public void setGraphics(GUINode graphics) {
+	public void setGraphics(GUINode graphics)
+	{
 		this.graphics = graphics;
 	}
 
@@ -175,19 +176,13 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 
 	public void setVisible(boolean isVisible)
 	{
-		//System.out.println("Setting visibility for node " + this.id + " to " + isVisible);
-		//System.out.println("Location: " + this.location);
 		this.isVisible = isVisible;
-		if(this.getGraphics()!=null){
+		if(this.getGraphics() != null)
 			this.getGraphics().setVisible(isVisible);
-		}
-//		this.mainNode.setVisible(isVisible);
-//		this.contextNode.setVisible(isVisible);
 	}
     
     public DefaultMutableTreeNode toDefaultMutableTreeNode()
     {
-//        return new DefaultMutableTreeNode(this.getShortDescription());
         return new DefaultMutableTreeNode(this);
     }
     

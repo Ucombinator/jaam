@@ -234,7 +234,7 @@ public class Graph
 	public void searchNodes(StacFrame.searchType search, String searchStr)
 	{
 		this.clearHighlights();
-		Parameters.leftArea.clear();
+		Parameters.bytecodeArea.clear();
 		
 		if(search == StacFrame.searchType.ID || search == StacFrame.searchType.OUT_OPEN || search == StacFrame.searchType.OUT_CLOSED
 				|| search == StacFrame.searchType.IN_OPEN || search == StacFrame.searchType.IN_CLOSED || search == StacFrame.searchType.ROOT_PATH)
