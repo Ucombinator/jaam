@@ -1,6 +1,4 @@
 
-import java.util.Iterator;
-
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
@@ -13,17 +11,13 @@ import javafx.scene.paint.Color;
 public class GUINode extends Pane
 {
     double dragX, dragY;
-    protected Rectangle back_rect, rect;
+    protected Rectangle rect;
     protected Text rectLabel;
-    boolean isDragging;
-    private AbstractVertex vertex;    
-    boolean labels_enabled = false;
-
+    private AbstractVertex vertex;
 	private GUINode parent;
 
-    // A node in the main visualization will keep track of its mirror in the context view, and vice versa.
-    // This allows us to update the location of both when either one of them is dragged.
-    protected GUINode mirror;
+    boolean labels_enabled = false;
+    boolean isDragging;
 
     public GUINode(GUINode parent, AbstractVertex v)
     {
@@ -31,16 +25,15 @@ public class GUINode extends Pane
         this.parent = parent;
         this.vertex = v;
         this.vertex.setGraphics(this);
-        this.back_rect = new Rectangle();
         this.rect = new Rectangle();
         this.rectLabel = new Text();
         if(labels_enabled)
         {
-        	this.getChildren().addAll(this.back_rect, this.rect, this.rectLabel);
+        	this.getChildren().addAll(this.rect, this.rectLabel);
         }
         else
         {
-        	this.getChildren().addAll(this.back_rect, this.rect);
+        	this.getChildren().addAll(this.rect);
         }
 
         this.rect.setOpacity(0.2);
@@ -48,10 +41,7 @@ public class GUINode extends Pane
         this.isDragging = false;
         
         this.setOnMouseClicked(new AnimationHandler());
-
         this.setVisible(true);
-        //System.out.println("Location of vertex:");
-        //v.printCoordinates();
     }
     
     public AbstractVertex getVertex() {
@@ -75,7 +65,6 @@ public class GUINode extends Pane
     // Next several methods: Pass on calls to underlying rectangle
     public void setFill(Color c)
     {
-    	this.back_rect.setFill(Color.WHITE);
         this.rect.setFill(c);
     }
 
@@ -91,13 +80,11 @@ public class GUINode extends Pane
 
     public void setArcHeight(double height)
     {
-    	this.back_rect.setArcHeight(height);
         this.rect.setArcHeight(height);
     }
 
     public void setArcWidth(double height)
     {
-    	this.back_rect.setArcWidth(height);
         this.rect.setArcWidth(height);
     }
 
@@ -105,13 +92,8 @@ public class GUINode extends Pane
     {
         this.setTranslateX(x);
         this.setTranslateY(y);
-        this.back_rect.setWidth(width);
-        this.back_rect.setHeight(height);
         this.rect.setWidth(width);
         this.rect.setHeight(height);
-
-        System.out.println("Location of GUINode rectangle:");
-        System.out.println(x + ", " + y + ", " + width + ", " + height);
     }
 
     public void makeDraggable()
@@ -149,8 +131,6 @@ public class GUINode extends Pane
             double offsetY = event.getScreenY() + dragY;
             node.setTranslateX(offsetX);
             node.setTranslateY(offsetY);
-            //node.relocate(offsetX, offsetY);
-            // TODO: Also adjust mirror node
         }
     };
 
@@ -177,10 +157,8 @@ public class GUINode extends Pane
             event.consume();
         	if (vertex.getSelfGraph()!=null)
         	{
-	        	Iterator<Edge> it = vertex.getSelfGraph().getEdges().values().iterator();
-	        	while(it.hasNext())
+	        	for(Edge e : vertex.getSelfGraph().getEdges().values())
                 {
-	        		Edge e = it.next();
 	        		if(e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
 	        		{
 	        		    e.getLine().setStroke(Color.GREENYELLOW);
@@ -204,10 +182,8 @@ public class GUINode extends Pane
             event.consume();
         	if(vertex.getSelfGraph() != null)
         	{
-	        	Iterator<Edge> it = vertex.getSelfGraph().getEdges().values().iterator();
-	        	while(it.hasNext())
+	        	for(Edge e : vertex.getSelfGraph().getEdges().values())
                 {
-	        		Edge e = it.next();
 	        		if (e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
 	        		{
 	        			e.getLine().setStroke(Color.BLACK);

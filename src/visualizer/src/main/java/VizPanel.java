@@ -16,7 +16,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Group;
-import javafx.scene.shape.Rectangle;
 
 import java.awt.Color;
 import java.util.Iterator;
@@ -36,6 +35,12 @@ public class VizPanel extends JFXPanel
 			javafx.scene.paint.Color.GREEN, javafx.scene.paint.Color.AZURE,
 			javafx.scene.paint.Color.BLUEVIOLET, javafx.scene.paint.Color.DARKTURQUOISE};
 	private int index = 0;
+
+	// The dimensions of the background for our graph
+	public double rootWidth = 500.0, rootHeight = 500.0;
+
+	// Store the count for vertex width and height when everything is expanded
+	public double maxVertexWidth, maxVertexHeight;
 
 	public AbstractVertex getPanelRoot()
 	{
@@ -73,8 +78,9 @@ public class VizPanel extends JFXPanel
 			System.out.println("Running layout...");
 			Graph g = Main.graph;			
 			this.panelRoot = LayerFactory.get2layer(g);
-			this.panelRoot.setExpanded(true);
 			LayoutAlgorithm.layout(this.panelRoot);
+			this.maxVertexWidth = this.panelRoot.getWidth();
+			this.maxVertexHeight = this.panelRoot.getHeight();
 		}
 		else
 		{
@@ -85,27 +91,16 @@ public class VizPanel extends JFXPanel
 
 	public double scaleX(double coordinate)
 	{
-		//return (coordinate * 80.0);
-		return (coordinate * 500.0 / this.panelRoot.getWidth());
+		return (coordinate * rootWidth / this.maxVertexWidth);
 	}
 
 	public double scaleY(double coordinate)
 	{
-		//return (coordinate * 40.0);
-		return (coordinate * 500.0 / this.panelRoot.getHeight());
+		return (coordinate * rootHeight / this.maxVertexHeight);
 	}
 
 	public void draw(GUINode parent, AbstractVertex v)
 	{
-		/*Rectangle test = new Rectangle();
-		test.setLayoutX(0);
-		test.setLayoutY(0);
-		test.setWidth(100);
-		test.setHeight(100);
-		test.setFill(javafx.scene.paint.Color.BLACK);
-		test.setVisible(true);
-		contentGroup.getChildren().add(test);*/
-
 		GUINode node = new GUINode(parent, v);
 
 		if (parent == null)
@@ -113,12 +108,11 @@ public class VizPanel extends JFXPanel
 		else
 			parent.getChildren().add(node);
 
-		// v.printCoordinates();
-		double layoutX = scaleX(v.getX());
-		double layoutY = scaleY(v.getY());
+		double translateX = scaleX(v.getX());
+		double translateY = scaleY(v.getY());
 		double width = scaleX(v.getWidth());
 		double height = scaleY(v.getHeight());
-		node.setLocation(layoutX, layoutY, width, height);
+		node.setLocation(translateX, translateY, width, height);
 
 		node.setArcWidth(scaleX(0.5));
 		node.setArcHeight(scaleY(0.5));

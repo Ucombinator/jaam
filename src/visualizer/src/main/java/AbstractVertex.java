@@ -1,19 +1,6 @@
 
 import javax.swing.tree.DefaultMutableTreeNode;
-
-import javafx.scene.Group;
-import javafx.scene.Node;
-import javafx.scene.layout.Pane;
-
 import java.util.ArrayList;
-
-//The base class for the various kinds of vertices.
-//An abstract vertex is a box on the screen. The subclasses vary in
-//what kind of data the vertex represents.
-
-//The current subclasses are lines of code, methods, and paths of methods.
-//We may also add other kinds of collapsing later, which will require
-//having new kinds of vertices.
 
 abstract class AbstractVertex implements Comparable<AbstractVertex>
 {
@@ -60,7 +47,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	}
 
 	private String label;
-	private boolean expanded = false;
+	private boolean expanded = true;
 
 	public ArrayList<Integer> tags;
 
@@ -78,8 +65,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	protected ArrayList<AbstractVertex> abstractNeighbors;
 
 	// A location stores coordinates for a subtree.
-	protected Location location;
-	boolean updateLocation;
+	protected Location location = new Location();
+	boolean updateLocation = false;
 
 	//children stores all of the vertices to which we have edges from this vertex
 	//in the current display
@@ -87,38 +74,33 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	//the current display
 	//The base graph is stored in the neighbors in the Vertex class.
 	protected ArrayList<AbstractVertex> children, incoming;
-
-	protected double x = 0;
-	protected double y = 0;
-	protected double width = -1; 	// we want this values to be initialized by the layout algorithm	
-	protected double height = -1;
 	
 
 	public void setWidth(double width) {
-		this.width = width;
+		this.location.width = width;
 	}
 	public void setHeight(double height) {
-		this.height = height;
+		this.location.height = height;
 	}
 	
 	public void setX(double x) {
-		this.x = x;
+		this.location.x = x;
 	}
 	public void setY(double y) {
-		this.y = y;
+		this.location.y = y;
 	}
 	
 	public double getX() {
-		return x;
+		return this.location.x;
 	}
 	public double getY() {
-		return y;
+		return this.location.y;
 	}
 	public double getWidth() {
-		return width;
+		return this.location.width;
 	}
 	public double getHeight() {
-		return height;
+		return this.location.height;
 	}
 
 	//The merge start is the first vertex of the merge children for a merge vertex, and is used
@@ -140,7 +122,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		UNVISITED
 	}
 	protected VertexStatus vertexStatus = VertexStatus.WHITE;
-	protected double[] subtreeBoundBox = {width,height};
+	protected double[] subtreeBoundBox = {this.location.width, this.location.height};
 	
 	//Subclasses must override these so that we have descriptions for each of them,
 	//and so that our generic collapsing can work for all of them
@@ -185,12 +167,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	
 	public void setDefaults()
 	{
-		this.location = new Location();
-		this.updateLocation = false;
-//		this.mainNode = new GUINode(this.contextNode);
-//		this.contextNode = new GUINode(this.mainNode);
 		this.setVisible(false);
-
 		this.incoming = new ArrayList<AbstractVertex>();
 		this.children = new ArrayList<AbstractVertex>();
         this.tags = new ArrayList<Integer>();
@@ -915,10 +892,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	}
 	
 	public void printCoordinates()
-
 	{
-		System.out.println("Vertex " + this.id + ": " + this.x + ", " + this.y + ", width = " + this.width + ", height = " + this.height);
+		System.out.println("Vertex " + this.id + this.location.toString());
 	}
-
 }
 
