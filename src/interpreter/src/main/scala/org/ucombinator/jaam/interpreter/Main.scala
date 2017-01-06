@@ -733,8 +733,9 @@ case class State(val stmt : Stmt,
         System.checkInitializedClasses(method.getDeclaringClass())
         dispatch(None, method)
       case Some((b, isSpecial)) =>
-        ((for (v <- b.getValues) yield {
-          v match {
+        var r = Set[AbstractState]()
+        for (v <- b.getValues) {
+          r ++= (v match {
             case ObjectValue(_, bp) if bp.isInstanceOf[AbstractSnowflakeBasePointer] => dispatch(Some(v), method)
             case ObjectValue(sootClass, bp) if Soot.canStoreClass(sootClass, method.getDeclaringClass) =>
               val meth = if (isSpecial) method else overrides(sootClass, method).head
@@ -742,8 +743,9 @@ case class State(val stmt : Stmt,
             case ArrayValue(sootType, bp) =>
               dispatch(Some(v), method)
             case _ => Set()
-          }
-        }) :\ Set[AbstractState]())(_ ++ _) // TODO: better way to do this?
+          })
+        }
+        r
     }
   }
 
