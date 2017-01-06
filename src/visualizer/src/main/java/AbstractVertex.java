@@ -60,7 +60,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	}
 
 	private String label;
-	private boolean expanded = true;
+	private boolean expanded = false;
 
 	public ArrayList<Integer> tags;
 

@@ -234,4 +234,13 @@ public class AbstractGraph
 		System.out.println("Loop heights found!");
 		VizPanel.computeHues();
 	}*/
+	
+	public void printCoordinates(){
+		Iterator<AbstractVertex> it = this.getVertices().values().iterator();
+		while(it.hasNext()){
+			AbstractVertex v = it.next();
+			System.out.println(v.getStrID() + ", x=" + v.getX() + ", y=" + v.getY());
+		}
+		
+	}
 }

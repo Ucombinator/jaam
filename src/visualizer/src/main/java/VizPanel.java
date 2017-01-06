@@ -73,6 +73,7 @@ public class VizPanel extends JFXPanel
 			System.out.println("Running layout...");
 			Graph g = Main.graph;			
 			this.panelRoot = LayerFactory.get2layer(g);
+			this.panelRoot.setExpanded(true);
 			LayoutAlgorithm.layout(this.panelRoot);
 		}
 		else

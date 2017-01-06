@@ -8,10 +8,30 @@ public class LayoutAlgorithm
 	// This works on a graph whose vertices have been assigned a bounding box
 	final static double MARGIN_PADDING = .25;
 	final static double NODES_PADDING = .5;
-
+	
+	private static AbstractVertex getVertexWithID(String id){
+		Iterator<AbstractVertex> it = Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().getVertices().values().iterator();
+		while(it.hasNext()){
+			AbstractVertex v = it.next();
+			if(v.getStrID().equals(id)){
+				System.out.println(":-D '"+v.getStrID()+"'");
+				return v;
+			}
+		}
+		return null;
+	}
+	
 	public static void layout(AbstractVertex parenteVertex){
+	
+//		getVertexWithID("vertex:20").setExpanded(false);
+//		getVertexWithID("vertex:21").setExpanded(false);
+//		getVertexWithID("vertex:22").setExpanded(false);
+		
 		initializeSizes(parenteVertex);
 		defaultLayout(parenteVertex,parenteVertex.getInnerGraph());
+		
+		System.out.println("AHAHAH");
+		Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().printCoordinates();
 	}
 	
 	private static void initializeSizes(AbstractVertex parenteVertex){

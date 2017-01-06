@@ -13,7 +13,7 @@ import javafx.scene.paint.Color;
 public class GUINode extends Pane
 {
     double dragX, dragY;
-    protected Rectangle back_rect,rect;
+    protected Rectangle back_rect, rect;
     protected Text rectLabel;
     boolean isDragging;
     private AbstractVertex vertex;    
@@ -50,8 +50,8 @@ public class GUINode extends Pane
         this.setOnMouseClicked(new AnimationHandler());
 
         this.setVisible(true);
-        System.out.println("Location of vertex:");
-        v.printCoordinates();
+        //System.out.println("Location of vertex:");
+        //v.printCoordinates();
     }
     
     public AbstractVertex getVertex() {
@@ -103,8 +103,8 @@ public class GUINode extends Pane
 
     public void setLocation(double x, double y, double width, double height)
     {
-        this.setLayoutX(x);
-        this.setLayoutY(y);
+        this.setTranslateX(x);
+        this.setTranslateY(y);
         this.back_rect.setWidth(width);
         this.back_rect.setHeight(height);
         this.rect.setWidth(width);
@@ -147,7 +147,9 @@ public class GUINode extends Pane
             node.isDragging = true;
             double offsetX = event.getScreenX() + dragX;
             double offsetY = event.getScreenY() + dragY;
-            node.relocate(offsetX, offsetY);
+            node.setTranslateX(offsetX);
+            node.setTranslateY(offsetY);
+            //node.relocate(offsetX, offsetY);
             // TODO: Also adjust mirror node
         }
     };
