@@ -182,10 +182,13 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
     })
     //println("methodsOfArgs: " + methodsOfArgs)
 
+    Log.warn("Saturating due to: "+meth)
     val methStates = (for {
       (base, meths) <- methodsOfArgs
+      if base.getValues.nonEmpty
       meth <- meths
     } yield {
+      Log.warn("Saturating: "+base+" meth: "+meth)
       val params = typesToDs(meth.getParameterTypes.toList)
       state.handleInvoke2(Some((base, false)), meth, params, ZeroCFAFramePointer(meth), None, nextStmt)
     }).flatten
