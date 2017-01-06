@@ -312,7 +312,7 @@ case class StaticFieldAddr(val field : SootField) extends Addr
 // TODO: why is values private?
 case class D(private val values: Set[Value]) {
   def getValues: Set[Value] = values
-  def join(that : D) = D(this.getValues ++ that.getValues)
+  def join(that : D) = D(this.getValues.union(that.getValues))
   def maybeZero() : Boolean = getValues.exists(_.isInstanceOf[AtomicValue])
 }
 object D {
