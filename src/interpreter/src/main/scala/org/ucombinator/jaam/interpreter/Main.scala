@@ -827,12 +827,12 @@ case class State(val stmt : Stmt,
         if (meth != null) {
           initializeClass(sootClass) // TODO: factor by moving before `if (meth != null)`
           // TODO: Do we need to use the same JStaticInvokeExpr for repeated calls?
-          this.copy().handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
+          this.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
             java.util.Collections.emptyList()), None, stmt)
         } else {
           // TODO: Do we need to do newStore for static fields?
           System.addInitializedClass(sootClass)
-          Set(this.copy())
+          Set(this)
         }
 
 /* TODO: remove (note, might be thrown by checkInitializedClasses?)
@@ -840,7 +840,7 @@ case class State(val stmt : Stmt,
         Log.info("Initializing snowflake class "+sootClass.getName)
         Snowflakes.initStaticFields(sootClass)
         System.addInitializedClass(sootClass)
-        Set(this.copy())
+        Set(this)
  */
       case UndefinedAddrsException(addrs) =>
         //An empty set of addrs may due to the over approximation of ifStmt.
@@ -849,10 +849,10 @@ case class State(val stmt : Stmt,
           addr match {
             case InstanceFieldAddr(bp, field) =>
               Snowflakes.initField(Set(addr), field)
-              Set(this.copy())
+              Set(this)
             case StaticFieldAddr(field) =>
               Snowflakes.initField(Set(addr), field)
-              Set(this.copy())
+              Set(this)
             case _ =>
               System.undefined += 1
               Log.error("Undefined Addrs in state "+this.id+"; stmt = "+stmt+"; addrs = "+addrs)
