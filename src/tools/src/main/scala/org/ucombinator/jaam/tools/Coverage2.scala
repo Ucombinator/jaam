@@ -53,6 +53,8 @@ object Coverage2 {
 
   def freshenType(t: Type): Type = {
     t match {
+      case t: VoidType => VoidType.v()
+
       // Sub-classes of PrimType
       case t: BooleanType => BooleanType.v()
       case t: ByteType => ByteType.v()
@@ -63,6 +65,7 @@ object Coverage2 {
       case t: LongType => LongType.v()
       case t: ShortType => ShortType.v()
 
+      // Sub-classes of RefLikeType
       case t: ArrayType => ArrayType.v(freshenType(t.baseType), t.numDimensions)
       case t: RefType => RefType.v(t.getClassName)
     }
@@ -80,7 +83,7 @@ object Coverage2 {
           // Use forceResolve instead of loadClass b/c previous soot calls mean it has already completed resolving
           val c2 = Scene.v().forceResolve(m.getDeclaringClass.getName, SootClass.BODIES)
           val params = m.getParameterTypes.map(freshenType(_))
-          val m2 = c2.getMethod(m.getName, params)
+          val m2 = c2.getMethod(m.getName, params, freshenType(m.getReturnType))
           methods += (m2 -> (methods.getOrElse(m2, Map[Int, SootUnit]()) + (s.stmt.index -> s.stmt.stmt)))
         case _ => {} // Ignore anything else.
       }

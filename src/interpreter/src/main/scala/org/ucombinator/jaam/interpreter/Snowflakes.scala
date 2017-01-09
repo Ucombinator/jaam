@@ -182,10 +182,13 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
     })
     //println("methodsOfArgs: " + methodsOfArgs)
 
+    Log.warn("Saturating due to: "+meth)
     val methStates = (for {
       (base, meths) <- methodsOfArgs
+      if base.getValues.nonEmpty
       meth <- meths
     } yield {
+      Log.warn("Saturating: "+base+" meth: "+meth)
       val params = typesToDs(meth.getParameterTypes.toList)
       state.handleInvoke2(Some((base, false)), meth, params, ZeroCFAFramePointer(meth), None, nextStmt)
     }).flatten
@@ -572,7 +575,7 @@ object ClassSnowflakes {
               try { // TODO: this is a bit of a hack
                 val expr = new soot.jimple.internal.JSpecialInvokeExpr(
                   local, //new soot.jimple.internal.JimpleLocal("newInstanceSnowflake", sootClass.getType()),
-                  sootClass.getMethod(SootMethod.constructorName, List()).makeRef(),
+                  sootClass.getMethod(SootMethod.constructorName, List(), VoidType.v()).makeRef(),
                   List[soot.Value]())
                 //state2.handleInvoke(expr, None)
                 state.handleInvoke(expr, None)

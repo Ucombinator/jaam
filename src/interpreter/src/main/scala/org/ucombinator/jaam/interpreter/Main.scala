@@ -82,6 +82,12 @@ case class KontStack(k : KontAddr) extends CachedHashCode {
                       stmt : Stmt,
                       fp : FramePointer
                     ) : Set[AbstractState] = {
+
+    if (!Main.conf.exceptions()) {
+      Log.info("Ignoring thrown exception: "+exception)
+      return Set()
+    }
+
     //TODO: if the JVM implementation does not enforce the rules on structured locking described in §2.11.10,
     //then if the method of the current frame is a synchronized method and the current thread is not the owner
     //of the monitor entered or reentered on invocation of the method, athrow throws an IllegalMonitorStateException
@@ -312,7 +318,7 @@ case class StaticFieldAddr(val field : SootField) extends Addr
 // TODO: why is values private?
 case class D(private val values: Set[Value]) {
   def getValues: Set[Value] = values
-  def join(that : D) = D(this.getValues ++ that.getValues)
+  def join(that : D) = D(this.getValues.union(that.getValues))
   def maybeZero() : Boolean = getValues.exists(_.isInstanceOf[AtomicValue])
 }
 object D {
@@ -701,6 +707,9 @@ case class State(val stmt : Stmt,
           if (Main.conf.snowflakeLibrary() && System.isLibraryClass(meth.getDeclaringClass) ||
               self.exists(Snowflakes.isSnowflakeObject(_)) ||
               meth.isNative) {
+            if (meth.isNative) {
+              Log.warn("Native snowflake: "+meth+" self: "+self)
+            }
             Snowflakes.warn(this.id, self, stmt, meth)
             // TODO/optimize: do we need to filter out incorrect class types?
             DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
@@ -724,8 +733,9 @@ case class State(val stmt : Stmt,
         System.checkInitializedClasses(method.getDeclaringClass())
         dispatch(None, method)
       case Some((b, isSpecial)) =>
-        ((for (v <- b.getValues) yield {
-          v match {
+        var r = Set[AbstractState]()
+        for (v <- b.getValues) {
+          r ++= (v match {
             case ObjectValue(_, bp) if bp.isInstanceOf[AbstractSnowflakeBasePointer] => dispatch(Some(v), method)
             case ObjectValue(sootClass, bp) if Soot.canStoreClass(sootClass, method.getDeclaringClass) =>
               val meth = if (isSpecial) method else overrides(sootClass, method).head
@@ -733,8 +743,9 @@ case class State(val stmt : Stmt,
             case ArrayValue(sootType, bp) =>
               dispatch(Some(v), method)
             case _ => Set()
-          }
-        }) :\ Set[AbstractState]())(_ ++ _) // TODO: better way to do this?
+          })
+        }
+        r
     }
   }
 
@@ -816,12 +827,12 @@ case class State(val stmt : Stmt,
         if (meth != null) {
           initializeClass(sootClass) // TODO: factor by moving before `if (meth != null)`
           // TODO: Do we need to use the same JStaticInvokeExpr for repeated calls?
-          this.copy().handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
+          this.handleInvoke(new JStaticInvokeExpr(meth.makeRef(),
             java.util.Collections.emptyList()), None, stmt)
         } else {
           // TODO: Do we need to do newStore for static fields?
           System.addInitializedClass(sootClass)
-          Set(this.copy())
+          Set(this)
         }
 
 /* TODO: remove (note, might be thrown by checkInitializedClasses?)
@@ -829,7 +840,7 @@ case class State(val stmt : Stmt,
         Log.info("Initializing snowflake class "+sootClass.getName)
         Snowflakes.initStaticFields(sootClass)
         System.addInitializedClass(sootClass)
-        Set(this.copy())
+        Set(this)
  */
       case UndefinedAddrsException(addrs) =>
         //An empty set of addrs may due to the over approximation of ifStmt.
@@ -838,10 +849,10 @@ case class State(val stmt : Stmt,
           addr match {
             case InstanceFieldAddr(bp, field) =>
               Snowflakes.initField(Set(addr), field)
-              Set(this.copy())
+              Set(this)
             case StaticFieldAddr(field) =>
               Snowflakes.initField(Set(addr), field)
-              Set(this.copy())
+              Set(this)
             case _ =>
               System.undefined += 1
               Log.error("Undefined Addrs in state "+this.id+"; stmt = "+stmt+"; addrs = "+addrs)
@@ -1338,6 +1349,11 @@ object Main {
       Log.error(f"Collection: " + mp.getCollectionUsage) //${mp.getInit} ${mp.getUsed} ${mp.getCommitted} ${mp.getMax}")
     }
  */
+
+    Log.error(s"Initialized classes:")
+    for (c <- System.initializedClasses.map(_.getName).toSeq.sorted) {
+      Log.error(s"  " + c)
+    }
 
     if (conf.maxSteps.toOption.exists(steps >= _)) {
       Log.error(s"Exceeded maximum state limit (${conf.maxSteps()})")
