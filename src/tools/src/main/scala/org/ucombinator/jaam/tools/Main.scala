@@ -103,6 +103,19 @@ object Conf {
       MissingReturns.missingReturns(jaamFile().toString)
     }
   }
+
+  class LoopDepthCounter extends Main("loop") {
+    banner("Analyze the number of depth of each loop in the application code")
+    footer("")
+
+    val mainClass = trailArg[String](descr = "The name of the main class")
+    val mainMethod = trailArg[String](descr = "The name of entrance method")
+    val jars = trailArg[String](descr = "Colon separated list of JAR files to directly compare coverage against")
+
+    def run(conf: Conf) {
+      LoopDepthCounter.main(mainClass(), mainMethod(), jars().split(":"))
+    }
+  }
 }
 
 class Conf(args : Seq[String]) extends ScallopConf(args = args) {
@@ -114,6 +127,7 @@ class Conf(args : Seq[String]) extends ScallopConf(args = args) {
   addSubcommand(new Conf.Coverage)
   addSubcommand(new Conf.Coverage2)
   addSubcommand(new Conf.MissingReturns)
+  addSubcommand(new Conf.LoopDepthCounter)
   verify()
 }
 
