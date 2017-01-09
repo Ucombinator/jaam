@@ -119,17 +119,20 @@ object LoopDepthCounter {
       case staticInvoke: StaticInvokeExpr => List(targetMethod)
       case specInvoke: SpecialInvokeExpr => List(hierarchy.resolveSpecialDispatch(specInvoke, targetMethod))
       case insInvoke: InstanceInvokeExpr => 
-        assert(insInvoke.getBase.getType.isInstanceOf[RefType], "Base is not a RefType")
-        val baseClass = insInvoke.getBase.getType.asInstanceOf[RefType].getSootClass
-        hierarchy.resolveAbstractDispatch(baseClass, targetMethod).toList
+        assert(insInvoke.getBase.getType.isInstanceOf[RefLikeType], "Base is not a RefLikeType")
+        insInvoke.getBase.getType match {
+          case rt: RefType =>
+            val baseClass = insInvoke.getBase.getType.asInstanceOf[RefType].getSootClass
+            hierarchy.resolveAbstractDispatch(baseClass, targetMethod).toList
+          case _ => List() // invocation on array/primitive type
+        }
     }
-    println(s"real methods: ${realTargetMethods}")
+    println(s"dispatched methods for ${targetMethod.getName}: ${realTargetMethods}")
 
-    val m = realTargetMethods(0)
     for (m <- realTargetMethods) {
-      if (m.isPhantom) { println(s"Warning: phantom method ${m.getName}, will not analyze") }
-      else if (m.isAbstract) { println(s"Warning: abstract method ${m.getName}, will not analyze") }
-      else if (m.isNative) { println(s"Warning: native method ${m.getName}, will not analyze") }
+      if (m.isPhantom) { println(s"Warning: phantom method ${m}, will not analyze") }
+      else if (m.isAbstract) { println(s"Warning: abstract method ${m}, will not analyze") }
+      else if (m.isNative) { println(s"Warning: native method ${m}, will not analyze") }
       else { findLoopsInMethod(Some(Soot.getMethodEntry(m)), m, currentLoop) }
     }
   }
@@ -142,7 +145,7 @@ object LoopDepthCounter {
   def findLoopsInMethod(stmt: Option[SootStmt], method: SootMethod, currentLoop: Option[Loop]) {
     if (stmt.nonEmpty) {
       val realStmt = stmt.get
-      println(s"${method.getName}[${realStmt.getJavaSourceStartLineNumber}]\t${realStmt}")
+      //println(s"${method.getName}[${realStmt.getJavaSourceStartLineNumber}]\t${realStmt}")
 
       realStmt match {
         case ifStmt: IfStmt =>
@@ -153,7 +156,7 @@ object LoopDepthCounter {
               val depth = if (currentLoop.nonEmpty) currentLoop.get.depth+1 else 1
               println(s"loop in ${method.getDeclaringClass.getName}.${method.getName} " + 
                       s"[${ifStmt.getJavaSourceStartLineNumber}, ${gotoStmt.getJavaSourceStartLineNumber}], " + 
-                      s"depth[${depth}]")
+                      s"depth: ${depth}")
               findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, 
                 Some(Loop(method, ifStmt, gotoStmt, depth, currentLoop)))
             case _ => findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop)
