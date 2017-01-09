@@ -14,7 +14,7 @@ object Soot {
   def initSoot(mainClassName: String, sootClassPath: String) {
     Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
-    Options.v().set_include_all(false)
+    Options.v().set_include_all(true)
     Options.v().set_keep_line_number(true)
     Options.v().set_allow_phantom_refs(true)
     Options.v().set_soot_classpath(sootClassPath)
@@ -23,9 +23,11 @@ object Soot {
     Options.v().set_app(true)
     Options.v().set_whole_program(true)
     soot.Main.v().autoSetOptions()
-    val mainClass = Scene.v().loadClassAndSupport(mainClassName)
-    Scene.v().setMainClass(mainClass)
+
+    Scene.v().addBasicClass(mainClassName, SootClass.BODIES);
+    Scene.v().setSootClassPath(sootClassPath)
     Scene.v().loadNecessaryClasses()
+
     CHATransformer.v().transform()
     val cg = Scene.v().getCallGraph()
   }
@@ -143,16 +145,21 @@ object LoopDepthCounter {
   }
 
   def findLoopsInMethod(stmt: Option[SootStmt], method: SootMethod, currentLoop: Option[Loop]) {
+    def isBefore(s1: SootStmt, s2: SootStmt): Boolean = {
+      Soot.getIndex(s1, method) < Soot.getIndex(s2, method)     
+    }
+
     if (stmt.nonEmpty) {
       val realStmt = stmt.get
-      //println(s"${method.getName}[${realStmt.getJavaSourceStartLineNumber}]\t${realStmt}")
+      println(s"${method.getName}[${realStmt.getJavaSourceStartLineNumber}]\t${realStmt}")
 
       realStmt match {
         case ifStmt: IfStmt =>
           val target = ifStmt.getTarget
           val predOfTarget = Soot.prevSyntactic(target, method)
+
           predOfTarget match {
-            case Some(gotoStmt: GotoStmt) if gotoStmt.getTarget == ifStmt =>
+            case Some(gotoStmt: GotoStmt) if isBefore(gotoStmt.getTarget.asInstanceOf[SootStmt], gotoStmt) =>
               val depth = if (currentLoop.nonEmpty) currentLoop.get.depth+1 else 1
               println(s"loop in ${method.getDeclaringClass.getName}.${method.getName} " + 
                       s"[${ifStmt.getJavaSourceStartLineNumber}, ${gotoStmt.getJavaSourceStartLineNumber}], " + 
@@ -164,7 +171,7 @@ object LoopDepthCounter {
 
         case gotoStmt: GotoStmt if (currentLoop.nonEmpty && currentLoop.get.end == gotoStmt) =>
           findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop.get.parent)
-
+        
         case invokeStmt: InvokeStmt =>
           //TODO handle recursive invokeExprs
           handleInvoke(invokeStmt.getInvokeExpr, currentLoop)
