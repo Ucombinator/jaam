@@ -1,11 +1,11 @@
 package org.ucombinator.jaam.tools
 
+import scala.language.implicitConversions
 import scala.collection.JavaConversions._
 
 import soot.options.Options
 import soot.tagkit.{GenericAttribute, SourceFileTag}
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
-
 import soot.jimple.{Stmt => SootStmt, _}
 import soot.jimple.toolkits.callgraph._
 
@@ -43,7 +43,6 @@ object Soot {
     m.getActiveBody
   }
 
-  import scala.language.implicitConversions
   implicit def unitToStmt(unit : SootUnit) : SootStmt = {
     assert(unit ne null, "unit is null")
     assert(unit.isInstanceOf[SootStmt], "unit not instance of Stmt. Unit is of class: " + unit.getClass)
@@ -112,6 +111,29 @@ object LoopDepthCounter {
 
   case class Loop(method: SootMethod, start: SootStmt, end: SootStmt, depth: Int, parent: Option[Loop])
 
+  def handleInvoke(invokeExpr: InvokeExpr, currentLoop: Option[Loop]) {
+    val hierarchy = Scene.v().getOrMakeFastHierarchy()
+    val targetMethod = invokeExpr.getMethod
+    val realTargetMethods: List[SootMethod] = invokeExpr match {
+      case dynInvoke: DynamicInvokeExpr => throw new Exception(s"Unexpected DynamicInvokeExpr: $dynInvoke")
+      case staticInvoke: StaticInvokeExpr => List(targetMethod)
+      case specInvoke: SpecialInvokeExpr => List(hierarchy.resolveSpecialDispatch(specInvoke, targetMethod))
+      case insInvoke: InstanceInvokeExpr => 
+        assert(insInvoke.getBase.getType.isInstanceOf[RefType], "Base is not a RefType")
+        val baseClass = insInvoke.getBase.getType.asInstanceOf[RefType].getSootClass
+        hierarchy.resolveAbstractDispatch(baseClass, targetMethod).toList
+    }
+    println(s"real methods: ${realTargetMethods}")
+
+    val m = realTargetMethods(0)
+    for (m <- realTargetMethods) {
+      if (m.isPhantom) { println(s"Warning: phantom method ${m.getName}, will not analyze") }
+      else if (m.isAbstract) { println(s"Warning: abstract method ${m.getName}, will not analyze") }
+      else if (m.isNative) { println(s"Warning: native method ${m.getName}, will not analyze") }
+      else { findLoopsInMethod(Some(Soot.getMethodEntry(m)), m, currentLoop) }
+    }
+  }
+
   def findLoopsInMethod(method: SootMethod) {
     val entry = Soot.getMethodEntry(method)
     findLoopsInMethod(Some(entry), method, None)
@@ -120,7 +142,8 @@ object LoopDepthCounter {
   def findLoopsInMethod(stmt: Option[SootStmt], method: SootMethod, currentLoop: Option[Loop]) {
     if (stmt.nonEmpty) {
       val realStmt = stmt.get
-      println(s"[${realStmt.getJavaSourceStartLineNumber}]\t${realStmt}")
+      println(s"${method.getName}[${realStmt.getJavaSourceStartLineNumber}]\t${realStmt}")
+
       realStmt match {
         case ifStmt: IfStmt =>
           val target = ifStmt.getTarget
@@ -128,13 +151,30 @@ object LoopDepthCounter {
           predOfTarget match {
             case Some(gotoStmt: GotoStmt) if gotoStmt.getTarget == ifStmt =>
               val depth = if (currentLoop.nonEmpty) currentLoop.get.depth+1 else 1
-              println(s"loop in [${ifStmt.getJavaSourceStartLineNumber}, ${gotoStmt.getJavaSourceStartLineNumber}], depth[${depth}]")
+              println(s"loop in ${method.getDeclaringClass.getName}.${method.getName} " + 
+                      s"[${ifStmt.getJavaSourceStartLineNumber}, ${gotoStmt.getJavaSourceStartLineNumber}], " + 
+                      s"depth[${depth}]")
               findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, 
                 Some(Loop(method, ifStmt, gotoStmt, depth, currentLoop)))
             case _ => findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop)
           }
+
         case gotoStmt: GotoStmt if (currentLoop.nonEmpty && currentLoop.get.end == gotoStmt) =>
           findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop.get.parent)
+
+        case invokeStmt: InvokeStmt =>
+          //TODO handle recursive invokeExprs
+          handleInvoke(invokeStmt.getInvokeExpr, currentLoop)
+          findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop)
+
+        case defStmt: DefinitionStmt =>
+          defStmt.getRightOp match {
+            case invokeExpr: InvokeExpr => 
+              handleInvoke(invokeExpr, currentLoop)
+              findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop)
+            case _ => findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop)
+          }
+
         case _ => findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop)
       }
     }
