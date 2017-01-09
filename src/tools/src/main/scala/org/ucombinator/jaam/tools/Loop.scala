@@ -125,15 +125,13 @@ object LoopDepthCounter {
         case ifStmt: IfStmt =>
           val target = ifStmt.getTarget
           val predOfTarget = Soot.prevSyntactic(target, method)
-          if (predOfTarget.nonEmpty) {
-            predOfTarget.get match {
-              case gotoStmt: GotoStmt if gotoStmt.getTarget == ifStmt=>
-                val depth = if (currentLoop.nonEmpty) currentLoop.get.depth+1 else 1
-                println(s"loop in [${ifStmt.getJavaSourceStartLineNumber}, ${gotoStmt.getJavaSourceStartLineNumber}], depth[${depth}]")
-                findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, 
-                  Some(Loop(method, ifStmt, gotoStmt, depth, currentLoop)))
-              case _ => findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop)
-            }
+          predOfTarget match {
+            case Some(gotoStmt: GotoStmt) if gotoStmt.getTarget == ifStmt =>
+              val depth = if (currentLoop.nonEmpty) currentLoop.get.depth+1 else 1
+              println(s"loop in [${ifStmt.getJavaSourceStartLineNumber}, ${gotoStmt.getJavaSourceStartLineNumber}], depth[${depth}]")
+              findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, 
+                Some(Loop(method, ifStmt, gotoStmt, depth, currentLoop)))
+            case _ => findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop)
           }
         case gotoStmt: GotoStmt if (currentLoop.nonEmpty && currentLoop.get.end == gotoStmt) =>
           findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop.get.parent)
