@@ -31,8 +31,13 @@ object Soot {
     soot.Main.v().autoSetOptions()
     
     val classesInJar = getAllClassNames(sootClassPath)
-    for (className <- classesInJar) {
-      Scene.v().addBasicClass(className, SootClass.HIERARCHY)
+    if (classesInJar.nonEmpty) {
+      for (className <- classesInJar) {
+        Scene.v().addBasicClass(className, SootClass.HIERARCHY)
+      }
+    } else {
+      val mainClass = Scene.v().loadClassAndSupport(mainClassName)
+      Scene.v().setMainClass(mainClass)
     }
 
     Scene.v().setSootClassPath(sootClassPath)
@@ -230,7 +235,7 @@ object LoopDepthCounter {
               val newLoop = Loop(method, ifStmt, gotoStmt, depth, currentLoop)
               val newStack = stack.setLoop
               println(s"Found a loop in ${method.getDeclaringClass.getName}.${method.getName} " + 
-                      s"[${ifStmt.getJavaSourceStartLineNumber}, ${gotoStmt.getJavaSourceStartLineNumsber}], " + 
+                      s"[${ifStmt.getJavaSourceStartLineNumber}, ${gotoStmt.getJavaSourceStartLineNumber}], " + 
                       s"depth: ${depth}")
               println(newStack)
               findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, Some(newLoop), newStack)
