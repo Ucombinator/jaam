@@ -152,12 +152,13 @@ object LoopDepthCounter {
 
   abstract class Stack
   case object Halt extends Stack
-  case class CallStack(currentMethod: SootMethod, stack: Stack, hasLoop: Boolean = false) extends Stack {
-    def setLoop(): CallStack = CallStack(currentMethod, stack, true)
+  case class CallStack(currentMethod: SootMethod, stack: Stack, nLoop: Int = 0) extends Stack {
+    def incLoop: CallStack = CallStack(currentMethod, stack, nLoop+1)
+    def decLoop: CallStack = CallStack(currentMethod, stack, nLoop-1)
     override def toString(): String =  {
-      def methodName(m: SootMethod, loop: Boolean) = {
+      def methodName(m: SootMethod, nLoop: Int) = {
         val name = m.getDeclaringClass.getName + "." + m.getName
-        if (loop) (RED + name + RESET) else name
+        if (nLoop > 0) s"$RED $name($nLoop) $RESET" else name
       }
       def aux(stack: Stack): List[String] = {
         stack match {
@@ -165,7 +166,7 @@ object LoopDepthCounter {
           case CallStack(m, s, loop) =>  methodName(m, loop) :: aux(s)
         }
       }
-      ((methodName(currentMethod, hasLoop)::aux(stack)).reverse).mkString(" -> ")
+      ((methodName(currentMethod, nLoop)::aux(stack)).reverse).mkString(" -> ")
     }
   }
 
@@ -233,7 +234,7 @@ object LoopDepthCounter {
             case Some(gotoStmt: GotoStmt) if isBefore(gotoStmt.getTarget.asInstanceOf[SootStmt], gotoStmt) =>
               val depth = if (currentLoop.nonEmpty) currentLoop.get.depth+1 else 1
               val newLoop = Loop(method, ifStmt, gotoStmt, depth, currentLoop)
-              val newStack = stack.setLoop
+              val newStack = stack.incLoop
               println(s"Found a loop in ${method.getDeclaringClass.getName}.${method.getName} " + 
                       s"[${ifStmt.getJavaSourceStartLineNumber}, ${gotoStmt.getJavaSourceStartLineNumber}], " + 
                       s"depth: ${depth}")
@@ -243,7 +244,7 @@ object LoopDepthCounter {
           }
 
         case gotoStmt: GotoStmt if (currentLoop.nonEmpty && currentLoop.get.end == gotoStmt) =>
-          findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop.get.parent, stack)
+          findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop.get.parent, stack.decLoop)
         
         case invokeStmt: InvokeStmt =>
           //TODO handle recursive invokeExprs
