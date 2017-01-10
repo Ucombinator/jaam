@@ -158,7 +158,7 @@ object LoopDepthCounter {
     override def toString(): String =  {
       def methodName(m: SootMethod, nLoop: Int) = {
         val name = m.getDeclaringClass.getName + "." + m.getName
-        if (nLoop > 0) s"$RED $name($nLoop) $RESET" else name
+        if (nLoop > 0) s"$RED$name($nLoop)$RESET" else name
       }
       def aux(stack: Stack): List[String] = {
         stack match {
