@@ -1,5 +1,8 @@
 package org.ucombinator.jaam.tools
 
+import java.util.zip.ZipInputStream
+import java.io.FileInputStream
+
 import scala.language.implicitConversions
 import scala.collection.JavaConversions._
 
@@ -24,13 +27,39 @@ object Soot {
     Options.v().set_whole_program(true)
     Options.v().set_app(true)
     soot.Main.v().autoSetOptions()
+    
+    val classesInJar = getAllClassNames(sootClassPath)
+    for (className <- classesInJar) {
+      Scene.v().addBasicClass(className, SootClass.HIERARCHY)
+    }
 
-    Scene.v().addBasicClass(mainClassName, SootClass.BODIES);
     Scene.v().setSootClassPath(sootClassPath)
     Scene.v().loadNecessaryClasses()
 
+    PackManager.v().runPacks()
+
     CHATransformer.v().transform()
     val cg = Scene.v().getCallGraph()
+  }
+  
+  // Only works on jar files
+  def getAllClassNames(classPath: String): List[String] = {
+    def getClassNames(jarFile: String): List[String] = {
+      //println(s"get all class names from ${jarFile}")
+      val zip = new ZipInputStream(new FileInputStream(jarFile))
+      var ans: List[String] = List()
+      var entry = zip.getNextEntry
+      while (entry != null) {
+        if (!entry.isDirectory && entry.getName().endsWith(".class")) {
+          val className = entry.getName().replace('/', '.')
+          ans = (className.substring(0, className.length() - ".class".length()))::ans
+        }
+        entry = zip.getNextEntry
+      }
+      ans
+    }
+    val classPaths = classPath.split(":").toList
+    (for (path <- classPaths if path.endsWith("jar")) yield getClassNames(path)).flatten
   }
 
   def getSootClass(s: String) = Scene.v().loadClass(s, SootClass.SIGNATURES)
@@ -126,7 +155,7 @@ object LoopDepthCounter {
         insInvoke.getBase.getType match {
           case rt: RefType =>
             val baseClass = insInvoke.getBase.getType.asInstanceOf[RefType].getSootClass
-            println(s"baseClass: ${baseClass}")
+            //println(s"baseClass: ${baseClass}")
             hierarchy.resolveAbstractDispatch(baseClass, targetMethod).toList
           case _ => List() // invocation on array/primitive type
         }
@@ -167,7 +196,7 @@ object LoopDepthCounter {
 
     if (stmt.nonEmpty) {
       val realStmt = stmt.get
-      println(s"${method.getName}[${realStmt.getJavaSourceStartLineNumber}]\t${realStmt}")
+      //println(s"${method.getName}[${realStmt.getJavaSourceStartLineNumber}]\t${realStmt}")
 
       realStmt match {
         case ifStmt: IfStmt =>
