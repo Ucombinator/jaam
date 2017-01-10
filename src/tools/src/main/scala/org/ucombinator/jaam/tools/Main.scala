@@ -110,7 +110,7 @@ object Conf {
 
     val mainClass = trailArg[String](descr = "The name of the main class")
     val mainMethod = trailArg[String](descr = "The name of entrance method")
-    val jars = trailArg[String](descr = "Colon separated list of JAR files to directly compare coverage against")
+    val jars = trailArg[String](descr = "Colon separated list of application's JAR files, not includes library")
 
     def run(conf: Conf) {
       LoopDepthCounter.main(mainClass(), mainMethod(), jars().split(":"))
