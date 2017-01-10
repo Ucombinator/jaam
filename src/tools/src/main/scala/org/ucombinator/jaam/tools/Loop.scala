@@ -14,14 +14,15 @@ object Soot {
   def initSoot(mainClassName: String, sootClassPath: String) {
     Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
-    Options.v().set_include_all(true)
     Options.v().set_keep_line_number(true)
     Options.v().set_allow_phantom_refs(true)
     Options.v().set_soot_classpath(sootClassPath)
+    Options.v().set_include_all(true)
     Options.v().set_prepend_classpath(false)
     Options.v().set_src_prec(Options.src_prec_only_class)
-    Options.v().set_app(true)
+
     Options.v().set_whole_program(true)
+    Options.v().set_app(true)
     soot.Main.v().autoSetOptions()
 
     Scene.v().addBasicClass(mainClassName, SootClass.BODIES);
@@ -113,7 +114,7 @@ object LoopDepthCounter {
 
   case class Loop(method: SootMethod, start: SootStmt, end: SootStmt, depth: Int, parent: Option[Loop])
 
-  def handleInvoke(invokeExpr: InvokeExpr, currentLoop: Option[Loop]) {
+  def getDispatchedMethods(invokeExpr: InvokeExpr): List[SootMethod] = {
     val hierarchy = Scene.v().getOrMakeFastHierarchy()
     val targetMethod = invokeExpr.getMethod
     val realTargetMethods: List[SootMethod] = invokeExpr match {
@@ -125,11 +126,26 @@ object LoopDepthCounter {
         insInvoke.getBase.getType match {
           case rt: RefType =>
             val baseClass = insInvoke.getBase.getType.asInstanceOf[RefType].getSootClass
+            println(s"baseClass: ${baseClass}")
             hierarchy.resolveAbstractDispatch(baseClass, targetMethod).toList
           case _ => List() // invocation on array/primitive type
         }
     }
     println(s"dispatched methods for ${targetMethod.getName}: ${realTargetMethods}")
+    realTargetMethods
+  }
+
+  def getDispatchedMethodsCHA(stmt: SootStmt): List[SootMethod] = {
+    val cg = Scene.v().getCallGraph()
+    val edges = cg.edgesOutOf(stmt).toList
+    val methods = edges.map((e: Edge) => e.tgt)
+    println(s"dispatched methods according to CHA: ${methods}")
+    methods
+  }
+
+  def handleInvoke(stmt: SootStmt, invokeExpr: InvokeExpr, currentLoop: Option[Loop]) {
+    val realTargetMethods = getDispatchedMethods(invokeExpr)
+    val realTargetMethodsCHA = getDispatchedMethodsCHA(stmt)
 
     for (m <- realTargetMethods) {
       if (m.isPhantom) { println(s"Warning: phantom method ${m}, will not analyze") }
@@ -174,13 +190,13 @@ object LoopDepthCounter {
         
         case invokeStmt: InvokeStmt =>
           //TODO handle recursive invokeExprs
-          handleInvoke(invokeStmt.getInvokeExpr, currentLoop)
+          handleInvoke(invokeStmt, invokeStmt.getInvokeExpr, currentLoop)
           findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop)
 
         case defStmt: DefinitionStmt =>
           defStmt.getRightOp match {
             case invokeExpr: InvokeExpr => 
-              handleInvoke(invokeExpr, currentLoop)
+              handleInvoke(defStmt, invokeExpr, currentLoop)
               findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop)
             case _ => findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop)
           }
