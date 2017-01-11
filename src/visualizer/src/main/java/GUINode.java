@@ -131,12 +131,6 @@ public class GUINode extends Pane
         this.rect.setOpacity((this.rect.getOpacity()) / 2.0);
     }
 
-    // Divides the actual width in pixels by the width in vertex units
-    public double getWidthPerVertex()
-    {
-        return this.getWidth() / vertex.getWidth();
-    }
-
     public void addMouseEvents()
     {
         this.setOnMousePressed(onMousePressedEventHandler);
@@ -145,6 +139,22 @@ public class GUINode extends Pane
         this.setOnMouseEntered(onMouseEnteredEventHandler);
         this.setOnMouseExited(onMouseExitedEventHandler);
         this.setOnMouseClicked(new AnimationHandler());
+    }
+
+    // The next two functions compute the shift that must be applied to keep the
+    // top left corner stationary when the node is scaled about its center.
+    public double getXShift()
+    {
+        double currentWidth = this.getScaleX() * this.getWidth();
+        double oldWidth = this.getWidth();
+        return (oldWidth - currentWidth) / 2;
+    }
+
+    public double getYShift()
+    {
+        double currentHeight = this.getScaleY() * this.getHeight();
+        double oldHeight = this.getHeight();
+        return (oldHeight - currentHeight) / 2;
     }
 
     EventHandler<MouseEvent> onMousePressedEventHandler = new EventHandler<MouseEvent>()
@@ -171,8 +181,8 @@ public class GUINode extends Pane
             node.isDragging = true;
             double offsetX = event.getScreenX() + dragX;
             double offsetY = event.getScreenY() + dragY;
-            node.setTranslateX(offsetX);
-            node.setTranslateY(offsetY);
+            node.setTranslateX(offsetX - node.getXShift());
+            node.setTranslateY(offsetY - node.getYShift());
 
             AbstractVertex v = GUINode.this.vertex;
             v.location.x = Parameters.stFrame.mainPanel.invScaleX(offsetX);

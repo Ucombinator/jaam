@@ -20,7 +20,7 @@ public class Edge implements Comparable<Edge>
 
 	static double defaultStrokeWidth = 1;
 	static double arrowheadAngleDiff = 0.15 * Math.PI;
-	double arrowLength;
+	public static double arrowLength;
 
 	private Edge(int source, int dest)
 	{
@@ -176,7 +176,6 @@ public class Edge implements Comparable<Edge>
 
 		// Compute arrowhead
 		double angle = Math.PI + Math.atan2(panel.scaleY(enterDestY - exitStartY), panel.scaleX(enterDestX - exitStartX));
-		this.arrowLength = node.getWidthPerVertex() / 10.0;
 
 		double x1 = panel.scaleX(enterDestX);
 		double y1 = panel.scaleY(enterDestY);
@@ -200,17 +199,20 @@ public class Edge implements Comparable<Edge>
 
 	public static void redrawEdges(AbstractVertex v)
 	{
-		for(Edge e : v.getSelfGraph().getEdges().values())
+		if(v.getSelfGraph() != null)
 		{
-			if(v.id == e.source || v.id == e.dest)
+			for (Edge e : v.getSelfGraph().getEdges().values())
 			{
-				// Clear current graphics...
-				e.graphics.getChildren().remove(e.line);
-				e.graphics.getChildren().remove(e.arrowhead);
-				e.node.getChildren().remove(e.graphics);
+				if (v.id == e.source || v.id == e.dest)
+				{
+					// Clear current graphics...
+					e.graphics.getChildren().remove(e.line);
+					e.graphics.getChildren().remove(e.arrowhead);
+					e.node.getChildren().remove(e.graphics);
 
-				// ...And draw new ones
-				e.draw(Parameters.stFrame.mainPanel, e.node);
+					// ...And draw new ones
+					e.draw(Parameters.stFrame.mainPanel, e.node);
+				}
 			}
 		}
 	}
@@ -248,8 +250,8 @@ public class Edge implements Comparable<Edge>
 
 			// TODO: The arrowhead will scale around the center, not the tip.
 			// It could be shifted, but that might not make much difference in the end.
-			this.arrowhead.setScaleX(node.getWidthPerVertex() / (10.0 * arrowLength));
-			this.arrowhead.setScaleY(node.getWidthPerVertex() / (10.0 * arrowLength));
+			this.arrowhead.setScaleX(1.0 / zoomLevel);
+			this.arrowhead.setScaleY(1.0 / zoomLevel);
 		}
 	}
 }
