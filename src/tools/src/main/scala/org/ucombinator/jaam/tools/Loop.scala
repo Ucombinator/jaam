@@ -235,39 +235,33 @@ object LoopDepthCounter {
   def findLoopsInMethod(stmt: Option[SootStmt], currentLoop: Option[Loop], stack: CallStack) {
     if (stmt.nonEmpty) {
       val realStmt = stmt.get
-      //println(s"${stack.currentMethod.getName}[${realStmt.getJavaSourceStartLineNumber}]\t${realStmt}")
-
+      val nextStmt = Soot.nextSyntactic(realStmt, stack.currentMethod)
+      println(s"${stack.currentMethod.getName}[${realStmt.getJavaSourceStartLineNumber}]\t${realStmt}")
       realStmt match {
-        case ifStmt: IfStmt =>
-          stack.allLoops.find((l: SootLoop) => l.getHead == ifStmt) match {
-            case Some(l) => 
-              val depth = if (currentLoop.nonEmpty) currentLoop.get.depth+1 else 1
-              val newLoop = Loop(stack.currentMethod, ifStmt, l.getBackJumpStmt, depth, currentLoop)
-              val newStack = stack.incLoop
-              println(s"Found a loop in ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName} " + 
-                      s"[${ifStmt.getJavaSourceStartLineNumber}, ${l.getBackJumpStmt.getJavaSourceStartLineNumber}], " + 
-                      s"depth: ${depth}")
-              println(newStack)
-              findLoopsInMethod(Soot.nextSyntactic(realStmt, stack.currentMethod), Some(newLoop), newStack)
-            case None => findLoopsInMethod(Soot.nextSyntactic(realStmt, stack.currentMethod), currentLoop, stack)
-          }
-
-        case gotoStmt: GotoStmt if (currentLoop.nonEmpty && currentLoop.get.end == gotoStmt) =>
-          findLoopsInMethod(Soot.nextSyntactic(realStmt, stack.currentMethod), currentLoop.get.parent, stack.decLoop)
-        
         case invokeStmt: InvokeStmt =>
           handleInvoke(invokeStmt, invokeStmt.getInvokeExpr, currentLoop, stack)
-          findLoopsInMethod(Soot.nextSyntactic(realStmt, stack.currentMethod), currentLoop, stack)
-
         case defStmt: DefinitionStmt =>
           defStmt.getRightOp match {
-            case invokeExpr: InvokeExpr => 
+            case invokeExpr: InvokeExpr =>
               handleInvoke(defStmt, invokeExpr, currentLoop, stack)
-              findLoopsInMethod(Soot.nextSyntactic(realStmt, stack.currentMethod), currentLoop, stack)
-            case _ => findLoopsInMethod(Soot.nextSyntactic(realStmt, stack.currentMethod), currentLoop, stack)
+            case _ => //Do nothing
           }
+        case _ => //Do nothing
+      }
 
-        case _ => findLoopsInMethod(Soot.nextSyntactic(realStmt, stack.currentMethod), currentLoop, stack)
+      stack.allLoops.find((l: SootLoop) => l.getHead == realStmt) match {
+        case Some(l) =>
+          val depth = if (currentLoop.nonEmpty) currentLoop.get.depth+1 else 1
+          val newLoop = Loop(stack.currentMethod, realStmt, l.getBackJumpStmt, depth, currentLoop)
+          val newStack = stack.incLoop
+          println(s"Found a loop in ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName} " + 
+            s"[${realStmt.getJavaSourceStartLineNumber}, ${l.getBackJumpStmt.getJavaSourceStartLineNumber}], " + 
+            s"depth: ${depth}")
+          println(newStack)
+          findLoopsInMethod(nextStmt, Some(newLoop), newStack)
+        case None if (currentLoop.nonEmpty && currentLoop.get.end == realStmt) =>
+          findLoopsInMethod(nextStmt, currentLoop.get.parent, stack.decLoop)
+        case _ => findLoopsInMethod(nextStmt, currentLoop, stack)
       }
     }
   }
