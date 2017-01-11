@@ -25,7 +25,6 @@ object Soot {
     Options.v().set_include_all(true)
     Options.v().set_prepend_classpath(false)
     Options.v().set_src_prec(Options.src_prec_only_class)
-    Options.v().set_main_class(mainClassName)
     Options.v().set_whole_program(true)
     Options.v().set_app(true)
     soot.Main.v().autoSetOptions()
@@ -36,6 +35,7 @@ object Soot {
         Scene.v().addBasicClass(className, SootClass.HIERARCHY)
       }
     } else {
+      Options.v().set_main_class(mainClassName)
       val mainClass = Scene.v().loadClassAndSupport(mainClassName)
       Scene.v().setMainClass(mainClass)
     }
