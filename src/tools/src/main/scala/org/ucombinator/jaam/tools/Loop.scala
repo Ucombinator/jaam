@@ -236,7 +236,8 @@ object LoopDepthCounter {
     if (stmt.nonEmpty) {
       val realStmt = stmt.get
       val nextStmt = Soot.nextSyntactic(realStmt, stack.currentMethod)
-      println(s"${stack.currentMethod.getName}[${realStmt.getJavaSourceStartLineNumber}]\t${realStmt}")
+      //println(s"${stack.currentMethod.getName}[${realStmt.getJavaSourceStartLineNumber}]\t${realStmt}")
+      
       realStmt match {
         case invokeStmt: InvokeStmt =>
           handleInvoke(invokeStmt, invokeStmt.getInvokeExpr, currentLoop, stack)
