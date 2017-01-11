@@ -96,49 +96,9 @@ object Soot {
 
   def getMethodEntry(m: SootMethod): SootStmt = getBody(m).getUnits.getFirst
 
-  def prevSyntactic(stmt: SootStmt, method: SootMethod): Option[SootStmt] = {
-    val prev = getBody(method).getUnits.getPredOf(stmt)
-    if (prev == null) None else Some(prev)
-  }
-  
   def nextSyntactic(stmt: SootStmt, method: SootMethod): Option[SootStmt] = {
     val next = getBody(method).getUnits.getSuccOf(stmt) 
     if (next == null) None else Some(next)
-  }
-
-  def nextSemantic(stmt: SootStmt, method: SootMethod): List[SootStmt] = {
-    stmt match {
-      case stmt: ReturnStmt => List()
-      case stmt: ReturnVoidStmt => List()
-      case stmt: ThrowStmt => List()
-      case stmt: GotoStmt => List(stmt.getTarget)
-      case stmt: SwitchStmt => stmt.getTargets.toList.map(u => u.asInstanceOf[SootStmt])
-      case stmt: IfStmt => 
-        nextSyntactic(stmt, method) match {
-          case Some(next) => List(stmt.getTarget, next)
-          case None => List(stmt.getTarget)
-        }
-      case _ => 
-        nextSyntactic(stmt, method) match {
-          case Some(next) => List(next)
-          case None => List()
-        }
-    }
-  }
-  
-  val indexTag = "org.ucombinator.jaam.Stmt.indexTag"
-  def getIndex(sootStmt: SootStmt, sootMethod: SootMethod): Int = {
-    if (sootStmt.hasTag(indexTag)) {
-      BigInt(sootStmt.getTag(indexTag).getValue).intValue
-    } else {
-      // label everything in the sootMethod so the amortized work is linear
-      for ((u, i) <- Soot.getBody(sootMethod).getUnits().toList.zipWithIndex) {
-        u.addTag(new GenericAttribute(indexTag, BigInt(i).toByteArray))
-      }
-
-      assert(sootStmt.hasTag(indexTag), "SootStmt "+sootStmt+" not found in SootMethod " + sootMethod)
-      BigInt(sootStmt.getTag(indexTag).getValue).intValue
-    }
   }
 }
 
