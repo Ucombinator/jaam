@@ -1,11 +1,14 @@
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 abstract class AbstractVertex implements Comparable<AbstractVertex>
 {
 	public static final double DEFAULT_WIDTH = 1.0;
 	public static final double DEFAULT_HEIGHT = 1.0;
+	public static final String METADATA_MERGE_PARENT = "MERGE_PARENT";
+	
 	static int idCounter = 0; // Used to assign unique id numbers to each vertex
 
 	// Used to sort lines of code in a method
@@ -65,6 +68,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	protected int index, parentIndex;
 	protected ArrayList<Vertex> neighbors;
 	protected ArrayList<AbstractVertex> abstractNeighbors;
+	protected HashMap<String, Object> metadata;
 
 	// A location stores coordinates for a subtree.
 	protected Location location = new Location();
@@ -139,15 +143,20 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		this.abstractNeighbors = new ArrayList<AbstractVertex>();
 		this.id = idCounter++;
 		this.strId = "vertex:"+this.id;
+		this.metadata = new HashMap<String,Object>();
 	
 	}
 	
-
 	public AbstractVertex(String label, VertexType type){
 		this();
 		this.label = label;
 		this.innerGraph = new AbstractGraph();
 		this.vertexType = type;
+	}
+	
+	
+	public  HashMap<String,Object> getMetaData(){
+		return this.metadata;
 	}
 	
     public String getLabel() {

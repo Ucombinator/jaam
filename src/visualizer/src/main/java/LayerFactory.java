@@ -42,6 +42,9 @@ public class LayerFactory
 		{
 			String method = iter.next();
 			AbstractVertex vertex = new Vertex(method, AbstractVertex.VertexType.METHOD);
+			
+			vertex.getMetaData().put(AbstractVertex.METADATA_MERGE_PARENT, buckets.get(method).iterator().next().mergeParent);
+			
 			//vertex.setExpanded(false);
 			methodVertices.put(method, vertex);
 			methodGraph.addVertex(vertex);
