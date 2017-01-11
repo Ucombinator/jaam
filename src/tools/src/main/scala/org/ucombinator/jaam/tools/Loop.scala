@@ -221,7 +221,7 @@ object LoopDepthCounter {
       else if (stack.exists(m)) { println(s"Recursive call on ${m}") }
       else { 
         val allLoops = (new LoopNestTree(Soot.getBody(m))).toList
-        findLoopsInMethod(Some(Soot.getMethodEntry(m)), m, currentLoop, CallStack(m, allLoops, stack)) 
+        findLoopsInMethod(Some(Soot.getMethodEntry(m)), currentLoop, CallStack(m, allLoops, stack)) 
       }
     }
   }
@@ -229,49 +229,45 @@ object LoopDepthCounter {
   def findLoopsInMethod(method: SootMethod) {
     val entry = Soot.getMethodEntry(method)
     val allLoops = (new LoopNestTree(Soot.getBody(method))).toList
-    findLoopsInMethod(Some(entry), method, None, CallStack(method, allLoops, Halt))
+    findLoopsInMethod(Some(entry), None, CallStack(method, allLoops, Halt))
   }
 
-  def findLoopsInMethod(stmt: Option[SootStmt], method: SootMethod, currentLoop: Option[Loop], stack: CallStack) {
-    def isBefore(s1: SootStmt, s2: SootStmt): Boolean = {
-      Soot.getIndex(s1, method) < Soot.getIndex(s2, method)     
-    }
-
+  def findLoopsInMethod(stmt: Option[SootStmt], currentLoop: Option[Loop], stack: CallStack) {
     if (stmt.nonEmpty) {
       val realStmt = stmt.get
-      println(s"${method.getName}[${realStmt.getJavaSourceStartLineNumber}]\t${realStmt}")
+      //println(s"${stack.currentMethod.getName}[${realStmt.getJavaSourceStartLineNumber}]\t${realStmt}")
 
       realStmt match {
         case ifStmt: IfStmt =>
           stack.allLoops.find((l: SootLoop) => l.getHead == ifStmt) match {
             case Some(l) => 
               val depth = if (currentLoop.nonEmpty) currentLoop.get.depth+1 else 1
-              val newLoop = Loop(method, ifStmt, l.getBackJumpStmt, depth, currentLoop)
+              val newLoop = Loop(stack.currentMethod, ifStmt, l.getBackJumpStmt, depth, currentLoop)
               val newStack = stack.incLoop
-              println(s"Found a loop in ${method.getDeclaringClass.getName}.${method.getName} " + 
+              println(s"Found a loop in ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName} " + 
                       s"[${ifStmt.getJavaSourceStartLineNumber}, ${l.getBackJumpStmt.getJavaSourceStartLineNumber}], " + 
                       s"depth: ${depth}")
               println(newStack)
-              findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, Some(newLoop), newStack)
-            case None => findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop, stack)
+              findLoopsInMethod(Soot.nextSyntactic(realStmt, stack.currentMethod), Some(newLoop), newStack)
+            case None => findLoopsInMethod(Soot.nextSyntactic(realStmt, stack.currentMethod), currentLoop, stack)
           }
 
         case gotoStmt: GotoStmt if (currentLoop.nonEmpty && currentLoop.get.end == gotoStmt) =>
-          findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop.get.parent, stack.decLoop)
+          findLoopsInMethod(Soot.nextSyntactic(realStmt, stack.currentMethod), currentLoop.get.parent, stack.decLoop)
         
         case invokeStmt: InvokeStmt =>
           handleInvoke(invokeStmt, invokeStmt.getInvokeExpr, currentLoop, stack)
-          findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop, stack)
+          findLoopsInMethod(Soot.nextSyntactic(realStmt, stack.currentMethod), currentLoop, stack)
 
         case defStmt: DefinitionStmt =>
           defStmt.getRightOp match {
             case invokeExpr: InvokeExpr => 
               handleInvoke(defStmt, invokeExpr, currentLoop, stack)
-              findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop, stack)
-            case _ => findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop, stack)
+              findLoopsInMethod(Soot.nextSyntactic(realStmt, stack.currentMethod), currentLoop, stack)
+            case _ => findLoopsInMethod(Soot.nextSyntactic(realStmt, stack.currentMethod), currentLoop, stack)
           }
 
-        case _ => findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop, stack)
+        case _ => findLoopsInMethod(Soot.nextSyntactic(realStmt, stack.currentMethod), currentLoop, stack)
       }
     }
   }
