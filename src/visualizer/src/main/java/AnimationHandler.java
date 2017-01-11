@@ -44,7 +44,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		}
 	}
 	
-	private void collapse(AbstractVertex v)
+	private void collapse(final AbstractVertex v)
 	{
 		for(final Node n : v.getGraphics().getChildren())
 		{
@@ -74,21 +74,23 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		st.play();
 
 		v.setExpanded(false);
-		LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-		
+		final AbstractVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
+		LayoutAlgorithm.layout(panelRoot);
+
 		st.setOnFinished(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event)
 			{
-				for(AbstractVertex vertex : Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+				for(AbstractVertex vertex : panelRoot.getInnerGraph().getVertices().values())
 					animate(vertex);
+
+				panelRoot.recomputeGraphicsSize();
+				Edge.redrawEdges(v);
 			}
 		});
-
-		Edge.redrawEdges(v);
 	}
 	
-	private void expand(AbstractVertex v)
+	private void expand(final AbstractVertex v)
 	{
 		for(final Node n: v.getGraphics().getChildren())
 		{
@@ -109,7 +111,8 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		}
 
 		v.setExpanded(true);
-		LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+		final AbstractVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
+		LayoutAlgorithm.layout(panelRoot);
 
 		ScaleTransition st = new ScaleTransition(Duration.millis(300), v.getGraphics());
 		st.setToX(AbstractVertex.DEFAULT_WIDTH);
@@ -121,12 +124,13 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 			@Override
 			public void handle(ActionEvent event)
 			{
-				for(AbstractVertex vertex : Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+				for(AbstractVertex vertex : panelRoot.getInnerGraph().getVertices().values())
 					animate(vertex);
+
+				panelRoot.recomputeGraphicsSize();
+				Edge.redrawEdges(v);
 			}
 		});
-
-		Edge.redrawEdges(v);
 	}
 	
 	private void handlePrimaryDoubleClick(MouseEvent event)
@@ -142,13 +146,8 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	public void animate(AbstractVertex v)
 	{
 		// Because vertices scale around their center, we have to shift them to keep the top left corner in the correct place.
-		double currentWidth = v.getGraphics().getScaleX() * v.getGraphics().getWidth();
-		double oldWidth = v.getGraphics().getWidth();
-		double currentHeight = v.getGraphics().getScaleY() * v.getGraphics().getHeight();
-		double oldHeight = v.getGraphics().getHeight();
-		double xShift = (oldWidth - currentWidth) / 2;
-		double yShift = (oldHeight - currentHeight) / 2;
-
+		double xShift = v.getGraphics().getXShift();
+		double yShift = v.getGraphics().getYShift();
 		TranslateTransition tt = new TranslateTransition(Duration.millis(300), v.getGraphics());
 		tt.setToX(Parameters.stFrame.mainPanel.scaleX(v.getX()) - xShift);
 		tt.setToY(Parameters.stFrame.mainPanel.scaleY(v.getY()) - yShift);

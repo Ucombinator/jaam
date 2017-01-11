@@ -169,6 +169,14 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	{
 		this.mergeParent = mergeParent;
 	}
+
+	public void recomputeGraphicsSize()
+	{
+		double pixelWidth = Parameters.stFrame.mainPanel.scaleX(this.location.width);
+		double pixelHeight = Parameters.stFrame.mainPanel.scaleY(this.location.height);
+		this.getGraphics().rect.setWidth(pixelWidth);
+		this.getGraphics().rect.setHeight(pixelHeight);
+	}
 	
 	public String getStrID()
 	{

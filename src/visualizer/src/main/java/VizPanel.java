@@ -109,6 +109,14 @@ public class VizPanel extends JFXPanel
 		return contentGroup.getScaleX();
 	}
 
+	// Divides the actual width in pixels by the width in vertex units
+	public double getWidthPerVertex()
+	{
+		System.out.println("Graphics width: " + panelRoot.getGraphics().getWidth());
+		System.out.println("Vertex units width: " + panelRoot.getWidth());
+		return panelRoot.getGraphics().getWidth() / panelRoot.getWidth();
+	}
+
 	public void draw(GUINode parent, AbstractVertex v)
 	{
 		GUINode node = new GUINode(parent, v);
@@ -138,6 +146,7 @@ public class VizPanel extends JFXPanel
 
 		if(this.showEdge)
 		{
+			Edge.arrowLength = this.getWidthPerVertex() / 10.0;
 			for(Edge e : v.getInnerGraph().getEdges().values())
 				e.draw(this, node);
 		}

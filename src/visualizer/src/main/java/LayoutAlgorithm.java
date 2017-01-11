@@ -24,7 +24,7 @@ public class LayoutAlgorithm
 	public static void layout(AbstractVertex parentVertex)
 	{
 		initializeSizes(parentVertex);
-		defaultLayout(parentVertex,parentVertex.getInnerGraph());
+		defaultLayout(parentVertex, parentVertex.getInnerGraph());
 	}
 	
 	private static void initializeSizes(AbstractVertex vertex)
@@ -35,12 +35,12 @@ public class LayoutAlgorithm
 			initializeSizes(childVertex);
 	}
 	
-	public static void defaultLayout(AbstractVertex parentVertex, AbstractGraph graph){
-		
+	public static void defaultLayout(AbstractVertex parentVertex, AbstractGraph graph)
+	{
 		for(AbstractVertex v : graph.getVertices().values())
 		{
-			AbstractGraph inner_graph = v.getInnerGraph();
-			if (inner_graph.getVertices().size() != 0)
+			AbstractGraph innerGraph = v.getInnerGraph();
+			if (innerGraph.getVertices().size() != 0)
 			{
 				//Layout the inner graphs of each node and assign width and height to each node
 				//coordinates are RELATIVE to the parent
@@ -70,6 +70,9 @@ public class LayoutAlgorithm
 		double[] xyPair = visit(root, MARGIN_PADDING, MARGIN_PADDING);
 		parentVertex.setWidth(xyPair[0] + 2 * MARGIN_PADDING);
 		parentVertex.setHeight(xyPair[1] + 2 * MARGIN_PADDING);
+		//System.out.println("Finished laying out parent vertex: " + parentVertex.id);
+		//System.out.println("Bounding box for children: " + xyPair[0] + ", " + xyPair[1]);
+		//System.out.println("Final dimensions: " + parentVertex.getWidth() + ", " + parentVertex.getHeight());
 	}
 	
 	public static double[] visit(AbstractVertex root, double left, double top)
