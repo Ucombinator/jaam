@@ -150,11 +150,16 @@ object LoopDepthCounter {
 
   case class Loop(method: SootMethod, start: SootStmt, end: SootStmt, depth: Int, parent: Option[Loop])
 
-  abstract class Stack
-  case object Halt extends Stack
+  abstract class Stack {
+    def exists(m: SootMethod): Boolean
+  }
+  case object Halt extends Stack {
+    def exists(m: SootMethod) = false
+  }
   case class CallStack(currentMethod: SootMethod, stack: Stack, nLoop: Int = 0) extends Stack {
     def incLoop: CallStack = CallStack(currentMethod, stack, nLoop+1)
     def decLoop: CallStack = CallStack(currentMethod, stack, nLoop-1)
+    def exists(m: SootMethod): Boolean = (m == currentMethod) || (stack.exists(m))
     override def toString(): String =  {
       def methodName(m: SootMethod, nLoop: Int) = {
         val name = m.getDeclaringClass.getName + "." + m.getName
@@ -207,6 +212,7 @@ object LoopDepthCounter {
       if (m.isPhantom) { /*println(s"Warning: phantom method ${m}, will not analyze")*/ }
       else if (m.isAbstract) { /*println(s"Warning: abstract method ${m}, will not analyze")*/ }
       else if (m.isNative) { /*println(s"Warning: native method ${m}, will not analyze")*/ }
+      else if (stack.exists(m)) { println(s"Recursive call on ${m}") }
       else { findLoopsInMethod(Some(Soot.getMethodEntry(m)), m, currentLoop, CallStack(m, stack)) }
     }
   }
@@ -247,7 +253,6 @@ object LoopDepthCounter {
           findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop.get.parent, stack.decLoop)
         
         case invokeStmt: InvokeStmt =>
-          //TODO handle recursive invokeExprs
           handleInvoke(invokeStmt, invokeStmt.getInvokeExpr, currentLoop, stack)
           findLoopsInMethod(Soot.nextSyntactic(realStmt, method), method, currentLoop, stack)
 
