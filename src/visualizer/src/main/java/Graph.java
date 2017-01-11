@@ -190,14 +190,24 @@ public class Graph
 		
 		for(Vertex v : this.vertices)
 		{
+			System.out.println("Vertex: " + v.id);
+			System.out.println("Selected: " + v.isSelected());
             if(v.isHighlighted || v.isSelected)
+            {
 				highlightedMethods.add(v.getMethod());
+				System.out.println("Adding method: " + v.getMethodName());
+			}
 		}
 		
 		for(MethodVertex v : this.methodVertices)
 		{
+			System.out.println("Method vertex: " + v.id);
+			System.out.println("Selected: " + v.isSelected());
             if(v.isHighlighted || v.isSelected)
+            {
 				highlightedMethods.add(v.getMethod());
+				System.out.println("Adding method: " + v.getMethodName());
+			}
 		}
 		
 		return highlightedMethods;
@@ -234,7 +244,7 @@ public class Graph
 	public void searchNodes(StacFrame.searchType search, String searchStr)
 	{
 		this.clearHighlights();
-		Parameters.leftArea.clear();
+		Parameters.bytecodeArea.clear();
 		
 		if(search == StacFrame.searchType.ID || search == StacFrame.searchType.OUT_OPEN || search == StacFrame.searchType.OUT_CLOSED
 				|| search == StacFrame.searchType.IN_OPEN || search == StacFrame.searchType.IN_CLOSED || search == StacFrame.searchType.ROOT_PATH)

@@ -82,11 +82,6 @@ public class Vertex extends AbstractVertex
                     //+ "statement: " + Parameters.getHTMLVerbatim(this.getInstruction()) + "</html>";
         return str;
     }
-    
-	public MethodVertex getMergeParent()
-	{
-		return this.mergeParent;
-	}
 	
 	public Method getMethod()
 	{
@@ -252,7 +247,8 @@ public class Vertex extends AbstractVertex
 		}
 	}
 	
-	public void mergeByMethod(MethodVertex mergeVer) {
+	public void mergeByMethod(MethodVertex mergeVer)
+	{
 		MethodVertex ver = mergeVer;
 
 		if (this.method == null)

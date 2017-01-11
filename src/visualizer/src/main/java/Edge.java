@@ -15,19 +15,24 @@ public class Edge implements Comparable<Edge>
 
 	int source, dest;
 	private AbstractVertex sourceVertex, destVertex;
-	protected String str_id;
+	private GUINode node;
+	protected String strId;
 
-	public Edge(int source, int dest)
+	static double defaultStrokeWidth = 1;
+	static double arrowheadAngleDiff = 0.15 * Math.PI;
+	double arrowLength;
+
+	private Edge(int source, int dest)
 	{
-		this.str_id = this.createID(source, dest);
+		this.strId = this.createID(source, dest);
 		this.source = source;
 		this.dest = dest;
 	}
 
-	public Edge(AbstractVertex sourceVertex, AbstractVertex destVertex, EDGE_TYPE edge_type)
+	public Edge(AbstractVertex sourceVertex, AbstractVertex destVertex, EDGE_TYPE edgeType)
 	{
 		this(sourceVertex.id, destVertex.id);
-		this.type = edge_type;
+		this.type = edgeType;
 		this.sourceVertex = sourceVertex;
 		this.destVertex = destVertex;
 		this.sourceVertex.addAbstractNeighbor(this.destVertex);
@@ -61,7 +66,6 @@ public class Edge implements Comparable<Edge>
 		return destVertex;
 	}
 
-	// TODO: Make lines thinner when zoomed in.
 	public void draw(VizPanel panel, GUINode node)
 	{
 		if (this.source == this.dest)
@@ -81,6 +85,7 @@ public class Edge implements Comparable<Edge>
 			return;
 		}
 
+		this.node = node;
 		double exitStartX, exitStartY, enterDestX, enterDestY;
 		double centerStartX = sourceVertex.getX() + sourceVertex.getWidth() / 2.0;
 		double centerStartY = sourceVertex.getY() + sourceVertex.getHeight() / 2.0;
@@ -163,34 +168,51 @@ public class Edge implements Comparable<Edge>
 
 		this.line = new Line(panel.scaleX(exitStartX), panel.scaleY(exitStartY),
 				panel.scaleX(enterDestX), panel.scaleY(enterDestY));
-		if (this.getType() == Edge.EDGE_TYPE.EDGE_DUMMY)
+		if (this.getType() == EDGE_TYPE.EDGE_DUMMY)
 		{
 			line.getStrokeDashArray().addAll(5d, 4d);
 		}
+		line.setStrokeWidth(defaultStrokeWidth);
 
 		// Compute arrowhead
-		// TODO: Pick better length?
 		double angle = Math.PI + Math.atan2(panel.scaleY(enterDestY - exitStartY), panel.scaleX(enterDestX - exitStartX));
-		double angleDiff = 0.15 * Math.PI;
-		double length = 10.0;
+		this.arrowLength = node.getWidthPerVertex() / 10.0;
 
 		double x1 = panel.scaleX(enterDestX);
 		double y1 = panel.scaleY(enterDestY);
-		double x2 = panel.scaleX(enterDestX) + length * Math.cos(angle + angleDiff);
-		double y2 = panel.scaleY(enterDestY) + length * Math.sin(angle + angleDiff);
-		double x3 = panel.scaleX(enterDestX) + length * Math.cos(angle - angleDiff);
-		double y3 = panel.scaleY(enterDestY) + length * Math.sin(angle - angleDiff);
+		double x2 = panel.scaleX(enterDestX) + arrowLength * Math.cos(angle + arrowheadAngleDiff);
+		double y2 = panel.scaleY(enterDestY) + arrowLength * Math.sin(angle + arrowheadAngleDiff);
+		double x3 = panel.scaleX(enterDestX) + arrowLength * Math.cos(angle - arrowheadAngleDiff);
+		double y3 = panel.scaleY(enterDestY) + arrowLength * Math.sin(angle - arrowheadAngleDiff);
 
-		Polygon arrowhead = new Polygon();
+		arrowhead = new Polygon();
 		arrowhead.getPoints().addAll(new Double[]{
 				x1, y1,
 				x2, y2,
 				x3, y3 });
 		arrowhead.setFill(Color.BLACK);
+		//System.out.println("Arrowhead points: " + arrowhead.toString());
 
 		this.graphics.getChildren().add(line);
 		this.graphics.getChildren().add(arrowhead);
 		node.getChildren().add(graphics);
+	}
+
+	public static void redrawEdges(AbstractVertex v)
+	{
+		for(Edge e : v.getSelfGraph().getEdges().values())
+		{
+			if(v.id == e.source || v.id == e.dest)
+			{
+				// Clear current graphics...
+				e.graphics.getChildren().remove(e.line);
+				e.graphics.getChildren().remove(e.arrowhead);
+				e.node.getChildren().remove(e.graphics);
+
+				// ...And draw new ones
+				e.draw(Parameters.stFrame.mainPanel, e.node);
+			}
+		}
 	}
 
 	public Line getLine()
@@ -210,5 +232,24 @@ public class Edge implements Comparable<Edge>
 	public void setGraphics(Group graphics)
 	{
 		this.graphics = graphics;
+	}
+
+	public void setVisible(boolean isVisible)
+	{
+		this.graphics.setVisible(isVisible);
+	}
+
+	public void setScale()
+	{
+		if(this.node != null) {
+			// Make the line for our edge thinner
+			double zoomLevel = Parameters.stFrame.mainPanel.getZoomLevel();
+			line.setStrokeWidth(defaultStrokeWidth / zoomLevel);
+
+			// TODO: The arrowhead will scale around the center, not the tip.
+			// It could be shifted, but that might not make much difference in the end.
+			this.arrowhead.setScaleX(node.getWidthPerVertex() / (10.0 * arrowLength));
+			this.arrowhead.setScaleY(node.getWidthPerVertex() / (10.0 * arrowLength));
+		}
 	}
 }

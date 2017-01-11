@@ -1,25 +1,14 @@
 
 import javax.swing.tree.DefaultMutableTreeNode;
-
-import javafx.scene.Group;
-import javafx.scene.Node;
-import javafx.scene.layout.Pane;
-
 import java.util.ArrayList;
-
-//The base class for the various kinds of vertices.
-//An abstract vertex is a box on the screen. The subclasses vary in
-//what kind of data the vertex represents.
-
-//The current subclasses are lines of code, methods, and paths of methods.
-//We may also add other kinds of collapsing later, which will require
-//having new kinds of vertices.
 
 abstract class AbstractVertex implements Comparable<AbstractVertex>
 {
 	public static final double DEFAULT_WIDTH = 1.0;
 	public static final double DEFAULT_HEIGHT = 1.0;
+	static int idCounter = 0; // Used to assign unique id numbers to each vertex
 
+	// Used to sort lines of code in a method
 	public int compareTo(AbstractVertex o)
 	{
 		if(this.getMinInstructionLine() == o.getMinInstructionLine())
@@ -33,17 +22,14 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 
 		return 1;
 	}
-	
-	static int id_counter = 0;
+
 	private int minInstructionLine = -1; //start with a negative value to be properly initialized later
-	
+
 	public int getMinInstructionLine() {
 		return minInstructionLine;
 	}
-
-
-	public void setMinInstructionLine(int smallest_instruction_line) {
-		this.minInstructionLine = smallest_instruction_line;
+	public void setMinInstructionLine(int smallestInstructionLine) {
+		this.minInstructionLine = smallestInstructionLine;
 	}
 	
 	protected AbstractGraph selfGraph = null;
@@ -55,12 +41,15 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	{
 		return graphics;
 	}
-	public void setGraphics(GUINode graphics) {
+	public void setGraphics(GUINode graphics)
+	{
 		this.graphics = graphics;
 	}
 
 	private String label;
-	private boolean expanded = true;
+
+	private boolean isExpanded = true;
+
 
 	public ArrayList<Integer> tags;
 
@@ -78,8 +67,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	protected ArrayList<AbstractVertex> abstractNeighbors;
 
 	// A location stores coordinates for a subtree.
-	protected Location location;
-	boolean updateLocation;
+	protected Location location = new Location();
+	boolean updateLocation = false;
 
 	//children stores all of the vertices to which we have edges from this vertex
 	//in the current display
@@ -87,44 +76,37 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	//the current display
 	//The base graph is stored in the neighbors in the Vertex class.
 	protected ArrayList<AbstractVertex> children, incoming;
-
-	protected double x = 0;
-	protected double y = 0;
-	protected double width = -1; 	// we want this values to be initialized by the layout algorithm	
-	protected double height = -1;
 	
 
 	public void setWidth(double width) {
-		this.width = width;
+		this.location.width = width;
 	}
 	public void setHeight(double height) {
-		this.height = height;
+		this.location.height = height;
 	}
 	
 	public void setX(double x) {
-		this.x = x;
+		this.location.x = x;
 	}
 	public void setY(double y) {
-		this.y = y;
+		this.location.y = y;
 	}
 	
 	public double getX() {
-		return x;
+		return this.location.x;
 	}
 	public double getY() {
-		return y;
+		return this.location.y;
 	}
 	public double getWidth() {
-		return width;
+		return this.location.width;
 	}
 	public double getHeight() {
-		return height;
+		return this.location.height;
 	}
 
-	//The merge start is the first vertex of the merge children for a merge vertex, and is used
-	//to create its incoming edges.
-	protected AbstractVertex parent, mergeRoot;
-	protected boolean isVisible, mergeable;
+	protected AbstractVertex parent, mergeRoot, mergeParent;
+	protected boolean isVisible;
 	protected boolean isSelected, isHighlighted, isIncomingHighlighted, isOutgoingHighlighted; //Select or Highlight this vertex, incoming edges, or outgoing edges
 	protected boolean drawEdges;
 	protected int numChildrenHighlighted, numChildrenSelected;
@@ -140,22 +122,27 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		UNVISITED
 	}
 	protected VertexStatus vertexStatus = VertexStatus.WHITE;
+
+	protected double[] subtreeBoundBox = {this.location.width, this.location.height};
+
 	
 	//Subclasses must override these so that we have descriptions for each of them,
 	//and so that our generic collapsing can work for all of them
 	abstract String getRightPanelContent();
 	abstract String getShortDescription();
-	abstract AbstractVertex getMergeParent();
 	abstract ArrayList<? extends AbstractVertex> getMergeChildren();
 	abstract String getName();
+	abstract Method getMethod();
 	
-	public AbstractVertex(){
+	public AbstractVertex()
+	{
 		this.abstractNeighbors = new ArrayList<AbstractVertex>();
-		this.id = id_counter++;
+		this.id = idCounter++;
 		this.strId = "vertex:"+this.id;
 	
 	}
 	
+
 	public AbstractVertex(String label, VertexType type){
 		this();
 		this.label = label;
@@ -178,6 +165,16 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	public void setInnerGraph(AbstractGraph innerGraph) {
 		this.innerGraph = innerGraph;
 	}
+
+	public AbstractVertex getMergeParent()
+	{
+		return this.mergeParent;
+	}
+
+	public void setMergeParent(AbstractVertex mergeParent)
+	{
+		this.mergeParent = mergeParent;
+	}
 	
 	public String getStrID()
 	{
@@ -186,12 +183,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	
 	public void setDefaults()
 	{
-		this.location = new Location();
-		this.updateLocation = false;
-//		this.mainNode = new GUINode(this.contextNode);
-//		this.contextNode = new GUINode(this.mainNode);
 		this.setVisible(false);
-
 		this.incoming = new ArrayList<AbstractVertex>();
 		this.children = new ArrayList<AbstractVertex>();
         this.tags = new ArrayList<Integer>();
@@ -199,19 +191,13 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 
 	public void setVisible(boolean isVisible)
 	{
-		//System.out.println("Setting visibility for node " + this.id + " to " + isVisible);
-		//System.out.println("Location: " + this.location);
 		this.isVisible = isVisible;
-		if(this.getGraphics()!=null){
+		if(this.getGraphics() != null)
 			this.getGraphics().setVisible(isVisible);
-		}
-//		this.mainNode.setVisible(isVisible);
-//		this.contextNode.setVisible(isVisible);
 	}
     
     public DefaultMutableTreeNode toDefaultMutableTreeNode()
     {
-//        return new DefaultMutableTreeNode(this.getShortDescription());
         return new DefaultMutableTreeNode(this);
     }
     
@@ -398,7 +384,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 			else
 			{
 				//We walk up our merge tree until we cannot go higher, or we reach a
-				//vertex that is expanded.
+				//vertex that is isExpanded.
 				while(!v.isVisible && v.getMergeParent() != null)
 					v = v.getMergeParent();
 
@@ -408,7 +394,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 					v = v.mergeRoot;
 
 				//If our current child is not correct, we replace it. This can happen when
-				//the current child is either collapsed or expanded to a different level
+				//the current child is either collapsed or isExpanded to a different level
 				//than it was before.
 				if(v != this.children.get(i))
 				{
@@ -731,6 +717,14 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 				this.loopHeight = v.loopHeight;
 		}
 	}
+
+	public void toggleSelected()
+	{
+		this.isSelected = !this.isSelected;
+		this.isHighlighted = !this.isHighlighted;
+		if(this.parent != null)
+			this.parent.isHighlighted = this.isHighlighted;
+	}
 	
 	public void addHighlight(boolean select, boolean vertex, boolean to, boolean from)
 	{
@@ -908,19 +902,23 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	}
 	
 	public boolean isExpanded() {
-		return expanded;
+		return isExpanded;
 	}
 
 	public void setExpanded(boolean expanded) {
-		this.expanded = expanded;
+		this.isExpanded = expanded;
+	}
+
+	public void setEdgeVisibility(boolean isEdgeVisible)
+	{
+		for(Edge e : this.innerGraph.getEdges().values())
+			e.setVisible(isEdgeVisible);
 	}
 	
 	public void printCoordinates()
-
 	{
-		System.out.println("Vertex " + this.id + ": " + this.x + ", " + this.y + ", width = " + this.width + ", height = " + this.height);
+		System.out.println("Vertex " + this.id + this.location.toString());
 	}
-
 
 	public void removeAbstractNeighbor(AbstractVertex destVertex) {
 		this.abstractNeighbors.remove(destVertex);		
@@ -930,6 +928,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	public VertexType getType() {
 		return this.vertexType;
 	}
+
 
 
 

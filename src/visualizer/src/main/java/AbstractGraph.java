@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
-// TODO: Should this be an abstract class?
 public class AbstractGraph
 {
 	private HashMap<String,AbstractVertex> vertices;
@@ -252,11 +251,11 @@ public class AbstractGraph
 	
 	public void printCoordinates(){
 		Iterator<AbstractVertex> it = this.getVertices().values().iterator();
-		while(it.hasNext()){
+		while(it.hasNext())
+		{
 			AbstractVertex v = it.next();
 			System.out.println(v.getStrID() + ", x=" + v.getX() + ", y=" + v.getY());
 		}
-		
 	}
 	
 	public AbstractVertex getRoot(){

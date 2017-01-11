@@ -14,11 +14,11 @@ import java.util.HashSet;
 
 public class CodeArea extends JTextArea
 {
-	private HashSet<Method> methods = new HashSet<Method>();
+	private AbstractVertex selectedVertex;
 	ArrayList<Instruction> description;
-	ArrayList<Integer> rowToIndex; //Since some Jimple indices can be missing, we need to store an offset
+	ArrayList<Integer> rowToIndex; // Since some Jimple indices can be missing, we need to store an offset
     
-    private int currentCaret=0;
+    private int currentCaret = 0;
 	
 	public CodeArea()
 	{
@@ -61,7 +61,6 @@ public class CodeArea extends JTextArea
 					}
 					else
 					{
-						//Main.graph.clearHighlights();
                         Main.graph.clearSelects();
 					
 						if(row >= 0 && row < rowToIndex.size())
@@ -92,7 +91,7 @@ public class CodeArea extends JTextArea
 	
 	//Cannot be called directly, but is called when the user clicks on a line in the left area
 	//Find vertices corresponding to the given highlight, and highlights them if addHighlight is true,
-	//or unhighlights them if addHighlight is false
+	//or unhighlights them if addHighlight is false.
 	public void searchByJimpleIndex(String method, int index, boolean addHighlight)
 	{
 		//Next we either add or remove the highlighted vertices
@@ -112,44 +111,53 @@ public class CodeArea extends JTextArea
 
 	public void clear()
 	{
-		this.methods = new HashSet<Method>();
+		this.selectedVertex = null;
 		this.description = new ArrayList<Instruction>();
 		this.rowToIndex = new ArrayList<Integer>();
 		this.writeText();
 	}
-		
-	//Rewrite our description based on which vertices are highlighted
+
+	public void setVertex(AbstractVertex v) {
+		this.selectedVertex = v;
+	}
+
+	// Rewrite the text area based on which vertex is selected
 	public void setDescription()
 	{
-		description = new ArrayList<Instruction>();
-		this.methods = Main.graph.collectHighlightedMethods();
-		
-		for(Method method : this.methods)
+		if(this.selectedVertex != null)
 		{
+			description = new ArrayList<Instruction>();
+			Method method = this.selectedVertex.getMethod();
+
+			if(method == null)
+			{
+				System.out.println("Error! Method is undefined.");
+				return;
+			}
+
 			method.highlightInstructions();
 
 			//Add header line with method name
 			String currMethod = method.getFullName();
 			description.add(new Instruction(currMethod + "\n", currMethod, false, -1));
-			
+
 			//Add all instructions in the method
 			description.addAll(method.getInstructionList());
-			
+
 			//Add blank line after each method
 			description.add(new Instruction("\n", currMethod, false, -1));
+
+			int rowNumber = 0;
+			rowToIndex = new ArrayList<Integer>();
+			for (int i = 0; i < description.size(); i++, rowNumber++) {
+				if (description.get(i).str.length() > 0)
+					rowToIndex.add(rowNumber);
+			}
+
+			this.computeDescriptionIndex();
+			this.writeText();
+			this.drawHighlights(Parameters.colorSelection, Parameters.colorFocus, Parameters.colorHighlight);
 		}
-		
-		int rowNumber = 0;
-		rowToIndex = new ArrayList<Integer>();
-		for(int i = 0; i < description.size(); i++, rowNumber++)
-		{
-			if(description.get(i).str.length() > 0)
-				rowToIndex.add(rowNumber);
-		}
-		
-		this.computeDescriptionIndex();
-		this.writeText();
-		this.drawHighlights(Parameters.colorSelection, Parameters.colorFocus, Parameters.colorHighlight);
 	}
 	
 	private void computeDescriptionIndex()
@@ -172,7 +180,7 @@ public class CodeArea extends JTextArea
 		StringBuilder fullText = new StringBuilder();
 		for(Instruction line : description)
 			fullText.append(line.str);
-		
+
 		this.setText(fullText.toString());
 	}
     
@@ -196,7 +204,7 @@ public class CodeArea extends JTextArea
                     close = i;
             }
             
-            if(close>=0)
+            if(close >= 0)
             {
                 this.setCaretPosition(this.getLineStartOffset(close));
             }

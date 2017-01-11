@@ -17,7 +17,8 @@ public class Parameters
 	public static double zoomFactor = 3.0/4.0, boxFactor = 3.0/4.0;
 	public static StacFrame stFrame;
 	public static JTextArea rightArea;
-	public static CodeArea leftArea;
+	public static CodeArea bytecodeArea;
+	public static CodeArea decompiledArea;
     public static SearchArea searchArea;
 	public static String currDirectory = "./";
 	public static javafx.scene.paint.Color fxColorFocus = javafx.scene.paint.Color.BLUE,
@@ -92,9 +93,10 @@ public class Parameters
 
 	public static void repaintAll()
 	{
+		System.out.println("Repainting...");
 		if (!Parameters.debugMode)
 		{
-			leftArea.setDescription();
+			bytecodeArea.setDescription();
 			setRightText();
 			searchArea.writeText();
 		}
@@ -110,7 +112,7 @@ public class Parameters
     
     public static void fixCaretPositions()
     {
-        leftArea.fixCaretPosition();
+        bytecodeArea.fixCaretPosition();
         searchArea.fixCaretPosition();
     }
 
