@@ -20,6 +20,20 @@ import soot.toolkits.graph.LoopNestTree;
 
 import Console._
 
+/* TODO Failure apps
+
+blogger
+Failed to apply jb to <stac.example.Next: fi.iki.elonen.JavaPluginResponse render(fi.iki.elonen.NanoHTTPD$IHTTPSession)>
+./bin/jaam-tools loop fi.iki.elonen.JavaWebServer main /Users/kraks/study/utah/STAC/Engagement1/Challenge_Programs/blogger/challenge_program/nanohttpd-javawebserver-2.2.0-SNAPSHOT-jar-with-dependencies.jar
+
+graph_analyzer, not terminates
+./bin/jaam-tools loop user.commands.CommandProcessor main /Users/kraks/study/utah/STAC/Engagement1/Challenge_Programs/graph_analyzer/challenge_program/GraphDisplay.jar
+
+subspace
+Failed to apply jb to <org.apache.commons.math3.util.BigReal: org.apache.commons.math3.util.BigReal divide(org.apache.commons.math3.util.BigReal)>
+./bin/jaam-tools loop com.example.subspace.Main main /Users/kraks/study/utah/STAC/Engagement1/Challenge_Programs/subspace/challenge_program/lib/Subspace-1.0.jar
+*/
+
 // TODO: merge with jaam.interpreter.Soot
 object Soot {
   def initSoot(mainClassName: String, sootClassPath: String) {
@@ -78,7 +92,7 @@ object Soot {
   def getSootClass(s: String) = Scene.v().loadClass(s, SootClass.SIGNATURES)
 
   def getBody(m: SootMethod): Body = {
-    if (m.isNative || m.isAbstract) 
+    if (m.isNative || m.isAbstract)
       throw new Exception("method body not exists")
 
     if (!m.hasActiveBody) {
@@ -178,7 +192,7 @@ object LoopDepthCounter {
       if (m.isPhantom) { /*println(s"Warning: phantom method ${m}, will not analyze")*/ }
       else if (m.isAbstract) { /*println(s"Warning: abstract method ${m}, will not analyze")*/ }
       else if (m.isNative) { /*println(s"Warning: native method ${m}, will not analyze")*/ }
-      else if (stack.exists(m)) { println(s"Recursive call on ${m}") }
+      else if (stack.exists(m)) { println(s"Recursive call on ${m}, skip.") }
       else { 
         val allLoops = (new LoopNestTree(Soot.getBody(m))).toList
         findLoopsInMethod(Some(Soot.getMethodEntry(m)), currentLoop, CallStack(m, allLoops, stack)) 
