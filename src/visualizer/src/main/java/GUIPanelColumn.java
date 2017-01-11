@@ -35,7 +35,7 @@ public class GUIPanelColumn
             splitPanes.get(i).resetToPreferredSizes();
         }
 
-        System.out.println("Finished constructing column! Panels = " + Integer.toString(panels.size()) + ", split panes = " + Integer.toString(splitPanes.size()));
+        //System.out.println("Finished constructing column! Panels = " + Integer.toString(panels.size()) + ", split panes = " + Integer.toString(splitPanes.size()));
     }
 
     // Returns our JPanel if there is only one panel,

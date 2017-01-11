@@ -69,7 +69,7 @@ public class VizPanel extends JFXPanel
 	{
 		if(root == null)
 		{
-			System.out.println("Running layout...");
+			//System.out.println("Running layout...");
 			Graph g = Main.graph;			
 			this.panelRoot = LayerFactory.get2layer(g);
 			LayoutAlgorithm.layout(this.panelRoot);
@@ -91,6 +91,16 @@ public class VizPanel extends JFXPanel
 	public double scaleY(double coordinate)
 	{
 		return (coordinate * rootHeight / this.maxVertexHeight);
+	}
+
+	public double invScaleX(double pixelCoordinate)
+	{
+		return (pixelCoordinate * this.maxVertexWidth / rootWidth);
+	}
+
+	public double invScaleY(double pixelCoordinate)
+	{
+		return (pixelCoordinate * this.maxVertexHeight / rootHeight);
 	}
 
 	public double getZoomLevel()

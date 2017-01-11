@@ -3,7 +3,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
-// TODO: Should this be an abstract class?
 public class AbstractGraph
 {
 	private HashMap<String,AbstractVertex> vertices;

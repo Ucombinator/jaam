@@ -19,7 +19,6 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	@Override
 	public void handle(MouseEvent event) {
 		EventType<MouseEvent> type = (EventType<MouseEvent>) event.getEventType();
-		System.out.println("Event type: " + type.toString());
 		if(type.equals(MouseEvent.MOUSE_CLICKED))
 		{
 			if(event.getButton().equals(MouseButton.PRIMARY))
@@ -85,6 +84,8 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 					animate(vertex);
 			}
 		});
+
+		Edge.redrawEdges(v);
 	}
 	
 	private void expand(AbstractVertex v)
@@ -124,6 +125,8 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 					animate(vertex);
 			}
 		});
+
+		Edge.redrawEdges(v);
 	}
 	
 	private void handlePrimaryDoubleClick(MouseEvent event)
@@ -155,11 +158,10 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	private void handlePrimarySingleClick(MouseEvent event)
 	{
 		event.consume();
-
-		System.out.println("Primary single click event!");
 		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
-		System.out.println("Click on vertex: " + v.id);
+
 		v.toggleSelected();
+		// TODO: Find better ways to highlight/unhighlight
 		if(v.isSelected())
 			v.getGraphics().increaseOpacity();
 		else
@@ -171,7 +173,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 			Parameters.bytecodeArea.clear();
 
 		Parameters.bytecodeArea.setDescription();
-		// The repaint seems to happen automatically?
+		// The repaint seems to happen automatically? I'm not sure why.
 		//Parameters.repaintAll();
 	}
 }

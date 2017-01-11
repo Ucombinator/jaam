@@ -439,12 +439,12 @@ public class StacFrame extends JFrame
 							ArrayList<Double> layoutColumnWeights)
 	{
 		// Construct columns
-		System.out.println("Layout size: " + Integer.toString(layout.size()));
+		//System.out.println("Layout size: " + Integer.toString(layout.size()));
 		ArrayList<GUIPanelColumn> columns = new ArrayList<GUIPanelColumn>();
 		for(int i = 0; i < layout.size(); i++)
 		{
-			System.out.println("Constructing column: " + Integer.toString(i) + ", height " +
-					Integer.toString(layout.get(i).size()));
+			//System.out.println("Constructing column: " + Integer.toString(i) + ", height " +
+			//		Integer.toString(layout.get(i).size()));
 			ArrayList<JComponent> panelList = layout.get(i);
 			columns.add(new GUIPanelColumn(panelList, layoutRowWeights.get(i)));
 		}

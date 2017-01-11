@@ -60,8 +60,6 @@ public class MethodVertex extends AbstractVertex
                     + "method: " + Parameters.getHTMLVerbatim(this.getMethodName()) + "</html>";
         return str;
     }
-
-    public AbstractVertex getMergeParent() { return null; }
 	
 	public ArrayList<Vertex> getMergeChildren()
 	{

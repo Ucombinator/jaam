@@ -29,10 +29,10 @@ public class Edge implements Comparable<Edge>
 		this.dest = dest;
 	}
 
-	public Edge(AbstractVertex sourceVertex, AbstractVertex destVertex, EDGE_TYPE edge_type)
+	public Edge(AbstractVertex sourceVertex, AbstractVertex destVertex, EDGE_TYPE edgeType)
 	{
 		this(sourceVertex.id, destVertex.id);
-		this.type = edge_type;
+		this.type = edgeType;
 		this.sourceVertex = sourceVertex;
 		this.destVertex = destVertex;
 		this.sourceVertex.addAbstractNeighbor(this.destVertex);
@@ -189,13 +189,30 @@ public class Edge implements Comparable<Edge>
 		arrowhead.getPoints().addAll(new Double[]{
 				x1, y1,
 				x2, y2,
-				x3, y3});
+				x3, y3 });
 		arrowhead.setFill(Color.BLACK);
 		//System.out.println("Arrowhead points: " + arrowhead.toString());
 
 		this.graphics.getChildren().add(line);
 		this.graphics.getChildren().add(arrowhead);
 		node.getChildren().add(graphics);
+	}
+
+	public static void redrawEdges(AbstractVertex v)
+	{
+		for(Edge e : v.getSelfGraph().getEdges().values())
+		{
+			if(v.id == e.source || v.id == e.dest)
+			{
+				// Clear current graphics...
+				e.graphics.getChildren().remove(e.line);
+				e.graphics.getChildren().remove(e.arrowhead);
+				e.node.getChildren().remove(e.graphics);
+
+				// ...And draw new ones
+				e.draw(Parameters.stFrame.mainPanel, e.node);
+			}
+		}
 	}
 
 	public Line getLine()
@@ -230,7 +247,7 @@ public class Edge implements Comparable<Edge>
 			line.setStrokeWidth(defaultStrokeWidth / zoomLevel);
 
 			// TODO: The arrowhead will scale around the center, not the tip.
-			// It should be shifted, but that might not make much difference in the end.
+			// It could be shifted, but that might not make much difference in the end.
 			this.arrowhead.setScaleX(node.getWidthPerVertex() / (10.0 * arrowLength));
 			this.arrowhead.setScaleY(node.getWidthPerVertex() / (10.0 * arrowLength));
 		}

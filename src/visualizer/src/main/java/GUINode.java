@@ -1,4 +1,6 @@
 
+import java.util.ArrayList;
+
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Text;
 import javafx.event.Event;
@@ -16,6 +18,8 @@ public class GUINode extends Pane
     protected Text rectLabel;
     private AbstractVertex vertex;
 	private GUINode parent;
+
+	private ArrayList<Edge> edges = new ArrayList<Edge>();
 
     boolean labelsEnabled = false;
     boolean isDragging;
@@ -150,6 +154,11 @@ public class GUINode extends Pane
             double offsetY = event.getScreenY() + dragY;
             node.setTranslateX(offsetX);
             node.setTranslateY(offsetY);
+
+            AbstractVertex v = GUINode.this.vertex;
+            v.location.x = Parameters.stFrame.mainPanel.invScaleX(offsetX);
+            v.location.y = Parameters.stFrame.mainPanel.invScaleY(offsetY);
+            Edge.redrawEdges(v);
         }
     };
 

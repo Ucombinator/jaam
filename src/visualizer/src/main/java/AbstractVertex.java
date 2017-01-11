@@ -6,7 +6,9 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 {
 	public static final double DEFAULT_WIDTH = 1.0;
 	public static final double DEFAULT_HEIGHT = 1.0;
+	static int idCounter = 0; // Used to assign unique id numbers to each vertex
 
+	// Used to sort lines of code in a method
 	public int compareTo(AbstractVertex o)
 	{
 		if(this.getMinInstructionLine() == o.getMinInstructionLine())
@@ -20,17 +22,14 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 
 		return 1;
 	}
-	
-	static int id_counter = 0;
+
 	private int minInstructionLine = -1; //start with a negative value to be properly initialized later
-	
+
 	public int getMinInstructionLine() {
 		return minInstructionLine;
 	}
-
-
-	public void setMinInstructionLine(int smallest_instruction_line) {
-		this.minInstructionLine = smallest_instruction_line;
+	public void setMinInstructionLine(int smallestInstructionLine) {
+		this.minInstructionLine = smallestInstructionLine;
 	}
 	
 	protected AbstractGraph selfGraph = null;
@@ -104,10 +103,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		return this.location.height;
 	}
 
-	//The merge start is the first vertex of the merge children for a merge vertex, and is used
-	//to create its incoming edges.
-	protected AbstractVertex parent, mergeRoot;
-	protected boolean isVisible, mergeable;
+	protected AbstractVertex parent, mergeRoot, mergeParent;
+	protected boolean isVisible;
 	protected boolean isSelected, isHighlighted, isIncomingHighlighted, isOutgoingHighlighted; //Select or Highlight this vertex, incoming edges, or outgoing edges
 	protected boolean drawEdges;
 	protected int numChildrenHighlighted, numChildrenSelected;
@@ -129,14 +126,14 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	//and so that our generic collapsing can work for all of them
 	abstract String getRightPanelContent();
 	abstract String getShortDescription();
-	abstract AbstractVertex getMergeParent();
 	abstract ArrayList<? extends AbstractVertex> getMergeChildren();
 	abstract String getName();
 	abstract Method getMethod();
 	
-	public AbstractVertex(){
+	public AbstractVertex()
+	{
 		this.abstractNeighbors = new ArrayList<AbstractVertex>();
-		this.id = id_counter++;
+		this.id = idCounter++;
 		this.strId = "vertex:"+this.id;
 	}
 	
@@ -161,6 +158,16 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	
 	public void setInnerGraph(AbstractGraph innerGraph) {
 		this.innerGraph = innerGraph;
+	}
+
+	public AbstractVertex getMergeParent()
+	{
+		return this.mergeParent;
+	}
+
+	public void setMergeParent(AbstractVertex mergeParent)
+	{
+		this.mergeParent = mergeParent;
 	}
 	
 	public String getStrID()
@@ -711,17 +718,6 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		this.isHighlighted = !this.isHighlighted;
 		if(this.parent != null)
 			this.parent.isHighlighted = this.isHighlighted;
-
-		System.out.println("Vertex: " + this.id);
-		System.out.println("Selected: " + this.isSelected);
-		System.out.println("Highlighted: " + this.isHighlighted);
-		if(this.parent != null)
-		{
-			System.out.println("Parent: " + this.parent.id);
-			System.out.println("Highlighted: " + this.parent.isHighlighted);
-		}
-		else
-			System.out.println("No parent found.");
 	}
 	
 	public void addHighlight(boolean select, boolean vertex, boolean to, boolean from)

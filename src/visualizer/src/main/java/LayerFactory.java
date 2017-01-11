@@ -1,8 +1,6 @@
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 
 public class LayerFactory
 {
@@ -16,9 +14,8 @@ public class LayerFactory
 		// We partition the vertex set of Main.graph into buckets corresponding to the methods.
 		HashMap<String, HashSet<Vertex>> buckets = new HashMap<String, HashSet<Vertex>>();
 		HashMap<String, Method> methods = new HashMap<String, Method>();
-		for(int i = 0; i < graph.vertices.size(); i++)
+		for(Vertex vertex : graph.vertices)
 		{
-			Vertex vertex = graph.vertices.get(i);
 			String methodName = vertex.getMethodName();
 			if(!buckets.containsKey(methodName))
 			{
@@ -31,7 +28,7 @@ public class LayerFactory
 		}
 		
 		// Add a vertex to the method graph for each method.
-		HashMap<String, AbstractVertex> methodVertices = new HashMap<>();
+		HashMap<String, AbstractVertex> methodVertices = new HashMap<String, AbstractVertex>();
 		for(String methodName: buckets.keySet())
 		{
 			// Create vertex for method
@@ -45,12 +42,9 @@ public class LayerFactory
 		for(int i = 0; i < graph.vertices.size(); i++)
 		{
 			Vertex vertex = graph.vertices.get(i);
-			ArrayList<Vertex> neighbors = vertex.neighbors;
-			Iterator<Vertex> it = neighbors.iterator();
-			while(it.hasNext())
+			for(Vertex neighbor : vertex.neighbors)
 			{
 				// This cast should be changed in the future once we get rid of the abstract class AbstractVertex
-				Vertex neighbor = it.next();
 				String tempID = vertex.getMethodName() + "--" + neighbor.getMethodName();
 				if(!edges.containsKey(tempID))
 				{
@@ -73,7 +67,7 @@ public class LayerFactory
 		{
 			//Create inner-vertices of the inner-methods graph.
 			HashSet<Vertex> innerVertexSet = buckets.get(methodVertex.getName());
-			System.out.println("Number of vertices: " + innerVertexSet.size());
+			//System.out.println("Number of vertices: " + innerVertexSet.size());
 			AbstractGraph innerGraph = methodVertex.getInnerGraph();
 			
 			// Add vertices of the inner graph.
@@ -89,6 +83,7 @@ public class LayerFactory
 				innerGraph.addVertex(newV);
 
 				newV.setMethod(oldV.getMethod());
+				newV.mergeParent = (MethodVertex) methodVertex;
 			}
 			
 			// Add the edges of the inner graph.
@@ -143,6 +138,9 @@ public class LayerFactory
 		
 		AbstractVertex root = new Vertex("root");
 		root.setInnerGraph(methodGraph);
+		for(AbstractVertex methodVertex : methodGraph.getVertices().values())
+			methodVertex.setMergeParent(root);
+
 		return root;
 	}
 }

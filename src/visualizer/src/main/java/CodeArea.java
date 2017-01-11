@@ -16,7 +16,7 @@ public class CodeArea extends JTextArea
 {
 	private AbstractVertex selectedVertex;
 	ArrayList<Instruction> description;
-	ArrayList<Integer> rowToIndex; //Since some Jimple indices can be missing, we need to store an offset
+	ArrayList<Integer> rowToIndex; // Since some Jimple indices can be missing, we need to store an offset
     
     private int currentCaret = 0;
 	
@@ -91,7 +91,7 @@ public class CodeArea extends JTextArea
 	
 	//Cannot be called directly, but is called when the user clicks on a line in the left area
 	//Find vertices corresponding to the given highlight, and highlights them if addHighlight is true,
-	//or unhighlights them if addHighlight is false
+	//or unhighlights them if addHighlight is false.
 	public void searchByJimpleIndex(String method, int index, boolean addHighlight)
 	{
 		//Next we either add or remove the highlighted vertices
@@ -135,7 +135,6 @@ public class CodeArea extends JTextArea
 				return;
 			}
 
-			System.out.println("Highlighted method: " + method.getFullName());
 			method.highlightInstructions();
 
 			//Add header line with method name
@@ -181,8 +180,7 @@ public class CodeArea extends JTextArea
 		StringBuilder fullText = new StringBuilder();
 		for(Instruction line : description)
 			fullText.append(line.str);
-		
-		System.out.println("Setting description: " + fullText.toString());
+
 		this.setText(fullText.toString());
 	}
     
