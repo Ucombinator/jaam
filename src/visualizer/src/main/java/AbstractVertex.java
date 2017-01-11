@@ -48,7 +48,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	}
 
 	private String label;
-	private boolean expanded = true;
+	private boolean isExpanded = true;
 
 	public ArrayList<Integer> tags;
 
@@ -132,6 +132,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	abstract AbstractVertex getMergeParent();
 	abstract ArrayList<? extends AbstractVertex> getMergeChildren();
 	abstract String getName();
+	abstract Method getMethod();
 	
 	public AbstractVertex(){
 		this.abstractNeighbors = new ArrayList<AbstractVertex>();
@@ -139,7 +140,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		this.strId = "vertex:"+this.id;
 	}
 	
-	public AbstractVertex(String label){
+	public AbstractVertex(String label)
+	{
 		this();
 		this.label = label;
 		this.innerGraph = new AbstractGraph();
@@ -369,7 +371,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 			else
 			{
 				//We walk up our merge tree until we cannot go higher, or we reach a
-				//vertex that is expanded.
+				//vertex that is isExpanded.
 				while(!v.isVisible && v.getMergeParent() != null)
 					v = v.getMergeParent();
 
@@ -379,7 +381,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 					v = v.mergeRoot;
 
 				//If our current child is not correct, we replace it. This can happen when
-				//the current child is either collapsed or expanded to a different level
+				//the current child is either collapsed or isExpanded to a different level
 				//than it was before.
 				if(v != this.children.get(i))
 				{
@@ -702,6 +704,25 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 				this.loopHeight = v.loopHeight;
 		}
 	}
+
+	public void toggleSelected()
+	{
+		this.isSelected = !this.isSelected;
+		this.isHighlighted = !this.isHighlighted;
+		if(this.parent != null)
+			this.parent.isHighlighted = this.isHighlighted;
+
+		System.out.println("Vertex: " + this.id);
+		System.out.println("Selected: " + this.isSelected);
+		System.out.println("Highlighted: " + this.isHighlighted);
+		if(this.parent != null)
+		{
+			System.out.println("Parent: " + this.parent.id);
+			System.out.println("Highlighted: " + this.parent.isHighlighted);
+		}
+		else
+			System.out.println("No parent found.");
+	}
 	
 	public void addHighlight(boolean select, boolean vertex, boolean to, boolean from)
 	{
@@ -879,11 +900,11 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	}
 	
 	public boolean isExpanded() {
-		return expanded;
+		return isExpanded;
 	}
 
 	public void setExpanded(boolean expanded) {
-		this.expanded = expanded;
+		this.isExpanded = expanded;
 	}
 
 	public void setEdgeVisibility(boolean isEdgeVisible)

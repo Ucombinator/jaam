@@ -190,14 +190,24 @@ public class Graph
 		
 		for(Vertex v : this.vertices)
 		{
+			System.out.println("Vertex: " + v.id);
+			System.out.println("Selected: " + v.isSelected());
             if(v.isHighlighted || v.isSelected)
+            {
 				highlightedMethods.add(v.getMethod());
+				System.out.println("Adding method: " + v.getMethodName());
+			}
 		}
 		
 		for(MethodVertex v : this.methodVertices)
 		{
+			System.out.println("Method vertex: " + v.id);
+			System.out.println("Selected: " + v.isSelected());
             if(v.isHighlighted || v.isSelected)
+            {
 				highlightedMethods.add(v.getMethod());
+				System.out.println("Adding method: " + v.getMethodName());
+			}
 		}
 		
 		return highlightedMethods;

@@ -6,35 +6,38 @@ import java.util.Iterator;
 
 public class LayerFactory
 {
-	static HashMap<String, Vertex> id_to_vertex = new HashMap<String, Vertex>();
-	static HashMap<String, AbstractVertex> id_to_abs_vertex = new HashMap<String, AbstractVertex>();
+	static HashMap<String, Vertex> idToVertex = new HashMap<String, Vertex>();
+	static HashMap<String, AbstractVertex> idToAbsVertex = new HashMap<String, AbstractVertex>();
 	
 	static AbstractVertex get2layer(Graph graph)
 	{
 		AbstractGraph methodGraph = new AbstractGraph();
 		
-		/* We partion the vertex set of Main.graph into buckets corresponding to the methods*/
+		// We partition the vertex set of Main.graph into buckets corresponding to the methods.
 		HashMap<String, HashSet<Vertex>> buckets = new HashMap<String, HashSet<Vertex>>();
+		HashMap<String, Method> methods = new HashMap<String, Method>();
 		for(int i = 0; i < graph.vertices.size(); i++)
 		{
 			Vertex vertex = graph.vertices.get(i);
-			String method = vertex.getMethodName();
-			if(!buckets.containsKey(method))
+			String methodName = vertex.getMethodName();
+			if(!buckets.containsKey(methodName))
 			{
-				buckets.put(method, new HashSet<Vertex>());
+				buckets.put(methodName, new HashSet<Vertex>());
 			}
-			buckets.get(method).add(vertex);
+			buckets.get(methodName).add(vertex);
+
+			if(!methods.containsKey(methodName))
+				methods.put(methodName, vertex.getMethod());
 		}
 		
-		// Add a vertex for each method to the methodGraph.
+		// Add a vertex to the method graph for each method.
 		HashMap<String, AbstractVertex> methodVertices = new HashMap<>();
-		Iterator<String> iter = buckets.keySet().iterator();
-		while(iter.hasNext())
+		for(String methodName: buckets.keySet())
 		{
-			String method = iter.next();
-			AbstractVertex vertex = new Vertex(method);
-			methodVertices.put(method, vertex);
-			methodGraph.addVertex(vertex);
+			// Create vertex for method
+			AbstractVertex methodVertex = new MethodVertex(methods.get(methodName), true);
+			methodVertices.put(methodName, methodVertex);
+			methodGraph.addVertex(methodVertex);
 		}
 
 		// Add edges to the methodGraph.
@@ -54,7 +57,9 @@ public class LayerFactory
 					AbstractVertex absVertex = methodVertices.get(vertex.getMethodName()); 
 					AbstractVertex absNeigh = methodVertices.get(neighbor.getMethodName());
 					
-					if(absVertex!=absNeigh){	// We are not distinguishing recursive calls
+					if(absVertex != absNeigh)
+					{
+						// We are not distinguishing recursive calls
 						Edge e = new Edge(absVertex, absNeigh, Edge.EDGE_TYPE.EDGE_REGULAR);
 						edges.put(tempID, e);
 						methodGraph.addEdge(e);
@@ -64,37 +69,33 @@ public class LayerFactory
 		}
 		
 		// Create inner graph for each method vertex.
-		Iterator<AbstractVertex> itAbstract = methodGraph.getVertices().values().iterator();
-		while(itAbstract.hasNext())
+		for(AbstractVertex methodVertex: methodGraph.getVertices().values())
 		{
 			//Create inner-vertices of the inner-methods graph.
-			AbstractVertex methodVertex = itAbstract.next();
-			HashSet<Vertex> innerVertexSet = buckets.get(methodVertex.getLabel());
+			HashSet<Vertex> innerVertexSet = buckets.get(methodVertex.getName());
+			System.out.println("Number of vertices: " + innerVertexSet.size());
 			AbstractGraph innerGraph = methodVertex.getInnerGraph();
 			
 			// Add vertices of the inner graph.
-			Iterator<Vertex> it = innerVertexSet.iterator();
-			HashMap<String,String> idMapping = new HashMap<>(); // first id is the Main.graph vertex id and the second id the New vertex id
-			while(it.hasNext())
+			HashMap<String, String> idMapping = new HashMap<>(); // first id is the Main.graph vertex id and the second id the New vertex id
+			for(Vertex oldV : innerVertexSet)
 			{
-				Vertex oldV = it.next();
 				Vertex newV = new Vertex("instruction:" + oldV.getStrID());
 				newV.setMinInstructionLine(oldV.id);
 
-				id_to_vertex.put(oldV.getStrID(), oldV);
-				id_to_abs_vertex.put(oldV.getStrID(), newV);
+				idToVertex.put(oldV.getStrID(), oldV);
+				idToAbsVertex.put(oldV.getStrID(), newV);
 				idMapping.put(oldV.getStrID(), newV.getStrID());
 				innerGraph.addVertex(newV);
+
+				newV.setMethod(oldV.getMethod());
 			}
 			
 			// Add the edges of the inner graph.
-			it = innerVertexSet.iterator();
-			while(it.hasNext()){
-				Vertex v = it.next();
-				ArrayList<Vertex> neighbors = v.neighbors;
-				Iterator<Vertex> itNeighbors = neighbors.iterator();
-				while(itNeighbors.hasNext()){
-					Vertex neighbor = itNeighbors.next();
+			for(Vertex v : innerVertexSet)
+			{
+				for(Vertex neighbor: v.neighbors)
+				{
 					if(v.getMethodName().equals(neighbor.getMethodName()))
 					{
 						innerGraph.addEdge(
@@ -112,36 +113,30 @@ public class LayerFactory
 			}
 		}
 		
-		// Setting the Smallest_instruction_line of the method vertices
-		itAbstract = methodGraph.getVertices().values().iterator();
-		while(itAbstract.hasNext())
+		// Setting the minimum instruction line of the method vertices
+		for(AbstractVertex methodVertex: methodGraph.getVertices().values())
 		{
-			AbstractVertex methodVertex = itAbstract.next();
-			Iterator<AbstractVertex> itInner = methodVertex.getInnerGraph().getVertices().values().iterator();
-			while(itInner.hasNext())
+			for(AbstractVertex vertex : methodVertex.getInnerGraph().getVertices().values())
 			{
 				if(methodVertex.getMinInstructionLine() == -1)
 				{
-					methodVertex.setMinInstructionLine(itInner.next().getMinInstructionLine());
+					methodVertex.setMinInstructionLine(vertex.getMinInstructionLine());
 				}
 				else
 				{
 					methodVertex.setMinInstructionLine(Math.min(methodVertex.getMinInstructionLine(),
-							itInner.next().getMinInstructionLine()));
+							vertex.getMinInstructionLine()));
 				}
 			}
 		}
-		
-		ArrayList<Edge> dummies = graph.computeDummyEdges();
-		Iterator<Edge> itEdge = dummies.iterator();
-		while(itEdge.hasNext())
+
+		for(Edge e : graph.computeDummyEdges())
 		{
-			Edge e = itEdge.next();
-			AbstractVertex startOringal = e.getSourceVertex();
+			AbstractVertex startOriginal = e.getSourceVertex();
 			AbstractVertex endOriginal = e.getDestVertex();
 			
-			AbstractVertex start = id_to_abs_vertex.get(startOringal.getStrID());
-			AbstractVertex end = id_to_abs_vertex.get(endOriginal.getStrID());
+			AbstractVertex start = idToAbsVertex.get(startOriginal.getStrID());
+			AbstractVertex end = idToAbsVertex.get(endOriginal.getStrID());
 			
 			start.getSelfGraph().addEdge(new Edge(start,end,Edge.EDGE_TYPE.EDGE_DUMMY));
 		}

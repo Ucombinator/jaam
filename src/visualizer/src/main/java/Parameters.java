@@ -93,6 +93,7 @@ public class Parameters
 
 	public static void repaintAll()
 	{
+		System.out.println("Repainting...");
 		if (!Parameters.debugMode)
 		{
 			bytecodeArea.setDescription();

@@ -4,15 +4,12 @@ public class MethodVertex extends AbstractVertex
 {
 	private Method method;
 	public ArrayList<Vertex> mergeChildren; //mergeChildren stores all of the lines that were merged to make this vertex
-		
-	public MethodVertex(int id, int index, Method method, boolean isVisible)
+
+	public MethodVertex(Method method, boolean isVisible)
 	{
-		super();
 		this.setDefaults();
 		vertexType = VertexType.METHOD;
-		
-		this.id = id;
-		this.index = index;
+
 		this.method = method;
 		this.name = method.getFullName();
 		this.setVisible(isVisible);
@@ -22,6 +19,14 @@ public class MethodVertex extends AbstractVertex
 		this.incoming = new ArrayList<AbstractVertex>();
 		this.children = new ArrayList<AbstractVertex>();
 		this.mergeChildren = new ArrayList<Vertex>();
+		this.innerGraph = new AbstractGraph();
+	}
+
+	public MethodVertex(int id, int index, Method method, boolean isVisible)
+	{
+		this(method, isVisible);
+		this.id = id;
+		this.index = index;
 	}
 
 	public String getName()

@@ -19,6 +19,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	@Override
 	public void handle(MouseEvent event) {
 		EventType<MouseEvent> type = (EventType<MouseEvent>) event.getEventType();
+		System.out.println("Event type: " + type.toString());
 		if(type.equals(MouseEvent.MOUSE_CLICKED))
 		{
 			if(event.getButton().equals(MouseButton.PRIMARY))
@@ -151,6 +152,26 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		tt.play();
 	}
 
-	// TODO: Implement selecting vertices here
-	private void handlePrimarySingleClick(MouseEvent event) {}
+	private void handlePrimarySingleClick(MouseEvent event)
+	{
+		event.consume();
+
+		System.out.println("Primary single click event!");
+		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
+		System.out.println("Click on vertex: " + v.id);
+		v.toggleSelected();
+		if(v.isSelected())
+			v.getGraphics().increaseOpacity();
+		else
+			v.getGraphics().decreaseOpacity();
+
+		if(v.isSelected())
+			Parameters.bytecodeArea.setVertex(v);
+		else
+			Parameters.bytecodeArea.clear();
+
+		Parameters.bytecodeArea.setDescription();
+		// The repaint seems to happen automatically?
+		//Parameters.repaintAll();
+	}
 }

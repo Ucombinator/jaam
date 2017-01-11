@@ -96,6 +96,18 @@ public class GUINode extends Pane
         this.rect.setHeight(height);
     }
 
+    // Halve the distance from the current opacity to 1.
+    public void increaseOpacity()
+    {
+        this.rect.setOpacity((1 + this.rect.getOpacity()) / 2.0);
+    }
+
+    // Halve the current opacity.
+    public void decreaseOpacity()
+    {
+        this.rect.setOpacity((this.rect.getOpacity()) / 2.0);
+    }
+
     // Divides the actual width in pixels by the width in vertex units
     public double getWidthPerVertex()
     {

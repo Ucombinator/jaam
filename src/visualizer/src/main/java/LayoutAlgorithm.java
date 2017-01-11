@@ -27,12 +27,12 @@ public class LayoutAlgorithm
 		defaultLayout(parentVertex,parentVertex.getInnerGraph());
 	}
 	
-	private static void initializeSizes(AbstractVertex parentVertex)
+	private static void initializeSizes(AbstractVertex vertex)
 	{
-		parentVertex.setWidth(AbstractVertex.DEFAULT_WIDTH);
-		parentVertex.setHeight(AbstractVertex.DEFAULT_HEIGHT);
-		for(AbstractVertex vertex : parentVertex.getInnerGraph().getVertices().values())
-			initializeSizes(vertex);
+		vertex.setWidth(AbstractVertex.DEFAULT_WIDTH);
+		vertex.setHeight(AbstractVertex.DEFAULT_HEIGHT);
+		for(AbstractVertex childVertex : vertex.getInnerGraph().getVertices().values())
+			initializeSizes(childVertex);
 	}
 	
 	public static void defaultLayout(AbstractVertex parentVertex, AbstractGraph graph){

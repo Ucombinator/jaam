@@ -237,10 +237,10 @@ public class AbstractGraph
 	
 	public void printCoordinates(){
 		Iterator<AbstractVertex> it = this.getVertices().values().iterator();
-		while(it.hasNext()){
+		while(it.hasNext())
+		{
 			AbstractVertex v = it.next();
 			System.out.println(v.getStrID() + ", x=" + v.getX() + ", y=" + v.getY());
 		}
-		
 	}
 }
