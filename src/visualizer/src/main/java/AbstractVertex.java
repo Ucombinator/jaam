@@ -60,13 +60,13 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	}
 
 	private String label;
-	private boolean expanded = false;
+	private boolean expanded = true;
 
 	public ArrayList<Integer> tags;
 
     public enum VertexType
 	{
-		LINE, METHOD, METHOD_PATH
+		LINE, METHOD, METHOD_PATH, CHAIN, INSTRUCTION, ROOT
 	}
 
 	protected int id;
@@ -140,7 +140,6 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		UNVISITED
 	}
 	protected VertexStatus vertexStatus = VertexStatus.WHITE;
-	protected double[] subtreeBoundBox = {width,height};
 	
 	//Subclasses must override these so that we have descriptions for each of them,
 	//and so that our generic collapsing can work for all of them
@@ -154,12 +153,14 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		this.abstractNeighbors = new ArrayList<AbstractVertex>();
 		this.id = id_counter++;
 		this.strId = "vertex:"+this.id;
+	
 	}
 	
-	public AbstractVertex(String label){
+	public AbstractVertex(String label, VertexType type){
 		this();
 		this.label = label;
 		this.innerGraph = new AbstractGraph();
+		this.vertexType = type;
 	}
 	
     public String getLabel() {
@@ -919,6 +920,18 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	{
 		System.out.println("Vertex " + this.id + ": " + this.x + ", " + this.y + ", width = " + this.width + ", height = " + this.height);
 	}
+
+
+	public void removeAbstractNeighbor(AbstractVertex destVertex) {
+		this.abstractNeighbors.remove(destVertex);		
+	}
+
+
+	public VertexType getType() {
+		return this.vertexType;
+	}
+
+
 
 }
 

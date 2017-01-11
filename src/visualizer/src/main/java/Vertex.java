@@ -15,9 +15,9 @@ public class Vertex extends AbstractVertex
 	public int dfsPathPos;
 	public boolean traversed;
 	
-	public Vertex(String label)
+	public Vertex(String label, AbstractVertex.VertexType type)
 	{
-		super(label);
+		super(label, type);
 	}
 	
 	public Vertex(int d, int i)

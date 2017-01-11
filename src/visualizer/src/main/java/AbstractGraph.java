@@ -1,4 +1,6 @@
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -44,6 +46,13 @@ public class AbstractGraph
 		vertex.setSelfGraph(this);
 	}
 	
+	
+	public void deleteVertex(AbstractVertex vertex)
+	{
+		this.vertices.remove(vertex.getStrID());
+		vertex.setSelfGraph(null);
+	}
+	
 	public void addVertices(HashSet<AbstractVertex> vertices)
 	{
 		Iterator<AbstractVertex> it =  vertices.iterator();
@@ -55,6 +64,12 @@ public class AbstractGraph
 	{
 		edge.getSourceVertex().addAbstractNeighbor(edge.getDestVertex());
 		this.edges.put(edge.getID(), edge);
+	}
+	
+	public void deleteEdge(Edge edge)
+	{
+		edge.getSourceVertex().removeAbstractNeighbor(edge.getDestVertex());
+		this.edges.remove(edge.getID());
 	}
 	
 	public String toString()
@@ -242,5 +257,22 @@ public class AbstractGraph
 			System.out.println(v.getStrID() + ", x=" + v.getX() + ", y=" + v.getY());
 		}
 		
+	}
+	
+	public AbstractVertex getRoot(){
+		if(this.vertices.values().size()==0){
+			return null;
+		}
+		ArrayList<AbstractVertex> arrayList = new ArrayList<AbstractVertex>(this.vertices.values());
+		Collections.sort(arrayList);
+		return arrayList.get(0);
+	}
+
+	public void deleteEdge(AbstractVertex previous, AbstractVertex next) {
+		this.edges.remove(Edge.createID(previous.id, next.id));
+	}
+
+	public boolean hasEdge(AbstractVertex first, AbstractVertex second) {
+		return this.edges.containsKey(Edge.createID(first.id, second.id));
 	}
 }

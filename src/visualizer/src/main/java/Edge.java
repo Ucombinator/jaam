@@ -41,7 +41,7 @@ public class Edge implements Comparable<Edge>
 		return type;
 	}
 
-	private String createID(int source, int dest) {
+	public static String createID(int source, int dest) {
 		return "edge:" + source + "-->" + dest;
 	}
 
@@ -50,9 +50,9 @@ public class Edge implements Comparable<Edge>
 	}
 
 	public String getID() {
-		return "edge:" + source + "-->" + dest;
+		return Edge.createID(this.source, this.dest);
 	}
-
+	
 	public AbstractVertex getSourceVertex() {
 		return sourceVertex;
 	}

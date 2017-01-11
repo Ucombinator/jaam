@@ -8,6 +8,9 @@ import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
 
 // TODO: Place vertex labels on top of vertices.
 public class GUINode extends Pane
@@ -33,6 +36,7 @@ public class GUINode extends Pane
         this.vertex.setGraphics(this);
         this.back_rect = new Rectangle();
         this.rect = new Rectangle();
+        
         this.rectLabel = new Text();
         if(labels_enabled)
         {
@@ -43,7 +47,7 @@ public class GUINode extends Pane
         	this.getChildren().addAll(this.back_rect, this.rect);
         }
 
-        this.rect.setOpacity(0.2);
+        
         this.makeDraggable();
         this.isDragging = false;
         
@@ -76,7 +80,11 @@ public class GUINode extends Pane
     public void setFill(Color c)
     {
     	this.back_rect.setFill(Color.WHITE);
-        this.rect.setFill(c);
+    	this.rect.setFill(c);
+    	if(vertex.getType()==AbstractVertex.VertexType.CHAIN){
+        	Stop[] stops = new Stop[]{new Stop(0.6,c), new Stop(0.4,Color.WHITE)};
+            this.rect.setFill(new LinearGradient(0, 0, 0, 8, false, CycleMethod.REPEAT, stops));
+        }
     }
 
     public void setStroke(Color c)
@@ -110,8 +118,8 @@ public class GUINode extends Pane
         this.rect.setWidth(width);
         this.rect.setHeight(height);
 
-        System.out.println("Location of GUINode rectangle:");
-        System.out.println(x + ", " + y + ", " + width + ", " + height);
+        //System.out.println("Location of GUINode rectangle:");
+        //System.out.println(x + ", " + y + ", " + width + ", " + height);
     }
 
     public void makeDraggable()
@@ -216,8 +224,11 @@ public class GUINode extends Pane
 	        	}
         	}
         	
+
+            
             GUINode obj = (GUINode) (event.getSource());
-            obj.rect.setOpacity(0.3);
+            
+            obj.rect.setOpacity(.3);
             if(obj.parent != null)
                 obj.parent.rect.setOpacity(1);
         }

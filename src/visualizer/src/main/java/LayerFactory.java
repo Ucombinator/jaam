@@ -4,8 +4,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import com.sun.media.jfxmedia.events.NewFrameEvent;
+
+import javafx.scene.paint.Color;
+
+
 public class LayerFactory
 {
+	private static final boolean create_chains = true;
+	private static final boolean contract_chains = false;
+	private static final int CHAIN_LENGTH = 2 ; // This value should ALWAYS be LARGEN THAN OR EQUAL 3 (otherwise it will break)
+	
 	static HashMap<String, Vertex> id_to_vertex = new HashMap<String, Vertex>();
 	static HashMap<String, AbstractVertex> id_to_abs_vertex = new HashMap<String, AbstractVertex>();
 	
@@ -32,7 +41,8 @@ public class LayerFactory
 		while(iter.hasNext())
 		{
 			String method = iter.next();
-			AbstractVertex vertex = new Vertex(method);
+			AbstractVertex vertex = new Vertex(method, AbstractVertex.VertexType.METHOD);
+			//vertex.setExpanded(false);
 			methodVertices.put(method, vertex);
 			methodGraph.addVertex(vertex);
 		}
@@ -78,7 +88,7 @@ public class LayerFactory
 			while(it.hasNext())
 			{
 				Vertex oldV = it.next();
-				Vertex newV = new Vertex("instruction:" + oldV.getStrID());
+				Vertex newV = new Vertex("instruction:" + oldV.getStrID(), AbstractVertex.VertexType.INSTRUCTION);
 				newV.setMinInstructionLine(oldV.id);
 
 				id_to_vertex.put(oldV.getStrID(), oldV);
@@ -146,8 +156,132 @@ public class LayerFactory
 			start.getSelfGraph().addEdge(new Edge(start,end,Edge.EDGE_TYPE.EDGE_DUMMY));
 		}
 		
-		AbstractVertex root = new Vertex("root");
+		AbstractVertex root = new Vertex("root", AbstractVertex.VertexType.ROOT);
 		root.setInnerGraph(methodGraph);
+		
+		collapseChains(root, CHAIN_LENGTH);
 		return root;
 	}
+
+	static void collapseChains(AbstractVertex parent, int k){
+		Iterator<AbstractVertex> it = parent.getInnerGraph().getVertices().values().iterator();
+		while(it.hasNext()){
+			AbstractVertex absVertex = it.next();
+			absVertex.vertexStatus = AbstractVertex.VertexStatus.WHITE;
+			collapseChains(absVertex, k);
+		}
+		
+		if(create_chains){
+			collapseFromVertex(parent.getInnerGraph().getRoot(), k);
+		}
+	
+	}
+
+	private static void collapseFromVertex(AbstractVertex root, int k) {
+		if(root==null){return;}
+		
+		System.out.println("collapseFromVertex");
+		int i = 0;
+		AbstractVertex currentVertex = root;
+		ArrayList<AbstractVertex> chain = new ArrayList<AbstractVertex>();
+		while(true){
+			currentVertex.vertexStatus = AbstractVertex.VertexStatus.GRAY;
+			Iterator<AbstractVertex> itChildren = currentVertex.getAbstractNeighbors().iterator();
+			ArrayList<AbstractVertex> grayChildren = new ArrayList<AbstractVertex>();
+			while(itChildren.hasNext())
+			{
+				AbstractVertex child = itChildren.next();
+				if (child.vertexStatus == AbstractVertex.VertexStatus.WHITE)
+				{
+					child.vertexStatus = AbstractVertex.VertexStatus.GRAY;
+					grayChildren.add(child);
+				}
+			}
+			
+			
+			
+			if(grayChildren.size()==1){
+				AbstractVertex child =  grayChildren.get(0);
+				chain.add(currentVertex);
+				currentVertex = child;
+			}else{
+				// We also add the last vertex to the chain (so that we can reconstruct all edges)
+//				if(grayChildren.size()==0){
+					chain.add(currentVertex);
+//			}
+				
+				/********************************************************************************/
+				if(i>=k){
+					System.out.println("CREATING CHAIN!!");
+					AbstractVertex first = chain.get(0);
+					AbstractVertex last = chain.get(chain.size()-1);
+					
+				
+					
+				
+					System.out.println("CHAIN starts at: " + chain.get(0).getStrID());
+					
+					
+					//Create the new vertex
+					AbstractVertex chainVertex = new Vertex("Chain:" + chain.get(0).getStrID(), AbstractVertex.VertexType.CHAIN);
+					chainVertex.setExpanded(!contract_chains);
+					chainVertex.setMinInstructionLine(Integer.MAX_VALUE); // to be sure it won't be the root
+					
+					first.getSelfGraph().addVertex(chainVertex);
+					first.getSelfGraph().addEdge(new Edge(first, chainVertex, Edge.EDGE_TYPE.EDGE_REGULAR));
+					if(first.getSelfGraph().hasEdge(chain.get(1),first)){
+						chainVertex.getSelfGraph().addEdge(new Edge(chainVertex,first, Edge.EDGE_TYPE.EDGE_REGULAR));
+					}
+					first.getSelfGraph().addEdge(new Edge(chainVertex, last, Edge.EDGE_TYPE.EDGE_REGULAR));
+					if(last.getSelfGraph().hasEdge(last,chain.get(chain.size()-2))){
+						chainVertex.getSelfGraph().addEdge(new Edge(last,chainVertex,  Edge.EDGE_TYPE.EDGE_REGULAR));
+					}
+				
+					
+					
+					chain.remove(chain.size()-1);
+					Iterator<AbstractVertex> chainIt = chain.iterator();
+					chainIt.next(); // to start from the second node of the chain
+					AbstractVertex previous = chainIt.next();
+					chainVertex.getInnerGraph().addVertex(previous);
+					while(chainIt.hasNext()){
+						AbstractVertex next = chainIt.next();
+						chainVertex.getInnerGraph().addVertex(next);
+						chainVertex.getInnerGraph().addEdge(new Edge(previous, next, Edge.EDGE_TYPE.EDGE_REGULAR));
+						if(first.getSelfGraph().hasEdge(next, previous)){
+							chainVertex.getInnerGraph().addEdge(new Edge(next, previous, Edge.EDGE_TYPE.EDGE_REGULAR));	
+						}
+						previous = next;
+					}
+					
+					
+					previous = first;
+					chainIt = chain.iterator();
+					chainIt.next();
+					while(chainIt.hasNext()){
+						AbstractVertex next = chainIt.next();
+						first.getSelfGraph().deleteEdge(previous,next);
+						first.getSelfGraph().deleteEdge(next,previous);
+						first.getSelfGraph().deleteVertex(next);
+						previous = next;
+					}
+					last.getSelfGraph().deleteEdge(chain.get(chain.size()-1),last);
+					last.getSelfGraph().deleteEdge(last,chain.get(chain.size()-1));
+					
+					
+				}
+				/********************************************************************************/
+				itChildren = grayChildren.iterator();
+				while(itChildren.hasNext()){
+					collapseFromVertex(itChildren.next(), k);
+				}
+				break;
+			}
+		
+			System.out.println("i:" + i); 
+			i++;
+		}
+	
+
+		}
 }

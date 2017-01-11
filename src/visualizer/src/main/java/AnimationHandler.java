@@ -158,8 +158,13 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		savePositions(Parameters.stFrame.mainPanel.getPanelRoot(), oldPositions);
 		oldPositions.put(v.getStrID(), new Point2D(Parameters.stFrame.mainPanel.scaleX(v.getX()+LayoutAlgorithm.MARGIN_PADDING), Parameters.stFrame.mainPanel.scaleY(v.getY()-v.getHeight()/2.0 + AbstractVertex.DEFAULT_HEIGHT/2.0+LayoutAlgorithm.MARGIN_PADDING)));
 		
+		/*****************************************************/
 		v.setExpanded(false);
+		System.out.println("Coordinated of the double-clicked vertex:");
+		v.printCoordinates();
 		LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+		v.printCoordinates();
+		/*****************************************************/
 		
 		System.out.println("AFTER");
 		Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().printCoordinates();
@@ -263,10 +268,13 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 //		v.getGraphics().setLayoutX(Parameters.stFrame.mainPanel.scaleX(v.getX()));
 //		v.getGraphics().setLayoutY(Parameters.stFrame.mainPanel.scaleY(v.getY()));
 		TranslateTransition tt = new TranslateTransition(Duration.millis(300), v.getGraphics());
-		double currentWidth = v.getGraphics().getScaleX()*v.getGraphics().getWidth();
 		double oldWidth = v.getGraphics().getWidth();
-		double currentHeight = v.getGraphics().getScaleY()*v.getGraphics().getHeight();
+		double currentWidth = v.getGraphics().getScaleX()*oldWidth;
 		double oldHeight = v.getGraphics().getHeight();
+		double currentHeight = v.getGraphics().getScaleY()*oldHeight;
+		
+//		tt.setToX(Parameters.stFrame.mainPanel.scaleX(v.getX()) - (oldWidth-currentWidth)/2);
+//		tt.setToY(Parameters.stFrame.mainPanel.scaleY(v.getY()) - (oldHeight-currentHeight)/2);
 		tt.setToX(Parameters.stFrame.mainPanel.scaleX(v.getX()) - (oldWidth-currentWidth)/2);
 		tt.setToY(Parameters.stFrame.mainPanel.scaleY(v.getY()) - (oldHeight-currentHeight)/2);
 		tt.play();
@@ -275,6 +283,8 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 
 	private void handlePrimarySingleClick(MouseEvent event)
 	{
-
+		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
+		System.out.println("Single click: " + v.getStrID());
+		event.consume();
 	}
 }
