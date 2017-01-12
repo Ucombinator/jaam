@@ -128,7 +128,22 @@ object LoopDepthCounter {
     findLoopsInMethod(mainMethod)
   }
 
-  case class Loop(method: SootMethod, start: SootStmt, end: SootStmt, depth: Int, parent: Option[Loop])
+  case class Loop(method: SootMethod, start: SootStmt, end: SootStmt, depth: Int, parent: Option[Loop], offset: Int = 0) {
+    def isEndStmt(stmt: SootStmt): Boolean = end == stmt
+    def getOffsetOfFutureEndStmt(stmt: SootStmt): Int = {
+      def find(stmt: SootStmt, n: Int, loop: Option[Loop]): Int = {
+        loop match {
+          case None => 0
+          case Some(l) => if (l.end == stmt) 1+n else find(stmt, 1+n, l.parent)
+        }
+      }
+      find(stmt, 0, parent)
+    }
+    def setOffset(n: Int): Loop = Loop(method, start, end, depth, parent, n)
+    def getParent(n: Int = 0): Option[Loop] = {
+      if (n == 0) parent else parent.get.getParent(n-1)
+    }
+  }
 
   abstract class Stack {
     def exists(m: SootMethod): Boolean
@@ -138,7 +153,7 @@ object LoopDepthCounter {
   }
   case class CallStack(currentMethod: SootMethod, allLoops: List[SootLoop], stack: Stack, nLoop: Int = 0) extends Stack {
     def incLoop: CallStack = CallStack(currentMethod, allLoops, stack, nLoop+1)
-    def decLoop: CallStack = CallStack(currentMethod, allLoops, stack, nLoop-1)
+    def decLoop(n: Int): CallStack = CallStack(currentMethod, allLoops, stack, nLoop-n)
     def exists(m: SootMethod): Boolean = (m == currentMethod) || (stack.exists(m))
     override def toString(): String =  {
       def methodName(m: SootMethod, nLoop: Int) = {
@@ -217,8 +232,7 @@ object LoopDepthCounter {
           handleInvoke(invokeStmt, invokeStmt.getInvokeExpr, currentLoop, stack)
         case defStmt: DefinitionStmt =>
           defStmt.getRightOp match {
-            case invokeExpr: InvokeExpr =>
-              handleInvoke(defStmt, invokeExpr, currentLoop, stack)
+            case invokeExpr: InvokeExpr => handleInvoke(defStmt, invokeExpr, currentLoop, stack)
             case _ => //Do nothing
           }
         case _ => //Do nothing
@@ -234,9 +248,22 @@ object LoopDepthCounter {
             s"depth: ${depth}")
           println(newStack)
           findLoopsInMethod(nextStmt, Some(newLoop), newStack)
-        case None if (currentLoop.nonEmpty && currentLoop.get.end == realStmt) =>
-          findLoopsInMethod(nextStmt, currentLoop.get.parent, stack.decLoop)
-        case _ => findLoopsInMethod(nextStmt, currentLoop, stack)
+        case None if (currentLoop.nonEmpty && currentLoop.get.isEndStmt(realStmt)) =>
+          val n = currentLoop.get.offset
+          findLoopsInMethod(nextStmt, currentLoop.get.getParent(n), stack.decLoop(n+1))
+        case _ => 
+          if (currentLoop.nonEmpty) {
+            val n = currentLoop.get.getOffsetOfFutureEndStmt(realStmt)
+            if (n > 0) {
+              findLoopsInMethod(nextStmt, Some(currentLoop.get.setOffset(n)), stack) 
+            }
+            else {
+              findLoopsInMethod(nextStmt, currentLoop, stack)
+            }
+          }
+          else {
+            findLoopsInMethod(nextStmt, currentLoop, stack)
+          }
       }
     }
   }
