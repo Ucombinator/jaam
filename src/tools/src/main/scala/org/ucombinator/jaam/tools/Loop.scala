@@ -239,22 +239,39 @@ object LoopDepthCounter {
       }
 
       stack.allLoops.find((l: SootLoop) => l.getHead == realStmt) match {
-        case Some(l) =>
+        case Some(l) if (currentLoop.nonEmpty && currentLoop.get.isEndStmt(realStmt)) =>
           val depth = if (currentLoop.nonEmpty) currentLoop.get.depth+1 else 1
-          val newLoop = Loop(stack.currentMethod, realStmt, l.getBackJumpStmt, depth, currentLoop)
+          val newLoop = Loop(stack.currentMethod, realStmt, l.getBackJumpStmt, depth, currentLoop, currentLoop.get.offset+1)
           val newStack = stack.incLoop
+          println("an end of loop and a start of another loop")
+          //println(s"loop end: ${l.getBackJumpStmt}")
           println(s"Found a loop in ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName} " + 
             s"[${realStmt.getJavaSourceStartLineNumber}, ${l.getBackJumpStmt.getJavaSourceStartLineNumber}], " + 
             s"depth: ${depth}")
           println(newStack)
           findLoopsInMethod(nextStmt, Some(newLoop), newStack)
+
+        case Some(l) =>
+          val depth = if (currentLoop.nonEmpty) currentLoop.get.depth+1 else 1
+          val newLoop = Loop(stack.currentMethod, realStmt, l.getBackJumpStmt, depth, currentLoop)
+          val newStack = stack.incLoop
+          //println(s"loop end: ${l.getBackJumpStmt}")
+          println(s"Found a loop in ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName} " + 
+            s"[${realStmt.getJavaSourceStartLineNumber}, ${l.getBackJumpStmt.getJavaSourceStartLineNumber}], " + 
+            s"depth: ${depth}")
+          println(newStack)
+
+          findLoopsInMethod(nextStmt, Some(newLoop), newStack)
+
         case None if (currentLoop.nonEmpty && currentLoop.get.isEndStmt(realStmt)) =>
           val n = currentLoop.get.offset
           findLoopsInMethod(nextStmt, currentLoop.get.getParent(n), stack.decLoop(n+1))
+
         case _ => 
           if (currentLoop.nonEmpty) {
             val n = currentLoop.get.getOffsetOfFutureEndStmt(realStmt)
             if (n > 0) {
+              println(s"find a future loop end ${n}")
               findLoopsInMethod(nextStmt, Some(currentLoop.get.setOffset(n)), stack) 
             }
             else {
