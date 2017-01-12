@@ -249,8 +249,8 @@ object LoopDepthCounter {
           } else { 0 }
           val newLoop = Loop(stack.currentMethod, realStmt, l.getBackJumpStmt, depth, currentLoop, offset)
           val newStack = stack.incLoop
-          println(s"Found a loop in ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName} " + 
-            s"[${realStmt.getJavaSourceStartLineNumber}, ${l.getBackJumpStmt.getJavaSourceStartLineNumber}], " + 
+          println(s"Found a loop in ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName}, " + 
+            s"starts from line [${realStmt.getJavaSourceStartLineNumber}], " + 
             s"depth: ${depth}")
           println(newStack)
           findLoopsInMethod(nextStmt, Some(newLoop), newStack)
