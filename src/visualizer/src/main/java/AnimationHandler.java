@@ -1,23 +1,23 @@
 
+import java.util.Iterator;
+
 import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.TranslateTransition;
-
+import javafx.animation.ParallelTransition;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.event.EventType;
-
 import javafx.scene.Node;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.shape.Rectangle;
-
 import javafx.util.Duration;
 
-// TODO: Use this example to create custom resizing animations:
-// https://rterp.wordpress.com/2015/09/01/creating-custom-animated-transitions-with-javafx/
 public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.input.MouseEvent>
 {
+	public static int transitionTime = 300; // Milliseconds per transition
+
 	@Override
 	public void handle(MouseEvent event) {
 		EventType<MouseEvent> type = (EventType<MouseEvent>) event.getEventType();
@@ -45,139 +45,111 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 			System.out.println("This line should never be printed since we add the handler by setOnMouseClicked");
 		}
 	}
-
-	private void collapse(final AbstractVertex v)
+	
+	private void collapsing(AbstractVertex v)
 	{
-		for(final Node n : v.getGraphics().getChildren())
+		Iterator<Node> it = v.getGraphics().getChildren().iterator();
+		while(it.hasNext())
 		{
+			final Node n = it.next();
 			if(!n.getClass().equals(Rectangle.class))
 			{
-				FadeTransition ft = new FadeTransition(Duration.millis(300), n);
+				FadeTransition ft = new FadeTransition(Duration.millis(transitionTime), n);
 				ft.setToValue(0.0);
-
+				
 				ft.setOnFinished(new EventHandler<ActionEvent>() {
 					@Override
-					public void handle(ActionEvent event) {
+					public void handle(ActionEvent event) {		
 						n.setVisible(false);
 					}
 				});
-
+				
 				ft.play();
 			}
 		}
 
-		TranslateTransition tt = new TranslateTransition(Duration.millis(300), v.getGraphics());
-		tt.setByY(Parameters.stFrame.mainPanel.scaleY(-v.getHeight()/2.0 + AbstractVertex.DEFAULT_HEIGHT/2.0));
-		tt.play();
-
-		ScaleTransition st = new ScaleTransition(Duration.millis(300), v.getGraphics());
-		st.setByX(AbstractVertex.DEFAULT_WIDTH/v.getWidth() - 1);
-		st.setByY(AbstractVertex.DEFAULT_HEIGHT/v.getHeight() - 1);
-		st.play();
-
 		v.setExpanded(false);
-		final AbstractVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
-		LayoutAlgorithm.layout(panelRoot);
-
-		st.setOnFinished(new EventHandler<ActionEvent>() {
-			@Override
-			public void handle(ActionEvent event)
-			{
-				for(AbstractVertex vertex : panelRoot.getInnerGraph().getVertices().values())
-					animate(vertex);
-
-				panelRoot.recomputeGraphicsSize();
-				Edge.redrawEdges(v);
-			}
-		});
+		LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+		ParallelTransition pt = new ParallelTransition();
+		animateRecursive(Parameters.stFrame.mainPanel.getPanelRoot(), pt);
+		pt.play();
 	}
-
-	private void expand(final AbstractVertex v)
+	
+	private void expanding(AbstractVertex v)
 	{
-		for(final Node n: v.getGraphics().getChildren())
+		Iterator<Node> it = v.getGraphics().getChildren().iterator();
+		while(it.hasNext())
 		{
+			final Node n = it.next();
 			if(!n.getClass().equals(Rectangle.class))
 			{
-				FadeTransition ft = new FadeTransition(Duration.millis(300), n);
-				ft.setToValue(1);
-
+				FadeTransition ft = new FadeTransition(Duration.millis(transitionTime), n);
+				ft.setToValue(1.0);
+				
 				ft.setOnFinished(new EventHandler<ActionEvent>() {
 					@Override
-					public void handle(ActionEvent event) {
+					public void handle(ActionEvent event) {		
 						n.setVisible(true);
 					}
 				});
-
+				
 				ft.play();
 			}
 		}
 
 		v.setExpanded(true);
-		final AbstractVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
+		AbstractVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
 		LayoutAlgorithm.layout(panelRoot);
-
-		ScaleTransition st = new ScaleTransition(Duration.millis(300), v.getGraphics());
-		st.setToX(AbstractVertex.DEFAULT_WIDTH);
-		st.setToY(AbstractVertex.DEFAULT_HEIGHT);
-		st.play();
-
-		st.setOnFinished(new EventHandler<ActionEvent>()
-		{
-			@Override
-			public void handle(ActionEvent event)
-			{
-				for(AbstractVertex vertex : panelRoot.getInnerGraph().getVertices().values())
-					animate(vertex);
-
-				panelRoot.recomputeGraphicsSize();
-				Edge.redrawEdges(v);
-			}
-		});
+		ParallelTransition pt = new ParallelTransition();
+		animateRecursive(panelRoot, pt);
+		pt.play();
 	}
-
+	
 	private void handlePrimaryDoubleClick(MouseEvent event)
 	{
-		event.consume();
-		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
+		AbstractVertex v = (((GUINode)(event.getSource())).getVertex());
 		if(v.isExpanded())
-			collapse(v);
+			collapsing(v);
 		else
-			expand(v);
+			expanding(v);
+				
+		event.consume();
 	}
-
-	public void animate(AbstractVertex v)
+	
+	private void animateRecursive(final AbstractVertex v, ParallelTransition pt)
 	{
-		// Because vertices scale around their center, we have to shift them to keep the top left corner in the correct place.
-		double xShift = v.getGraphics().getXShift();
-		double yShift = v.getGraphics().getYShift();
-		TranslateTransition tt = new TranslateTransition(Duration.millis(300), v.getGraphics());
-		tt.setToX(Parameters.stFrame.mainPanel.scaleX(v.getX()) - xShift);
-		tt.setToY(Parameters.stFrame.mainPanel.scaleY(v.getY()) - yShift);
-		tt.play();
+		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
+		while(it.hasNext()){
+			AbstractVertex next = it.next();
+			if(v.isExpanded()){
+				animateRecursive(next, pt);
+			}
+		}
+
+		// TODO: For efficiency, we should check if each transition is required before we create it.
+		// TODO: Move arrows as well as nodes.
+		double pixelWidth = Parameters.stFrame.mainPanel.scaleX(v.getWidth());
+		double pixelHeight = Parameters.stFrame.mainPanel.scaleY(v.getHeight());
+		double toScaleX = pixelWidth/v.getGraphics().getWidth();
+		double toScaleY = pixelHeight/v.getGraphics().getHeight();
+		double xShift = 0.5*v.getGraphics().getWidth()*(toScaleX - 1);
+		double yShift = 0.5*v.getGraphics().getHeight()*(toScaleY - 1);
+
+		ScaleTransition st = new ScaleTransition(Duration.millis(transitionTime), v.getGraphics());
+		st.setToX(toScaleX);
+		st.setToY(toScaleY);
+		pt.getChildren().addAll(st);
+
+		TranslateTransition tt = new TranslateTransition(Duration.millis(transitionTime), v.getGraphics());
+		tt.setToX(Parameters.stFrame.mainPanel.scaleX(v.getX()) + xShift);
+		tt.setToY(Parameters.stFrame.mainPanel.scaleY(v.getY()) + yShift);
+		pt.getChildren().addAll(tt);
 	}
 
 	private void handlePrimarySingleClick(MouseEvent event)
 	{
-		event.consume();
 		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
-
-		v.toggleSelected();
-		// TODO: Find better ways to highlight/unhighlight
-		if(v.isSelected())
-			v.getGraphics().increaseOpacity();
-		else
-			v.getGraphics().decreaseOpacity();
-
-		// If we are in debug mode, the bytecode area does not exist.
-		if(Parameters.bytecodeArea != null) {
-			if (v.isSelected())
-				Parameters.bytecodeArea.setVertex(v);
-			else
-				Parameters.bytecodeArea.clear();
-
-			Parameters.bytecodeArea.setDescription();
-			// The repaint seems to happen automatically? I'm not sure why.
-			//Parameters.repaintAll();
-		}
+		System.out.println("Single click: " + v.getStrID());
+		event.consume();
 	}
 }
