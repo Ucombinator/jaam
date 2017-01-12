@@ -130,11 +130,12 @@ object LoopDepthCounter {
 
   case class Loop(method: SootMethod, start: SootStmt, end: SootStmt, depth: Int, parent: Option[Loop], offset: Int = 0) {
     def isEndStmt(stmt: SootStmt): Boolean = end == stmt
-    def getOffsetOfFutureEndStmt(stmt: SootStmt): Int = {
-      def find(stmt: SootStmt, n: Int, loop: Option[Loop]): Int = {
+    //TODO refactor offset
+    def getOffsetOfFutureEndStmt(stmt: SootStmt): Option[Int] = {
+      def find(stmt: SootStmt, n: Int, loop: Option[Loop]): Option[Int] = {
         loop match {
-          case None => 0
-          case Some(l) => if (l.end == stmt) 1+n else find(stmt, 1+n, l.parent)
+          case None => None
+          case Some(l) => if (l.end == stmt) Some(1+n) else find(stmt, 1+n, l.parent)
         }
       }
       find(stmt, 0, parent)
@@ -239,48 +240,36 @@ object LoopDepthCounter {
       }
 
       stack.allLoops.find((l: SootLoop) => l.getHead == realStmt) match {
-        case Some(l) if (currentLoop.nonEmpty && currentLoop.get.isEndStmt(realStmt)) =>
-          val depth = if (currentLoop.nonEmpty) currentLoop.get.depth+1 else 1
-          val newLoop = Loop(stack.currentMethod, realStmt, l.getBackJumpStmt, depth, currentLoop, currentLoop.get.offset+1)
-          val newStack = stack.incLoop
-          println("an end of loop and a start of another loop")
-          //println(s"loop end: ${l.getBackJumpStmt}")
-          println(s"Found a loop in ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName} " + 
-            s"[${realStmt.getJavaSourceStartLineNumber}, ${l.getBackJumpStmt.getJavaSourceStartLineNumber}], " + 
-            s"depth: ${depth}")
-          println(newStack)
-          findLoopsInMethod(nextStmt, Some(newLoop), newStack)
-
         case Some(l) =>
           val depth = if (currentLoop.nonEmpty) currentLoop.get.depth+1 else 1
-          val newLoop = Loop(stack.currentMethod, realStmt, l.getBackJumpStmt, depth, currentLoop)
+          val offset = if (currentLoop.nonEmpty && currentLoop.get.isEndStmt(realStmt)) {
+            //TODO need more test on this very corner case
+            println("an end of loop and a start of another loop")
+            currentLoop.get.offset+1
+          } else { 0 }
+          val newLoop = Loop(stack.currentMethod, realStmt, l.getBackJumpStmt, depth, currentLoop, offset)
           val newStack = stack.incLoop
           //println(s"loop end: ${l.getBackJumpStmt}")
           println(s"Found a loop in ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName} " + 
             s"[${realStmt.getJavaSourceStartLineNumber}, ${l.getBackJumpStmt.getJavaSourceStartLineNumber}], " + 
             s"depth: ${depth}")
           println(newStack)
-
           findLoopsInMethod(nextStmt, Some(newLoop), newStack)
 
         case None if (currentLoop.nonEmpty && currentLoop.get.isEndStmt(realStmt)) =>
           val n = currentLoop.get.offset
           findLoopsInMethod(nextStmt, currentLoop.get.getParent(n), stack.decLoop(n+1))
 
-        case _ => 
-          if (currentLoop.nonEmpty) {
-            val n = currentLoop.get.getOffsetOfFutureEndStmt(realStmt)
-            if (n > 0) {
+        case None if (currentLoop.nonEmpty) =>
+          currentLoop.get.getOffsetOfFutureEndStmt(realStmt) match {
+            case Some(n) =>
               println(s"find a future loop end ${n}")
               findLoopsInMethod(nextStmt, Some(currentLoop.get.setOffset(n)), stack) 
-            }
-            else {
-              findLoopsInMethod(nextStmt, currentLoop, stack)
-            }
+            case None => findLoopsInMethod(nextStmt, currentLoop, stack)
           }
-          else {
-            findLoopsInMethod(nextStmt, currentLoop, stack)
-          }
+
+        case _ =>
+          findLoopsInMethod(nextStmt, currentLoop, stack)
       }
     }
   }
