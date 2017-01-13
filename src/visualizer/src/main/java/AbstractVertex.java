@@ -2,6 +2,7 @@
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 abstract class AbstractVertex implements Comparable<AbstractVertex>
 {
@@ -70,7 +71,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	protected String name;
 	protected int index, parentIndex;
 	protected ArrayList<Vertex> neighbors;
-	protected ArrayList<AbstractVertex> abstractNeighbors;
+	protected HashSet<AbstractVertex> abstractOutgoingNeighbors;
+	protected HashSet<AbstractVertex> abstractIncomingNeighbors;
 	protected HashMap<String, Object> metadata;
 
 	// A location stores coordinates for a subtree.
@@ -143,7 +145,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	
 	public AbstractVertex()
 	{
-		this.abstractNeighbors = new ArrayList<AbstractVertex>();
+		this.abstractOutgoingNeighbors = new HashSet<AbstractVertex>();
+		this.abstractIncomingNeighbors = new HashSet<AbstractVertex>();
 		this.id = idCounter++;
 		this.strId = "vertex:"+this.id;
 		this.metadata = new HashMap<String,Object>();
@@ -907,15 +910,26 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		newParent.addChild(this);
 	}
 
-	public void addAbstractNeighbor(AbstractVertex neighbor)
+	public void addOutgoingAbstractNeighbor(AbstractVertex neighbor)
 	{
-		this.abstractNeighbors.add(neighbor);
+		this.abstractOutgoingNeighbors.add(neighbor);
 	}
 	
-	public ArrayList<AbstractVertex> getAbstractNeighbors()
+	public void addIncomingAbstractNeighbor(AbstractVertex neighbor)
 	{
-		return this.abstractNeighbors;
+		this.abstractIncomingNeighbors.add(neighbor);
 	}
+	
+	public HashSet<AbstractVertex> getOutgoingAbstractNeighbors()
+	{
+		return this.abstractOutgoingNeighbors;
+	}
+	
+	public HashSet<AbstractVertex> getIncomingAbstractNeighbors()
+	{
+		return this.abstractIncomingNeighbors;
+	}
+
 
 	public void setSelfGraph(AbstractGraph abstractGraph) {
 		this.selfGraph = abstractGraph;
@@ -940,8 +954,12 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		System.out.println("Vertex " + this.id + this.location.toString());
 	}
 
-	public void removeAbstractNeighbor(AbstractVertex destVertex) {
-		this.abstractNeighbors.remove(destVertex);		
+	public void removeOutgoingAbstractNeighbor(AbstractVertex destVertex) {
+		this.abstractOutgoingNeighbors.remove(destVertex);		
+	}
+	
+	public void removeIncomingAbstractNeighbor(AbstractVertex destVertex) {
+		this.abstractIncomingNeighbors.remove(destVertex);		
 	}
 
 

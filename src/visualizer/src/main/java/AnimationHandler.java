@@ -82,7 +82,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 //						AbstractVertex vertex = itMethodVertices.next();
 //						animate(vertex);
 //					}
-					animate_recursive(Parameters.stFrame.mainPanel.getPanelRoot());
+					animate_recursive(Parameters.stFrame.mainPanel.getPanelRoot(),1,1);
 				}
 			});
 		}
@@ -152,107 +152,46 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		/*****************************************************/
 		
 	
-				animate_recursive(Parameters.stFrame.mainPanel.getPanelRoot());
+				animate_recursive(Parameters.stFrame.mainPanel.getPanelRoot(),1,1);
 		
 		
 
 	}
 	
-	
-	private void collapsing2(MouseEvent event)
-	{
-		event.consume();
-		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
-		
-		Iterator<Node> it = v.getGraphics().getChildren().iterator();
-		while(it.hasNext())
-		{
-			Node n = it.next();
-			if(!n.getClass().equals(Rectangle.class))
-			{
-				FadeTransition ft = new FadeTransition(Duration.millis(300), n);
-				ft.setToValue(0.0);
-				
-				ft.setOnFinished(new EventHandler<ActionEvent>() {
-					@Override
-					public void handle(ActionEvent event) {		
-						n.setVisible(false);
-					}
-				});
-				
-				ft.play();
-			}
-		}
-		
-		
-		
-		
-//		tt.setOnFinished(new EventHandler<ActionEvent>() {
-//			@Override
-//			public void handle(ActionEvent event)
+//	private void bla(MouseEvent event)
+//	{
+//		event.consume();
+//		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
+//		
+//		Iterator<Node> it = v.getGraphics().getChildren().iterator();
+//		while(it.hasNext())
+//		{
+//			Node n = it.next();
+//			if(!n.getClass().equals(Rectangle.class))
 //			{
+//				FadeTransition ft = new FadeTransition(Duration.millis(300), n);
+//				ft.setToValue(1);
 //				
-//				//v.getGraphics().setTranslateX(Parameters.stFrame.mainPanel.scaleX(v.getX()));
-//				//v.getGraphics().setTranslateY(Parameters.stFrame.mainPanel.scaleY(v.getY()));			
-//				//v.getGraphics().setTranslateY(v.getY()*v.getGraphics().getScaleY()-Parameters.stFrame.mainPanel.scaleY(-v.getHeight()/2.0 + AbstractVertex.DEFAULT_HEIGHT/2.0));			
-//				v.getGraphics().setLayoutX(0);
-//				v.getGraphics().setLayoutY(0);
+//				n.setVisible(true);				
+//				ft.play();
 //			}
-//				
-//		});
-		
-		ScaleTransition st = new ScaleTransition(Duration.millis(500), v.getGraphics());
-
-		st.setFromX(1);
-		st.setFromY(1);
-		st.setToX(AbstractVertex.DEFAULT_WIDTH/v.getWidth());
-		st.setToY(AbstractVertex.DEFAULT_HEIGHT/v.getHeight());
-		//st.setFromX(Parameters.stFrame.mainPanel.scaleX(1.0));
-//		st.setByX(AbstractVertex.DEFAULT_WIDTH/v.getWidth() -1 );
-		//st.setFromY(Parameters.stFrame.mainPanel.scaleY(1.0));
-//		st.setByY(AbstractVertex.DEFAULT_HEIGHT/v.getHeight() -1);
-		st.play();
-		
-		TranslateTransition tt = new TranslateTransition(Duration.millis(500), v.getGraphics());
-		//tt.setByY(Parameters.stFrame.mainPanel.scaleY(-v.getHeight()/2.0 + AbstractVertex.DEFAULT_HEIGHT/2.0));
-		double currentY = Parameters.stFrame.mainPanel.scaleY(v.getY());
-		double AY = Parameters.stFrame.mainPanel.scaleY(v.getHeight() + AbstractVertex.DEFAULT_HEIGHT)/2.0;
-		tt.setToY(currentY);
-		
-		
-		//HashMap<String, Point2D> oldPositions = new HashMap<>();
-		//savePositions(Parameters.stFrame.mainPanel.getPanelRoot(), oldPositions);
-		//oldPositions.put(v.getStrID(), new Point2D(Parameters.stFrame.mainPanel.scaleX(v.getX()+LayoutAlgorithm.MARGIN_PADDING), Parameters.stFrame.mainPanel.scaleY(v.getY()-v.getHeight()/2.0 + AbstractVertex.DEFAULT_HEIGHT/2.0+LayoutAlgorithm.MARGIN_PADDING)));
-		
-		/*****************************************************/
-		v.setExpanded(false);
-		System.out.println("Coordinated of the double-clicked vertex:");
-		double oldWidth = v.getGraphics().getWidth();
-		double oldHeight = v.getGraphics().getHeight();
-		LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-		/*****************************************************/
-		
-		
-		st.setOnFinished(new EventHandler<ActionEvent>() {
-			@Override
-			public void handle(ActionEvent event) {		
-				double pixelWidth = Parameters.stFrame.mainPanel.scaleX(v.getWidth());
-				double pixelHeight = Parameters.stFrame.mainPanel.scaleY(v.getHeight());
-				v.getGraphics().setLayoutX((oldWidth-pixelWidth)/2);
-//				v.getGraphics().setLayoutY((oldHeight-pixelHeight)/2);
-				v.getGraphics().rect.setWidth(pixelWidth);
-				v.getGraphics().rect.setHeight(pixelHeight);
-				v.getGraphics().setScaleX(1);
-				v.getGraphics().setScaleY(1);
-//				//v.getGraphics().setLayoutX(Parameters.stFrame.mainPanel.scaleX(v.getX()));;
-//				//v.getGraphics().setLayoutY(Parameters.stFrame.mainPanel.scaleY(v.getY()));;
-				
-				tt.play();
-				animate_recursive(Parameters.stFrame.mainPanel.getPanelRoot());
-			}
-		});
-
-	}
+//		}
+//		
+//
+//		
+//		/*****************************************************/
+//		v.setExpanded(true);
+//		System.out.println("Coordinated of the double-clicked vertex:");
+//		double oldWidth = v.getGraphics().getWidth();
+//		double oldHeight = v.getGraphics().getHeight();
+//		LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+//		/*****************************************************/
+//		
+//	
+//				//animate_recursive(Parameters.stFrame.mainPanel.getPanelRoot(),1,1);
+//
+//	}
+	
 	
 	private void expanding(MouseEvent event)
 	{
@@ -335,50 +274,26 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	}
 
 	
-	private void animate_recursive(AbstractVertex v) {
-		
-		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
-		while(it.hasNext()){
-			AbstractVertex next = it.next();
-			if(v.isExpanded()){
-				animate_recursive(next);
-			}
-		}
+	private void animate_recursive(AbstractVertex v, double parentScaleX, double parentScaleY) {
 		
 		
-		TranslateTransition tt = new TranslateTransition(Duration.millis(300), v.getGraphics());
+		
 		double oldWidth = v.getGraphics().getWidth();
-		double currentWidth = v.getGraphics().getScaleX()*oldWidth;
+		//double currentWidth = v.getGraphics().getScaleX()*oldWidth;
 		double oldHeight = v.getGraphics().getHeight();
-		double currentHeight = v.getGraphics().getScaleY()*oldHeight;
-//		tt.setFromX(v.getGraphics().getTranslateX());
-//		tt.setFromY(v.getGraphics().getTranslateY());
-		tt.setToX(Parameters.stFrame.mainPanel.scaleX(v.getX()));
-		tt.setToY(Parameters.stFrame.mainPanel.scaleY(v.getY()));
-		
-		
-		tt.setOnFinished(new EventHandler<ActionEvent>() {
-			@Override
-			public void handle(ActionEvent event)
-			{
-				event.consume();
-				v.getGraphics().setTranslateX(Parameters.stFrame.mainPanel.scaleX(v.getX()));
-				v.getGraphics().setTranslateY(Parameters.stFrame.mainPanel.scaleY(v.getY()));			
-				v.getGraphics().setLayoutX(0);
-				v.getGraphics().setLayoutY(0);
-			}
-				
-		});
+		//double currentHeight = v.getGraphics().getScaleY()*oldHeight;
 
 		double pixelWidth = Parameters.stFrame.mainPanel.scaleX(v.getWidth());
 		double pixelHeight = Parameters.stFrame.mainPanel.scaleY(v.getHeight());
 		
+//		double previousWidth = v.getWidth()*v.getGraphics().getScaleX();
+//		double previousHeight = v.getHeight()*v.getGraphics().getScaleY();
 		
 			ScaleTransition st = new ScaleTransition(Duration.millis(500), v.getGraphics());
 			st.setFromX(v.getGraphics().getScaleX());
 			st.setFromY(v.getGraphics().getScaleY());
-			st.setToX(pixelWidth/v.getGraphics().getWidth());
-			st.setToY(pixelHeight/v.getGraphics().getHeight());
+			st.setToX(pixelWidth/(parentScaleX*oldWidth));
+			st.setToY(pixelHeight/(parentScaleY*oldHeight));
 			
 			
 			st.setOnFinished(new EventHandler<ActionEvent>() {
@@ -386,20 +301,77 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 				public void handle(ActionEvent event)
 				{
 					event.consume();	
+//					double previousWidth = v.getWidth()*v.getGraphics().getScaleX();
+//					double previousHeight = v.getHeight()*v.getGraphics().getScaleY();
 					double pixelWidth = Parameters.stFrame.mainPanel.scaleX(v.getWidth());
 					double pixelHeight = Parameters.stFrame.mainPanel.scaleY(v.getHeight());
-					v.getGraphics().setLayoutX((oldWidth-pixelWidth)/2);
-					v.getGraphics().setLayoutY((oldHeight-pixelHeight)/2);
+//					v.getGraphics().setLayoutX((oldWidth-pixelWidth)/2);
+//					v.getGraphics().setLayoutY((oldHeight-pixelHeight)/2);
+//					v.getGraphics().rect.setWidth(pixelWidth);
+//					v.getGraphics().rect.setHeight(pixelHeight);
+//					v.getGraphics().setScaleX(1);
+//					v.getGraphics().setScaleY(1);
+					
+					double newWidth = v.getGraphics().getWidth()*v.getGraphics().getScaleX();
+					double newHeight = v.getGraphics().getHeight()*v.getGraphics().getScaleY();
+					
+//					tt.setFromX(v.getGraphics().getTranslateX());
+//					tt.setFromY(v.getGraphics().getTranslateY());
+//					double AX = (newWidth-pixelWidth)/2.0;
+//					double AY = (newHeight-pixelHeight)/2.0;
+
+					
 					v.getGraphics().rect.setWidth(pixelWidth);
 					v.getGraphics().rect.setHeight(pixelHeight);
+					
 					v.getGraphics().setScaleX(1);
 					v.getGraphics().setScaleY(1);
 					
-					tt.play();
+					
+//					TranslateTransition tt = new TranslateTransition(Duration.millis(300), v.getGraphics());
+//					tt.setFromX(v.getGraphics().getTranslateX());
+//					tt.setFromY(v.getGraphics().getTranslateY());
+//					tt.setToX(Parameters.stFrame.mainPanel.scaleX(v.getX()));
+//					tt.setToY(Parameters.stFrame.mainPanel.scaleY(v.getY()));
+					v.getGraphics().setTranslateX(Parameters.stFrame.mainPanel.scaleX(v.getX()));
+					v.getGraphics().setTranslateY(Parameters.stFrame.mainPanel.scaleY(v.getY()));
+					
+					
+//					tt.setOnFinished(new EventHandler<ActionEvent>() {
+//						@Override
+//						public void handle(ActionEvent event)
+//						{
+//							event.consume();
+//							v.getGraphics().setTranslateX(Parameters.stFrame.mainPanel.scaleX(v.getX()));
+//							v.getGraphics().setTranslateY(Parameters.stFrame.mainPanel.scaleY(v.getY()));			
+//							v.getGraphics().setLayoutX(0);
+//							v.getGraphics().setLayoutY(0);
+//						}
+//							
+//					});
+					
+//					tt.play();
+					
+					
+
 				}
 			});
+			
+			
+			Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
+			while(it.hasNext()){
+				AbstractVertex next = it.next();
+				if(v.isExpanded()){
+//					animate_recursive(next, parentScaleX*v.getGraphics().getScaleX(), parentScaleY*v.getGraphics().getScaleY());
+					animate_recursive(next, pixelWidth/oldWidth, pixelHeight/oldHeight);
+				}
+			}
+			
+			
 		    st.play();
 		
+			
+			
 		
 	}
 	public void animate(AbstractVertex v)

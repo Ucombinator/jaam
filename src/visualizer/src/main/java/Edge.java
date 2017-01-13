@@ -35,7 +35,8 @@ public class Edge implements Comparable<Edge>
 		this.type = edgeType;
 		this.sourceVertex = sourceVertex;
 		this.destVertex = destVertex;
-		this.sourceVertex.addAbstractNeighbor(this.destVertex);
+		this.sourceVertex.addOutgoingAbstractNeighbor(this.destVertex);
+		this.destVertex.addIncomingAbstractNeighbor(this.sourceVertex);
 
 		graphics = new Group();
 		line = new Line();

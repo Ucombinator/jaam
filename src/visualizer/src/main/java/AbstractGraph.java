@@ -61,13 +61,13 @@ public class AbstractGraph
 	
 	public void addEdge(Edge edge)
 	{
-		edge.getSourceVertex().addAbstractNeighbor(edge.getDestVertex());
+		edge.getSourceVertex().addOutgoingAbstractNeighbor(edge.getDestVertex());
 		this.edges.put(edge.getID(), edge);
 	}
 	
 	public void deleteEdge(Edge edge)
 	{
-		edge.getSourceVertex().removeAbstractNeighbor(edge.getDestVertex());
+		edge.getSourceVertex().removeOutgoingAbstractNeighbor(edge.getDestVertex());
 		this.edges.remove(edge.getID());
 	}
 	

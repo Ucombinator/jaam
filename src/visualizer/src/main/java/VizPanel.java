@@ -85,12 +85,14 @@ public class VizPanel extends JFXPanel
 
 	public double scaleX(double coordinate)
 	{
-		return (coordinate * rootWidth / this.maxVertexWidth);
+		return 5*coordinate;
+		//return (coordinate * rootWidth / this.maxVertexWidth);
 	}
 
 	public double scaleY(double coordinate)
 	{
-		return (coordinate * rootHeight / this.maxVertexHeight);
+		return 5*coordinate;
+		//return (coordinate * rootHeight / this.maxVertexHeight);
 	}
 
 	public double invScaleX(double pixelCoordinate)
