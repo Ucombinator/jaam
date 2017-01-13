@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
+
 public class AbstractGraph
 {
 	private HashMap<String,AbstractVertex> vertices;
@@ -274,4 +275,6 @@ public class AbstractGraph
 	public boolean hasEdge(AbstractVertex first, AbstractVertex second) {
 		return this.edges.containsKey(Edge.createID(first.id, second.id));
 	}
+
+
 }

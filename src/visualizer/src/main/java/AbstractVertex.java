@@ -1,8 +1,10 @@
 
 import javax.swing.tree.DefaultMutableTreeNode;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 
 abstract class AbstractVertex implements Comparable<AbstractVertex>
 {
@@ -12,6 +14,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	
 	
 	public static final String METADATA_MERGE_PARENT = "MERGE_PARENT";
+	public static final String METADATA_INSTRUCTION = "INSTRUCTION_STATEMENT";
 	
 	static int idCounter = 0; // Used to assign unique id numbers to each vertex
 
@@ -965,6 +968,25 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 
 	public VertexType getType() {
 		return this.vertexType;
+	}
+	public void toggleNodesOfType(VertexType type) {
+		if(this.getType()==type){
+			this.setExpanded(!this.isExpanded());
+		}else{
+			Iterator<AbstractVertex> it = this.getInnerGraph().getVertices().values().iterator();
+			while(it.hasNext()){
+				it.next().toggleNodesOfType(type);
+			}
+		}
+		
+	}
+	
+	public void reset(){
+		this.setGraphics(null);
+		Iterator<AbstractVertex> it = this.getInnerGraph().getVertices().values().iterator();
+			while(it.hasNext()){
+				it.next().reset();
+			}	
 	}
 
 

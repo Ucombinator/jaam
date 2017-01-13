@@ -396,7 +396,17 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	private void handlePrimarySingleClick(MouseEvent event)
 	{
 		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
-		System.out.println("Single click: " + v.getStrID());
+		System.out.println("*******************VERTEX PRESSED****************");
+		System.out.println("ID:"+ v.getStrID());
+		if(v.getType()==AbstractVertex.VertexType.METHOD){
+			MethodVertex m = (MethodVertex)v.getMetaData().get(AbstractVertex.METADATA_MERGE_PARENT);
+			System.out.println("METHOD: "+ m.getMethodName());
+		}
+		if(v.getType()==AbstractVertex.VertexType.INSTRUCTION){
+			String m = (String)v.getMetaData().get(AbstractVertex.METADATA_INSTRUCTION);
+			System.out.println("Instruction: "+ m);
+		}
+		System.out.println("*************************************************");
 		event.consume();
 	}
 }

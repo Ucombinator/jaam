@@ -192,6 +192,9 @@ public class Edge implements Comparable<Edge>
 				x3, y3 });
 		arrowhead.setFill(Color.BLACK);
 		//System.out.println("Arrowhead points: " + arrowhead.toString());
+		
+		
+		this.graphics.getChildren().removeAll(this.graphics.getChildren());
 
 		this.graphics.getChildren().add(line);
 		this.graphics.getChildren().add(arrowhead);

@@ -49,6 +49,10 @@ public class VizPanel extends JFXPanel
 	public VizPanel()
 	{
 		super();
+		initContentGroup();
+	}
+
+	private void initContentGroup() {
 		contentGroup = new Group();
 
 		if (Parameters.debugMode)
@@ -62,7 +66,7 @@ public class VizPanel extends JFXPanel
 			scrollPane = createZoomPane(contentGroup);
 			this.setScene(new Scene(scrollPane));
 		}
-		this.setBackground(Color.WHITE);
+		this.setBackground(Color.WHITE);		
 	}
 
 	public void initFX(AbstractVertex root)
@@ -73,8 +77,7 @@ public class VizPanel extends JFXPanel
 			Graph g = Main.graph;			
 			this.panelRoot = LayerFactory.get2layer(g);
 			LayoutAlgorithm.layout(this.panelRoot);
-			this.maxVertexWidth = this.panelRoot.getWidth();
-			this.maxVertexHeight = this.panelRoot.getHeight();
+			resetPanelSize();
 		}
 		else
 		{
@@ -82,17 +85,23 @@ public class VizPanel extends JFXPanel
 		}
 		draw(null, this.panelRoot);
 	}
+	
+
+	public void resetPanelSize() {
+		this.maxVertexWidth = this.panelRoot.getWidth();
+		this.maxVertexHeight = this.panelRoot.getHeight();		
+	}
 
 	public double scaleX(double coordinate)
 	{
-		return 5*coordinate;
-		//return (coordinate * rootWidth / this.maxVertexWidth);
+//		return 5*coordinate;
+		return (coordinate * rootWidth / this.maxVertexWidth);
 	}
 
 	public double scaleY(double coordinate)
 	{
-		return 5*coordinate;
-		//return (coordinate * rootHeight / this.maxVertexHeight);
+//		return 5*coordinate;
+		return (coordinate * rootHeight / this.maxVertexHeight);
 	}
 
 	public double invScaleX(double pixelCoordinate)
@@ -123,10 +132,12 @@ public class VizPanel extends JFXPanel
 	{
 		GUINode node = new GUINode(parent, v);
 
-		if (parent == null)
+		if (parent == null){
 			contentGroup.getChildren().add(node);
-		else
+		}
+		else{
 			parent.getChildren().add(node);
+		}
 
 		double translateX = scaleX(v.getX());
 		double translateY = scaleY(v.getY());
@@ -146,7 +157,7 @@ public class VizPanel extends JFXPanel
 		if (v.getInnerGraph().getVertices().size() == 0)
 			return;
 
-		if(this.showEdge)
+		if(this.showEdge && v.isExpanded())
 		{
 			Edge.arrowLength = this.getWidthPerVertex() / 10.0;
 			for(Edge e : v.getInnerGraph().getEdges().values())
@@ -156,7 +167,10 @@ public class VizPanel extends JFXPanel
 		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
 		while (it.hasNext())
 		{
-			draw(node, it.next());
+			AbstractVertex child = it.next();
+			if(v.isExpanded()){
+				draw(node, child);
+			}
 		}
 	}
 

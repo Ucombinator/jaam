@@ -1,13 +1,16 @@
 
 import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
+import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
+import javafx.scene.Group;
 import javafx.util.Duration;
 
 import java.io.File;
 import java.util.ArrayList;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.FlowLayout;
 
@@ -573,7 +576,83 @@ public class StacFrame extends JFrame
 			}
 		);
 		sizePanel.add(sizePlus);
-        
+		
+		
+/***************************************************************************************/
+		
+		JPanel collpasePanel = new JPanel();
+		this.menuPanel.add(collpasePanel);
+		
+		
+		Color activeColor = Color.CYAN;
+		Color inactiveColor = Color.BLACK;
+		
+		
+		JButton methodCollapse = new JButton("M");
+		methodCollapse.setOpaque(true);
+		methodCollapse.setForeground(inactiveColor);
+		
+		methodCollapse.setEnabled(true);
+		methodCollapse.addActionListener
+		(
+			new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractVertex.VertexType.METHOD);
+					 Platform.runLater(new Runnable() { 
+				            @Override
+				            public void run() {
+				            	if(methodCollapse.getForeground()==activeColor){
+				            		methodCollapse.setForeground(inactiveColor);
+				            	}else{
+				            		methodCollapse.setForeground(activeColor);
+				            	}
+								GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+								((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
+				            	Parameters.stFrame.mainPanel.getPanelRoot().reset();
+				            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+				            	Parameters.stFrame.mainPanel.resetPanelSize();
+								Parameters.stFrame.mainPanel.draw(null, Parameters.stFrame.mainPanel.getPanelRoot());				            }
+				        });
+				}
+				}
+		);
+		collpasePanel.add(methodCollapse);
+	
+		
+		JButton chainCollapse = new JButton("C");
+		chainCollapse.setForeground(inactiveColor);
+		chainCollapse.setEnabled(true);
+
+		chainCollapse.addActionListener
+		(
+			new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractVertex.VertexType.CHAIN);
+					 Platform.runLater(new Runnable() { 
+				            @Override
+				            public void run() {
+				            	if(chainCollapse.getForeground()==activeColor){
+				            		chainCollapse.setForeground(inactiveColor);
+				            	}else{
+				            		chainCollapse.setForeground(activeColor);
+				            	}
+				            	GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+								((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
+				            	Parameters.stFrame.mainPanel.getPanelRoot().reset();
+				            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+				            	Parameters.stFrame.mainPanel.resetPanelSize();
+								Parameters.stFrame.mainPanel.draw(null, Parameters.stFrame.mainPanel.getPanelRoot());				            }
+				        });		}
+				}
+		);
+		collpasePanel.add(chainCollapse);
+		
+		
+/***************************************************************************************/		
         
         // Search bar
         this.searchF = new SearchField();
