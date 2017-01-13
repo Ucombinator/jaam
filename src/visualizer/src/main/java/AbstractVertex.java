@@ -7,12 +7,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 {
 	public static final double DEFAULT_WIDTH = 1.0;
 	public static final double DEFAULT_HEIGHT = 1.0;
-	
-	
-	
-	public static final String METADATA_MERGE_PARENT = "MERGE_PARENT";
-	
 	static int idCounter = 0; // Used to assign unique id numbers to each vertex
+	public static final String METADATA_MERGE_PARENT = "MERGE_PARENT";
 
 	// Used to sort lines of code in a method
 	public int compareTo(AbstractVertex o)

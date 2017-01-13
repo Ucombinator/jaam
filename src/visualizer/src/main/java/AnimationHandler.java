@@ -48,6 +48,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	
 	private void collapsing(AbstractVertex v)
 	{
+		System.out.println("Collapsing node: " + v.id + ", " + v.getGraphics().toString());
 		Iterator<Node> it = v.getGraphics().getChildren().iterator();
 		while(it.hasNext())
 		{
@@ -69,12 +70,20 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		}
 
 		v.setExpanded(false);
-		LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+		final AbstractVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
+		LayoutAlgorithm.layout(panelRoot);
 		ParallelTransition pt = new ParallelTransition();
-		animateRecursive(Parameters.stFrame.mainPanel.getPanelRoot(), pt);
+		animateRecursive(panelRoot, pt);
 		pt.play();
+
+		pt.setOnFinished(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				Edge.redrawEdges(panelRoot, true);
+			}
+		});
 	}
-	
+
 	private void expanding(AbstractVertex v)
 	{
 		Iterator<Node> it = v.getGraphics().getChildren().iterator();
@@ -98,11 +107,18 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		}
 
 		v.setExpanded(true);
-		AbstractVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
+		final AbstractVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
 		LayoutAlgorithm.layout(panelRoot);
 		ParallelTransition pt = new ParallelTransition();
 		animateRecursive(panelRoot, pt);
 		pt.play();
+
+		pt.setOnFinished(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				Edge.redrawEdges(panelRoot, true);
+			}
+		});
 	}
 	
 	private void handlePrimaryDoubleClick(MouseEvent event)
@@ -128,28 +144,39 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 
 		// TODO: For efficiency, we should check if each transition is required before we create it.
 		// TODO: Move arrows as well as nodes.
+		GUINode node = v.getGraphics();
 		double pixelWidth = Parameters.stFrame.mainPanel.scaleX(v.getWidth());
 		double pixelHeight = Parameters.stFrame.mainPanel.scaleY(v.getHeight());
-		double toScaleX = pixelWidth/v.getGraphics().getWidth();
-		double toScaleY = pixelHeight/v.getGraphics().getHeight();
-		double xShift = 0.5*v.getGraphics().getWidth()*(toScaleX - 1);
-		double yShift = 0.5*v.getGraphics().getHeight()*(toScaleY - 1);
+		double toScaleX = (pixelWidth/node.getWidth());
+		double toScaleY = pixelHeight/node.getHeight();
+		double pivotX = 0;
+		double pivotY = 0;
 
-		ScaleTransition st = new ScaleTransition(Duration.millis(transitionTime), v.getGraphics());
-		st.setToX(toScaleX);
-		st.setToY(toScaleY);
-		pt.getChildren().addAll(st);
+		double xShift = 0.5*node.getWidth()*(toScaleX - 1);
+		double yShift = 0.5*node.getHeight()*(toScaleY - 1);
+		double toX = Parameters.stFrame.mainPanel.scaleX(v.getX()) + xShift;
+		double toY = Parameters.stFrame.mainPanel.scaleY(v.getY()) + yShift;
 
-		TranslateTransition tt = new TranslateTransition(Duration.millis(transitionTime), v.getGraphics());
-		tt.setToX(Parameters.stFrame.mainPanel.scaleX(v.getX()) + xShift);
-		tt.setToY(Parameters.stFrame.mainPanel.scaleY(v.getY()) + yShift);
-		pt.getChildren().addAll(tt);
+		if(toScaleX != node.getScaleX() || toScaleY != node.getScaleY())
+		{
+			ScaleTransition st = new ScaleTransition(Duration.millis(transitionTime), node);
+			st.setToX(toScaleX);
+			st.setToY(toScaleY);
+			pt.getChildren().addAll(st);
+		}
+
+		if(toX != node.getTranslateX() || toY != node.getTranslateY())
+		{
+			TranslateTransition tt = new TranslateTransition(Duration.millis(transitionTime), node);
+			tt.setToX(toX);
+			tt.setToY(toY);
+			pt.getChildren().addAll(tt);
+		}
 	}
 
 	private void handlePrimarySingleClick(MouseEvent event)
 	{
 		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
-		System.out.println("Single click: " + v.getStrID());
 		event.consume();
 	}
 }

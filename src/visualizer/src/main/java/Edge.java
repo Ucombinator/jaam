@@ -2,13 +2,18 @@
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.Group;
+
+import javafx.geometry.Bounds;
 
 public class Edge implements Comparable<Edge>
 {
 	Group graphics;
 	Line line;
 	Polygon arrowhead;
+	Rectangle marker1, marker2;
+	static final boolean markCenters = true;
 
 	public enum EDGE_TYPE {EDGE_REGULAR, EDGE_DUMMY};
 	private EDGE_TYPE type;
@@ -70,104 +75,107 @@ public class Edge implements Comparable<Edge>
 	{
 		if (this.source == this.dest)
 		{
-			System.out.println("Error in Edge.draw(): The source and destination vertices are the same.");
+			/*System.out.println("Error in Edge.draw(): The source and destination vertices are the same.");
 			System.out.println(this.source +"---"+ this.dest);
 			System.out.println(this.sourceVertex.getLabel() +"---"+ this.destVertex.getLabel());
-			System.out.println(this.getType());
+			System.out.println(this.getType());*/
 			return;
 		}
 		else if (sourceVertex.getX() == destVertex.getX() && sourceVertex.getY() == destVertex.getY())
 		{
-			System.out.println("Error in Edge.draw(): The two vertices are at the same location.");
+			/*System.out.println("Error in Edge.draw(): The two vertices are at the same location.");
 			System.out.println(this.source + " --- " + this.dest);
 			System.out.println(this.sourceVertex.getLabel() + " --- " + this.destVertex.getLabel());
-			System.out.println(this.getType());
+			System.out.println(this.getType());*/
 			return;
 		}
 
 		this.node = node;
-		double exitStartX, exitStartY, enterDestX, enterDestY;
-		double centerStartX = sourceVertex.getX() + sourceVertex.getWidth() / 2.0;
-		double centerStartY = sourceVertex.getY() + sourceVertex.getHeight() / 2.0;
-		double centerDestX = destVertex.getX() + destVertex.getWidth() / 2.0;
-		double centerDestY = destVertex.getY() + destVertex.getHeight() / 2.0;
+		GUINode sourceNode = sourceVertex.getGraphics();
+		GUINode destNode = destVertex.getGraphics();
+		Bounds sourceBounds = sourceNode.getBoundsInParent();
+		Bounds destBounds = destNode.getBoundsInParent();
+		double sourceCenterX = (sourceBounds.getMinX() + sourceBounds.getMaxX()) / 2.0;
+		double sourceCenterY = (sourceBounds.getMinY() + sourceBounds.getMaxY()) / 2.0;
+		double destCenterX = (destBounds.getMinX() + destBounds.getMaxX()) / 2.0;
+		double destCenterY = (destBounds.getMinY() + destBounds.getMaxY()) / 2.0;
+		double sourceExitX, sourceExitY, destEnterX, destEnterY;
 
 		// To find which side a line exits from, we compute both diagonals of the rectangle and determine whether
 		// the other end lies above or below each diagonal. The positive diagonal uses the positive slope, and the
 		// negative diagonal uses the negative slope.
 		// Keep in mind that the increasing y direction is downward.
-		double startDiagSlope = sourceVertex.getHeight() / sourceVertex.getWidth();
-		double startInterceptPos = centerStartY - centerStartX * startDiagSlope;
-		double startInterceptNeg = centerStartY + centerStartX * startDiagSlope;
-		boolean aboveStartPosDiag = (centerDestX * startDiagSlope + startInterceptPos > centerDestY);
-		boolean aboveStartNegDiag = (-centerDestX * startDiagSlope + startInterceptNeg > centerDestY);
+		double startDiagSlope = sourceBounds.getHeight() / sourceBounds.getWidth();
+		double startInterceptPos = sourceCenterY - sourceCenterX * startDiagSlope;
+		double startInterceptNeg = sourceCenterY + sourceCenterX * startDiagSlope;
+		boolean aboveStartPosDiag = (destCenterX * startDiagSlope + startInterceptPos > destCenterY);
+		boolean aboveStartNegDiag = (-destCenterX * startDiagSlope + startInterceptNeg > destCenterY);
 
 		if (aboveStartPosDiag && aboveStartNegDiag)
 		{
 			// Top
-			double invSlope = (centerDestX - centerStartX) / (centerDestY - centerStartY);
-			exitStartY = sourceVertex.getY();
-			exitStartX = centerStartX + invSlope * (exitStartY - centerStartY);
+			double invSlope = (destCenterX - sourceCenterX) / (destCenterY - sourceCenterY);
+			sourceExitY = sourceBounds.getMinY();
+			sourceExitX = sourceCenterX + invSlope * (sourceExitY - sourceCenterY);
 		}
 		else if (!aboveStartPosDiag && aboveStartNegDiag)
 		{
 			// Left
-			double slope = (centerDestY - centerStartY) / (centerDestX - centerStartX);
-			exitStartX = sourceVertex.getX();
-			exitStartY = centerStartY + slope * (exitStartX - centerStartX);
+			double slope = (destCenterY - sourceCenterY) / (destCenterX - sourceCenterX);
+			sourceExitX = sourceBounds.getMinX();
+			sourceExitY = sourceCenterY + slope * (sourceExitX - sourceCenterX);
 		}
 		else if (aboveStartPosDiag && !aboveStartNegDiag)
 		{
 			// Right
-			double slope = (centerDestY - centerStartY) / (centerDestX - centerStartX);
-			exitStartX = sourceVertex.getX() + sourceVertex.getWidth();
-			exitStartY = centerStartY + slope * (exitStartX - centerStartX);
+			double slope = (destCenterY - sourceCenterY) / (destCenterX - sourceCenterX);
+			sourceExitX = sourceBounds.getMaxX();
+			sourceExitY = sourceCenterY + slope * (sourceExitX - sourceCenterX);
 		}
 		else
 		{
 			// Bottom
-			double invSlope = (centerDestX - centerStartX) / (centerDestY - centerStartY);
-			exitStartY = sourceVertex.getY() + sourceVertex.getHeight();
-			exitStartX = centerStartX + invSlope * (exitStartY - centerStartY);
+			double invSlope = (destCenterX - sourceCenterX) / (destCenterY - sourceCenterY);
+			sourceExitY = sourceBounds.getMaxY();
+			sourceExitX = sourceCenterX + invSlope * (sourceExitY - sourceCenterY);
 		}
 
-		double destDiagSlope = destVertex.getHeight() / destVertex.getWidth();
-		double destInterceptPos = centerDestY - centerDestX * destDiagSlope;
-		double destInterceptNeg = centerDestY + centerDestX * destDiagSlope;
-		boolean aboveDestPosDiag = (centerStartX * destDiagSlope + destInterceptPos > centerStartY);
-		boolean aboveDestNegDiag = (-centerStartX * destDiagSlope + destInterceptNeg > centerStartY);
+		double destDiagSlope = destBounds.getHeight() / destBounds.getWidth();
+		double destInterceptPos = destCenterY - destCenterX * destDiagSlope;
+		double destInterceptNeg = destCenterY + destCenterX * destDiagSlope;
+		boolean aboveDestPosDiag = (sourceCenterX * destDiagSlope + destInterceptPos > sourceCenterY);
+		boolean aboveDestNegDiag = (-sourceCenterX * destDiagSlope + destInterceptNeg > sourceCenterY);
 
 		if (aboveDestPosDiag && aboveDestNegDiag)
 		{
 			// Top
-			double invSlope = (centerStartX - centerDestX) / (centerStartY - centerDestY);
-			enterDestY = destVertex.getY();
-			enterDestX = centerDestX + invSlope * (enterDestY - centerDestY);
+			double invSlope = (sourceCenterX - destCenterX) / (sourceCenterY - destCenterY);
+			destEnterY = destBounds.getMinY();
+			destEnterX = destCenterX + invSlope * (destEnterY - destCenterY);
 		}
 		else if(!aboveDestPosDiag && aboveDestNegDiag)
 		{
 			// Left
-			double slope = (centerStartY - centerDestY) / (centerStartX - centerDestX);
-			enterDestX = destVertex.getX();
-			enterDestY = centerDestY + slope * (enterDestX - centerDestX);
+			double slope = (sourceCenterY - destCenterY) / (sourceCenterX - destCenterX);
+			destEnterX = destBounds.getMinX();
+			destEnterY = destCenterY + slope * (destEnterX - destCenterX);
 		}
 		else if (aboveDestPosDiag && !aboveDestNegDiag)
 		{
 			// Right
-			double slope = (centerStartY - centerDestY) / (centerStartX - centerDestX);
-			enterDestX = destVertex.getX() + destVertex.getWidth();
-			enterDestY = centerDestY + slope * (enterDestX - centerDestX);
+			double slope = (sourceCenterY - destCenterY) / (sourceCenterX - destCenterX);
+			destEnterX = destBounds.getMaxX();
+			destEnterY = destCenterY + slope * (destEnterX - destCenterX);
 		}
 		else
 		{
 			// Bottom
-			double invSlope = (centerStartX - centerDestX) / (centerStartY - centerDestY);
-			enterDestY = destVertex.getY() + destVertex.getHeight();
-			enterDestX = centerDestX + invSlope * (enterDestY - centerDestY);
+			double invSlope = (sourceCenterX - destCenterX) / (sourceCenterY - destCenterY);
+			destEnterY = destBounds.getMaxY();
+			destEnterX = destCenterX + invSlope * (destEnterY - destCenterY);
 		}
 
-		this.line = new Line(panel.scaleX(exitStartX), panel.scaleY(exitStartY),
-				panel.scaleX(enterDestX), panel.scaleY(enterDestY));
+		this.line = new Line(sourceExitX, sourceExitY, destEnterX, destEnterY);
 		if (this.getType() == EDGE_TYPE.EDGE_DUMMY)
 		{
 			line.getStrokeDashArray().addAll(5d, 4d);
@@ -175,14 +183,14 @@ public class Edge implements Comparable<Edge>
 		line.setStrokeWidth(defaultStrokeWidth);
 
 		// Compute arrowhead
-		double angle = Math.PI + Math.atan2(panel.scaleY(enterDestY - exitStartY), panel.scaleX(enterDestX - exitStartX));
+		double angle = Math.PI + Math.atan2(destEnterY - sourceExitY, destEnterX - sourceExitX);
 
-		double x1 = panel.scaleX(enterDestX);
-		double y1 = panel.scaleY(enterDestY);
-		double x2 = panel.scaleX(enterDestX) + arrowLength * Math.cos(angle + arrowheadAngleDiff);
-		double y2 = panel.scaleY(enterDestY) + arrowLength * Math.sin(angle + arrowheadAngleDiff);
-		double x3 = panel.scaleX(enterDestX) + arrowLength * Math.cos(angle - arrowheadAngleDiff);
-		double y3 = panel.scaleY(enterDestY) + arrowLength * Math.sin(angle - arrowheadAngleDiff);
+		double x1 = destEnterX;
+		double y1 = destEnterY;
+		double x2 = destEnterX + arrowLength * Math.cos(angle + arrowheadAngleDiff);
+		double y2 = destEnterY + arrowLength * Math.sin(angle + arrowheadAngleDiff);
+		double x3 = destEnterX + arrowLength * Math.cos(angle - arrowheadAngleDiff);
+		double y3 = destEnterY + arrowLength * Math.sin(angle - arrowheadAngleDiff);
 
 		arrowhead = new Polygon();
 		arrowhead.getPoints().addAll(new Double[]{
@@ -192,12 +200,33 @@ public class Edge implements Comparable<Edge>
 		arrowhead.setFill(Color.BLACK);
 		//System.out.println("Arrowhead points: " + arrowhead.toString());
 
+		// Mark the center of each node for testing
+		if(markCenters)
+		{
+			marker1 = getMarker(sourceCenterX, sourceCenterY);
+			marker2 = getMarker(destCenterX, destCenterY);
+			this.graphics.getChildren().add(marker1);
+			this.graphics.getChildren().add(marker2);
+		}
+
 		this.graphics.getChildren().add(line);
 		this.graphics.getChildren().add(arrowhead);
 		node.getChildren().add(graphics);
 	}
 
-	public static void redrawEdges(AbstractVertex v)
+	public Rectangle getMarker(double x, double y)
+	{
+		Rectangle marker = new Rectangle();
+		marker.setTranslateX(x);
+		marker.setTranslateY(y);
+		marker.setWidth(10);
+		marker.setHeight(10);
+		marker.setFill(Color.RED);
+
+		return marker;
+	}
+
+	public static void redrawEdges(AbstractVertex v, boolean recurse)
 	{
 		if(v.getSelfGraph() != null)
 		{
@@ -206,6 +235,11 @@ public class Edge implements Comparable<Edge>
 				if (v.id == e.source || v.id == e.dest)
 				{
 					// Clear current graphics...
+					if(markCenters) {
+						e.graphics.getChildren().remove(e.marker1);
+						e.graphics.getChildren().remove(e.marker2);
+					}
+
 					e.graphics.getChildren().remove(e.line);
 					e.graphics.getChildren().remove(e.arrowhead);
 					e.node.getChildren().remove(e.graphics);
@@ -214,6 +248,12 @@ public class Edge implements Comparable<Edge>
 					e.draw(Parameters.stFrame.mainPanel, e.node);
 				}
 			}
+		}
+
+		if(recurse)
+		{
+			for (AbstractVertex w : v.getInnerGraph().getVertices().values())
+				redrawEdges(w, recurse);
 		}
 	}
 

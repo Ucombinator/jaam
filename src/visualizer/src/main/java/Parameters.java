@@ -13,8 +13,7 @@ public class Parameters
 {
 	public static boolean debugMode = false;
 	public static int width = 1200, height = 800;
-	public static int transitionTime = 500;
-	public static double zoomFactor = 3.0/4.0, boxFactor = 3.0/4.0;
+	public static double boxFactor = 3.0/4.0;
 	public static StacFrame stFrame;
 	public static JTextArea rightArea;
 	public static CodeArea bytecodeArea;

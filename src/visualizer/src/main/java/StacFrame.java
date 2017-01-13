@@ -287,35 +287,6 @@ public class StacFrame extends JFrame
 		//Navigation menu
 		menuNavigation = new JMenu("Navigation");
 		menuBar.add(menuNavigation);
-		JMenuItem zoomIn = new JMenuItem("Zoom in        (Mouse wheel up)");
-		menuNavigation.add(zoomIn);
-		zoomIn.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						// TODO: Fill in correct function here
-						//Main.graph.increaseZoom(Parameters.zoomFactor, -1, -1);
-						Parameters.repaintAll();
-					}
-				}
-		);
-    
-		JMenuItem zoomOut = new JMenuItem("Zoom out      (Mouse wheel down)");
-		menuNavigation.add(zoomOut);
-		zoomOut.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						// TODO: Fill in correct function here
-						//Main.graph.increaseZoom(1/Parameters.zoomFactor, -1, -1);
-						Parameters.repaintAll();
-					}
-				}
-		);
 		
         JMenuItem rearrange = new JMenuItem("Rearrange graph");
         menuNavigation.add(rearrange);
@@ -333,7 +304,6 @@ public class StacFrame extends JFrame
 		);
         rearrange.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, ActionEvent.CTRL_MASK));
 
-        
 		JMenuItem resetGraph = new JMenuItem("Reset view");
 		menuNavigation.add(resetGraph);
 		resetGraph.addActionListener
@@ -438,13 +408,9 @@ public class StacFrame extends JFrame
 	public void buildWindow(ArrayList<ArrayList<JComponent>> layout, ArrayList<ArrayList<Double>> layoutRowWeights,
 							ArrayList<Double> layoutColumnWeights)
 	{
-		// Construct columns
-		//System.out.println("Layout size: " + Integer.toString(layout.size()));
 		ArrayList<GUIPanelColumn> columns = new ArrayList<GUIPanelColumn>();
 		for(int i = 0; i < layout.size(); i++)
 		{
-			//System.out.println("Constructing column: " + Integer.toString(i) + ", height " +
-			//		Integer.toString(layout.get(i).size()));
 			ArrayList<JComponent> panelList = layout.get(i);
 			columns.add(new GUIPanelColumn(panelList, layoutRowWeights.get(i)));
 		}

@@ -13,7 +13,7 @@ public class LayerFactory
 {
 	private static final boolean create_chains = true;
 	private static final boolean contract_chains = false;
-	private static final int CHAIN_LENGTH = 2 ; // This value should ALWAYS be LARGEN THAN OR EQUAL 3 (otherwise it will break)
+	private static final int CHAIN_LENGTH = 4 ; // This value should ALWAYS be LARGEN THAN OR EQUAL 3 (otherwise it will break)
 	
 	static HashMap<String, Vertex> id_to_vertex = new HashMap<String, Vertex>();
 	static HashMap<String, AbstractVertex> id_to_abs_vertex = new HashMap<String, AbstractVertex>();
@@ -183,7 +183,7 @@ public class LayerFactory
 	private static void collapseFromVertex(AbstractVertex root, int k) {
 		if(root==null){return;}
 		
-		System.out.println("collapseFromVertex");
+		//System.out.println("collapseFromVertex");
 		int i = 0;
 		AbstractVertex currentVertex = root;
 		ArrayList<AbstractVertex> chain = new ArrayList<AbstractVertex>();
@@ -215,14 +215,14 @@ public class LayerFactory
 				
 				/********************************************************************************/
 				if(i>=k){
-					System.out.println("CREATING CHAIN!!");
+					//System.out.println("CREATING CHAIN!!");
 					AbstractVertex first = chain.get(0);
 					AbstractVertex last = chain.get(chain.size()-1);
 					
 				
 					
 				
-					System.out.println("CHAIN starts at: " + chain.get(0).getStrID());
+					//System.out.println("CHAIN starts at: " + chain.get(0).getStrID());
 					
 					
 					//Create the new vertex
@@ -281,7 +281,7 @@ public class LayerFactory
 				break;
 			}
 		
-			System.out.println("i:" + i); 
+			//System.out.println("i:" + i);
 			i++;
 		}
 	
