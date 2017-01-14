@@ -97,7 +97,7 @@ public class GUINode extends Pane
 
     public void setStrokeWidth(double strokeWidth)
     {
-        this.rect.setStrokeWidth(strokeWidth);
+        this.rect.setStrokeWidth(0.001);
     }
 
     public void setArcHeight(double height)

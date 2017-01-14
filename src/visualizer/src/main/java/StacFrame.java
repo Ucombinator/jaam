@@ -543,7 +543,123 @@ public class StacFrame extends JFrame
 		);
 		sizePanel.add(sizePlus);
 		
+/********************************************************************************/
+		JPanel xSclalePanel = new JPanel();
+		xSclalePanel.setBorder(BorderFactory.createEtchedBorder());
+		xSclalePanel.setLayout(new GridLayout(1,3));
+		this.menuPanel.add(xSclalePanel);
 		
+		JButton xSclalePanelMinus = new JButton("-");
+		xSclalePanelMinus.setEnabled(true);
+		xSclalePanelMinus.addActionListener
+		(
+			new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					Platform.runLater(new Runnable() { 
+			            @Override
+			            public void run() {
+							Parameters.stFrame.mainPanel.decrementScaleXFactor();
+							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
+							Parameters.stFrame.mainPanel.getPanelRoot().reset();
+			            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+			            	Parameters.stFrame.mainPanel.resetPanelSize();
+							Parameters.stFrame.mainPanel.draw(null, Parameters.stFrame.mainPanel.getPanelRoot());				            }
+			        });
+				}
+			}
+		);
+		xSclalePanel.add(xSclalePanelMinus);
+		
+		JLabel xScaleL = new JLabel("X scale");
+		xScaleL.setHorizontalAlignment(SwingConstants.CENTER);
+		xSclalePanel.add(xScaleL);
+		
+		JButton xScalePlus = new JButton("+");
+		xScalePlus.setEnabled(true);
+		xScalePlus.addActionListener
+		(
+			new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					Platform.runLater(new Runnable() { 
+			            @Override
+			            public void run() {
+							Parameters.stFrame.mainPanel.incrementScaleXFactor();
+							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
+							Parameters.stFrame.mainPanel.getPanelRoot().reset();
+			            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+			            	Parameters.stFrame.mainPanel.resetPanelSize();
+							Parameters.stFrame.mainPanel.draw(null, Parameters.stFrame.mainPanel.getPanelRoot());				            }
+			        });
+				}
+			}
+		);
+		xSclalePanel.add(xScalePlus);
+/************************************************************************************/
+		
+		
+		JPanel yScalePanel = new JPanel();
+		yScalePanel.setBorder(BorderFactory.createEtchedBorder());
+		yScalePanel.setLayout(new GridLayout(1,3));
+		this.menuPanel.add(yScalePanel);
+		
+		JButton yScalePanelMinus = new JButton("-");
+		yScalePanelMinus.setEnabled(true);
+		yScalePanelMinus.addActionListener
+		(
+			new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					Platform.runLater(new Runnable() { 
+			            @Override
+			            public void run() {
+							Parameters.stFrame.mainPanel.decrementScaleYFactor();
+							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
+							Parameters.stFrame.mainPanel.getPanelRoot().reset();
+			            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+			            	Parameters.stFrame.mainPanel.resetPanelSize();
+							Parameters.stFrame.mainPanel.draw(null, Parameters.stFrame.mainPanel.getPanelRoot());				            }
+			        });
+				}
+			}
+		);
+		yScalePanel.add(yScalePanelMinus);
+		
+		JLabel yScaleL = new JLabel("Y scale");
+		yScaleL.setHorizontalAlignment(SwingConstants.CENTER);
+		yScalePanel.add(yScaleL);
+		
+		JButton yScalePlus = new JButton("+");
+		yScalePlus.setEnabled(true);
+		yScalePlus.addActionListener
+		(
+			new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					Platform.runLater(new Runnable() { 
+			            @Override
+			            public void run() {
+							Parameters.stFrame.mainPanel.incrementScaleYFactor();
+							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
+							Parameters.stFrame.mainPanel.getPanelRoot().reset();
+			            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+			            	Parameters.stFrame.mainPanel.resetPanelSize();
+							Parameters.stFrame.mainPanel.draw(null, Parameters.stFrame.mainPanel.getPanelRoot());				            }
+			        });
+				}
+			}
+		);
+		yScalePanel.add(yScalePlus);
+
 /***************************************************************************************/
 		
 		JPanel collpasePanel = new JPanel();

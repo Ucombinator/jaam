@@ -95,16 +95,17 @@ public class VizPanel extends JFXPanel
 		this.maxVertexHeight = this.panelRoot.getHeight();		
 	}
 
+	
+	int factorX =1;
+	int factorY =1;
 	public double scaleX(double coordinate)
 	{
-//		return 5*coordinate;
-		return (coordinate * rootWidth / this.maxVertexWidth);
+		return factorX*(coordinate * rootWidth / this.maxVertexWidth);
 	}
 
 	public double scaleY(double coordinate)
 	{
-//		return 5*coordinate;
-		return (coordinate * rootHeight / this.maxVertexHeight);
+		return factorY*(coordinate * rootHeight / this.maxVertexHeight);
 	}
 
 	public double invScaleX(double pixelCoordinate)
@@ -378,6 +379,26 @@ public class VizPanel extends JFXPanel
 		{
 			for(Edge e : v.getInnerGraph().getEdges().values())
 				e.setScale();
+		}
+	}
+
+	public void incrementScaleXFactor() {
+		factorX++;
+	}
+	
+	public void decrementScaleXFactor() {
+		if(factorX>=2){
+			factorX--;
+		}
+	}
+	
+	public void incrementScaleYFactor() {
+		factorY++;
+	}
+	
+	public void decrementScaleYFactor() {
+		if(factorY>=2){
+			factorY--;
 		}
 	}
 }
