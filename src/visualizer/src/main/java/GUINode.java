@@ -38,7 +38,6 @@ public class GUINode extends Pane
         this.vertex.setGraphics(this);
         
         this.rect = new Rectangle();
-     
         this.rectLabel = new Text();
         if(labelsEnabled)
         {
@@ -187,7 +186,7 @@ public class GUINode extends Pane
             AbstractVertex v = GUINode.this.vertex;
             v.location.x = Parameters.stFrame.mainPanel.invScaleX(offsetX);
             v.location.y = Parameters.stFrame.mainPanel.invScaleY(offsetY);
-            Edge.redrawEdges(v);
+            Edge.redrawEdges(v, false);
         }
     };
 
