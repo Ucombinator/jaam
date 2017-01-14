@@ -149,18 +149,15 @@ object LoopDepthCounter {
   }
 
   abstract class Stack {
-    def exists(m: SootMethod): Option[Stack]
+    def exists(m: SootMethod): Boolean
   }
   case object Halt extends Stack {
-    def exists(m: SootMethod): Option[Stack] = None
+    def exists(m: SootMethod): Boolean = false
   }
   case class CallStack(currentMethod: SootMethod, allLoops: List[SootLoop], stack: Stack, nLoop: Int = 0) extends Stack {
     def incLoop: CallStack = CallStack(currentMethod, allLoops, stack, nLoop+1)
     def decLoop(n: Int): CallStack = CallStack(currentMethod, allLoops, stack, nLoop-n)
-    def exists(m: SootMethod): Option[Stack] = {
-      if ((m == currentMethod) || (stack.exists(m).isInstanceOf[Some[Stack]])) Some(stack)
-      else None
-    }
+    def exists(m: SootMethod): Boolean = ((m == currentMethod) || stack.exists(m))
     override def toString(): String =  {
       def methodName(m: SootMethod, nLoop: Int) = {
         val name = Soot.methodFullName(m)
@@ -226,10 +223,10 @@ object LoopDepthCounter {
     
     for (m <- realTargetMethods) {
       stack.exists(m) match {
-        case Some(s) => 
+        case true => 
           println(s"Found recursive calls on ${Soot.methodFullName(m)}, skip.") 
           println(CallStack(m, List()/*just need a list here*/, stack).toStringAndHighlightMethod(m))
-        case None =>
+        case false =>
           if (m.isPhantom) { /*println(s"Warning: phantom method ${m}, will not analyze")*/ }
           else if (m.isAbstract) { /*println(s"Warning: abstract method ${m}, will not analyze")*/ }
           else if (m.isNative) { /*println(s"Warning: native method ${m}, will not analyze")*/ }
