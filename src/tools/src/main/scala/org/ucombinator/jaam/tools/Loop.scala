@@ -114,6 +114,8 @@ object Soot {
     val next = getBody(method).getUnits.getSuccOf(stmt) 
     if (next == null) None else Some(next)
   }
+
+  def methodFullName(m: SootMethod): String = m.getDeclaringClass.getName + "." + m.getName
 }
 
 object LoopDepthCounter {
@@ -147,19 +149,37 @@ object LoopDepthCounter {
   }
 
   abstract class Stack {
-    def exists(m: SootMethod): Boolean
+    def exists(m: SootMethod): Option[Stack]
   }
   case object Halt extends Stack {
-    def exists(m: SootMethod) = false
+    def exists(m: SootMethod): Option[Stack] = None
   }
   case class CallStack(currentMethod: SootMethod, allLoops: List[SootLoop], stack: Stack, nLoop: Int = 0) extends Stack {
     def incLoop: CallStack = CallStack(currentMethod, allLoops, stack, nLoop+1)
     def decLoop(n: Int): CallStack = CallStack(currentMethod, allLoops, stack, nLoop-n)
-    def exists(m: SootMethod): Boolean = (m == currentMethod) || (stack.exists(m))
+    def exists(m: SootMethod): Option[Stack] = {
+      if ((m == currentMethod) || (stack.exists(m).isInstanceOf[Some[Stack]])) Some(stack)
+      else None
+    }
     override def toString(): String =  {
       def methodName(m: SootMethod, nLoop: Int) = {
-        val name = m.getDeclaringClass.getName + "." + m.getName
+        val name = Soot.methodFullName(m)
         "  " + (if (nLoop > 0) s"$RED$name($nLoop)$RESET" else name)
+      }
+      def aux(stack: Stack): List[String] = {
+        stack match {
+          case Halt => List()
+          case CallStack(m, al, s, loop) =>  methodName(m, loop) :: aux(s)
+        }
+      }
+      ((methodName(currentMethod, nLoop)::aux(stack)).reverse).mkString("\n")
+    }
+    
+    def toStringAndHighlightMethod(recMethod: SootMethod): String = {
+      def methodName(m: SootMethod, nLoop: Int) = {
+        val name = Soot.methodFullName(m)
+        val nameLoop = "  " + (if (nLoop > 0) s"$name($nLoop)" else name)
+        if (m == recMethod) s"$GREEN$nameLoop$RESET"  else nameLoop
       }
       def aux(stack: Stack): List[String] = {
         stack match {
@@ -205,13 +225,18 @@ object LoopDepthCounter {
     val realTargetMethodsCHA = getDispatchedMethodsCHA(stmt)
     
     for (m <- realTargetMethods) {
-      if (m.isPhantom) { /*println(s"Warning: phantom method ${m}, will not analyze")*/ }
-      else if (m.isAbstract) { /*println(s"Warning: abstract method ${m}, will not analyze")*/ }
-      else if (m.isNative) { /*println(s"Warning: native method ${m}, will not analyze")*/ }
-      else if (stack.exists(m)) { println(s"Recursive call on ${m}, skip.") }
-      else { 
-        val allLoops = (new LoopNestTree(Soot.getBody(m))).toList
-        findLoopsInMethod(Some(Soot.getMethodEntry(m)), currentLoop, CallStack(m, allLoops, stack)) 
+      stack.exists(m) match {
+        case Some(s) => 
+          println(s"Found recursive calls on ${Soot.methodFullName(m)}, skip.") 
+          println(CallStack(m, List()/*just need a list here*/, stack).toStringAndHighlightMethod(m))
+        case None =>
+          if (m.isPhantom) { /*println(s"Warning: phantom method ${m}, will not analyze")*/ }
+          else if (m.isAbstract) { /*println(s"Warning: abstract method ${m}, will not analyze")*/ }
+          else if (m.isNative) { /*println(s"Warning: native method ${m}, will not analyze")*/ }
+          else { 
+            val allLoops = (new LoopNestTree(Soot.getBody(m))).toList
+            findLoopsInMethod(Some(Soot.getMethodEntry(m)), currentLoop, CallStack(m, allLoops, stack)) 
+          }
       }
     }
   }
@@ -244,14 +269,14 @@ object LoopDepthCounter {
           val depth = if (currentLoop.nonEmpty) currentLoop.get.depth+1 else 1
           val offset = if (currentLoop.nonEmpty && currentLoop.get.isEndStmt(realStmt)) {
             //TODO need more test on this very corner case
-            println("realStmt is an end of loop and a start of another loop")
+            //println("realStmt is an end of loop and a start of another loop")
             currentLoop.get.offset+1
           } else { 0 }
           val newLoop = Loop(stack.currentMethod, realStmt, l.getBackJumpStmt, depth, currentLoop, offset)
           val newStack = stack.incLoop
           println(s"Found a loop in ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName}, " + 
-            s"starts from line [${realStmt.getJavaSourceStartLineNumber}], " + 
-            s"depth: ${depth}")
+                  s"starts from line [${realStmt.getJavaSourceStartLineNumber}], " + 
+                  s"depth: ${depth}")
           println(newStack)
           findLoopsInMethod(nextStmt, Some(newLoop), newStack)
 
@@ -262,7 +287,7 @@ object LoopDepthCounter {
         case None if (currentLoop.nonEmpty) =>
           currentLoop.get.getOffsetOfFutureEndStmt(realStmt) match {
             case Some(n) =>
-              println(s"Find a future loop end, offset: ${n}")
+              //println(s"Find a future loop end, offset: ${n}")
               findLoopsInMethod(nextStmt, Some(currentLoop.get.setOffset(n)), stack) 
             case None => findLoopsInMethod(nextStmt, currentLoop, stack)
           }
