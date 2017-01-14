@@ -972,13 +972,27 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	public void toggleNodesOfType(VertexType type) {
 		if(this.getType()==type){
 			this.setExpanded(!this.isExpanded());
-		}else{
+		}
 			Iterator<AbstractVertex> it = this.getInnerGraph().getVertices().values().iterator();
 			while(it.hasNext()){
 				it.next().toggleNodesOfType(type);
 			}
-		}
 		
+	}
+	
+	public void toggleEdges() {
+		Iterator<Edge> it = this.getInnerGraph().getEdges().values().iterator();
+			while(it.hasNext()){
+				Edge e = it.next();
+				if(e.getGraphics()!=null){
+					e.getGraphics().setVisible(!e.getGraphics().isVisible());
+				}
+			}	
+			
+			Iterator<AbstractVertex> itN = this.getInnerGraph().getVertices().values().iterator();
+			while(itN.hasNext()){
+				itN.next().toggleEdges();
+			}	
 	}
 	
 	public void reset(){

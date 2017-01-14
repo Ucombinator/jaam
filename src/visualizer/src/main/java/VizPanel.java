@@ -1,8 +1,10 @@
 
+import javafx.animation.ScaleTransition;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -13,6 +15,7 @@ import javafx.scene.Scene;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
+import javafx.util.Duration;
 import javafx.scene.layout.Pane;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Group;
@@ -232,12 +235,28 @@ public class VizPanel extends JFXPanel
 			}
 		});
 
-		zoomPane.setOnScroll(new EventHandler<ScrollEvent>()
+		
+		EventHandler<ScrollEvent> voindHandle =  new EventHandler<ScrollEvent>()
 		{
 			@Override
 			public void handle(ScrollEvent event)
 			{
 				event.consume();
+				System.out.println("voindHandle");
+			}
+		}; 
+		
+		
+		
+		EventHandler<ScrollEvent> activeHandle = new EventHandler<ScrollEvent>()
+		{
+			@Override
+			public void handle(ScrollEvent event)
+			{
+				event.consume();
+				System.out.println("ZOOOOOOOOOOOM");
+				zoomPane.setOnScroll(voindHandle);
+				
 
 				if (event.getDeltaY() == 0)
 					return;
@@ -248,16 +267,34 @@ public class VizPanel extends JFXPanel
 				// amount of scrolling in each direction in scrollContent coordinate units
 				final Point2D scrollOffset = figureScrollOffset(scrollContent, scroller);
 
-				group.setScaleX(group.getScaleX() * scaleFactor);
-				group.setScaleY(group.getScaleY() * scaleFactor);
+				ScaleTransition st = new ScaleTransition(Duration.millis(5),group);
+				st.setToX(group.getScaleX()*scaleFactor);
+				st.setToY(group.getScaleX()*scaleFactor);
+//				group.setScaleX(group.getScaleX() * scaleFactor);
+//				group.setScaleY(group.getScaleY() * scaleFactor);
+				Parameters.stFrame.mainPanel.getPanelRoot().toggleEdges();
+				st.play();
+				
+				EventHandler<ScrollEvent> activeHandle = this;
+				
+				st.setOnFinished(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent event)
+					{
 
-				// move viewport so that old center remains in the center after the scaling
-				repositionScroller(scrollContent, scroller, scaleFactor, scrollOffset);
-
-				// Adjust stroke width of lines and length of arrows
-				VizPanel.this.scaleLines();
+						// move viewport so that old center remains in the center after the scaling
+						repositionScroller(scrollContent, scroller, scaleFactor, scrollOffset);
+						Parameters.stFrame.mainPanel.getPanelRoot().toggleEdges();
+						// Adjust stroke width of lines and length of arrows
+						VizPanel.this.scaleLines();
+						zoomPane.setOnScroll(activeHandle);
+					}
+				});
 			}
-		});
+		}; 
+		
+		
+		zoomPane.setOnScroll(activeHandle);
 
 		// Panning via drag....
 		final ObjectProperty<Point2D> lastMouseCoordinates = new SimpleObjectProperty<Point2D>();
