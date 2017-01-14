@@ -555,6 +555,7 @@ public class StacFrame extends JFrame
 		
 		
 		JButton methodCollapse = new JButton("M");
+		
 		methodCollapse.setOpaque(true);
 		methodCollapse.setForeground(inactiveColor);
 		
@@ -563,9 +564,11 @@ public class StacFrame extends JFrame
 		(
 			new ActionListener()
 			{
+				boolean methodExpanded = true;
 				public void actionPerformed(ActionEvent e)
 				{
-					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractVertex.VertexType.METHOD);
+					methodExpanded = !methodExpanded;
+					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractVertex.VertexType.METHOD, methodExpanded);
 					 Platform.runLater(new Runnable() { 
 				            @Override
 				            public void run() {
@@ -595,9 +598,11 @@ public class StacFrame extends JFrame
 		(
 			new ActionListener()
 			{
+				boolean chainExpanded = true;
 				public void actionPerformed(ActionEvent e)
 				{
-					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractVertex.VertexType.CHAIN);
+					chainExpanded = !chainExpanded;
+					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractVertex.VertexType.CHAIN,chainExpanded);
 					 Platform.runLater(new Runnable() { 
 				            @Override
 				            public void run() {

@@ -969,13 +969,13 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	public VertexType getType() {
 		return this.vertexType;
 	}
-	public void toggleNodesOfType(VertexType type) {
+	public void toggleNodesOfType(VertexType type, boolean methodExpanded) {
 		if(this.getType()==type){
-			this.setExpanded(!this.isExpanded());
+			this.setExpanded(methodExpanded);
 		}
 			Iterator<AbstractVertex> it = this.getInnerGraph().getVertices().values().iterator();
 			while(it.hasNext()){
-				it.next().toggleNodesOfType(type);
+				it.next().toggleNodesOfType(type,methodExpanded);
 			}
 		
 	}
