@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
+
 public class AbstractGraph
 {
 	private HashMap<String,AbstractVertex> vertices;
@@ -61,13 +62,13 @@ public class AbstractGraph
 	
 	public void addEdge(Edge edge)
 	{
-		edge.getSourceVertex().addAbstractNeighbor(edge.getDestVertex());
+		edge.getSourceVertex().addOutgoingAbstractNeighbor(edge.getDestVertex());
 		this.edges.put(edge.getID(), edge);
 	}
 	
 	public void deleteEdge(Edge edge)
 	{
-		edge.getSourceVertex().removeAbstractNeighbor(edge.getDestVertex());
+		edge.getSourceVertex().removeOutgoingAbstractNeighbor(edge.getDestVertex());
 		this.edges.remove(edge.getID());
 	}
 	
@@ -274,4 +275,6 @@ public class AbstractGraph
 	public boolean hasEdge(AbstractVertex first, AbstractVertex second) {
 		return this.edges.containsKey(Edge.createID(first.id, second.id));
 	}
+
+
 }

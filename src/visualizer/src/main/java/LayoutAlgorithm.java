@@ -81,7 +81,7 @@ public class LayoutAlgorithm
 	public static void assingXandYtoInnerNodesAndGiveParentBBox(AbstractVertex root, double left, double top)
 	{
 		root.vertexStatus = AbstractVertex.VertexStatus.GRAY;
-		Iterator<AbstractVertex> it = root.getAbstractNeighbors().iterator();
+		Iterator<AbstractVertex> it = root.getOutgoingAbstractNeighbors().iterator();
 		ArrayList<AbstractVertex> grayChildren = new ArrayList<AbstractVertex>(); 
 		while(it.hasNext())
 		{
@@ -143,7 +143,7 @@ public class LayoutAlgorithm
 	public static double[] storeBBoxWidthAndHeight(AbstractVertex root)
 	{
 		root.vertexStatus = AbstractVertex.VertexStatus.GRAY;
-		Iterator<AbstractVertex> it = root.getAbstractNeighbors().iterator();
+		Iterator<AbstractVertex> it = root.getOutgoingAbstractNeighbors().iterator();
 		ArrayList<AbstractVertex> grayChildren = new ArrayList<AbstractVertex>(); 
 		while(it.hasNext())
 		{

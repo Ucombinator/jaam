@@ -12,8 +12,10 @@ import javafx.scene.paint.Color;
 public class LayerFactory
 {
 	private static final boolean create_chains = true;
-	private static final boolean contract_chains = false;
-	private static final int CHAIN_LENGTH = 4 ; // This value should ALWAYS be LARGEN THAN OR EQUAL 3 (otherwise it will break)
+	private static final boolean chains_expanded = true;
+	private static final boolean methods_expanded = true;
+	
+	private static final int CHAIN_LENGTH = 2 ; // This value should ALWAYS be LARGEN THAN OR EQUAL 3 (otherwise it will break)
 	
 	static HashMap<String, Vertex> id_to_vertex = new HashMap<String, Vertex>();
 	static HashMap<String, AbstractVertex> id_to_abs_vertex = new HashMap<String, AbstractVertex>();
@@ -42,7 +44,7 @@ public class LayerFactory
 		{
 			String method = iter.next();
 			AbstractVertex vertex = new Vertex(method, AbstractVertex.VertexType.METHOD);
-			
+			vertex.setExpanded(methods_expanded);
 			vertex.getMetaData().put(AbstractVertex.METADATA_MERGE_PARENT, buckets.get(method).iterator().next().mergeParent);
 			
 			//vertex.setExpanded(false);
@@ -92,6 +94,7 @@ public class LayerFactory
 			{
 				Vertex oldV = it.next();
 				Vertex newV = new Vertex("instruction:" + oldV.getStrID(), AbstractVertex.VertexType.INSTRUCTION);
+				newV.getMetaData().put(AbstractVertex.METADATA_INSTRUCTION, oldV.getInstruction());
 				newV.setMinInstructionLine(oldV.id);
 
 				id_to_vertex.put(oldV.getStrID(), oldV);
@@ -162,34 +165,34 @@ public class LayerFactory
 		AbstractVertex root = new Vertex("root", AbstractVertex.VertexType.ROOT);
 		root.setInnerGraph(methodGraph);
 		
-		collapseChains(root, CHAIN_LENGTH);
+		createChainVertices(root, CHAIN_LENGTH);
 		return root;
 	}
 
-	static void collapseChains(AbstractVertex parent, int k){
+	static void createChainVertices(AbstractVertex parent, int k){
 		Iterator<AbstractVertex> it = parent.getInnerGraph().getVertices().values().iterator();
 		while(it.hasNext()){
 			AbstractVertex absVertex = it.next();
 			absVertex.vertexStatus = AbstractVertex.VertexStatus.WHITE;
-			collapseChains(absVertex, k);
+			createChainVertices(absVertex, k);
 		}
 		
 		if(create_chains){
-			collapseFromVertex(parent.getInnerGraph().getRoot(), k);
+			createChainVerticesFromVertex(parent.getInnerGraph().getRoot(), k);
 		}
 	
 	}
 
-	private static void collapseFromVertex(AbstractVertex root, int k) {
+	private static void createChainVerticesFromVertex(AbstractVertex root, int k) {
 		if(root==null){return;}
 		
-		//System.out.println("collapseFromVertex");
+		System.out.println("collapseFromVertex");
 		int i = 0;
 		AbstractVertex currentVertex = root;
 		ArrayList<AbstractVertex> chain = new ArrayList<AbstractVertex>();
 		while(true){
 			currentVertex.vertexStatus = AbstractVertex.VertexStatus.GRAY;
-			Iterator<AbstractVertex> itChildren = currentVertex.getAbstractNeighbors().iterator();
+			Iterator<AbstractVertex> itChildren = currentVertex.getOutgoingAbstractNeighbors().iterator();
 			ArrayList<AbstractVertex> grayChildren = new ArrayList<AbstractVertex>();
 			while(itChildren.hasNext())
 			{
@@ -202,8 +205,31 @@ public class LayerFactory
 			}
 			
 			
+			ArrayList<AbstractVertex> copyOfIncoming = new ArrayList<AbstractVertex>(currentVertex.getIncomingAbstractNeighbors());
+			copyOfIncoming.removeAll(grayChildren);
 			
-			if(grayChildren.size()==1){
+			
+			ArrayList<AbstractVertex> copyOfOutgoing = new ArrayList<AbstractVertex>(currentVertex.getOutgoingAbstractNeighbors());
+			copyOfOutgoing.removeAll(copyOfIncoming);
+			
+			
+			System.out.println("Condition for vertex: " + currentVertex.getStrID());
+			System.out.println("grayChildren: " + grayChildren.size());
+			System.out.println("copyOfIncoming: " + copyOfIncoming.size());
+			System.out.println("copyOfOutgoing" + copyOfOutgoing.size());
+			Iterator<AbstractVertex> itVVV = copyOfOutgoing.iterator();
+			while(itVVV.hasNext()){
+				System.out.println("n: " + itVVV.next().getStrID());
+			}
+			
+			
+			
+			//if(grayChildren.size()==1 && copyOfIncoming.size()==1){
+//			if(currentVertex.getOutgoingAbstractNeighbors().size()==1 && copyOfIncoming.size()==1){
+			if(grayChildren.size()==1 && copyOfIncoming.size()<=1 && copyOfOutgoing.size()==1){
+			System.out.println("Condition true for vertex: " + currentVertex.getStrID());
+			System.out.println("getOutgoingAbstractNeighbors: "+ currentVertex.getOutgoingAbstractNeighbors().size());
+//			if(currentVertex.getOutgoingAbstractNeighbors().size()==1){
 				AbstractVertex child =  grayChildren.get(0);
 				chain.add(currentVertex);
 				currentVertex = child;
@@ -215,19 +241,19 @@ public class LayerFactory
 				
 				/********************************************************************************/
 				if(i>=k){
-					//System.out.println("CREATING CHAIN!!");
+					System.out.println("CREATING CHAIN!!");
 					AbstractVertex first = chain.get(0);
 					AbstractVertex last = chain.get(chain.size()-1);
 					
 				
 					
 				
-					//System.out.println("CHAIN starts at: " + chain.get(0).getStrID());
+					System.out.println("CHAIN starts at: " + chain.get(0).getStrID());
 					
 					
 					//Create the new vertex
 					AbstractVertex chainVertex = new Vertex("Chain:" + chain.get(0).getStrID(), AbstractVertex.VertexType.CHAIN);
-					chainVertex.setExpanded(!contract_chains);
+					chainVertex.setExpanded(chains_expanded);
 					chainVertex.setMinInstructionLine(Integer.MAX_VALUE); // to be sure it won't be the root
 					
 					first.getSelfGraph().addVertex(chainVertex);
@@ -276,12 +302,12 @@ public class LayerFactory
 				/********************************************************************************/
 				itChildren = grayChildren.iterator();
 				while(itChildren.hasNext()){
-					collapseFromVertex(itChildren.next(), k);
+					createChainVerticesFromVertex(itChildren.next(), k);
 				}
 				break;
 			}
 		
-			//System.out.println("i:" + i);
+			System.out.println("i:" + i); 
 			i++;
 		}
 	

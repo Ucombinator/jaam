@@ -40,7 +40,8 @@ public class Edge implements Comparable<Edge>
 		this.type = edgeType;
 		this.sourceVertex = sourceVertex;
 		this.destVertex = destVertex;
-		this.sourceVertex.addAbstractNeighbor(this.destVertex);
+		this.sourceVertex.addOutgoingAbstractNeighbor(this.destVertex);
+		this.destVertex.addIncomingAbstractNeighbor(this.sourceVertex);
 
 		graphics = new Group();
 		line = new Line();
@@ -89,6 +90,8 @@ public class Edge implements Comparable<Edge>
 			System.out.println(this.getType());*/
 			return;
 		}
+		else if((sourceVertex.getGraphics() == null) || (destVertex.getGraphics() == null))
+			return;
 
 		this.node = node;
 		GUINode sourceNode = sourceVertex.getGraphics();
@@ -199,6 +202,9 @@ public class Edge implements Comparable<Edge>
 				x3, y3 });
 		arrowhead.setFill(Color.BLACK);
 		//System.out.println("Arrowhead points: " + arrowhead.toString());
+		
+		
+		this.graphics.getChildren().removeAll(this.graphics.getChildren());
 
 		// Mark the center of each node for testing
 		if(markCenters)
@@ -242,7 +248,9 @@ public class Edge implements Comparable<Edge>
 
 					e.graphics.getChildren().remove(e.line);
 					e.graphics.getChildren().remove(e.arrowhead);
-					e.node.getChildren().remove(e.graphics);
+
+					if(e.node != null)
+						e.node.getChildren().remove(e.graphics);
 
 					// ...And draw new ones
 					e.draw(Parameters.stFrame.mainPanel, e.node);
