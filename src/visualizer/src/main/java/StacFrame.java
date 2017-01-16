@@ -544,14 +544,14 @@ public class StacFrame extends JFrame
 		sizePanel.add(sizePlus);
 		
 /********************************************************************************/
-		JPanel xSclalePanel = new JPanel();
-		xSclalePanel.setBorder(BorderFactory.createEtchedBorder());
-		xSclalePanel.setLayout(new GridLayout(1,3));
-		this.menuPanel.add(xSclalePanel);
+		JPanel xScalePanel = new JPanel();
+		xScalePanel.setBorder(BorderFactory.createEtchedBorder());
+		xScalePanel.setLayout(new GridLayout(1,3));
+		this.menuPanel.add(xScalePanel);
 		
-		JButton xSclalePanelMinus = new JButton("-");
-		xSclalePanelMinus.setEnabled(true);
-		xSclalePanelMinus.addActionListener
+		JButton xScalePanelMinus = new JButton("-");
+		xScalePanelMinus.setEnabled(true);
+		xScalePanelMinus.addActionListener
 		(
 			new ActionListener()
 			{
@@ -566,16 +566,19 @@ public class StacFrame extends JFrame
 							Parameters.stFrame.mainPanel.getPanelRoot().reset();
 			            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
 			            	Parameters.stFrame.mainPanel.resetPanelSize();
-							Parameters.stFrame.mainPanel.draw(null, Parameters.stFrame.mainPanel.getPanelRoot());				            }
+
+							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+			            }
 			        });
 				}
 			}
 		);
-		xSclalePanel.add(xSclalePanelMinus);
+		xScalePanel.add(xScalePanelMinus);
 		
 		JLabel xScaleL = new JLabel("X scale");
 		xScaleL.setHorizontalAlignment(SwingConstants.CENTER);
-		xSclalePanel.add(xScaleL);
+		xScalePanel.add(xScaleL);
 		
 		JButton xScalePlus = new JButton("+");
 		xScalePlus.setEnabled(true);
@@ -594,12 +597,15 @@ public class StacFrame extends JFrame
 							Parameters.stFrame.mainPanel.getPanelRoot().reset();
 			            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
 			            	Parameters.stFrame.mainPanel.resetPanelSize();
-							Parameters.stFrame.mainPanel.draw(null, Parameters.stFrame.mainPanel.getPanelRoot());				            }
+
+							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+			            }
 			        });
 				}
 			}
 		);
-		xSclalePanel.add(xScalePlus);
+		xScalePanel.add(xScalePlus);
 /************************************************************************************/
 		
 		
@@ -625,7 +631,10 @@ public class StacFrame extends JFrame
 							Parameters.stFrame.mainPanel.getPanelRoot().reset();
 			            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
 			            	Parameters.stFrame.mainPanel.resetPanelSize();
-							Parameters.stFrame.mainPanel.draw(null, Parameters.stFrame.mainPanel.getPanelRoot());				            }
+
+							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+			            }
 			        });
 				}
 			}
@@ -653,7 +662,10 @@ public class StacFrame extends JFrame
 							Parameters.stFrame.mainPanel.getPanelRoot().reset();
 			            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
 			            	Parameters.stFrame.mainPanel.resetPanelSize();
-							Parameters.stFrame.mainPanel.draw(null, Parameters.stFrame.mainPanel.getPanelRoot());				            }
+
+							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+			            }
 			        });
 				}
 			}
@@ -666,12 +678,10 @@ public class StacFrame extends JFrame
 		this.menuPanel.add(collpasePanel);
 		
 		
-		Color activeColor = Color.CYAN;
-		Color inactiveColor = Color.BLACK;
-		
-		
-		JButton methodCollapse = new JButton("M");
-		
+		final Color activeColor = Color.CYAN;
+		final Color inactiveColor = Color.BLACK;
+
+		final JButton methodCollapse = new JButton("M");
 		methodCollapse.setOpaque(true);
 		methodCollapse.setForeground(inactiveColor);
 		
@@ -685,28 +695,31 @@ public class StacFrame extends JFrame
 				{
 					methodExpanded = !methodExpanded;
 					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractVertex.VertexType.METHOD, methodExpanded);
-					 Platform.runLater(new Runnable() { 
-				            @Override
-				            public void run() {
-				            	if(methodCollapse.getForeground()==activeColor){
-				            		methodCollapse.setForeground(inactiveColor);
-				            	}else{
-				            		methodCollapse.setForeground(activeColor);
-				            	}
-								GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
-								((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
-				            	Parameters.stFrame.mainPanel.getPanelRoot().reset();
-				            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-				            	Parameters.stFrame.mainPanel.resetPanelSize();
-								Parameters.stFrame.mainPanel.draw(null, Parameters.stFrame.mainPanel.getPanelRoot());				            }
-				        });
+					Platform.runLater(new Runnable() {
+						@Override
+						public void run() {
+							if(methodCollapse.getForeground()==activeColor){
+								methodCollapse.setForeground(inactiveColor);
+							}else{
+								methodCollapse.setForeground(activeColor);
+							}
+							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
+							Parameters.stFrame.mainPanel.getPanelRoot().reset();
+							LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+							Parameters.stFrame.mainPanel.resetPanelSize();
+
+							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+						}
+					});
 				}
-				}
+			}
 		);
 		collpasePanel.add(methodCollapse);
 	
 		
-		JButton chainCollapse = new JButton("C");
+		final JButton chainCollapse = new JButton("C");
 		chainCollapse.setForeground(inactiveColor);
 		chainCollapse.setEnabled(true);
 
@@ -719,22 +732,26 @@ public class StacFrame extends JFrame
 				{
 					chainExpanded = !chainExpanded;
 					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractVertex.VertexType.CHAIN,chainExpanded);
-					 Platform.runLater(new Runnable() { 
-				            @Override
-				            public void run() {
-				            	if(chainCollapse.getForeground()==activeColor){
-				            		chainCollapse.setForeground(inactiveColor);
-				            	}else{
-				            		chainCollapse.setForeground(activeColor);
-				            	}
-				            	GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
-								((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
-				            	Parameters.stFrame.mainPanel.getPanelRoot().reset();
-				            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-				            	Parameters.stFrame.mainPanel.resetPanelSize();
-								Parameters.stFrame.mainPanel.draw(null, Parameters.stFrame.mainPanel.getPanelRoot());				            }
-				        });		}
+					Platform.runLater(new Runnable() {
+						@Override
+						public void run() {
+							if(chainCollapse.getForeground()==activeColor){
+								chainCollapse.setForeground(inactiveColor);
+							}else{
+								chainCollapse.setForeground(activeColor);
+							}
+							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
+							Parameters.stFrame.mainPanel.getPanelRoot().reset();
+							LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+							Parameters.stFrame.mainPanel.resetPanelSize();
+
+							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+						}
+					});
 				}
+			}
 		);
 		collpasePanel.add(chainCollapse);
 		

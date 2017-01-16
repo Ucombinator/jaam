@@ -86,7 +86,8 @@ public class VizPanel extends JFXPanel
 		{
 			this.panelRoot = root;
 		}
-		draw(null, this.panelRoot);
+		drawNodes(null, this.panelRoot);
+		drawEdges(null, this.panelRoot);
 	}
 	
 
@@ -132,7 +133,7 @@ public class VizPanel extends JFXPanel
 		return panelRoot.getGraphics().getWidth() / panelRoot.getWidth();
 	}
 
-	public void draw(GUINode parent, AbstractVertex v)
+	public void drawNodes(GUINode parent, AbstractVertex v)
 	{
 		GUINode node = new GUINode(parent, v);
 
@@ -161,6 +162,19 @@ public class VizPanel extends JFXPanel
 		if (v.getInnerGraph().getVertices().size() == 0)
 			return;
 
+		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
+		while (it.hasNext())
+		{
+			AbstractVertex child = it.next();
+			if(v.isExpanded()){
+				drawNodes(node, child);
+			}
+		}
+	}
+
+	public void drawEdges(GUINode parent, AbstractVertex v)
+	{
+		GUINode node = v.getGraphics();
 		if(this.showEdge && v.isExpanded())
 		{
 			Edge.arrowLength = this.getWidthPerVertex() / 10.0;
@@ -173,7 +187,7 @@ public class VizPanel extends JFXPanel
 		{
 			AbstractVertex child = it.next();
 			if(v.isExpanded()){
-				draw(node, child);
+				drawEdges(node, child);
 			}
 		}
 	}
@@ -237,7 +251,7 @@ public class VizPanel extends JFXPanel
 		});
 
 		
-		EventHandler<ScrollEvent> voindHandle =  new EventHandler<ScrollEvent>()
+		final EventHandler<ScrollEvent> voindHandle =  new EventHandler<ScrollEvent>()
 		{
 			@Override
 			public void handle(ScrollEvent event)
@@ -247,8 +261,7 @@ public class VizPanel extends JFXPanel
 			}
 		}; 
 		
-		
-		
+
 		EventHandler<ScrollEvent> activeHandle = new EventHandler<ScrollEvent>()
 		{
 			@Override
@@ -276,7 +289,7 @@ public class VizPanel extends JFXPanel
 				Parameters.stFrame.mainPanel.getPanelRoot().toggleEdges();
 				st.play();
 				
-				EventHandler<ScrollEvent> activeHandle = this;
+				final EventHandler<ScrollEvent> activeHandle = this;
 				
 				st.setOnFinished(new EventHandler<ActionEvent>() {
 					@Override
