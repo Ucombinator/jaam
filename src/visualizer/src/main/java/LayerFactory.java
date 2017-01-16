@@ -94,7 +94,7 @@ public class LayerFactory
 			{
 				Vertex oldV = it.next();
 				Vertex newV = new Vertex("instruction:" + oldV.getStrID(), AbstractVertex.VertexType.INSTRUCTION);
-				newV.getMetaData().put(AbstractVertex.METADATA_INSTRUCTION, oldV.getInstruction());
+				newV.getMetaData().put(AbstractVertex.METADATA_INSTRUCTION, oldV.getRealInstruction());
 				newV.setMinInstructionLine(oldV.id);
 
 				id_to_vertex.put(oldV.getStrID(), oldV);

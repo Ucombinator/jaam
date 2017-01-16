@@ -175,6 +175,11 @@ public class Vertex extends AbstractVertex
 		return this.instruction;
 	}
 	
+	public Instruction getRealInstruction()
+	{
+		return new Instruction("bla");
+	}
+	
 	public String getDescription()
 	{
 		return this.description;

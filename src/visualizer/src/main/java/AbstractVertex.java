@@ -1003,8 +1003,23 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 			}	
 	}
 
-
-
-
+	
+	public HashMap<AbstractVertex, Instruction> getInstructions(){
+		return this.getInstructions(new HashMap<AbstractVertex, Instruction>());
+	}
+	
+	private HashMap<AbstractVertex, Instruction> getInstructions(HashMap<AbstractVertex, Instruction> instructions){
+		if(this.getType().equals(AbstractVertex.VertexType.ROOT) || this.getType().equals(AbstractVertex.VertexType.METHOD) || this.getType().equals(AbstractVertex.VertexType.CHAIN)){
+			Iterator<AbstractVertex> it = this.getInnerGraph().getVertices().values().iterator();
+			while(it.hasNext()){
+					it.next().getInstructions(instructions);
+			}
+		} else if(this.getType().equals(AbstractVertex.VertexType.INSTRUCTION)){
+			instructions.put(this, (Instruction)this.getMetaData().get(AbstractVertex.METADATA_INSTRUCTION));
+		} else {
+			System.out.println("Unrecongnized type in method getInstructions");
+		}
+		return instructions;
+	}
 }
 

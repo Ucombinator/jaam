@@ -1,4 +1,5 @@
 
+import java.util.HashMap;
 import java.util.Iterator;
 
 import javafx.animation.FadeTransition;
@@ -176,7 +177,10 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 
 	private void handlePrimarySingleClick(MouseEvent event)
 	{
-		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
 		event.consume();
+		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
+		HashMap<AbstractVertex, Instruction> instructions = v.getInstructions();
+		System.out.println(instructions.values());
+		
 	}
 }
