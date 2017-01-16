@@ -10,6 +10,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 {
 	public static final double DEFAULT_WIDTH = 1.0;
 	public static final double DEFAULT_HEIGHT = 1.0;
+	
+	public Instruction inst;
 
 	public static final String METADATA_MERGE_PARENT = "MERGE_PARENT";
 	public static final String METADATA_INSTRUCTION = "INSTRUCTION_STATEMENT";
@@ -1019,5 +1021,14 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		}
 		return instructions;
 	}
+	
+	public Instruction getRealInstruction()
+	{
+		return this.inst;
+	}
+	
+
+	public void setRealInstruction(Instruction inst) {this.inst = inst; }
+	
 }
 
