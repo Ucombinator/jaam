@@ -13,7 +13,7 @@ public class Edge implements Comparable<Edge>
 	Line line;
 	Polygon arrowhead;
 	Rectangle marker1, marker2;
-	static final boolean markCenters = true;
+	static final boolean markCenters = false;
 
 	public enum EDGE_TYPE {EDGE_REGULAR, EDGE_DUMMY};
 	private EDGE_TYPE type;
@@ -217,7 +217,9 @@ public class Edge implements Comparable<Edge>
 
 		this.graphics.getChildren().add(line);
 		this.graphics.getChildren().add(arrowhead);
-		node.getChildren().add(graphics);
+
+		if(node != null)
+			node.getChildren().add(graphics);
 	}
 
 	public Rectangle getMarker(double x, double y)

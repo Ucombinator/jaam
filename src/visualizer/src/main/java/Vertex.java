@@ -5,6 +5,7 @@ public class Vertex extends AbstractVertex
 {
 	public int jimpleIndex;
 	public String description = "", instruction = "";
+	public Instruction inst;
 	public MethodVertex mergeParent;
 	public Method method;
 
@@ -189,6 +190,8 @@ public class Vertex extends AbstractVertex
 	{
 		this.instruction = in;
 	}
+
+	public void setRealInstruction(Instruction inst) {this.realInstruction = inst; }
 	
 	public void setNameToInstruction()
 	{

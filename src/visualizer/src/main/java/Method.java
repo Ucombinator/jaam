@@ -110,6 +110,7 @@ public class Method
 				
 				String newInst = v.jimpleIndex + ":  " + v.getInstruction() + "\n";
 				this.instructionList.set(v.jimpleIndex, new Instruction(newInst, this.methodName, true, v.jimpleIndex));
+				v.setRealInstruction(instructionList.get(v.jimpleIndex));
 			}
 		}
 		
