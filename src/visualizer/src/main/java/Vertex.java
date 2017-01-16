@@ -191,7 +191,7 @@ public class Vertex extends AbstractVertex
 		this.instruction = in;
 	}
 
-	public void setRealInstruction(Instruction inst) {this.realInstruction = inst; }
+	public void setRealInstruction(Instruction inst) {this.inst = inst; }
 	
 	public void setNameToInstruction()
 	{
