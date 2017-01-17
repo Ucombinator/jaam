@@ -165,6 +165,12 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		this.metadata = new HashMap<String,Object>();	
 	}
 	
+	private javafx.scene.paint.Color[] colors = {javafx.scene.paint.Color.AQUAMARINE,
+			javafx.scene.paint.Color.GREEN, javafx.scene.paint.Color.AZURE,
+			javafx.scene.paint.Color.BLUEVIOLET, javafx.scene.paint.Color.DARKTURQUOISE};
+	
+	
+	static int colorIndex = 0;
 	public AbstractVertex(String label, VertexType type){
 		this();
 		this.label = label;
@@ -174,7 +180,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		if(this.vertexType == VertexType.ROOT){
 			this.setColor(Color.WHITE);
 		} else if (this.vertexType == VertexType.METHOD){
-			this.setColor(Color.CYAN);
+			this.setColor(colors[colorIndex++ % colors.length]);
 		} else if (this.vertexType == VertexType.CHAIN){
 			this.setColor(Color.GREEN);
 		} else if (this.vertexType == VertexType.INSTRUCTION){

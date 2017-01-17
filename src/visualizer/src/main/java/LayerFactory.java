@@ -97,6 +97,7 @@ public class LayerFactory
 
 				System.out.println("Loop height: " + oldV.loopHeight);
 				Color c = convertToFXColor(VizPanel.hues[oldV.loopHeight]);
+				System.out.println("Color: " + c);
 				newV.setColor(c);
 
 				newV.getMetaData().put(AbstractVertex.METADATA_INSTRUCTION, oldV.getRealInstruction());
