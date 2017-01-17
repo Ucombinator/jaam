@@ -37,6 +37,7 @@ public class VizPanel extends JFXPanel
 			javafx.scene.paint.Color.GREEN, javafx.scene.paint.Color.AZURE,
 			javafx.scene.paint.Color.BLUEVIOLET, javafx.scene.paint.Color.DARKTURQUOISE};
 	private int index = 0;
+	public static int maxLoopHeight;
 
 	// The dimensions of the background for our graph
 	public double rootWidth = 500.0, rootHeight = 500.0;
@@ -96,9 +97,8 @@ public class VizPanel extends JFXPanel
 		this.maxVertexHeight = this.panelRoot.getHeight();		
 	}
 
-	
-	int factorX =1;
-	int factorY =1;
+	int factorX = 1;
+	int factorY = 1;
 	public double scaleX(double coordinate)
 	{
 		return factorX*(coordinate * rootWidth / this.maxVertexWidth);
@@ -148,6 +148,7 @@ public class VizPanel extends JFXPanel
 		double height = scaleY(v.getHeight());
 		node.setLocation(translateX, translateY, width, height);
 
+		// Move these to initialization?
 		node.setArcWidth(scaleX(0.5));
 		node.setArcHeight(scaleY(0.5));
 		node.setLabel("  " + v.getLabel());
@@ -194,8 +195,8 @@ public class VizPanel extends JFXPanel
 	{
 		float start = 0.4f; //green
 		float end = 0.0f; //red
-		
-		int maxLoopHeight = 0;
+
+		VizPanel.maxLoopHeight = 0;
 		for(Vertex v : Main.graph.vertices)
 		{
 			if(v.loopHeight > maxLoopHeight)
