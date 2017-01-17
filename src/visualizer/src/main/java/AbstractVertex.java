@@ -11,7 +11,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	public static final double DEFAULT_WIDTH = 1.0;
 	public static final double DEFAULT_HEIGHT = 1.0;
 	
-	public Instruction inst;
+	
 
 	public static final String METADATA_MERGE_PARENT = "MERGE_PARENT";
 	public static final String METADATA_INSTRUCTION = "INSTRUCTION_STATEMENT";
@@ -1022,14 +1022,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		return instructions;
 	}
 	
-	public Instruction getRealInstruction()
-	{
-		return this.inst;
-	}
-	
 
-	public void setRealInstruction(Instruction inst) {this.inst = inst; }
-	
 
 	
 	public HashSet<AbstractVertex> getVerticesWithInstuctionID(int id, String method_name){
@@ -1043,8 +1036,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 					it.next().getVerticesWithInstuctionID(id, method_name, set);
 			}
 		} else if(this.getType().equals(AbstractVertex.VertexType.INSTRUCTION) 
-				&& this.getRealInstruction().methodName.equals(method_name)
-				&& this.getRealInstruction().jimpleIndex == id){
+				&& ((Instruction)this.getMetaData().get(AbstractVertex.METADATA_INSTRUCTION)).methodName.equals(method_name)
+				&& ((Instruction)this.getMetaData().get(AbstractVertex.METADATA_INSTRUCTION)).jimpleIndex == id){
 			set.add(this);
 		} else {
 			System.out.println("Unrecongnized type in method getInstructions");

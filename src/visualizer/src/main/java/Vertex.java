@@ -6,6 +6,8 @@ public class Vertex extends AbstractVertex
 	public int jimpleIndex;
 	public String description = "", instruction = "";
 	
+	public Instruction inst;
+	
 	public MethodVertex mergeParent;
 	public Method method;
 
@@ -294,4 +296,13 @@ public class Vertex extends AbstractVertex
 	{
 		return this.neighbors.size();
 	}
+	
+	public Instruction getRealInstruction()
+	{
+		return this.inst;
+	}
+	
+
+	public void setRealInstruction(Instruction inst) {this.inst = inst; }
+	
 }
