@@ -257,7 +257,7 @@ object LoopDepthCounter {
           defStmt.getRightOp match {
             case invokeExpr: InvokeExpr => handleInvoke(defStmt, invokeExpr, currentLoop, stack)
             case newExpr @ (_:NewExpr | _:NewArrayExpr | _:NewMultiArrayExpr) if (currentLoop.nonEmpty) =>
-              println(s"Found space allocation in a ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName}, " + 
+              println(s"Found object allocation in a ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName}, " + 
                       s"depth ${currentLoop.get.depth}: $CYAN$newExpr$RESET")
               println(stack)
             case _ => //Do nothing
