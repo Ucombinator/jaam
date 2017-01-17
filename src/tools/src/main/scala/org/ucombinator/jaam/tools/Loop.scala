@@ -169,7 +169,7 @@ object LoopDepthCounter {
           case CallStack(m, al, s, loop) =>  methodName(m, loop) :: aux(s)
         }
       }
-      ((methodName(currentMethod, nLoop)::aux(stack)).reverse).mkString("\n")
+      ((methodName(currentMethod, nLoop)::aux(stack)).reverse).mkString("\n")+"\n"
     }
     
     def toStringAndHighlightMethod(recMethod: SootMethod): String = {
@@ -184,7 +184,7 @@ object LoopDepthCounter {
           case CallStack(m, al, s, loop) =>  methodName(m, loop) :: aux(s)
         }
       }
-      ((methodName(currentMethod, nLoop)::aux(stack)).reverse).mkString("\n")
+      ((methodName(currentMethod, nLoop)::aux(stack)).reverse).mkString("\n")+"\n"
     }
   }
 
@@ -256,6 +256,10 @@ object LoopDepthCounter {
         case defStmt: DefinitionStmt =>
           defStmt.getRightOp match {
             case invokeExpr: InvokeExpr => handleInvoke(defStmt, invokeExpr, currentLoop, stack)
+            case newExpr @ (_:NewExpr | _:NewArrayExpr | _:NewMultiArrayExpr) if (currentLoop.nonEmpty) =>
+              println(s"Found space allocation in a ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName}, " + 
+                      s"depth ${currentLoop.get.depth}: $CYAN$newExpr$RESET")
+              println(stack)
             case _ => //Do nothing
           }
         case _ => //Do nothing
