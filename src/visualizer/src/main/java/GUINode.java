@@ -54,6 +54,7 @@ public class GUINode extends Pane
 
         this.addMouseEvents();
         this.setVisible(true);
+       
     }
     
     public AbstractVertex getVertex() {

@@ -1,6 +1,8 @@
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import javafx.scene.paint.Color;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,7 +20,15 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	public static final String METADATA_INSTRUCTION = "INSTRUCTION_STATEMENT";
 	
 	static int idCounter = 0; // Used to assign unique id numbers to each vertex
+	
+	private Color color = Color.RED;
 
+	public Color getColor() {
+		return this.color;
+	}
+	public void setColor(Color color) {
+		this.color = color;
+	}
 	// Used to sort lines of code in a method
 	public int compareTo(AbstractVertex o)
 	{
@@ -153,8 +163,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		this.abstractIncomingNeighbors = new HashSet<AbstractVertex>();
 		this.id = idCounter++;
 		this.strId = "vertex:"+this.id;
-		this.metadata = new HashMap<String,Object>();
-	
+		this.metadata = new HashMap<String,Object>();	
 	}
 	
 	public AbstractVertex(String label, VertexType type){
@@ -162,6 +171,16 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		this.label = label;
 		this.innerGraph = new AbstractGraph();
 		this.vertexType = type;
+		
+		if(this.vertexType == VertexType.ROOT){
+			this.setColor(Color.WHITE);
+		} else if (this.vertexType == VertexType.METHOD){
+			this.setColor(Color.BLUE);
+		} else if (this.vertexType == VertexType.CHAIN){
+			this.setColor(Color.GREEN);
+		} else if (this.vertexType == VertexType.INSTRUCTION){
+			this.setColor(Color.YELLOW);
+		}
 	}
 	
 	
