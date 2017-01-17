@@ -1015,9 +1015,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 					it.next().getInstructions(instructions);
 			}
 		} else if(this.getType().equals(AbstractVertex.VertexType.INSTRUCTION)){
-			Instruction newInstruction = (Instruction)this.getMetaData().get(METADATA_INSTRUCTION);
-			System.out.println(instructions.contains(newInstruction));
-			instructions.add(newInstruction);
+			instructions.add((Instruction)this.getMetaData().get(METADATA_INSTRUCTION));
 		} else {
 			System.out.println("Unrecognized type in method getInstructions");
 		}
