@@ -1028,8 +1028,23 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		return this.inst;
 	}
 
-	public void setRealInstruction(Instruction inst)
-	{
-		this.inst = inst;
+	public HashSet<AbstractVertex> getVerticesWithInstructionID(int id, String method_name){
+		return getVerticesWithInstructionID(id, method_name, new HashSet<AbstractVertex>());
+	}
+	
+	private HashSet<AbstractVertex> getVerticesWithInstructionID(int id, String method_name, HashSet<AbstractVertex> set){
+		if(this.getType().equals(AbstractVertex.VertexType.ROOT) || this.getType().equals(AbstractVertex.VertexType.METHOD) || this.getType().equals(AbstractVertex.VertexType.CHAIN)){
+			Iterator<AbstractVertex> it = this.getInnerGraph().getVertices().values().iterator();
+			while(it.hasNext()){
+					it.next().getVerticesWithInstructionID(id, method_name, set);
+			}
+		} else if(this.getType().equals(AbstractVertex.VertexType.INSTRUCTION) 
+				&& this.getRealInstruction().methodName.equals(method_name)
+				&& this.getRealInstruction().jimpleIndex == id){
+			set.add(this);
+		} else {
+			System.out.println("Unrecongnized type in method getInstructions");
+		}
+		return set;
 	}
 }
