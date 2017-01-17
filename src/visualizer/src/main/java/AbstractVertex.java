@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.awt.Color;
 
 abstract class AbstractVertex implements Comparable<AbstractVertex>
 {
@@ -239,6 +240,11 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		this.isVisible = isVisible;
 		if(this.getGraphics() != null)
 			this.getGraphics().setVisible(isVisible);
+	}
+
+	public void setColor(Color c)
+	{
+
 	}
     
     public DefaultMutableTreeNode toDefaultMutableTreeNode()

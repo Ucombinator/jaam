@@ -94,6 +94,7 @@ public class LayerFactory
 			{
 				Vertex oldV = it.next();
 				Vertex newV = new Vertex("instruction:" + oldV.getStrID(), AbstractVertex.VertexType.INSTRUCTION);
+				newV.setColor(VizPanel.hues[oldV.loopHeight]);
 				newV.getMetaData().put(AbstractVertex.METADATA_INSTRUCTION, oldV.getRealInstruction());
 				newV.setMinInstructionLine(oldV.id);
 

@@ -11,12 +11,14 @@ import java.awt.Color;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 
 public class CodeArea extends JTextArea
 {
 	private AbstractVertex selectedVertex;
 	ArrayList<Instruction> description;
 	ArrayList<Integer> rowToIndex; // Since some Jimple indices can be missing, we need to store an offset
+	HashSet<AbstractVertex> highlighted;
     
     private int currentCaret = 0;
 	
@@ -26,6 +28,7 @@ public class CodeArea extends JTextArea
 		this.setEditable(false);
 		description = new ArrayList<Instruction>();
 		rowToIndex = new ArrayList<Integer>();
+		highlighted = new HashSet<AbstractVertex>();
         
         ((DefaultCaret)this.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
         
@@ -94,18 +97,17 @@ public class CodeArea extends JTextArea
 	//or unhighlights them if addHighlight is false.
 	public void searchByJimpleIndex(String method, int index, boolean addHighlight)
 	{
-		//Next we either add or remove the highlighted vertices
-		for(Vertex v : Main.graph.vertices)
-		{
-			if(v.getMethodName().contains(method) && v.jimpleIndex == index)
-			{
-				if(addHighlight)
-                {
-					v.addHighlight(true, false, true, true);
-                }
-				else
-					v.clearAllSelect();
-			}
+		// Unhighlight currently highlighted vertices
+		for(AbstractVertex v : highlighted) {
+			//v.setHighlighted(false);
+		}
+
+		//Next we either add the highlighted vertices
+		AbstractVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
+		highlighted = panelRoot.getVerticesWithInstructionID(index, method);
+
+		for(AbstractVertex v : highlighted) {
+			//v.setHighlighted(true);
 		}
 	}
 
