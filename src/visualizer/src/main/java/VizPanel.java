@@ -152,7 +152,7 @@ public class VizPanel extends JFXPanel
 		node.setArcHeight(scaleY(0.5));
 		node.setLabel("  " + v.getLabel());
 
-		node.setFill(v.getColor());
+		node.setFill(colors[index++ % colors.length]);
 		node.setStroke(javafx.scene.paint.Color.BLACK);
 		node.setStrokeWidth(.5);
 		node.setOpacity(1);
