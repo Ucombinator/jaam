@@ -1004,36 +1004,35 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	}
 
 	
-	public HashMap<AbstractVertex, Instruction> getInstructions(){
-		return this.getInstructions(new HashMap<AbstractVertex, Instruction>());
+	public HashSet<Instruction> getInstructions(){
+		return this.getInstructions(new HashSet<Instruction>());
 	}
 	
-	private HashMap<AbstractVertex, Instruction> getInstructions(HashMap<AbstractVertex, Instruction> instructions){
+	private HashSet<Instruction> getInstructions(HashSet<Instruction> instructions) {
 		if(this.getType().equals(AbstractVertex.VertexType.ROOT) || this.getType().equals(AbstractVertex.VertexType.METHOD) || this.getType().equals(AbstractVertex.VertexType.CHAIN)){
 			Iterator<AbstractVertex> it = this.getInnerGraph().getVertices().values().iterator();
 			while(it.hasNext()){
 					it.next().getInstructions(instructions);
 			}
 		} else if(this.getType().equals(AbstractVertex.VertexType.INSTRUCTION)){
-			instructions.put(this, (Instruction)this.getMetaData().get(AbstractVertex.METADATA_INSTRUCTION));
+			System.out.println("Instruction: " + ((Instruction)this.getMetaData().get(METADATA_INSTRUCTION)));
+			instructions.add((Instruction)this.getMetaData().get(METADATA_INSTRUCTION));
 		} else {
-			System.out.println("Unrecongnized type in method getInstructions");
+			System.out.println("Unrecognized type in method getInstructions");
 		}
 		return instructions;
 	}
 	
 
-
-	
-	public HashSet<AbstractVertex> getVerticesWithInstuctionID(int id, String method_name){
-		return getVerticesWithInstuctionID(id, method_name, new HashSet<AbstractVertex>());
+	public HashSet<AbstractVertex> getVerticesWithInstructionID(int id, String method_name){
+		return getVerticesWithInstructionID(id, method_name, new HashSet<AbstractVertex>());
 	}
 	
-	private HashSet<AbstractVertex> getVerticesWithInstuctionID(int id, String method_name, HashSet<AbstractVertex> set){
+	private HashSet<AbstractVertex> getVerticesWithInstructionID(int id, String method_name, HashSet<AbstractVertex> set){
 		if(this.getType().equals(AbstractVertex.VertexType.ROOT) || this.getType().equals(AbstractVertex.VertexType.METHOD) || this.getType().equals(AbstractVertex.VertexType.CHAIN)){
 			Iterator<AbstractVertex> it = this.getInnerGraph().getVertices().values().iterator();
 			while(it.hasNext()){
-					it.next().getVerticesWithInstuctionID(id, method_name, set);
+					it.next().getVerticesWithInstructionID(id, method_name, set);
 			}
 		} else if(this.getType().equals(AbstractVertex.VertexType.INSTRUCTION) 
 				&& ((Instruction)this.getMetaData().get(AbstractVertex.METADATA_INSTRUCTION)).methodName.equals(method_name)
@@ -1044,7 +1043,4 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		}
 		return set;
 	}
-	
-
 }
-

@@ -143,7 +143,6 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 			}
 		}
 
-		// TODO: For efficiency, we should check if each transition is required before we create it.
 		// TODO: Move arrows as well as nodes.
 		GUINode node = v.getGraphics();
 		double pixelWidth = Parameters.stFrame.mainPanel.scaleX(v.getWidth());
@@ -179,8 +178,8 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	{
 		event.consume();
 		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
-		HashMap<AbstractVertex, Instruction> instructions = v.getInstructions();
-		System.out.println(instructions.values());
-		
+
+		Parameters.bytecodeArea.setVertex(v);
+		Parameters.bytecodeArea.setDescription();
 	}
 }

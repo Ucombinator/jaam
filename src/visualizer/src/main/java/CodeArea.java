@@ -10,7 +10,7 @@ import java.awt.event.MouseListener;
 import java.awt.Color;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
 
 public class CodeArea extends JTextArea
 {
@@ -126,26 +126,14 @@ public class CodeArea extends JTextArea
 	{
 		if(this.selectedVertex != null)
 		{
-			description = new ArrayList<Instruction>();
-			Method method = this.selectedVertex.getMethod();
-
-			if(method == null)
-			{
-				System.out.println("Error! Method is undefined.");
-				return;
-			}
-
-			method.highlightInstructions();
-
-			//Add header line with method name
-			String currMethod = method.getFullName();
-			description.add(new Instruction(currMethod + "\n", currMethod, false, -1));
+			//description.add(new Instruction(currMethod + "\n", currMethod, false, -1));
 
 			//Add all instructions in the method
-			description.addAll(method.getInstructionList());
+			description = new ArrayList<Instruction>(selectedVertex.getInstructions());
+			Collections.sort(description);
 
 			//Add blank line after each method
-			description.add(new Instruction("\n", currMethod, false, -1));
+			//description.add(new Instruction("\n", currMethod, false, -1));
 
 			int rowNumber = 0;
 			rowToIndex = new ArrayList<Integer>();

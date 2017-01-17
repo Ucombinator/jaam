@@ -15,8 +15,6 @@ import javafx.scene.paint.Stop;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 
-
-// TODO: Place vertex labels on top of vertices.
 public class GUINode extends Pane
 {
     double dragX, dragY;
