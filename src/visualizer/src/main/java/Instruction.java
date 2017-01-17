@@ -55,9 +55,6 @@ public class Instruction implements Comparable<Instruction>
 	public boolean equals(Object otherInstruction)
 	{
 		if(otherInstruction instanceof Instruction) {
-			System.out.println("Comparing!");
-			System.out.println(this.methodName + ", " + this.jimpleIndex);
-			System.out.println(((Instruction)otherInstruction).methodName + ((Instruction) otherInstruction).jimpleIndex);
 			return (this.methodName.equals(((Instruction) otherInstruction).methodName)
 					&& this.jimpleIndex == ((Instruction) otherInstruction).jimpleIndex);
 		}

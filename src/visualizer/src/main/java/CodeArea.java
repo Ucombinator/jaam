@@ -97,9 +97,12 @@ public class CodeArea extends JTextArea
 	//or unhighlights them if addHighlight is false.
 	public void searchByJimpleIndex(String method, int index, boolean addHighlight)
 	{
+		// TODO: Unhighlight
+
+		System.out.println("Highlighting nodes: " + method + ", " + index);
 		// Unhighlight currently highlighted vertices
 		for(AbstractVertex v : highlighted) {
-			//v.setHighlighted(false);
+			v.setHighlighted(false);
 		}
 
 		//Next we either add the highlighted vertices
@@ -107,7 +110,7 @@ public class CodeArea extends JTextArea
 		highlighted = panelRoot.getVerticesWithInstructionID(index, method);
 
 		for(AbstractVertex v : highlighted) {
-			//v.setHighlighted(true);
+			v.setHighlighted(true);
 		}
 	}
 
@@ -133,9 +136,6 @@ public class CodeArea extends JTextArea
 			//Add all instructions in the method
 			description = new ArrayList<Instruction>(selectedVertex.getInstructions());
 			Collections.sort(description);
-
-			for(Instruction inst: description)
-				System.out.println(inst.methodName + ", " + inst.jimpleIndex + ": " + inst.str);
 
 			//Add blank line after each method
 			//description.add(new Instruction("\n", currMethod, false, -1));

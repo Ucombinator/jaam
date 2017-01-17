@@ -12,11 +12,11 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 {
 	public static final double DEFAULT_WIDTH = 1.0;
 	public static final double DEFAULT_HEIGHT = 1.0;
-	
-	
 
 	public static final String METADATA_MERGE_PARENT = "MERGE_PARENT";
 	public static final String METADATA_INSTRUCTION = "INSTRUCTION_STATEMENT";
+
+	public Color highlightColor = Color.ORANGE;
 	
 	static int idCounter = 0; // Used to assign unique id numbers to each vertex
 	
@@ -277,6 +277,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		double yDiff = y - this.location.y;
 		return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
 	}
+
+
 	
 	public void replaceChild(AbstractVertex ver)
 	{
@@ -768,45 +770,20 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		}
 	}
 
+	public void setHighlighted(boolean isHighlighted)
+	{
+		if(isHighlighted)
+			this.getGraphics().setFill(highlightColor);
+		else
+			this.getGraphics().setFill(this.getColor());
+	}
+
 	public void toggleSelected()
 	{
 		this.isSelected = !this.isSelected;
 		this.isHighlighted = !this.isHighlighted;
 		if(this.parent != null)
 			this.parent.isHighlighted = this.isHighlighted;
-	}
-	
-	public void addHighlight(boolean select, boolean vertex, boolean to, boolean from)
-	{
-		//System.out.println("Highlighting vertex: " + this.getFullName());
-		if(select)
-			this.isSelected = true;
-		if(vertex)
-			this.isHighlighted = true;
-		if(to)
-			this.isIncomingHighlighted = true;
-		if(from)
-			this.isOutgoingHighlighted = true;
-
-		AbstractVertex v = this.getMergeParent();
-		while(v != null)
-		{
-			if(select)
-			{
-				v.numChildrenSelected++;
-			}
-			if(vertex)
-			{
-				v.numChildrenHighlighted++;
-				//System.out.println("Adding child highlight to " + v.getFullName());
-			}
-			if(to)
-				v.isIncomingHighlighted = true;
-			if(from)
-				v.isOutgoingHighlighted = true;
-			
-			v = v.getMergeParent();
-		}
 	}
 	
 	public boolean isCycleHighlighted()
@@ -1041,7 +1018,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		} else if(this.getType().equals(AbstractVertex.VertexType.INSTRUCTION)){
 			instructions.add((Instruction)this.getMetaData().get(METADATA_INSTRUCTION));
 		} else {
-			System.out.println("Unrecognized type in method getInstructions");
+			System.out.println("Unrecognized type in method getInstructions: " + this.getType());
 		}
 		return instructions;
 	}
@@ -1056,12 +1033,13 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 			while(it.hasNext()){
 					it.next().getVerticesWithInstructionID(id, method_name, set);
 			}
-		} else if(this.getType().equals(AbstractVertex.VertexType.INSTRUCTION) 
-				&& ((Instruction)this.getMetaData().get(AbstractVertex.METADATA_INSTRUCTION)).methodName.equals(method_name)
-				&& ((Instruction)this.getMetaData().get(AbstractVertex.METADATA_INSTRUCTION)).jimpleIndex == id){
-			set.add(this);
+		} else if(this.getType().equals(AbstractVertex.VertexType.INSTRUCTION)) {
+			if (((Instruction) this.getMetaData().get(AbstractVertex.METADATA_INSTRUCTION)).methodName.equals(method_name)
+					&& ((Instruction) this.getMetaData().get(AbstractVertex.METADATA_INSTRUCTION)).jimpleIndex == id) {
+				set.add(this);
+			}
 		} else {
-			System.out.println("Unrecongnized type in method getInstructions");
+			System.out.println("Unrecognized type in method getInstructions: " + this.getType());
 		}
 		return set;
 	}
