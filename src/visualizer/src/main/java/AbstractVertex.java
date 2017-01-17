@@ -785,6 +785,39 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		if(this.parent != null)
 			this.parent.isHighlighted = this.isHighlighted;
 	}
+
+	public void addHighlight(boolean select, boolean vertex, boolean to, boolean from)
+	{
+		//System.out.println("Highlighting vertex: " + this.getFullName());
+		if(select)
+			this.isSelected = true;
+		if(vertex)
+			this.isHighlighted = true;
+		if(to)
+			this.isIncomingHighlighted = true;
+		if(from)
+			this.isOutgoingHighlighted = true;
+
+		AbstractVertex v = this.getMergeParent();
+		while(v != null)
+		{
+			if(select)
+			{
+				v.numChildrenSelected++;
+			}
+			if(vertex)
+			{
+				v.numChildrenHighlighted++;
+				//System.out.println("Adding child highlight to " + v.getFullName());
+			}
+			if(to)
+				v.isIncomingHighlighted = true;
+			if(from)
+				v.isOutgoingHighlighted = true;
+
+			v = v.getMergeParent();
+		}
+	}
 	
 	public boolean isCycleHighlighted()
 	{
