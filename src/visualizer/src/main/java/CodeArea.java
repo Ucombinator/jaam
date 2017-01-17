@@ -132,6 +132,9 @@ public class CodeArea extends JTextArea
 			description = new ArrayList<Instruction>(selectedVertex.getInstructions());
 			Collections.sort(description);
 
+			for(Instruction inst: description)
+				System.out.println(inst.methodName + ", " + inst.jimpleIndex + ": " + inst.str);
+
 			//Add blank line after each method
 			//description.add(new Instruction("\n", currMethod, false, -1));
 

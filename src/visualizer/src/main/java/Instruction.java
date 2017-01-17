@@ -44,8 +44,24 @@ public class Instruction implements Comparable<Instruction>
 		return (new Integer(this.jimpleIndex)).compareTo(otherInstruction.jimpleIndex);
 	}
 
-	public boolean equals(Instruction otherInstruction)
+	@Override
+	public int hashCode()
 	{
-		return (this.methodName == otherInstruction.methodName && this.jimpleIndex == otherInstruction.jimpleIndex);
+		String toCompare = this.methodName + Integer.toString(this.jimpleIndex);
+		return toCompare.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object otherInstruction)
+	{
+		if(otherInstruction instanceof Instruction) {
+			System.out.println("Comparing!");
+			System.out.println(this.methodName + ", " + this.jimpleIndex);
+			System.out.println(((Instruction)otherInstruction).methodName + ((Instruction) otherInstruction).jimpleIndex);
+			return (this.methodName.equals(((Instruction) otherInstruction).methodName)
+					&& this.jimpleIndex == ((Instruction) otherInstruction).jimpleIndex);
+		}
+		else
+			return false;
 	}
 }

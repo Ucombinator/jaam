@@ -1015,14 +1015,14 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 					it.next().getInstructions(instructions);
 			}
 		} else if(this.getType().equals(AbstractVertex.VertexType.INSTRUCTION)){
-			System.out.println("Instruction: " + ((Instruction)this.getMetaData().get(METADATA_INSTRUCTION)));
-			instructions.add((Instruction)this.getMetaData().get(METADATA_INSTRUCTION));
+			Instruction newInstruction = (Instruction)this.getMetaData().get(METADATA_INSTRUCTION);
+			System.out.println(instructions.contains(newInstruction));
+			instructions.add(newInstruction);
 		} else {
 			System.out.println("Unrecognized type in method getInstructions");
 		}
 		return instructions;
 	}
-	
 
 	public HashSet<AbstractVertex> getVerticesWithInstructionID(int id, String method_name){
 		return getVerticesWithInstructionID(id, method_name, new HashSet<AbstractVertex>());
