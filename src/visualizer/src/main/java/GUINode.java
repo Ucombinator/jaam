@@ -19,6 +19,7 @@ public class GUINode extends Pane
 {
     double dragX, dragY;
     protected Rectangle rect;
+    protected Rectangle backRect;
     protected Text rectLabel;
     private AbstractVertex vertex;
 	private GUINode parent;
@@ -36,19 +37,16 @@ public class GUINode extends Pane
         this.vertex.setGraphics(this);
         
         this.rect = new Rectangle();
+        this.backRect = new Rectangle();
         this.rectLabel = new Text();
         if(labelsEnabled)
         {
-        	this.getChildren().addAll(this.rect, this.rectLabel);
+        	this.getChildren().addAll(this.backRect, this.rect, this.rectLabel);
         }
         else
         {
-        	this.getChildren().addAll(this.rect);
+        	this.getChildren().addAll(this.backRect, this.rect);
         }
-
-
-        
-        //this.makeDraggable(); ASK TIM
 
         this.isDragging = false;
 
@@ -78,7 +76,7 @@ public class GUINode extends Pane
     // Next several methods: Pass on calls to underlying rectangle
     public void setFill(Color c)
     {
-    	//this.back_rect.setFill(Color.WHITE);
+    	this.backRect.setFill(Color.WHITE);
     	this.rect.setFill(c);
     	if(vertex.getType()==AbstractVertex.VertexType.CHAIN){
         	Stop[] stops = new Stop[]{new Stop(0.6,c), new Stop(0.4,Color.WHITE)};
@@ -102,11 +100,13 @@ public class GUINode extends Pane
     public void setArcHeight(double height)
     {
         this.rect.setArcHeight(height);
+        this.backRect.setArcHeight(height);
     }
 
-    public void setArcWidth(double height)
+    public void setArcWidth(double width)
     {
-        this.rect.setArcWidth(height);
+        this.rect.setArcWidth(width);
+        this.backRect.setArcWidth(width);
     }
 
     public void setLocation(double x, double y, double width, double height)
@@ -115,6 +115,8 @@ public class GUINode extends Pane
         this.setTranslateY(y);
         this.rect.setWidth(width);
         this.rect.setHeight(height);
+        this.backRect.setWidth(width);
+        this.backRect.setHeight(height);
     }
 
     // Halve the distance from the current opacity to 1.
@@ -210,7 +212,7 @@ public class GUINode extends Pane
         public void handle(Event event)
         {
             event.consume();
-        	if (vertex.getSelfGraph()!=null)
+        	if (vertex.getSelfGraph() != null)
         	{
 	        	for(Edge e : vertex.getSelfGraph().getEdges().values())
                 {

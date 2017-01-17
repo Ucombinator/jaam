@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.awt.Color;
 
 abstract class AbstractVertex implements Comparable<AbstractVertex>
 {
@@ -175,14 +174,13 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		if(this.vertexType == VertexType.ROOT){
 			this.setColor(Color.WHITE);
 		} else if (this.vertexType == VertexType.METHOD){
-			this.setColor(Color.BLUE);
+			this.setColor(Color.CYAN);
 		} else if (this.vertexType == VertexType.CHAIN){
 			this.setColor(Color.GREEN);
 		} else if (this.vertexType == VertexType.INSTRUCTION){
 			this.setColor(Color.YELLOW);
 		}
 	}
-	
 	
 	public  HashMap<String,Object> getMetaData(){
 		return this.metadata;
@@ -240,11 +238,6 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		this.isVisible = isVisible;
 		if(this.getGraphics() != null)
 			this.getGraphics().setVisible(isVisible);
-	}
-
-	public void setColor(Color c)
-	{
-
 	}
     
     public DefaultMutableTreeNode toDefaultMutableTreeNode()

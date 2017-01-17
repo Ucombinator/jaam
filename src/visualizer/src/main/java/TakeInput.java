@@ -20,6 +20,7 @@ public class TakeInput extends Thread
 		Main.graph.mergeAllByMethod();
 		Main.graph.computeInstLists();
 		Main.graph.collectAllTags();
+		Main.graph.identifyLoops();
 		Main.graph.calcLoopHeights();
 
 		// Run these panels on JavaFX thread instead of Swing thread

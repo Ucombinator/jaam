@@ -783,6 +783,8 @@ public class Graph
 
 	public void calcLoopHeights()
 	{
+		System.out.println("Calculating loop heights");
+
 		//The loop height is -1 if it has not yet been calculated.
 		//We do a breadth-first search of the graph, since the vertices might not be in order in our list.
 

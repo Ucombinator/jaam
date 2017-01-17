@@ -94,7 +94,11 @@ public class LayerFactory
 			{
 				Vertex oldV = it.next();
 				Vertex newV = new Vertex("instruction:" + oldV.getStrID(), AbstractVertex.VertexType.INSTRUCTION);
-				newV.setColor(VizPanel.hues[oldV.loopHeight]);
+
+				System.out.println("Loop height: " + oldV.loopHeight);
+				Color c = convertToFXColor(VizPanel.hues[oldV.loopHeight]);
+				newV.setColor(c);
+
 				newV.getMetaData().put(AbstractVertex.METADATA_INSTRUCTION, oldV.getRealInstruction());
 				newV.setMinInstructionLine(oldV.id);
 
@@ -314,4 +318,28 @@ public class LayerFactory
 	
 
 		}
+
+		public static Color convertToFXColor(float redToGreenHue)
+		{
+			float sat = 1f;
+			float brightness = 1f;
+			java.awt.Color awtColor = getHSBColorT(redToGreenHue, sat, brightness);
+
+			int r = awtColor.getRed();
+			int g = awtColor.getGreen();
+			int b = awtColor.getBlue();
+			int a = awtColor.getAlpha();
+			double opacity = a / 255.0 ;
+			return javafx.scene.paint.Color.rgb(r, g, b, opacity);
+		}
+
+	public static java.awt.Color getHSBColorT(float H, float S, float B)
+	{
+		int rgb = java.awt.Color.HSBtoRGB(H, S, B);
+		int red = (rgb >> 16) & 0xFF;
+		int green = (rgb >> 8) & 0xFF;
+		int blue = rgb & 0xFF;
+		return new java.awt.Color(red, green, blue, Parameters.transparency);
+	}
 }
+
