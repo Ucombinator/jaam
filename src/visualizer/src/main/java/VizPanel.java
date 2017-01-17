@@ -128,8 +128,6 @@ public class VizPanel extends JFXPanel
 	// Divides the actual width in pixels by the width in vertex units
 	public double getWidthPerVertex()
 	{
-		System.out.println("Graphics width: " + panelRoot.getGraphics().getWidth());
-		System.out.println("Vertex units width: " + panelRoot.getWidth());
 		return panelRoot.getGraphics().getWidth() / panelRoot.getWidth();
 	}
 
