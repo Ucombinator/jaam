@@ -585,7 +585,9 @@ object ClassSnowflakes {
               }
             }
           }
-        case _ => Set()
+        case _ =>
+          Log.error("Unimplemented: newInstance on "+self)
+          Set()
       }
     }
   }
