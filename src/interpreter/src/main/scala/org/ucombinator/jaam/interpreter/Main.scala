@@ -219,6 +219,9 @@ case object InitialBasePointer extends BasePointer
 // Oh, and class loaders are a headache(!)
 abstract class StringBasePointer extends BasePointer {}
 
+case object StringLiteralAddr extends Addr {} // HACK: so string literals can be smuggled to Class.forName0
+case class StringLiteralValue(s: String) extends Value {} // HACK: so string literals can be smuggled to Class.forName0
+
 // TODO/soundness: how to mix literal string base pointer and string base pointer top?
 object StringBasePointer {
   var constants = Map[String, StringBasePointer]()
@@ -240,7 +243,10 @@ object StringBasePointer {
     ArrayLengthAddr(StringArrayBasePointerTop), D.atomicTop)
 
   def apply(string: String, state: State): StringBasePointer = {
-    if (Main.conf.stringTop()) { StringBasePointerTop }
+    if (Main.conf.stringTop()) {
+      System.store.update(StringLiteralAddr, D(Set(StringLiteralValue(string))))
+      StringBasePointerTop
+    }
     else {
       constants.get(string) match {
         case Some(bp) => bp

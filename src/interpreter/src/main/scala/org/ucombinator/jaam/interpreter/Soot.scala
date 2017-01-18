@@ -113,6 +113,8 @@ object Soot {
     m.getActiveBody
   }
 
+  def isClass(s: String) = SourceLocator.v().getClassSource(s) != null
+
   def getSootClass(s : String) = Scene.v().loadClass(s, SootClass.SIGNATURES)
 
   def getSootType(t : String): Type = t match {

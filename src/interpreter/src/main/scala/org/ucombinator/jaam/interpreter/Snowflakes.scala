@@ -591,6 +591,73 @@ object ClassSnowflakes {
       }
     }
   }
+
+  Snowflakes.table.put(MethodDescription("java.lang.Class", "getName", List(), "java.lang.String"), getName)
+  case object getName extends NonstaticSnowflakeHandler {
+    override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
+      val local = state.stmt.sootStmt match {
+        case stmt : DefinitionStmt => stmt.getLeftOp().asInstanceOf[Local]
+      }
+      val lhsAddr = state.addrsOf(local)
+
+      Log.info("getName self: "+self)
+      self match {
+        case ObjectValue(_, ClassBasePointer(className)) =>
+          System.store.update(lhsAddr, D(Set(ObjectValue(Soot.classes.Class, StringBasePointer(className, state)))))
+          Set(state.copy(stmt = nextStmt))
+        case _ =>
+          Log.error("Unimplemented: getName on "+self)
+          Set()
+      }
+    }
+  }
+
+  //private static native java.lang.Class<?> forName0(java.lang.String, boolean, java.lang.ClassLoader, java.lang.Class<?>) throws java.lang.ClassNotFoundException;
+  Snowflakes.table.put(MethodDescription("java.lang.Class", "forName0", List("java.lang.String", "boolean", "java.lang.ClassLoader", "java.lang.Class"), "java.lang.Class"), forName0)
+  case object forName0 extends StaticSnowflakeHandler {
+    override def apply(state: State, nextStmt: Stmt, args: List[D]): Set[AbstractState] = {
+//      Log.error(s"forName0\n  state: $state\n  nextStmt: $nextStmt\n  args: $args")
+      val className = args(0)
+      var classes = D(Set())
+      for (v <- className.getValues) {
+        v match {
+          case ObjectValue(_, LiteralStringBasePointer(s)) =>
+            if (Soot.isClass(s)) {
+/*
+            Log.error("allow phantom: "+Scene.v().getPhantomRefs())
+            Log.error("forName0 ok: "+s+".")
+            Log.error("forName0 containsClass: "+SourceLocator.v().getClassSource("com.stac.Main"))
+            Log.error("forName0 containsClass: "+SourceLocator.v().getClassSource(s))
+            Log.error("forName0 containsClass: "+SourceLocator.v().getClassSource("foobar.poiuwer"))
+            //Log.error("forName0 containsClass: "+soot.Scene.v().containsClass(s))
+            //val sc = soot.Scene.v().getSootClassUnsafe(s)
+            // TryloadClass, NO loadClassAndSupport, loadClass, NO getSootClassUnsafe
+            //Log.error("forName0 getSootClassUnsafe: "+sc)
+            //Log.error("forName0 getSootClassUnsafe.isPhantom: "+sc.isPhantom)
+            //Log.error("forName0 foobar2: "+soot.Scene.v().loadClass("foobar", SootClass.BODIES))
+ */
+              classes = classes.join(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer(s.replace('/', '.')))))) // TODO: replace might be unneeded; put a check in the ClassBasePointer constructor
+            }
+          case ObjectValue(_, StringBasePointerTop) =>
+            for (StringLiteralValue(s) <- System.store.getOrElseBot(StringLiteralAddr).getValues) {
+              if (Soot.isClass(s)) {
+                classes = classes.join(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer(s.replace('/', '.')))))) // TODO: replace might be unneeded; put a check in the ClassBasePointer constructor
+              }
+            }
+          case ObjectValue(c,_) if c == Soot.classes.String =>
+            Log.error("java.lang.Class.forName0 ignoring non-literal String: "+v)
+          case _ => {}
+        }
+      }
+      Log.error(f"forName0: $className $classes")
+      // TODO: factor this with ReturnSnowflake
+      state.stmt.sootStmt match {
+        case sootStmt : DefinitionStmt => System.store.update(state.addrsOf(sootStmt.getLeftOp()), classes)
+        case sootStmt : InvokeStmt => {}
+      }
+      Set(state.copy(stmt = nextStmt))
+    }
+  }
 }
 
 object Snowflakes {
