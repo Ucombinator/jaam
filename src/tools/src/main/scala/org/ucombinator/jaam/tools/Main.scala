@@ -108,12 +108,18 @@ object Conf {
     banner("Analyze the number of depth of each loop in the application code")
     footer("")
 
+    val loop = opt[Boolean](descr = "Run loop detection")
+    val rec = opt[Boolean](descr = "Run recursion detection")
+    val alloc = opt[Boolean](descr = "Run allocation detection")
+
     val mainClass = trailArg[String](descr = "The name of the main class")
     val mainMethod = trailArg[String](descr = "The name of entrance method")
     val jars = trailArg[String](descr = "Colon separated list of application's JAR files, not includes library")
 
     def run(conf: Conf) {
-      LoopDepthCounter.main(mainClass(), mainMethod(), jars().split(":"))
+      val all = !(loop() || rec() || alloc())
+      //println(s"${all} ${loop()} ${rec()} ${alloc()}")
+      LoopDepthCounter.main(mainClass(), mainMethod(), jars().split(":"), PrintOption(all, loop(), rec(), alloc()))
     }
   }
 }

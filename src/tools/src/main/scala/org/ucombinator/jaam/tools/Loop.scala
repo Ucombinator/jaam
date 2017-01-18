@@ -118,8 +118,13 @@ object Soot {
   def methodFullName(m: SootMethod): String = m.getDeclaringClass.getName + "." + m.getName
 }
 
+case class PrintOption(all: Boolean, loop: Boolean, rec: Boolean, alloc: Boolean)
+
 object LoopDepthCounter {
-  def main(mainClassName: String, mainMethodName: String, classPaths: Seq[String]) {
+  var opt: PrintOption = null
+
+  def main(mainClassName: String, mainMethodName: String, classPaths: Seq[String], runOpt: PrintOption) {
+    opt = runOpt
     val sootClassPath = classPaths.toList.mkString(":")
     println(s"main class: ${mainClassName}")
     println(s"main method: ${mainMethodName}")
@@ -224,8 +229,10 @@ object LoopDepthCounter {
     for (m <- realTargetMethods) {
       stack.exists(m) match {
         case true => 
-          println(s"Found recursive calls on ${Soot.methodFullName(m)}, skip.") 
-          println(CallStack(m, List()/*just need a list here*/, stack).toStringAndHighlightMethod(m))
+          if (opt.all || opt.rec) {
+            println(s"Found recursive calls on ${Soot.methodFullName(m)}, skip.") 
+            println(CallStack(m, List()/*just need a list here*/, stack).toStringAndHighlightMethod(m))
+          }
         case false =>
           if (m.isPhantom) { /*println(s"Warning: phantom method ${m}, will not analyze")*/ }
           else if (m.isAbstract) { /*println(s"Warning: abstract method ${m}, will not analyze")*/ }
@@ -257,9 +264,11 @@ object LoopDepthCounter {
           defStmt.getRightOp match {
             case invokeExpr: InvokeExpr => handleInvoke(defStmt, invokeExpr, currentLoop, stack)
             case newExpr @ (_:NewExpr | _:NewArrayExpr | _:NewMultiArrayExpr) if (currentLoop.nonEmpty) =>
-              println(s"Found object allocation in a ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName}, " + 
-                      s"depth ${currentLoop.get.depth}: $CYAN$newExpr$RESET")
-              println(stack)
+              if (opt.all || opt.alloc) {
+                println(s"Found object allocation in a ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName}, " + 
+                        s"depth ${currentLoop.get.depth}: $CYAN$newExpr$RESET")
+                println(stack)
+              }
             case _ => //Do nothing
           }
         case _ => //Do nothing
@@ -275,10 +284,12 @@ object LoopDepthCounter {
           } else { 0 }
           val newLoop = Loop(stack.currentMethod, realStmt, l.getBackJumpStmt, depth, currentLoop, offset)
           val newStack = stack.incLoop
-          println(s"Found a loop in ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName}, " + 
-                  s"starts from line [${realStmt.getJavaSourceStartLineNumber}], " + 
-                  s"depth: ${depth}")
-          println(newStack)
+          if (opt.all || opt.loop) {
+            println(s"Found a loop in ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName}, " + 
+                    s"starts from line [${realStmt.getJavaSourceStartLineNumber}], " +
+                    s"depth: ${depth}")
+            println(newStack)
+          }
           findLoopsInMethod(nextStmt, Some(newLoop), newStack)
 
         case None if (currentLoop.nonEmpty && currentLoop.get.isEndStmt(realStmt)) =>
