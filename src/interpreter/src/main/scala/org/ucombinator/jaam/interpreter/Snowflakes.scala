@@ -790,6 +790,9 @@ object Snowflakes {
       }
     })
 
+  // By skipping the code for `java.lang.Object.<init>()` we avoid a state convergence of every constructor call
+  table.put(MethodDescription("java.lang.Object", SootMethod.constructorName, List(), "void"), NoOpSnowflake)
+  table.put(MethodDescription("java.lang.Object", "equals", List("java.lang.Object"), "boolean"), ReturnSnowflake(D.atomicTop))
   table.put(MethodDescription("java.lang.Object", "clone", List(), "java.lang.Object"),
     new NonstaticSnowflakeHandler {
       override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
