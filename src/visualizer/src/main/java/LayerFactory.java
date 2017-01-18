@@ -1,8 +1,11 @@
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+
 
 import com.sun.media.jfxmedia.events.NewFrameEvent;
 
@@ -20,6 +23,10 @@ public class LayerFactory
 	static HashMap<String, Vertex> id_to_vertex = new HashMap<String, Vertex>();
 	static HashMap<String, AbstractVertex> id_to_abs_vertex = new HashMap<String, AbstractVertex>();
 	
+	
+	static AbstractVertex getLayeredGraph(Graph graph){
+		return get2layer(graph);
+	}
 	static AbstractVertex get2layer(Graph graph)
 	{
 		AbstractGraph methodGraph = new AbstractGraph();
@@ -44,6 +51,7 @@ public class LayerFactory
 		{
 			String method = iter.next();
 			AbstractVertex vertex = new Vertex(method, AbstractVertex.VertexType.METHOD);
+			vertex.getMetaData().put(AbstractVertex.METADATA_METHOD_NAME, method);
 			vertex.setExpanded(methods_expanded);
 			vertex.getMetaData().put(AbstractVertex.METADATA_MERGE_PARENT, buckets.get(method).iterator().next().mergeParent);
 			
@@ -94,6 +102,7 @@ public class LayerFactory
 			{
 				Vertex oldV = it.next();
 				Vertex newV = new Vertex("instruction:" + oldV.getStrID(), AbstractVertex.VertexType.INSTRUCTION);
+				newV.getMetaData().put(AbstractVertex.METADATA_METHOD_NAME, methodVertex.getMetaData().get(AbstractVertex.METADATA_METHOD_NAME));
 
 				System.out.println("Loop height: " + oldV.loopHeight);
 				Color c = convertToFXColor(VizPanel.hues[oldV.loopHeight]);
@@ -154,7 +163,10 @@ public class LayerFactory
 			}
 		}
 		
-		ArrayList<Edge> dummies = graph.computeDummyEdges();
+
+		Collections.sort(graph.vertices);
+		ArrayList<Edge> dummies = Graph.computeDummyEdges(graph.vertices.get(0));
+		
 		Iterator<Edge> itEdge = dummies.iterator();
 		while(itEdge.hasNext())
 		{
@@ -168,10 +180,16 @@ public class LayerFactory
 			start.getSelfGraph().addEdge(new Edge(start,end,Edge.EDGE_TYPE.EDGE_DUMMY));
 		}
 		
+		
 		AbstractVertex root = new Vertex("root", AbstractVertex.VertexType.ROOT);
 		root.setInnerGraph(methodGraph);
-		
 		createChainVertices(root, CHAIN_LENGTH);
+		
+		System.out.println("Statistics:");
+		System.out.println(JAAMUtils.RED("Number of edges: ") +JAAMUtils.YELLOW(""+root.getTotalEdgeCount()));
+		System.out.println(JAAMUtils.RED("Number of vertices: ") + JAAMUtils.YELLOW(""+root.getTotalVertexCount()));
+		
+		
 		return root;
 	}
 
@@ -191,6 +209,7 @@ public class LayerFactory
 				Vertex newV = new Vertex("instruction:" + vertex.getStrID(), AbstractVertex.VertexType.INSTRUCTION);
 				newV.setMinInstructionLine(vertex.getMinInstructionLine());
 				newV.setExpanded(methods_expanded);
+				newV.getMetaData().put(AbstractVertex.METADATA_METHOD_NAME, method);
 				abstractGraph.addVertex(newV);
 				id_to_abs_vertex.put(vertex.getStrID(), newV);
 			}
@@ -224,8 +243,11 @@ public class LayerFactory
 			}
 		}
 		
+
 		
-		ArrayList<Edge> dummies = graph.computeDummyEdges();
+		Collections.sort(graph.vertices);
+		ArrayList<Edge> dummies = Graph.computeDummyEdges(graph.vertices.get(0));
+
 		Iterator<Edge> itEdge = dummies.iterator();
 		while(itEdge.hasNext())
 		{
@@ -240,8 +262,7 @@ public class LayerFactory
 		}
 		
 		AbstractVertex root = new Vertex("root", AbstractVertex.VertexType.ROOT);
-		root.setInnerGraph(abstractGraph);
-		
+		root.setInnerGraph(abstractGraph);	
 		//createChainVertices(root, CHAIN_LENGTH);
 		return root;
 	}

@@ -24,6 +24,8 @@ public class Graph
 	private double maxHeight; // required for collapse method
 	public int maxIndex;
 
+	
+	
 	public Graph()
 	{
 		this.totalVertices = 0;
@@ -640,46 +642,6 @@ public class Graph
 		return root.location.height - 1;
 	}
 	
-	public ArrayList<Edge> computeDummyEdges()
-	{
-		ArrayList<Edge> dummies = new ArrayList<Edge>();
-		HashMap<String, Vertex> hash = new HashMap<String, Vertex>();
-		Iterator<Vertex> it = this.vertices.iterator();
-		while(it.hasNext())
-		{
-			it.next().vertexStatus = AbstractVertex.VertexStatus.UNVISITED;
-		}
-
-		// Visit first vertex of root method
-		Collections.sort(Main.graph.vertices);
-		System.out.println("Num of vertices: " + Main.graph.vertices.size());
-		visit(Main.graph.vertices.get(0), hash, dummies);
-		return dummies;
-	}
-	
-	private void visit(Vertex root, HashMap<String, Vertex> hash, ArrayList<Edge> dummies)
-	{
-		//System.out.println("Root: " + root);
-		Iterator<Vertex> it = root.neighbors.iterator();
-		root.vertexStatus = AbstractVertex.VertexStatus.VISITED;
-		//System.out.println("Vertex: " + root.getStrID() + " has been visited!");
-		
-		while(it.hasNext())
-		{
-			Vertex v  = it.next();
-			if(v.vertexStatus == AbstractVertex.VertexStatus.UNVISITED){
-				if(!v.getMethodName().equals(root.getMethodName()))
-				{
-					if(hash.containsKey(v.getMethodName())){
-						dummies.add(new Edge(hash.get(v.getMethodName()), v, Edge.EDGE_TYPE.EDGE_DUMMY));
-					}
-				}
-
-				hash.put(v.getMethodName(), v);
-				visit(v,hash,dummies);
-			}
-		}
-	}
 
 
 	// Next three methods modified from "A New Algorithm for Identifying Loops in Decompilation"
@@ -697,7 +659,7 @@ public class Graph
 		{
 			Vertex header = v.getLoopHeader();
 			if(header != null)
-				System.out.println(v.id + " --> " + v.getLoopHeader().id);
+				System.out.println("identifyLoops:" + v.id + " --> " + v.getLoopHeader().id);
 		}
 	}
 
@@ -831,5 +793,48 @@ public class Graph
 
 		System.out.println("Loop heights found!");
 		VizPanel.computeHues();
+	}
+	
+	public static ArrayList<Edge> computeDummyEdges(Vertex root)
+	{
+		ArrayList<Edge> dummies = new ArrayList<Edge>();
+		
+//		Iterator<Vertex> it = this.vertices.iterator();
+//		while(it.hasNext())
+//		{
+//			it.next().vertexStatus = AbstractVertex.VertexStatus.UNVISITED;
+//		}
+
+		// Visit first vertex of root method
+		//System.out.println("Num of vertices: " + Main.graph.vertices.size());
+		root.cleanAll();
+		visit(root, new HashMap<String, Vertex>(), dummies);
+		return dummies;
+	}
+	
+	private static void visit(Vertex root, HashMap<String, Vertex> hash, ArrayList<Edge> dummies)
+	{
+		//System.out.println("Root: " + root);
+		Iterator<Vertex> it = root.neighbors.iterator();
+		root.vertexStatus = AbstractVertex.VertexStatus.VISITED;
+		//System.out.println("Vertex: " + root.getStrID() + " has been visited!");
+		
+		while(it.hasNext())
+		{
+			Vertex v  = it.next();
+			String vMethod = v.getMethodName();
+			String rootMethod = root.getMethodName();
+			if(v.vertexStatus == AbstractVertex.VertexStatus.UNVISITED){
+				if(!vMethod.equals(rootMethod))
+				{
+					if(hash.containsKey(vMethod)){
+						dummies.add(new Edge(hash.get(vMethod), v, Edge.EDGE_TYPE.EDGE_DUMMY));
+					}
+				}
+
+				hash.put(vMethod, v);
+				visit(v,hash,dummies);
+			}
+		}
 	}
 }

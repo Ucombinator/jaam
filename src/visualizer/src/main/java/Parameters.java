@@ -12,6 +12,7 @@ import java.awt.Color;
 public class Parameters
 {
 	public static boolean debugMode = false;
+	public static boolean edgeVisible = true;
 	public static int width = 1200, height = 800;
 	public static double boxFactor = 3.0/4.0;
 	public static StacFrame stFrame;

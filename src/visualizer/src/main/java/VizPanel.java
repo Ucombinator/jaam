@@ -30,7 +30,7 @@ public class VizPanel extends JFXPanel
 	private ScrollPane scrollPane;
 
 	public static float hues[]; //Used for shading nodes from green to red
-	public boolean showEdge = true;
+
 
 	private AbstractVertex panelRoot;
 	private javafx.scene.paint.Color[] colors = {javafx.scene.paint.Color.AQUAMARINE,
@@ -79,7 +79,7 @@ public class VizPanel extends JFXPanel
 		{
 			//System.out.println("Running layout...");
 			Graph g = Main.graph;			
-			this.panelRoot = LayerFactory.get2layer(g);
+			this.panelRoot = LayerFactory.getLayeredGraph(g);
 			LayoutAlgorithm.layout(this.panelRoot);
 			resetPanelSize();
 		}
@@ -173,23 +173,24 @@ public class VizPanel extends JFXPanel
 
 	public void drawEdges(GUINode parent, AbstractVertex v)
 	{
+		//System.out.println("Edges of vertex: " + v.getStrID());
+		if(!Parameters.edgeVisible){
+			return;
+		}
+		
 		GUINode node = v.getGraphics();
-		if(this.showEdge && v.isExpanded())
+		if(v.isExpanded())
 		{
-			Edge.arrowLength = this.getWidthPerVertex() / 10.0;
+			//Edge.arrowLength = this.getWidthPerVertex() / 10.0;
 			for(Edge e : v.getInnerGraph().getEdges().values())
 				e.draw(this, node);
-		}
-
-		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
-		while (it.hasNext())
-		{
-			AbstractVertex child = it.next();
-			if(v.isExpanded()){
+		
+			for(AbstractVertex child : v.getInnerGraph().getVertices().values())
 				drawEdges(node, child);
-			}
+			
 		}
 	}
+
 
 	public static void computeHues()
 	{

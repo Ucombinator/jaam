@@ -1,5 +1,6 @@
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 public class Vertex extends AbstractVertex
 {
@@ -302,6 +303,17 @@ public class Vertex extends AbstractVertex
 		return this.inst;
 	}
 	
+	
+	public void cleanAll(){
+		this.vertexStatus = AbstractVertex.VertexStatus.UNVISITED;
+		Iterator<Vertex> it = this.neighbors.iterator();
+		while(it.hasNext()){
+			Vertex v = it.next();
+			if(v.vertexStatus != AbstractVertex.VertexStatus.UNVISITED){
+				v.cleanAll();
+			}
+			}
+	}
 
 	public void setRealInstruction(Instruction inst) {this.inst = inst; }
 	

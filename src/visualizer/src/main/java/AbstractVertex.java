@@ -4,6 +4,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -15,6 +16,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 
 	public static final String METADATA_MERGE_PARENT = "MERGE_PARENT";
 	public static final String METADATA_INSTRUCTION = "INSTRUCTION_STATEMENT";
+	public static final String METADATA_METHOD_NAME = "METHOD_NAME";
 
 	public Color highlightColor = Color.ORANGE;
 	
@@ -165,9 +167,12 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		this.metadata = new HashMap<String,Object>();	
 	}
 	
-	private javafx.scene.paint.Color[] colors = {javafx.scene.paint.Color.AQUAMARINE,
-			javafx.scene.paint.Color.GREEN, javafx.scene.paint.Color.AZURE,
-			javafx.scene.paint.Color.BLUEVIOLET, javafx.scene.paint.Color.DARKTURQUOISE};
+	private javafx.scene.paint.Color[] colors = {javafx.scene.paint.Color.LIGHTCORAL,
+			javafx.scene.paint.Color.LIGHTBLUE, javafx.scene.paint.Color.LIGHTCYAN,
+			javafx.scene.paint.Color.LIGHTSEAGREEN, javafx.scene.paint.Color.LIGHTSALMON,
+			javafx.scene.paint.Color.LIGHTSKYBLUE, javafx.scene.paint.Color.LIGHTGOLDENRODYELLOW,
+			javafx.scene.paint.Color.LIGHTGREY};
+
 	
 	
 	static int colorIndex = 0;
@@ -1020,7 +1025,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 			while(it.hasNext()){
 				Edge e = it.next();
 				if(e.getGraphics()!=null){
-					e.getGraphics().setVisible(!e.getGraphics().isVisible());
+					e.getGraphics().setVisible(!e.getGraphics().isVisible() && Parameters.edgeVisible);
 				}
 			}	
 			
@@ -1076,5 +1081,32 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 			System.out.println("Unrecognized type in method getInstructions: " + this.getType());
 		}
 		return set;
+	}
+	
+	public void cleanAll(){
+		this.vertexStatus = AbstractVertex.VertexStatus.UNVISITED;
+		Iterator<AbstractVertex> it = this.getInnerGraph().getVertices().values().iterator();
+		while(it.hasNext()){
+			AbstractVertex v = it.next();
+			if(v.vertexStatus != AbstractVertex.VertexStatus.UNVISITED){
+				v.cleanAll();
+			}
+		}
+	}
+	
+	public int getTotalEdgeCount(){
+		int result = this.getInnerGraph().getEdges().size();
+		for(AbstractVertex v: this.getInnerGraph().getVertices().values()){
+			result+=v.getTotalEdgeCount();
+		}
+		return result;
+	}
+	
+	public int getTotalVertexCount(){
+		int result = this.getInnerGraph().getVertices().size();
+		for(AbstractVertex v: this.getInnerGraph().getVertices().values()){
+			result+=v.getTotalVertexCount();
+		}
+		return result;
 	}
 }

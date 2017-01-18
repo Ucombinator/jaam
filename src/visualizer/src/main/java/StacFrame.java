@@ -479,10 +479,17 @@ public class StacFrame extends JFrame
 			{
 				public void itemStateChanged(ItemEvent e)
 				{
-					mainPanel.showEdge = showEdge.isSelected();
-					mainPanel.getPanelRoot().setEdgeVisibility(showEdge.isSelected());
-					for(AbstractVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
-						v.setEdgeVisibility(showEdge.isSelected());
+					Platform.runLater(new Runnable() {
+						
+						@Override
+						public void run() {
+							Parameters.edgeVisible = showEdge.isSelected();
+							mainPanel.getPanelRoot().setEdgeVisibility(Parameters.edgeVisible);
+							for(AbstractVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+								v.setEdgeVisibility(showEdge.isSelected());
+						}
+					});
+
 				}
 			}
 		);
