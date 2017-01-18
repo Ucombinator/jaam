@@ -801,8 +801,8 @@ object Snowflakes {
       }
     })
 
-    table.put(MethodDescription("com.cyberpointllc.stac.hashmap.Node", "hash",
-      List("java.lang.Object", "int"), "int"), ReturnSnowflake(D.atomicTop))
+//    table.put(MethodDescription("com.cyberpointllc.stac.hashmap.Node", "hash",
+//      List("java.lang.Object", "int"), "int"), ReturnSnowflake(D.atomicTop))
 
     /*
     table.put(MethodDescription("com.sun.net.httpserver.HttpServer", "createContext",
