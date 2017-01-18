@@ -126,7 +126,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
         ReturnSnowflake(D.atomicTop)(state, nextStmt, self, args)
       case at : ArrayType =>
         val states = ReturnArraySnowflake(at.baseType.toString, at.numDimensions)(state, nextStmt, self, args)
-        val values = System.store(GlobalSnowflakeAddr).getValues
+        val values = System.store.getOrElseBot(GlobalSnowflakeAddr).getValues
 
         val bp = Snowflakes.malloc(at)
         state.stmt.sootStmt match {
@@ -153,7 +153,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
               case _ => throw new RuntimeException("Can not assign a RefType value to non-RefType. stmt: " + stmt + " meth: " + meth)
             }
 
-            val values: Set[Value] = System.store(GlobalSnowflakeAddr).getValues
+            val values: Set[Value] = System.store.getOrElseBot(GlobalSnowflakeAddr).getValues
             val newValues = values.filter(_ match {
               case ObjectValue(sootClass, bp) => Soot.canStoreClass(sootClass, parentClass)
               case _ => false
