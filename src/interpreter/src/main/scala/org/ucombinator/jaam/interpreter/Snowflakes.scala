@@ -89,7 +89,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
     def typeToD(ty: Type): D = {
       ty match {
         case _ : PrimType => D.atomicTop
-        case at : ArrayType => D(Set(ArrayValue(at.getElementType, Snowflakes.malloc(at))))
+        case at : ArrayType => D(Set(ArrayValue(at, Snowflakes.malloc(at))))
         case rt : RefType =>
           D(Set(ObjectValue(Soot.getSootClass(rt.getClassName), Snowflakes.malloc(rt.getSootClass))))
       }
