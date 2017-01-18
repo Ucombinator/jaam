@@ -167,6 +167,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
     // If the argument type is an interface or abstract class, then we try to call
     // each method from the definition of interface/abstract class.
     // TODO: options to control saturation
+    // TODO: log what objects are being saturated
     val methodsOfArgs = (for {
       (arg, ty) <- args zip meth.getParameterTypes if ty.isInstanceOf[RefType];
       sootClass = ty.asInstanceOf[RefType].getSootClass;

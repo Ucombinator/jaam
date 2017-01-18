@@ -8,6 +8,8 @@ package org.ucombinator.jaam.interpreter
   2. Don't order addresses.  Dogs and cats, living together.  Mass hysteria.
 */
 
+// TODO: put info about configuration in jaam file
+// TODO: put enough information in jaam file to continue interrupted processes
 // TODO: need to track exceptions that derefing a Null could cause
 // TODO: invoke main method instead of jumping to first instr so static init is done correctly
 // TODO: invoke main method so we can initialize the parameters to main
@@ -15,6 +17,9 @@ package org.ucombinator.jaam.interpreter
 // TODO: if(?) { C.f } else { C.f }
 //       Then C.<clinit> may be called on one branch but not the other
 // TODO: logging system that allows control of different sub-systems
+// TODO: must use return type with getMethod
+// TODO/research: increase context sensitivity when constructors go up inheritance hierarchy
+// TODO: way to interrupt process but with normal termination
 
 import scala.collection.JavaConversions._
 import scala.collection.immutable
@@ -188,6 +193,7 @@ object Value {
 abstract class AtomicValue extends Value
 
 case object AnyAtomicValue extends AtomicValue
+// TODO: separate 'null' from AnyAtomicValue
 
 case class ObjectValue(val sootClass : SootClass, val bp : BasePointer) extends Value {
   if (!sootClass.isConcrete && !Snowflakes.isSnowflakeObject(bp)) {
@@ -389,6 +395,12 @@ abstract sealed class AbstractState {
   def toPacket() : serializer.AbstractState
 
   val id = AbstractState.idMap.getOrElseUpdate(this, AbstractState.nextId)
+
+// TODO: can't have because AbstractState.idMap would use it
+//  override def equals(that: Any): Boolean = {
+//    that.isInstanceOf[AbstractState] &&
+//    that.asInstanceOf[AbstractState].id == this.id
+//  }
 }
 
 object AbstractState {
@@ -553,6 +565,7 @@ case class State(val stmt : Stmt,
             val zCheck = eval(v.getOp2)
             if(v.isInstanceOf[DivExpr] && zCheck.maybeZero()){
               // TODO/soundness: No malloc!
+              // TODO: populate fields of object (use createObject?)
               exceptions = exceptions.join(D(Set(ObjectValue(Soot.classes.ArithmeticException, malloc()))))
             }
             D.atomicTop
@@ -602,6 +615,7 @@ case class State(val stmt : Stmt,
             exceptions = exceptions.join(classCastException)
             d2 = d2.join(D(Set(v)))
 
+            // TODO: re-enable this exception code
             /*
             // Snowflakes can be down cast, but they might throw an exception
             val classCastException = D(Set(ObjectValue(Soot.classes.ClassCastException, malloc())))
@@ -814,10 +828,13 @@ case class State(val stmt : Stmt,
       case UninitializedClassException(sootClass) =>
         Log.info("Static initializing "+sootClass)
 
+        // TODO: run this even if there is no clinit?
+        // TODO: do we need to call clinit of super classes?
         def initializeClass(sootClass: SootClass) {
           // TODO: stop if reach initialized class
           // TODO: does `Object` hasSuperclass?
           // TODO: handle initialize snowflake object
+          // TODO: call super class even when self has no clinit method?
           if (sootClass.hasSuperclass) {
             initializeClass(sootClass.getSuperclass)
           }
@@ -837,11 +854,14 @@ case class State(val stmt : Stmt,
             java.util.Collections.emptyList()), None, stmt)
         } else {
           // TODO: Do we need to do newStore for static fields?
+          //initializeClass(sootClass) // TODO: factor by moving before `if (meth != null)`
+          // TODO: above omitted b/c absense of <clinit> means there are no static fields?
           System.addInitializedClass(sootClass)
           Set(this)
         }
 
 /* TODO: remove (note, might be thrown by checkInitializedClasses?)
+// TODO: subsumed (sort of) by UndefinedAddrException
       case UninitializedSnowflakeObjectException(sootClass) =>
         Log.info("Initializing snowflake class "+sootClass.getName)
         Snowflakes.initStaticFields(sootClass)
@@ -851,6 +871,7 @@ case class State(val stmt : Stmt,
       case UndefinedAddrsException(addrs) =>
         //An empty set of addrs may due to the over approximation of ifStmt.
 
+        // TODO: is this right? (filter to do only on snowflake objects) (might have trouble determining if snowflake b/c we don't have the target)
         val states = for (addr <- addrs) yield {
           addr match {
             case InstanceFieldAddr(bp, field) =>
@@ -1029,6 +1050,7 @@ object State {
 object System {
   // TODO: record the state numbers not just how many undefined (needed to avoid double counting)
   // TODO: more statistics on what kind of statement and why.  Also, remove from list if it later gets a successor?
+  // TODO: should these go in Main?
   var undefined: Int = 0
   var noSucc: Int = 0
   val store: Store = Store(mutable.Map[Addr, D]())
@@ -1261,7 +1283,9 @@ object Main {
 
     val outSerializer = new serializer.PacketOutput(new FileOutputStream(outfile))
     val mainMainMethod : SootMethod = Soot.getSootClass(mainClass).getMethodByName(mainMethod)
-    val initialState = State.inject(Stmt.methodEntry(mainMainMethod))
+    val initialState = State.inject(Stmt.methodEntry(mainMainMethod)) // TODO: we should initialize the main class
+    // TODO: check if we are initializing superclasses
+    // TODO: check if we initialize on java.lang.Class
 
     var done: Set[AbstractState] = Set()
     var doneEdges: Map[(Int, Int), Int] = Map()
@@ -1340,8 +1364,11 @@ object Main {
     sorted.foreach { case (size, n) => println(size + " \t " + n) }
     */
     Log.error(s"Done!")
+    // TODO: this is wrong if the process is suspended.  Maybe use com.sun.management.OperatingSystemMXBean
     val duration = java.time.Duration.between(startInstant, java.time.Instant.now())
     Log.error(f"Steps: $steps")
+    // TODO: number of states
+    // TODO: number of edges
     Log.error(f"Time: ${duration.toHours}%d:${duration.toMinutes % 60}%02d:${duration.getSeconds%60}%02d.${duration.toMillis%1000}%03d")
     Log.error("Total memory: " + Runtime.getRuntime.totalMemory/1024/1024 + " MB")
     Log.error("Unused memory: " + Runtime.getRuntime.freeMemory/1024/1024 + " MB")
@@ -1372,3 +1399,10 @@ object Main {
     }
   }
 }
+
+// TODO: test load all of the preloaded store
+
+// TODO: undefined addrs in state 12
+// 00:16  INFO: Processing step 147 and state 126 with 7 states remaining: <java.util.Hashtable: java.lang.Object get(java.lang.Object)>:5:$i2 = lengthof r2
+// ESC[31m00:16 ERROR: Undefined Addrs in state 126; stmt = <java.util.Hashtable: java.lang.Object get(java.lang.Object)>:5:$i2 = lengthof r2; addrs = Set(LocalFrameAddr(ZeroCFAFramePointer(<java.util.Hashtable: java.lang.Object get(java.lang.Object)>),r2))ESC[0m
+// 00:16  INFO: Done processing step 147 and state 126
