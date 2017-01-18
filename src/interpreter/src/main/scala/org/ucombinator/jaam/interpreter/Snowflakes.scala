@@ -548,8 +548,8 @@ object ArrayListSnowflakes {
 
 // Note: enabled
 object ClassSnowflakes {
-  Snowflakes.table.put(MethodDescription("java.lang.Class", "newInstance", List(), "java.lang.Object"), newInstance())
-  case class newInstance() extends NonstaticSnowflakeHandler {
+  Snowflakes.table.put(MethodDescription("java.lang.Class", "newInstance", List(), "java.lang.Object"), newInstance)
+  case object newInstance extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       val local = state.stmt.sootStmt match {
         case stmt : DefinitionStmt => stmt.getLeftOp().asInstanceOf[Local]
