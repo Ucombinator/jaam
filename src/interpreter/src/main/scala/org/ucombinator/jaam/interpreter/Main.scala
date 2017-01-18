@@ -1052,7 +1052,7 @@ object System {
   // TODO: more statistics on what kind of statement and why.  Also, remove from list if it later gets a successor?
   // TODO: should these go in Main?
   var undefined: Int = 0
-  var noSucc: Int = 0
+  var noSucc = mutable.Set[AbstractState]()
   val store: Store = Store(mutable.Map[Addr, D]())
   val kstore: KontStore = KontStore(mutable.Map[KontAddr, KontD](HaltKontAddr -> KontD(Set())))
 
@@ -1134,15 +1134,12 @@ object System {
   def next(state: AbstractState): Set[AbstractState] = {
     trunOnRecording()
     val nexts = state.next()
-    if (nexts.size == 0) {
-      state match {
-        case ErrorState => {}
-        case state : State =>
-          if (state.kontStack.k != HaltKontAddr) {
-            Log.error("state[" + state.id + "] has no successors: " + state)
-            System.noSucc += 1
-          }
-      }
+    if (nexts.size != 0 ||
+      state == ErrorState ||
+      state.isInstanceOf[State] && state.asInstanceOf[State].kontStack.k == HaltKontAddr) {
+      noSucc -= state
+    } else {
+      noSucc += state
     }
     turnOffRecording()
 
@@ -1383,19 +1380,22 @@ object Main {
     }
  */
 
-    Log.error(s"Initialized classes:")
-    for (c <- System.initializedClasses.map(_.getName).toSeq.sorted) {
-      Log.error(s"  " + c)
-    }
-
     if (conf.maxSteps.toOption.exists(steps >= _)) {
       Log.error(s"Exceeded maximum state limit (${conf.maxSteps()})")
     }
+
+    Log.error("Initialized classes: "+System.initializedClasses.size)
+    for (c <- System.initializedClasses.map(_.getName).toSeq.sorted) {
+      Log.error("Initialized class:  " + c)
+    }
+
     if (System.undefined != 0) {
       Log.error(s"Undefined address number: ${System.undefined}")
     }
-    if (System.noSucc != 0) {
-      Log.error(s"No successor state number: ${System.noSucc}")
+
+    Log.error("States with no successor: "+System.noSucc.size)
+    for (state <- System.noSucc) {
+      Log.error("State " + state.id + " has no successors: " + state)
     }
   }
 }
