@@ -15,7 +15,7 @@ public class LayerFactory
 	private static final boolean chains_expanded = true;
 	private static final boolean methods_expanded = true;
 	
-	private static final int CHAIN_LENGTH = 2 ; // This value should ALWAYS be LARGEN THAN OR EQUAL 3 (otherwise it will break)
+	private static final int CHAIN_LENGTH = 3 ; // This value should ALWAYS be LARGEN THAN OR EQUAL 3 (otherwise it will break)
 	
 	static HashMap<String, Vertex> id_to_vertex = new HashMap<String, Vertex>();
 	static HashMap<String, AbstractVertex> id_to_abs_vertex = new HashMap<String, AbstractVertex>();
@@ -172,6 +172,77 @@ public class LayerFactory
 		root.setInnerGraph(methodGraph);
 		
 		createChainVertices(root, CHAIN_LENGTH);
+		return root;
+	}
+
+	static AbstractVertex get1layer(Graph graph)
+	{
+		AbstractGraph abstractGraph = new AbstractGraph();
+		
+		/* We partion the vertex set of Main.graph into buckets corresponding to the methods*/
+		
+		for(int i = 0; i < graph.vertices.size(); i++)
+		{
+			Vertex vertex = graph.vertices.get(i);
+			String method = vertex.getMethodName();
+			if(id_to_abs_vertex.containsKey(vertex.getStrID())){
+				System.out.println("WARINING: there exists two vertices with the same StrID: " + vertex.getStrID());
+			}else{
+				Vertex newV = new Vertex("instruction:" + vertex.getStrID(), AbstractVertex.VertexType.INSTRUCTION);
+				newV.setMinInstructionLine(vertex.getMinInstructionLine());
+				newV.setExpanded(methods_expanded);
+				abstractGraph.addVertex(newV);
+				id_to_abs_vertex.put(vertex.getStrID(), newV);
+			}
+		}
+		// Add edges to the methodGraph.
+		HashMap<String, Edge> edges = new HashMap<String,Edge>(); 
+		for(int i = 0; i < graph.vertices.size(); i++)
+		{
+			Vertex vertex = graph.vertices.get(i);
+			ArrayList<Vertex> neighbors = vertex.neighbors;
+			Iterator<Vertex> it = neighbors.iterator();
+			while(it.hasNext())
+			{
+				Vertex neighbor = it.next();
+				String tempID = vertex.getStrID() + "--" + neighbor.getStrID();
+				if(edges.containsKey(tempID))
+				{
+					System.out.println("WARINING: there exists two vertices with the same StrID: " + tempID);
+				}
+				else{
+					AbstractVertex absVertex = id_to_abs_vertex.get(vertex.getStrID()); 
+					AbstractVertex absNeigh = id_to_abs_vertex.get(neighbor.getStrID());
+					if(absVertex!=absNeigh){	// We are not distinguishing recursive calls
+						Edge e = new Edge(absVertex, absNeigh, Edge.EDGE_TYPE.EDGE_REGULAR);
+						abstractGraph.addEdge(e);
+						edges.put(tempID, e);
+					}else{
+						System.out.println("Warning: loop exists for vertex: " +  absVertex.getStrID());
+					}
+				}
+			}
+		}
+		
+		
+		ArrayList<Edge> dummies = graph.computeDummyEdges();
+		Iterator<Edge> itEdge = dummies.iterator();
+		while(itEdge.hasNext())
+		{
+			Edge e = itEdge.next();
+			AbstractVertex startOringal = e.getSourceVertex();
+			AbstractVertex endOriginal = e.getDestVertex();
+			
+			AbstractVertex start = id_to_abs_vertex.get(startOringal.getStrID());
+			AbstractVertex end = id_to_abs_vertex.get(endOriginal.getStrID());
+			
+			start.getSelfGraph().addEdge(new Edge(start,end,Edge.EDGE_TYPE.EDGE_DUMMY));
+		}
+		
+		AbstractVertex root = new Vertex("root", AbstractVertex.VertexType.ROOT);
+		root.setInnerGraph(abstractGraph);
+		
+		//createChainVertices(root, CHAIN_LENGTH);
 		return root;
 	}
 

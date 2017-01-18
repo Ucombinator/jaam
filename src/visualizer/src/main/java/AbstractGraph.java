@@ -112,6 +112,7 @@ public class AbstractGraph
 	
 	public AbstractVertex getRoot(){
 		if(this.vertices.values().size()==0){
+			System.out.println("getRoot on empty graph");
 			return null;
 		}
 		ArrayList<AbstractVertex> arrayList = new ArrayList<AbstractVertex>(this.vertices.values());

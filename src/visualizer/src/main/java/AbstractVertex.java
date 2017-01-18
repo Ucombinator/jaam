@@ -228,7 +228,8 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	
 	public String getStrID()
 	{
-		return strId;
+		this.strId ="vertex:"+this.id; // the id might been set after the vertex constructor is called
+		return this.strId;
 	}
 	
 	public void setDefaults()

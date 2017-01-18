@@ -64,12 +64,20 @@ public class LayoutAlgorithm
 		Iterator<AbstractVertex> itClear = graph.getVertices().values().iterator();
 		// Initialize all the nodes to be WHITE
 			while(itClear.hasNext()){itClear.next().vertexStatus = AbstractVertex.VertexStatus.WHITE;}
-		storeBBoxWidthAndHeight(root);
+		if(root!=null){
+			storeBBoxWidthAndHeight(root);
+		}
 		itClear = graph.getVertices().values().iterator();
 			while(itClear.hasNext()){itClear.next().vertexStatus = AbstractVertex.VertexStatus.WHITE;}
-		assingXandYtoInnerNodesAndGiveParentBBox(root, MARGIN_PADDING, MARGIN_PADDING);
-		parentVertex.setWidth(bboxWidth.get(root.getStrID()) + 2 * MARGIN_PADDING);
-		parentVertex.setHeight(bboxHeight.get(root.getStrID()) + 2 * MARGIN_PADDING);
+		if(root!=null){
+			assingXandYtoInnerNodesAndGiveParentBBox(root, MARGIN_PADDING, MARGIN_PADDING);
+			parentVertex.setWidth(bboxWidth.get(root.getStrID()) + 2 * MARGIN_PADDING);
+			parentVertex.setHeight(bboxHeight.get(root.getStrID()) + 2 * MARGIN_PADDING);
+		}else{
+			parentVertex.setWidth(AbstractVertex.DEFAULT_WIDTH);
+			parentVertex.setHeight(AbstractVertex.DEFAULT_HEIGHT);
+		}
+		
 	}
 	
 	/**
