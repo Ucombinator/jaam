@@ -607,7 +607,8 @@ case class State(val stmt : Stmt,
         }
         var d2 = D(Set())
         for (v <- d.getValues) {
-          if (isCastableTo(v, castedType) || castedType.isInstanceOf[ArrayType]) {
+          // TODO/Guannan: Can we remove rhs of this `||`?
+          if (v == AnyAtomicValue || isCastableTo(v, castedType) || castedType.isInstanceOf[ArrayType]) {
             // Up casts are always legal
             d2 = d2.join(D(Set((v))))
           }
