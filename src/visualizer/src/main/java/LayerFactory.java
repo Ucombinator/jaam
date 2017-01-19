@@ -27,50 +27,37 @@ public class LayerFactory
 	static AbstractVertex getLayeredGraph(Graph graph){
 		return get2layer(graph);
 	}
+	
 	static AbstractVertex get2layer(Graph graph)
 	{
 		AbstractGraph methodGraph = new AbstractGraph();
 		
 		/* We partion the vertex set of Main.graph into buckets corresponding to the methods*/
 		HashMap<String, HashSet<Vertex>> buckets = new HashMap<String, HashSet<Vertex>>();
-		for(int i = 0; i < graph.vertices.size(); i++)
-		{
-			Vertex vertex = graph.vertices.get(i);
+		for(Vertex vertex: graph.vertices){
 			String method = vertex.getMethodName();
-			if(!buckets.containsKey(method))
-			{
+			if(!buckets.containsKey(method)){
 				buckets.put(method, new HashSet<Vertex>());
 			}
 			buckets.get(method).add(vertex);
 		}
 		
+		
 		// Add a vertex for each method to the methodGraph.
 		HashMap<String, AbstractVertex> methodVertices = new HashMap<>();
-		Iterator<String> iter = buckets.keySet().iterator();
-		while(iter.hasNext())
-		{
-			String method = iter.next();
-			AbstractVertex vertex = new Vertex(method, AbstractVertex.VertexType.METHOD);
-			vertex.getMetaData().put(AbstractVertex.METADATA_METHOD_NAME, method);
-			vertex.setExpanded(methods_expanded);
-			vertex.getMetaData().put(AbstractVertex.METADATA_MERGE_PARENT, buckets.get(method).iterator().next().mergeParent);
-			
-			//vertex.setExpanded(false);
-			methodVertices.put(method, vertex);
-			methodGraph.addVertex(vertex);
+		for(String method: buckets.keySet()){
+				AbstractVertex vertex = new Vertex(method, AbstractVertex.VertexType.METHOD);
+				vertex.getMetaData().put(AbstractVertex.METADATA_METHOD_NAME, method);
+				vertex.getMetaData().put(AbstractVertex.METADATA_MERGE_PARENT, buckets.get(method).iterator().next().mergeParent);
+				vertex.setExpanded(methods_expanded);
+				methodVertices.put(method, vertex);
+				methodGraph.addVertex(vertex);
 		}
 
 		// Add edges to the methodGraph.
 		HashMap<String, Edge> edges = new HashMap<String,Edge>(); 
-		for(int i = 0; i < graph.vertices.size(); i++)
-		{
-			Vertex vertex = graph.vertices.get(i);
-			ArrayList<Vertex> neighbors = vertex.neighbors;
-			Iterator<Vertex> it = neighbors.iterator();
-			while(it.hasNext())
-			{
-				// This cast should be changed in the future once we get rid of the abstract class AbstractVertex
-				Vertex neighbor = it.next();
+		for(Vertex vertex: graph.vertices){
+			for(Vertex neighbor: vertex.neighbors){
 				String tempID = vertex.getMethodName() + "--" + neighbor.getMethodName();
 				if(!edges.containsKey(tempID))
 				{
@@ -87,81 +74,68 @@ public class LayerFactory
 		}
 		
 		// Create inner graph for each method vertex.
-		Iterator<AbstractVertex> itAbstract = methodGraph.getVertices().values().iterator();
-		while(itAbstract.hasNext())
-		{
+		for(AbstractVertex methodVertex: methodGraph.getVertices().values()){
 			//Create inner-vertices of the inner-methods graph.
-			AbstractVertex methodVertex = itAbstract.next();
-			HashSet<Vertex> innerVertexSet = buckets.get(methodVertex.getLabel());
-			AbstractGraph innerGraph = methodVertex.getInnerGraph();
 			
 			// Add vertices of the inner graph.
-			Iterator<Vertex> it = innerVertexSet.iterator();
 			HashMap<String,String> idMapping = new HashMap<>(); // first id is the Main.graph vertex id and the second id the New vertex id
-			while(it.hasNext())
-			{
-				Vertex oldV = it.next();
+			for(Vertex oldV: buckets.get(methodVertex.getLabel())){
 				Vertex newV = new Vertex("instruction:" + oldV.getStrID(), AbstractVertex.VertexType.INSTRUCTION);
-				newV.getMetaData().put(AbstractVertex.METADATA_METHOD_NAME, methodVertex.getMetaData().get(AbstractVertex.METADATA_METHOD_NAME));
+					newV.getMetaData().put(AbstractVertex.METADATA_METHOD_NAME, methodVertex.getMetaData().get(AbstractVertex.METADATA_METHOD_NAME));
+					newV.getMetaData().put(AbstractVertex.METADATA_INSTRUCTION, oldV.getRealInstruction());
+					
+					newV.setColor(convertToFXColor(VizPanel.hues[oldV.loopHeight]));
 
-				System.out.println("Loop height: " + oldV.loopHeight);
-				Color c = convertToFXColor(VizPanel.hues[oldV.loopHeight]);
-				System.out.println("Color: " + c);
-				newV.setColor(c);
+				
+					newV.setMinInstructionLine(oldV.id);
 
-				newV.getMetaData().put(AbstractVertex.METADATA_INSTRUCTION, oldV.getRealInstruction());
-				newV.setMinInstructionLine(oldV.id);
-
-				id_to_vertex.put(oldV.getStrID(), oldV);
-				id_to_abs_vertex.put(oldV.getStrID(), newV);
-				idMapping.put(oldV.getStrID(), newV.getStrID());
-				innerGraph.addVertex(newV);
+					id_to_vertex.put(oldV.getStrID(), oldV);
+					id_to_abs_vertex.put(oldV.getStrID(), newV);
+					idMapping.put(oldV.getStrID(), newV.getStrID());
+					
+					methodVertex.getInnerGraph().addVertex(newV);
 			}
 			
 			// Add the edges of the inner graph.
-			it = innerVertexSet.iterator();
-			while(it.hasNext()){
-				Vertex v = it.next();
-				ArrayList<Vertex> neighbors = v.neighbors;
-				Iterator<Vertex> itNeighbors = neighbors.iterator();
-				while(itNeighbors.hasNext()){
-					Vertex neighbor = itNeighbors.next();
-					if(v.getMethodName().equals(neighbor.getMethodName()))
-					{
-						innerGraph.addEdge(
+			
+			for(Vertex v: buckets.get(methodVertex.getLabel())){
+				for(Vertex neighbor: v.neighbors){
+					if(v.getMethodName().equals(neighbor.getMethodName())){
+						methodVertex.getInnerGraph().addEdge(
 								new Edge(
-										innerGraph.getVertices().get(
-												idMapping.get(
-												v.getStrID()))
-										, innerGraph.getVertices().get(
-								idMapping.get(
-								neighbor.getStrID())),
-										Edge.EDGE_TYPE.EDGE_REGULAR)
+										methodVertex.getInnerGraph().getVertices().get(idMapping.get(v.getStrID()))
+										, 
+										methodVertex.getInnerGraph().getVertices().get(idMapping.get(neighbor.getStrID()))
+										,
+										Edge.EDGE_TYPE.EDGE_REGULAR
+										)
 								);
 					}
 				}
 			}
 		}
 		
-		// Setting the Smallest_instruction_line of the method vertices
-		itAbstract = methodGraph.getVertices().values().iterator();
-		while(itAbstract.hasNext())
-		{
-			AbstractVertex methodVertex = itAbstract.next();
-			Iterator<AbstractVertex> itInner = methodVertex.getInnerGraph().getVertices().values().iterator();
-			while(itInner.hasNext())
-			{
-				if(methodVertex.getMinInstructionLine() == -1)
-				{
-					methodVertex.setMinInstructionLine(itInner.next().getMinInstructionLine());
-				}
-				else
-				{
-					methodVertex.setMinInstructionLine(Math.min(methodVertex.getMinInstructionLine(),
-							itInner.next().getMinInstructionLine()));
-				}
-			}
-		}
+		AbstractVertex root = new Vertex("root", AbstractVertex.VertexType.ROOT);
+		root.setInnerGraph(methodGraph);
+		root.bringUpInstructionValues();
+//		
+//		// Setting the Smallest_instruction_line of the method vertices
+//		
+//		for(AbstractVertex methodVertex: methodGraph.getVertices().values()){
+//			Iterator<AbstractVertex> itInner = methodVertex.getInnerGraph().getVertices().values().iterator();
+//			while(itInner.hasNext())
+//			{
+//				if(methodVertex.getMinInstructionLine() == -1)
+//				{
+//					methodVertex.setMinInstructionLine(itInner.next().getMinInstructionLine());
+//				}
+//				else
+//				{
+//					methodVertex.setMinInstructionLine(Math.min(methodVertex.getMinInstructionLine(),
+//							itInner.next().getMinInstructionLine()));
+//				}
+//			}
+//		}
 		
 
 		Collections.sort(graph.vertices);
@@ -181,8 +155,7 @@ public class LayerFactory
 		}
 		
 		
-		AbstractVertex root = new Vertex("root", AbstractVertex.VertexType.ROOT);
-		root.setInnerGraph(methodGraph);
+		
 		createChainVertices(root, CHAIN_LENGTH);
 		
 		System.out.println("Statistics:");

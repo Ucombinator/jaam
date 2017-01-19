@@ -1109,4 +1109,17 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		}
 		return result;
 	}
+	
+	public void bringUpInstructionValues() {
+		for(AbstractVertex child: this.getInnerGraph().getVertices().values()){
+			child.bringUpInstructionValues();
+		}
+		if(this.minInstructionLine==-1){
+			this.minInstructionLine = Integer.MAX_VALUE;
+		}
+		for(AbstractVertex child: this.getInnerGraph().getVertices().values()){
+			this.setMinInstructionLine(Math.min(this.minInstructionLine,child.getMinInstructionLine()));
+		}
+		
+	}
 }
