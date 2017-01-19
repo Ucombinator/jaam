@@ -596,7 +596,7 @@ case class State(val stmt : Stmt,
         // (and maybe already is))
         def isCastableTo(v : Value, t : Type) : Boolean = {
           v match {
-            case _ : AtomicValue => t.isInstanceOf[PrimType]
+            case _ : AtomicValue => true // null is always castable
             case ObjectValue(sootClass, _) =>
               t match {
                 case rt : RefType => Soot.canStoreClass(sootClass, rt.getSootClass)
