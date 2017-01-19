@@ -1433,7 +1433,9 @@ object Main {
     // TODO: check if we are initializing superclasses
     // TODO: check if we initialize on java.lang.Class
 
-    var done: Set[AbstractState] = Set()
+    var visitCounts: Map[AbstractState.Id, Int] = Map()
+
+    var done: Set[AbstractState.Id] = Set()
     var doneEdges: Map[(Int, Int), Int] = Map()
 
     var todo: mutable.PriorityQueue[AbstractState] = mutable.PriorityQueue()(
@@ -1442,16 +1444,27 @@ object Main {
     outSerializer.write(initialState.toPacket())
 
     var steps = 0
+    var realSteps = 0
     try {
       while (todo.nonEmpty && !conf.maxSteps.toOption.exists(steps >= _)) {
         steps += 1
         val current = todo.dequeue
 
-        if (!done.contains(current)) {
-          Log.info(s"Processing step $steps and state ${current.id} with ${todo.size} states remaining: " +
+        // Remove any duplicates
+        while (todo.headOption match {
+          case Some(s) => s.id == current.id
+          case None => false}) {
+          todo.dequeue
+        }
+
+        if (!done.contains(current.id)) {
+          realSteps += 1
+          val currentCount = visitCounts.getOrElse(current.id, 0) + 1
+          visitCounts += current.id -> currentCount
+          Log.info(s"Processing step $steps and real step $realSteps and state ${current.id} for ${currentCount}th time with ${todo.size} states remaining: " +
             (current match { case s : State => s.stmt.toString; case s => s.toString}))
           val nexts = System.next(current)
-          val newTodo = nexts.filter(!done.contains(_))
+          val newTodo = nexts.filter({x => !done.contains(x.id)})
 
           for (n <- newTodo) {
             Log.info("Writing state "+n.id)
@@ -1470,12 +1483,12 @@ object Main {
           }
 
           for (w <- current.getWriteAddrs; s <- System.readTable.getOrElse(w, Set())) {
-            done -= s
+            done -= s.id
             todo += s
             Log.info("writeAddr(" + w + "): " + s)
           }
           for (w <- current.getKWriteAddrs; s <- System.readKTable.getOrElse(w, Set())) {
-            done -= s
+            done -= s.id
             todo += s
             Log.info("kWriteAddr(" + w + "): " + s)
           }
@@ -1485,7 +1498,7 @@ object Main {
             todo ++= newTodo
           }
           else {
-            done += current
+            done += current.id
             todo ++= newTodo
           }
 
