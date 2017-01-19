@@ -20,6 +20,8 @@ import soot.toolkits.graph.LoopNestTree;
 
 import Console._
 
+// TODO duplicate, sorting, no-color option
+
 /* TODO Failure apps
 
 blogger
@@ -118,7 +120,7 @@ object Soot {
   def methodFullName(m: SootMethod): String = m.getDeclaringClass.getName + "." + m.getName
 }
 
-case class PrintOption(all: Boolean, loop: Boolean, rec: Boolean, alloc: Boolean)
+case class PrintOption(all: Boolean, loop: Boolean, rec: Boolean, alloc: Boolean, color: Boolean)
 
 object LoopDepthCounter {
   var opt: PrintOption = null
@@ -165,8 +167,10 @@ object LoopDepthCounter {
     def exists(m: SootMethod): Boolean = ((m == currentMethod) || stack.exists(m))
     override def toString(): String =  {
       def methodName(m: SootMethod, nLoop: Int) = {
-        val name = Soot.methodFullName(m)
-        "  " + (if (nLoop > 0) s"$RED$name($nLoop)$RESET" else name)
+        val mName = Soot.methodFullName(m)
+        "  " + (if (nLoop > 0 && opt.color) s"$RED$mName($nLoop)$RESET"
+                else if (nLoop > 0) s"$mName($nLoop)"
+                else mName)
       }
       def aux(stack: Stack): List[String] = {
         stack match {
@@ -179,9 +183,10 @@ object LoopDepthCounter {
     
     def toStringAndHighlightMethod(recMethod: SootMethod): String = {
       def methodName(m: SootMethod, nLoop: Int) = {
-        val name = Soot.methodFullName(m)
-        val nameLoop = "  " + (if (nLoop > 0) s"$name($nLoop)" else name)
-        if (m == recMethod) s"$GREEN$nameLoop$RESET"  else nameLoop
+        val mName = Soot.methodFullName(m)
+        val nameLoop = if (nLoop > 0) s"$mName($nLoop)" else mName
+        val nameColor = if (opt.color) s"$GREEN$nameLoop$RESET" else nameLoop
+        "  " + (if (m == recMethod) nameColor else nameLoop)
       }
       def aux(stack: Stack): List[String] = {
         stack match {
@@ -251,6 +256,13 @@ object LoopDepthCounter {
     findLoopsInMethod(Some(entry), None, CallStack(method, allLoops, Halt))
   }
 
+  def printAllocationInfo(loop: Loop, stack: CallStack, expr: SootValue) {
+    val e = if (opt.color) s"$CYAN$expr$RESET" else s"$expr"
+    println(s"Found object allocation in a ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName}, " + 
+      s"depth ${loop.depth}: $e")
+    println(stack)
+  }
+
   def findLoopsInMethod(stmt: Option[SootStmt], currentLoop: Option[Loop], stack: CallStack) {
     if (stmt.nonEmpty) {
       val realStmt = stmt.get
@@ -264,11 +276,7 @@ object LoopDepthCounter {
           defStmt.getRightOp match {
             case invokeExpr: InvokeExpr => handleInvoke(defStmt, invokeExpr, currentLoop, stack)
             case newExpr @ (_:NewExpr | _:NewArrayExpr | _:NewMultiArrayExpr) if (currentLoop.nonEmpty) =>
-              if (opt.all || opt.alloc) {
-                println(s"Found object allocation in a ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName}, " + 
-                        s"depth ${currentLoop.get.depth}: $CYAN$newExpr$RESET")
-                println(stack)
-              }
+              if (opt.all || opt.alloc) { printAllocationInfo(currentLoop.get, stack, newExpr) }
             case _ => //Do nothing
           }
         case _ => //Do nothing
