@@ -11,13 +11,17 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.language.existentials
 
-sealed trait OriginalRepresentation
-case class SootMethod(method: soot.SootMethod)              extends OriginalRepresentation
-case class ReflectMethod(method: Method)                    extends OriginalRepresentation
-case class ReflectConstructor(constructor: Constructor[_])  extends OriginalRepresentation
-case class ClassStaticInitializer(callingClass: Class[_])   extends OriginalRepresentation
+package reprsentation {
+  sealed trait OriginalRepresentation
+  case class SootMethod(method: soot.SootMethod)              extends OriginalRepresentation
+  case class ReflectMethod(method: Method)                    extends OriginalRepresentation
+  case class ReflectConstructor(constructor: Constructor[_])  extends OriginalRepresentation
+  case class ClassStaticInitializer(callingClass: Class[_])   extends OriginalRepresentation
+}
 
+import reprsentation._
 class ComparableMethod(val originalMethod: OriginalRepresentation) {
+
   def this(reflectMethod: Method)               = this(ReflectMethod(reflectMethod))
   def this(reflectConstructor: Constructor[_])  = this(ReflectConstructor(reflectConstructor))
   def this(sootStmt: Stmt)                      = this(SootMethod(sootStmt.method))
