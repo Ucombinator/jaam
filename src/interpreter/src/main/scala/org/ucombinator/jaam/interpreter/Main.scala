@@ -29,6 +29,7 @@ import scala.io.Source
 import scala.reflect.ClassTag
 
 import java.io.FileOutputStream
+import java.io.{File, BufferedReader, FileReader}
 
 import org.rogach.scallop._
 
@@ -221,6 +222,8 @@ case object FromJava extends From
 abstract class BasePointer
 case class OneCFABasePointer(stmt : Stmt, fp : FramePointer) extends BasePointer
 case object InitialBasePointer extends BasePointer
+case class PreloadedBasePointer(id: Int) extends BasePointer {}
+
 // Note that due to interning, strings and classes may share base pointers with each other
 // Oh, and class loaders are a headache(!)
 abstract class StringBasePointer extends BasePointer {}
@@ -845,7 +848,64 @@ case class State(val stmt : Stmt,
           System.addInitializedClass(sootClass)
         }
 
+/*
+ TODO: This exception is often due to missing a Jar file that should be in the path.  Could we compute a jar file signature that we could check?
+
+Exception in thread "main" java.lang.RuntimeException: No field value in class jdk.nashorn.internal.codegen.ClassEmitter$Flag
+        at soot.SootClass.getFieldByName(SootClass.java:283)
+        at org.ucombinator.jaam.interpreter.State$$anonfun$org$ucombinator$jaam$interpreter$State$$loadObject$1$2.apply(Main.scala:869)
+        at org.ucombinator.jaam.interpreter.State$$anonfun$org$ucombinator$jaam$interpreter$State$$loadObject$1$2.apply(Main.scala:867)
+*/
+        def loadObject(o: String): D = {
+          if (o == "<null>") {
+            D.atomicTop
+          } else {
+            val id = o.toInt
+            val bp = PreloadedBasePointer(o.toInt)
+            val (t, members) = System.objects(id)
+            val typ = System.parseType(t)
+            typ match {
+              case typ: RefType =>
+                val c = Soot.getSootClass(typ.getClassName())
+                if (!System.loadedObjects(id)) {
+                  System.loadedObjects += id
+                  for (System.Field(d, f, t, v) <- members) {
+                    val d2 = Soot.getSootClass(System.parseType(d).asInstanceOf[RefType].getClassName())
+                    System.store.update(InstanceFieldAddr(bp, d2.getFieldByName(f)), loadObject(v))
+                  }
+                }
+                D(Set(ObjectValue(c, bp)))
+              case typ: ArrayType =>
+                if (!System.loadedObjects(id)) {
+                  System.loadedObjects += id
+                  System.store.update(ArrayLengthAddr(bp), D.atomicTop)
+                  val (t, elements) = System.objects(id)
+                  for (System.Element(i,e) <- elements) {
+                    System.store.update(ArrayRefAddr(bp), loadObject(e))
+                  }
+                }
+                D(Set(ArrayValue(typ, bp)))
+              case _ => throw new RuntimeException("Unexpected type in load object: "+o)
+            }
+          }
+        }
+
         exceptions = D(Set())
+
+        // NOTE: we dont initialize the super class until one of its fields is
+        // mentioned.  I think we get away with delaying it, but that might
+        // not technically be the right thing to do.
+        val fields = System.staticFields.getOrElse(sootClass.getName, null)
+        if (fields != null) {
+          for (System.Field(_, name, typ, value) <- fields) {
+            Log.info(f"Static field $sootClass $name is $value")
+            val sootField = sootClass.getFieldByName(name)
+            System.store.update(StaticFieldAddr(sootField), loadObject(value))
+          }
+          System.addInitializedClass(sootClass)
+          return Set(this)
+        }
+
         val meth = sootClass.getMethodByNameUnsafe(SootMethod.staticInitializerName)
         if (meth != null) {
           initializeClass(sootClass) // TODO: factor by moving before `if (meth != null)`
@@ -1172,6 +1232,87 @@ object System {
 
     nexts
   }
+
+  abstract class Member() {}
+  case class Field(declaringClass: String, name: String, typ: String, value: String) extends Member() {}
+  case class Element(index: Int, element: String) extends Member() {}
+
+  val loadedStatics = mutable.Set[String]()
+  val loadedObjects = mutable.Set[Int]()
+  val staticFields = mutable.Map[String/*class name*/, List[Field]]()
+  val objects = mutable.Map[Int/*addr*/, (String/*type*/,List[Member])]()
+
+  def parseType(name: String): Type = {
+    var i = 0
+    while (name(i) == '[') {
+      i += 1
+    }
+    val baseType = name(i) match {
+      //case '[' => ArrayType.v(parseType(name.substring(1)), 1)
+      case 'Z' => BooleanType.v()
+      case 'B' => ByteType.v()
+      case 'C' => CharType.v()
+      case 'L' => Soot.getSootClass(name.substring(i + 1, name.length() - 1)).getType()
+      case 'D' => DoubleType.v()
+      case 'F' => FloatType.v()
+      case 'I' => IntType.v()
+      case 'J' => LongType.v()
+      case 'S' => ShortType.v()
+    }
+    if (i == 0) { baseType }
+    else { ArrayType.v(baseType, i) }
+  }
+
+  def loadStore(file: File) {
+    val f = new BufferedReader(new FileReader(file))
+    var line = f.readLine()
+    while (line != null) {
+      line.split(": ", 2).toList match {
+        //case List() => {}
+        case List(_) => {}
+        case List(tag,body) =>
+      val parts = body.split("\t").toList.map(_.split("=",2).toList)
+      if (tag == "static fields") {
+        parts match {
+          case List(List("class",c)) =>
+            staticFields(c) = List()
+        }
+      } else if (tag == "static field") {
+        parts match {
+          case List(List("class", c), List("field", f), List("type", t), List("value", v)) =>
+            staticFields(c) = Field(c, f, t, v) :: staticFields(c) // TODO: flip order the normal way around
+        }
+      } else if (tag == "instance fields") {
+        parts match { // TODO: [] in pattern match?
+          case List(List("object", o), List("type", c)) =>
+            if (objects.getOrElse(o.toInt,null) == null) { // TODO: clean up this code
+              objects(o.toInt) = (c, List())
+            } else {
+              objects(o.toInt) = (c, objects(o.toInt)._2)
+            }
+        }
+      } else if (tag == "instance field") {
+        parts match {
+          case List(List("class", c), List("object",o), List("field", f), List("type", t), List("value", v)) =>
+            objects(o.toInt) = (c, Field(c, f, t, v) :: objects(o.toInt)._2) //TODO: agent should do only one instancefields (or we just work around it)
+        }
+      } else if (tag == "array elements") {
+        parts match {
+          case List(List("array", a), List("type", t), List("length", l)) =>
+            objects(a.toInt) = (t, List())
+        }
+      } else if (tag == "array element") {
+        parts match {
+          case List(List("array", a), List("type", t), List("index", i), List("element", e)) =>
+            objects(a.toInt) = (t, Element(i.toInt, e) :: objects(a.toInt)._2)
+        }
+      }
+      }
+
+      line = f.readLine()
+    }
+  }
+
 }
 
 /**
@@ -1232,6 +1373,8 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
 
   val exceptions = toggle(prefix = "no-", default = Some(true))
 
+  val initialStore = opt[java.io.File]()
+
   verify()
 
   object StateOrdering {
@@ -1263,6 +1406,11 @@ object Main {
     if (conf.waitForUser()) {
       print("Press enter to start.")
       scala.io.StdIn.readLine()
+    }
+
+    Main.conf.initialStore.toOption match {
+      case Some(f) => System.loadStore(f)
+      case None => {}
     }
 
     Soot.initialize(conf)
