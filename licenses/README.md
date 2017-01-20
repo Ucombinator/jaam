@@ -1,5 +1,6 @@
-This project is licensed under the [Two-Clause BSD License](LICENSE.md) with
-the exception of the following files as they originate from external projects:
+The source for this this project is licensed under the
+[Two-Clause BSD License](LICENSE.md) with the exception of the following files
+as they originate from external projects:
 
 - [`jars/sbt-launch.jar`](../jars/sbt-launch.jar)
   - _External Project_: SBT 0.13.13 <http://www.scala-sbt.org/0.13/docs/Manual-Installation.html>
@@ -14,3 +15,8 @@ the exception of the following files as they originate from external projects:
   - _License File_: [`licenses/LICENSE-openjdk`](LICENSE-openjdk)
   - _License Type_: GNU General Public License (GPL) version 2
   - _License Origin_: `usr/lib/jvm/java-1.7.0-openjdk-1.7.0.85-2.6.1.2.el7_1.x86_64/LICENSE` in the `openjdk-headless` RPM
+
+Unfortunately, binaries cannot be distributed as they contain parts of
+`tools.jar` from the building platform's Java Development Kit (JDK).  If at
+some point we figure out a better packaging that avoid this, we will be able
+to provide binary distributions.

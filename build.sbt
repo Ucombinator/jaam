@@ -21,7 +21,7 @@ lazy val quietDiscard = new sbtassembly.MergeStrategy {
   val name = "quietDiscard"
   def apply(tempDir: File, path: String, files: Seq[File]): Either[String, Seq[(File, String)]] =
     Right(Nil)
-  override def detailLogLevel = Level.Debug
+  override def detailLogLevel = Level.Info
   override def summaryLogLevel = Level.Info
   override def notifyThreshold = 1
 }
@@ -45,8 +45,10 @@ lazy val commonSettings = Seq(
     "-Xlint:_"
   ),
 
-  // Discard META-INF, but deduplicate everything else
+  // Discard META-INF (except for stuff in services which we need for jaam-agent).
+  // Deduplicate everything else.
   assemblyMergeStrategy in assembly := {
+    case PathList("META-INF", "services", xs @ _*) => MergeStrategy.singleOrError
     case PathList("META-INF", xs @ _*) => quietDiscard
     case x => MergeStrategy.deduplicate
   },
@@ -56,6 +58,14 @@ lazy val commonSettings = Seq(
     ShadeRule.rename("com.esotericsoftware.**" -> "shaded-kryo.@0")
       .inLibrary("com.esotericsoftware" % "kryo-shaded" % "3.0.3")
   )
+
+/* TODO: Get this to work
+// Exclude tools.jar (from JDK) since not allowed to ship without JDK
+  assemblyExcludedJars in assembly := {
+      val cp = (fullClasspath in assembly).value
+      cp filter {_.data.getName == "tools.jar"}
+  }
+ */
 )
 
 ////////////////////////////////////////
@@ -84,3 +94,6 @@ lazy val analyzer = (project in file("src/analyzer"))
 lazy val json_exporter = (project in file("src/json_exporter"))
   .settings(commonSettings)
   .dependsOn(serializer)
+
+lazy val agent = (project in file("src/agent"))
+  .settings(commonSettings)

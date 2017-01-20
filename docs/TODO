@@ -1,0 +1,10 @@
+filter out nodes that are in java library
+container classes
+
+Use JVM snowflake from real running JVM
+
+Procyon
+
+Static initialization order (do as an analysis)
+
+Filter nodes by graph liveness

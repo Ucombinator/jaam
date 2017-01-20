@@ -89,7 +89,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
     def typeToD(ty: Type): D = {
       ty match {
         case _ : PrimType => D.atomicTop
-        case at : ArrayType => D(Set(ArrayValue(at.getElementType, Snowflakes.malloc(at))))
+        case at : ArrayType => D(Set(ArrayValue(at, Snowflakes.malloc(at))))
         case rt : RefType =>
           D(Set(ObjectValue(Soot.getSootClass(rt.getClassName), Snowflakes.malloc(rt.getSootClass))))
       }
@@ -126,7 +126,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
         ReturnSnowflake(D.atomicTop)(state, nextStmt, self, args)
       case at : ArrayType =>
         val states = ReturnArraySnowflake(at.baseType.toString, at.numDimensions)(state, nextStmt, self, args)
-        val values = System.store(GlobalSnowflakeAddr).getValues
+        val values = System.store.getOrElseBot(GlobalSnowflakeAddr).getValues
 
         val bp = Snowflakes.malloc(at)
         state.stmt.sootStmt match {
@@ -153,7 +153,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
               case _ => throw new RuntimeException("Can not assign a RefType value to non-RefType. stmt: " + stmt + " meth: " + meth)
             }
 
-            val values: Set[Value] = System.store(GlobalSnowflakeAddr).getValues
+            val values: Set[Value] = System.store.getOrElseBot(GlobalSnowflakeAddr).getValues
             val newValues = values.filter(_ match {
               case ObjectValue(sootClass, bp) => Soot.canStoreClass(sootClass, parentClass)
               case _ => false
@@ -167,6 +167,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
     // If the argument type is an interface or abstract class, then we try to call
     // each method from the definition of interface/abstract class.
     // TODO: options to control saturation
+    // TODO: log what objects are being saturated
     val methodsOfArgs = (for {
       (arg, ty) <- args zip meth.getParameterTypes if ty.isInstanceOf[RefType];
       sootClass = ty.asInstanceOf[RefType].getSootClass;
@@ -548,8 +549,8 @@ object ArrayListSnowflakes {
 
 // Note: enabled
 object ClassSnowflakes {
-  Snowflakes.table.put(MethodDescription("java.lang.Class", "newInstance", List(), "java.lang.Object"), newInstance())
-  case class newInstance() extends NonstaticSnowflakeHandler {
+  Snowflakes.table.put(MethodDescription("java.lang.Class", "newInstance", List(), "java.lang.Object"), newInstance)
+  case object newInstance extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       val local = state.stmt.sootStmt match {
         case stmt : DefinitionStmt => stmt.getLeftOp().asInstanceOf[Local]
@@ -585,8 +586,77 @@ object ClassSnowflakes {
               }
             }
           }
-        case _ => Set()
+        case _ =>
+          Log.error("Unimplemented: newInstance on "+self)
+          Set()
       }
+    }
+  }
+
+  Snowflakes.table.put(MethodDescription("java.lang.Class", "getName", List(), "java.lang.String"), getName)
+  case object getName extends NonstaticSnowflakeHandler {
+    override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
+      val local = state.stmt.sootStmt match {
+        case stmt : DefinitionStmt => stmt.getLeftOp().asInstanceOf[Local]
+      }
+      val lhsAddr = state.addrsOf(local)
+
+      Log.info("getName self: "+self)
+      self match {
+        case ObjectValue(_, ClassBasePointer(className)) =>
+          System.store.update(lhsAddr, D(Set(ObjectValue(Soot.classes.Class, StringBasePointer(className, state)))))
+          Set(state.copy(stmt = nextStmt))
+        case _ =>
+          Log.error("Unimplemented: getName on "+self)
+          Set()
+      }
+    }
+  }
+
+  //private static native java.lang.Class<?> forName0(java.lang.String, boolean, java.lang.ClassLoader, java.lang.Class<?>) throws java.lang.ClassNotFoundException;
+  Snowflakes.table.put(MethodDescription("java.lang.Class", "forName0", List("java.lang.String", "boolean", "java.lang.ClassLoader", "java.lang.Class"), "java.lang.Class"), forName0)
+  case object forName0 extends StaticSnowflakeHandler {
+    override def apply(state: State, nextStmt: Stmt, args: List[D]): Set[AbstractState] = {
+//      Log.error(s"forName0\n  state: $state\n  nextStmt: $nextStmt\n  args: $args")
+      val className = args(0)
+      var classes = D(Set())
+      for (v <- className.getValues) {
+        v match {
+          case ObjectValue(_, LiteralStringBasePointer(s)) =>
+            if (Soot.isClass(s)) {
+/*
+            Log.error("allow phantom: "+Scene.v().getPhantomRefs())
+            Log.error("forName0 ok: "+s+".")
+            Log.error("forName0 containsClass: "+SourceLocator.v().getClassSource("com.stac.Main"))
+            Log.error("forName0 containsClass: "+SourceLocator.v().getClassSource(s))
+            Log.error("forName0 containsClass: "+SourceLocator.v().getClassSource("foobar.poiuwer"))
+            //Log.error("forName0 containsClass: "+soot.Scene.v().containsClass(s))
+            //val sc = soot.Scene.v().getSootClassUnsafe(s)
+            // TryloadClass, NO loadClassAndSupport, loadClass, NO getSootClassUnsafe
+            //Log.error("forName0 getSootClassUnsafe: "+sc)
+            //Log.error("forName0 getSootClassUnsafe.isPhantom: "+sc.isPhantom)
+            //Log.error("forName0 foobar2: "+soot.Scene.v().loadClass("foobar", SootClass.BODIES))
+ */
+              classes = classes.join(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer(s.replace('/', '.')))))) // TODO: replace might be unneeded; put a check in the ClassBasePointer constructor
+            }
+          case ObjectValue(_, StringBasePointerTop) =>
+            for (StringLiteralValue(s) <- System.store.getOrElseBot(StringLiteralAddr).getValues) {
+              if (Soot.isClass(s)) {
+                classes = classes.join(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer(s.replace('/', '.')))))) // TODO: replace might be unneeded; put a check in the ClassBasePointer constructor
+              }
+            }
+          case ObjectValue(c,_) if c == Soot.classes.String =>
+            Log.error("java.lang.Class.forName0 ignoring non-literal String: "+v)
+          case _ => {}
+        }
+      }
+      Log.error(f"forName0: $className $classes")
+      // TODO: factor this with ReturnSnowflake
+      state.stmt.sootStmt match {
+        case sootStmt : DefinitionStmt => System.store.update(state.addrsOf(sootStmt.getLeftOp()), classes)
+        case sootStmt : InvokeStmt => {}
+      }
+      Set(state.copy(stmt = nextStmt))
     }
   }
 }
@@ -790,6 +860,9 @@ object Snowflakes {
       }
     })
 
+  // By skipping the code for `java.lang.Object.<init>()` we avoid a state convergence of every constructor call
+  table.put(MethodDescription("java.lang.Object", SootMethod.constructorName, List(), "void"), NoOpSnowflake)
+  table.put(MethodDescription("java.lang.Object", "equals", List("java.lang.Object"), "boolean"), ReturnSnowflake(D.atomicTop))
   table.put(MethodDescription("java.lang.Object", "clone", List(), "java.lang.Object"),
     new NonstaticSnowflakeHandler {
       override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
@@ -801,8 +874,8 @@ object Snowflakes {
       }
     })
 
-    table.put(MethodDescription("com.cyberpointllc.stac.hashmap.Node", "hash",
-      List("java.lang.Object", "int"), "int"), ReturnSnowflake(D.atomicTop))
+//    table.put(MethodDescription("com.cyberpointllc.stac.hashmap.Node", "hash",
+//      List("java.lang.Object", "int"), "int"), ReturnSnowflake(D.atomicTop))
 
     /*
     table.put(MethodDescription("com.sun.net.httpserver.HttpServer", "createContext",
