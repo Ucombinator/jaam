@@ -165,8 +165,8 @@ object LoopDepthCounter {
     def incLoop: CallStack = CallStack(currentMethod, allLoops, stack, nLoop+1)
     def decLoop(n: Int): CallStack = CallStack(currentMethod, allLoops, stack, nLoop-n)
     def exists(m: SootMethod): Boolean = ((m == currentMethod) || stack.exists(m))
-    override def toString(): String =  {
-      def methodName(m: SootMethod, nLoop: Int) = {
+    override def toString(): String = {
+      def methodName(m: SootMethod, nLoop: Int): String = {
         val mName = Soot.methodFullName(m)
         "  " + (if (nLoop > 0 && opt.color) s"$RED$mName($nLoop)$RESET"
                 else if (nLoop > 0) s"$mName($nLoop)"
@@ -182,19 +182,22 @@ object LoopDepthCounter {
     }
     
     def toStringAndHighlightMethod(recMethod: SootMethod): String = {
-      def methodName(m: SootMethod, nLoop: Int) = {
+      def methodName(m: SootMethod, nLoop: Int): String = {
         val mName = Soot.methodFullName(m)
         val nameLoop = if (nLoop > 0) s"$mName($nLoop)" else mName
         val nameColor = if (opt.color) s"$GREEN$nameLoop$RESET" else nameLoop
         "  " + (if (m == recMethod) nameColor else nameLoop)
       }
-      def aux(stack: Stack): List[String] = {
+      def aux(stack: Stack, metEndOfRec: Boolean): List[String] = {
         stack match {
           case Halt => List()
-          case CallStack(m, al, s, loop) =>  methodName(m, loop) :: aux(s)
+          case CallStack(m, al, s, loop) => 
+            if (m == recMethod && !metEndOfRec) (methodName(m, loop) + " ⇐ recursion ends")::aux(s, true)
+            else if (m == recMethod) (methodName(m, loop) + " ⇐ recursion begins")::aux(s, metEndOfRec)
+            else methodName(m, loop)::(aux(s, metEndOfRec))
         }
       }
-      ((methodName(currentMethod, nLoop)::aux(stack)).reverse).mkString("\n")+"\n"
+      aux(this, false).reverse.mkString("\n")+"\n"
     }
   }
 
