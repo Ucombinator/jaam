@@ -125,6 +125,21 @@ object Conf {
       LoopDepthCounter.main(mainClass(), mainMethod(), jars().split(":"), PrintOption(all, loop(), rec(), alloc(), color))
     }
   }
+
+  class ListItems extends Main("list") {
+    banner("List all classes and methods in the JAAM file")
+    footer("")
+
+    val noclasses = opt[Boolean](descr = "Do not print all classes")
+    val nomethods = opt[Boolean](descr = "Do not print all methods")
+    val full = opt[Boolean](descr = "Print full descriptions of found items")
+
+    val jaamFile = trailArg[java.io.File](descr = "The JAAM file to analyze")
+
+    def run(conf: Conf) {
+      ListItems.main(jaamFile().toString, ListPrintOption(!noclasses(), !nomethods(), full()))
+    }
+  }
 }
 
 class Conf(args : Seq[String]) extends ScallopConf(args = args) {
@@ -137,6 +152,7 @@ class Conf(args : Seq[String]) extends ScallopConf(args = args) {
   addSubcommand(new Conf.Coverage2)
   addSubcommand(new Conf.MissingReturns)
   addSubcommand(new Conf.LoopDepthCounter)
+  addSubcommand(new Conf.ListItems)
   verify()
 }
 
