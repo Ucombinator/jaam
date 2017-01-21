@@ -229,15 +229,14 @@ object LoopDepthCounter {
     val mainMethod = Soot.getSootClass(mainClassName).getMethodByName(mainMethodName)
     findLoopsInMethod(mainMethod)
 
-    if (opt.all || opt.loop) {
-      loopResults.sortBy(_.depth).foreach(println)
-    }
-    if (opt.all || opt.rec) {
-      recResults.foreach(println)
-    }
-    if (opt.all || opt.alloc) {
-      allocResults.sortBy(_.loop.depth).foreach(println)
-    }
+    if (opt.all || opt.loop)  { loopResults.sortBy(_.depth).foreach(println) }
+    if (opt.all || opt.rec)   { recResults.foreach(println) }
+    if (opt.all || opt.alloc) { allocResults.sortBy(_.loop.depth).foreach(println) }
+    
+    println("Summary:")
+    if (opt.all || opt.loop)  { println(s"  number of loops: ${loopResults.size}") }
+    if (opt.all || opt.rec)   { println(s"  number of recursions: ${recResults.size}") }
+    if (opt.all || opt.alloc) { println(s"  number of object allocations: ${allocResults.size}") }
   }
 
 
