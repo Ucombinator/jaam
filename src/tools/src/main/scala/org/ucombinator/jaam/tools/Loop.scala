@@ -201,7 +201,7 @@ object LoopDepthCounter {
   }
   case class RecResult(method: SootMethod, stack: CallStack) extends Result {
     override def toString(): String = {
-      s"Found recursive calls on ${Soot.methodFullName(method)}, skil.\n" +
+      s"Found recursive calls on ${Soot.methodFullName(method)}, skip.\n" +
       stack.toStringAndHighlightMethod(method)
     }
   }
@@ -230,13 +230,13 @@ object LoopDepthCounter {
     findLoopsInMethod(mainMethod)
 
     if (opt.all || opt.loop) {
-      loopResults.foreach(print)
+      loopResults.sortBy(_.depth).foreach(println)
     }
     if (opt.all || opt.rec) {
-      recResults.foreach(print)
+      recResults.foreach(println)
     }
     if (opt.all || opt.alloc) {
-      allocResults.foreach(print)
+      allocResults.sortBy(_.loop.depth).foreach(println)
     }
   }
 
