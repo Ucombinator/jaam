@@ -278,12 +278,6 @@ object LoopDepthCounter {
       stack.exists(m) match {
         case true => 
           recResults += RecResult(m, CallStack(m, List()/*just need a list here*/, stack))
-          /*
-          if (opt.all || opt.rec) {
-            println(s"Found recursive calls on ${Soot.methodFullName(m)}, skip.") 
-            println(CallStack(m, List()/*just need a list here*/, stack).toStringAndHighlightMethod(m))
-          }
-          */
         case false =>
           if (m.isPhantom) { /*println(s"Warning: phantom method ${m}, will not analyze")*/ }
           else if (m.isAbstract) { /*println(s"Warning: abstract method ${m}, will not analyze")*/ }
@@ -302,13 +296,6 @@ object LoopDepthCounter {
     findLoopsInMethod(Some(entry), None, CallStack(method, allLoops, Halt))
   }
 
-  def printAllocationInfo(loop: Loop, stack: CallStack, expr: SootValue) {
-    val e = if (opt.color) s"$CYAN$expr$RESET" else s"$expr"
-    println(s"Found object allocation in a ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName}, " + 
-      s"depth ${loop.depth}: $e")
-    println(stack)
-  }
-
   def findLoopsInMethod(stmt: Option[SootStmt], currentLoop: Option[Loop], stack: CallStack) {
     if (stmt.nonEmpty) {
       val realStmt = stmt.get
@@ -323,7 +310,6 @@ object LoopDepthCounter {
             case invokeExpr: InvokeExpr => handleInvoke(defStmt, invokeExpr, currentLoop, stack)
             case newExpr @ (_:NewExpr | _:NewArrayExpr | _:NewMultiArrayExpr) if (currentLoop.nonEmpty) =>
               allocResults += AllocResult(stack.currentMethod, newExpr, currentLoop.get, stack)
-              //if (opt.all || opt.alloc) { printAllocationInfo(stack.currentMethod, currentLoop.get, stack, newExpr) }
             case _ => //Do nothing
           }
         case _ => //Do nothing
@@ -341,14 +327,6 @@ object LoopDepthCounter {
           val newStack = stack.incLoop
 
           loopResults += LoopResult(stack.currentMethod, depth, realStmt.getJavaSourceStartLineNumber, newStack)
-          /*
-          if (opt.all || opt.loop) {
-            println(s"Found a loop in ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName}, " + 
-                    s"starts from line [${realStmt.getJavaSourceStartLineNumber}], " +
-                    s"depth: ${depth}")
-            println(newStack)
-          }
-          */
           findLoopsInMethod(nextStmt, Some(newLoop), newStack)
 
         case None if (currentLoop.nonEmpty && currentLoop.get.isEndStmt(realStmt)) =>
