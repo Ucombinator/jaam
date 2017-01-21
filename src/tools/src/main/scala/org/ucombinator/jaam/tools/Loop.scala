@@ -20,7 +20,7 @@ import soot.toolkits.graph.LoopNestTree;
 
 import Console._
 
-// TODO duplicate, sorting, no-color option
+// TODO duplicate, sorting
 
 /* TODO Failure apps
 
@@ -123,19 +123,8 @@ object Soot {
 case class PrintOption(all: Boolean, loop: Boolean, rec: Boolean, alloc: Boolean, color: Boolean)
 
 object LoopDepthCounter {
+  import collection.mutable.ListBuffer
   var opt: PrintOption = null
-
-  def main(mainClassName: String, mainMethodName: String, classPaths: Seq[String], runOpt: PrintOption) {
-    opt = runOpt
-    val sootClassPath = classPaths.toList.mkString(":")
-    println(s"main class: ${mainClassName}")
-    println(s"main method: ${mainMethodName}")
-    println(s"jar file names: ${sootClassPath}")
-
-    Soot.initSoot(mainClassName, sootClassPath)
-    val mainMethod = Soot.getSootClass(mainClassName).getMethodByName(mainMethodName)
-    findLoopsInMethod(mainMethod)
-  }
 
   case class Loop(method: SootMethod, start: SootStmt, end: SootStmt, depth: Int, parent: Option[Loop], offset: Int = 0) {
     def isEndStmt(stmt: SootStmt): Boolean = end == stmt
@@ -201,6 +190,57 @@ object LoopDepthCounter {
     }
   }
 
+  abstract class Result
+  case class LoopResult(method: SootMethod, depth: Int, loc: Int, stack: CallStack) extends Result {
+    override def toString(): String = {
+      s"Found a loop in ${method.getDeclaringClass.getName}.${method.getName}, " + 
+      s"starts from line [$loc], " +
+      s"depth: ${depth} \n" + 
+      stack
+    }
+  }
+  case class RecResult(method: SootMethod, stack: CallStack) extends Result {
+    override def toString(): String = {
+      s"Found recursive calls on ${Soot.methodFullName(method)}, skil.\n" +
+      stack.toStringAndHighlightMethod(method)
+    }
+  }
+  case class AllocResult(method: SootMethod, expr: SootValue, loop: Loop, stack: CallStack) extends Result {
+    override def toString(): String = {
+      val e = if (opt.color) s"$CYAN$expr$RESET" else s"$expr"
+      s"Found object allocation in ${method.getDeclaringClass.getName}.${method.getName}, " + 
+      s"depth ${loop.depth}: $e \n" + 
+      stack
+    }
+  }
+
+  val loopResults: ListBuffer[LoopResult] = ListBuffer()
+  val recResults: ListBuffer[RecResult] = ListBuffer()
+  val allocResults: ListBuffer[AllocResult] = ListBuffer()
+
+  def main(mainClassName: String, mainMethodName: String, classPaths: Seq[String], runOpt: PrintOption) {
+    opt = runOpt
+    val sootClassPath = classPaths.toList.mkString(":")
+    println(s"main class: ${mainClassName}")
+    println(s"main method: ${mainMethodName}")
+    println(s"jar file names: ${sootClassPath}")
+
+    Soot.initSoot(mainClassName, sootClassPath)
+    val mainMethod = Soot.getSootClass(mainClassName).getMethodByName(mainMethodName)
+    findLoopsInMethod(mainMethod)
+
+    if (opt.all || opt.loop) {
+      loopResults.foreach(print)
+    }
+    if (opt.all || opt.rec) {
+      recResults.foreach(print)
+    }
+    if (opt.all || opt.alloc) {
+      allocResults.foreach(print)
+    }
+  }
+
+
   def getDispatchedMethods(invokeExpr: InvokeExpr): List[SootMethod] = {
     val hierarchy = Scene.v().getOrMakeFastHierarchy()
     val targetMethod = invokeExpr.getMethod
@@ -237,10 +277,13 @@ object LoopDepthCounter {
     for (m <- realTargetMethods) {
       stack.exists(m) match {
         case true => 
+          recResults += RecResult(m, CallStack(m, List()/*just need a list here*/, stack))
+          /*
           if (opt.all || opt.rec) {
             println(s"Found recursive calls on ${Soot.methodFullName(m)}, skip.") 
             println(CallStack(m, List()/*just need a list here*/, stack).toStringAndHighlightMethod(m))
           }
+          */
         case false =>
           if (m.isPhantom) { /*println(s"Warning: phantom method ${m}, will not analyze")*/ }
           else if (m.isAbstract) { /*println(s"Warning: abstract method ${m}, will not analyze")*/ }
@@ -279,7 +322,8 @@ object LoopDepthCounter {
           defStmt.getRightOp match {
             case invokeExpr: InvokeExpr => handleInvoke(defStmt, invokeExpr, currentLoop, stack)
             case newExpr @ (_:NewExpr | _:NewArrayExpr | _:NewMultiArrayExpr) if (currentLoop.nonEmpty) =>
-              if (opt.all || opt.alloc) { printAllocationInfo(currentLoop.get, stack, newExpr) }
+              allocResults += AllocResult(stack.currentMethod, newExpr, currentLoop.get, stack)
+              //if (opt.all || opt.alloc) { printAllocationInfo(stack.currentMethod, currentLoop.get, stack, newExpr) }
             case _ => //Do nothing
           }
         case _ => //Do nothing
@@ -295,12 +339,16 @@ object LoopDepthCounter {
           } else { 0 }
           val newLoop = Loop(stack.currentMethod, realStmt, l.getBackJumpStmt, depth, currentLoop, offset)
           val newStack = stack.incLoop
+
+          loopResults += LoopResult(stack.currentMethod, depth, realStmt.getJavaSourceStartLineNumber, newStack)
+          /*
           if (opt.all || opt.loop) {
             println(s"Found a loop in ${stack.currentMethod.getDeclaringClass.getName}.${stack.currentMethod.getName}, " + 
                     s"starts from line [${realStmt.getJavaSourceStartLineNumber}], " +
                     s"depth: ${depth}")
             println(newStack)
           }
+          */
           findLoopsInMethod(nextStmt, Some(newLoop), newStack)
 
         case None if (currentLoop.nonEmpty && currentLoop.get.isEndStmt(realStmt)) =>
