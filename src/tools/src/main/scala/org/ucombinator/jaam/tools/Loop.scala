@@ -19,8 +19,9 @@ import soot.toolkits.graph.ExceptionalBlockGraph;
 import soot.toolkits.graph.LoopNestTree;
 
 import Console._
+import collection.mutable.Set
 
-// TODO duplicate, sorting
+// TODO duplicate
 
 /* TODO Failure apps
 
@@ -123,7 +124,6 @@ object Soot {
 case class PrintOption(all: Boolean, loop: Boolean, rec: Boolean, alloc: Boolean, color: Boolean)
 
 object LoopDepthCounter {
-  import collection.mutable.ListBuffer
   var opt: PrintOption = null
 
   case class Loop(method: SootMethod, start: SootStmt, end: SootStmt, depth: Int, parent: Option[Loop], offset: Int = 0) {
@@ -214,9 +214,10 @@ object LoopDepthCounter {
     }
   }
 
-  val loopResults: ListBuffer[LoopResult] = ListBuffer()
-  val recResults: ListBuffer[RecResult] = ListBuffer()
-  val allocResults: ListBuffer[AllocResult] = ListBuffer()
+  // Using set to remove equivalent items
+  val loopResults: Set[LoopResult] = Set()
+  val recResults: Set[RecResult] = Set()
+  val allocResults: Set[AllocResult] = Set()
 
   def main(mainClassName: String, mainMethodName: String, classPaths: Seq[String], runOpt: PrintOption) {
     opt = runOpt
@@ -229,16 +230,15 @@ object LoopDepthCounter {
     val mainMethod = Soot.getSootClass(mainClassName).getMethodByName(mainMethodName)
     findLoopsInMethod(mainMethod)
 
-    if (opt.all || opt.loop)  { loopResults.sortBy(_.depth).foreach(println) }
+    if (opt.all || opt.loop)  { loopResults.toList.sortBy(_.depth).foreach(println) }
     if (opt.all || opt.rec)   { recResults.foreach(println) }
-    if (opt.all || opt.alloc) { allocResults.sortBy(_.loop.depth).foreach(println) }
+    if (opt.all || opt.alloc) { allocResults.toList.sortBy(_.loop.depth).foreach(println) }
     
     println("Summary:")
     if (opt.all || opt.loop)  { println(s"  number of loops: ${loopResults.size}") }
     if (opt.all || opt.rec)   { println(s"  number of recursions: ${recResults.size}") }
     if (opt.all || opt.alloc) { println(s"  number of object allocations: ${allocResults.size}") }
   }
-
 
   def getDispatchedMethods(invokeExpr: InvokeExpr): List[SootMethod] = {
     val hierarchy = Scene.v().getOrMakeFastHierarchy()
