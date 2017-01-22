@@ -132,12 +132,11 @@ object Conf {
 
     val noclasses = opt[Boolean](descr = "Do not print all classes")
     val nomethods = opt[Boolean](descr = "Do not print all methods")
-    val full = opt[Boolean](descr = "Print full descriptions of found items")
 
-    val jaamFile = trailArg[java.io.File](descr = "The JAAM file to analyze")
+    val jarFile = trailArg[java.io.File](descr = "The .jar file to analyze")
 
     def run(conf: Conf) {
-      ListItems.main(jaamFile().toString, ListPrintOption(!noclasses(), !nomethods(), full()))
+      ListItems.main(jarFile().toString, ListPrintOption(!noclasses(), !nomethods()))
     }
   }
 }

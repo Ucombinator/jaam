@@ -1,64 +1,62 @@
 package org.ucombinator.jaam.tools
 
-import java.io.FileInputStream
+import java.io.File
+import java.lang.reflect.Executable
+import java.net.URLClassLoader
+import java.util.jar.JarFile
+
+import scala.collection.JavaConversions._
 import scala.collection.mutable
 
-import org.ucombinator.jaam.serializer._
-
-case class ListPrintOption(classes: Boolean, methods: Boolean, full: Boolean)
+case class ListPrintOption(classes: Boolean, methods: Boolean)
 
 object ListItems {
-  def printClass(c: soot.SootClass, full: Boolean): Unit = {
-    if (full) {
-      println(c)
-    } else {
-      println(c.getShortName)
-    }
-  }
+  private val classEnding = ".class"
 
-  def printMethod(m: soot.SootMethod, classes: Boolean, full: Boolean): Unit = {
-    var s = ""
-    if (classes) {
-      s += "  "
-    }
-    if (full) {
-      s += m
-    } else {
-      s += m.getName
-    }
-    println(s)
-  }
-
-  def main(jaamFile: String, printOption: ListPrintOption): Unit = {
-    val mapping = mutable.HashMap.empty[soot.SootClass, mutable.HashSet[soot.SootMethod]]
-
-    val stream = new FileInputStream(jaamFile)
-    val pi = new PacketInput(stream)
-    var packet: Packet = null
-    while ({packet = pi.read(); !packet.isInstanceOf[EOF]}) {
-      packet match {
-        case n: Node => n match {
-          case s: State =>
-            val m = s.stmt.method
-            val c = m.getDeclaringClass
-            mapping.get(c) match {
-              case Some(l) => l += m
-              case None => mapping += (c -> mutable.HashSet(m))
-            }
-          case _ => ()
+  def printMainClass(jarFile: JarFile): Unit = {
+    Option(jarFile.getManifest) match {
+      case Some(manifest) =>
+        Option(manifest.getMainAttributes.getValue("Main-Class")) match {
+          case Some(value) => println("Main Class: " + value)
+          case None => ()
         }
-        case _ => ()
-      }
+      case None => ()
     }
-    pi.close()
-    stream.close()
+  }
 
-    for ( (c, l) <- mapping) {
+  def getString(executable: Executable): String = {
+    "<" + executable.getClass.getSimpleName + "> " + executable.toString
+  }
+
+  def main(jarFileName: String, printOption: ListPrintOption): Unit = {
+    val jarFileURL = new File(jarFileName).toURI.toURL
+    val classLoader = new URLClassLoader(Array(jarFileURL))
+
+    val verify = false
+    val jarFile = new JarFile(jarFileName, verify)
+
+    // Attempt to read the manifest.
+//    printMainClass(jarFile)
+
+    // Iterate through the JarEntries to find things.
+    for (jarEntry <- jarFile.entries().filter(_.getName.endsWith(classEnding))) {
+      val fileName = jarEntry.getName
+      val binaryName = fileName.dropRight(classEnding.length).replaceAll(File.separator, ".")
       if (printOption.classes) {
-        printClass(c, printOption.full)
+        println("<Class> " + binaryName)
       }
+      // Load the class and print the methods and constructors inside of it.
       if (printOption.methods) {
-        l.foreach(printMethod(_, printOption.classes, printOption.full))
+        try {
+          val loadedClass = classLoader.loadClass(binaryName)
+          val items = mutable.MutableList.empty[Executable]
+          loadedClass.getDeclaredConstructors.foreach(items += _)
+          loadedClass.getDeclaredMethods.foreach(items += _)
+          val front = if (printOption.classes) "  " else ""
+          items.foreach(i => println(front + getString(i)))
+        } catch {
+          case e: Throwable => e.printStackTrace()
+        }
       }
     }
   }
