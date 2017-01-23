@@ -128,17 +128,31 @@ object Conf {
   }
 
   class ListItems extends Main("list") {
-    banner("List all classes and methods in the JAAM file")
+    banner("List all classes and methods in the JAR file")
     footer("")
 
     val noclasses = opt[Boolean](descr = "Do not print all classes")
     val nomethods = opt[Boolean](descr = "Do not print all methods")
-    val full = opt[Boolean](descr = "Print full descriptions of found items")
 
-    val jaamFile = trailArg[java.io.File](descr = "The JAAM file to analyze")
+    val jarFile = trailArg[java.io.File](descr = "The .jar file to analyze")
 
     def run(conf: Conf) {
-      ListItems.main(jaamFile().toString, ListPrintOption(!noclasses(), !nomethods(), full()))
+      ListItems.main(jarFile().toString, ListPrintOption(!noclasses(), !nomethods()))
+    }
+  }
+
+  class FindMain extends Main("find-main") {
+    banner("Attempt to find the Main class from which to run the JAR file")
+    footer("")
+
+    val showerrs = opt[Boolean](name = "show-errors", short = 's', descr = "Show errors for unloadable classes")
+    val force = opt[Boolean](name = "force-possibilities", short = 'f', descr = "Show all possibilities found manually, even if a main class is found in the manifest")
+    val verifymanual = opt[Boolean](name = "validate", short = 'v', descr = "Check potential Main classes for a valid `main` method")
+
+    val jars = trailArg[String](descr = "Colon-separated list of JAR files to directly search for `main` methods")
+
+    def run(conf: Conf) {
+      FindMain.main(jars().split(":"), showerrs(), force(), verifymanual())
     }
   }
 }
@@ -154,6 +168,7 @@ class Conf(args : Seq[String]) extends ScallopConf(args = args) {
   addSubcommand(new Conf.MissingReturns)
   addSubcommand(new Conf.LoopDepthCounter)
   addSubcommand(new Conf.ListItems)
+  addSubcommand(new Conf.FindMain)
   verify()
 }
 
@@ -167,6 +182,7 @@ object Main {
     options.subcommand match {
       case None => println("ERROR: No subcommand specified")
       case Some(m : Main) => m.run(options)
+      case Some(other) => println("ERROR: Bad subcommand specified: " + other)
     }
   }
 }
