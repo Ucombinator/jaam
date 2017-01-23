@@ -127,7 +127,7 @@ object Conf {
   }
 
   class ListItems extends Main("list") {
-    banner("List all classes and methods in the JAAM file")
+    banner("List all classes and methods in the JAR file")
     footer("")
 
     val noclasses = opt[Boolean](descr = "Do not print all classes")
@@ -137,6 +137,17 @@ object Conf {
 
     def run(conf: Conf) {
       ListItems.main(jarFile().toString, ListPrintOption(!noclasses(), !nomethods()))
+    }
+  }
+
+  class FindMain extends Main("find-main") {
+    banner("Attempt to find the Main class from which to run the JAR file")
+    footer("")
+
+    val jarFile = trailArg[java.io.File](descr = "The .jar file to analyze")
+
+    def run(conf: Conf) {
+      FindMain.main(jarFile().toString)
     }
   }
 }
@@ -152,6 +163,7 @@ class Conf(args : Seq[String]) extends ScallopConf(args = args) {
   addSubcommand(new Conf.MissingReturns)
   addSubcommand(new Conf.LoopDepthCounter)
   addSubcommand(new Conf.ListItems)
+  addSubcommand(new Conf.FindMain)
   verify()
 }
 

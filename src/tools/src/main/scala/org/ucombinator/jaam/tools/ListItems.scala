@@ -13,17 +13,6 @@ case class ListPrintOption(classes: Boolean, methods: Boolean)
 object ListItems {
   private val classEnding = ".class"
 
-  def printMainClass(jarFile: JarFile): Unit = {
-    Option(jarFile.getManifest) match {
-      case Some(manifest) =>
-        Option(manifest.getMainAttributes.getValue("Main-Class")) match {
-          case Some(value) => println("Main Class: " + value)
-          case None => ()
-        }
-      case None => ()
-    }
-  }
-
   def getString(executable: Executable): String = {
     "<" + executable.getClass.getSimpleName + "> " + executable.toString
   }
@@ -34,9 +23,6 @@ object ListItems {
 
     val verify = false
     val jarFile = new JarFile(jarFileName, verify)
-
-    // Attempt to read the manifest.
-//    printMainClass(jarFile)
 
     // Iterate through the JarEntries to find things.
     for (jarEntry <- jarFile.entries().filter(_.getName.endsWith(classEnding))) {
