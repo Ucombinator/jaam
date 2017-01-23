@@ -144,10 +144,14 @@ object Conf {
     banner("Attempt to find the Main class from which to run the JAR file")
     footer("")
 
-    val jarFile = trailArg[java.io.File](descr = "The .jar file to analyze")
+    val showerrs = opt[Boolean](name = "--show-errors", short = 's', descr = "Show errors for unloadable classes")
+    val force = opt[Boolean](name = "--force-possibilities", short = 'f', descr = "Show all possibilities found manually, even if a main class is found in the manifest")
+    val verifymanual = opt[Boolean](name = "--validate", short = 'v', descr = "Check potential Main classes for a valid `main` method")
+
+    val jars = trailArg[String](descr = "Colon-separated list of JAR files to directly search for `main` methods")
 
     def run(conf: Conf) {
-      FindMain.main(jarFile().toString)
+      FindMain.main(jars().split(":"), showerrs(), force(), verifymanual())
     }
   }
 }
@@ -177,6 +181,7 @@ object Main {
     options.subcommand match {
       case None => println("ERROR: No subcommand specified")
       case Some(m : Main) => m.run(options)
+      case Some(other) => println("ERROR: Bad subcommand specified: " + other)
     }
   }
 }

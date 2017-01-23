@@ -1,7 +1,6 @@
 package org.ucombinator.jaam.tools
 
 import java.io.File
-import java.lang.NoClassDefFoundError
 import java.lang.reflect.{Method, Modifier}
 import java.net.URLClassLoader
 import java.util.jar.JarFile
@@ -36,37 +35,73 @@ object FindMain {
     else { false }
   }
 
-  def checkJarFile(jarFile: JarFile, jarFileName: String): Array[Method] = {
-    val possibilities = mutable.MutableList.empty[Method]
+  def checkJarFile(showErrors: Boolean, validate: Boolean, jarFile: JarFile, jarFileName: String): Array[String] = {
+    val possibilities = mutable.MutableList.empty[String]
     // The ClassLoader requires a URL.
     val jarFileURL = new File(jarFileName).toURI.toURL
     val classLoader = new URLClassLoader(Array(jarFileURL))
 
-    for (jarEntry <- jarFile.entries().filter(_.getName.endsWith(classEnding))) {
-      val fileName = jarEntry.getName
-      val binaryName = fileName.dropRight(classEnding.length).replaceAll(File.separator, ".")
-      try {
-        val loadedClass = classLoader.loadClass(binaryName)
-        loadedClass.getDeclaredMethods.foreach(
-          method => if (matchesMainSignature(method)) { possibilities += method }
-        )
-      }catch {
-        case n: NoClassDefFoundError => println("Could not search referenced class: " + binaryName)
-        case e: Throwable => e.printStackTrace()
+    for (jarClass <- jarFile.entries().filter(_.getName.endsWith(classEnding))) {
+      val className = jarClass.getName
+      val binaryClassName = className.dropRight(classEnding.length).replaceAll(File.separator, ".")
+      if (binaryClassName.endsWith(".Main")) {
+        var valid = false
+        if (validate) {
+          // Check for an enclosed `main` method which matches regular main method definitions.
+          try {
+            val loadedClass = classLoader.loadClass(binaryClassName)
+            loadedClass.getDeclaredMethods.foreach(
+              method => if (matchesMainSignature(method)) { valid = true }
+            )
+          }catch {
+            case n: NoClassDefFoundError =>
+              println("Could not search potential matching class: " + binaryClassName)
+              if (showErrors) {
+                n.printStackTrace()
+              }
+            case e: Throwable => e.printStackTrace()
+          }
+        } else {
+          // Don't do validation.
+          valid = true
+        }
+        if (valid) {
+          possibilities += binaryClassName
+        }
       }
     }
     possibilities.toArray
   }
 
-  def main(jarFileName: String): Unit = {
-    val verify = false
-    val jarFile = new JarFile(jarFileName, verify)
+  def main(jarFileNames: Seq[String], showErrors: Boolean, forcePossibilities: Boolean, validate: Boolean): Unit = {
+    var foundSomething = false
+    val verifyJarFiles = false
 
-    checkManifest(jarFile) match {
-      case Some(value) => println("Main class from manifest: " + value)
-      case None =>
-        println("No Main-Class attribute in manifest. Checking possibilities through reflection.")
-        checkJarFile(jarFile, jarFileName).foreach(m => println("Possibility: " + m))
+    for (jarFileName <- jarFileNames) {
+      println("Searching file for `Main` class: " + jarFileName)
+      val jarFile = new JarFile(jarFileName, verifyJarFiles)
+      var printPossibilities = forcePossibilities
+      checkManifest(jarFile) match {
+        case Some(value) =>
+          foundSomething = true
+          println("Main class from manifest: " + value)
+        case None =>
+          println("No Main-Class attribute in manifest.")
+          printPossibilities = true
+      }
+      if (printPossibilities) {
+        println("Checking possibilities manually...")
+        val possibilities = checkJarFile(showErrors, validate, jarFile, jarFileName)
+        if (possibilities.nonEmpty) {
+          foundSomething = true
+        }
+        possibilities.foreach(m => println("Possibility: " + m))
+      }
+    }
+
+    if (!foundSomething) {
+      // Nothing was found, so show an error.
+      sys.exit(1)
     }
   }
 }
