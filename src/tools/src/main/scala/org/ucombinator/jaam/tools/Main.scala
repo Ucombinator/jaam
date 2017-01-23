@@ -113,6 +113,7 @@ object Conf {
     val alloc = opt[Boolean](descr = "Run allocation detection")
     val nocolor = opt[Boolean](descr = "No coloring option if you want to redirect the output to some file or text editor",
                                default = Some(false))
+    var remove_duplicates = opt[Boolean](name = "remove-duplicates", descr = "Only output deepest loop, may lose suspicious loops", default = Some(false))
 
     val mainClass = trailArg[String](descr = "The name of the main class")
     val mainMethod = trailArg[String](descr = "The name of entrance method")
@@ -121,8 +122,8 @@ object Conf {
     def run(conf: Conf) {
       val all = !(loop() || rec() || alloc())
       var color = !nocolor()
-      //println(s"${all} ${loop()} ${rec()} ${alloc()}")
-      LoopDepthCounter.main(mainClass(), mainMethod(), jars().split(":"), PrintOption(all, loop(), rec(), alloc(), color))
+      LoopDepthCounter.main(mainClass(), mainMethod(), jars().split(":"), 
+                            PrintOption(all, loop(), rec(), alloc(), color, remove_duplicates()))
     }
   }
 

@@ -11,6 +11,7 @@ import soot.tagkit.{GenericAttribute, SourceFileTag}
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.jimple.{Stmt => SootStmt, _}
 import soot.jimple.toolkits.callgraph._
+import soot.jimple.Jimple
 
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
 import soot.toolkits.graph.Block;
@@ -19,7 +20,7 @@ import soot.toolkits.graph.ExceptionalBlockGraph;
 import soot.toolkits.graph.LoopNestTree;
 
 import Console._
-import collection.mutable.Set
+import collection.mutable.ListBuffer
 
 // TODO duplicate
 
@@ -121,7 +122,7 @@ object Soot {
   def methodFullName(m: SootMethod): String = m.getDeclaringClass.getName + "." + m.getName
 }
 
-case class PrintOption(all: Boolean, loop: Boolean, rec: Boolean, alloc: Boolean, color: Boolean)
+case class PrintOption(all: Boolean, loop: Boolean, rec: Boolean, alloc: Boolean, color: Boolean, rmDup: Boolean)
 
 object LoopDepthCounter {
   var opt: PrintOption = null
@@ -146,14 +147,38 @@ object LoopDepthCounter {
 
   abstract class Stack {
     def exists(m: SootMethod): Boolean
+    def >= (that: Stack): Boolean
   }
   case object Halt extends Stack {
     def exists(m: SootMethod): Boolean = false
+    def >= (that: Stack): Boolean = {
+      that match {
+        case Halt => true
+        case _ => false
+      }
+    }
   }
-  case class CallStack(currentMethod: SootMethod, allLoops: List[SootLoop], stack: Stack, nLoop: Int = 0) extends Stack {
-    def incLoop: CallStack = CallStack(currentMethod, allLoops, stack, nLoop+1)
-    def decLoop(n: Int): CallStack = CallStack(currentMethod, allLoops, stack, nLoop-n)
+  case class CallStack(expr: Expr, currentMethod: SootMethod, allLoops: List[SootLoop], stack: Stack, nLoop: Int = 0) extends Stack {
+    def incLoop: CallStack = CallStack(expr, currentMethod, allLoops, stack, nLoop+1)
+    def decLoop(n: Int): CallStack = CallStack(expr, currentMethod, allLoops, stack, nLoop-n)
     def exists(m: SootMethod): Boolean = ((m == currentMethod) || stack.exists(m))
+    def >= (that: Stack): Boolean = {
+      def len(s: Stack): Int = {
+        s match {
+          case Halt => 0
+          case CallStack(_, _, _, stack, _) => 1 + len(stack)
+        }
+      }
+      that match {
+        case Halt => true
+        case that: CallStack =>
+          val thisLen = len(this)
+          val thatLen = len(that)
+          if (thisLen < thatLen) return false
+          if (thisLen == thatLen) return stackEqual(this, that)
+          this.stack >= that
+      }
+    }
     override def toString(): String = {
       def methodName(m: SootMethod, nLoop: Int): String = {
         val mName = Soot.methodFullName(m)
@@ -164,7 +189,7 @@ object LoopDepthCounter {
       def aux(stack: Stack): List[String] = {
         stack match {
           case Halt => List()
-          case CallStack(m, al, s, loop) =>  methodName(m, loop) :: aux(s)
+          case CallStack(e, m, al, s, loop) =>  methodName(m, loop) :: aux(s)
         }
       }
       ((methodName(currentMethod, nLoop)::aux(stack)).reverse).mkString("\n")+"\n"
@@ -180,13 +205,23 @@ object LoopDepthCounter {
       def aux(stack: Stack, metEndOfRec: Boolean): List[String] = {
         stack match {
           case Halt => List()
-          case CallStack(m, al, s, loop) => 
+          case CallStack(e, m, al, s, loop) => 
             if (m == recMethod && !metEndOfRec) (methodName(m, loop) + " ⇐ recursion ends")::aux(s, true)
             else if (m == recMethod) (methodName(m, loop) + " ⇐ recursion begins")::aux(s, metEndOfRec)
             else methodName(m, loop)::(aux(s, metEndOfRec))
         }
       }
       aux(this, false).reverse.mkString("\n")+"\n"
+    }
+  }
+  def stackEqual(s1: Stack, s2: Stack): Boolean = {
+    (s1, s2) match {
+      case (Halt, Halt) => true
+      case (s1: CallStack, s2: CallStack) =>
+        if (s1.expr == s2.expr && s1.currentMethod == s2.currentMethod)
+          stackEqual(s1.stack, s2.stack)
+        else false
+      case (_, _) => false
     }
   }
 
@@ -205,19 +240,43 @@ object LoopDepthCounter {
       stack.toStringAndHighlightMethod(method)
     }
   }
-  case class AllocResult(method: SootMethod, expr: SootValue, loop: Loop, stack: CallStack) extends Result {
+  case class AllocResult(method: SootMethod, expr: SootValue, depth: Int, stack: CallStack) extends Result {
     override def toString(): String = {
       val e = if (opt.color) s"$CYAN$expr$RESET" else s"$expr"
       s"Found object allocation in ${method.getDeclaringClass.getName}.${method.getName}, " + 
-      s"depth ${loop.depth}: $e \n" + 
+      s"depth ${depth}: $e \n" + 
       stack
     }
   }
 
+  def removeDuplicates(s: List[Result], res: List[Result]): List[Result] = {
+    def notKeep(x: Result, xs: List[Result]): Boolean = {
+      xs.exists((y: Result) => {
+        // TODO refactor
+        if (y.isInstanceOf[LoopResult]) {
+          val y1 = y.asInstanceOf[LoopResult]
+          val x1 = x.asInstanceOf[LoopResult]
+          (stackEqual(y1.stack, x1.stack) && y1.depth > x1.depth) || (y1.stack >= x1.stack)
+        }
+        else if (y.isInstanceOf[AllocResult]) {
+          val y1 = y.asInstanceOf[AllocResult]
+          val x1 = x.asInstanceOf[AllocResult]
+          (stackEqual(y1.stack, x1.stack) && y1.depth > x1.depth) || (y1.stack >= x1.stack)
+        }
+        else false
+      })
+    }
+    s match {
+      case x::xs => if (notKeep(x, res++xs)) { removeDuplicates(xs, res) }
+                    else { removeDuplicates(xs, x::res) }
+      case Nil => res
+    }
+  }
+
   // Using set to remove equivalent items
-  val loopResults: Set[LoopResult] = Set()
-  val recResults: Set[RecResult] = Set()
-  val allocResults: Set[AllocResult] = Set()
+  val loopResults: ListBuffer[LoopResult] = ListBuffer()
+  val recResults: ListBuffer[RecResult] = ListBuffer()
+  val allocResults: ListBuffer[AllocResult] = ListBuffer()
 
   def main(mainClassName: String, mainMethodName: String, classPaths: Seq[String], runOpt: PrintOption) {
     opt = runOpt
@@ -229,10 +288,26 @@ object LoopDepthCounter {
     Soot.initSoot(mainClassName, sootClassPath)
     val mainMethod = Soot.getSootClass(mainClassName).getMethodByName(mainMethodName)
     findLoopsInMethod(mainMethod)
-
-    if (opt.all || opt.loop)  { loopResults.toList.sortBy(_.depth).foreach(println) }
-    if (opt.all || opt.rec)   { recResults.foreach(println) }
-    if (opt.all || opt.alloc) { allocResults.toList.sortBy(_.loop.depth).foreach(println) }
+    
+    if (opt.all || opt.loop) {
+      if (opt.rmDup) {
+        val reduced = removeDuplicates(loopResults.toList, List())
+        loopResults.clear
+        for (x <- reduced) { loopResults += x.asInstanceOf[LoopResult] }
+      }
+      loopResults.sortBy(_.depth).foreach(println) 
+    }
+    if (opt.all || opt.rec)   { 
+      recResults.foreach(println) 
+    }
+    if (opt.all || opt.alloc) { 
+      if (opt.rmDup) {
+        val reduced = removeDuplicates(allocResults.toList, List())
+        allocResults.clear
+        reduced.foreach(allocResults += _.asInstanceOf[AllocResult])
+      }
+      allocResults.sortBy(_.depth).foreach(println) 
+    }
     
     println("Summary:")
     if (opt.all || opt.loop)  { println(s"  number of loops: ${loopResults.size}") }
@@ -276,14 +351,14 @@ object LoopDepthCounter {
     for (m <- realTargetMethods) {
       stack.exists(m) match {
         case true => 
-          recResults += RecResult(m, CallStack(m, List()/*just need a list here*/, stack))
+          recResults += RecResult(m, CallStack(null/*?*/, m, List()/*just need a list here*/, stack))
         case false =>
           if (m.isPhantom) { /*println(s"Warning: phantom method ${m}, will not analyze")*/ }
           else if (m.isAbstract) { /*println(s"Warning: abstract method ${m}, will not analyze")*/ }
           else if (m.isNative) { /*println(s"Warning: native method ${m}, will not analyze")*/ }
           else { 
             val allLoops = (new LoopNestTree(Soot.getBody(m))).toList
-            findLoopsInMethod(Some(Soot.getMethodEntry(m)), currentLoop, CallStack(m, allLoops, stack)) 
+            findLoopsInMethod(Some(Soot.getMethodEntry(m)), currentLoop, CallStack(invokeExpr, m, allLoops, stack)) 
           }
       }
     }
@@ -292,7 +367,7 @@ object LoopDepthCounter {
   def findLoopsInMethod(method: SootMethod) {
     val entry = Soot.getMethodEntry(method)
     val allLoops = (new LoopNestTree(Soot.getBody(method))).toList
-    findLoopsInMethod(Some(entry), None, CallStack(method, allLoops, Halt))
+    findLoopsInMethod(Some(entry), None, CallStack(Jimple.v.newStaticInvokeExpr(method.makeRef), method, allLoops, Halt))
   }
 
   def findLoopsInMethod(stmt: Option[SootStmt], currentLoop: Option[Loop], stack: CallStack) {
@@ -308,7 +383,7 @@ object LoopDepthCounter {
           defStmt.getRightOp match {
             case invokeExpr: InvokeExpr => handleInvoke(defStmt, invokeExpr, currentLoop, stack)
             case newExpr @ (_:NewExpr | _:NewArrayExpr | _:NewMultiArrayExpr) if (currentLoop.nonEmpty) =>
-              allocResults += AllocResult(stack.currentMethod, newExpr, currentLoop.get, stack)
+              allocResults += AllocResult(stack.currentMethod, newExpr, currentLoop.get.depth, stack)
             case _ => //Do nothing
           }
         case _ => //Do nothing
