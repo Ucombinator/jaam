@@ -148,11 +148,12 @@ object Conf {
     val showerrs = opt[Boolean](name = "show-errors", short = 's', descr = "Show errors for unloadable classes")
     val force = opt[Boolean](name = "force-possibilities", short = 'f', descr = "Show all possibilities found manually, even if a main class is found in the manifest")
     val verifymanual = opt[Boolean](name = "validate", short = 'v', descr = "Check potential Main classes for a valid `main` method")
+    val anyClass = opt[Boolean](descr = "Check all classes not just those named Main")
 
     val jars = trailArg[String](descr = "Colon-separated list of JAR files to directly search for `main` methods")
 
     def run(conf: Conf) {
-      FindMain.main(jars().split(":"), showerrs(), force(), verifymanual())
+      FindMain.main(jars().split(":"), showerrs(), force(), verifymanual(), anyClass())
     }
   }
 }

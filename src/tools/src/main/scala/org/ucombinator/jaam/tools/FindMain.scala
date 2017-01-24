@@ -35,7 +35,7 @@ object FindMain {
     else { false }
   }
 
-  def checkJarFile(showErrors: Boolean, validate: Boolean, jarFile: JarFile, jarFileName: String): Array[String] = {
+  def checkJarFile(showErrors: Boolean, validate: Boolean, jarFile: JarFile, jarFileName: String, anyClass: Boolean): Array[String] = {
     val possibilities = mutable.MutableList.empty[String]
     // The ClassLoader requires a URL.
     val jarFileURL = new File(jarFileName).toURI.toURL
@@ -44,7 +44,7 @@ object FindMain {
     for (jarClass <- jarFile.entries().filter(_.getName.endsWith(classEnding))) {
       val className = jarClass.getName
       val binaryClassName = className.dropRight(classEnding.length).replaceAll(File.separator, ".")
-      if (binaryClassName.endsWith(".Main")) {
+      if (anyClass || binaryClassName.endsWith(".Main")) {
         var valid = false
         if (validate) {
           // Check for an enclosed `main` method which matches regular main method definitions.
@@ -73,7 +73,7 @@ object FindMain {
     possibilities.toArray
   }
 
-  def main(jarFileNames: Seq[String], showErrors: Boolean, forcePossibilities: Boolean, validate: Boolean): Unit = {
+  def main(jarFileNames: Seq[String], showErrors: Boolean, forcePossibilities: Boolean, validate: Boolean, anyClass: Boolean): Unit = {
     var foundSomething = false
     val verifyJarFiles = false
 
@@ -91,7 +91,7 @@ object FindMain {
       }
       if (printPossibilities) {
         println("Checking possibilities manually...")
-        val possibilities = checkJarFile(showErrors, validate, jarFile, jarFileName)
+        val possibilities = checkJarFile(showErrors, validate, jarFile, jarFileName, anyClass)
         if (possibilities.nonEmpty) {
           foundSomething = true
         }
