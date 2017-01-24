@@ -185,7 +185,7 @@ public class VizPanel extends JFXPanel
 		// Move these to initialization?
 		node.setArcWidth(scaleX(0.5));
 		node.setArcHeight(scaleY(0.5));
-		node.setLabel("  " + v.getLabel());
+		//node.setLabel("  " + v.getLabel());
 
 		node.setFill(v.getColor());
 		node.setStroke(javafx.scene.paint.Color.BLACK);

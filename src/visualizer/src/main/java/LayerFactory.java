@@ -80,7 +80,7 @@ public class LayerFactory
 			// Add vertices of the inner graph.
 			HashMap<String,String> idMapping = new HashMap<>(); // first id is the Main.graph vertex id and the second id the New vertex id
 			for(Vertex oldV: buckets.get(methodVertex.getLabel())){
-				Vertex newV = new Vertex("instruction:" + oldV.getStrID(), AbstractVertex.VertexType.INSTRUCTION);
+				Vertex newV = new Vertex(oldV.getRealInstruction().str, AbstractVertex.VertexType.INSTRUCTION);
 					newV.getMetaData().put(AbstractVertex.METADATA_METHOD_NAME, methodVertex.getMetaData().get(AbstractVertex.METADATA_METHOD_NAME));
 					newV.getMetaData().put(AbstractVertex.METADATA_INSTRUCTION, oldV.getRealInstruction());
 					

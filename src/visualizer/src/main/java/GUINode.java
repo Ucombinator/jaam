@@ -17,7 +17,9 @@ import javafx.scene.shape.Rectangle;
 
 public class GUINode extends Pane
 {
-    double dragX, dragY;
+    protected static final double TEXT_VERTICAL_PADDING = 15;
+    protected static final double TEXT_HORIZONTAL_PADDING = 15;
+	double dragX, dragY;
     protected Rectangle rect;
     protected Rectangle backRect;
     protected Text rectLabel;
@@ -38,7 +40,7 @@ public class GUINode extends Pane
         
         this.rect = new Rectangle();
         this.backRect = new Rectangle();
-        this.rectLabel = new Text();
+        this.rectLabel = new Text(v.getLabel());
         if(labelsEnabled)
         {
         	this.getChildren().addAll(this.backRect, this.rect, this.rectLabel);
@@ -212,6 +214,11 @@ public class GUINode extends Pane
         public void handle(Event event)
         {
             event.consume();
+            if(!getVertex().getType().equals(AbstractVertex.VertexType.ROOT)){
+            getChildren().add(rectLabel);
+            rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
+            rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
+            }
         	if (vertex.getSelfGraph() != null)
         	{
 	        	for(Edge e : vertex.getSelfGraph().getEdges().values())
@@ -238,6 +245,8 @@ public class GUINode extends Pane
         public void handle(Event event)
         {
             event.consume();
+            getChildren().remove(rectLabel);
+            
         	if(vertex.getSelfGraph() != null)
         	{
 	        	for(Edge e : vertex.getSelfGraph().getEdges().values())
