@@ -883,7 +883,7 @@ public class StacFrame extends JFrame
 	// Clean up info from previous searches
 	public void initSearch()
 	{
-		Parameters.stFrame.mainPanel.highlighted = new HashSet<AbstractVertex>();
+		this.mainPanel.resetHighlighted(null);
 		Parameters.bytecodeArea.clear();
 		Parameters.rightArea.setText("");
 	}

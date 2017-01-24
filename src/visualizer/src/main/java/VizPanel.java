@@ -159,10 +159,12 @@ public class VizPanel extends JFXPanel
 	{
 		for(AbstractVertex currHighlighted : this.highlighted)
 			currHighlighted.setHighlighted(false);
-
 		highlighted = new HashSet<AbstractVertex>();
-		highlighted.add(newHighlighted);
-		newHighlighted.setHighlighted(true);
+
+		if(newHighlighted != null) {
+			highlighted.add(newHighlighted);
+			newHighlighted.setHighlighted(true);
+		}
 	}
 
 	public void drawNodes(GUINode parent, AbstractVertex v)

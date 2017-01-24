@@ -799,10 +799,10 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	public void searchByInstruction(String query)
 	{
 		if(this.vertexType == vertexType.INSTRUCTION) {
-			if(((Vertex) this).instruction.contains(query)) {
+			String instStr = ((Instruction) this.getMetaData().get(METADATA_INSTRUCTION)).str;
+			if(instStr.contains(query)) {
 				this.setHighlighted(true);
 				Parameters.stFrame.mainPanel.highlighted.add(this);
-				System.out.println("Search successful: " + ((Vertex) this).instruction);
 			}
 		}
 
@@ -812,18 +812,12 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 
 	public void searchByMethod(String query)
 	{
+
 		if(this.vertexType == vertexType.METHOD) {
-			if(this.getMethod() != null) {
-				String methodName = (String) this.getMetaData().get(METADATA_METHOD_NAME);
-				System.out.println("Testing method: " + methodName);
-				if (methodName.contains(query)) {
-					this.setHighlighted(true);
-					Parameters.stFrame.mainPanel.highlighted.add(this);
-					System.out.println("Search successful: " + this.getMethod().getFullName());
-				}
-			}
-			else {
-				System.out.println("Error: No method assigned to method vertex.");
+			String methodName = (String) this.getMetaData().get(METADATA_METHOD_NAME);
+			if (methodName.contains(query)) {
+				this.setHighlighted(true);
+				Parameters.stFrame.mainPanel.highlighted.add(this);
 			}
 		}
 
