@@ -18,7 +18,7 @@ public class LayerFactory
 	private static final boolean chains_expanded = true;
 	private static final boolean methods_expanded = true;
 	
-	private static final int CHAIN_LENGTH = 3 ; // This value should ALWAYS be LARGEN THAN OR EQUAL 3 (otherwise it will break)
+	private static final int CHAIN_LENGTH = 3 ; // This value should ALWAYS be LARGER THAN OR EQUAL 3 (otherwise it will break)
 	
 	static HashMap<String, Vertex> id_to_vertex = new HashMap<String, Vertex>();
 	static HashMap<String, AbstractVertex> id_to_abs_vertex = new HashMap<String, AbstractVertex>();
@@ -32,7 +32,7 @@ public class LayerFactory
 	{
 		AbstractGraph methodGraph = new AbstractGraph();
 		
-		/* We partion the vertex set of Main.graph into buckets corresponding to the methods*/
+		/* We partition the vertex set of Main.graph into buckets corresponding to the methods*/
 		HashMap<String, HashSet<Vertex>> buckets = new HashMap<String, HashSet<Vertex>>();
 		for(Vertex vertex: graph.vertices){
 			String method = vertex.getMethodName();
@@ -158,11 +158,10 @@ public class LayerFactory
 		
 		createChainVertices(root, CHAIN_LENGTH);
 		
-		System.out.println("Statistics:");
+		/*System.out.println("Statistics:");
 		System.out.println(JAAMUtils.RED("Number of edges: ") +JAAMUtils.YELLOW(""+root.getTotalEdgeCount()));
-		System.out.println(JAAMUtils.RED("Number of vertices: ") + JAAMUtils.YELLOW(""+root.getTotalVertexCount()));
-		
-		
+		System.out.println(JAAMUtils.RED("Number of vertices: ") + JAAMUtils.YELLOW(""+root.getTotalVertexCount()));*/
+
 		return root;
 	}
 
@@ -170,14 +169,14 @@ public class LayerFactory
 	{
 		AbstractGraph abstractGraph = new AbstractGraph();
 		
-		/* We partion the vertex set of Main.graph into buckets corresponding to the methods*/
+		/* We partition the vertex set of Main.graph into buckets corresponding to the methods*/
 		
 		for(int i = 0; i < graph.vertices.size(); i++)
 		{
 			Vertex vertex = graph.vertices.get(i);
 			String method = vertex.getMethodName();
 			if(id_to_abs_vertex.containsKey(vertex.getStrID())){
-				System.out.println("WARINING: there exists two vertices with the same StrID: " + vertex.getStrID());
+				System.out.println("WARNING: there exists two vertices with the same StrID: " + vertex.getStrID());
 			}else{
 				Vertex newV = new Vertex("instruction:" + vertex.getStrID(), AbstractVertex.VertexType.INSTRUCTION);
 				newV.setMinInstructionLine(vertex.getMinInstructionLine());
@@ -200,7 +199,7 @@ public class LayerFactory
 				String tempID = vertex.getStrID() + "--" + neighbor.getStrID();
 				if(edges.containsKey(tempID))
 				{
-					System.out.println("WARINING: there exists two vertices with the same StrID: " + tempID);
+					System.out.println("WARNING: there exists two vertices with the same StrID: " + tempID);
 				}
 				else{
 					AbstractVertex absVertex = id_to_abs_vertex.get(vertex.getStrID()); 
@@ -215,8 +214,6 @@ public class LayerFactory
 				}
 			}
 		}
-		
-
 		
 		Collections.sort(graph.vertices);
 		ArrayList<Edge> dummies = Graph.computeDummyEdges(graph.vertices.get(0));
@@ -257,7 +254,7 @@ public class LayerFactory
 	private static void createChainVerticesFromVertex(AbstractVertex root, int k) {
 		if(root==null){return;}
 		
-		System.out.println("collapseFromVertex");
+		//System.out.println("collapseFromVertex");
 		int i = 0;
 		AbstractVertex currentVertex = root;
 		ArrayList<AbstractVertex> chain = new ArrayList<AbstractVertex>();
@@ -284,22 +281,22 @@ public class LayerFactory
 			copyOfOutgoing.removeAll(copyOfIncoming);
 			
 			
-			System.out.println("Condition for vertex: " + currentVertex.getStrID());
+			/*System.out.println("Condition for vertex: " + currentVertex.getStrID());
 			System.out.println("grayChildren: " + grayChildren.size());
 			System.out.println("copyOfIncoming: " + copyOfIncoming.size());
-			System.out.println("copyOfOutgoing" + copyOfOutgoing.size());
+			System.out.println("copyOfOutgoing" + copyOfOutgoing.size());*/
 			Iterator<AbstractVertex> itVVV = copyOfOutgoing.iterator();
-			while(itVVV.hasNext()){
+			/*while(itVVV.hasNext()){
 				System.out.println("n: " + itVVV.next().getStrID());
-			}
+			}*/
 			
 			
 			
 			//if(grayChildren.size()==1 && copyOfIncoming.size()==1){
 //			if(currentVertex.getOutgoingAbstractNeighbors().size()==1 && copyOfIncoming.size()==1){
 			if(grayChildren.size()==1 && copyOfIncoming.size()<=1 && copyOfOutgoing.size()==1){
-			System.out.println("Condition true for vertex: " + currentVertex.getStrID());
-			System.out.println("getOutgoingAbstractNeighbors: "+ currentVertex.getOutgoingAbstractNeighbors().size());
+			//System.out.println("Condition true for vertex: " + currentVertex.getStrID());
+			//System.out.println("getOutgoingAbstractNeighbors: "+ currentVertex.getOutgoingAbstractNeighbors().size());
 //			if(currentVertex.getOutgoingAbstractNeighbors().size()==1){
 				AbstractVertex child =  grayChildren.get(0);
 				chain.add(currentVertex);
@@ -378,7 +375,7 @@ public class LayerFactory
 				break;
 			}
 		
-			System.out.println("i:" + i); 
+			//System.out.println("i:" + i);
 			i++;
 		}
 	

@@ -21,6 +21,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.Group;
 
 import java.awt.Color;
+import java.util.HashSet;
 import java.util.Iterator;
 
 public class VizPanel extends JFXPanel
@@ -28,15 +29,13 @@ public class VizPanel extends JFXPanel
 	private Group contentGroup;
 	private Pane testPane;
 	private ScrollPane scrollPane;
+	HashSet<AbstractVertex> highlighted;
 
 	public static float hues[]; //Used for shading nodes from green to red
-
-
 	private AbstractVertex panelRoot;
 	private javafx.scene.paint.Color[] colors = {javafx.scene.paint.Color.AQUAMARINE,
 			javafx.scene.paint.Color.GREEN, javafx.scene.paint.Color.AZURE,
 			javafx.scene.paint.Color.BLUEVIOLET, javafx.scene.paint.Color.DARKTURQUOISE};
-	private int index = 0;
 	public static int maxLoopHeight;
 
 	// The dimensions of the background for our graph
@@ -54,6 +53,7 @@ public class VizPanel extends JFXPanel
 	{
 		super();
 		initContentGroup();
+		highlighted = new HashSet<AbstractVertex>();
 	}
 
 	private void initContentGroup() {
@@ -129,6 +129,40 @@ public class VizPanel extends JFXPanel
 	public double getWidthPerVertex()
 	{
 		return panelRoot.getGraphics().getWidth() / panelRoot.getWidth();
+	}
+
+	//Called when the user clicks on a line in the left area.
+	//Updates the vertex highlights to those that correspond to the instruction clicked.
+	public void searchByJimpleIndex(String method, int index, boolean removeCurrent, boolean addChosen)
+	{
+		if(removeCurrent) {
+			// Unhighlight currently highlighted vertices
+			for (AbstractVertex v : this.highlighted) {
+				v.setHighlighted(false);
+			}
+		}
+
+		if(addChosen) {
+			//Next we add the highlighted vertices
+			this.highlighted = panelRoot.getVerticesWithInstructionID(index, method);
+			for (AbstractVertex v : this.highlighted) {
+				v.setHighlighted(true);
+			}
+		} else {
+			HashSet<AbstractVertex> toRemoveHighlights = panelRoot.getVerticesWithInstructionID(index, method);
+			for(AbstractVertex v : toRemoveHighlights)
+				v.setHighlighted(false);
+		}
+	}
+
+	public void resetHighlighted(AbstractVertex newHighlighted)
+	{
+		for(AbstractVertex currHighlighted : this.highlighted)
+			currHighlighted.setHighlighted(false);
+
+		highlighted = new HashSet<AbstractVertex>();
+		highlighted.add(newHighlighted);
+		newHighlighted.setHighlighted(true);
 	}
 
 	public void drawNodes(GUINode parent, AbstractVertex v)

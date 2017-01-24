@@ -21,6 +21,8 @@ import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.Font;
+import java.util.HashSet;
+import java.util.StringTokenizer;
 
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
@@ -125,7 +127,9 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						searchAndHighlight(searchType.ID);
+						initSearch();
+						String query = getSearchInput(searchType.ID);
+						searchByID(query);
 						Parameters.repaintAll();
 					}
 				}
@@ -139,7 +143,9 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						searchAndHighlight(searchType.INSTRUCTION);
+						initSearch();
+						String query = getSearchInput(searchType.INSTRUCTION);
+						Parameters.stFrame.mainPanel.getPanelRoot().searchByInstruction(query);
 						Parameters.repaintAll();
 					}
 				}
@@ -153,13 +159,15 @@ public class StacFrame extends JFrame
             {
                 public void actionPerformed(ActionEvent ev)
                 {
-                    searchAndHighlight(searchType.METHOD);
+					initSearch();
+                	String query = getSearchInput(searchType.METHOD);
+					Parameters.stFrame.mainPanel.getPanelRoot().searchByMethod(query);
                     Parameters.repaintAll();
                 }
             }
 		);
 
-        JMenuItem searchTags = new JMenuItem("Allocation Tags");
+        /*JMenuItem searchTags = new JMenuItem("Allocation Tags");
         menuSearch.add(searchTags);
         searchTags.addActionListener
         (
@@ -270,9 +278,10 @@ public class StacFrame extends JFrame
 						Parameters.repaintAll();
 					}
 				}
-		);
-		
-		JMenuItem clearAll = new JMenuItem("Clear All");
+		);*/
+
+        // TODO: Re-implement this menu item.
+		/*JMenuItem clearAll = new JMenuItem("Clear All");
 		menuSearch.add(clearAll);
 		clearAll.addActionListener
 		(
@@ -281,11 +290,11 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						Main.graph.clearHighlights();
-						Parameters.bytecodeArea.clear();
+						StacFrame.this.initSearch();
 						Parameters.repaintAll();
 					}
 				}
-		);
+		);*/
 
 		//Navigation menu
 		menuNavigation = new JMenu("Navigation");
@@ -870,8 +879,16 @@ public class StacFrame extends JFrame
 		ti.run(file.getAbsolutePath(), fromMessages);
 		Parameters.repaintAll();
 	}
-	
-	public void searchAndHighlight(searchType search)
+
+	// Clean up info from previous searches
+	public void initSearch()
+	{
+		Parameters.stFrame.mainPanel.highlighted = new HashSet<AbstractVertex>();
+		Parameters.bytecodeArea.clear();
+		Parameters.rightArea.setText("");
+	}
+
+	public String getSearchInput(searchType search)
 	{
 		String title = "";
 		System.out.println("Search type: " + search);
@@ -898,21 +915,39 @@ public class StacFrame extends JFrame
 		{
 			input = JOptionPane.showInputDialog(null, title);
 			if(input == null)
-				return;
+				return "";
 			else
 				input = input.trim();
 
 			if(input.equals(""))
-				return;
+				return "";
 		}
 
-		Main.graph.searchNodes(search, input);
-		
-		Parameters.vertexHighlight = true;
-
-		Parameters.highlightOutgoing = search != searchType.OUT_OPEN;
-		Parameters.highlightIncoming = search != searchType.IN_OPEN;
+		return input;
     }
+
+	public void searchByID(String input)
+	{
+		AbstractVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
+		StringTokenizer token = new StringTokenizer(input,", ");
+
+		int id1, id2;
+		String tok;
+
+		while(token.hasMoreTokens()) {
+			tok = token.nextToken();
+			if (tok.trim().equalsIgnoreCase(""))
+				continue;
+			if (tok.indexOf('-') == -1) {
+				id1 = Integer.parseInt(tok.trim());
+				panelRoot.searchByID(id1);
+			} else {
+				id1 = Integer.parseInt(tok.substring(0, tok.indexOf('-')).trim());
+				id2 = Integer.parseInt(tok.substring(tok.lastIndexOf('-') + 1).trim());
+				panelRoot.searchByIDRange(id1, id2);
+			}
+		}
+	}
 
 	public void addKeyboard(JFXPanel viz)
 	{

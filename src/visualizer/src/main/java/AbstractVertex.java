@@ -3,11 +3,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 
 import javafx.scene.paint.Color;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.*;
 
 abstract class AbstractVertex implements Comparable<AbstractVertex>
 {
@@ -776,6 +772,65 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		}
 	}
 
+	public void searchByID(int id)
+	{
+		if(this.id == id) {
+			this.setHighlighted(true);
+			Parameters.stFrame.mainPanel.highlighted.add(this);
+			System.out.println("Search successful: " + this.id);
+		}
+
+		for(AbstractVertex v : this.getInnerGraph().getVertices().values())
+			v.searchByID(id);
+	}
+
+	public void searchByIDRange(int id1, int id2)
+	{
+		if(this.id >= id1 && this.id <= id2) {
+			this.setHighlighted(true);
+			Parameters.stFrame.mainPanel.highlighted.add(this);
+			System.out.println("Search successful: " + this.id);
+		}
+
+		for(AbstractVertex v : this.getInnerGraph().getVertices().values())
+			v.searchByIDRange(id1, id2);
+	}
+
+	public void searchByInstruction(String query)
+	{
+		if(this.vertexType == vertexType.INSTRUCTION) {
+			if(((Vertex) this).instruction.contains(query)) {
+				this.setHighlighted(true);
+				Parameters.stFrame.mainPanel.highlighted.add(this);
+				System.out.println("Search successful: " + ((Vertex) this).instruction);
+			}
+		}
+
+		for(AbstractVertex v : this.getInnerGraph().getVertices().values())
+			v.searchByInstruction(query);
+	}
+
+	public void searchByMethod(String query)
+	{
+		if(this.vertexType == vertexType.METHOD) {
+			if(this.getMethod() != null) {
+				String methodName = (String) this.getMetaData().get(METADATA_METHOD_NAME);
+				System.out.println("Testing method: " + methodName);
+				if (methodName.contains(query)) {
+					this.setHighlighted(true);
+					Parameters.stFrame.mainPanel.highlighted.add(this);
+					System.out.println("Search successful: " + this.getMethod().getFullName());
+				}
+			}
+			else {
+				System.out.println("Error: No method assigned to method vertex.");
+			}
+		}
+
+		for(AbstractVertex v : this.getInnerGraph().getVertices().values())
+			v.searchByMethod(query);
+	}
+
 	public void setHighlighted(boolean isHighlighted)
 	{
 		if(isHighlighted)
@@ -797,10 +852,13 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		//System.out.println("Highlighting vertex: " + this.getFullName());
 		if(select)
 			this.isSelected = true;
+
 		if(vertex)
 			this.isHighlighted = true;
+
 		if(to)
 			this.isIncomingHighlighted = true;
+
 		if(from)
 			this.isOutgoingHighlighted = true;
 

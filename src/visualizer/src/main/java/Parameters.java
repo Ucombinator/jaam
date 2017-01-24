@@ -42,18 +42,9 @@ public class Parameters
 	public static void setRightText()
 	{
 		StringBuilder text = new StringBuilder();
-		for(Vertex v : Main.graph.vertices)
-		{
-            if(v.isSelected)
-				text.append(v.getRightPanelContent() + "\n\n");
-		}
-		
-		for(MethodVertex v : Main.graph.methodVertices)
-		{
-            if(v.isSelected)
-				text.append(v.getRightPanelContent() + "\n\n");
-		}
-		
+		for(AbstractVertex v : stFrame.mainPanel.highlighted)
+			text.append(v.getRightPanelContent() + "\n");
+
 		rightArea.setText(text.toString());
 		rightArea.setCaretPosition(0);
 	}
@@ -93,7 +84,7 @@ public class Parameters
 
 	public static void repaintAll()
 	{
-		System.out.println("Repainting...");
+		System.out.println("Repainting all...");
 		if (!Parameters.debugMode)
 		{
 			bytecodeArea.setDescription();

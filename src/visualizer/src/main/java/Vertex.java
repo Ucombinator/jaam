@@ -65,16 +65,30 @@ public class Vertex extends AbstractVertex
 	{
 		this.method = m;
 	}
-	
+
+	public String vertexTypeToString()
+	{
+		if(this.vertexType == VertexType.INSTRUCTION)
+			return "Instruction";
+		else if(this.vertexType == VertexType.METHOD)
+			return "Method";
+		else if(this.vertexType == VertexType.CHAIN)
+			return "Chain";
+		else
+			return "Unknown";
+	}
+
 	public String getRightPanelContent()
 	{
-		String str = "Regular Vertex (loop height = " + this.loopHeight + ")\n"
-				+ "id: " + this.id + "\n"
-				+ "statement: " + this.getInstruction() + "\n"
-				+ "method: " + this.getMethodName() + "\n"
+		String str = this.vertexTypeToString() + " vertex (loop height = " + this.loopHeight + ")\n"
+				+ "id: " + this.id + "\n";
+
+		if(this.vertexType == VertexType.INSTRUCTION)
+			str += "statement: " + ((Instruction) this.getMetaData().get(AbstractVertex.METADATA_INSTRUCTION)).str;
+
+		str +=  "method: " + this.getMetaData().get(AbstractVertex.METADATA_METHOD_NAME) + "\n"
 				+ " location (left, right, top, bottom): "
 				+ this.location.left + ", " + this.location.right + ", " + this.location.top + ", " + this.location.bottom + "\n"
-				+ this.getDescription() + "\n"
 				+ "visibility = " + this.isVisible + "\n";
 		return str;
 	}

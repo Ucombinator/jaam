@@ -178,12 +178,9 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	{
 		event.consume();
 		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
-		System.out.println("Vertex: " + v.getStrID());
-		System.out.println("Type: " + v.getType());
-		System.out.println("Incomign: " + v.getOutgoingAbstractNeighbors().size());
-		System.out.println("Outcoming: " + v.getIncomingAbstractNeighbors().size());
 
-		Parameters.bytecodeArea.setVertex(v);
+		Parameters.stFrame.mainPanel.resetHighlighted(v);
 		Parameters.bytecodeArea.setDescription();
+		Parameters.setRightText();
 	}
 }

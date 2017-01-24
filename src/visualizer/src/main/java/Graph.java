@@ -245,6 +245,7 @@ public class Graph
 	
 	public void searchNodes(StacFrame.searchType search, String searchStr)
 	{
+		// TODO: This will probably break when it is used again.
 		this.clearHighlights();
 		Parameters.bytecodeArea.clear();
 		

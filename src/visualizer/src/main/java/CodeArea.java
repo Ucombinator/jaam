@@ -15,11 +15,8 @@ import java.util.HashSet;
 
 public class CodeArea extends JTextArea
 {
-	private AbstractVertex selectedVertex;
 	ArrayList<Instruction> description;
 	ArrayList<Integer> rowToIndex; // Since some Jimple indices can be missing, we need to store an offset
-	HashSet<AbstractVertex> highlighted;
-    
     private int currentCaret = 0;
 	
 	public CodeArea()
@@ -28,8 +25,6 @@ public class CodeArea extends JTextArea
 		this.setEditable(false);
 		description = new ArrayList<Instruction>();
 		rowToIndex = new ArrayList<Integer>();
-		highlighted = new HashSet<AbstractVertex>();
-        
         ((DefaultCaret)this.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
         
 		this.addMouseListener
@@ -52,32 +47,34 @@ public class CodeArea extends JTextArea
 							{
 								if(line.isSelected)
 								{
-									CodeArea.this.searchByJimpleIndex(line.methodName, line.jimpleIndex,false);
+									Parameters.stFrame.mainPanel.searchByJimpleIndex(
+											line.methodName, line.jimpleIndex, false,false);
 								}
 								else
 								{
 									Parameters.vertexHighlight = true;
-									CodeArea.this.searchByJimpleIndex(line.methodName, line.jimpleIndex, true);
+									Parameters.stFrame.mainPanel.searchByJimpleIndex(
+											line.methodName, line.jimpleIndex, false,true);
 								}
 							}
 						}
 					}
 					else
 					{
-                        Main.graph.clearSelects();
-					
 						if(row >= 0 && row < rowToIndex.size())
 						{
 							Instruction line = description.get(rowToIndex.get(row));
 							if(line.isInstr)
 							{
 								Parameters.vertexHighlight = true;
-								CodeArea.this.searchByJimpleIndex(line.methodName, line.jimpleIndex, true);
+								Parameters.stFrame.mainPanel.searchByJimpleIndex(
+										line.methodName, line.jimpleIndex, true, true);
 							}
 						}
 					}
-					
-					Main.graph.redoCycleHighlights();
+
+					//TODO: Rewrite cycle highlighting
+					//Main.graph.redoCycleHighlights();
 					Parameters.repaintAll();
 				}
 				
@@ -91,54 +88,27 @@ public class CodeArea extends JTextArea
 			}
 		);
 	}
-	
-	//Cannot be called directly, but is called when the user clicks on a line in the left area
-	//Find vertices corresponding to the given highlight, and highlights them if addHighlight is true,
-	//or unhighlights them if addHighlight is false.
-	public void searchByJimpleIndex(String method, int index, boolean addHighlight)
-	{
-		// TODO: Unhighlight
-
-		System.out.println("Highlighting nodes: " + method + ", " + index);
-		// Unhighlight currently highlighted vertices
-		for(AbstractVertex v : highlighted) {
-			v.setHighlighted(false);
-		}
-
-		//Next we either add the highlighted vertices
-		AbstractVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
-		highlighted = panelRoot.getVerticesWithInstructionID(index, method);
-
-		for(AbstractVertex v : highlighted) {
-			v.setHighlighted(true);
-		}
-	}
 
 	public void clear()
 	{
-		this.selectedVertex = null;
 		this.description = new ArrayList<Instruction>();
 		this.rowToIndex = new ArrayList<Integer>();
 		this.writeText();
 	}
 
-	public void setVertex(AbstractVertex v) {
-		this.selectedVertex = v;
-	}
-
-	// Rewrite the text area based on which vertex is selected
+	// Rewrite the text area based on which vertices are highlighted
 	public void setDescription()
 	{
-		if(this.selectedVertex != null)
+		HashSet<AbstractVertex> highlighted = Parameters.stFrame.mainPanel.highlighted;
+		if(highlighted.size() > 0)
 		{
-			//description.add(new Instruction(currMethod + "\n", currMethod, false, -1));
-
-			//Add all instructions in the method
-			description = new ArrayList<Instruction>(selectedVertex.getInstructions());
+			//Add all instructions
+			//TODO: Separate and distinguish methods
+			//TODO: Remove duplicates
+			description = new ArrayList<Instruction>();
+			for(AbstractVertex v : highlighted)
+				description.addAll(v.getInstructions());
 			Collections.sort(description);
-
-			//Add blank line after each method
-			//description.add(new Instruction("\n", currMethod, false, -1));
 
 			int rowNumber = 0;
 			rowToIndex = new ArrayList<Integer>();
