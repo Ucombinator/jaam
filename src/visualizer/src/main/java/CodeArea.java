@@ -45,6 +45,7 @@ public class CodeArea extends JTextArea
 							Instruction line = description.get(rowToIndex.get(row));
 							if(line.isInstr)
 							{
+								// TODO: Highlighting gets weird sometimes when the shift key is held here...
 								if(line.isSelected)
 								{
 									Parameters.stFrame.mainPanel.searchByJimpleIndex(
@@ -105,10 +106,22 @@ public class CodeArea extends JTextArea
 			//Add all instructions
 			//TODO: Separate and distinguish methods
 			//TODO: Remove duplicates
-			description = new ArrayList<Instruction>();
+			HashSet<AbstractVertex> methodVertices = new HashSet<AbstractVertex>();
 			for(AbstractVertex v : highlighted)
-				description.addAll(v.getInstructions());
-			Collections.sort(description);
+				methodVertices.addAll(v.getMethodVertices());
+
+			description = new ArrayList<Instruction>();
+			for(AbstractVertex v : methodVertices) {
+				String methodName = (String) v.getMetaData().get(AbstractVertex.METADATA_METHOD_NAME);
+				ArrayList<Instruction> currInstructions = new ArrayList<Instruction>(v.getInstructions());
+				Collections.sort(currInstructions);
+				//System.out.println(currInstructions.size());
+
+				description.add(new Instruction(methodName + "\n", methodName, false, -1));
+				description.addAll(currInstructions);
+				description.add(new Instruction("\n", methodName, false, -1));
+				//System.out.println(description.size());
+			}
 
 			int rowNumber = 0;
 			rowToIndex = new ArrayList<Integer>();
@@ -141,8 +154,9 @@ public class CodeArea extends JTextArea
 	private void writeText()
 	{
 		StringBuilder fullText = new StringBuilder();
-		for(Instruction line : description)
+		for(Instruction line : description) {
 			fullText.append(line.str);
+		}
 
 		this.setText(fullText.toString());
 	}
@@ -174,7 +188,7 @@ public class CodeArea extends JTextArea
         }
         catch(BadLocationException ex)
         {
-            System.out.println("doc = "+CodeArea.this.getText());
+            System.out.println("doc = " + CodeArea.this.getText());
             System.out.println(ex);
         }
 

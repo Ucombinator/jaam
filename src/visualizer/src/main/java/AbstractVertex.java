@@ -1,8 +1,6 @@
 
 import javax.swing.tree.DefaultMutableTreeNode;
-
 import javafx.scene.paint.Color;
-
 import java.util.*;
 
 abstract class AbstractVertex implements Comparable<AbstractVertex>
@@ -17,7 +15,6 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	public Color highlightColor = Color.ORANGE;
 	
 	static int idCounter = 0; // Used to assign unique id numbers to each vertex
-	
 	private Color color = Color.RED;
 
 	public Color getColor() {
@@ -65,9 +62,7 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	}
 
 	private String label;
-
 	private boolean isExpanded = true;
-
 
 	public ArrayList<Integer> tags;
 
@@ -1039,6 +1034,35 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		return this.abstractIncomingNeighbors;
 	}
 
+	public void assignParents()
+	{
+		for(AbstractVertex v : this.innerGraph.getVertices().values()) {
+			v.parent = this;
+			v.assignParents();
+		}
+	}
+
+	public HashSet<AbstractVertex> getMethodVertices()
+	{
+		HashSet<AbstractVertex> methodVertices = new HashSet<AbstractVertex>();
+		if(this.vertexType == VertexType.INSTRUCTION) {
+			AbstractVertex v = this;
+			while(v.vertexType != VertexType.METHOD) {
+				v = v.parent;
+			}
+			methodVertices.add(v);
+		}
+		else if (this.vertexType == VertexType.METHOD) {
+			methodVertices.add(this);
+		}
+		else {
+			for(AbstractVertex v : this.getInnerGraph().getVertices().values()) {
+				methodVertices.addAll(v.getMethodVertices());
+			}
+		}
+
+		return methodVertices;
+	}
 
 	public void setSelfGraph(AbstractGraph abstractGraph) {
 		this.selfGraph = abstractGraph;
@@ -1110,21 +1134,22 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 	}
 
 	
-	public HashSet<Instruction> getInstructions(){
+	public HashSet<Instruction> getInstructions() {
 		return this.getInstructions(new HashSet<Instruction>());
 	}
 	
 	private HashSet<Instruction> getInstructions(HashSet<Instruction> instructions) {
-		if(this.getType().equals(AbstractVertex.VertexType.ROOT) || this.getType().equals(AbstractVertex.VertexType.METHOD) || this.getType().equals(AbstractVertex.VertexType.CHAIN)){
+		if(this.getType().equals(AbstractVertex.VertexType.ROOT) || this.getType().equals(AbstractVertex.VertexType.METHOD) || this.getType().equals(AbstractVertex.VertexType.CHAIN)) {
 			Iterator<AbstractVertex> it = this.getInnerGraph().getVertices().values().iterator();
 			while(it.hasNext()){
 					it.next().getInstructions(instructions);
 			}
 		} else if(this.getType().equals(AbstractVertex.VertexType.INSTRUCTION)){
-			instructions.add((Instruction)this.getMetaData().get(METADATA_INSTRUCTION));
+			instructions.add((Instruction) this.getMetaData().get(METADATA_INSTRUCTION));
 		} else {
 			System.out.println("Unrecognized type in method getInstructions: " + this.getType());
 		}
+
 		return instructions;
 	}
 

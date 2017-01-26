@@ -32,7 +32,7 @@ public class LayerFactory
 	{
 		AbstractGraph methodGraph = new AbstractGraph();
 		
-		/* We partition the vertex set of Main.graph into buckets corresponding to the methods*/
+		// We partition the vertex set of Main.graph into buckets corresponding to the methods.
 		HashMap<String, HashSet<Vertex>> buckets = new HashMap<String, HashSet<Vertex>>();
 		for(Vertex vertex: graph.vertices){
 			String method = vertex.getMethodName();
@@ -41,7 +41,6 @@ public class LayerFactory
 			}
 			buckets.get(method).add(vertex);
 		}
-		
 		
 		// Add a vertex for each method to the methodGraph.
 		HashMap<String, AbstractVertex> methodVertices = new HashMap<>();
@@ -74,7 +73,7 @@ public class LayerFactory
 		}
 		
 		// Create inner graph for each method vertex.
-		for(AbstractVertex methodVertex: methodGraph.getVertices().values()){
+		for(AbstractVertex methodVertex: methodGraph.getVertices().values()) {
 			//Create inner-vertices of the inner-methods graph.
 
 			// Add vertices of the inner graph.
@@ -83,6 +82,7 @@ public class LayerFactory
 				String inst = "";
 				if(oldV.getRealInstruction() != null)
 					inst = oldV.getRealInstruction().str;
+
 				Vertex newV = new Vertex(inst, AbstractVertex.VertexType.INSTRUCTION);
 				newV.getMetaData().put(AbstractVertex.METADATA_METHOD_NAME, methodVertex.getMetaData().get(AbstractVertex.METADATA_METHOD_NAME));
 				newV.getMetaData().put(AbstractVertex.METADATA_INSTRUCTION, oldV.getRealInstruction());
@@ -247,35 +247,34 @@ public class LayerFactory
 		if(create_chains){
 			createChainVerticesFromVertex(parent.getInnerGraph().getRoot(), k);
 		}
-	
 	}
 
 	private static void createChainVerticesFromVertex(AbstractVertex root, int k) {
-		if(root==null){return;}
-		
+		if (root == null) {
+			return;
+		}
+
 		//System.out.println("collapseFromVertex");
 		int i = 0;
 		AbstractVertex currentVertex = root;
 		ArrayList<AbstractVertex> chain = new ArrayList<AbstractVertex>();
-		while(true){
+		while (true) {
 			currentVertex.vertexStatus = AbstractVertex.VertexStatus.GRAY;
 			Iterator<AbstractVertex> itChildren = currentVertex.getOutgoingAbstractNeighbors().iterator();
 			ArrayList<AbstractVertex> grayChildren = new ArrayList<AbstractVertex>();
-			while(itChildren.hasNext())
-			{
+			while (itChildren.hasNext()) {
 				AbstractVertex child = itChildren.next();
-				if (child.vertexStatus == AbstractVertex.VertexStatus.WHITE)
-				{
+				if (child.vertexStatus == AbstractVertex.VertexStatus.WHITE) {
 					child.vertexStatus = AbstractVertex.VertexStatus.GRAY;
 					grayChildren.add(child);
 				}
 			}
-			
-			
+
+
 			ArrayList<AbstractVertex> copyOfIncoming = new ArrayList<AbstractVertex>(currentVertex.getIncomingAbstractNeighbors());
 			copyOfIncoming.removeAll(grayChildren);
-			
-			
+
+
 			ArrayList<AbstractVertex> copyOfOutgoing = new ArrayList<AbstractVertex>(currentVertex.getOutgoingAbstractNeighbors());
 			copyOfOutgoing.removeAll(copyOfIncoming);
 			
@@ -288,106 +287,103 @@ public class LayerFactory
 			/*while(itVVV.hasNext()){
 				System.out.println("n: " + itVVV.next().getStrID());
 			}*/
-			
-			
-			
+
+
 			//if(grayChildren.size()==1 && copyOfIncoming.size()==1){
 //			if(currentVertex.getOutgoingAbstractNeighbors().size()==1 && copyOfIncoming.size()==1){
-			if(grayChildren.size()==1 && copyOfIncoming.size()<=1 && copyOfOutgoing.size()==1){
-			//System.out.println("Condition true for vertex: " + currentVertex.getStrID());
-			//System.out.println("getOutgoingAbstractNeighbors: "+ currentVertex.getOutgoingAbstractNeighbors().size());
+			if (grayChildren.size() == 1 && copyOfIncoming.size() <= 1 && copyOfOutgoing.size() == 1) {
+				//System.out.println("Condition true for vertex: " + currentVertex.getStrID());
+				//System.out.println("getOutgoingAbstractNeighbors: "+ currentVertex.getOutgoingAbstractNeighbors().size());
 //			if(currentVertex.getOutgoingAbstractNeighbors().size()==1){
-				AbstractVertex child =  grayChildren.get(0);
+				AbstractVertex child = grayChildren.get(0);
 				chain.add(currentVertex);
 				currentVertex = child;
-			}else{
+			} else {
 				// We also add the last vertex to the chain (so that we can reconstruct all edges)
 //				if(grayChildren.size()==0){
-					chain.add(currentVertex);
+				chain.add(currentVertex);
 //			}
-				
+
 				/********************************************************************************/
-				if(i>=k){
+				if (i >= k) {
 					//System.out.println("CREATING CHAIN!!");
 					AbstractVertex first = chain.get(0);
-					AbstractVertex last = chain.get(chain.size()-1);
+					AbstractVertex last = chain.get(chain.size() - 1);
 
 					//System.out.println("CHAIN starts at: " + chain.get(0).getStrID());
 					//Create the new vertex
 					AbstractVertex chainVertex = new Vertex("Chain:" + chain.get(0).getStrID(), AbstractVertex.VertexType.CHAIN);
 					chainVertex.setExpanded(chains_expanded);
 					chainVertex.setMinInstructionLine(Integer.MAX_VALUE); // to be sure it won't be the root
-					
+
 					first.getSelfGraph().addVertex(chainVertex);
 					first.getSelfGraph().addEdge(new Edge(first, chainVertex, Edge.EDGE_TYPE.EDGE_REGULAR));
-					if(first.getSelfGraph().hasEdge(chain.get(1),first)){
-						chainVertex.getSelfGraph().addEdge(new Edge(chainVertex,first, Edge.EDGE_TYPE.EDGE_REGULAR));
+					if (first.getSelfGraph().hasEdge(chain.get(1), first)) {
+						chainVertex.getSelfGraph().addEdge(new Edge(chainVertex, first, Edge.EDGE_TYPE.EDGE_REGULAR));
 					}
 					first.getSelfGraph().addEdge(new Edge(chainVertex, last, Edge.EDGE_TYPE.EDGE_REGULAR));
-					if(last.getSelfGraph().hasEdge(last,chain.get(chain.size()-2))){
-						chainVertex.getSelfGraph().addEdge(new Edge(last,chainVertex,  Edge.EDGE_TYPE.EDGE_REGULAR));
+					if (last.getSelfGraph().hasEdge(last, chain.get(chain.size() - 2))) {
+						chainVertex.getSelfGraph().addEdge(new Edge(last, chainVertex, Edge.EDGE_TYPE.EDGE_REGULAR));
 					}
-				
 
-					chain.remove(chain.size()-1);
+
+					chain.remove(chain.size() - 1);
 					Iterator<AbstractVertex> chainIt = chain.iterator();
 					chainIt.next(); // to start from the second node of the chain
 					AbstractVertex previous = chainIt.next();
 					chainVertex.getInnerGraph().addVertex(previous);
-					while(chainIt.hasNext()){
+					while (chainIt.hasNext()) {
 						AbstractVertex next = chainIt.next();
 						chainVertex.getInnerGraph().addVertex(next);
 						chainVertex.getInnerGraph().addEdge(new Edge(previous, next, Edge.EDGE_TYPE.EDGE_REGULAR));
-						if(first.getSelfGraph().hasEdge(next, previous)){
-							chainVertex.getInnerGraph().addEdge(new Edge(next, previous, Edge.EDGE_TYPE.EDGE_REGULAR));	
+						if (first.getSelfGraph().hasEdge(next, previous)) {
+							chainVertex.getInnerGraph().addEdge(new Edge(next, previous, Edge.EDGE_TYPE.EDGE_REGULAR));
 						}
 						previous = next;
 					}
-					
-					
+
+
 					previous = first;
 					chainIt = chain.iterator();
 					chainIt.next();
-					while(chainIt.hasNext()){
+					while (chainIt.hasNext()) {
 						AbstractVertex next = chainIt.next();
-						first.getSelfGraph().deleteEdge(previous,next);
-						first.getSelfGraph().deleteEdge(next,previous);
+						first.getSelfGraph().deleteEdge(previous, next);
+						first.getSelfGraph().deleteEdge(next, previous);
 						first.getSelfGraph().deleteVertex(next);
 						previous = next;
 					}
-					last.getSelfGraph().deleteEdge(chain.get(chain.size()-1),last);
-					last.getSelfGraph().deleteEdge(last,chain.get(chain.size()-1));
-					
-					
+					last.getSelfGraph().deleteEdge(chain.get(chain.size() - 1), last);
+					last.getSelfGraph().deleteEdge(last, chain.get(chain.size() - 1));
+
+
 				}
 				/********************************************************************************/
 				itChildren = grayChildren.iterator();
-				while(itChildren.hasNext()){
+				while (itChildren.hasNext()) {
 					createChainVerticesFromVertex(itChildren.next(), k);
 				}
 				break;
 			}
-		
+
 			//System.out.println("i:" + i);
 			i++;
 		}
-	
+	}
 
-		}
+	public static Color convertToFXColor(float redToGreenHue)
+	{
+		float sat = 1f;
+		float brightness = 1f;
+		java.awt.Color awtColor = getHSBColorT(redToGreenHue, sat, brightness);
 
-		public static Color convertToFXColor(float redToGreenHue)
-		{
-			float sat = 1f;
-			float brightness = 1f;
-			java.awt.Color awtColor = getHSBColorT(redToGreenHue, sat, brightness);
-
-			int r = awtColor.getRed();
-			int g = awtColor.getGreen();
-			int b = awtColor.getBlue();
-			int a = awtColor.getAlpha();
-			double opacity = a / 255.0 ;
-			return javafx.scene.paint.Color.rgb(r, g, b, opacity);
-		}
+		int r = awtColor.getRed();
+		int g = awtColor.getGreen();
+		int b = awtColor.getBlue();
+		int a = awtColor.getAlpha();
+		double opacity = a / 255.0 ;
+		return javafx.scene.paint.Color.rgb(r, g, b, opacity);
+	}
 
 	public static java.awt.Color getHSBColorT(float H, float S, float B)
 	{
