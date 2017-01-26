@@ -147,10 +147,8 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		GUINode node = v.getGraphics();
 		double pixelWidth = Parameters.stFrame.mainPanel.scaleX(v.getWidth());
 		double pixelHeight = Parameters.stFrame.mainPanel.scaleY(v.getHeight());
-		double toScaleX = (pixelWidth/node.getWidth());
-		double toScaleY = pixelHeight/node.getHeight();
-		double pivotX = 0;
-		double pivotY = 0;
+		double toScaleX = pixelWidth / node.getWidth();
+		double toScaleY = pixelHeight / node.getHeight();
 
 		double xShift = 0.5*node.getWidth()*(toScaleX - 1);
 		double yShift = 0.5*node.getHeight()*(toScaleY - 1);

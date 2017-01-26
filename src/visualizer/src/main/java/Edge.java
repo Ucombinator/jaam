@@ -90,6 +90,10 @@ public class Edge implements Comparable<Edge>
 			System.out.println(this.getType());*/
 			return;
 		}
+		else if(destVertex.getMetaData().get(AbstractVertex.METADATA_METHOD_NAME) == "ErrorState") {
+			//System.out.println("Hiding edge to ErrorState...");
+			return;
+		}
 		else if((sourceVertex.getGraphics() == null) || (destVertex.getGraphics() == null))
 			return;
 

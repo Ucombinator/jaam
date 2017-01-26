@@ -78,6 +78,7 @@ public class TakeInput extends Thread
 				}
 				else if(packet instanceof ErrorState)
 				{
+					// TODO: Add description for ErrorState on initialization
 					int id = ((ErrorState) packet).id().id();
 					Main.graph.addErrorState(id);
 				}

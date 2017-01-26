@@ -644,7 +644,6 @@ public class Graph
 	}
 	
 
-
 	// Next three methods modified from "A New Algorithm for Identifying Loops in Decompilation"
 	// TODO: Run this on each method graph separately
 	public void identifyLoops()
@@ -659,8 +658,8 @@ public class Graph
 		for(Vertex v : vertices)
 		{
 			Vertex header = v.getLoopHeader();
-			if(header != null)
-				System.out.println("identifyLoops:" + v.id + " --> " + v.getLoopHeader().id);
+			//if(header != null)
+			//	System.out.println("identifyLoops:" + v.id + " --> " + v.getLoopHeader().id);
 		}
 	}
 

@@ -493,6 +493,7 @@ public class StacFrame extends JFrame
 						
 						@Override
 						public void run() {
+							// TODO: When this is checked off and then back on, the edges don't reappear.
 							Parameters.edgeVisible = showEdge.isSelected();
 							mainPanel.getPanelRoot().setEdgeVisibility(Parameters.edgeVisible);
 							for(AbstractVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
