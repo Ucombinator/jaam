@@ -25,7 +25,7 @@ public class Edge implements Comparable<Edge>
 
 	static double defaultStrokeWidth = 1;
 	static double arrowheadAngleDiff = 0.15 * Math.PI;
-	public static double arrowLength;
+	public static double arrowLength = 10;
 
 	private Edge(int source, int dest)
 	{

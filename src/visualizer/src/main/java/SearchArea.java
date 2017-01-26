@@ -32,13 +32,16 @@ public class SearchArea extends JPanel
         this.searchTree.setCellRenderer(new SearchRenderer());
 
         this.add(this.searchTree, BorderLayout.CENTER);
-        this.searchTree.addMouseListener
+        /*this.searchTree.addMouseListener
 		(
 			new MouseListener()
 			{
 				public void mouseClicked(MouseEvent e)
 				{
+				    //System.out.println("Location: " + e.getX() + ", " + e.getY());
+				    //System.out.println("Search tree: " + searchTree.toString());
                     TreePath path = searchTree.getPathForLocation(e.getX(), e.getY());
+                    //System.out.println("TreePath = " + path);
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode)(path.getLastPathComponent());
                     AbstractVertex ver = (AbstractVertex)(node.getUserObject());
                     
@@ -76,48 +79,22 @@ public class SearchArea extends JPanel
 				
 				public void mouseExited(MouseEvent e){}
 			}
-		);
+		);*/
  	}
-    
-    private void expandAllNodes(JTree tree)
-    {
-        for (int i = 0; i < tree.getRowCount(); i++)
-        {
-            tree.expandRow(i);
-        }
-    }
-    
+
 	//Set the text for the area
 	public void writeText()
 	{
         this.root.removeAllChildren();
+        if(Parameters.stFrame.mainPanel.highlighted.size() > 0) {
+            // We don't want to include the panel root, so we start our check with its children
+            for(AbstractVertex v : Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+                v.addTreeNodes(this.root);
 
-        DefaultMutableTreeNode currentPNode = new DefaultMutableTreeNode();
-        DefaultMutableTreeNode currentMNode = new DefaultMutableTreeNode();
-        DefaultMutableTreeNode node = new DefaultMutableTreeNode();
-
-        for(AbstractVertex mver : Main.graph.methodVertices)
-        {
-            if(Parameters.vertexHighlight && (mver.isBranchSelected() || mver.isBranchHighlighted()))
-            {
-                currentMNode = mver.toDefaultMutableTreeNode();
-                currentPNode.add(currentMNode);
-            }
-
-            for(AbstractVertex ver : mver.getMergeChildren())
-            {
-                if(Parameters.vertexHighlight && (ver.isBranchSelected() || ver.isBranchHighlighted()))
-                {
-                    node = ver.toDefaultMutableTreeNode();
-                    currentMNode.add(node);
-                }
-            }
+            // TODO: Auto-expand nodes?
+            DefaultTreeModel model = (DefaultTreeModel)this.searchTree.getModel();
+            model.reload(this.root);
         }
-        
-        this.expandAllNodes(this.searchTree);
-        DefaultTreeModel model = (DefaultTreeModel)this.searchTree.getModel();
-        model.reload(this.root);
-        this.expandAllNodes(this.searchTree);
 	}
     
     public void fixCaretPosition()

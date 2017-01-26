@@ -96,7 +96,7 @@ public class Vertex extends AbstractVertex
 	// TODO: Restore function getHTMLVerbatim
     public String getShortDescription()
     {
-        String str = "<html>" + this.id + ": Regular Vertex<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+        String str = "<html>" + this.id + ": " + this.vertexTypeToString() + " Vertex<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
                     //+ "statement: " + Parameters.getHTMLVerbatim(this.getInstruction()) + "</html>";
         return str;
     }

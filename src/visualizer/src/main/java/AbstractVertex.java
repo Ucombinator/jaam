@@ -247,7 +247,21 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		if(this.getGraphics() != null)
 			this.getGraphics().setVisible(isVisible);
 	}
-    
+
+	public boolean addTreeNodes(DefaultMutableTreeNode parentNode) {
+		boolean addedNodes = false;
+		DefaultMutableTreeNode newNode = this.toDefaultMutableTreeNode();
+		for(AbstractVertex v : this.getInnerGraph().getVertices().values())
+			addedNodes |= v.addTreeNodes(newNode);
+
+		if(Parameters.stFrame.mainPanel.highlighted.contains(this) || addedNodes) {
+			parentNode.add(newNode);
+			return true;
+		}
+		else
+			return false;
+	}
+
     public DefaultMutableTreeNode toDefaultMutableTreeNode()
     {
         return new DefaultMutableTreeNode(this);

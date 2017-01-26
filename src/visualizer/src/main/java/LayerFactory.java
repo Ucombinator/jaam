@@ -308,16 +308,11 @@ public class LayerFactory
 				
 				/********************************************************************************/
 				if(i>=k){
-					System.out.println("CREATING CHAIN!!");
+					//System.out.println("CREATING CHAIN!!");
 					AbstractVertex first = chain.get(0);
 					AbstractVertex last = chain.get(chain.size()-1);
-					
-				
-					
-				
-					System.out.println("CHAIN starts at: " + chain.get(0).getStrID());
-					
-					
+
+					//System.out.println("CHAIN starts at: " + chain.get(0).getStrID());
 					//Create the new vertex
 					AbstractVertex chainVertex = new Vertex("Chain:" + chain.get(0).getStrID(), AbstractVertex.VertexType.CHAIN);
 					chainVertex.setExpanded(chains_expanded);
@@ -333,8 +328,7 @@ public class LayerFactory
 						chainVertex.getSelfGraph().addEdge(new Edge(last,chainVertex,  Edge.EDGE_TYPE.EDGE_REGULAR));
 					}
 				
-					
-					
+
 					chain.remove(chain.size()-1);
 					Iterator<AbstractVertex> chainIt = chain.iterator();
 					chainIt.next(); // to start from the second node of the chain
