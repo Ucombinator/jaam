@@ -56,7 +56,8 @@ public class StacFrame extends JFrame
 	private int width, height;
 	private ArrayList<JSplitPane> horizontalSplitPanes;
 	public VizPanel mainPanel;
-	private JPanel menuPanel, bytecodePanel, decompiledPanel, rightPanel, searchPanel;
+	private JPanel menuPanel, bytecodePanel, rightPanel, searchPanel;
+	//private JPanel decompiledPanel;
 	public JCheckBox showEdge;
     public SearchField searchF;
 	
@@ -793,7 +794,7 @@ public class StacFrame extends JFrame
 	public void setSplitScreen()
 	{
 		// Declare each panel
-		decompiledPanel = new JPanel();
+		//decompiledPanel = new JPanel();
 		bytecodePanel = new JPanel();
 		rightPanel = new JPanel();
         searchPanel = new JPanel();
@@ -809,12 +810,12 @@ public class StacFrame extends JFrame
 		bytecodePanel.add(bytecodeScroll, BorderLayout.CENTER);
 		bytecodePanel.setFont(Parameters.font);
 
-		decompiledPanel.setLayout(new BorderLayout());
+		/*decompiledPanel.setLayout(new BorderLayout());
 		Parameters.decompiledArea = new CodeArea();
 		JScrollPane decompiledScroll = new JScrollPane(Parameters.decompiledArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		decompiledPanel.add(decompiledScroll, BorderLayout.CENTER);
-		decompiledPanel.setFont(Parameters.font);
+		decompiledPanel.setFont(Parameters.font);*/
 		
 		JLabel rightL = new JLabel("Description", JLabel.CENTER);
 		Parameters.rightArea = new JTextArea();
@@ -843,10 +844,10 @@ public class StacFrame extends JFrame
 
 		ArrayList<JComponent> left = new ArrayList<JComponent>();
 		left.add(bytecodePanel);
-		left.add(decompiledPanel);
+		//left.add(decompiledPanel);
 
 		ArrayList<Double> leftWeights = new ArrayList<Double>();
-		leftWeights.add(0.6);
+		//leftWeights.add(0.6);
 		layoutRowWeights.add(leftWeights);
 
 		ArrayList<JComponent> center = new ArrayList<JComponent>();

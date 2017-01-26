@@ -76,28 +76,27 @@ public class LayerFactory
 		// Create inner graph for each method vertex.
 		for(AbstractVertex methodVertex: methodGraph.getVertices().values()){
 			//Create inner-vertices of the inner-methods graph.
-			
+
 			// Add vertices of the inner graph.
 			HashMap<String,String> idMapping = new HashMap<>(); // first id is the Main.graph vertex id and the second id the New vertex id
 			for(Vertex oldV: buckets.get(methodVertex.getLabel())){
-				Vertex newV = new Vertex(oldV.getRealInstruction().str, AbstractVertex.VertexType.INSTRUCTION);
-					newV.getMetaData().put(AbstractVertex.METADATA_METHOD_NAME, methodVertex.getMetaData().get(AbstractVertex.METADATA_METHOD_NAME));
-					newV.getMetaData().put(AbstractVertex.METADATA_INSTRUCTION, oldV.getRealInstruction());
-					
-					newV.setColor(convertToFXColor(VizPanel.hues[oldV.loopHeight]));
+				String inst = "";
+				if(oldV.getRealInstruction() != null)
+					inst = oldV.getRealInstruction().str;
+				Vertex newV = new Vertex(inst, AbstractVertex.VertexType.INSTRUCTION);
+				newV.getMetaData().put(AbstractVertex.METADATA_METHOD_NAME, methodVertex.getMetaData().get(AbstractVertex.METADATA_METHOD_NAME));
+				newV.getMetaData().put(AbstractVertex.METADATA_INSTRUCTION, oldV.getRealInstruction());
+				newV.setColor(convertToFXColor(VizPanel.hues[oldV.loopHeight]));
+				newV.setMinInstructionLine(oldV.id);
 
-				
-					newV.setMinInstructionLine(oldV.id);
+				id_to_vertex.put(oldV.getStrID(), oldV);
+				id_to_abs_vertex.put(oldV.getStrID(), newV);
+				idMapping.put(oldV.getStrID(), newV.getStrID());
 
-					id_to_vertex.put(oldV.getStrID(), oldV);
-					id_to_abs_vertex.put(oldV.getStrID(), newV);
-					idMapping.put(oldV.getStrID(), newV.getStrID());
-					
-					methodVertex.getInnerGraph().addVertex(newV);
+				methodVertex.getInnerGraph().addVertex(newV);
 			}
 			
 			// Add the edges of the inner graph.
-			
 			for(Vertex v: buckets.get(methodVertex.getLabel())){
 				for(Vertex neighbor: v.neighbors){
 					if(v.getMethodName().equals(neighbor.getMethodName())){
