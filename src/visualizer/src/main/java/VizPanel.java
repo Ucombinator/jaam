@@ -20,6 +20,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Group;
 
+import javax.swing.table.AbstractTableModel;
 import java.awt.Color;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -142,20 +143,24 @@ public class VizPanel extends JFXPanel
 		if(removeCurrent) {
 			// Unhighlight currently highlighted vertices
 			for (AbstractVertex v : this.highlighted) {
+				highlighted.remove(v);
 				v.setHighlighted(false);
 			}
 		}
 
 		if(addChosen) {
 			//Next we add the highlighted vertices
-			this.highlighted = panelRoot.getVerticesWithInstructionID(index, method);
-			for (AbstractVertex v : this.highlighted) {
+			HashSet<AbstractVertex> toAddHighlights = panelRoot.getVerticesWithInstructionID(index, method);
+			for (AbstractVertex v : toAddHighlights) {
+				highlighted.add(v);
 				v.setHighlighted(true);
 			}
 		} else {
 			HashSet<AbstractVertex> toRemoveHighlights = panelRoot.getVerticesWithInstructionID(index, method);
-			for(AbstractVertex v : toRemoveHighlights)
+			for(AbstractVertex v : toRemoveHighlights) {
+				highlighted.remove(v);
 				v.setHighlighted(false);
+			}
 		}
 	}
 

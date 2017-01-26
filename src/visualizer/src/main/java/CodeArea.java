@@ -45,7 +45,6 @@ public class CodeArea extends JTextArea
 							Instruction line = description.get(rowToIndex.get(row));
 							if(line.isInstr)
 							{
-								// TODO: Highlighting gets weird sometimes when the shift key is held here...
 								if(line.isSelected)
 								{
 									Parameters.stFrame.mainPanel.searchByJimpleIndex(
