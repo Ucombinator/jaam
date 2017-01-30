@@ -73,7 +73,7 @@ case class Stmt(val sootStmt : SootStmt, val sootMethod : SootMethod) {
 }
 
 object Soot {
-  def initialize(conf : Conf) {
+  def initialize(conf : Conf, customizations: => Unit = {}) {
     // We choose to not use Soot in verbose mode.
     Options.v().set_verbose(false)
     // Put class bodies in Jimple format
@@ -93,6 +93,8 @@ object Soot {
 
     // TODO: when should we have this?
     //Options.v.set_whole_program(true)
+
+    customizations // Let the caller specify modifications to settings
 
     // Compute dependent options
     soot.Main.v().autoSetOptions()
