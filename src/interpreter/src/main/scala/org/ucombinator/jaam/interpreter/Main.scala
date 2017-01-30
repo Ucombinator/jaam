@@ -1438,7 +1438,7 @@ object Main {
     var done: Set[AbstractState.Id] = Set()
     var doneEdges: Map[(Int, Int), Int] = Map()
 
-    var todo: mutable.PriorityQueue[AbstractState] = mutable.PriorityQueue()(
+    val todo: mutable.PriorityQueue[AbstractState] = mutable.PriorityQueue()(
       conf.stateOrdering()(conf.globalSnowflakeAddrLast()))
     todo.enqueue(initialState)
     outSerializer.write(initialState.toPacket())
