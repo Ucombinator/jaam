@@ -38,8 +38,10 @@ import org.rogach.scallop._
 // fix this when we build the Scala wrapper for Soot.)
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.jimple.{Stmt => SootStmt, _}
+import soot.options.Options
 
 import soot.jimple.internal.JStaticInvokeExpr
+import soot.jimple.toolkits.callgraph._
 import soot.jimple.toolkits.invoke.AccessManager
 import soot.tagkit._
 
@@ -1378,6 +1380,14 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
 
   val initialStore = opt[java.io.File]()
 
+  val analyzer = enum[Conf.Analyzer](
+    descr = "which analyzer to use",
+    default = Some("cha"),
+    argType = "analyzer",
+    elems = immutable.ListMap(
+      "aam" -> Conf.AAM,
+      "cha" -> Conf.CHA))
+
   verify()
 
   object StateOrdering {
@@ -1396,12 +1406,17 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
   }
 }
 
+object Conf {
+  sealed trait Analyzer {}
+  final case object AAM extends Analyzer {}
+  final case object CHA extends Analyzer {}
+}
+
 object Main {
   // TODO: better way to have "final after initialization" (lazy?) and populated from Runtime.args
   var conf : Conf = null;  // TODO: find a better place to put this
 
   def main(args : Array[String]) {
-    val startInstant = java.time.Instant.now()
 
     val conf = new Conf(args)
     Main.conf = conf;
@@ -1411,14 +1426,114 @@ object Main {
       scala.io.StdIn.readLine()
     }
 
+    Log.setLogging(conf.logLevel())
+    Log.color = conf.color()
+
+    conf.analyzer() match {
+      case Conf.AAM => aam()
+      case Conf.CHA => cha()
+    }
+  }
+
+  def cha() {
+    Soot.initialize(conf, {
+      //Options.v().set_verbose(true)
+      //Options.v().set_include_all(false)
+
+      //Options.v.set_whole_program(true)
+      Options.v().set_app(true)
+
+      //soot.options.Options.v().set_main_class(conf.mainClass())
+      Scene.v().setMainClass(Scene.v().loadClassAndSupport(conf.mainClass()))
+      Scene.v().loadNecessaryClasses()
+    })
+
+    Options.v().setPhaseOption("cg", "verbose:true")
+    CHATransformer.v().transform()
+    val cg = Scene.v().getCallGraph()
+
+    var seen = Set[State]() // includes everything including todo elements
+    var todo = List[State]()
+    var edgeCount = 0
+
+    def addState(s: State) {
+      if (!seen(s)) {
+        Log.debug("addState:"+s)
+        seen += s
+        todo = s :: todo
+        outSerializer.write(s.toPacket)
+      }
+    }
+
+    def addEdge(s1: State, s2: State) {
+      Log.debug("addEdge:"+s1.id+" -> "+s2.id)
+      edgeCount += 1
+      val edge = serializer.Edge(
+        serializer.Id[serializer.Edge](edgeCount),
+        serializer.Id[serializer.Node](s1.id),
+        serializer.Id[serializer.Node](s2.id))
+      outSerializer.write(edge)
+    }
+
+    val outSerializer = new serializer.PacketOutput(new FileOutputStream(conf.outfile()))
+
+    try {
+      val mainMethod = Soot.getSootClass(conf.mainClass()).getMethodByName(conf.method())
+      val initialState = State.inject(Stmt.methodEntry(mainMethod))
+
+      addState(initialState)
+
+      while (todo.nonEmpty) {
+        val state = todo.head
+        todo = todo.tail
+        Log.debug("Processing:"+state)
+
+        if (state.stmt.sootStmt.containsInvokeExpr()) {
+          for (edge <- cg.edgesOutOf(state.stmt.sootStmt)) {
+            val m = edge.tgt().method()
+
+            if (m.isPhantom) { /*println(s"Warning: phantom method ${m}, will not analyze")*/ }
+            else if (m.isAbstract) { /*println(s"Warning: abstract method ${m}, will not analyze")*/ }
+            else if (m.isNative) { /*println(s"Warning: native method ${m}, will not analyze")*/ }
+            else {
+              val entryState = State.inject(Stmt.methodEntry(m))
+              addState(entryState)
+              addEdge(state, entryState)
+            }
+          }
+        } else if (
+          state.stmt.sootStmt.isInstanceOf[ReturnStmt] ||
+          state.stmt.sootStmt.isInstanceOf[ReturnVoidStmt]) {
+          for (edge <- cg.edgesInto(state.stmt.sootMethod)) {
+            // TODO: do something for non-explicit edges (they have a null stmt and unit) (probably are due to throwing exceptions)
+            if (edge.isExplicit()) {
+              val returnState = State.inject(Stmt(edge.srcStmt(), edge.src()).nextSyntactic)
+              addState(returnState)
+              addEdge(state, returnState)
+            }
+          }
+        } else {
+          for (stmt <- state.stmt.nextSemantic) {
+            val newState = State.inject(stmt)
+            addState(newState)
+            addEdge(state, newState)
+          }
+        }
+      }
+    } finally {
+      outSerializer.close()
+    }
+  }
+
+  def aam() {
+    val startInstant = java.time.Instant.now()
+
     Main.conf.initialStore.toOption match {
       case Some(f) => System.loadStore(f)
       case None => {}
     }
 
     Soot.initialize(conf)
-    Log.setLogging(conf.logLevel())
-    Log.color = conf.color()
 
     // TODO: libClasses option?
     System.setAppLibraryClasses(conf.libClasses())
