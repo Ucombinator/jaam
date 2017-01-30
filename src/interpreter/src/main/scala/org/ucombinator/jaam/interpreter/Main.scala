@@ -1327,6 +1327,7 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
   // TODO: banner("")
   // TODO: how do we turn off sorting of options by name?
   // TODO: always print default setting
+  appendDefaultToDescription = true
 
   val classpath   = opt[String](required = true, short = 'P', descr = "the TODO class directory")
   val rtJar       = opt[String](required = true, short = 'J', descr = "the rt.jar file")
