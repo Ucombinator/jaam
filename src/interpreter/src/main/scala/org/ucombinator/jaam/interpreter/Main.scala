@@ -1333,7 +1333,8 @@ class Conf(args : Seq[String]) extends JaamConf(args = args) {
   val mainClass   = opt[String](required = true, short = 'c', descr = "the main class")
   val method      = opt[String](required = true, short = 'm', descr = "the main method", default = Some("main"))
   val libClasses  = opt[String](short = 'L', descr = "app's library classes")
-  val outfile     = opt[String](short = 'o', descr = "the output file for the serialized data")
+  val _outfile     = opt[String](name = "outfile", short = 'o', descr = "the output file for the serialized data")
+  def outfile() = _outfile.getOrElse(mainClass() + ".jaam") // TODO: extend scallop to do this for us
   val logLevel    = enum[Log.Level](
     short = 'l',
     descr = "the level of logging verbosity",
@@ -1420,15 +1421,9 @@ object Main {
 
     // TODO: libClasses option?
     System.setAppLibraryClasses(conf.libClasses())
-    val mainClass   = conf.mainClass()
-    val mainMethod  = conf.method()
-    val outfile     = conf.outfile.toOption match {
-      case None => mainClass + ".jaam"
-      case Some(s) => s
-    }
 
-    val outSerializer = new serializer.PacketOutput(new FileOutputStream(outfile))
-    val mainMainMethod : SootMethod = Soot.getSootClass(mainClass).getMethodByName(mainMethod)
+    val outSerializer = new serializer.PacketOutput(new FileOutputStream(conf.outfile()))
+    val mainMainMethod : SootMethod = Soot.getSootClass(conf.mainClass()).getMethodByName(conf.method())
     val initialState = State.inject(Stmt.methodEntry(mainMainMethod)) // TODO: we should initialize the main class
     // TODO: check if we are initializing superclasses
     // TODO: check if we initialize on java.lang.Class
