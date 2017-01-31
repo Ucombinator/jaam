@@ -1456,6 +1456,8 @@ object Main {
     var todo = List[State]()
     var edgeCount = 0
 
+    val outSerializer = new serializer.PacketOutput(new FileOutputStream(conf.outfile()))
+
     def addState(s: State) {
       if (!seen(s)) {
         Log.debug("addState:"+s)
@@ -1474,8 +1476,6 @@ object Main {
         serializer.Id[serializer.Node](s2.id))
       outSerializer.write(edge)
     }
-
-    val outSerializer = new serializer.PacketOutput(new FileOutputStream(conf.outfile()))
 
     try {
       val mainMethod = Soot.getSootClass(conf.mainClass()).getMethodByName(conf.method())
