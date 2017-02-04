@@ -1,6 +1,6 @@
 
 //TODO: Save list of matching vertices here to speed up highlighting?
-public class Instruction
+public class Instruction implements Comparable<Instruction>
 {
 	public String str;
 	public String methodName;
@@ -37,5 +37,28 @@ public class Instruction
         this.isSelected = false;
 		this.startIndex = -1;
 		this.endIndex = -1;
+	}
+
+	public int compareTo(Instruction otherInstruction)
+	{
+		return (new Integer(this.jimpleIndex)).compareTo(otherInstruction.jimpleIndex);
+	}
+
+	@Override
+	public int hashCode()
+	{
+		String toCompare = this.methodName + Integer.toString(this.jimpleIndex);
+		return toCompare.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object otherInstruction)
+	{
+		if(otherInstruction instanceof Instruction) {
+			return (this.methodName.equals(((Instruction) otherInstruction).methodName)
+					&& this.jimpleIndex == ((Instruction) otherInstruction).jimpleIndex);
+		}
+		else
+			return false;
 	}
 }

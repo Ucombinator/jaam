@@ -10,25 +10,21 @@ import java.awt.event.MouseListener;
 import java.awt.Color;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 
 public class CodeArea extends JTextArea
 {
-	private HashSet<Method> methods = new HashSet<Method>();
 	ArrayList<Instruction> description;
-	ArrayList<Integer> rowToIndex; //Since some Jimple indices can be missing, we need to store an offset
-    
-    private int currentCaret=0;
+	ArrayList<Integer> rowToIndex; // Since some Jimple indices can be missing, we need to store an offset
+    private int currentCaret = 0;
 	
 	public CodeArea()
 	{
 		this.setFont(Parameters.font);
-//		System.out.println("Initializing empty code area");
 		this.setEditable(false);
 		description = new ArrayList<Instruction>();
 		rowToIndex = new ArrayList<Integer>();
-        
-        
         ((DefaultCaret)this.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
         
 		this.addMouseListener
@@ -47,38 +43,38 @@ public class CodeArea extends JTextArea
 						if(row >= 0 && row < rowToIndex.size())
 						{
 							Instruction line = description.get(rowToIndex.get(row));
-							//System.out.println("Instruction selected on row " + row + ", " + line.str);
 							if(line.isInstr)
 							{
 								if(line.isSelected)
 								{
-									CodeArea.this.searchByJimpleIndex(line.methodName, line.jimpleIndex, false);
+									Parameters.stFrame.mainPanel.searchByJimpleIndex(
+											line.methodName, line.jimpleIndex, false,false);
 								}
 								else
 								{
 									Parameters.vertexHighlight = true;
-									CodeArea.this.searchByJimpleIndex(line.methodName, line.jimpleIndex, true);
+									Parameters.stFrame.mainPanel.searchByJimpleIndex(
+											line.methodName, line.jimpleIndex, false,true);
 								}
 							}
 						}
 					}
 					else
 					{
-						//Main.graph.clearHighlights();
-                        Main.graph.clearSelects();
-					
 						if(row >= 0 && row < rowToIndex.size())
 						{
 							Instruction line = description.get(rowToIndex.get(row));
 							if(line.isInstr)
 							{
 								Parameters.vertexHighlight = true;
-								CodeArea.this.searchByJimpleIndex(line.methodName, line.jimpleIndex, true);
+								Parameters.stFrame.mainPanel.searchByJimpleIndex(
+										line.methodName, line.jimpleIndex, true, true);
 							}
 						}
 					}
-					
-					Main.graph.redoCycleHighlights();
+
+					//TODO: Rewrite cycle highlighting
+					//Main.graph.redoCycleHighlights();
 					Parameters.repaintAll();
 				}
 				
@@ -92,73 +88,51 @@ public class CodeArea extends JTextArea
 			}
 		);
 	}
-	
-	//Cannot be called directly, but is called when the user clicks on a line in the left area
-	//Find vertices corresponding to the given highlight, and highlights them if addHighlight is true,
-	//or unhighlights them if addHighlight is false
-	public void searchByJimpleIndex(String method, int index, boolean addHighlight)
-	{
-		//Next we either add or remove the highlighted vertices
-		for(Vertex v : Main.graph.vertices)
-		{
-			if(v.getMethodName().contains(method) && v.jimpleIndex == index)
-			{
-				if(addHighlight)
-                {
-					v.addHighlight(true, false, true, true);
-                }
-				else
-					v.clearAllSelect();
-//					v.clearAllHighlights();
-			}
-		}
-        if(addHighlight)
-            Parameters.ping();
-	}
 
 	public void clear()
 	{
-		this.methods = new HashSet<Method>();
 		this.description = new ArrayList<Instruction>();
 		this.rowToIndex = new ArrayList<Integer>();
 		this.writeText();
 	}
-		
-	//Rewrite our description based on which vertices are highlighted
+
+	// Rewrite the text area based on which vertices are highlighted
 	public void setDescription()
 	{
-		description = new ArrayList<Instruction>();
-		this.methods = Main.graph.collectHighlightedMethods();
-		
-		for(Method method : this.methods)
+		HashSet<AbstractVertex> highlighted = Parameters.stFrame.mainPanel.highlighted;
+		if(highlighted.size() > 0)
 		{
-			method.highlightInstructions();
+			//Add all instructions
+			//TODO: Separate and distinguish methods
+			//TODO: Remove duplicates
+			HashSet<AbstractVertex> methodVertices = new HashSet<AbstractVertex>();
+			for(AbstractVertex v : highlighted)
+				methodVertices.addAll(v.getMethodVertices());
 
-			//Add header line with method name
-			String currMethod = method.getFullName();
-			description.add(new Instruction(currMethod + "\n", currMethod, false, -1));
-			
-			//Add all instructions in the method
-			description.addAll(method.getInstructionList());
-			
-			//Add blank line after each method
-			description.add(new Instruction("\n", currMethod, false, -1));
-		}
-		
-		int rowNumber = 0;
-		rowToIndex = new ArrayList<Integer>();
-		for(int i = 0; i < description.size(); i++, rowNumber++)
-		{
-			if(description.get(i).str.length() > 0)
-				rowToIndex.add(rowNumber);
-		}
-		
-		this.computeDescriptionIndex();
-		this.writeText();
-		this.drawHighlights(Parameters.colorSelection, Parameters.colorFocus, Parameters.colorHighlight);
+			description = new ArrayList<Instruction>();
+			for(AbstractVertex v : methodVertices) {
+				String methodName = (String) v.getMetaData().get(AbstractVertex.METADATA_METHOD_NAME);
+				ArrayList<Instruction> currInstructions = new ArrayList<Instruction>(v.getInstructions());
+				Collections.sort(currInstructions);
+				//System.out.println(currInstructions.size());
 
-//		this.setCaretPosition(0);
-//        this.fixCaretPosition();
+				description.add(new Instruction(methodName + "\n", methodName, false, -1));
+				description.addAll(currInstructions);
+				description.add(new Instruction("\n", methodName, false, -1));
+				//System.out.println(description.size());
+			}
+
+			int rowNumber = 0;
+			rowToIndex = new ArrayList<Integer>();
+			for (int i = 0; i < description.size(); i++, rowNumber++) {
+				if (description.get(i).str.length() > 0)
+					rowToIndex.add(rowNumber);
+			}
+
+			this.computeDescriptionIndex();
+			this.writeText();
+			this.drawHighlights(Parameters.colorSelection, Parameters.colorFocus, Parameters.colorHighlight);
+		}
 	}
 	
 	private void computeDescriptionIndex()
@@ -179,19 +153,18 @@ public class CodeArea extends JTextArea
 	private void writeText()
 	{
 		StringBuilder fullText = new StringBuilder();
-		for(Instruction line : description)
+		for(Instruction line : description) {
 			fullText.append(line.str);
-		
+		}
+
 		this.setText(fullText.toString());
 	}
-    
     
     public void fixCaretPosition()
     {
         try
         {
             int line = this.getLineOfOffset(this.getCaretPosition());
-//            int line = this.getLineOfOffset(this.currentCaret);
             int close = -1;
             int dist1, dist2;
             
@@ -203,23 +176,22 @@ public class CodeArea extends JTextArea
                 dist1 = line - close;
                 dist2 = line - i;
                 
-                if(dist2*dist2 < dist1*dist1 || !this.description.get(line).isSelected)
+                if((dist2 * dist2 < dist1 * dist1) || !this.description.get(line).isSelected)
                     close = i;
             }
             
-            if(close>=0)
+            if(close >= 0)
             {
                 this.setCaretPosition(this.getLineStartOffset(close));
             }
         }
         catch(BadLocationException ex)
         {
-            System.out.println("doc = "+CodeArea.this.getText());
+            System.out.println("doc = " + CodeArea.this.getText());
             System.out.println(ex);
         }
 
     }
-    
 	
 	private void drawHighlights(Color c1, Color c2, Color c3)
 	{

@@ -1,15 +1,16 @@
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 public class Vertex extends AbstractVertex
 {
 	public int jimpleIndex;
 	public String description = "", instruction = "";
+	
+	public Instruction inst;
+	
 	public MethodVertex mergeParent;
 	public Method method;
-
-	//neighbors stores the edges of the vertices in our base graph, before collapsing occurs
-	protected ArrayList<Vertex> neighbors;
 
 	//Used for shading vertices based on the number of nested loops they contain
 	//loopHeight is stored for all vertices
@@ -18,6 +19,11 @@ public class Vertex extends AbstractVertex
 	public int dfsPathPos;
 	public boolean traversed;
 	
+	public Vertex(String label, AbstractVertex.VertexType type)
+	{
+		super(label, type);
+	}
+	
 	public Vertex(int d, int i)
 	{
 		this(d, i, Integer.toString(d), d >= 0 );
@@ -25,6 +31,7 @@ public class Vertex extends AbstractVertex
 	
 	public Vertex(int d, int i, String nm, boolean addC)
 	{
+		super();
 		this.setDefaults();
 		this.neighbors = new ArrayList<Vertex>();
 		vertexType = VertexType.LINE;
@@ -32,6 +39,7 @@ public class Vertex extends AbstractVertex
 		this.id = d;
 		this.name = nm;
 		this.index = i;
+		this.method = new Method();
 		
 		this.parent = null;
 		this.mergeParent = null;
@@ -57,31 +65,41 @@ public class Vertex extends AbstractVertex
 	{
 		this.method = m;
 	}
-	
+
+	public String vertexTypeToString()
+	{
+		if(this.vertexType == VertexType.INSTRUCTION)
+			return "Instruction";
+		else if(this.vertexType == VertexType.METHOD)
+			return "Method";
+		else if(this.vertexType == VertexType.CHAIN)
+			return "Chain";
+		else
+			return "Unknown";
+	}
+
 	public String getRightPanelContent()
 	{
-		String str = "Regular Vertex (loop height = " + this.loopHeight + ")\n"
-				+ "id: " + this.id + "\n"
-				+ "statement: " + this.getInstruction() + "\n"
-				+ "method: " + this.getMethodName() + "\n"
+		String str = this.vertexTypeToString() + " vertex (loop height = " + this.loopHeight + ")\n"
+				+ "id: " + this.id + "\n";
+
+		if(this.vertexType == VertexType.INSTRUCTION)
+			str += "statement: " + ((Instruction) this.getMetaData().get(AbstractVertex.METADATA_INSTRUCTION)).str;
+
+		str +=  "method: " + this.getMetaData().get(AbstractVertex.METADATA_METHOD_NAME) + "\n"
 				+ " location (left, right, top, bottom): "
-				+ this.left + ", " + this.right + ", " + this.top + ", " + this.bottom + "\n"
-				+ this.getDescription() + "\n";
+				+ this.location.left + ", " + this.location.right + ", " + this.location.top + ", " + this.location.bottom + "\n"
+				+ "visibility = " + this.isVisible + "\n";
 		return str;
 	}
-	
+
+	// TODO: Restore function getHTMLVerbatim
     public String getShortDescription()
     {
-//        String str = this.id+": Regular Vertex\n        statement: " + this.getInstruction() + "\n";
-        String str = "<html>"+this.id+": Regular Vertex<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
-                    + "statement: " + Parameters.getHTMLVerbatim(this.getInstruction()) + "</html>";
-        return ""+str;
+        String str = "<html>" + this.id + ": " + this.vertexTypeToString() + " Vertex<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+                    //+ "statement: " + Parameters.getHTMLVerbatim(this.getInstruction()) + "</html>";
+        return str;
     }
-    
-	public MethodVertex getMergeParent()
-	{
-		return this.mergeParent;
-	}
 	
 	public Method getMethod()
 	{
@@ -97,8 +115,7 @@ public class Vertex extends AbstractVertex
 	{
 		return new ArrayList<AbstractVertex>();
 	}
-	
-    
+
 	public void addNeighbor(Vertex dest)
 	{
 		if(Parameters.debug)
@@ -176,6 +193,7 @@ public class Vertex extends AbstractVertex
 		return this.instruction;
 	}
 	
+	
 	public String getDescription()
 	{
 		return this.description;
@@ -190,7 +208,7 @@ public class Vertex extends AbstractVertex
 	{
 		this.instruction = in;
 	}
-	
+
 	public void setNameToInstruction()
 	{
 		this.name = this.instruction;
@@ -248,7 +266,8 @@ public class Vertex extends AbstractVertex
 		}
 	}
 	
-	public void mergeByMethod(MethodVertex mergeVer) {
+	public void mergeByMethod(MethodVertex mergeVer)
+	{
 		MethodVertex ver = mergeVer;
 
 		if (this.method == null)
@@ -292,4 +311,24 @@ public class Vertex extends AbstractVertex
 	{
 		return this.neighbors.size();
 	}
+	
+	public Instruction getRealInstruction()
+	{
+		return this.inst;
+	}
+	
+	
+	public void cleanAll(){
+		this.vertexStatus = AbstractVertex.VertexStatus.UNVISITED;
+		Iterator<Vertex> it = this.neighbors.iterator();
+		while(it.hasNext()){
+			Vertex v = it.next();
+			if(v.vertexStatus != AbstractVertex.VertexStatus.UNVISITED){
+				v.cleanAll();
+			}
+			}
+	}
+
+	public void setRealInstruction(Instruction inst) {this.inst = inst; }
+	
 }

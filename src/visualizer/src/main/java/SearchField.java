@@ -91,7 +91,7 @@ public class SearchField extends JPanel implements DocumentListener
         this.add(buttonPanel, BorderLayout.EAST);
         
         
-//        ImageIcon searchImage = new ImageIcon(Parameters.pwd+"src/visualizer/images/"+"search.png");
+//        ImageIcon searchImage = new ImageIcon(Parameters.currDirectory+"src/visualizer/images/"+"search.png");
 
         this.searchButton = new JButton("Find");
         this.searchButton.addActionListener

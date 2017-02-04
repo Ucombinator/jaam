@@ -1,8 +1,16 @@
 
+import javafx.animation.ParallelTransition;
+import javafx.animation.ScaleTransition;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Group;
+import javafx.util.Duration;
+
 import java.io.File;
 import java.util.ArrayList;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.FlowLayout;
 
@@ -12,16 +20,14 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseWheelListener;
-import java.awt.event.MouseWheelEvent;
 import java.awt.Font;
+import java.util.HashSet;
+import java.util.StringTokenizer;
 
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -30,15 +36,12 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.BorderFactory;
 import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
 
 import javax.swing.JTextArea;
-import javax.swing.JComboBox;
 import javax.swing.KeyStroke;
 import javax.swing.JLabel;
 import javax.swing.JButton;
 import javax.swing.text.DefaultCaret;
-
 
 /**
  * JFrame showing a map
@@ -52,11 +55,11 @@ public class StacFrame extends JFrame
 	private JMenu menuFile, menuSearch, menuNavigation, menuCustomize, menuHelp;
 	private int width, height;
 	private ArrayList<JSplitPane> horizontalSplitPanes;
-	public VizPanel vizPanel, contextPanel;
-	private JPanel menuPanel, leftPanel, rightPanel, searchPanel;
-	public JCheckBox showContext, showEdge;
+	public VizPanel mainPanel;
+	private JPanel menuPanel, bytecodePanel, rightPanel, searchPanel;
+	//private JPanel decompiledPanel;
+	public JCheckBox showEdge;
     public SearchField searchF;
-	private boolean context = false, mouseDrag = false;
 	
 	public enum searchType
 	{
@@ -69,12 +72,14 @@ public class StacFrame extends JFrame
 		width = Parameters.width;
 		height = Parameters.height;
 		this.setLocation(0, 0);
-		
-		setSize(this.width,this.height);
+		setSize(this.width, this.height);
 
 		makeMenuBar();
-		makeLayout();
-		
+		if (Parameters.debugMode)
+			makeSimpleLayout();
+		else
+			makeLayout();
+
 		this.setVisible(true);
 	}
 	
@@ -85,18 +90,6 @@ public class StacFrame extends JFrame
 		//File menu
 		menuFile = new JMenu("File");
 		menuBar.add(menuFile);
-		/*JMenuItem loadGraph = new JMenuItem("Load graph from JSON"); //Will be removed soon
-		menuFile.add(loadGraph);
-		loadGraph.addActionListener(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						loadGraph(false);
-					}
-				}
-		);*/
-
 		JMenuItem loadMessages = new JMenuItem("Load graph from message file");
 		menuFile.add(loadMessages);
 		loadMessages.addActionListener(
@@ -135,7 +128,9 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						searchAndHighlight(searchType.ID);
+						initSearch();
+						String query = getSearchInput(searchType.ID);
+						searchByID(query);
 						Parameters.repaintAll();
 					}
 				}
@@ -149,7 +144,9 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						searchAndHighlight(searchType.INSTRUCTION);
+						initSearch();
+						String query = getSearchInput(searchType.INSTRUCTION);
+						Parameters.stFrame.mainPanel.getPanelRoot().searchByInstruction(query);
 						Parameters.repaintAll();
 					}
 				}
@@ -163,13 +160,15 @@ public class StacFrame extends JFrame
             {
                 public void actionPerformed(ActionEvent ev)
                 {
-                    searchAndHighlight(searchType.METHOD);
+					initSearch();
+                	String query = getSearchInput(searchType.METHOD);
+					Parameters.stFrame.mainPanel.getPanelRoot().searchByMethod(query);
                     Parameters.repaintAll();
                 }
             }
 		);
 
-        JMenuItem searchTags = new JMenuItem("Allocation Tags");
+        /*JMenuItem searchTags = new JMenuItem("Allocation Tags");
         menuSearch.add(searchTags);
         searchTags.addActionListener
         (
@@ -184,7 +183,6 @@ public class StacFrame extends JFrame
         );
         searchTags.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK));
         
-        
 		JMenuItem searchLeaves = new JMenuItem("All leaves");
 		menuSearch.add(searchLeaves);
 		searchLeaves.addActionListener
@@ -198,7 +196,6 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-
 		
 		JMenuItem searchSources = new JMenuItem("All sources");
 		menuSearch.add(searchSources);
@@ -213,7 +210,6 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-
 		
 		JMenuItem searchOutgoing = new JMenuItem("Outgoing neighborhood (open)");
 		menuSearch.add(searchOutgoing);
@@ -229,10 +225,9 @@ public class StacFrame extends JFrame
 				}
 		);
 
-		
-		JMenuItem searchOutgoingclosed = new JMenuItem("Outgoing neighborhood (closed)");
-		menuSearch.add(searchOutgoingclosed);
-		searchOutgoingclosed.addActionListener
+		JMenuItem searchOutgoingClosed = new JMenuItem("Outgoing neighborhood (closed)");
+		menuSearch.add(searchOutgoingClosed);
+		searchOutgoingClosed.addActionListener
 		(
 				new ActionListener()
 				{
@@ -244,7 +239,6 @@ public class StacFrame extends JFrame
 				}
 		);
 
-		
 		JMenuItem searchIncoming = new JMenuItem("Incoming neighborhood (open)");
 		menuSearch.add(searchIncoming);
 		searchIncoming.addActionListener
@@ -259,10 +253,9 @@ public class StacFrame extends JFrame
 				}
 		);
 
-		
-		JMenuItem searchIncomingclosed = new JMenuItem("Incoming neighborhood (closed)");
-		menuSearch.add(searchIncomingclosed);
-		searchIncomingclosed.addActionListener
+		JMenuItem searchIncomingClosed = new JMenuItem("Incoming neighborhood (closed)");
+		menuSearch.add(searchIncomingClosed);
+		searchIncomingClosed.addActionListener
 		(
 				new ActionListener()
 				{
@@ -286,10 +279,10 @@ public class StacFrame extends JFrame
 						Parameters.repaintAll();
 					}
 				}
-		);
+		);*/
 
-		
-		JMenuItem clearAll = new JMenuItem("Clear All");
+        // TODO: Re-implement this menu item.
+		/*JMenuItem clearAll = new JMenuItem("Clear All");
 		menuSearch.add(clearAll);
 		clearAll.addActionListener
 		(
@@ -298,62 +291,32 @@ public class StacFrame extends JFrame
 					public void actionPerformed(ActionEvent ev)
 					{
 						Main.graph.clearHighlights();
-						Parameters.leftArea.clear();
+						StacFrame.this.initSearch();
 						Parameters.repaintAll();
 					}
 				}
-		);
-		
+		);*/
 
 		//Navigation menu
 		menuNavigation = new JMenu("Navigation");
 		menuBar.add(menuNavigation);
-		JMenuItem zoomIn = new JMenuItem("Zoom in        (Mouse wheel up)");
-		menuNavigation.add(zoomIn);
-		zoomIn.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						Main.graph.increaseZoom(Parameters.zoomFactor, -1, -1);
-						Parameters.repaintAll();
-					}
-				}
-		);
-    
-		JMenuItem zoomOut = new JMenuItem("Zoom out      (Mouse wheel down)");
-		menuNavigation.add(zoomOut);
-		zoomOut.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						Main.graph.increaseZoom(1/Parameters.zoomFactor, -1, -1);
-						Parameters.repaintAll();
-					}
-				}
-		);
 		
         JMenuItem rearrange = new JMenuItem("Rearrange graph");
         menuNavigation.add(rearrange);
         rearrange.addActionListener
         (
-         new ActionListener()
-         {
-            public void actionPerformed(ActionEvent ev)
-            {
-                Main.graph.root.rearrangeByWidth();
-//                Main.graph.root.rearrangeByLoopHeight();
-                Main.graph.root.centerizeXCoordinate();
-                Parameters.repaintAll();
-            }
-        }
-         );
+				new ActionListener()
+				{
+					public void actionPerformed(ActionEvent ev)
+					{
+						Main.graph.root.rearrangeByWidth();
+						Main.graph.root.centerizeXCoordinate();
+						Parameters.repaintAll();
+					}
+				}
+		);
         rearrange.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, ActionEvent.CTRL_MASK));
 
-        
 		JMenuItem resetGraph = new JMenuItem("Reset view");
 		menuNavigation.add(resetGraph);
 		resetGraph.addActionListener
@@ -362,7 +325,8 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						Main.graph.resetZoom();
+						// TODO: Write reset function
+						//Main.graph.resetZoom();
 						Parameters.repaintAll();
 					}
 				}
@@ -377,122 +341,31 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						Main.graph.collapseOnce();
-                        Main.graph.root.centerizeXCoordinate();
+						// TODO: Write new collapse function
+						//Main.graph.collapseOnce();
+                        //Main.graph.root.centerizeXCoordinate();
 						Parameters.repaintAll();
 					}
 				}
 		);
 		collapse.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, 0));
 
-		JMenuItem decollapse = new JMenuItem("Expand nodes");
-		menuNavigation.add(decollapse);
-		decollapse.addActionListener
+		JMenuItem expand = new JMenuItem("Expand nodes");
+		menuNavigation.add(expand);
+		expand.addActionListener
 		(
 				new ActionListener()
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						Main.graph.deCollapseOnce();
-                        Main.graph.root.centerizeXCoordinate();
+						// TODO: Write new expand function
+						//Main.graph.deCollapseOnce();
+                        //Main.graph.root.centerizeXCoordinate();
 						Parameters.repaintAll();
 					}
 				}
 		);
-		decollapse.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, 0));
-		
-		JMenuItem previous = new JMenuItem("Previous view");
-		menuNavigation.add(previous);
-		previous.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						Main.graph.loadPreviousView();
-						Parameters.repaintAll();
-					}
-				}
-		);
-		previous.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, 0));
-		
-		
-//		JMenuItem next = new JMenuItem("Return to next view");
-        JMenuItem next = new JMenuItem("Next view");
-		menuNavigation.add(next);
-		next.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						Main.graph.restoreNewView();
-						Parameters.repaintAll();
-					}
-				}
-		);
-		next.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, 0));
-		
-		JMenuItem panUp = new JMenuItem("Pan up");
-		menuNavigation.add(panUp);
-		panUp.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						Main.graph.shiftView(0, -1);
-						Parameters.repaintAll();
-					}
-				}
-		);
-		panUp.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0));
-		
-		JMenuItem panDown = new JMenuItem("Pan down");
-		menuNavigation.add(panDown);
-		panDown.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						Main.graph.shiftView(0, 1);
-						Parameters.repaintAll();
-					}
-				}
-		);
-		panDown.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0));
-		
-		JMenuItem panLeft = new JMenuItem("Pan left");
-		menuNavigation.add(panLeft);
-		panLeft.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						Main.graph.shiftView(-1, 0);
-						Parameters.repaintAll();
-					}
-				}
-		);
-		panLeft.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0));
-		
-		JMenuItem panRight = new JMenuItem("Pan right");
-		menuNavigation.add(panRight);
-		panRight.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						Main.graph.shiftView(1, 0);
-						Parameters.repaintAll();
-					}
-				}
-		);
-		panRight.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0));
-		
+		expand.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, 0));
 		
 		//Customize display
 		menuCustomize = new JMenu("Customize");
@@ -506,9 +379,10 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						String newFontSize = JOptionPane.showInputDialog(null, "The current font size is: " + Parameters.font.getSize() + ". Please enter a new font size");
+						String newFontSize = JOptionPane.showInputDialog(null, "The current font size is: " +
+								Parameters.font.getSize() + ". Please enter a new font size");
 						Parameters.font = new Font("Serif", Font.PLAIN, Integer.parseInt(newFontSize));
-						Parameters.leftArea.setFont(Parameters.font);
+						Parameters.bytecodeArea.setFont(Parameters.font);
 						Parameters.rightArea.setFont(Parameters.font);
 						Parameters.repaintAll();
 					}
@@ -516,54 +390,48 @@ public class StacFrame extends JFrame
 		);
 		changeFont.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, ActionEvent.CTRL_MASK));
 		
-		//Help menu
+		// Help menu
 		menuHelp = new JMenu("Help");
 		menuBar.add(menuHelp);
 		JMenuItem help = new JMenuItem("Shortcuts");
 		menuHelp.add(help);
-		help.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						JOptionPane.showMessageDialog(getParent(), 
-								"The following keyboard shortcuts are implemented.\n"
+		help.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent ev)
+			{
+				JOptionPane.showMessageDialog(getParent(),
+						"The following keyboard shortcuts are implemented.\n"
+								+ "(Outdated, needs to be fixed)"
 								+ "R: Reset zoom level to show entire graph \n"
 								+ "C: Collapse all nodes by method \n"
-								+ "D: Uncollapse all nodes \n"
-								+ "P: Return to previous view \n"
-								+ "N: Continue from previous to next view \n"
+								+ "E: Expand all nodes \n"
 								+ "F: Change font size \n"
-								+ "Arrows: Pan up, down, left or right \n"
-								+ "Left-Click: Uncollapse a node \n"
-								+ "Right-Click: Collapse all nodes of a single method \n"
+								+ "Left click: Select a vertex \n"
+								+ "Left double click: Collapse/Uncollapse a node \n"
 								+ "Shift-click: Select/de-select multiple vertices \n"
-								+ "CTRL + <Digit>: Hotkey view with all vertices currently on screen to <Digit> \n"
-								+ "<Digit>: Go to hotkeyed view \n"
 								+ "H: Open this list of shortcuts"
 						);
 					}
 				}
 		);
 		help.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, ActionEvent.CTRL_MASK));
+
+		this.setJMenuBar(menuBar);
 	}
 
-	public void buildWindow(ArrayList<ArrayList<JPanel>> layout, ArrayList<ArrayList<Double>> layoutRowWeights, ArrayList<Double> layoutColumnWeights)
+	public void buildWindow(ArrayList<ArrayList<JComponent>> layout, ArrayList<ArrayList<Double>> layoutRowWeights,
+							ArrayList<Double> layoutColumnWeights)
 	{
-		// Construct columns
-		System.out.println("Layout size: " + Integer.toString(layout.size()));
 		ArrayList<GUIPanelColumn> columns = new ArrayList<GUIPanelColumn>();
 		for(int i = 0; i < layout.size(); i++)
 		{
-			System.out.println("Constructing column: " + Integer.toString(i) + ", height " + Integer.toString(layout.get(i).size()));
-			ArrayList<JPanel> panelList = layout.get(i);
+			ArrayList<JComponent> panelList = layout.get(i);
 			columns.add(new GUIPanelColumn(panelList, layoutRowWeights.get(i)));
 		}
 
 		// Connect columns with horizontal split panes
 		this.horizontalSplitPanes = new ArrayList<JSplitPane>();
-		for(int i = 0; i < layout.size() - 1; i++) {
+		for(int i = 0; i < layout.size() - 1; i++)
+		{
 			JSplitPane nextSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
 			nextSplit.setOneTouchExpandable(true);
 			if (i == 0)
@@ -590,39 +458,29 @@ public class StacFrame extends JFrame
 
 	public void makeLayout()
 	{
-
-		//centerPanel and vizPanel
+		//centerPanel and mainPanel
 		this.setLayout(new BorderLayout());
 		setSplitScreen();
-		
-		this.addMouseToViz();
-		this.addKeyboard(vizPanel);
-		this.addMouseToContext();
-		this.addKeyboard(contextPanel);
-		
+
+		this.addKeyboard(mainPanel);
         
         JPanel topPanel = new JPanel();
         topPanel.setBorder(BorderFactory.createEtchedBorder());
         topPanel.setLayout(new BorderLayout());
-//        topPanel.setLayout(new GridLayout(2,1));
         this.getContentPane().add(topPanel, BorderLayout.NORTH);
-        
-        
-        
+
 		//menuPanel
 		this.menuPanel = new JPanel();
 		this.menuPanel.setBorder(BorderFactory.createEtchedBorder());
 		this.menuPanel.setLayout(new FlowLayout());
-//		this.getContentPane().add(this.menuPanel, BorderLayout.NORTH);
         topPanel.add(this.menuPanel, BorderLayout.CENTER);
-        
+
+		JPanel controlPanel = new JPanel();
+		controlPanel.setBorder(BorderFactory.createEtchedBorder());
+		controlPanel.setLayout(new GridLayout(1,1));
+		this.menuPanel.add(controlPanel);
 		
-		JPanel contextPanel = new JPanel();
-		contextPanel.setBorder(BorderFactory.createEtchedBorder());
-		contextPanel.setLayout(new GridLayout(1,1));
-		this.menuPanel.add(contextPanel);
-		
-		showEdge = new JCheckBox("Show Edge");
+		showEdge = new JCheckBox("Show edges");
 		showEdge.setEnabled(true);
 		showEdge.setSelected(true);
 		showEdge.addItemListener
@@ -631,12 +489,22 @@ public class StacFrame extends JFrame
 			{
 				public void itemStateChanged(ItemEvent e)
 				{
-					vizPanel.showEdge = showEdge.isSelected();					
-					StacFrame.this.repaint();
+					Platform.runLater(new Runnable() {
+						
+						@Override
+						public void run() {
+							// TODO: When this is checked off and then back on, the edges don't reappear.
+							Parameters.edgeVisible = showEdge.isSelected();
+							mainPanel.getPanelRoot().setEdgeVisibility(Parameters.edgeVisible);
+							for(AbstractVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+								v.setEdgeVisibility(showEdge.isSelected());
+						}
+					});
+
 				}
 			}
 		);
-		contextPanel.add(showEdge);
+		controlPanel.add(showEdge);
 		
 		JPanel sizePanel = new JPanel();
 		sizePanel.setBorder(BorderFactory.createEtchedBorder());
@@ -651,14 +519,22 @@ public class StacFrame extends JFrame
 			{
 				public void actionPerformed(ActionEvent e)
 				{
-					vizPanel.boxSize *= Parameters.boxFactor;
-					Parameters.repaintAll();
+					ParallelTransition pt = new ParallelTransition();
+					for(AbstractVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+					{
+						GUINode node = v.getGraphics();
+						ScaleTransition st = new ScaleTransition(Duration.millis(300), node);
+						st.setToX(node.getScaleX() * Parameters.boxFactor);
+						st.setToY(node.getScaleY() * Parameters.boxFactor);
+						pt.getChildren().add(st);
+					}
+					pt.play();
 				}
 			}
 		);
 		sizePanel.add(sizeMinus);
 		
-		JLabel sizeL = new JLabel("box size");
+		JLabel sizeL = new JLabel("Box size");
 		sizeL.setHorizontalAlignment(SwingConstants.CENTER);
 		sizePanel.add(sizeL);
 		
@@ -670,64 +546,277 @@ public class StacFrame extends JFrame
 			{
 				public void actionPerformed(ActionEvent e)
 				{
-					vizPanel.boxSize /= Parameters.boxFactor;
-					Parameters.repaintAll();
+					ParallelTransition pt = new ParallelTransition();
+					for(AbstractVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+					{
+						GUINode node = v.getGraphics();
+						ScaleTransition st = new ScaleTransition(Duration.millis(300), node);
+						st.setToX(node.getScaleX() * 1.0 / Parameters.boxFactor);
+						st.setToY(node.getScaleY() * 1.0 / Parameters.boxFactor);
+						pt.getChildren().add(st);
+					}
+					pt.play();
 				}
 			}
 		);
 		sizePanel.add(sizePlus);
+		
+/********************************************************************************/
+		JPanel xScalePanel = new JPanel();
+		xScalePanel.setBorder(BorderFactory.createEtchedBorder());
+		xScalePanel.setLayout(new GridLayout(1,3));
+		this.menuPanel.add(xScalePanel);
+		
+		JButton xScalePanelMinus = new JButton("-");
+		xScalePanelMinus.setEnabled(true);
+		xScalePanelMinus.addActionListener
+		(
+			new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					Platform.runLater(new Runnable() { 
+			            @Override
+			            public void run() {
+							Parameters.stFrame.mainPanel.decrementScaleXFactor();
+							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
+							Parameters.stFrame.mainPanel.getPanelRoot().reset();
+			            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+			            	Parameters.stFrame.mainPanel.resetPanelSize();
+
+							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+			            }
+			        });
+				}
+			}
+		);
+		xScalePanel.add(xScalePanelMinus);
+		
+		JLabel xScaleL = new JLabel("X scale");
+		xScaleL.setHorizontalAlignment(SwingConstants.CENTER);
+		xScalePanel.add(xScaleL);
+		
+		JButton xScalePlus = new JButton("+");
+		xScalePlus.setEnabled(true);
+		xScalePlus.addActionListener
+		(
+			new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					Platform.runLater(new Runnable() { 
+			            @Override
+			            public void run() {
+							Parameters.stFrame.mainPanel.incrementScaleXFactor();
+							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
+							Parameters.stFrame.mainPanel.getPanelRoot().reset();
+			            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+			            	Parameters.stFrame.mainPanel.resetPanelSize();
+
+							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+			            }
+			        });
+				}
+			}
+		);
+		xScalePanel.add(xScalePlus);
+/************************************************************************************/
+		
+		
+		JPanel yScalePanel = new JPanel();
+		yScalePanel.setBorder(BorderFactory.createEtchedBorder());
+		yScalePanel.setLayout(new GridLayout(1,3));
+		this.menuPanel.add(yScalePanel);
+		
+		JButton yScalePanelMinus = new JButton("-");
+		yScalePanelMinus.setEnabled(true);
+		yScalePanelMinus.addActionListener
+		(
+			new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					Platform.runLater(new Runnable() { 
+			            @Override
+			            public void run() {
+							Parameters.stFrame.mainPanel.decrementScaleYFactor();
+							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
+							Parameters.stFrame.mainPanel.getPanelRoot().reset();
+			            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+			            	Parameters.stFrame.mainPanel.resetPanelSize();
+
+							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+			            }
+			        });
+				}
+			}
+		);
+		yScalePanel.add(yScalePanelMinus);
+		
+		JLabel yScaleL = new JLabel("Y scale");
+		yScaleL.setHorizontalAlignment(SwingConstants.CENTER);
+		yScalePanel.add(yScaleL);
+		
+		JButton yScalePlus = new JButton("+");
+		yScalePlus.setEnabled(true);
+		yScalePlus.addActionListener
+		(
+			new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					Platform.runLater(new Runnable() { 
+			            @Override
+			            public void run() {
+							Parameters.stFrame.mainPanel.incrementScaleYFactor();
+							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
+							Parameters.stFrame.mainPanel.getPanelRoot().reset();
+			            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+			            	Parameters.stFrame.mainPanel.resetPanelSize();
+
+							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+			            }
+			        });
+				}
+			}
+		);
+		yScalePanel.add(yScalePlus);
+
+/***************************************************************************************/
+		
+		JPanel collpasePanel = new JPanel();
+		this.menuPanel.add(collpasePanel);
+		
+		
+		final Color activeColor = Color.CYAN;
+		final Color inactiveColor = Color.BLACK;
+
+		final JButton methodCollapse = new JButton("M");
+		methodCollapse.setOpaque(true);
+		methodCollapse.setForeground(inactiveColor);
+		
+		methodCollapse.setEnabled(true);
+		methodCollapse.addActionListener
+		(
+			new ActionListener()
+			{
+				boolean methodExpanded = true;
+				public void actionPerformed(ActionEvent e)
+				{
+					methodExpanded = !methodExpanded;
+					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractVertex.VertexType.METHOD, methodExpanded);
+					Platform.runLater(new Runnable() {
+						@Override
+						public void run() {
+							if(methodCollapse.getForeground()==activeColor){
+								methodCollapse.setForeground(inactiveColor);
+							}else{
+								methodCollapse.setForeground(activeColor);
+							}
+							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
+							Parameters.stFrame.mainPanel.getPanelRoot().reset();
+							LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+							Parameters.stFrame.mainPanel.resetPanelSize();
+
+							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+						}
+					});
+				}
+			}
+		);
+		collpasePanel.add(methodCollapse);
+	
+		
+		final JButton chainCollapse = new JButton("C");
+		chainCollapse.setForeground(inactiveColor);
+		chainCollapse.setEnabled(true);
+
+		chainCollapse.addActionListener
+		(
+			new ActionListener()
+			{
+				boolean chainExpanded = true;
+				public void actionPerformed(ActionEvent e)
+				{
+					chainExpanded = !chainExpanded;
+					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractVertex.VertexType.CHAIN,chainExpanded);
+					Platform.runLater(new Runnable() {
+						@Override
+						public void run() {
+							if(chainCollapse.getForeground()==activeColor){
+								chainCollapse.setForeground(inactiveColor);
+							}else{
+								chainCollapse.setForeground(activeColor);
+							}
+							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
+							Parameters.stFrame.mainPanel.getPanelRoot().reset();
+							LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+							Parameters.stFrame.mainPanel.resetPanelSize();
+
+							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+						}
+					});
+				}
+			}
+		);
+		collpasePanel.add(chainCollapse);
+		
+		
+/***************************************************************************************/		
         
-        
-        /// bottom panel
-        
+        // Search bar
         this.searchF = new SearchField();
         this.getContentPane().add(searchF, BorderLayout.SOUTH);
-//        topPanel.add(searchF, BorderLayout.SOUTH);
-        
-        
-        //////********************** tag Panel ******************//////
-        
-/*
-        JPanel tagPanel = new JPanel();
-        tagPanel.setBorder(BorderFactory.createEtchedBorder());
-        tagPanel.setLayout(new FlowLayout());
-        topPanel.add(tagPanel, BorderLayout.SOUTH);
-        
-        JLabel tLab = new JLabel("Search for Tags: ");
-        tagPanel.add(tLab);
-        
-        JComboBox combo = new JComboBox(new Object[]{"Ester", "Jordi", "Jordina", "Jorge", "Sergi"});
-        combo.setEditable(true);
-        tagPanel.add(combo);
- */
-        
-        //////******************** tag Panel end ****************//////
-        
-		
-		
-		this.setJMenuBar(menuBar);
+
 		this.setVisible(true);
 		this.repaint();
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);	
 	}
-	
+
+	public void makeSimpleLayout()
+	{
+		this.mainPanel = new VizPanel();
+		this.setLayout(new BorderLayout());
+		this.getContentPane().add(this.mainPanel);
+	}
+
 	public void setSplitScreen()
 	{
 		// Declare each panel
-		leftPanel = new JPanel();
+		//decompiledPanel = new JPanel();
+		bytecodePanel = new JPanel();
 		rightPanel = new JPanel();
         searchPanel = new JPanel();
-		this.vizPanel = new VizPanel(this, false);
-		this.contextPanel = new VizPanel(this,true);
+		this.mainPanel = new VizPanel();
 
 		// Build each panel
-		JLabel leftL = new JLabel("Context", JLabel.CENTER);
-		Parameters.leftArea = new CodeArea();
-		leftPanel.setLayout(new BorderLayout());
-		leftPanel.add(leftL,BorderLayout.NORTH);
-		JScrollPane scrollL = new JScrollPane (Parameters.leftArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		leftPanel.add(scrollL, BorderLayout.CENTER);
-		leftPanel.setFont(Parameters.font);
+		JLabel leftL = new JLabel("Code", JLabel.CENTER);
+		Parameters.bytecodeArea = new CodeArea();
+		bytecodePanel.setLayout(new BorderLayout());
+		bytecodePanel.add(leftL,BorderLayout.NORTH);
+		JScrollPane bytecodeScroll = new JScrollPane (Parameters.bytecodeArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		bytecodePanel.add(bytecodeScroll, BorderLayout.CENTER);
+		bytecodePanel.setFont(Parameters.font);
+
+		/*decompiledPanel.setLayout(new BorderLayout());
+		Parameters.decompiledArea = new CodeArea();
+		JScrollPane decompiledScroll = new JScrollPane(Parameters.decompiledArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		decompiledPanel.add(decompiledScroll, BorderLayout.CENTER);
+		decompiledPanel.setFont(Parameters.font);*/
 		
 		JLabel rightL = new JLabel("Description", JLabel.CENTER);
 		Parameters.rightArea = new JTextArea();
@@ -735,7 +824,8 @@ public class StacFrame extends JFrame
         ((DefaultCaret)Parameters.rightArea.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 		rightPanel.setLayout(new BorderLayout());
 		rightPanel.add(rightL, BorderLayout.NORTH);
-		JScrollPane scrollR = new JScrollPane (Parameters.rightArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		JScrollPane scrollR = new JScrollPane (Parameters.rightArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		rightPanel.add(scrollR, BorderLayout.CENTER);
 		rightPanel.setFont(Parameters.font);
 		
@@ -743,29 +833,30 @@ public class StacFrame extends JFrame
         Parameters.searchArea = new SearchArea();
         searchPanel.setLayout(new BorderLayout());
         searchPanel.add(searchL,BorderLayout.NORTH);
-        JScrollPane scrollS = new JScrollPane (Parameters.searchArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        JScrollPane scrollS = new JScrollPane (Parameters.searchArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         searchPanel.add(scrollS, BorderLayout.CENTER);
         searchPanel.setFont(Parameters.font);
 
 		// Build data structure to hold panels
-		ArrayList<ArrayList<JPanel>> layout = new ArrayList<ArrayList<JPanel>>();
+		ArrayList<ArrayList<JComponent>> layout = new ArrayList<ArrayList<JComponent>>();
 		ArrayList<ArrayList<Double>> layoutRowWeights = new ArrayList<ArrayList<Double>>();
 		ArrayList<Double> layoutColumnWeights = new ArrayList<Double>();
 
-		ArrayList<JPanel> left = new ArrayList<JPanel>();
-		left.add(leftPanel);
-		left.add(contextPanel);
+		ArrayList<JComponent> left = new ArrayList<JComponent>();
+		left.add(bytecodePanel);
+		//left.add(decompiledPanel);
 
 		ArrayList<Double> leftWeights = new ArrayList<Double>();
-		leftWeights.add(0.6);
+		//leftWeights.add(0.6);
 		layoutRowWeights.add(leftWeights);
 
-		ArrayList<JPanel> center = new ArrayList<JPanel>();
-		center.add(vizPanel);
+		ArrayList<JComponent> center = new ArrayList<JComponent>();
+		center.add(mainPanel);
 		ArrayList<Double> centerWeights = new ArrayList<Double>();
 		layoutRowWeights.add(centerWeights);
 
-		ArrayList<JPanel> right = new ArrayList<JPanel>();
+		ArrayList<JComponent> right = new ArrayList<JComponent>();
 		right.add(rightPanel);
 		right.add(searchPanel);
 		ArrayList<Double> rightWeights = new ArrayList<Double>();
@@ -790,8 +881,16 @@ public class StacFrame extends JFrame
 		ti.run(file.getAbsolutePath(), fromMessages);
 		Parameters.repaintAll();
 	}
-	
-	public void searchAndHighlight(searchType search)
+
+	// Clean up info from previous searches
+	public void initSearch()
+	{
+		this.mainPanel.resetHighlighted(null);
+		Parameters.bytecodeArea.clear();
+		Parameters.rightArea.setText("");
+	}
+
+	public String getSearchInput(searchType search)
 	{
 		String title = "";
 		System.out.println("Search type: " + search);
@@ -807,7 +906,8 @@ public class StacFrame extends JFrame
 		{
 			title = "Method name contains ...";
 		}
-		else if(search == searchType.OUT_OPEN || search == searchType.OUT_CLOSED || search == searchType.IN_OPEN || search == searchType.IN_CLOSED)
+		else if(search == searchType.OUT_OPEN || search == searchType.OUT_CLOSED || search == searchType.IN_OPEN
+				|| search == searchType.IN_CLOSED)
 		{
 			title = "Enter node ID";
 		}
@@ -817,420 +917,62 @@ public class StacFrame extends JFrame
 		{
 			input = JOptionPane.showInputDialog(null, title);
 			if(input == null)
-				return;
+				return "";
 			else
 				input = input.trim();
 
 			if(input.equals(""))
-				return;
+				return "";
 		}
 
-		Main.graph.searchNodes(search, input);
-		
-		Parameters.vertexHighlight = true;
-
-		Parameters.highlightOutgoing = search != searchType.OUT_OPEN;
-		Parameters.highlightIncoming = search != searchType.IN_OPEN;
-    
+		return input;
     }
-	
-	public boolean isGraphLoaded()
+
+	public void searchByID(String input)
 	{
-		return (Main.graph != null);
-	}
-	
-	public void addMouseToViz()
-	{
-		vizPanel.addMouseListener
-		(
-			new MouseListener()
-			{
-				public void mouseClicked(MouseEvent m)
-				{
-                    vizPanel.requestFocusInWindow();
-					if(!isGraphLoaded())
-						return;
-					
-					context = false;
-					double x = vizPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(m))*Main.graph.getWidth();
-					double y = vizPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(m))*Main.graph.getHeight();
-					
-					if(System.currentTimeMillis() - Parameters.mouseLastTime > Parameters.mouseInterval)
-					{
-						Parameters.mouseLastTime = System.currentTimeMillis();
-						
-						if(SwingUtilities.isLeftMouseButton(m) && Main.graph != null)
-						{	
-							if(m.isShiftDown())
-							{
-								AbstractVertex ver = Main.graph.getVertexNearestCoordinate(x, y);
-								if(ver != null)
-								{
-//									if(ver.isHighlighted())
-									if(ver.isSelected())
-									{
-//										ver.clearAllHighlights();
-										ver.clearAllSelect();
-										Main.graph.redoCycleHighlights();
-									}
-									else
-									{
-										ver.addHighlight(true, false, true, true);
-										if(ver.vertexType == AbstractVertex.VertexType.LINE)
-											((Vertex) ver).highlightCycles();
-                                        Parameters.ping();
-									}
-								}
-							}
-							else if(m.getClickCount() == 1)
-							{
-								AbstractVertex ver = Main.graph.getVertexNearestCoordinate(x, y);
-								Parameters.leftArea.clear();
-                                Main.graph.clearSelects();
+		AbstractVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
+		StringTokenizer token = new StringTokenizer(input,", ");
 
-								if(ver != null)
-								{
-									Parameters.highlightIncoming = true;
-									Parameters.highlightOutgoing = true;
-									Parameters.vertexHighlight = true;
-									ver.addHighlight(true, false, true, true);
-									if(ver.vertexType == AbstractVertex.VertexType.LINE)
-										((Vertex) ver).highlightCycles();
-                                    Parameters.ping();
-                                    Parameters.fixCaretPositions();
-								}
-							}
-							
-							else if(m.getClickCount() == 2)
-							{
-								AbstractVertex ver = Main.graph.getVertexNearestCoordinate(x, y);
-								if(ver != null)
-								{
-									if(ver.getMergeChildren().size() > 0) //We have a merge vertex
-									{
-										ver.deCollapse();
-										Parameters.repaintAll();
-									}
-								}
-							}
-						}
-						
-						if(SwingUtilities.isRightMouseButton(m) && Main.graph != null)
-						{
-							//if(m.getClickCount() == 1)
-							{
-								AbstractVertex ver = Main.graph.getVertexNearestCoordinate(x, y);
-								if(ver != null)
-								{
-									if(ver.getMergeParent() != null)
-									{
-										ver.getMergeParent().collapse();
-									}
-								}
-							}
-						}
-						
-						Parameters.repaintAll();
-					}
-				}
-				
-				public void mouseEntered(MouseEvent arg0){}
-				
-				public void mouseExited(MouseEvent arg0){}
+		int id1, id2;
+		String tok;
 
-				public void mousePressed(MouseEvent m)
-				{
-					if(!isGraphLoaded())
-						return;
-					context = false;
-					vizPanel.selectLeft = getRelativeXPixels(m);
-					vizPanel.selectTop = getRelativeYPixels(m);
-					vizPanel.showSelection = true;
-					
-					Parameters.startTime = System.currentTimeMillis();
-					Parameters.lastInterval = -1;
-				}
-
-				public void mouseReleased(MouseEvent ev)
-				{
-					if(!isGraphLoaded())
-						return;
-					vizPanel.requestFocus();
-					vizPanel.showSelection = false;
-					context = false;
-					
-					if(mouseDrag)
-					{
-						mouseDrag = false;
-						if(Main.graph != null)
-						{
-							double x1 = vizPanel.getIndexFromCurrentPixelX(vizPanel.selectLeft);
-							double x2 = vizPanel.getIndexFromCurrentPixelX(vizPanel.selectRight);
-							double y1 = vizPanel.getIndexFromCurrentPixelY(vizPanel.selectTop);
-							double y2 = vizPanel.getIndexFromCurrentPixelY(vizPanel.selectBottom);
-
-							Main.graph.selectVertices(x1, x2, y1, y2);
-						}
-						Parameters.repaintAll();
-					}
-				}
+		while(token.hasMoreTokens()) {
+			tok = token.nextToken();
+			if (tok.trim().equalsIgnoreCase(""))
+				continue;
+			if (tok.indexOf('-') == -1) {
+				id1 = Integer.parseInt(tok.trim());
+				panelRoot.searchByID(id1);
+			} else {
+				id1 = Integer.parseInt(tok.substring(0, tok.indexOf('-')).trim());
+				id2 = Integer.parseInt(tok.substring(tok.lastIndexOf('-') + 1).trim());
+				panelRoot.searchByIDRange(id1, id2);
 			}
-		);
-		
-		vizPanel.addMouseMotionListener
-		(
-			new MouseMotionListener()
-			{
-				public void mouseMoved(MouseEvent m){}				
-
-				public void mouseDragged(MouseEvent m)
-				{
-					if(!isGraphLoaded())
-						return;
-					context = false;
-					mouseDrag = true;
-					vizPanel.selectRight = getRelativeXPixels(m);
-					vizPanel.selectBottom = getRelativeYPixels(m);
-
-					if((System.currentTimeMillis()-Parameters.startTime)/Parameters.refreshInterval > Parameters.lastInterval)
-					{
-						StacFrame.this.repaint();
-						Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.refreshInterval;
-					}
-				}
-			}
-		);
-
-		vizPanel.addMouseWheelListener
-		(
-			new MouseWheelListener()
-			{
-				public void mouseWheelMoved(MouseWheelEvent e)
-				{
-					if(!isGraphLoaded())
-						return;
-
-					int notches = e.getWheelRotation();
-					
-					//Zoom in or box++ for mouse wheel up, zoom out or box-- for mouse wheel down
-					if(notches > 0)
-					{
-						if(e.isShiftDown())
-						{
-							vizPanel.boxSize /= Parameters.boxFactor;
-						}
-						else
-						{
-							double x = vizPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(e));
-							double y = vizPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(e));
-							Main.graph.increaseZoom(Parameters.zoomFactor, x, y);
-						}
-					}
-					else
-					{
-						if(e.isShiftDown())
-						{
-							vizPanel.boxSize *= Parameters.boxFactor;
-						}
-						else
-						{
-							double x = vizPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(e));
-							double y = vizPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(e));
-							Main.graph.increaseZoom(1/Parameters.zoomFactor, x, y);
-						}
-					}
-					
-					Parameters.repaintAll();
-				}
-			}
-		);
-		
-	}
-	
-	public void addMouseToContext()
-	{
-		contextPanel.addMouseListener
-		(
-			new MouseListener()
-			{
-				public void mouseClicked(MouseEvent m)
-				{
-					if(!isGraphLoaded())
-						return;
-					contextPanel.requestFocusInWindow();
-					context = true;
-					
-					double x = contextPanel.getRelativeFracFromAbsolutePixelX(getRelativeXPixels(m));
-					double y = contextPanel.getRelativeFracFromAbsolutePixelY(getRelativeYPixels(m));
-
-					Main.graph.zoomNPan(x, y, 1.0);
-					Parameters.repaintAll();
-
-					if(System.currentTimeMillis() - Parameters.mouseLastTime > Parameters.mouseInterval)
-					{
-						Parameters.mouseLastTime = System.currentTimeMillis();						
-					}
-				}
-				
-				public void mouseEntered(MouseEvent arg0)
-				{
-				}
-				
-				public void mouseExited(MouseEvent arg0)
-				{
-				}
-
-				public void mousePressed(MouseEvent m)
-				{
-					if(!isGraphLoaded())
-						return;
-					context = true;
-					contextPanel.selectLeft = getRelativeXPixels(m);
-					contextPanel.selectTop = getRelativeYPixels(m);
-					contextPanel.showSelection = true;
-					
-					Parameters.startTime = System.currentTimeMillis();
-					Parameters.lastInterval = -1;
-				}
-
-				public void mouseReleased(MouseEvent ev)
-				{
-					if(!isGraphLoaded())
-						return;
-					context = true;
-//					vizPanel.requestFocus();
-					contextPanel.showSelection = false;
-					
-					if(mouseDrag)
-					{
-						mouseDrag = false;
-						if(Main.graph != null)
-						{
-							double x1 = contextPanel.getRelativeFracFromAbsolutePixelX(contextPanel.selectLeft);
-							double x2 = contextPanel.getRelativeFracFromAbsolutePixelX(contextPanel.selectRight);
-							double y1 = contextPanel.getRelativeFracFromAbsolutePixelY(contextPanel.selectTop);
-							double y2 = contextPanel.getRelativeFracFromAbsolutePixelY(contextPanel.selectBottom);
-							Main.graph.zoomNPan(x1, x2, y1, y2);
-						}
-						Parameters.repaintAll();
-					}
-				}
-
-			}
-
-		);
-		
-		contextPanel.addMouseMotionListener
-		(
-			new MouseMotionListener()
-			{
-				public void mouseMoved(MouseEvent m){}
-				
-
-				public void mouseDragged(MouseEvent m)
-				{
-					if(!isGraphLoaded())
-						return;
-					context = true;
-					mouseDrag = true;
-					contextPanel.selectRight = getRelativeXPixels(m);
-					contextPanel.selectBottom = getRelativeYPixels(m);
-
-					if((System.currentTimeMillis()-Parameters.startTime)/Parameters.refreshInterval > Parameters.lastInterval)
-					{
-						StacFrame.this.repaint();
-						Parameters.lastInterval = (System.currentTimeMillis()-Parameters.startTime)/Parameters.refreshInterval;
-					}
-				}
-			}
-		);
-
-		
-		contextPanel.addMouseWheelListener
-		(
-			new MouseWheelListener()
-			{
-				public void mouseWheelMoved(MouseWheelEvent e)
-				{
-					if(!isGraphLoaded())
-						return;
-					int notches = e.getWheelRotation();
-					
-					//box++ for mouse wheel up, box-- for mouse wheel down
-					if(notches > 0)
-					{
-						contextPanel.boxSize /= Parameters.boxFactor;
-					}
-					else
-					{
-						contextPanel.boxSize *= Parameters.boxFactor;
-					}
-					Parameters.repaintAll();
-				}
-			}
-		);
-
-	}
-	
-	//Gets the x location of a mouse event in pixels.
-	public double getRelativeXPixels(MouseEvent m)
-	{
-		// TODO: Why does this not need to be shifted?
-		return m.getX();
+		}
 	}
 
-	//Gets the y location of a mouse event in pixels, shifted so that the top of the current panel is 0.
-	public double getRelativeYPixels(MouseEvent m)
-	{
-		//TODO: Why is this not different for the context menu?
-		//Subtract the top bar, the menu panel height, and the start height of the current panel
-		return m.getY() - (this.getHeight() - this.getContentPane().getSize().height) - vizPanel.getY() - this.menuPanel.getHeight();
-	}
-
-	public void addKeyboard(JPanel viz)
+	public void addKeyboard(JFXPanel viz)
 	{
 		viz.addKeyListener(new KeyListener()
-			{
-				public void keyTyped(KeyEvent ev){}
-				
-				public void keyPressed(KeyEvent ev)
-				{
-                    if(SearchField.focused)
-                        return;
-					int code = ev.getKeyCode();
-//					System.out.println("Key pressed: " + code);
-					
-					if(code == 'L')
-					{
-						String lim = JOptionPane.showInputDialog(null, "Set Limit on the number of vertices:");
-						Parameters.limitV = Long.parseLong(lim);
-						Parameters.repaintAll();
-					}
+		{
+			public void keyTyped(KeyEvent ev){}
 
-					if(Character.isDigit(code))
-					{
-						int digit = code - '0';
-						if(ev.isControlDown())
-						{
-							//Assign hotkey to view
-							System.out.println("Assigning hotkey to " + digit);
-							Main.graph.addHotkeyedView(digit);
-						}
-						else
-						{
-							//Go to hotkeyed view
-							System.out.println("Loading hotkeyed view: " + digit);
-							Main.graph.loadHotkeyedView(digit);
-							Parameters.repaintAll();
-						}
-					}
-				}
-					
-				public void keyReleased(KeyEvent ev)
+			public void keyPressed(KeyEvent ev)
+			{
+				if(SearchField.focused)
+					return;
+
+				int code = ev.getKeyCode();
+				if(code == 'L')
 				{
-//					System.out.println("key released: "+ev.getKeyCode());
+					String lim = JOptionPane.showInputDialog(null, "Set limit on the number of vertices:");
+					Parameters.limitV = Long.parseLong(lim);
+					Parameters.repaintAll();
 				}
-			});
+			}
+
+			public void keyReleased(KeyEvent ev) {}
+		});
 		
 		viz.setFocusable(true);
 		viz.requestFocusInWindow();

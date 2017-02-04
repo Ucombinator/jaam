@@ -8,7 +8,15 @@ public class Method
 	//private final String functionName;
 	ArrayList<Vertex> vertices;
 	ArrayList<Instruction> instructionList;
-	
+
+	public Method()
+	{
+		this.methodName = "Dummy_method";
+		this.ourClass = new Class("Dummy_class");
+		vertices = new ArrayList<Vertex>();
+		instructionList = new ArrayList<Instruction>();
+	}
+
 	public Method(String methodName)
 	{
 		//System.out.println("Creating method: " + methodName);
@@ -102,6 +110,7 @@ public class Method
 				
 				String newInst = v.jimpleIndex + ":  " + v.getInstruction() + "\n";
 				this.instructionList.set(v.jimpleIndex, new Instruction(newInst, this.methodName, true, v.jimpleIndex));
+				v.setRealInstruction(instructionList.get(v.jimpleIndex));
 			}
 		}
 		

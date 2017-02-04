@@ -1,74 +1,248 @@
 
-import java.awt.BasicStroke;
+import javafx.animation.ScaleTransition;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
+
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.StackPane;
+import javafx.util.Duration;
+import javafx.scene.layout.Pane;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.Group;
+
+import javax.swing.table.AbstractTableModel;
 import java.awt.Color;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
+import java.util.HashSet;
+import java.util.Iterator;
 
-import javax.swing.JPanel;
-
-import java.awt.geom.GeneralPath;
-import java.awt.geom.Path2D;
-
-
-public class VizPanel extends JPanel
+public class VizPanel extends JFXPanel
 {
-	private boolean context;
-	private StacFrame parent;
-	private double maxWidth, maxHeight, minWidth, minHeight, boxWidth, boxHeight;
+	private Group contentGroup;
+	private Pane testPane;
+	private ScrollPane scrollPane;
+	HashSet<AbstractVertex> highlighted;
 
-	//The leftMargin margin is the width of the panel minus the width of the currently displayed graph, divided by 2.
-	//The topMargin margin is the height of the panel minus the height of the currently displayed graph, divided by 2.
-	private double leftMargin, topMargin;
+	public static float hues[]; //Used for shading nodes from green to red
+	private AbstractVertex panelRoot;
+	private javafx.scene.paint.Color[] colors = {javafx.scene.paint.Color.AQUAMARINE,
+			javafx.scene.paint.Color.GREEN, javafx.scene.paint.Color.AZURE,
+			javafx.scene.paint.Color.BLUEVIOLET, javafx.scene.paint.Color.DARKTURQUOISE};
+	public static int maxLoopHeight;
 
-	public boolean showSelection = false;
-	public double selectLeft, selectRight, selectTop, selectBottom;
-	public double boxSize = 1.0;
-	public static float hues[]; //Used for shading edges from green to red
-	public boolean showEdge = true;
+	// The dimensions of the background for our graph
+	public double rootWidth = 500.0, rootHeight = 500.0;
 
-	public VizPanel(StacFrame p, boolean cont)
+	// Store the count for vertex width and height when everything is expanded
+	public double maxVertexWidth, maxVertexHeight;
+
+	public AbstractVertex getPanelRoot()
+	{
+		return this.panelRoot;
+	}
+
+	public VizPanel()
 	{
 		super();
-		this.parent = p;
-		this.context = cont;
+		initContentGroup();
+		highlighted = new HashSet<AbstractVertex>();
+	}
+
+	private void initContentGroup() {
+		contentGroup = new Group();
+
+		if (Parameters.debugMode)
+		{
+			testPane = new Pane();
+			testPane.getChildren().add(contentGroup);
+			this.setScene(new Scene(testPane));
+		}
+		else
+		{
+			scrollPane = createZoomPane(contentGroup);
+			this.setScene(new Scene(scrollPane));
+		}
+		this.setBackground(Color.WHITE);		
+	}
+
+	public void initFX(AbstractVertex root)
+	{
+		if(root == null)
+		{
+			//System.out.println("Running layout...");
+			Graph g = Main.graph;			
+			this.panelRoot = LayerFactory.getLayeredGraph(g);
+			this.panelRoot.assignParents();
+			LayoutAlgorithm.layout(this.panelRoot);
+			resetPanelSize();
+		}
+		else
+		{
+			this.panelRoot = root;
+		}
+		drawNodes(null, this.panelRoot);
+		drawEdges(null, this.panelRoot);
 	}
 	
-	public void vizPaint(Graphics2D g)
-	{		
-		Graph graph = Main.graph;
 
-		//Provide a margin of 2% on each side?
-		this.boxWidth = this.getWidth()*0.96/(graph.getWidth()*(graph.currWindow.right-graph.currWindow.left));
-		this.boxHeight = this.getHeight()*0.96/(graph.getHeight()*(graph.currWindow.bottom-graph.currWindow.top));
-		
-		if(this.boxWidth > this.maxWidth)
-		{
-			this.boxWidth = this.maxWidth;
-		}
-
-		if(this.boxHeight > this.maxHeight)
-		{
-			this.boxHeight = this.maxHeight;
-		}
-
-		this.leftMargin = (this.getWidth() - this.boxWidth*graph.getWidth()*(graph.currWindow.right - graph.currWindow.left))/2;
-		this.topMargin = (this.getHeight() - this.boxHeight*graph.getHeight()*(graph.currWindow.bottom - graph.currWindow.top))/2;
-
-		drawEdges(g);
-		drawVertices(g);
-		
-		//Draw arrows toward highlighted vertices that are off the main screen
-		//drawHighlightedVertexMap(g);
+	public void resetPanelSize() {
+		this.maxVertexWidth = this.panelRoot.getWidth();
+		this.maxVertexHeight = this.panelRoot.getHeight();		
 	}
-	
+
+	double factorX = 1;
+	double factorY = 1;
+	double factorMultiple = 1.1;
+	double maxFactorMultiple = 3;
+
+	public double scaleX(double coordinate)
+	{
+		return factorX*(coordinate * rootWidth / this.maxVertexWidth);
+	}
+
+	public double scaleY(double coordinate)
+	{
+		return factorY*(coordinate * rootHeight / this.maxVertexHeight);
+	}
+
+	public double invScaleX(double pixelCoordinate)
+	{
+		return (pixelCoordinate * this.maxVertexWidth / rootWidth);
+	}
+
+	public double invScaleY(double pixelCoordinate)
+	{
+		return (pixelCoordinate * this.maxVertexHeight / rootHeight);
+	}
+
+	public double getZoomLevel()
+	{
+		// We assume that scaleX and scaleY are equal
+		return contentGroup.getScaleX();
+	}
+
+	// Divides the actual width in pixels by the width in vertex units
+	public double getWidthPerVertex()
+	{
+		return panelRoot.getGraphics().getWidth() / panelRoot.getWidth();
+	}
+
+	//Called when the user clicks on a line in the left area.
+	//Updates the vertex highlights to those that correspond to the instruction clicked.
+	public void searchByJimpleIndex(String method, int index, boolean removeCurrent, boolean addChosen)
+	{
+		if(removeCurrent) {
+			// Unhighlight currently highlighted vertices
+			for (AbstractVertex v : this.highlighted) {
+				highlighted.remove(v);
+				v.setHighlighted(false);
+			}
+		}
+
+		if(addChosen) {
+			//Next we add the highlighted vertices
+			HashSet<AbstractVertex> toAddHighlights = panelRoot.getVerticesWithInstructionID(index, method);
+			for (AbstractVertex v : toAddHighlights) {
+				highlighted.add(v);
+				v.setHighlighted(true);
+			}
+		} else {
+			HashSet<AbstractVertex> toRemoveHighlights = panelRoot.getVerticesWithInstructionID(index, method);
+			for(AbstractVertex v : toRemoveHighlights) {
+				highlighted.remove(v);
+				v.setHighlighted(false);
+			}
+		}
+	}
+
+	public void resetHighlighted(AbstractVertex newHighlighted)
+	{
+		for(AbstractVertex currHighlighted : this.highlighted)
+			currHighlighted.setHighlighted(false);
+		highlighted = new HashSet<AbstractVertex>();
+
+		if(newHighlighted != null) {
+			highlighted.add(newHighlighted);
+			newHighlighted.setHighlighted(true);
+		}
+	}
+
+	public void drawNodes(GUINode parent, AbstractVertex v)
+	{
+		GUINode node = new GUINode(parent, v);
+
+		if (parent == null){
+			contentGroup.getChildren().add(node);
+		}
+		else{
+			parent.getChildren().add(node);
+		}
+
+		double translateX = scaleX(v.getX());
+		double translateY = scaleY(v.getY());
+		double width = scaleX(v.getWidth());
+		double height = scaleY(v.getHeight());
+		node.setLocation(translateX, translateY, width, height);
+
+		// Move these to initialization?
+		node.setArcWidth(scaleX(0.5));
+		node.setArcHeight(scaleY(0.5));
+		//node.setLabel("  " + v.getLabel());
+
+		node.setFill(v.getColor());
+		node.setStroke(javafx.scene.paint.Color.BLACK);
+		node.setStrokeWidth(.5);
+		node.setOpacity(1);
+
+		if (v.getInnerGraph().getVertices().size() == 0)
+			return;
+
+		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
+		while (it.hasNext())
+		{
+			AbstractVertex child = it.next();
+			if(v.isExpanded()){
+				drawNodes(node, child);
+			}
+		}
+	}
+
+	public void drawEdges(GUINode parent, AbstractVertex v)
+	{
+		//System.out.println("Edges of vertex: " + v.getStrID());
+		if(!Parameters.edgeVisible){
+			return;
+		}
+		
+		GUINode node = v.getGraphics();
+		if(v.isExpanded())
+		{
+			//Edge.arrowLength = this.getWidthPerVertex() / 10.0;
+			for(Edge e : v.getInnerGraph().getEdges().values())
+				e.draw(this, node);
+		
+			for(AbstractVertex child : v.getInnerGraph().getVertices().values())
+				drawEdges(node, child);
+			
+		}
+	}
+
+
 	public static void computeHues()
 	{
 		float start = 0.4f; //green
 		float end = 0.0f; //red
-		
-		int maxLoopHeight = 0;
+
+		VizPanel.maxLoopHeight = 0;
 		for(Vertex v : Main.graph.vertices)
 		{
 			if(v.loopHeight > maxLoopHeight)
@@ -80,239 +254,14 @@ public class VizPanel extends JPanel
 		hues = new float[maxLoopHeight + 1];
 		for(int i = 0; i <= maxLoopHeight; i++)
 		{
+			// Linear interpolation of color values
 			hues[i] = start - ((float) i)/(maxLoopHeight + 1)*(start - end);
 		}
 	}
-	
-	//Draw all visible graph vertices.
-	public void drawVertices(Graphics2D g)
-	{
-		for(Vertex ver : Main.graph.vertices)
-		{
-			if(ver.isVisible)
-				drawVertex(g, ver);
-		}
 
-		for(MethodVertex ver : Main.graph.methodVertices)
-		{
-			if(ver.isVisible)
-				drawVertex(g, ver);
-		}
-		
-		for(MethodPathVertex ver : Main.graph.methodPathVertices)
-		{
-			if(ver.isVisible)
-				drawVertex(g, ver);
-		}
-	}
-	
-	public void drawVertex(Graphics2D g, AbstractVertex ver)
-	{
-		Graph graph = Main.graph;
-		double x1temp, x2temp, y1temp, y2temp;
-		int x1, x2, y1, y2;
-		double fac = 0.25*this.boxSize;
-		
-		if(this.boxWidth < this.minWidth)
-		{
-			x1temp = ver.x - fac*this.minWidth/this.boxWidth;
-			x2temp = ver.x + fac*this.minWidth/this.boxWidth;
-		}
-		else
-		{
-			x1temp = ver.x - fac;
-			x2temp = ver.x + fac;
-		}
-		
-		if(!this.context)
-		{
-			x1temp -= graph.currWindow.left*graph.getWidth();
-			x2temp -= graph.currWindow.left*graph.getWidth();
-		}
-		
-		x1 = (int) this.getPixelXFromIndex(x1temp);
-		x2 = (int) this.getPixelXFromIndex(x2temp);
-		
-		
-		if(this.boxHeight < this.minHeight)
-		{
-			y1temp = ver.y - fac*this.minHeight/this.boxHeight;
-			y2temp = ver.y + fac*this.minHeight/this.boxHeight;
-		}
-		else
-		{
-			y1temp = ver.y - fac;
-			y2temp = ver.y + fac;
-		}
-		
-		if(!this.context)
-		{
-			y1temp -= graph.currWindow.top*graph.getHeight();
-			y2temp -= graph.currWindow.top*graph.getHeight();
-		}
-		
-		y1 = (int) this.getPixelYFromIndex(y1temp);
-		y2 = (int) this.getPixelYFromIndex(y2temp);
-		
-		if(Parameters.vertexHighlight && (ver.isSelected() || ver.isChildSelected()))
-		{
-			//System.out.println("Drawing highlighted vertex: " + ver.id);
-			g.setColor(Parameters.colorHighlight);
-			g.fillRect(x1, y1, x2 - x1, y2 - y1);
-		}
-		else if(Parameters.vertexHighlight && (ver.isHighlighted() || ver.isChildHighlighted()))
-		{
-			//System.out.println("Drawing highlighted vertex: " + ver.id);
-			g.setColor(Parameters.colorSelection);
-			g.fillRect(x1, y1, x2 - x1, y2 - y1);
-		}
-		else
-		{
-			//Hue ranges from green to red
-			//Allows for varying shades up to 5 nested loops
-			float hue = hues[0];
-			if(ver.loopHeight > 0)
-				hue = hues[Math.min(hues.length - 1, ver.loopHeight)];
-			
-			float sat = 1f;
-			float brightness = 1f;
-			Color c = getHSBColorT(hue, sat, brightness);
-			g.setColor(c);
-			g.fillRect(x1, y1, x2 - x1, y2 - y1);
-		}
-
-/*		
-        for(Integer tg : ver.tags)
-        {
-            int t = tg.intValue();
-            
-            if(Main.graph.highlightedTags.get(t).booleanValue())
-            {
-                double l=0;
-                if((x2-x1)/6.0 > (y2-y1)/4.0)
-                    l = (y2-y1)/4.0;
-                else
-                    l = (x2-x1)/6.0;
-                
-                drawStar(g,x1+(x2-x1)/6,(y1+y2)/2,l);
-            }
-        }
-*/
-        
-        Font ff = new Font("Serif", Font.BOLD, Parameters.font.getSize());
-		if(!this.context)
-			this.drawCenteredString(g, ver.getName(), (int) (this.getPixelXFromIndex(ver.x - graph.currWindow.left*graph.getWidth())),
-					(int) (this.getPixelYFromIndex(ver.y-graph.currWindow.top*graph.getHeight())), ff, Color.BLACK);
-		
-		if(this.boxWidth < this.minWidth || this.boxHeight < this.minHeight)
-			g.setColor(this.getColorT(Color.BLACK.getRGB()));
-		else
-			g.setColor(Color.BLACK);
-
-		//Draw outline of boxes only in main window or in context for selected or highlighted vertices
-		if(this.context)
-		{
-            if(Parameters.vertexHighlight && (ver.isSelected() || ver.isChildSelected() || ver.isHighlighted() || ver.isChildHighlighted()))
-            {
-                g.setStroke(new BasicStroke(3));
-                g.drawRect(x1, y1, x2 - x1, y2 - y1);
-            }
-		}
-        else
-        {
-            g.setStroke(new BasicStroke(1));
-            if(Parameters.vertexHighlight && (ver.isSelected() || ver.isChildSelected() || ver.isHighlighted() || ver.isChildHighlighted()))
-                g.setStroke(new BasicStroke(3));
-            g.drawRect(x1, y1, x2 - x1, y2 - y1);
-        }
-        
-        
-        if(Parameters.pingStart && ver.isSelected)
-        {
-            int width = x2-x1;
-            int height = y2-y1;
-            if(width>height)
-                height = width;
-            else
-                width = height;
-            
-            int x = (x1+x2)/2 - width;
-            int y = (y1+y2)/2 - height;
-            
-            g.setColor(Color.BLUE);
-            g.drawOval(x,y,2*width,2*height);
-            
-            if(Parameters.pingEnd)
-            {
-                if(this.context)
-                    Parameters.pingRespondedContext = true;
-                else
-                    Parameters.pingRespondedMain = true;
-                if(Parameters.pingRespondedMain && Parameters.pingRespondedContext)
-                    Parameters.pingStart = false;
-            }
-        }
-        
-        
-	}
-    
-    //not needed anymore
-    public void drawStar(Graphics2D g, double x, double y, double l)
-    {
-        double root3 = Math.sqrt(3);
-        double l1=l;
-        double l2=l/root3;
-        Path2D.Double star = new Path2D.Double();
-        star.moveTo(x+l2,y);
-        star.lineTo(x+l1*root3/2,y-l/2);
-        star.lineTo(x+l2/2,y-l2*root3/2);
-        star.lineTo(x,y-l1);
-        star.lineTo(x-l2/2,y-l2*root3/2);
-        star.lineTo(x-l1*root3/2,y-l1/2);
-        star.lineTo(x-l2,y);
-        star.lineTo(x-l1*root3/2,y+l1/2);
-        star.lineTo(x-l2/2,y+l2*root3/2);
-        star.lineTo(x,y+l1);
-        star.lineTo(x+l2/2,y+l2*root3/2);
-        star.lineTo(x+l1*root3/2,y+l1/2);
-        star.lineTo(x+l2,y);
-        
-        
-        Color c = new Color(128,0,128);
-        g.setColor(c);
-        g.fill(star);
-        g.setColor(Color.BLACK);
-        g.draw(star);
-        
-    }
-	
-	//If edges are turned on, draw all visible graph edges.
-	public void drawEdges(Graphics2D g)
-	{
-		if(this.showEdge)
-		{
-			for(Vertex ver : Main.graph.vertices)
-			{
-				AbstractVertex v = ver;
-				while(!v.isVisible)
-					v = v.getMergeParent();
-				
-				for(Vertex nbr : ver.neighbors)
-				{
-					AbstractVertex w = nbr;
-					while(!w.isVisible)
-						w = w.getMergeParent();
-
-					//System.out.println("Drawing edge: " + v.getFullName() + ", " + w.getFullName());
-					if(v != w && v.drawEdges && w.drawEdges)
-						drawEdge(g, v, w);
-				}
-			}
-		}
-	}
-	
-	//Checks if an edge between two different vertices should be highlighted
-	//We highlight it only if the vertices on both ends want it to be highlighted.
+	// Currently unused: Do we need it?
+	// Checks if an edge between two different vertices should be highlighted
+	// We highlight it only if the vertices on both ends want it to be highlighted
 	public boolean isHighlightedEdge(AbstractVertex v, AbstractVertex nbr)
 	{
 		if(!v.isOutgoingHighlighted || !nbr.isIncomingHighlighted)
@@ -321,544 +270,189 @@ public class VizPanel extends JPanel
 			return false;
 		else return !(Parameters.highlightIncoming && !Parameters.highlightOutgoing && nbr.isIncomingHighlighted);
 	}
-	
-	public void drawEdge(Graphics2D g, AbstractVertex v, AbstractVertex w)
+
+	// Next three methods copied from solution here: https://community.oracle.com/thread/2541811
+	// Feature request (inactive) to have an easier way to zoom inside a ScrollPane:
+	// https://bugs.openjdk.java.net/browse/JDK-8091618
+	private ScrollPane createZoomPane(final Group group)
 	{
-		Graph graph = Main.graph;
-		double x1temp, x2temp, y1temp, y2temp;
-		int x1, x2, y1, y2;
-		double fac = 0.25*this.boxSize;
-		boolean isCurved;
-		
-		
-		x1temp = v.x;
-		x2temp = w.x;
-		
-		if(!this.context)
+		final double SCALE_DELTA = 1.1;
+		final StackPane zoomPane = new StackPane();
+
+		zoomPane.getChildren().add(group);
+
+		final ScrollPane scroller = new ScrollPane();
+		final Group scrollContent = new Group(zoomPane);
+		scroller.setContent(scrollContent);
+
+		scroller.viewportBoundsProperty().addListener(new ChangeListener<Bounds>()
 		{
-			x1temp -= graph.getWidth()*graph.currWindow.left;
-			x2temp -= graph.getWidth()*graph.currWindow.left;
-		}
-		
-		x1 = (int) this.getPixelXFromIndex(x1temp);
-		x2 = (int) this.getPixelXFromIndex(x2temp);
-		
-		//Start of arrow is at center of first box
-		y1temp = v.y;
-		
-		//If box 1 is above box 2, draw arrow to the center of the topMargin line
-		if(v.y > w.y)
-		{
-			isCurved = true;
-			if(this.boxHeight < this.minHeight)
+			@Override
+			public void changed(ObservableValue<? extends Bounds> observable,
+								Bounds oldValue, Bounds newValue)
 			{
-				y2temp = w.y + fac*this.minHeight/this.boxHeight;
+				zoomPane.setMinSize(newValue.getWidth(), newValue.getHeight());
 			}
-			else
-			{
-				y2temp = w.y + fac;
-			}
-		}
-		
-		//Otherwise, draw arrow to the center of the bottom line
-		else
-		{
-			isCurved = false;
-			if(this.boxHeight < this.minHeight)
-			{
-				y2temp = w.y - fac*this.minHeight/this.boxHeight;
-			}
-			else
-			{
-				y2temp = w.y - fac;
-			}
-		}
-		
-		if(!this.context)
-		{
-			y1temp -= graph.currWindow.top*graph.getHeight();
-			y2temp -= graph.currWindow.top*graph.getHeight();
-		}
-		
-		y1 = (int) this.getPixelYFromIndex(y1temp);
-		y2 = (int) this.getPixelYFromIndex(y2temp);
+		});
 
 		
-		if(isHighlightedEdge(v, w))
+		final EventHandler<ScrollEvent> voindHandle =  new EventHandler<ScrollEvent>()
 		{
-			g.setColor(Color.RED);
-			g.setStroke(new BasicStroke(4));
-		}
-		else
-		{
-			g.setColor(Color.BLACK);
-			g.setStroke(new BasicStroke(1));
-		}
-		
-		if(!isCurved)
-			drawArrow(g, x1, y1, x2, y2);
-		else
-			drawCurvedArrow(g, x1, y1, x2, y2);
-	}
-	
-	public void drawArrow(Graphics2D g, int x1, int y1, int x2, int y2)
-	{
-		g.drawLine(x1, y1, x2, y2);
-		double angle = Math.atan2(y2 - y1, x2 - x1);		
-		double length = 15.0;
-		if(this.boxSize < 1)
-			length = length * this.boxSize;
-
-		if(length < 2.0 && !this.context)
-			length = 2.0;
-		if(length < 1.0 && this.context)
-			length = 1.0;
-		
-		this.drawArrowhead(g, x2, y2, angle, length);
-	}
-	
-	public void drawCurvedArrow(Graphics2D g, int x1, int y1, int x2, int y2)
-	{
-		//Our arrow will start and end pointing toward our control point.
-		//We pick the control point by starting at the midpoint of the line from (x1, y1) to (x2, y2),
-		//and moving a distance of Parameters.minBoxWidth from this line perpendicularly.
-		
-		int x3, y3;
-		int midX = (x1 + x2)/2;
-		int midY = (y1 + y2)/2;
-
-		//This sets the incoming/outgoing angle to be arctan(1/2), or about 26 degrees. It looks okay.
-		double dist = 0.5*getEuclideanDistance(x1, y1, midX, midY);
-		
-		if(x1 == x2)
-		{
-			x3 = (int) (midX - dist);
-			y3 = midY;
-		}
-		else
-		{
-			//We know that y2 > y1, since our arrow is pointing up.
-			double mPerp = ((double) x2 - x1)/(y2 - y1);
-			double deltaX = dist/Math.sqrt(mPerp*mPerp + 1);
-			double deltaY = (dist*mPerp)/Math.sqrt(mPerp*mPerp + 1);
-			
-			if(x2 > x1)
+			@Override
+			public void handle(ScrollEvent event)
 			{
-				x3 = (int) (midX + deltaX);
-				y3 = (int) (midY - deltaY);
+				event.consume();
+				System.out.println("voindHandle");
 			}
-			else
-			{
-				x3 = (int) (midX - deltaX);
-				y3 = (int) (midY + deltaY);
-			}
-		}
+		}; 
 		
-		GeneralPath path = new GeneralPath(GeneralPath.WIND_EVEN_ODD, 3);
-		path.moveTo(x1, y1);
-		path.quadTo(x3, y3, x2, y2);
-		g.draw(path);
-		
-		double angle = Math.atan2(y2 - y3, x2 - x3);
-		double length = 15.0;
-		if(this.boxSize < 1)
-			length = length * this.boxSize;
 
-		if(length < 2.0)
-			length = 2.0;
-		
-		this.drawArrowhead(g, x2, y2, angle, length);
-	}
-
-	private double getEuclideanDistance(double x1, double y1, double x2, double y2)
-	{
-		return Math.sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
-	}
-	
-	public void drawArrowhead(Graphics2D g, int x, int y, double angle, double length)
-	{
-		double angleDiff = 20.0*Math.PI/180.0; //30 degrees
-		
-		//For the legs of our arrow, rotate the opposite direction, then offset by angleDiff degrees.
-		double anglePlus = (angle + Math.PI) + angleDiff;
-		double angleMinus = (angle + Math.PI) - angleDiff;
-		int xPlus = (int)(x + length*Math.cos(anglePlus));
-		int yPlus = (int)(y + length*Math.sin(anglePlus));
-		int xMinus = (int)(x + length*Math.cos(angleMinus));
-		int yMinus = (int)(y + length*Math.sin(angleMinus));
-		
-		/*System.out.println("Head point: " + x + ", " + y);
-		System.out.println("Angle: " + angle*180.0/Math.PI + " degrees");
-		System.out.println("Plus point: " + xPlus + ", " + yPlus);
-		System.out.println("Minus point: " + xMinus + ", " + yMinus);*/
-		
-		GeneralPath path = new GeneralPath(GeneralPath.WIND_EVEN_ODD, 4);
-		path.moveTo(x, y);
-		path.lineTo(xPlus, yPlus);
-		path.lineTo(xMinus, yMinus);
-		path.lineTo(x, y);
-		g.fill(path);
-	}
-	
-	public void drawCenteredString(Graphics2D g, String text, int x, int y, Font font, Color col)
-	{
-	    g.setFont(font);
-	    g.setColor(col);
-	    FontMetrics metrics = g.getFontMetrics(font);
-	    
-	    double width;
-	    if(this.boxWidth < this.minWidth)
-	    {
-	    	width = this.minWidth * 0.5 * this.boxSize;
-	    }
-	    else
-	    {
-	    	width = this.boxWidth * 0.5 * this.boxSize;
-	    }
-	    
-	    double height;
-	    if(this.boxHeight < this.minHeight)
-	    {
-	    	height = this.minHeight * 0.5 * this.boxSize;
-	    }
-	    else
-	    {
-	    	height = this.boxHeight * 0.5 * this.boxSize;
-	    }
-
-	    String[] lines = text.split("\n");
-	    
-	    height = height/metrics.getHeight();
-	    if(height<1)
-	    	height = 1;
-	    int i;
-	    for(i=0; i<lines.length-height; i++);
-	    for(; i < lines.length; i++)
-	    {
-		    String line = lines[i];
-		    if(width < metrics.stringWidth(line))
-		    {
-		    	line = shortenString(line, width, metrics);
-		    }
-		    
-		    int xCentered = x - metrics.stringWidth(line)/2;
-		    g.drawString(line, xCentered, y);
-		    y += metrics.getHeight();
-	    }
-	}
-	
-	//Do a binary search to see how much of the line we can print.
-	public String shortenString(String str, double width, FontMetrics metrics)
-	{
-    	int start = 0;
-    	int end = str.length();
-    	while(end - start > 1)
-    	{
-    		int center = (start + end)/2;
-    		String newSubstr = str.substring(0, center) + "..";
-    		if(width < metrics.stringWidth(newSubstr))
-    			end = center;
-    		else
-    			start = center;
-    	}
-
-    	String newSubstr1 = str.substring(0, start) + "..";
-    	String newSubstr2 = str.substring(0, end) + "..";
-    	if(width < metrics.stringWidth(newSubstr2))
-    		str = newSubstr1;
-    	else
-    		str = newSubstr2;
-    	
-    	return str;
-	}
-	
-	/*public void drawHighlightedVertexMap(Graphics2D g)
-	{
-		double leftMargin = 0;
-		double right = (Main.graph.currWindow.right - Main.graph.currWindow.leftMargin)*Main.graph.getWidth();
-		double topMargin = 0;
-		double bottom = (Main.graph.currWindow.bottom - Main.graph.currWindow.topMargin)*Main.graph.getHeight();
-		double middleX = (leftMargin + right)/2.0;
-		double middleY = (topMargin + bottom)/2.0;
-		
-		int[] countVertices = new int[9];
-		for(int i = 0; i < 9; i++)
+		EventHandler<ScrollEvent> activeHandle = new EventHandler<ScrollEvent>()
 		{
-			countVertices[i] = 0;
-		}
-		
-		for(AbstractVertex v : highlightedVertices)
-		{
-			//We split our window by the leftMargin, right, topMargin, and bottom of the current view.
-			//This gives us nine possible regions. The eight outer regions are not contained
-			//in our current view, so we add an arrow for each one with the number of highlighted
-			//vertices it contains.
-			/* _____________
-			 * | 1 | 2 | 3 |
-			 * _____________
-			 * | 4 | 5 | 6 |
-			 * _____________
-			 * | 7 | 8 | 9 |
-			 * _____________
-			 *
-			
-			int currIndex = 0;
-			//x-position: leftMargin side = 0, middle = 1, right = 2
-			if(v.x >= leftMargin && v.x <= right)
+			@Override
+			public void handle(ScrollEvent event)
 			{
-				currIndex++;
-			}
-			else if(v.x > right)
-			{
-				currIndex += 2;
-			}
-			
-			//y-position: topMargin = 0, middle = 3, bottom = 6
-			if(v.y >= topMargin && v.y <= bottom)
-			{
-				currIndex += 3;
-			}
-			else if(v.y > bottom)
-			{
-				currIndex += 6;
-			}
-			
-			countVertices[currIndex]++;
-		}
-		
-		double[] arrowAngle = {225, 270, 315, 180, -1, 0, 135, 90, 45};
-		double[] xPositions = {leftMargin, middleX, right, leftMargin, -1, right, leftMargin, middleX, right};
-		double[] yPositions = {topMargin, topMargin, topMargin, middleY, middleY, middleY, bottom, bottom, bottom};
-		int arrowLength = 20;
-		
-		g.setColor(Color.BLACK);
-		g.setStroke(new BasicStroke(2));
-		
-		for(int i = 0; i < 9; i++)
-		{
-			//Take arrow pointing to right, place tip at xPositions[i], yPositions[i], and rotate by arrowAngle[i]
-			//Then label with value
-			if(i != 4)
-			{
-				arrowAngle[i] *= Math.PI/180.0; //Convert angles to radians
-				int x1 = (int) (this.getRelativeXPixels(xPositions[i]));
-				int y1 = (int) (this.getRelativeYPixels(yPositions[i]));
-				int x2 = x1 + (int)(arrowLength*Math.cos(arrowAngle[i]));
-				int y2 = y1 + (int)(arrowLength*Math.sin(arrowAngle[i]));
-				//System.out.println(xPositions[i] + ", " + yPositions[i]);
-				//System.out.println(x1 + ", " + y1);
+				event.consume();
+				System.out.println("ZOOOOOOOOOOOM");
+				zoomPane.setOnScroll(voindHandle);
 				
-				drawArrow(g, x1, y1, x2, y2);
+
+				if (event.getDeltaY() == 0)
+					return;
+
+				final double scaleFactor = (event.getDeltaY() > 0) ? SCALE_DELTA
+						: 1 / SCALE_DELTA;
+
+				// amount of scrolling in each direction in scrollContent coordinate units
+				final Point2D scrollOffset = figureScrollOffset(scrollContent, scroller);
+
+				ScaleTransition st = new ScaleTransition(Duration.millis(5),group);
+				st.setToX(group.getScaleX()*scaleFactor);
+				st.setToY(group.getScaleX()*scaleFactor);
+//				group.setScaleX(group.getScaleX() * scaleFactor);
+//				group.setScaleY(group.getScaleY() * scaleFactor);
+				Parameters.stFrame.mainPanel.getPanelRoot().toggleEdges();
+				st.play();
+				
+				final EventHandler<ScrollEvent> activeHandle = this;
+				
+				st.setOnFinished(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent event)
+					{
+
+						// move viewport so that old center remains in the center after the scaling
+						repositionScroller(scrollContent, scroller, scaleFactor, scrollOffset);
+						Parameters.stFrame.mainPanel.getPanelRoot().toggleEdges();
+						// Adjust stroke width of lines and length of arrows
+						VizPanel.this.scaleLines();
+						zoomPane.setOnScroll(activeHandle);
+					}
+				});
 			}
-		}
-	}*/
-	
-	public void contextPaint(Graphics2D g)
-	{
-		Graph graph = Main.graph;
+		}; 
+		
+		
+		zoomPane.setOnScroll(activeHandle);
 
-		this.boxWidth = this.getWidth()*0.96/graph.getWidth();
-		this.boxHeight = this.getHeight()*0.96/graph.getHeight();
+		// Panning via drag....
+		final ObjectProperty<Point2D> lastMouseCoordinates = new SimpleObjectProperty<Point2D>();
+		scrollContent.setOnMousePressed(new EventHandler<MouseEvent>() {
+			@Override
+			public void handle(MouseEvent event) {
+				lastMouseCoordinates.set(new Point2D(event.getX(), event.getY()));
+			}
+		});
 
-		if(this.boxWidth >this.maxWidth)
-			this.boxWidth = this.maxWidth;
-
-		if(this.boxHeight >this.maxHeight)
-			this.boxHeight = this.maxHeight;
-		
-		this.leftMargin = (this.getWidth() - this.boxWidth *graph.getWidth())/2;
-		this.topMargin = (this.getHeight() - this.boxHeight *graph.getHeight())/2;
-
-		drawEdges(g);
-		drawVertices(g);
-	}
-	
-	public Color getHSBColorT(float H, float S, float B)
-	{
-		int rgb = Color.HSBtoRGB(H, S, B);
-	    int red = (rgb >> 16) & 0xFF;
-	    int green = (rgb >> 8) & 0xFF;
-	    int blue = rgb & 0xFF;
-	    Color color = new Color(red, green, blue, Parameters.transparency);
-	    return color;
-	}
-	
-	public Color getColorT(int rgb)
-	{
-	    int red = (rgb >> 16) & 0xFF;
-	    int green = (rgb >> 8) & 0xFF;
-	    int blue = rgb & 0xFF;
-	    Color color = new Color(red, green, blue, Parameters.transparency);
-	    return color;
-	}
-	
-	public void paintComponent(Graphics g)
-	{
-		super.paintComponent(g);
-		this.setBackground(Color.WHITE);
-
-		if(Main.graph == null)
-			return;
-		
-		this.minWidth = Parameters.minBoxWidth;
-		this.minHeight = Parameters.minBoxHeight;
-		this.maxWidth = this.getWidth();
-		this.maxHeight = this.getHeight();
-		
-		if(this.maxWidth<this.minWidth)
-			this.maxWidth = this.minWidth;
-		if(this.maxHeight<this.minHeight)
-			this.maxHeight = this.minHeight;
-		
-		Graphics2D g2 = (Graphics2D) g.create();
-		
-		int x1, x2, y1, y2;
-		
-		Graph graph = Main.graph;
-		
-		
-		if(this.context)
+		// Fix drag location when node is scaled
+		scrollContent.setOnMouseDragged(new EventHandler<MouseEvent>()
 		{
-			g.setColor(Parameters.colorFocus);
-			
-			if(graph.currWindow.left > 0 || graph.currWindow.right < 1
-					|| graph.currWindow.top > 0 || graph.currWindow.bottom < 1)
+			@Override
+			public void handle(MouseEvent event)
 			{
-				x1 = (int) this.getPixelXFromIndex(graph.getWidth()*graph.currWindow.left);
-				y1 = (int) this.getPixelYFromIndex(graph.getHeight()*graph.currWindow.top);
-				x2 = (int) this.getPixelXFromIndex(graph.getWidth()*graph.currWindow.right);
-				y2 = (int) this.getPixelYFromIndex(graph.getHeight()*graph.currWindow.bottom);
-				g.fillRect(x1, y1, x2-x1, y2-y1);
-				g.setColor(Color.YELLOW);
-				g.drawRect(x1, y1, x2-x1, y2-y1);
-			}
-		}
+				double deltaX = event.getX() - lastMouseCoordinates.get().getX();
+				double extraWidth = scrollContent.getLayoutBounds().getWidth() - scroller.getViewportBounds().getWidth();
+				double deltaH = deltaX * (scroller.getHmax() - scroller.getHmin()) / extraWidth;
+				double desiredH = scroller.getHvalue() - deltaH;
+				scroller.setHvalue(Math.max(0, Math.min(scroller.getHmax(), desiredH)));
 
-		if(this.showSelection)
-		{
-			g2.setColor(Parameters.colorSelection);
+				double deltaY = event.getY() - lastMouseCoordinates.get().getY();
+				double extraHeight = scrollContent.getLayoutBounds().getHeight() - scroller.getViewportBounds().getHeight();
+				double deltaV = deltaY * (scroller.getHmax() - scroller.getHmin()) / extraHeight;
+				double desiredV = scroller.getVvalue() - deltaV;
+				scroller.setVvalue(Math.max(0, Math.min(scroller.getVmax(), desiredV)));
+			}
+		});
 
-			if(this.selectLeft < this.selectRight)
-			{
-				x1 = (int) this.selectLeft;
-				x2 = (int) this.selectRight;
-			}
-			else
-			{
-				x2 = (int) this.selectLeft;
-				x1 = (int) this.selectRight;
-			}
-
-			if(this.selectTop < this.selectBottom)
-			{
-				y1 = (int) this.selectTop;
-				y2 = (int) this.selectBottom;
-			}
-			else
-			{
-				y2 = (int) this.selectTop;
-				y1 = (int) this.selectBottom;
-			}
-						
-			g2.fillRect(x1, y1, x2-x1, y2-y1);
-			
-			float dash[] = {10.0f};
-		    BasicStroke dashed = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, dash, 0.0f);
-		    g2.setStroke(dashed);
-		    g2.setColor(Color.GRAY);
-		    g2.drawRect(x1, y1, x2-x1, y2-y1);
-		}
-
-		
-		
-		if(this.context)
-			this.contextPaint(g2);
-		else
-        {
-			this.vizPaint(g2);
-        }
-		
-		g.dispose();
+		return scroller;
 	}
 
-	//Convert a current pixel location to a horizontal value between 0 and 1
-	public double getRelativeFracFromAbsolutePixelX(double x)
+	private Point2D figureScrollOffset(Node scrollContent, ScrollPane scroller)
 	{
-		Graph graph = Main.graph;
-		if(this.context)
+		double extraWidth = scrollContent.getLayoutBounds().getWidth() - scroller.getViewportBounds().getWidth();
+		double hScrollProportion = (scroller.getHvalue() - scroller.getHmin()) / (scroller.getHmax() - scroller.getHmin());
+		double scrollXOffset = hScrollProportion * Math.max(0, extraWidth);
+		double extraHeight = scrollContent.getLayoutBounds().getHeight() - scroller.getViewportBounds().getHeight();
+		double vScrollProportion = (scroller.getVvalue() - scroller.getVmin()) / (scroller.getVmax() - scroller.getVmin());
+		double scrollYOffset = vScrollProportion * Math.max(0, extraHeight);
+		return new Point2D(scrollXOffset, scrollYOffset);
+	}
+
+	private void repositionScroller(Node scrollContent, ScrollPane scroller, double scaleFactor, Point2D scrollOffset)
+	{
+		double scrollXOffset = scrollOffset.getX();
+		double scrollYOffset = scrollOffset.getY();
+		double extraWidth = scrollContent.getLayoutBounds().getWidth() - scroller.getViewportBounds().getWidth();
+		if (extraWidth > 0)
 		{
-			double xFrac = (x - this.leftMargin) / (this.boxWidth*graph.getWidth());
-			if(xFrac < 0)
-				return 0;
-			else if(xFrac > 1)
-				return 1;
-			else
-				return xFrac;
+			double halfWidth = scroller.getViewportBounds().getWidth() / 2 ;
+			double newScrollXOffset = (scaleFactor - 1) *  halfWidth + scaleFactor * scrollXOffset;
+			scroller.setHvalue(scroller.getHmin() + newScrollXOffset * (scroller.getHmax() - scroller.getHmin()) / extraWidth);
 		}
 		else
 		{
-			double xFrac = (x - this.leftMargin) / (this.boxWidth*graph.getWidth()) + graph.currWindow.left;
-			if(xFrac < 0)
-				return 0;
-			else if(xFrac > 1)
-				return 1;
-			else
-				return xFrac;
+			scroller.setHvalue(scroller.getHmin());
 		}
-	}
 
-	//Convert an absolute pixel location to a vertical value between 0 and 1
-	public double getRelativeFracFromAbsolutePixelY(double y)
-	{
-		Graph graph = Main.graph;
-		if(this.context)
+		double extraHeight = scrollContent.getLayoutBounds().getHeight() - scroller.getViewportBounds().getHeight();
+		if (extraHeight > 0)
 		{
-			double yFrac = (y - this.topMargin) / (this.boxHeight * graph.getHeight());
-			if(yFrac < 0)
-				return 0;
-			else if(yFrac > 1)
-				return 1;
-			else
-				return yFrac;
+			double halfHeight = scroller.getViewportBounds().getHeight() / 2 ;
+			double newScrollYOffset = (scaleFactor - 1) * halfHeight + scaleFactor * scrollYOffset;
+			scroller.setVvalue(scroller.getVmin() + newScrollYOffset * (scroller.getVmax() - scroller.getVmin()) / extraHeight);
 		}
 		else
 		{
-			double yFrac = (y - this.topMargin) / (this.boxHeight * graph.getHeight()) + graph.currWindow.top;
-			if(yFrac < 0)
-				return 0;
-			else if(yFrac > 1)
-				return 1;
-			else
-				return yFrac;
+			scroller.setHvalue(scroller.getHmin());
 		}
 	}
 
-	//Convert a horizontal box index to a current x pixel location
-	public double getPixelXFromIndex(double x)
+	public void scaleLines()
 	{
-		return this.leftMargin + this.boxWidth * x;
+		//System.out.println("Scaling lines and arrowheads...");
+		for(Edge e : this.panelRoot.getInnerGraph().getEdges().values())
+			e.setScale();
+
+		for(AbstractVertex v : this.panelRoot.getInnerGraph().getVertices().values())
+		{
+			for(Edge e : v.getInnerGraph().getEdges().values())
+				e.setScale();
+		}
 	}
 
-	//Convert a vertical box index to a current y pixel location
-	public double getPixelYFromIndex(double y)
-	{
-		return this.topMargin + this.boxHeight * y;
+	public void incrementScaleXFactor() {
+		factorX *= factorMultiple;
 	}
-
-	public double getIndexFromCurrentPixelX(double currXPixel)
-	{
-		double xFrac = getRelativeFracFromAbsolutePixelX(currXPixel);
-		return xFrac*Main.graph.getWidth();
+	
+	public void decrementScaleXFactor() {
+		factorX /= factorMultiple;
 	}
-
-	public double getIndexFromCurrentPixelY(double currYPixel)
-	{
-		double yFrac = getRelativeFracFromAbsolutePixelY(currYPixel);
-		return yFrac*Main.graph.getHeight();
+	
+	public void incrementScaleYFactor() {
+		factorY *= factorMultiple;
 	}
-
-	public StacFrame getParent()
-	{
-		return parent;
+	
+	public void decrementScaleYFactor() {
+		factorY /= factorMultiple;
 	}
 }
