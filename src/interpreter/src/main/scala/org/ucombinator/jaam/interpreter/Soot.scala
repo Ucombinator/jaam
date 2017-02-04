@@ -101,8 +101,8 @@ object Soot {
 
     // Run transformations and analyses according to the configured options.
     // Transformation could include jimple, shimple, and CFG generation
-    PackManager.v().runPacks()
     Scene.v().loadBasicClasses()
+    PackManager.v().runPacks()
   }
 
   def getBody(m : SootMethod) = {
