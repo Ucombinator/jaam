@@ -1484,7 +1484,7 @@ object Main {
       // Spark looks not as good as CHA according to the number of reachable methods
       //Options.v().setPhaseOption("cg.spark", "enabled:true,on-fly-cg:true")
 
-      //soot.options.Options.v().set_main_class(conf.mainClass())
+      Options.v().set_main_class(conf.mainClass())
       //Scene.v().setMainClass(Scene.v().loadClassAndSupport(conf.mainClass()))
       //Scene.v().loadNecessaryClasses()
       Scene.v().loadBasicClasses()
@@ -1555,7 +1555,7 @@ object Main {
         val state = todo.head
         todo = todo.tail
         Log.info("Processing:"+state)
-        //if (state.stmt.sootStmt.containsInvokeExpr()) {
+
         for (edge <- cg.edgesOutOf(state.stmt.sootStmt)) {
           val m = edge.tgt().method()
           Log.debug("  -->" + m)
@@ -1586,7 +1586,7 @@ object Main {
             // TODO: do something for non-explicit edges (they have a null stmt and unit) (probably are due to throwing exceptions)
             val clazz = edge.src.method.getDeclaringClass
             if (edge.isExplicit() && !System.isJavaLibraryClass(clazz)) {
-              Log.info(s"  go back to ${edge.src.method}")
+              Log.info(s"  goes back to ${edge.src.method}")
               val returnState = State.inject(Stmt(edge.srcStmt(), edge.src()).nextSyntactic)
               addState(returnState)
               addEdge(state, returnState)
@@ -1599,12 +1599,11 @@ object Main {
             addEdge(state, newState)
           }
         }
-
       }
     } finally {
       outSerializer.close()
-      Log.info("number of states: " + stateCount)
-      Log.info("number of edges: " + edgeCount)
+      Log.info(s"number of states: ${stateCount}")
+      Log.info(s"number of edges: ${edgeCount}")
     }
   }
 
