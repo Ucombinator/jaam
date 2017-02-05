@@ -1617,6 +1617,21 @@ object Main {
       Log.info(s"number of methods covered and in jar file: ${seenAndInJar.size}")
       Log.info(s"number of methods covered but not in jar file: ${seenButNotInJar.size}")
       Log.info(s"number of methods not covered but in jar file: ${inJarButNotSeen.size}")
+
+      // Many of the methods not covered but appeared in jar file are maybe never been called,
+      // we can safely omit these methods if the call graph is correct.
+      val (called, notCalled) = inJarButNotSeen.partition(cg.edgesInto(_).toList.size > 0)
+      Log.info(s"number of methods not covered but in jar file and have been called: ${called.size}")
+
+      // Print methods not covered but may have been called
+      for (m <- called) {
+        val into = cg.edgesInto(m).toList
+        Log.info(s"  number of edges into ${m}: ${into.size}")
+        for (edge <- into) {
+          val caller = edge.src.method
+          Log.debug(s"    may called by: ${caller}")
+        }
+      }
     }
   }
 
