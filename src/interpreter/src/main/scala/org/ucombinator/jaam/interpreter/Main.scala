@@ -1441,7 +1441,7 @@ object Main {
 
   def getAllClassNames(classPath: String): List[String] = {
     def getClassNames(jarFile: String): List[String] = {
-      //println(s"get all class names from ${jarFile}")
+      Log.info(s"Getting all class names from ${jarFile}")
       val zip = new ZipInputStream(new FileInputStream(jarFile))
       var ans: List[String] = List()
       var entry = zip.getNextEntry
@@ -1459,29 +1459,27 @@ object Main {
   }
 
   def cha() {
+    //val allAppClassess = conf.classpath().toString.split(":").map(getAllClassNames(_))
     Soot.initialize(conf, {
       //Options.v().set_verbose(true)
       Options.v().set_include_all(false)
-
       Options.v.set_whole_program(true)
       Options.v().set_app(true)
       Options.v().set_soot_classpath(conf.rtJar().toString + ":" + conf.classpath().toString)
-      //Options.v().set_soot_classpath(conf.classpath().toString)
 
-      for (jarPath <- conf.classpath().toString.split(":")) {
-        val classesInJar = getAllClassNames(jarPath)
-        for (className <- classesInJar) {
-          //addBasicClass and setApplicationClass seem equivalent to cg
-          //Scene.v().addBasicClass(className, SootClass.HIERARCHY)
-          val c = Scene.v().loadClassAndSupport(className)
-          c.setApplicationClass
-        }
+      for (className <- getAllClassNames(conf.classpath().toString)) {
+        //addBasicClass and setApplicationClass seem equivalent to cg
+        //Scene.v().addBasicClass(className, SootClass.HIERARCHY)
+        val c = Scene.v().loadClassAndSupport(className)
+        c.setApplicationClass
       }
 
       //Options.v().setPhaseOption("cg", "verbose:true")
       Options.v().setPhaseOption("cg.cha", "enabled:true")
 
       // Spark looks not as good as CHA according to the number of reachable methods
+      // but point-to analysis can be used to refine call graph, see example
+      // http://www.programcreek.com/java-api-examples/index.php?api=soot.jimple.toolkits.callgraph.CallGraph
       //Options.v().setPhaseOption("cg.spark", "enabled:true,on-fly-cg:true")
 
       Options.v().set_main_class(conf.mainClass())
@@ -1499,7 +1497,8 @@ object Main {
     }
 
     var seen = Set[State]() // includes everything including todo elements
-    var todo = List[State]()
+    var todo = Set[State]()
+    var seenMethods = Set[SootMethod]()
     var stateCount = 0
     var edgeCount = 0
 
@@ -1510,8 +1509,10 @@ object Main {
         stateCount += 1
         Log.debug("addState:"+s)
         seen += s
-        todo = s :: todo
+        todo += s
         outSerializer.write(s.toPacket)
+
+        seenMethods += s.stmt.sootMethod
       }
     }
 
@@ -1602,8 +1603,20 @@ object Main {
       }
     } finally {
       outSerializer.close()
+
+      val allAppMethods = getAllClassNames(conf.classpath().toString)
+                          .map(Scene.v().loadClassAndSupport(_))
+                          .map(_.getMethods).flatten.toSet
+      val seenAndInJar = seenMethods.intersect(allAppMethods)
+      val seenButNotInJar = seenMethods.diff(allAppMethods)
+      val inJarButNotSeen = allAppMethods.diff(seenMethods)
       Log.info(s"number of states: ${stateCount}")
       Log.info(s"number of edges: ${edgeCount}")
+      Log.info(s"number of covered methods: ${seenMethods.size}")
+      Log.info(s"number of methods in app's jar file: ${allAppMethods.size}")
+      Log.info(s"number of methods covered and in jar file: ${seenAndInJar.size}")
+      Log.info(s"number of methods covered but not in jar file: ${seenButNotInJar.size}")
+      Log.info(s"number of methods not covered but in jar file: ${inJarButNotSeen.size}")
     }
   }
 
