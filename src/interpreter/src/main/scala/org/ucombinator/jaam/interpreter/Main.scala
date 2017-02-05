@@ -1622,6 +1622,7 @@ object Main {
       // we can safely omit these methods if the call graph is correct.
       val (called, notCalled) = inJarButNotSeen.partition(cg.edgesInto(_).toList.size > 0)
       Log.info(s"number of methods not covered but in jar file and have been called: ${called.size}")
+      Log.info(s"real method coverage: ${seenAndInJar.size.toDouble/(allAppMethods.size-notCalled.size)}")
 
       // Print methods not covered but may have been called
       for (m <- called) {
