@@ -11,6 +11,20 @@ import scala.collection.mutable
 import org.objectweb.asm._
 import org.objectweb.asm.tree._
 
+class ListItems extends Main("list") {
+  banner("List all classes and methods in the JAR file")
+  footer("")
+
+  val noclasses = opt[Boolean](descr = "Do not print all classes")
+  val nomethods = opt[Boolean](descr = "Do not print all methods")
+
+  val jarFile = trailArg[java.io.File](descr = "The .jar file to analyze")
+
+  def run(conf: Conf) {
+    ListItems.main(jarFile().toString, ListPrintOption(!noclasses(), !nomethods()))
+  }
+}
+
 case class ListPrintOption(classes: Boolean, methods: Boolean)
 
 object ListItems {
