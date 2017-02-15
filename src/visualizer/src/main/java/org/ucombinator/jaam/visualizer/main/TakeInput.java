@@ -1,10 +1,13 @@
+package org.ucombinator.jaam.visualizer.main;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Stack;
-import org.ucombinator.jaam.serializer.*;
-
 import javafx.application.Platform;
+
+import org.ucombinator.jaam.serializer.*;
+import org.ucombinator.jaam.visualizer.graph.Graph;
+import org.ucombinator.jaam.visualizer.graph.Class;
 
 public class TakeInput extends Thread
 {

@@ -1,3 +1,4 @@
+package org.ucombinator.jaam.visualizer.gui;
 
 import javafx.animation.ScaleTransition;
 import javafx.beans.property.ObjectProperty;
@@ -20,17 +21,26 @@ import javafx.scene.layout.Pane;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Group;
 
-import javax.swing.table.AbstractTableModel;
 import java.awt.Color;
+
 import java.util.HashSet;
 import java.util.Iterator;
+
+import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
+import org.ucombinator.jaam.visualizer.graph.Edge;
+import org.ucombinator.jaam.visualizer.graph.Graph;
+import org.ucombinator.jaam.visualizer.graph.Vertex;
+import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
+import org.ucombinator.jaam.visualizer.layout.LayerFactory;
+import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class VizPanel extends JFXPanel
 {
 	private Group contentGroup;
 	private Pane testPane;
 	private ScrollPane scrollPane;
-	HashSet<AbstractVertex> highlighted;
+	public HashSet<AbstractVertex> highlighted;
 
 	public static float hues[]; //Used for shading nodes from green to red
 	private AbstractVertex panelRoot;

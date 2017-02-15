@@ -1,3 +1,7 @@
+package org.ucombinator.jaam.visualizer.main;
+
+import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
+
 import java.util.Iterator;
 
 public class JAAMUtils {

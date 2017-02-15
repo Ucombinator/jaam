@@ -1,16 +1,19 @@
+package org.ucombinator.jaam.visualizer.layout;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
-
-import com.sun.media.jfxmedia.events.NewFrameEvent;
-
 import javafx.scene.paint.Color;
-
+import org.ucombinator.jaam.visualizer.graph.AbstractGraph;
+import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
+import org.ucombinator.jaam.visualizer.graph.Edge;
+import org.ucombinator.jaam.visualizer.graph.Graph;
+import org.ucombinator.jaam.visualizer.graph.Vertex;
+import org.ucombinator.jaam.visualizer.gui.VizPanel;
+import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class LayerFactory
 {
@@ -24,11 +27,11 @@ public class LayerFactory
 	static HashMap<String, AbstractVertex> id_to_abs_vertex = new HashMap<String, AbstractVertex>();
 	
 	
-	static AbstractVertex getLayeredGraph(Graph graph){
+	public static AbstractVertex getLayeredGraph(Graph graph){
 		return get2layer(graph);
 	}
 	
-	static AbstractVertex get2layer(Graph graph)
+	public static AbstractVertex get2layer(Graph graph)
 	{
 		AbstractGraph methodGraph = new AbstractGraph();
 		
@@ -120,8 +123,8 @@ public class LayerFactory
 //		
 //		// Setting the Smallest_instruction_line of the method vertices
 //		
-//		for(AbstractVertex methodVertex: methodGraph.getVertices().values()){
-//			Iterator<AbstractVertex> itInner = methodVertex.getInnerGraph().getVertices().values().iterator();
+//		for(org.ucombinator.jaam.visualizer.graph.AbstractVertex methodVertex: methodGraph.getVertices().values()){
+//			Iterator<org.ucombinator.jaam.visualizer.graph.AbstractVertex> itInner = methodVertex.getInnerGraph().getVertices().values().iterator();
 //			while(itInner.hasNext())
 //			{
 //				if(methodVertex.getMinInstructionLine() == -1)

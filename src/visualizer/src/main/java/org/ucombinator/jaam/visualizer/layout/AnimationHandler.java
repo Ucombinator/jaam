@@ -1,5 +1,5 @@
+package org.ucombinator.jaam.visualizer.layout;
 
-import java.util.HashMap;
 import java.util.Iterator;
 
 import javafx.animation.FadeTransition;
@@ -14,6 +14,11 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
+
+import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
+import org.ucombinator.jaam.visualizer.graph.Edge;
+import org.ucombinator.jaam.visualizer.gui.GUINode;
+import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.input.MouseEvent>
 {

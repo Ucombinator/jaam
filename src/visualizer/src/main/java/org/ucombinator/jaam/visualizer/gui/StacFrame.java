@@ -1,3 +1,4 @@
+package org.ucombinator.jaam.visualizer.gui;
 
 import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
@@ -21,7 +22,6 @@ import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.Font;
-import java.util.HashSet;
 import java.util.StringTokenizer;
 
 import javax.swing.JCheckBox;
@@ -42,6 +42,12 @@ import javax.swing.KeyStroke;
 import javax.swing.JLabel;
 import javax.swing.JButton;
 import javax.swing.text.DefaultCaret;
+
+import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
+import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
+import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.main.Parameters;
+import org.ucombinator.jaam.visualizer.main.TakeInput;
 
 /**
  * JFrame showing a map
@@ -812,7 +818,7 @@ public class StacFrame extends JFrame
 		bytecodePanel.setFont(Parameters.font);
 
 		/*decompiledPanel.setLayout(new BorderLayout());
-		Parameters.decompiledArea = new CodeArea();
+		Parameters.decompiledArea = new org.ucombinator.jaam.visualizer.gui.CodeArea();
 		JScrollPane decompiledScroll = new JScrollPane(Parameters.decompiledArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		decompiledPanel.add(decompiledScroll, BorderLayout.CENTER);

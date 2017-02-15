@@ -1,8 +1,7 @@
+package org.ucombinator.jaam.visualizer.gui;
 
 import javax.swing.JPanel;
 import javax.swing.JLabel;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.BorderLayout;
@@ -11,8 +10,10 @@ import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreePath;
 import java.awt.Component;
+
+import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
+import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class SearchArea extends JPanel
 {
@@ -43,7 +44,7 @@ public class SearchArea extends JPanel
                     TreePath path = searchTree.getPathForLocation(e.getX(), e.getY());
                     //System.out.println("TreePath = " + path);
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode)(path.getLastPathComponent());
-                    AbstractVertex ver = (AbstractVertex)(node.getUserObject());
+                    org.ucombinator.jaam.visualizer.graph.AbstractVertex ver = (org.ucombinator.jaam.visualizer.graph.AbstractVertex)(node.getUserObject());
                     
                     if(!ver.isVisible)
                         return;

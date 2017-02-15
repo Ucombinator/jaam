@@ -1,6 +1,10 @@
+package org.ucombinator.jaam.visualizer.graph;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+
+import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class Vertex extends AbstractVertex
 {

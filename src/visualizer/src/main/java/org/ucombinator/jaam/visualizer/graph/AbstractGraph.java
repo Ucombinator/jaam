@@ -1,3 +1,4 @@
+package org.ucombinator.jaam.visualizer.graph;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,7 +10,7 @@ import java.util.Iterator;
 public class AbstractGraph
 {
 	private HashMap<String,AbstractVertex> vertices;
-	private HashMap<String,Edge> edges;
+	private HashMap<String, Edge> edges;
 	
 	public AbstractGraph(HashMap<String, AbstractVertex> vertices, HashMap<String, Edge> edges)
 	{
@@ -127,8 +128,4 @@ public class AbstractGraph
 	public boolean hasEdge(AbstractVertex first, AbstractVertex second) {
 		return this.edges.containsKey(Edge.createID(first.id, second.id));
 	}
-
-
-	
-
 }

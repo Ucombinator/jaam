@@ -1,3 +1,7 @@
+package org.ucombinator.jaam.visualizer.layout;
+
+import org.ucombinator.jaam.visualizer.graph.AbstractGraph;
+import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 
 import java.util.ArrayList;
 import java.util.Collection;

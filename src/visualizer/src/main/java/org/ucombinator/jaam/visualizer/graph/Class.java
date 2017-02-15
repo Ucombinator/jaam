@@ -1,3 +1,4 @@
+package org.ucombinator.jaam.visualizer.graph;
 
 import java.util.ArrayList;
 

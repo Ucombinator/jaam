@@ -1,3 +1,4 @@
+package org.ucombinator.jaam.visualizer.graph;
 
 //TODO: Save list of matching vertices here to speed up highlighting?
 public class Instruction implements Comparable<Instruction>

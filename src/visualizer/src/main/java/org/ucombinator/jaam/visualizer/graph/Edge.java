@@ -1,11 +1,15 @@
+package org.ucombinator.jaam.visualizer.graph;
 
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.Group;
-
 import javafx.geometry.Bounds;
+
+import org.ucombinator.jaam.visualizer.gui.GUINode;
+import org.ucombinator.jaam.visualizer.gui.VizPanel;
+import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class Edge implements Comparable<Edge>
 {

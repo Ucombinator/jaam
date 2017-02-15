@@ -1,3 +1,4 @@
+package org.ucombinator.jaam.visualizer.graph;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -6,7 +7,11 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.HashMap;
 import java.util.StringTokenizer;
-import java.util.Collections;
+
+import org.ucombinator.jaam.visualizer.gui.StacFrame;
+import org.ucombinator.jaam.visualizer.gui.VizPanel;
+import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class Graph
 {
@@ -19,7 +24,7 @@ public class Graph
     public ArrayList<Boolean> highlightedTags;
 	public HashMap<String, Method> methods;
 	public HashMap<String, Class> classes;
-	protected AbstractVertex root;
+	public AbstractVertex root;
 
 	private double maxHeight; // required for collapse method
 	public int maxIndex;
@@ -802,7 +807,7 @@ public class Graph
 //		Iterator<Vertex> it = this.vertices.iterator();
 //		while(it.hasNext())
 //		{
-//			it.next().vertexStatus = AbstractVertex.VertexStatus.UNVISITED;
+//			it.next().vertexStatus = org.ucombinator.jaam.visualizer.graph.AbstractVertex.VertexStatus.UNVISITED;
 //		}
 
 		// Visit first vertex of root method

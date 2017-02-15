@@ -1,3 +1,4 @@
+package org.ucombinator.jaam.visualizer.gui;
 
 import java.util.ArrayList;
 
@@ -11,16 +12,20 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Stop;
-
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+
+import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
+import org.ucombinator.jaam.visualizer.graph.Edge;
+import org.ucombinator.jaam.visualizer.layout.AnimationHandler;
+import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class GUINode extends Pane
 {
     protected static final double TEXT_VERTICAL_PADDING = 15;
     protected static final double TEXT_HORIZONTAL_PADDING = 15;
 	double dragX, dragY;
-    protected Rectangle rect;
+    public Rectangle rect;
     protected Rectangle backRect;
     protected Text rectLabel;
     private AbstractVertex vertex;
@@ -80,7 +85,7 @@ public class GUINode extends Pane
     {
     	this.backRect.setFill(Color.WHITE);
     	this.rect.setFill(c);
-    	if(vertex.getType()==AbstractVertex.VertexType.CHAIN){
+    	if(vertex.getType()== AbstractVertex.VertexType.CHAIN){
         	Stop[] stops = new Stop[]{new Stop(0.6,c), new Stop(0.4,Color.WHITE)};
             this.rect.setFill(new LinearGradient(0, 0, 8, 8, false, CycleMethod.REPEAT, stops));
         } else if(vertex.getType()==AbstractVertex.VertexType.ROOT){

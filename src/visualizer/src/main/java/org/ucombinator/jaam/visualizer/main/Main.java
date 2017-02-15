@@ -1,3 +1,7 @@
+package org.ucombinator.jaam.visualizer.main;
+
+import org.ucombinator.jaam.visualizer.graph.Graph;
+import org.ucombinator.jaam.visualizer.gui.StacFrame;
 
 public class Main
 {

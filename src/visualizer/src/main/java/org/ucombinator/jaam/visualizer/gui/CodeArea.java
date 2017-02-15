@@ -1,3 +1,4 @@
+package org.ucombinator.jaam.visualizer.gui;
 
 import javax.swing.JTextArea;
 import javax.swing.text.BadLocationException;
@@ -12,6 +13,10 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+
+import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
+import org.ucombinator.jaam.visualizer.graph.Instruction;
+import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class CodeArea extends JTextArea
 {

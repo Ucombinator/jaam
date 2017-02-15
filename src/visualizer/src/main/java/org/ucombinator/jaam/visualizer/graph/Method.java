@@ -1,5 +1,8 @@
+package org.ucombinator.jaam.visualizer.graph;
 
 import java.util.ArrayList;
+
+import org.ucombinator.jaam.visualizer.main.Main;
 
 public class Method
 {

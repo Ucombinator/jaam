@@ -1,3 +1,4 @@
+package org.ucombinator.jaam.visualizer.main;
 
 import java.io.File;
 import java.io.IOException;
@@ -7,6 +8,11 @@ import javax.swing.JTextArea;
 
 import java.awt.Font;
 import java.awt.Color;
+
+import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
+import org.ucombinator.jaam.visualizer.gui.CodeArea;
+import org.ucombinator.jaam.visualizer.gui.SearchArea;
+import org.ucombinator.jaam.visualizer.gui.StacFrame;
 
 // TODO: Remove stFrame variable and make StacFrame a singleton class
 public class Parameters

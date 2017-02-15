@@ -1,3 +1,7 @@
+package org.ucombinator.jaam.visualizer.graph;
+
+import org.ucombinator.jaam.visualizer.main.Parameters;
+
 import java.util.ArrayList;
 
 public class MethodVertex extends AbstractVertex

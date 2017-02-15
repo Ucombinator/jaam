@@ -1,9 +1,19 @@
+package org.ucombinator.jaam.visualizer.graph;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javafx.scene.paint.Color;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Iterator;
 
-abstract class AbstractVertex implements Comparable<AbstractVertex>
+import org.ucombinator.jaam.visualizer.gui.GUINode;
+import org.ucombinator.jaam.visualizer.gui.Location;
+import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.main.Parameters;
+
+
+public abstract class AbstractVertex implements Comparable<AbstractVertex>
 {
 	public static final double DEFAULT_WIDTH = 1.0;
 	public static final double DEFAULT_HEIGHT = 1.0;
@@ -71,18 +81,18 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		LINE, METHOD, METHOD_PATH, CHAIN, INSTRUCTION, ROOT
 	}
 
-	protected int id;
+	public int id;
 	protected String strId;
 	protected VertexType vertexType;
 	protected String name;
 	protected int index, parentIndex;
-	protected ArrayList<Vertex> neighbors;
+	public ArrayList<Vertex> neighbors;
 	protected HashSet<AbstractVertex> abstractOutgoingNeighbors;
 	protected HashSet<AbstractVertex> abstractIncomingNeighbors;
 	protected HashMap<String, Object> metadata;
 
 	// A location stores coordinates for a subtree.
-	protected Location location = new Location();
+	public Location location = new Location();
 	boolean updateLocation = false;
 
 	//children stores all of the vertices to which we have edges from this vertex
@@ -122,10 +132,10 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 
 	protected AbstractVertex parent, mergeRoot, mergeParent;
 	protected boolean isVisible;
-	protected boolean isSelected, isHighlighted, isIncomingHighlighted, isOutgoingHighlighted; //Select or Highlight this vertex, incoming edges, or outgoing edges
+	public boolean isSelected, isHighlighted, isIncomingHighlighted, isOutgoingHighlighted; //Select or Highlight this vertex, incoming edges, or outgoing edges
 	protected boolean drawEdges;
 	protected int numChildrenHighlighted, numChildrenSelected;
-	protected int loopHeight;
+	public int loopHeight;
 
 	// TODO: Can we just use white for unvisited and black for visited?
 	public enum VertexStatus
@@ -136,15 +146,15 @@ abstract class AbstractVertex implements Comparable<AbstractVertex>
 		VISITED,
 		UNVISITED
 	}
-	protected VertexStatus vertexStatus = VertexStatus.WHITE;
+	public VertexStatus vertexStatus = VertexStatus.WHITE;
 
 	protected double[] subtreeBoundBox = {this.location.width, this.location.height};
 
 	
 	//Subclasses must override these so that we have descriptions for each of them,
 	//and so that our generic collapsing can work for all of them
-	abstract String getRightPanelContent();
-	abstract String getShortDescription();
+	public abstract String getRightPanelContent();
+	public abstract String getShortDescription();
 	abstract ArrayList<? extends AbstractVertex> getMergeChildren();
 	abstract String getName();
 	abstract Method getMethod();

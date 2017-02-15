@@ -1,3 +1,5 @@
+package org.ucombinator.jaam.visualizer.gui;
+
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.JButton;
