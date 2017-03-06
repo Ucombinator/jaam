@@ -5,6 +5,7 @@ import java.io.{FileInputStream, FileOutputStream, IOException}
 import scala.collection.mutable
 import org.ucombinator.jaam.serializer._
 import com.esotericsoftware.kryo.KryoException
+import com.esotericsoftware.minlog.Log
 
 object Validate {
   private val uniqueNodes = mutable.Set[Id[Node]]()
@@ -59,9 +60,13 @@ object Validate {
         }
       }
 
-      if (endedPrematurely && shouldAppendMissingEOF) {
-        // Need to add the EOF
-        po.write(EOF())
+      if (endedPrematurely) {
+        if (shouldAppendMissingEOF) {
+          // Need to add the EOF
+          po.write(EOF())
+        } else {
+          Log.error("The file ended prematurely. Run with --fixEOF to recover the usable portions of the JAAM file.")
+        }
       }
 
       po.close()
