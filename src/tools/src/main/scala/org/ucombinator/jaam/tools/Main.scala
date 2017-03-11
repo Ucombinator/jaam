@@ -20,6 +20,7 @@ class Conf(args : Seq[String]) extends ScallopConf(args = args) {
   addSubcommand(new LoopDepthCounter)
   addSubcommand(new ListItems)
   addSubcommand(new FindMain)
+  addSubcommand(new Taint)
   verify()
 }
 
