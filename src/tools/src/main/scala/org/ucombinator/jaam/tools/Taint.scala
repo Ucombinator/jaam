@@ -31,11 +31,60 @@ object Taint {
   }
 
   def readAddrs(unit: Unit): Set[TaintAddress] = {
-    ??? // TODO:Petey
+    unit match {
+      case sootStmt : InvokeStmt => addrsOf(sootStmt.getInvokeExpr)
+      case sootStmt : DefinitionStmt =>
+        addrsOf(sootStmt.getRightOp)
+        // TODO is it possible to read something from the lhs that matters?
+        // addrsOf(sootStmt.getLeftOp) ++ addrsOf(sootStmt.getRightOp)
+      case sootStmt : IfStmt => addrsOf(sootStmt.getCondition)
+      case sootStmt : SwitchStmt => addrsOf(sootStmt.getKey)
+      case sootStmt : ReturnStmt => addrsOf(sootStmt.getOp())
+      case _ : ReturnVoidStmt => Set.empty
+      case _ : NopStmt => Set.empty
+      case _ : GotoStmt => Set.empty
+      case sootStmt : EnterMonitorStmt => addrsOf(sootStmt.getOp)
+      case sootStmt : ExitMonitorStmt => addrsOf(sootStmt.getOp)
+      case sootStmt : ThrowStmt => addrsOf(sootStmt.getOp)
+      case _ => ???
+    }
+  }
+
+  def addrsOf(expr: Value): Set[TaintAddress] = {
+    expr match {
+      case l : Local => Set(LocalTaintAddress(l))
+      // TODO this could throw an exception
+      case r : Ref => Set(RefTaintAddress(r))
+      case _ : Constant => Set.empty
+      case unop : UnopExpr => addrsOf(unop.getOp)
+      case binop : BinopExpr =>
+        // TODO in the case of division, this could throw an exception
+        addrsOf(binop.getOp1) ++ addrsOf(binop.getOp2)
+      case io : InstanceOfExpr => addrsOf(io.getOp)
+        // TODO this could throw an exception
+      case cast : CastExpr => addrsOf(cast.getOp)
+      case _ => ???
+    }
   }
 
   def writeAddrs(unit: Unit): Set[TaintAddress] = {
-    ??? // TODO:Petey
+    unit match {
+      case sootStmt : DefinitionStmt => addrsOf(sootStmt.getLeftOp)
+      case _ : InvokeStmt => Set.empty
+      case _ : IfStmt => Set.empty
+      case _ : SwitchStmt => Set.empty
+      // this is only true for intraprocedural
+      case _ : ReturnStmt => Set.empty
+      case _ : ReturnVoidStmt => Set.empty
+      case _ : NopStmt => Set.empty
+      case _ : GotoStmt => Set.empty
+      case sootStmt : EnterMonitorStmt => addrsOf(sootStmt.getOp)
+      case sootStmt : ExitMonitorStmt => addrsOf(sootStmt.getOp)
+      case _ : ThrowStmt => Set.empty
+        // TODO
+        // Set(RefTaintAddress(CaughtExceptionRef))
+      case _ => ???
+    }
   }
 
   def taintGraph(method: SootMethod): immutable.Map[TaintAddress, Set[TaintAddress]] = {
