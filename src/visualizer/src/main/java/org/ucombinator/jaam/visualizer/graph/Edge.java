@@ -40,12 +40,12 @@ public class Edge implements Comparable<Edge>
 
 	public Edge(AbstractVertex sourceVertex, AbstractVertex destVertex, EDGE_TYPE edgeType)
 	{
-		this(sourceVertex.id, destVertex.id);
+		this(sourceVertex.getId(), destVertex.getId());
 		this.type = edgeType;
 		this.sourceVertex = sourceVertex;
 		this.destVertex = destVertex;
-		this.sourceVertex.addOutgoingAbstractNeighbor(this.destVertex);
-		this.destVertex.addIncomingAbstractNeighbor(this.sourceVertex);
+		this.sourceVertex.addOutgoingNeighbor(this.destVertex);
+		this.destVertex.addIncomingNeighbor(this.sourceVertex);
 
 		graphics = new Group();
 		line = new Line();
@@ -242,7 +242,7 @@ public class Edge implements Comparable<Edge>
 		return marker;
 	}
 
-	public static void redrawEdges(AbstractVertex v, boolean recurse)
+	public static void redrawEdges(AbstractLayoutVertex v, boolean recurse)
 	{
 		if(v.getSelfGraph() != null)
 		{

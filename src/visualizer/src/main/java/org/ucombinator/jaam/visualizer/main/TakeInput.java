@@ -7,7 +7,8 @@ import javafx.application.Platform;
 
 import org.ucombinator.jaam.serializer.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
-import org.ucombinator.jaam.visualizer.graph.Class;
+//import org.ucombinator.jaam.visualizer.graph.Class;
+import org.ucombinator.jaam.visualizer.graph.Instruction;
 
 public class TakeInput extends Thread
 {
@@ -37,9 +38,9 @@ public class TakeInput extends Thread
 
 		Parameters.mouseLastTime = System.currentTimeMillis();
 
-		System.out.println("number of vertices = " + Main.graph.vertices.size());
+		/*System.out.println("number of vertices = " + Main.graph.vertices.size());
 		System.out.println("number of method vertices = " + Main.graph.methodVertices.size());
-		System.out.println("number of classes = " + Main.graph.classes.size());
+		System.out.println("number of classes = " + Main.graph.classes.size());*/
 	}
 	
 	private void setFileInput(String file)
@@ -93,7 +94,8 @@ public class TakeInput extends Thread
 					String methodName = statePacket.stmt().method().toString();
 					String instruction = statePacket.stmt().stmt().toString();
 					int jimpleIndex = statePacket.stmt().index();
-					Main.graph.addVertex(id, methodName, instruction, "", jimpleIndex, true);
+					Instruction inst = new Instruction(instruction, methodName, jimpleIndex, true);
+					Main.graph.addVertex(id, inst, true);
 				}
                 
                 else if(packet instanceof org.ucombinator.jaam.serializer.NodeTag)
@@ -115,7 +117,7 @@ public class TakeInput extends Thread
 		}
 	}
 
-	public static void loadDecompiledCode()
+	/*public static void loadDecompiledCode()
 	{
 		if(Main.graph != null)
 		{
@@ -142,7 +144,7 @@ public class TakeInput extends Thread
 		{
 			System.out.println("Cannot load source code until we have a graph...");
 		}
-	}
+	}*/
 
 	public static ArrayList<File> getJavaFilesRec(File file)
 	{

@@ -9,6 +9,7 @@ public class Vertex extends AbstractVertex
 {
 	private int inputId;
 	private Instruction instruction;
+	private boolean drawEdges;
 
 	//Used for shading vertices based on the number of nested loops they contain
 	//loopHeight is stored for all vertices
@@ -17,12 +18,12 @@ public class Vertex extends AbstractVertex
 	private ArrayList<Vertex> loopChildren;
 	private int dfsPathPos;
 	private boolean traversed;
-	
-	public Vertex(Instruction inst, int inputId)
-	{
+
+	public Vertex(int inputId) {
 		super(Integer.toString(inputId));
 		this.inputId = inputId;
-		this.instruction = null;
+		this.instruction = new Instruction("");
+		this.drawEdges = true;
 
 		//Used for shading vertices based on the number of nested loops they contain
 		//loopHeight is stored for all vertices
@@ -31,6 +32,12 @@ public class Vertex extends AbstractVertex
 		this.loopChildren = new ArrayList<Vertex>();
 		this.dfsPathPos = -1;
 		this.traversed = false;
+	}
+
+	public Vertex(Instruction inst, int inputId, boolean drawEdges) {
+		this(inputId);
+		this.instruction = inst;
+		this.drawEdges = drawEdges;
 	}
 	
 	public String getMethodName()
@@ -41,6 +48,10 @@ public class Vertex extends AbstractVertex
 	public String getInstructionText()
 	{
 		return this.instruction.getText();
+	}
+
+	public void setDrawEdges(boolean drawEdges) {
+		this.drawEdges = drawEdges;
 	}
 	
 	public void setLoopHeader(Vertex v)

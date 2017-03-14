@@ -123,7 +123,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     public abstract boolean searchByMethod(String query);
 
     static int colorIndex = 0;
-    public AbstractLayoutVertex(String label, VertexType type) {
+    public AbstractLayoutVertex(String label, VertexType type, boolean drawEdges) {
         super(label);
         this.graphics = null;
         this.isExpanded = true;
@@ -132,6 +132,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
         this.innerGraph = new HierarchicalGraph();
         this.vertexType = type;
+        this.drawEdges = drawEdges;
 
         if(this.vertexType == VertexType.ROOT){
             this.setColor(Color.WHITE);
@@ -156,7 +157,9 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         return minIndex;
     }
 
-
+    public boolean getDrawEdges() {
+        return this.drawEdges;
+    }
 
     public HierarchicalGraph getInnerGraph() {
         return innerGraph;
@@ -689,11 +692,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     }
     */
 
-    public boolean checkPotentialParent()
-    {
-        return this != Main.graph.root;
-    }
-
     public void searchByID(int id)
     {
         this.searchByIDRange(id, id);
@@ -846,7 +844,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     public void cleanAll(){
         this.setVertexStatus(VertexStatus.WHITE);
         Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVertices().values().iterator();
-        while(it.hasNext()){
+        while(it.hasNext()) {
             AbstractLayoutVertex v = it.next();
             v.cleanAll();
         }

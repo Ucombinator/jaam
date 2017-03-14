@@ -3,17 +3,14 @@ package org.ucombinator.jaam.visualizer.layout;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-
-import org.ucombinator.jaam.visualizer.graph.Edge;
 
 public class HierarchicalGraph
 {
 	private HashMap<String, AbstractLayoutVertex> vertices;
-	private HashMap<String, Edge> edges;
+	private HashMap<String, LayoutEdge> edges;
 	
-	public HierarchicalGraph(HashMap<String, AbstractLayoutVertex> vertices, HashMap<String, Edge> edges)
+	public HierarchicalGraph(HashMap<String, AbstractLayoutVertex> vertices, HashMap<String, LayoutEdge> edges)
 	{
 		super();
 		this.vertices = vertices;
@@ -28,11 +25,11 @@ public class HierarchicalGraph
 		this.vertices = vertices;
 	}
 
-	public HashMap<String, Edge> getEdges() {
+	public HashMap<String, LayoutEdge> getEdges() {
 		return this.edges;
 	}
 
-	public void setEdges(HashMap<String, Edge> edges) {
+	public void setEdges(HashMap<String, LayoutEdge> edges) {
 		this.edges = edges;
 	}	
 	
@@ -48,13 +45,13 @@ public class HierarchicalGraph
 		vertex.setSelfGraph(this);
 	}
 	
-	public void addEdge(Edge edge)
+	public void addEdge(LayoutEdge edge)
 	{
 		edge.getSourceVertex().addOutgoingNeighbor(edge.getDestVertex());
 		this.edges.put(edge.getID(), edge);
 	}
 	
-	public void deleteEdge(Edge edge)
+	public void deleteEdge(LayoutEdge edge)
 	{
 		edge.getSourceVertex().removeOutgoingAbstractNeighbor(edge.getDestVertex());
 		this.edges.remove(edge.getID());
@@ -79,11 +76,11 @@ public class HierarchicalGraph
 		}
 		output.append("\n");
 		
-		Iterator<Edge> edgeIter = this.getEdges().values().iterator();
+		Iterator<LayoutEdge> edgeIter = this.getEdges().values().iterator();
 		output.append("Edges: ");
 		while(edgeIter.hasNext()){
-			Edge e = edgeIter.next();
-			output.append("( "+e.getSourceVertex().getLabel()+"->" +e.getDestVertex().getLabel()+ " ), ");
+			LayoutEdge e = edgeIter.next();
+			output.append("( " + e.getSourceVertex().getLabel() + "->" + e.getDestVertex().getLabel() + " ), ");
 		}
 		output.append("\n");
 		return output.toString();
@@ -110,10 +107,47 @@ public class HierarchicalGraph
 	}
 
 	public void deleteEdge(AbstractLayoutVertex previous, AbstractLayoutVertex next) {
-		this.edges.remove(Edge.createID(previous.getId(), next.getId()));
+		this.edges.remove(LayoutEdge.createID(previous.getId(), next.getId()));
 	}
 
 	public boolean hasEdge(AbstractLayoutVertex first, AbstractLayoutVertex second) {
-		return this.edges.containsKey(Edge.createID(first.getId(), second.getId()));
+		return this.edges.containsKey(LayoutEdge.createID(first.getId(), second.getId()));
+	}
+
+	public static ArrayList<LayoutEdge> computeDummyEdges(LayoutInstructionVertex root)
+	{
+		ArrayList<LayoutEdge> dummies = new ArrayList<LayoutEdge>();
+
+		// Visit first vertex of root method
+		root.cleanAll();
+		visit(root, new HashMap<String, AbstractLayoutVertex>(), dummies);
+		return dummies;
+	}
+
+	private static void visit(LayoutInstructionVertex root, HashMap<String, AbstractLayoutVertex> hash, ArrayList<LayoutEdge> dummies)
+	{
+		//System.out.println("Root: " + root);
+		Iterator<AbstractLayoutVertex> it = root.getOutgoingNeighbors().iterator();
+		root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
+		//System.out.println("Vertex: " + root.getStrID() + " has been visited!");
+
+		while(it.hasNext())
+		{
+			// TODO: Check if this is actually valid.
+			LayoutInstructionVertex v  = (LayoutInstructionVertex) it.next();
+			String vMethod = v.getInstruction().getMethodName();
+			String rootMethod = root.getInstruction().getMethodName();
+			if(v.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE){
+				if(!vMethod.equals(rootMethod))
+				{
+					if(hash.containsKey(vMethod)){
+						dummies.add(new LayoutEdge(hash.get(vMethod), v, LayoutEdge.EDGE_TYPE.EDGE_DUMMY));
+					}
+				}
+
+				hash.put(vMethod, v);
+				visit(v,hash,dummies);
+			}
+		}
 	}
 }
