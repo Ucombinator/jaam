@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import javafx.scene.paint.Color;
-import org.ucombinator.jaam.visualizer.graph.AbstractGraph;
 import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 import org.ucombinator.jaam.visualizer.graph.Edge;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -33,24 +32,23 @@ public class LayerFactory
 	
 	public static AbstractVertex get2layer(Graph graph)
 	{
-		AbstractGraph methodGraph = new AbstractGraph();
+		HierarchicalGraph methodGraph = new HierarchicalGraph();
 		
 		// We partition the vertex set of Main.graph into buckets corresponding to the methods.
-		HashMap<String, HashSet<Vertex>> buckets = new HashMap<String, HashSet<Vertex>>();
+		HashMap<String, HashSet<Vertex>> methodBuckets = new HashMap<String, HashSet<Vertex>>();
 		for(Vertex vertex: graph.vertices){
 			String method = vertex.getMethodName();
-			if(!buckets.containsKey(method)){
-				buckets.put(method, new HashSet<Vertex>());
+			if(!methodBuckets.containsKey(method)){
+				methodBuckets.put(method, new HashSet<Vertex>());
 			}
-			buckets.get(method).add(vertex);
+			methodBuckets.get(method).add(vertex);
 		}
 		
 		// Add a vertex for each method to the methodGraph.
 		HashMap<String, AbstractVertex> methodVertices = new HashMap<>();
-		for(String method: buckets.keySet()){
-				AbstractVertex vertex = new Vertex(method, AbstractVertex.VertexType.METHOD);
-				vertex.getMetaData().put(AbstractVertex.METADATA_METHOD_NAME, method);
-				vertex.getMetaData().put(AbstractVertex.METADATA_MERGE_PARENT, buckets.get(method).iterator().next().mergeParent);
+		for(String method: methodBuckets.keySet()) {
+				LayoutMethodVertex vertex = new LayoutMethodVertex(method);
+				vertex.getMetaData().put(AbstractLayoutVertex.METADATA_MERGE_PARENT, methodBuckets.get(method).iterator().next().mergeParent);
 				vertex.setExpanded(methods_expanded);
 				methodVertices.put(method, vertex);
 				methodGraph.addVertex(vertex);
@@ -81,14 +79,14 @@ public class LayerFactory
 
 			// Add vertices of the inner graph.
 			HashMap<String,String> idMapping = new HashMap<>(); // first id is the Main.graph vertex id and the second id the New vertex id
-			for(Vertex oldV: buckets.get(methodVertex.getLabel())){
+			for(Vertex oldV: methodBuckets.get(methodVertex.getLabel())){
 				String inst = "";
-				if(oldV.getRealInstruction() != null)
-					inst = oldV.getRealInstruction().str;
+				if(oldV.getInstruction() != null)
+					inst = oldV.getInstruction().str;
 
 				Vertex newV = new Vertex(inst, AbstractVertex.VertexType.INSTRUCTION);
 				newV.getMetaData().put(AbstractVertex.METADATA_METHOD_NAME, methodVertex.getMetaData().get(AbstractVertex.METADATA_METHOD_NAME));
-				newV.getMetaData().put(AbstractVertex.METADATA_INSTRUCTION, oldV.getRealInstruction());
+				newV.getMetaData().put(AbstractVertex.METADATA_INSTRUCTION, oldV.getInstruction());
 				newV.setColor(convertToFXColor(VizPanel.hues[oldV.loopHeight]));
 				newV.setMinInstructionLine(oldV.id);
 
@@ -100,7 +98,7 @@ public class LayerFactory
 			}
 			
 			// Add the edges of the inner graph.
-			for(Vertex v: buckets.get(methodVertex.getLabel())){
+			for(Vertex v: methodBuckets.get(methodVertex.getLabel())){
 				for(Vertex neighbor: v.neighbors){
 					if(v.getMethodName().equals(neighbor.getMethodName())){
 						methodVertex.getInnerGraph().addEdge(

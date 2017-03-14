@@ -63,13 +63,14 @@ public class Graph
 		this.addVertex(id, "ErrorState", "", "ErrorState", -1, false);
 	}
 	
-	public void addVertex(int v, String methodName, String inst, String desc, int ind, boolean drawEdges)
+	public void addVertex(int v, String methodName, String inst, String desc, int jimpleIndex, boolean drawEdges)
 	{
 		Vertex ver = this.containsVertex(v);
 		
 		if(ver == null)
 		{
-			ver = new Vertex(v, totalVertices);
+			Instruction instruction = new Instruction(inst, methodName, jimpleIndex, true);
+			ver = new Vertex(instruction, v);
 			this.vertices.add(ver);
 			totalVertices++;
 		}
@@ -78,11 +79,11 @@ public class Graph
 		ver.setDescription(desc);
 		ver.setInstruction(inst);
 		ver.setNameToInstruction();
-		ver.jimpleIndex = ind;
+		ver.jimpleIndex = jimpleIndex;
 		ver.drawEdges = drawEdges;
 		
-		if(ind > this.maxIndex)
-			this.maxIndex = ind;
+		if(jimpleIndex > this.maxIndex)
+			this.maxIndex = jimpleIndex;
 	}
 
 	public void matchVertexToMethod(Vertex v, String methodName)
@@ -486,7 +487,7 @@ public class Graph
 	{
 		for(Vertex v : this.vertices)
 		{
-			if(v.getInstruction().contains(match))
+			if(v.getInstructionText().contains(match))
 				v.addHighlight(false, true, true, true);
 		}
 	}

@@ -111,7 +111,7 @@ public class Method
 				while(instructionList.size() <= v.jimpleIndex)
 					instructionList.add(new Instruction(this.methodName));
 				
-				String newInst = v.jimpleIndex + ":  " + v.getInstruction() + "\n";
+				String newInst = v.jimpleIndex + ":  " + v.getInstructionText() + "\n";
 				this.instructionList.set(v.jimpleIndex, new Instruction(newInst, this.methodName, true, v.jimpleIndex));
 				v.setRealInstruction(instructionList.get(v.jimpleIndex));
 			}
