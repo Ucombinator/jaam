@@ -33,7 +33,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
 
     private LayoutEdge(int source, int dest)
     {
-        this.strId = this.createID(source, dest);
+        this.strId = LayoutEdge.createID(source, dest);
         this.source = source;
         this.dest = dest;
     }
@@ -60,12 +60,12 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         return "edge:" + source + "-->" + dest;
     }
 
-    public int compareTo(org.ucombinator.jaam.visualizer.layout.LayoutEdge otherEdge) {
-        return ((Integer) source).compareTo(otherEdge.source);
+    public String getID() {
+        return strId;
     }
 
-    public String getID() {
-        return org.ucombinator.jaam.visualizer.graph.Edge.createID(this.source, this.dest);
+    public int compareTo(org.ucombinator.jaam.visualizer.layout.LayoutEdge otherEdge) {
+        return ((Integer) source).compareTo(otherEdge.source);
     }
 
     public AbstractLayoutVertex getSourceVertex() {

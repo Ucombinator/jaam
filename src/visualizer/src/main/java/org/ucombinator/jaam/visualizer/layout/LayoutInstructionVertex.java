@@ -8,10 +8,12 @@ import org.ucombinator.jaam.visualizer.graph.Instruction;
 public class LayoutInstructionVertex extends AbstractLayoutVertex {
 
     Instruction instruction;
+    LayoutMethodVertex methodVertex;
 
-    public LayoutInstructionVertex(Instruction instruction) {
-        super(instruction.getText(), VertexType.INSTRUCTION);
+    public LayoutInstructionVertex(Instruction instruction, boolean drawEdges) {
+        super(instruction.getText(), VertexType.INSTRUCTION, drawEdges);
         this.instruction = instruction;
+        this.methodVertex = null;
     }
 
     @Override

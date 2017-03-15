@@ -16,7 +16,12 @@ public class HierarchicalGraph
 		this.vertices = vertices;
 		this.edges = edges;
 	}
-	
+
+	public HierarchicalGraph()
+	{
+		this(new HashMap<String, AbstractLayoutVertex>(), new HashMap<String, LayoutEdge>());
+	}
+
 	public HashMap<String, AbstractLayoutVertex> getVertices() {
 		return vertices;
 	}
@@ -31,18 +36,18 @@ public class HierarchicalGraph
 
 	public void setEdges(HashMap<String, LayoutEdge> edges) {
 		this.edges = edges;
-	}	
-	
-	public HierarchicalGraph()
-	{
-		vertices = new HashMap<>();
-		edges = new HashMap<>();
 	}
 
 	public void addVertex(AbstractLayoutVertex vertex)
 	{
 		this.vertices.put(vertex.getStrID(), vertex);
 		vertex.setSelfGraph(this);
+	}
+
+	public void deleteVertex(AbstractLayoutVertex vertex)
+	{
+		this.vertices.remove(vertex.getStrID());
+		vertex.setSelfGraph(null);
 	}
 	
 	public void addEdge(LayoutEdge edge)
@@ -114,7 +119,7 @@ public class HierarchicalGraph
 		return this.edges.containsKey(LayoutEdge.createID(first.getId(), second.getId()));
 	}
 
-	public static ArrayList<LayoutEdge> computeDummyEdges(LayoutInstructionVertex root)
+	public static ArrayList<LayoutEdge> computeDummyEdges(AbstractLayoutVertex root)
 	{
 		ArrayList<LayoutEdge> dummies = new ArrayList<LayoutEdge>();
 
@@ -124,29 +129,38 @@ public class HierarchicalGraph
 		return dummies;
 	}
 
-	private static void visit(LayoutInstructionVertex root, HashMap<String, AbstractLayoutVertex> hash, ArrayList<LayoutEdge> dummies)
+	private static void visit(AbstractLayoutVertex root, HashMap<String, AbstractLayoutVertex> hash, ArrayList<LayoutEdge> dummies)
 	{
 		//System.out.println("Root: " + root);
 		Iterator<AbstractLayoutVertex> it = root.getOutgoingNeighbors().iterator();
 		root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
-		//System.out.println("Vertex: " + root.getStrID() + " has been visited!");
+		String rootMethod;
+
+		if (root instanceof LayoutInstructionVertex)
+			rootMethod = ((LayoutInstructionVertex) root).getInstruction().getMethodName();
+		else // root instanceof LayoutMethodVertex
+			rootMethod = ((LayoutMethodVertex) root).getMethodName();
 
 		while(it.hasNext())
 		{
-			// TODO: Check if this is actually valid.
-			LayoutInstructionVertex v  = (LayoutInstructionVertex) it.next();
-			String vMethod = v.getInstruction().getMethodName();
-			String rootMethod = root.getInstruction().getMethodName();
-			if(v.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE){
-				if(!vMethod.equals(rootMethod))
+			AbstractLayoutVertex absVertex = it.next();
+			String nextVertexMethod;
+
+			if (absVertex instanceof LayoutInstructionVertex)
+				nextVertexMethod = ((LayoutInstructionVertex) absVertex).getInstruction().getMethodName();
+			else
+				nextVertexMethod = ((LayoutMethodVertex) absVertex).getMethodName();
+
+			if(absVertex.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE){
+				if(!nextVertexMethod.equals(rootMethod))
 				{
-					if(hash.containsKey(vMethod)){
-						dummies.add(new LayoutEdge(hash.get(vMethod), v, LayoutEdge.EDGE_TYPE.EDGE_DUMMY));
+					if(hash.containsKey(nextVertexMethod)){
+						dummies.add(new LayoutEdge(hash.get(nextVertexMethod), absVertex, LayoutEdge.EDGE_TYPE.EDGE_DUMMY));
 					}
 				}
 
-				hash.put(vMethod, v);
-				visit(v,hash,dummies);
+				hash.put(nextVertexMethod, absVertex);
+				visit(absVertex, hash, dummies);
 			}
 		}
 	}

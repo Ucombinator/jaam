@@ -7,9 +7,8 @@ public class Instruction implements Comparable<Instruction>
 	private String methodName;
 	private boolean isInstr;
 	private int jimpleIndex;
-
-	private int startIndex;
-	private int endIndex;
+	private int descriptionIndex;
+	private boolean isSelected;
 	
 	public Instruction(String methodName)
 	{
@@ -17,8 +16,8 @@ public class Instruction implements Comparable<Instruction>
 		this.methodName = methodName;
 		this.isInstr = false;
 		this.jimpleIndex = -1;
-		this.startIndex = -1;
-		this.endIndex = -1;
+		this.descriptionIndex = -1;
+		this.isSelected = false;
 	}
 	
 	public Instruction(String str, String method, int jimpleIndex, boolean isInstr)
@@ -27,8 +26,8 @@ public class Instruction implements Comparable<Instruction>
 		this.methodName = method;
 		this.isInstr = isInstr;
 		this.jimpleIndex = jimpleIndex;
-		this.startIndex = -1;
-		this.endIndex = -1;
+		this.descriptionIndex = -1;
+		this.isSelected = false;
 	}
 
 	public String getText() {
@@ -46,6 +45,30 @@ public class Instruction implements Comparable<Instruction>
 	public int compareTo(Instruction otherInstruction)
 	{
 		return (new Integer(this.jimpleIndex)).compareTo(otherInstruction.jimpleIndex);
+	}
+
+	public boolean isRealInstruction() {
+		return this.isInstr;
+	}
+
+	public void setDescriptionIndex(int descriptionIndex) {
+		this.descriptionIndex = descriptionIndex;
+	}
+
+	public int getStartIndex() {
+		return this.descriptionIndex;
+	}
+
+	public int getEndIndex() {
+		return this.descriptionIndex + this.text.length();
+	}
+
+	public void setSelected(boolean isSelected) {
+		this.isSelected = isSelected;
+	}
+
+	public boolean isSelected() {
+		return this.isSelected;
 	}
 
 	@Override

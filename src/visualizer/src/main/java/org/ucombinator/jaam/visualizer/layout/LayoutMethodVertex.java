@@ -7,8 +7,8 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
 
     private String methodName;
 
-    public LayoutMethodVertex(String methodName) {
-        super(methodName, VertexType.METHOD);
+    public LayoutMethodVertex(String methodName, boolean drawEdges) {
+        super(methodName, VertexType.METHOD, drawEdges);
         this.methodName = methodName;
     }
 

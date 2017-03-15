@@ -44,6 +44,7 @@ import javax.swing.JButton;
 import javax.swing.text.DefaultCaret;
 
 import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.main.Parameters;
@@ -307,7 +308,7 @@ public class StacFrame extends JFrame
 		menuNavigation = new JMenu("Navigation");
 		menuBar.add(menuNavigation);
 		
-        JMenuItem rearrange = new JMenuItem("Rearrange graph");
+        /*JMenuItem rearrange = new JMenuItem("Rearrange graph");
         menuNavigation.add(rearrange);
         rearrange.addActionListener
         (
@@ -321,7 +322,7 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-        rearrange.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, ActionEvent.CTRL_MASK));
+        rearrange.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, ActionEvent.CTRL_MASK));*/
 
 		JMenuItem resetGraph = new JMenuItem("Reset view");
 		menuNavigation.add(resetGraph);
@@ -502,7 +503,7 @@ public class StacFrame extends JFrame
 							// TODO: When this is checked off and then back on, the edges don't reappear.
 							Parameters.edgeVisible = showEdge.isSelected();
 							mainPanel.getPanelRoot().setEdgeVisibility(Parameters.edgeVisible);
-							for(AbstractVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+							for(AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
 								v.setEdgeVisibility(showEdge.isSelected());
 						}
 					});
@@ -526,7 +527,7 @@ public class StacFrame extends JFrame
 				public void actionPerformed(ActionEvent e)
 				{
 					ParallelTransition pt = new ParallelTransition();
-					for(AbstractVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+					for(AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
 					{
 						GUINode node = v.getGraphics();
 						ScaleTransition st = new ScaleTransition(Duration.millis(300), node);
@@ -553,7 +554,7 @@ public class StacFrame extends JFrame
 				public void actionPerformed(ActionEvent e)
 				{
 					ParallelTransition pt = new ParallelTransition();
-					for(AbstractVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+					for(AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
 					{
 						GUINode node = v.getGraphics();
 						ScaleTransition st = new ScaleTransition(Duration.millis(300), node);
@@ -718,7 +719,7 @@ public class StacFrame extends JFrame
 				public void actionPerformed(ActionEvent e)
 				{
 					methodExpanded = !methodExpanded;
-					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractVertex.VertexType.METHOD, methodExpanded);
+					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD, methodExpanded);
 					Platform.runLater(new Runnable() {
 						@Override
 						public void run() {
@@ -755,7 +756,7 @@ public class StacFrame extends JFrame
 				public void actionPerformed(ActionEvent e)
 				{
 					chainExpanded = !chainExpanded;
-					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractVertex.VertexType.CHAIN,chainExpanded);
+					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN,chainExpanded);
 					Platform.runLater(new Runnable() {
 						@Override
 						public void run() {
@@ -936,7 +937,7 @@ public class StacFrame extends JFrame
 
 	public void searchByID(String input)
 	{
-		AbstractVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
+		AbstractLayoutVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
 		StringTokenizer token = new StringTokenizer(input,", ");
 
 		int id1, id2;

@@ -9,7 +9,7 @@ import javax.swing.JTextArea;
 import java.awt.Font;
 import java.awt.Color;
 
-import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.gui.CodeArea;
 import org.ucombinator.jaam.visualizer.gui.SearchArea;
 import org.ucombinator.jaam.visualizer.gui.StacFrame;
@@ -39,7 +39,7 @@ public class Parameters
 	public static boolean debug = false;
 	public static long interval = 5000;
 	public static long mouseLastTime;
-	public static boolean highlightIncoming = false, highlightOutgoing = false, vertexHighlight = true;
+	public static boolean vertexHighlight = true;
     public static boolean fixCaret = false;
 	
 	public static int debug1, debug2;
@@ -48,7 +48,7 @@ public class Parameters
 	public static void setRightText()
 	{
 		StringBuilder text = new StringBuilder();
-		for(AbstractVertex v : stFrame.mainPanel.highlighted)
+		for(AbstractLayoutVertex v : stFrame.mainPanel.highlighted)
 			text.append(v.getRightPanelContent() + "\n");
 
 		rightArea.setText(text.toString());
@@ -110,7 +110,9 @@ public class Parameters
     public static void fixCaretPositions()
     {
         bytecodeArea.fixCaretPosition();
-        searchArea.fixCaretPosition();
+
+        // TODO: Fix this
+        //searchArea.fixCaretPosition();
     }
 
 	public static String getHTMLVerbatim(String str)

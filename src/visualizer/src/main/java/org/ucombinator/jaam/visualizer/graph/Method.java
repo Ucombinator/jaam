@@ -22,7 +22,6 @@ public class Method
 
 	public Method(String methodName)
 	{
-		//System.out.println("Creating method: " + methodName);
 		this.methodName = methodName;
 
 		if(!methodName.equals("ErrorState"))
@@ -35,7 +34,6 @@ public class Method
 
 			//this.functionName = splitMethodName[1];
 		}
-
 
 		vertices = new ArrayList<Vertex>();
 		instructionList = new ArrayList<Instruction>();
@@ -51,19 +49,13 @@ public class Method
 		return this.ourClass.getClassName();
 	}
 
-	/*public String getFunctionName()
-	{
-		return this.functionName;
-	}*/
-
 	public void addClass(String className)
 	{
-		this.ourClass = Main.graph.classes.get(className);
+		this.ourClass = Main.graph.getClasses().get(className);
 		if(this.ourClass == null)
 		{
 			this.ourClass = new Class(className);
-			Main.graph.classes.put(className, this.ourClass);
-			System.out.println("Adding new class: " + className);
+			Main.graph.getClasses().put(className, this.ourClass);
 		}
 
 		this.ourClass.addMethod(this);
@@ -91,74 +83,5 @@ public class Method
 			return this.methodName.equals(((Method) other).methodName);
 		else
 			return false;
-	}
-	
-	public void print()
-	{
-		System.out.println(this.methodName);
-	}
-	
-	//This has to be here instead of in the MethodVertex class, because a method vertex
-	//might only have part of the code for the method.
-	public void collectAndSortInstructions()
-	{
-		this.instructionList = new ArrayList<Instruction>();
-	
-		for(Vertex v : this.vertices)
-		{
-			if(v.jimpleIndex >= 0)
-			{
-				while(instructionList.size() <= v.jimpleIndex)
-					instructionList.add(new Instruction(this.methodName));
-				
-				String newInst = v.jimpleIndex + ":  " + v.getInstructionText() + "\n";
-				this.instructionList.set(v.jimpleIndex, new Instruction(newInst, this.methodName, true, v.jimpleIndex));
-				v.setRealInstruction(instructionList.get(v.jimpleIndex));
-			}
-		}
-		
-		//Remove empty instructions
-		/*for(int i = 0; i < instructionList.size(); i++)
-		{
-			if(instructionList.get(i).str == "")
-			{
-				this.instructionList.remove(i);
-				i--;
-			}
-		}*/
-	}
-	
-	public void highlightInstructions()
-	{
-		//System.out.println("Recalculating highlights for instructions in method " + this.methodName);
-		for(Instruction inst : this.instructionList)
-		{
-			inst.isHighlighted = false;
-			inst.isCycleHighlighted = false;
-            inst.isSelected = false;
-		}
-		
-		for(Vertex v : this.vertices)
-		{
-			if(v.jimpleIndex >= 0)
-			{
-				if(v.isHighlighted())
-				{
-					this.instructionList.get(v.jimpleIndex).isHighlighted = true;
-					//System.out.println("Highlighting " + v.jimpleIndex + ", " + v.getMethodName());
-				}
-				
-				if(v.isCycleHighlighted())
-				{
-					this.instructionList.get(v.jimpleIndex).isCycleHighlighted = true;
-					//System.out.println("Cycle highlighting " + v.jimpleIndex + ", " + v.getMethodName());
-				}
-
-                if(v.isSelected())
-                {
-                    this.instructionList.get(v.jimpleIndex).isSelected = true;
-                }
-			}
-		}
 	}
 }

@@ -7,8 +7,8 @@ import java.util.HashSet;
  */
 public class LayoutChainVertex extends AbstractLayoutVertex {
 
-    public LayoutChainVertex() {
-        super("", VertexType.CHAIN);
+    public LayoutChainVertex(boolean drawEdges) {
+        super("", VertexType.CHAIN, drawEdges);
     }
 
     public String getRightPanelContent() {

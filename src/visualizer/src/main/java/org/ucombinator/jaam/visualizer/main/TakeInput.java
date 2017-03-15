@@ -20,12 +20,12 @@ public class TakeInput extends Thread
 		Main.graph = new Graph();
 		this.parsePackets(file);
 
-		Main.graph.finalizeParentsForRootChildren();
+		/*Main.graph.finalizeParentsForRootChildren();
 		Main.graph.mergeAllByMethod();
 		Main.graph.computeInstLists();
 		Main.graph.collectAllTags();
 		Main.graph.identifyLoops();
-		Main.graph.calcLoopHeights();
+		Main.graph.calcLoopHeights();*/
 
 		// Run these panels on JavaFX thread instead of Swing thread
 		Platform.runLater(new Runnable() {
@@ -35,12 +35,7 @@ public class TakeInput extends Thread
 				Parameters.stFrame.mainPanel.initFX(null);
 			}
 		});
-
 		Parameters.mouseLastTime = System.currentTimeMillis();
-
-		/*System.out.println("number of vertices = " + Main.graph.vertices.size());
-		System.out.println("number of method vertices = " + Main.graph.methodVertices.size());
-		System.out.println("number of classes = " + Main.graph.classes.size());*/
 	}
 	
 	private void setFileInput(String file)

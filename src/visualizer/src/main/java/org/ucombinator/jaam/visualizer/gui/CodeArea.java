@@ -14,7 +14,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 
-import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
 import org.ucombinator.jaam.visualizer.graph.Instruction;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 
@@ -48,18 +49,18 @@ public class CodeArea extends JTextArea
 						if(row >= 0 && row < rowToIndex.size())
 						{
 							Instruction line = description.get(rowToIndex.get(row));
-							if(line.isInstr)
+							if(line.isRealInstruction())
 							{
-								if(line.isSelected)
+								if(line.isSelected())
 								{
 									Parameters.stFrame.mainPanel.searchByJimpleIndex(
-											line.methodName, line.jimpleIndex, false,false);
+											line.getMethodName(), line.getJimpleIndex(), false,false);
 								}
 								else
 								{
 									Parameters.vertexHighlight = true;
 									Parameters.stFrame.mainPanel.searchByJimpleIndex(
-											line.methodName, line.jimpleIndex, false,true);
+											line.getMethodName(), line.getJimpleIndex(), false,true);
 								}
 							}
 						}
@@ -69,17 +70,15 @@ public class CodeArea extends JTextArea
 						if(row >= 0 && row < rowToIndex.size())
 						{
 							Instruction line = description.get(rowToIndex.get(row));
-							if(line.isInstr)
+							if(line.isRealInstruction())
 							{
 								Parameters.vertexHighlight = true;
 								Parameters.stFrame.mainPanel.searchByJimpleIndex(
-										line.methodName, line.jimpleIndex, true, true);
+										line.getMethodName(), line.getJimpleIndex(), true, true);
 							}
 						}
 					}
 
-					//TODO: Rewrite cycle highlighting
-					//Main.graph.redoCycleHighlights();
 					Parameters.repaintAll();
 				}
 				
@@ -104,33 +103,31 @@ public class CodeArea extends JTextArea
 	// Rewrite the text area based on which vertices are highlighted
 	public void setDescription()
 	{
-		HashSet<AbstractVertex> highlighted = Parameters.stFrame.mainPanel.highlighted;
+		HashSet<AbstractLayoutVertex> highlighted = Parameters.stFrame.mainPanel.highlighted;
 		if(highlighted.size() > 0)
 		{
-			//Add all instructions
-			//TODO: Separate and distinguish methods
-			//TODO: Remove duplicates
-			HashSet<AbstractVertex> methodVertices = new HashSet<AbstractVertex>();
-			for(AbstractVertex v : highlighted)
-				methodVertices.addAll(v.getMethodVertices());
+			//TODO: Add function for getting all methods
+			HashSet<LayoutMethodVertex> methodVertices = new HashSet<LayoutMethodVertex>();
+			//for(AbstractLayoutVertex v : highlighted)
+			//	methodVertices.addAll(v.getMethodVertices());
 
 			description = new ArrayList<Instruction>();
-			for(AbstractVertex v : methodVertices) {
-				String methodName = (String) v.getMetaData().get(AbstractVertex.METADATA_METHOD_NAME);
+			for(LayoutMethodVertex v : methodVertices) {
+				String methodName = v.getMethodName();
 				ArrayList<Instruction> currInstructions = new ArrayList<Instruction>(v.getInstructions());
 				Collections.sort(currInstructions);
 				//System.out.println(currInstructions.size());
 
-				description.add(new Instruction(methodName + "\n", methodName, false, -1));
+				description.add(new Instruction(methodName + "\n", methodName, -1, false));
 				description.addAll(currInstructions);
-				description.add(new Instruction("\n", methodName, false, -1));
+				description.add(new Instruction("\n", methodName, -1, false));
 				//System.out.println(description.size());
 			}
 
 			int rowNumber = 0;
 			rowToIndex = new ArrayList<Integer>();
 			for (int i = 0; i < description.size(); i++, rowNumber++) {
-				if (description.get(i).str.length() > 0)
+				if (description.get(i).getText().length() > 0)
 					rowToIndex.add(rowNumber);
 			}
 
@@ -144,12 +141,10 @@ public class CodeArea extends JTextArea
 	{
 		if(this.description.size() > 0)
 		{
-			this.description.get(0).startIndex = 0;
-			this.description.get(0).endIndex = this.description.get(0).str.length();
+			this.description.get(0).setDescriptionIndex(0);
 			for(int i = 1; i < this.description.size(); i++)
 			{
-				this.description.get(i).startIndex = this.description.get(i - 1).endIndex;
-				this.description.get(i).endIndex = this.description.get(i).startIndex + this.description.get(i).str.length();
+				this.description.get(i).setDescriptionIndex(this.description.get(i - 1).getEndIndex());
 			}
 		}
 	}
@@ -159,7 +154,7 @@ public class CodeArea extends JTextArea
 	{
 		StringBuilder fullText = new StringBuilder();
 		for(Instruction line : description) {
-			fullText.append(line.str);
+			fullText.append(line.getText());
 		}
 
 		this.setText(fullText.toString());
@@ -175,13 +170,13 @@ public class CodeArea extends JTextArea
             
             for(int i = 0; i < this.description.size(); i++)
             {
-                if(!this.description.get(i).isSelected)
+                if(!this.description.get(i).isSelected())
                     continue;
                 
                 dist1 = line - close;
                 dist2 = line - i;
                 
-                if((dist2 * dist2 < dist1 * dist1) || !this.description.get(line).isSelected)
+                if((dist2 * dist2 < dist1 * dist1) || !this.description.get(line).isSelected())
                     close = i;
             }
             
@@ -198,7 +193,7 @@ public class CodeArea extends JTextArea
 
     }
 	
-	private void drawHighlights(Color c1, Color c2, Color c3)
+	private void drawHighlights(Color lineHighlightColor, Color cycleHighlightColor, Color lineSelectionColor)
 	{
         Highlighter h = CodeArea.this.getHighlighter();
         h.removeAllHighlights();
@@ -206,12 +201,12 @@ public class CodeArea extends JTextArea
 		{
 			//TODO: Find new color for applying both highlights?
 			Instruction line = this.description.get(i);
-            if(line.isSelected)
-                this.drawLineHighlight(i, c3);
-			else if(line.isHighlighted)
-				this.drawLineHighlight(i, c1);
+            if(line.isSelected())
+                this.drawLineHighlight(i, lineSelectionColor);
+			/*else if(line.isHighlighted)
+				this.drawLineHighlight(i, lineHighlightColor);
 			else if(line.isCycleHighlighted)
-				this.drawLineHighlight(i, c2);
+				this.drawLineHighlight(i, cycleHighlightColor);*/
 		}
 	}
 	
@@ -222,7 +217,7 @@ public class CodeArea extends JTextArea
 		
 		try
 		{
-			h.addHighlight(description.get(rowIndex).startIndex, description.get(rowIndex).endIndex, highlightPainter);
+			h.addHighlight(description.get(rowIndex).getStartIndex(), description.get(rowIndex).getEndIndex(), highlightPainter);
 		}
 		catch(BadLocationException e)
 		{

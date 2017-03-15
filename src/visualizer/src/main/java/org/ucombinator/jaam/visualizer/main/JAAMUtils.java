@@ -1,15 +1,15 @@
 package org.ucombinator.jaam.visualizer.main;
 
-import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 
 import java.util.Iterator;
 
 public class JAAMUtils {
 
-	private static AbstractVertex getVertexWithID(String id){
-		Iterator<AbstractVertex> it = Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().getVertices().values().iterator();
+	private static AbstractLayoutVertex getVertexWithID(String id){
+		Iterator<AbstractLayoutVertex> it = Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().getVertices().values().iterator();
 		while(it.hasNext()){
-			AbstractVertex v = it.next();
+			AbstractLayoutVertex v = it.next();
 			if(v.getStrID().equals(id)){
 				return v;
 			}

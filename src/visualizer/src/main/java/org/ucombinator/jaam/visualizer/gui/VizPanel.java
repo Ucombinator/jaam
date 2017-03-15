@@ -27,9 +27,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.graph.Edge;
 import org.ucombinator.jaam.visualizer.graph.Graph;
-import org.ucombinator.jaam.visualizer.graph.Vertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 import org.ucombinator.jaam.visualizer.layout.LayerFactory;
 import org.ucombinator.jaam.visualizer.main.Main;
@@ -89,9 +89,8 @@ public class VizPanel extends JFXPanel
 		if(root == null)
 		{
 			//System.out.println("Running layout...");
-			Graph g = Main.graph;			
+			Graph g = Main.graph;
 			this.panelRoot = LayerFactory.getLayeredGraph(g);
-			//this.panelRoot.assignParents();
 			LayoutAlgorithm.layout(this.panelRoot);
 			resetPanelSize();
 		}
@@ -237,7 +236,7 @@ public class VizPanel extends JFXPanel
 		if(v.isExpanded())
 		{
 			//Edge.arrowLength = this.getWidthPerVertex() / 10.0;
-			for(Edge e : v.getInnerGraph().getEdges().values())
+			for(LayoutEdge e : v.getInnerGraph().getEdges().values())
 				e.draw(this, node);
 		
 			for(AbstractLayoutVertex child : v.getInnerGraph().getVertices().values())
@@ -245,7 +244,6 @@ public class VizPanel extends JFXPanel
 			
 		}
 	}
-
 
 	/*public static void computeHues()
 	{
@@ -428,12 +426,12 @@ public class VizPanel extends JFXPanel
 	public void scaleLines()
 	{
 		//System.out.println("Scaling lines and arrowheads...");
-		for(Edge e : this.panelRoot.getInnerGraph().getEdges().values())
+		for(LayoutEdge e : this.panelRoot.getInnerGraph().getEdges().values())
 			e.setScale();
 
 		for(AbstractLayoutVertex v : this.panelRoot.getInnerGraph().getVertices().values())
 		{
-			for(Edge e : v.getInnerGraph().getEdges().values())
+			for(LayoutEdge e : v.getInnerGraph().getEdges().values())
 				e.setScale();
 		}
 	}

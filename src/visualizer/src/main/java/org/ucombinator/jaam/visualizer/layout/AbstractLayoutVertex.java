@@ -754,7 +754,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     public void setEdgeVisibility(boolean isEdgeVisible)
     {
-        for(Edge e : this.innerGraph.getEdges().values())
+        for(LayoutEdge e : this.innerGraph.getEdges().values())
             e.setVisible(isEdgeVisible);
     }
 
@@ -778,9 +778,9 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     }
 
     public void toggleEdges() {
-        Iterator<Edge> it = this.getInnerGraph().getEdges().values().iterator();
+        Iterator<LayoutEdge> it = this.getInnerGraph().getEdges().values().iterator();
         while(it.hasNext()){
-            Edge e = it.next();
+            LayoutEdge e = it.next();
             if(e.getGraphics()!=null){
                 e.getGraphics().setVisible(!e.getGraphics().isVisible() && Parameters.edgeVisible);
             }

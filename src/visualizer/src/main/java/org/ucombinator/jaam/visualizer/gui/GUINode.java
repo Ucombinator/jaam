@@ -16,7 +16,7 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.graph.Edge;
+import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.layout.AnimationHandler;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 
@@ -31,7 +31,7 @@ public class GUINode extends Pane
     private AbstractLayoutVertex vertex;
 	private GUINode parent;
 
-	private ArrayList<Edge> edges = new ArrayList<Edge>();
+	private ArrayList<LayoutEdge> edges = new ArrayList<LayoutEdge>();
 
     boolean labelsEnabled = false;
     boolean isDragging;
@@ -194,7 +194,7 @@ public class GUINode extends Pane
             AbstractLayoutVertex v = GUINode.this.vertex;
             v.setX(Parameters.stFrame.mainPanel.invScaleX(offsetX));
             v.setY(Parameters.stFrame.mainPanel.invScaleY(offsetY));
-            Edge.redrawEdges(v, false);
+            LayoutEdge.redrawEdges(v, false);
         }
     };
 
@@ -226,7 +226,7 @@ public class GUINode extends Pane
             }
         	if (vertex.getSelfGraph() != null)
         	{
-	        	for(Edge e : vertex.getSelfGraph().getEdges().values())
+	        	for(LayoutEdge e : vertex.getSelfGraph().getEdges().values())
                 {
 	        		if(e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
 	        		{
@@ -254,7 +254,7 @@ public class GUINode extends Pane
             
         	if(vertex.getSelfGraph() != null)
         	{
-	        	for(Edge e : vertex.getSelfGraph().getEdges().values())
+	        	for(LayoutEdge e : vertex.getSelfGraph().getEdges().values())
                 {
 	        		if (e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
 	        		{

@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.HashMap;
 
-import org.ucombinator.jaam.visualizer.main.Main;
 public class Graph
 {
 	private ArrayList<Vertex> vertices;
@@ -30,6 +29,10 @@ public class Graph
 
 	public ArrayList<Vertex> getVertices() {
 		return this.vertices;
+	}
+
+	public HashMap<String, Class> getClasses() {
+		return this.classes;
 	}
 
 	public void setMaxHeight(double height)
@@ -160,16 +163,6 @@ public class Graph
 		}
 
 		return null;
-	}	
-	
-	//Computes the instruction lists for each method
-	public void computeInstLists()
-	{
-		for(Entry<String, Method> entry : this.methods.entrySet())
-		{
-			Method method = entry.getValue();
-			method.collectAndSortInstructions();
-		}
 	}
 
 	// Next three methods modified from "A New Algorithm for Identifying Loops in Decompilation"
