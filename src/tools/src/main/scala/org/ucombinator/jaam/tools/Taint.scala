@@ -7,6 +7,7 @@ import scala.collection.mutable
 
 import soot._
 import soot.jimple._
+import soot.options.Options
 
 import org.ucombinator.jaam.serializer._
 
@@ -19,14 +20,37 @@ class Taint extends Main("taint") {
   val method = opt[String](descr = "TODO:document")
   val implicitFlows = opt[Boolean](descr = "TODO:implement", default = Some(false))
   val file = trailArg[java.io.File](descr = "a .jaam file to be printed")
+  val jars = opt[String](descr = "colon-separated list of jar files")
 
   def run(conf: Conf) {
-    Taint.run(className(), method(), implicitFlows(), file())
+    Taint.run(className(), method(), implicitFlows(),
+        "resources/rt.jar:" + jars(), file())
   }
 }
 
 object Taint {
-  def run(className: String, method: String, implicitFlows: Boolean, file: java.io.File) {
+  def run(className: String, method: String, implicitFlows: Boolean,
+      jars: String, file: java.io.File) {
+    Options.v().set_verbose(true)
+    Options.v().set_output_format(Options.output_format_jimple)
+    Options.v().set_include_all(true)
+    Options.v().set_keep_line_number(true)
+    Options.v().set_allow_phantom_refs(true)
+    Options.v().set_soot_classpath(jars)
+    Options.v().set_prepend_classpath(false)
+    Options.v().set_src_prec(Options.src_prec_only_class)
+    // TODO I just copied this from Coverage2
+    Options.v().set_whole_program(true)
+    soot.Main.v().autoSetOptions()
+    val mainClass = Scene.v().loadClassAndSupport(className)
+    Scene.v().setMainClass(mainClass)
+    Scene.v().loadNecessaryClasses()
+
+    // val mName = className + "." + method
+    val clazz = Scene.v().forceResolve(className, SootClass.BODIES)
+    val m = clazz.getMethod(method)
+    val graph = taintGraph(m)
+    println(graph)
     ??? // TODO:Petey
   }
 
