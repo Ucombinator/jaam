@@ -49,75 +49,79 @@ object Taint {
     // val mName = className + "." + method
     val clazz = Scene.v().forceResolve(className, SootClass.BODIES)
     val m = clazz.getMethod(method)
+    m.retrieveActiveBody()
     val graph = taintGraph(m)
     println(graph)
     ??? // TODO:Petey
   }
 
-  def readAddrs(unit: Unit): Set[TaintAddress] = {
-    unit match {
-      case sootStmt : InvokeStmt => addrsOf(sootStmt.getInvokeExpr)
-      case sootStmt : DefinitionStmt =>
-        addrsOf(sootStmt.getRightOp)
-        // TODO is it possible to read something from the lhs that matters?
-        // addrsOf(sootStmt.getLeftOp) ++ addrsOf(sootStmt.getRightOp)
-      case sootStmt : IfStmt => addrsOf(sootStmt.getCondition)
-      case sootStmt : SwitchStmt => addrsOf(sootStmt.getKey)
-      case sootStmt : ReturnStmt => addrsOf(sootStmt.getOp())
-      case _ : ReturnVoidStmt => Set.empty
-      case _ : NopStmt => Set.empty
-      case _ : GotoStmt => Set.empty
-      case sootStmt : EnterMonitorStmt => addrsOf(sootStmt.getOp)
-      case sootStmt : ExitMonitorStmt => addrsOf(sootStmt.getOp)
-      case sootStmt : ThrowStmt => addrsOf(sootStmt.getOp)
-      case _ => ???
-    }
-  }
-
-  def addrsOf(expr: Value): Set[TaintAddress] = {
+  // TODO petey/michael: is InvokeExpr the only expr with side effects?
+  def addrsOf(expr: Value,
+      taintStore: mutable.Map[TaintAddress, Set[TaintAddress]]):
+      Set[TaintAddress] = {
     expr match {
       case l : Local => Set(LocalTaintAddress(l))
       // TODO this could throw an exception
       case r : Ref => Set(RefTaintAddress(r))
       case _ : Constant => Set.empty
-      case unop : UnopExpr => addrsOf(unop.getOp)
+      case unop : UnopExpr => addrsOf(unop.getOp, taintStore)
       case binop : BinopExpr =>
         // TODO in the case of division, this could throw an exception
-        addrsOf(binop.getOp1) ++ addrsOf(binop.getOp2)
-      case io : InstanceOfExpr => addrsOf(io.getOp)
+        addrsOf(binop.getOp1, taintStore) ++ addrsOf(binop.getOp2, taintStore)
+      case io : InstanceOfExpr => addrsOf(io.getOp, taintStore)
         // TODO this could throw an exception
-      case cast : CastExpr => addrsOf(cast.getOp)
-      case _ => ???
+      case cast : CastExpr => addrsOf(cast.getOp, taintStore)
+      case invoke : InvokeExpr =>
+        val target = invoke.getMethod
+        for {
+          index <- Range(0, invoke.getArgCount)
+        } {
+          val arg = invoke.getArg(index)
+          val from = addrsOf(arg, taintStore)
+          val to = ParameterTaintAddress(target, index)
+          taintStore(to) = taintStore.getOrElse(to, Set.empty) ++ from
+        }
+        Set(ReturnTaintAddress(invoke))
+      case _ =>
+        println(expr)
+        ???
     }
   }
 
-  def writeAddrs(unit: Unit): Set[TaintAddress] = {
-    unit match {
-      case sootStmt : DefinitionStmt => addrsOf(sootStmt.getLeftOp)
-      case _ : InvokeStmt => Set.empty
-      case _ : IfStmt => Set.empty
-      case _ : SwitchStmt => Set.empty
-      // this is only true for intraprocedural
-      case _ : ReturnStmt => Set.empty
-      case _ : ReturnVoidStmt => Set.empty
-      case _ : NopStmt => Set.empty
-      case _ : GotoStmt => Set.empty
-      case sootStmt : EnterMonitorStmt => addrsOf(sootStmt.getOp)
-      case sootStmt : ExitMonitorStmt => addrsOf(sootStmt.getOp)
-      case _ : ThrowStmt => Set.empty
-        // TODO
-        // Set(RefTaintAddress(CaughtExceptionRef))
-      case _ => ???
-    }
-  }
-
-  def taintGraph(method: SootMethod): immutable.Map[TaintAddress, Set[TaintAddress]] = {
+  def taintGraph(method: SootMethod):
+      immutable.Map[TaintAddress, Set[TaintAddress]] = {
     val taintStore = mutable.Map[TaintAddress, Set[TaintAddress]]()
 
     for (unit <- method.getActiveBody.getUnits.toList) {
-      val read = readAddrs(unit)
-      for (addr <- writeAddrs(unit)) {
-        taintStore(addr) ++= read
+      unit match {
+        case sootStmt : DefinitionStmt =>
+          val from = addrsOf(sootStmt.getRightOp, taintStore)
+          for {
+            addr <- addrsOf(sootStmt.getLeftOp, taintStore)
+          } taintStore(addr) = taintStore.getOrElse(addr, Set.empty) ++ from
+        case sootStmt : InvokeStmt =>
+          addrsOf(sootStmt.getInvokeExpr, taintStore)
+        case sootStmt : IfStmt =>
+          addrsOf(sootStmt.getCondition, taintStore)
+        case sootStmt : SwitchStmt =>
+          addrsOf(sootStmt.getKey, taintStore)
+        // this is only true for intraprocedural
+        case sootStmt : ReturnStmt =>
+          addrsOf(sootStmt.getOp, taintStore)
+        case sootStmt : EnterMonitorStmt =>
+          addrsOf(sootStmt.getOp, taintStore)
+        case sootStmt : ExitMonitorStmt =>
+          addrsOf(sootStmt.getOp, taintStore)
+        case _ : ReturnVoidStmt => {}
+        case _ : NopStmt => {}
+        case _ : GotoStmt => {}
+        // TODO
+        // Set(RefTaintAddress(CaughtExceptionRef))
+        case sootStmt : ThrowStmt =>
+          addrsOf(sootStmt.getOp, taintStore)
+        case _ =>
+          println(unit)
+          ???
       }
     }
 
@@ -133,50 +137,6 @@ object Taint {
     taintStore.toMap
   }
 
-/*
-    //def update(to: TaintAddress, from: TaintValue) { update(to, Set(from)) }
-
-    def update(to: Set[TaintAddress], from: Set[TaintValue]) {
-      for (addr <- to) {
-        update(to, from)
-      }
-    }
-
-    def update(to: TaintAddress, from: Set[TaintValue]) {
-      taintStore.get(to) match {
-        case None =>
-          modified = true
-          taintStore(to) = from
-        case Some(addrs) =>
-          if (!from.subsetOf(addrs)) {
-            modified = true
-            taintStore(to) ++= from
-          }
-      }
-    }
-
-
-    val units = method.getActiveBody.getUnits.toList
-
-    val taintStore = mutable.Map[TaintAddress, Set[TaintValue]]()
-
-    for (unit <- units) {
-      for (addr <- readAddrs(unit)) update(addr, Set(addr))
-      for (addr <- writeAddrs(unit)) update(addr, Set(addr))
-    }
-
-    var modified = true
-
-    while (modified) {
-      modified = false
-
-      for (unit <- units) {
-        update(writeAddrs(unit), readAddrs(unit).asInstanceOf[Set[TaintValue]])
-      }
-    }
-
-    taintStore.toMap
- */
 }
 
 abstract sealed class TaintValue
@@ -184,3 +144,5 @@ abstract sealed class TaintValue
 abstract sealed class TaintAddress extends TaintValue
 case class LocalTaintAddress(local: Local) extends TaintAddress
 case class RefTaintAddress(ref: Ref) extends TaintAddress
+case class ParameterTaintAddress(m: SootMethod, index: Int) extends TaintAddress
+case class ReturnTaintAddress(ie: InvokeExpr) extends TaintAddress
