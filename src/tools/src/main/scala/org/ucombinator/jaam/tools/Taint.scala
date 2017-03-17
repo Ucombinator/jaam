@@ -51,8 +51,11 @@ object Taint {
     val m = clazz.getMethod(method)
     m.retrieveActiveBody()
     val graph = taintGraph(m)
-    println(graph)
-    ??? // TODO:Petey
+    val taintStore = propagateTaints(graph, ???) // TODO:Petey
+    // Need to figure out what the incoming arguments to the function
+    // look like - are they Locals? Refs? - and mark them in an initial
+    // taint store.
+    println(taintStore)
   }
 
   // TODO petey/michael: is InvokeExpr the only expr with side effects?
@@ -133,6 +136,22 @@ object Taint {
     initialStore: immutable.Map[TaintAddress, Set[TaintValue]]):
       immutable.Map[TaintAddress, Set[TaintValue]] = {
     val taintStore = mutable.Map(initialStore.toSeq: _*)
+    var changed : Boolean = true
+
+    while (changed) {
+      changed = false
+      for {
+        (to, froms) <- graph
+        from <- froms
+      } {
+        val taints = taintStore.getOrElse(from, Set.empty)
+        val current = taintStore.getOrElse(to, Set.empty)
+        if (!taints.subsetOf(current)) {
+          changed = true
+          taintStore(to) = current ++ taints
+        }
+      }
+    }
 
     taintStore.toMap
   }
