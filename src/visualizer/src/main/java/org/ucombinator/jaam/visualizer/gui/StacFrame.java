@@ -6,6 +6,8 @@ import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Group;
 import javafx.util.Duration;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.Scene;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -63,7 +65,8 @@ public class StacFrame extends JFrame
 	private int width, height;
 	private ArrayList<JSplitPane> horizontalSplitPanes;
 	public VizPanel mainPanel;
-	private JPanel menuPanel, bytecodePanel, rightPanel, searchPanel;
+	private JPanel menuPanel, rightPanel, searchPanel;
+	private JFXPanel bytecodePanel;
 	//private JPanel decompiledPanel;
 	public JCheckBox showEdge;
     public SearchField searchF;
@@ -386,10 +389,12 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						String newFontSize = JOptionPane.showInputDialog(null, "The current font size is: " +
+						String newFontSizeStr = JOptionPane.showInputDialog(null, "The current font size is: " +
 								Parameters.font.getSize() + ". Please enter a new font size");
-						Parameters.font = new Font("Serif", Font.PLAIN, Integer.parseInt(newFontSize));
-						Parameters.bytecodeArea.setFont(Parameters.font);
+						int newFontSize = Integer.parseInt(newFontSizeStr);
+						Parameters.font = new Font("Serif", Font.PLAIN, newFontSize);
+						Parameters.jfxFont = new javafx.scene.text.Font("Serif", newFontSize);
+						Parameters.bytecodeArea.resetFont();
 						Parameters.rightArea.setFont(Parameters.font);
 						Parameters.repaintAll();
 					}
@@ -803,7 +808,7 @@ public class StacFrame extends JFrame
 	{
 		// Declare each panel
 		//decompiledPanel = new JPanel();
-		bytecodePanel = new JPanel();
+		bytecodePanel = new JFXPanel();
 		rightPanel = new JPanel();
         searchPanel = new JPanel();
 		this.mainPanel = new VizPanel();
@@ -813,9 +818,9 @@ public class StacFrame extends JFrame
 		Parameters.bytecodeArea = new CodeArea();
 		bytecodePanel.setLayout(new BorderLayout());
 		bytecodePanel.add(leftL,BorderLayout.NORTH);
-		JScrollPane bytecodeScroll = new JScrollPane (Parameters.bytecodeArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		bytecodePanel.add(bytecodeScroll, BorderLayout.CENTER);
+		ScrollPane bytecodeScroll = new ScrollPane ();
+		bytecodeScroll.setContent(Parameters.bytecodeArea);
+		bytecodePanel.setScene(new Scene(bytecodeScroll));
 		bytecodePanel.setFont(Parameters.font);
 
 		/*decompiledPanel.setLayout(new BorderLayout());

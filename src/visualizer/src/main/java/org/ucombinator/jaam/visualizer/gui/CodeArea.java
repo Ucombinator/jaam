@@ -1,14 +1,17 @@
 package org.ucombinator.jaam.visualizer.gui;
 
-import javax.swing.JTextArea;
+
+import javafx.scene.input.MouseEvent;
+import javafx.event.EventHandler;
+import javafx.scene.Node;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
+import javafx.scene.paint.Color;
+
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 import javax.swing.text.DefaultCaret;
-import java.awt.Font;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.Color;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,85 +22,60 @@ import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
 import org.ucombinator.jaam.visualizer.graph.Instruction;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 
-public class CodeArea extends JTextArea
+public class CodeArea extends TextFlow
 {
 	ArrayList<Instruction> description;
-	ArrayList<Integer> rowToIndex; // Since some Jimple indices can be missing, we need to store an offset
     private int currentCaret = 0;
 	
 	public CodeArea()
 	{
-		this.setFont(Parameters.font);
-		this.setEditable(false);
 		description = new ArrayList<Instruction>();
-		rowToIndex = new ArrayList<Integer>();
-        ((DefaultCaret)this.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
-        
-		this.addMouseListener
-		(
-			new MouseListener()
-			{
-				public void mouseClicked(MouseEvent e)
-				{
-					int y = e.getY();
-					Font font = CodeArea.this.getFont();
-					int lineHeight = CodeArea.this.getFontMetrics(font).getHeight();
-					int row = y/lineHeight;
-                     
-					if(e.isShiftDown())
-					{
-						if(row >= 0 && row < rowToIndex.size())
-						{
-							Instruction line = description.get(rowToIndex.get(row));
-							if(line.isRealInstruction())
-							{
-								if(line.isSelected())
-								{
-									Parameters.stFrame.mainPanel.searchByJimpleIndex(
-											line.getMethodName(), line.getJimpleIndex(), false,false);
-								}
-								else
-								{
-									Parameters.vertexHighlight = true;
-									Parameters.stFrame.mainPanel.searchByJimpleIndex(
-											line.getMethodName(), line.getJimpleIndex(), false,true);
-								}
-							}
-						}
-					}
-					else
-					{
-						if(row >= 0 && row < rowToIndex.size())
-						{
-							Instruction line = description.get(rowToIndex.get(row));
-							if(line.isRealInstruction())
-							{
-								Parameters.vertexHighlight = true;
-								Parameters.stFrame.mainPanel.searchByJimpleIndex(
-										line.getMethodName(), line.getJimpleIndex(), true, true);
-							}
-						}
-					}
 
-					Parameters.repaintAll();
-				}
-				
-				public void mousePressed(MouseEvent e){}
-				
-				public void mouseReleased(MouseEvent e){}
-				
-				public void mouseEntered(MouseEvent e){}
-				
-				public void mouseExited(MouseEvent e){}
-			}
-		);
+		// TODO: Is there a  JavaFX equivalent for this?
+		//((DefaultCaret)this.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 	}
+
+	EventHandler<MouseEvent> onMouseClickedEventHandler = new javafx.event.EventHandler<MouseEvent>() {
+		@Override
+		public void handle(MouseEvent event) {
+			event.consume();
+			Text lineText = (Text) event.getSource();
+			int row = CodeArea.this.getChildren().indexOf(lineText);
+			Instruction lineInstr = CodeArea.this.description.get(row);
+
+			if (event.isShiftDown()) {
+				if (lineInstr.isRealInstruction()) {
+					if (lineInstr.isSelected()) {
+						Parameters.stFrame.mainPanel.searchByJimpleIndex(
+								lineInstr.getMethodName(), lineInstr.getJimpleIndex(), false, false);
+					} else {
+						Parameters.vertexHighlight = true;
+						Parameters.stFrame.mainPanel.searchByJimpleIndex(
+								lineInstr.getMethodName(), lineInstr.getJimpleIndex(), false, true);
+					}
+				}
+			} else {
+				if (lineInstr.isRealInstruction()) {
+					Parameters.vertexHighlight = true;
+					Parameters.stFrame.mainPanel.searchByJimpleIndex(
+							lineInstr.getMethodName(), lineInstr.getJimpleIndex(), true, true);
+				}
+			}
+			Parameters.repaintAll();
+		}
+	};
 
 	public void clear()
 	{
 		this.description = new ArrayList<Instruction>();
-		this.rowToIndex = new ArrayList<Integer>();
 		this.writeText();
+	}
+
+	public void resetFont() {
+		for(Node textNode : this.getChildren()) {
+			Text line = (Text) textNode;
+			line.setFont(Parameters.jfxFont);
+		}
 	}
 
 	// Rewrite the text area based on which vertices are highlighted
@@ -124,104 +102,35 @@ public class CodeArea extends JTextArea
 				//System.out.println(description.size());
 			}
 
-			int rowNumber = 0;
-			rowToIndex = new ArrayList<Integer>();
-			for (int i = 0; i < description.size(); i++, rowNumber++) {
-				if (description.get(i).getText().length() > 0)
-					rowToIndex.add(rowNumber);
-			}
-
-			this.computeDescriptionIndex();
 			this.writeText();
-			this.drawHighlights(Parameters.colorSelection, Parameters.colorFocus, Parameters.colorHighlight);
-		}
-	}
-	
-	private void computeDescriptionIndex()
-	{
-		if(this.description.size() > 0)
-		{
-			this.description.get(0).setDescriptionIndex(0);
-			for(int i = 1; i < this.description.size(); i++)
-			{
-				this.description.get(i).setDescriptionIndex(this.description.get(i - 1).getEndIndex());
-			}
+			this.setHighlights(Parameters.fxColorSelection);
 		}
 	}
 	
 	//Set the text for the area to the sum of all of the lines in the description
 	private void writeText()
 	{
-		StringBuilder fullText = new StringBuilder();
+		this.clear();
 		for(Instruction line : description) {
-			fullText.append(line.getText());
+			Text lineText = new Text(line.getText());
+			lineText.setOnMouseClicked(onMouseClickedEventHandler);
+			this.getChildren().add(lineText);
 		}
-
-		this.setText(fullText.toString());
 	}
-    
-    public void fixCaretPosition()
-    {
-        try
-        {
-            int line = this.getLineOfOffset(this.getCaretPosition());
-            int close = -1;
-            int dist1, dist2;
-            
-            for(int i = 0; i < this.description.size(); i++)
-            {
-                if(!this.description.get(i).isSelected())
-                    continue;
-                
-                dist1 = line - close;
-                dist2 = line - i;
-                
-                if((dist2 * dist2 < dist1 * dist1) || !this.description.get(line).isSelected())
-                    close = i;
-            }
-            
-            if(close >= 0)
-            {
-                this.setCaretPosition(this.getLineStartOffset(close));
-            }
-        }
-        catch(BadLocationException ex)
-        {
-            System.out.println("doc = " + CodeArea.this.getText());
-            System.out.println(ex);
-        }
-
-    }
 	
-	private void drawHighlights(Color lineHighlightColor, Color cycleHighlightColor, Color lineSelectionColor)
+	private void setHighlights(Color lineSelectionColor)
 	{
-        Highlighter h = CodeArea.this.getHighlighter();
-        h.removeAllHighlights();
 		for(int i = 0; i < this.description.size(); i++)
 		{
 			//TODO: Find new color for applying both highlights?
 			Instruction line = this.description.get(i);
-            if(line.isSelected())
-                this.drawLineHighlight(i, lineSelectionColor);
-			/*else if(line.isHighlighted)
-				this.drawLineHighlight(i, lineHighlightColor);
-			else if(line.isCycleHighlighted)
-				this.drawLineHighlight(i, cycleHighlightColor);*/
-		}
-	}
-	
-	private void drawLineHighlight(int rowIndex, Color c)
-	{
-		DefaultHighlighter.DefaultHighlightPainter highlightPainter = new DefaultHighlighter.DefaultHighlightPainter(c);
-		Highlighter h = this.getHighlighter();
-		
-		try
-		{
-			h.addHighlight(description.get(rowIndex).getStartIndex(), description.get(rowIndex).getEndIndex(), highlightPainter);
-		}
-		catch(BadLocationException e)
-		{
-			System.out.println(e);
+			Text lineText = (Text) this.getChildren().get(i);
+            if(line.isSelected()) {
+				lineText.setFill(lineSelectionColor);
+			}
+			else {
+            	lineText.setFill(Color.WHITE);
+			}
 		}
 	}
 }

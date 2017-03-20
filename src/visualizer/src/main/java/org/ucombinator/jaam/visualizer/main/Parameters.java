@@ -35,6 +35,7 @@ public class Parameters
 			colorHighlight = new Color(Integer.parseInt("2B8CBE", 16));
 	public static int transparency = 160;
 	public static Font font = new Font("Serif", Font.PLAIN, 14);
+	public static javafx.scene.text.Font jfxFont = new javafx.scene.text.Font("Serif", 14);
 	
 	public static boolean debug = false;
 	public static long interval = 5000;
@@ -93,7 +94,7 @@ public class Parameters
 		System.out.println("Repainting all...");
 		if (!Parameters.debugMode)
 		{
-			bytecodeArea.setDescription();
+			//bytecodeArea.setDescription();
 			setRightText();
 			searchArea.writeText();
 		}
@@ -106,14 +107,6 @@ public class Parameters
             Parameters.fixCaretPositions();
         }*/
 	}
-    
-    public static void fixCaretPositions()
-    {
-        bytecodeArea.fixCaretPosition();
-
-        // TODO: Fix this
-        //searchArea.fixCaretPosition();
-    }
 
 	public static String getHTMLVerbatim(String str)
 	{
