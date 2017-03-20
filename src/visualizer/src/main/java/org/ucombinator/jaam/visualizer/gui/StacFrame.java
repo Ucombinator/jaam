@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.gui;
 
 import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Group;
@@ -9,6 +10,8 @@ import javafx.util.Duration;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Scene;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -808,42 +811,43 @@ public class StacFrame extends JFrame
 		this.getContentPane().add(this.mainPanel);
 	}
 
-	public void setSplitScreen()
-	{
-		// Declare each panel
-		//decompiledPanel = new JPanel();
+	public void makeJFXPanels() {
+		// TODO: Set sizes to fill parent
 		bytecodePanel = new JFXPanel();
-		rightPanel = new JFXPanel();
-        searchPanel = new JPanel();
-		this.mainPanel = new VizPanel();
-
-		// Build each panel
-		JLabel leftL = new JLabel("Code", JLabel.CENTER);
+		BorderPane leftRoot = new BorderPane();
+		Label leftLabel = new Label("Code");
+		ScrollPane scrollLeft = new ScrollPane();
 		Parameters.bytecodeArea = new CodeArea();
-		bytecodePanel.setLayout(new BorderLayout());
-		bytecodePanel.add(leftL,BorderLayout.NORTH);
-		ScrollPane bytecodeScroll = new ScrollPane ();
-		bytecodeScroll.setContent(Parameters.bytecodeArea);
-		bytecodePanel.setScene(new Scene(bytecodeScroll));
-		bytecodePanel.setFont(Parameters.font);
+		scrollLeft.setContent(Parameters.bytecodeArea);
+		leftRoot.setTop(leftLabel);
+		leftRoot.setCenter(scrollLeft);
+		bytecodePanel.setScene(new Scene(leftRoot));
 
-		/*decompiledPanel.setLayout(new BorderLayout());
-		Parameters.decompiledArea = new org.ucombinator.jaam.visualizer.gui.CodeArea();
-		JScrollPane decompiledScroll = new JScrollPane(Parameters.decompiledArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		decompiledPanel.add(decompiledScroll, BorderLayout.CENTER);
-		decompiledPanel.setFont(Parameters.font);*/
-		
-		JLabel rightL = new JLabel("Description", JLabel.CENTER);
+		rightPanel = new JFXPanel();
+		BorderPane rightRoot = new BorderPane();
+		Label rightLabel = new Label("Description");
+		ScrollPane rightScroll = new ScrollPane();
 		Parameters.rightArea = new TextArea();
 		Parameters.rightArea.setEditable(false);
-		rightPanel.setLayout(new BorderLayout());
-		rightPanel.add(rightL, BorderLayout.NORTH);
-		ScrollPane scrollR = new ScrollPane();
-		scrollR.setContent(Parameters.rightArea);
-		rightPanel.setScene(new Scene(scrollR));
-		rightPanel.setFont(Parameters.font);
-		
+		rightScroll.setContent(Parameters.rightArea);
+		rightRoot.setTop(rightLabel);
+		rightRoot.setCenter(rightScroll);
+		rightPanel.setScene(new Scene(rightRoot));
+	}
+
+	public void setSplitScreen()
+	{
+		// Make these panels on JavaFX thread instead of Swing thread
+		this.mainPanel = new VizPanel();
+		Platform.runLater(new Runnable() {
+			@Override
+			public void run()
+			{
+				makeJFXPanels();
+			}
+		});
+
+        searchPanel = new JPanel();
         JLabel searchL = new JLabel("Search Results", JLabel.CENTER);
         Parameters.searchArea = new SearchArea();
         searchPanel.setLayout(new BorderLayout());

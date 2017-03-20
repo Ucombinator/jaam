@@ -90,6 +90,7 @@ public class CodeArea extends TextFlow
 			//	methodVertices.addAll(v.getMethodVertices());
 
 			description = new ArrayList<Instruction>();
+			description.add(new Instruction("Code will be added here\n", "", -1, false));
 			for(LayoutMethodVertex v : methodVertices) {
 				String methodName = v.getMethodName();
 				ArrayList<Instruction> currInstructions = new ArrayList<Instruction>(v.getInstructions());
@@ -110,7 +111,7 @@ public class CodeArea extends TextFlow
 	//Set the text for the area to the sum of all of the lines in the description
 	private void writeText()
 	{
-		this.clear();
+		this.getChildren().clear();
 		for(Instruction line : description) {
 			Text lineText = new Text(line.getText());
 			lineText.setOnMouseClicked(onMouseClickedEventHandler);
