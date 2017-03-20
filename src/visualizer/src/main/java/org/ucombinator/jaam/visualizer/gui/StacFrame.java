@@ -6,6 +6,9 @@ import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Group;
 import javafx.util.Duration;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.Scene;
+import javafx.scene.control.TextArea;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -44,6 +47,7 @@ import javax.swing.JButton;
 import javax.swing.text.DefaultCaret;
 
 import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.main.Parameters;
@@ -62,7 +66,8 @@ public class StacFrame extends JFrame
 	private int width, height;
 	private ArrayList<JSplitPane> horizontalSplitPanes;
 	public VizPanel mainPanel;
-	private JPanel menuPanel, bytecodePanel, rightPanel, searchPanel;
+	private JPanel menuPanel, searchPanel;
+	private JFXPanel bytecodePanel, rightPanel;
 	//private JPanel decompiledPanel;
 	public JCheckBox showEdge;
     public SearchField searchF;
@@ -307,7 +312,7 @@ public class StacFrame extends JFrame
 		menuNavigation = new JMenu("Navigation");
 		menuBar.add(menuNavigation);
 		
-        JMenuItem rearrange = new JMenuItem("Rearrange graph");
+        /*JMenuItem rearrange = new JMenuItem("Rearrange graph");
         menuNavigation.add(rearrange);
         rearrange.addActionListener
         (
@@ -321,7 +326,7 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-        rearrange.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, ActionEvent.CTRL_MASK));
+        rearrange.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, ActionEvent.CTRL_MASK));*/
 
 		JMenuItem resetGraph = new JMenuItem("Reset view");
 		menuNavigation.add(resetGraph);
@@ -385,11 +390,14 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						String newFontSize = JOptionPane.showInputDialog(null, "The current font size is: " +
-								Parameters.font.getSize() + ". Please enter a new font size");
-						Parameters.font = new Font("Serif", Font.PLAIN, Integer.parseInt(newFontSize));
-						Parameters.bytecodeArea.setFont(Parameters.font);
-						Parameters.rightArea.setFont(Parameters.font);
+						String newFontSizeStr = JOptionPane.showInputDialog(null,
+								"The current font size is: " + Parameters.font.getSize()
+										+ ". Please enter a new font size");
+						int newFontSize = Integer.parseInt(newFontSizeStr);
+						Parameters.font = new Font("Serif", Font.PLAIN, newFontSize);
+						Parameters.jfxFont = new javafx.scene.text.Font("Serif", newFontSize);
+						Parameters.bytecodeArea.resetFont();
+						Parameters.rightArea.setFont(Parameters.jfxFont);
 						Parameters.repaintAll();
 					}
 				}
@@ -502,7 +510,7 @@ public class StacFrame extends JFrame
 							// TODO: When this is checked off and then back on, the edges don't reappear.
 							Parameters.edgeVisible = showEdge.isSelected();
 							mainPanel.getPanelRoot().setEdgeVisibility(Parameters.edgeVisible);
-							for(AbstractVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+							for(AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
 								v.setEdgeVisibility(showEdge.isSelected());
 						}
 					});
@@ -526,7 +534,7 @@ public class StacFrame extends JFrame
 				public void actionPerformed(ActionEvent e)
 				{
 					ParallelTransition pt = new ParallelTransition();
-					for(AbstractVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+					for(AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
 					{
 						GUINode node = v.getGraphics();
 						ScaleTransition st = new ScaleTransition(Duration.millis(300), node);
@@ -553,7 +561,7 @@ public class StacFrame extends JFrame
 				public void actionPerformed(ActionEvent e)
 				{
 					ParallelTransition pt = new ParallelTransition();
-					for(AbstractVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+					for(AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
 					{
 						GUINode node = v.getGraphics();
 						ScaleTransition st = new ScaleTransition(Duration.millis(300), node);
@@ -718,7 +726,8 @@ public class StacFrame extends JFrame
 				public void actionPerformed(ActionEvent e)
 				{
 					methodExpanded = !methodExpanded;
-					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractVertex.VertexType.METHOD, methodExpanded);
+					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
+							methodExpanded);
 					Platform.runLater(new Runnable() {
 						@Override
 						public void run() {
@@ -755,7 +764,8 @@ public class StacFrame extends JFrame
 				public void actionPerformed(ActionEvent e)
 				{
 					chainExpanded = !chainExpanded;
-					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractVertex.VertexType.CHAIN,chainExpanded);
+					Parameters.stFrame.mainPanel.getPanelRoot()
+							.toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN,chainExpanded);
 					Platform.runLater(new Runnable() {
 						@Override
 						public void run() {
@@ -802,8 +812,8 @@ public class StacFrame extends JFrame
 	{
 		// Declare each panel
 		//decompiledPanel = new JPanel();
-		bytecodePanel = new JPanel();
-		rightPanel = new JPanel();
+		bytecodePanel = new JFXPanel();
+		rightPanel = new JFXPanel();
         searchPanel = new JPanel();
 		this.mainPanel = new VizPanel();
 
@@ -812,9 +822,9 @@ public class StacFrame extends JFrame
 		Parameters.bytecodeArea = new CodeArea();
 		bytecodePanel.setLayout(new BorderLayout());
 		bytecodePanel.add(leftL,BorderLayout.NORTH);
-		JScrollPane bytecodeScroll = new JScrollPane (Parameters.bytecodeArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		bytecodePanel.add(bytecodeScroll, BorderLayout.CENTER);
+		ScrollPane bytecodeScroll = new ScrollPane ();
+		bytecodeScroll.setContent(Parameters.bytecodeArea);
+		bytecodePanel.setScene(new Scene(bytecodeScroll));
 		bytecodePanel.setFont(Parameters.font);
 
 		/*decompiledPanel.setLayout(new BorderLayout());
@@ -825,14 +835,13 @@ public class StacFrame extends JFrame
 		decompiledPanel.setFont(Parameters.font);*/
 		
 		JLabel rightL = new JLabel("Description", JLabel.CENTER);
-		Parameters.rightArea = new JTextArea();
+		Parameters.rightArea = new TextArea();
 		Parameters.rightArea.setEditable(false);
-        ((DefaultCaret)Parameters.rightArea.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 		rightPanel.setLayout(new BorderLayout());
 		rightPanel.add(rightL, BorderLayout.NORTH);
-		JScrollPane scrollR = new JScrollPane (Parameters.rightArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		rightPanel.add(scrollR, BorderLayout.CENTER);
+		ScrollPane scrollR = new ScrollPane();
+		scrollR.setContent(Parameters.rightArea);
+		rightPanel.setScene(new Scene(scrollR));
 		rightPanel.setFont(Parameters.font);
 		
         JLabel searchL = new JLabel("Search Results", JLabel.CENTER);
@@ -936,7 +945,7 @@ public class StacFrame extends JFrame
 
 	public void searchByID(String input)
 	{
-		AbstractVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
+		AbstractLayoutVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
 		StringTokenizer token = new StringTokenizer(input,", ");
 
 		int id1, id2;
@@ -971,7 +980,8 @@ public class StacFrame extends JFrame
 				int code = ev.getKeyCode();
 				if(code == 'L')
 				{
-					String lim = JOptionPane.showInputDialog(null, "Set limit on the number of vertices:");
+					String lim = JOptionPane.showInputDialog(null,
+							"Set limit on the number of vertices:");
 					Parameters.limitV = Long.parseLong(lim);
 					Parameters.repaintAll();
 				}

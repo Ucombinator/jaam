@@ -3,46 +3,72 @@ package org.ucombinator.jaam.visualizer.graph;
 //TODO: Save list of matching vertices here to speed up highlighting?
 public class Instruction implements Comparable<Instruction>
 {
-	public String str;
-	public String methodName;
-	public boolean isInstr;
-	public int jimpleIndex;
-	public boolean isCycleHighlighted;
-	public boolean isHighlighted;
-    public boolean isSelected;
-
-	public int startIndex;
-	public int endIndex;
+	private String text;
+	private String methodName;
+	private boolean isInstr;
+	private int jimpleIndex;
+	private int descriptionIndex;
+	private boolean isSelected;
 	
 	public Instruction(String methodName)
 	{
-		this.str = "";
+		this.text = "";
 		this.methodName = methodName;
 		this.isInstr = false;
 		this.jimpleIndex = -1;
-		this.isHighlighted = false;
-        this.isCycleHighlighted = false;
-        this.isSelected = false;
-		this.startIndex = -1;
-		this.endIndex = -1;
+		this.descriptionIndex = -1;
+		this.isSelected = false;
 	}
 	
-	public Instruction(String str, String method, boolean isInstr, int jimpleIndex)
+	public Instruction(String str, String method, int jimpleIndex, boolean isInstr)
 	{
-		this.str = str;
+		this.text = str;
 		this.methodName = method;
 		this.isInstr = isInstr;
 		this.jimpleIndex = jimpleIndex;
-		this.isHighlighted = false;
-        this.isCycleHighlighted = false;
-        this.isSelected = false;
-		this.startIndex = -1;
-		this.endIndex = -1;
+		this.descriptionIndex = -1;
+		this.isSelected = false;
+	}
+
+	public String getText() {
+		return text;
+	}
+
+	public String getMethodName() {
+		return this.methodName;
+	}
+
+	public int getJimpleIndex() {
+		return jimpleIndex;
 	}
 
 	public int compareTo(Instruction otherInstruction)
 	{
 		return (new Integer(this.jimpleIndex)).compareTo(otherInstruction.jimpleIndex);
+	}
+
+	public boolean isRealInstruction() {
+		return this.isInstr;
+	}
+
+	public void setDescriptionIndex(int descriptionIndex) {
+		this.descriptionIndex = descriptionIndex;
+	}
+
+	public int getStartIndex() {
+		return this.descriptionIndex;
+	}
+
+	public int getEndIndex() {
+		return this.descriptionIndex + this.text.length();
+	}
+
+	public void setSelected(boolean isSelected) {
+		this.isSelected = isSelected;
+	}
+
+	public boolean isSelected() {
+		return this.isSelected;
 	}
 
 	@Override

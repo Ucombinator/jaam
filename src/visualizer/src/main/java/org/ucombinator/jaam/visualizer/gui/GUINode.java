@@ -15,8 +15,8 @@ import javafx.scene.paint.Stop;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 
-import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
-import org.ucombinator.jaam.visualizer.graph.Edge;
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.layout.AnimationHandler;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 
@@ -28,15 +28,15 @@ public class GUINode extends Pane
     public Rectangle rect;
     protected Rectangle backRect;
     protected Text rectLabel;
-    private AbstractVertex vertex;
+    private AbstractLayoutVertex vertex;
 	private GUINode parent;
 
-	private ArrayList<Edge> edges = new ArrayList<Edge>();
+	private ArrayList<LayoutEdge> edges = new ArrayList<LayoutEdge>();
 
     boolean labelsEnabled = false;
     boolean isDragging;
 
-    public GUINode(GUINode parent, AbstractVertex v)
+    public GUINode(GUINode parent, AbstractLayoutVertex v)
     {
         super();
         this.parent = parent;
@@ -62,11 +62,11 @@ public class GUINode extends Pane
        
     }
     
-    public AbstractVertex getVertex() {
+    public AbstractLayoutVertex getVertex() {
 		return vertex;
 	}
 
-	public void setVertex(AbstractVertex vertex) {
+	public void setVertex(AbstractLayoutVertex vertex) {
 		this.vertex = vertex;
 	}
 
@@ -85,10 +85,10 @@ public class GUINode extends Pane
     {
     	this.backRect.setFill(Color.WHITE);
     	this.rect.setFill(c);
-    	if(vertex.getType()== AbstractVertex.VertexType.CHAIN){
+    	if(vertex.getType()== AbstractLayoutVertex.VertexType.CHAIN){
         	Stop[] stops = new Stop[]{new Stop(0.6,c), new Stop(0.4,Color.WHITE)};
             this.rect.setFill(new LinearGradient(0, 0, 8, 8, false, CycleMethod.REPEAT, stops));
-        } else if(vertex.getType()==AbstractVertex.VertexType.ROOT){
+        } else if(vertex.getType() == AbstractLayoutVertex.VertexType.ROOT){
         	this.rect.setFill(javafx.scene.paint.Color.WHITE);
         }
 
@@ -191,10 +191,10 @@ public class GUINode extends Pane
             node.setTranslateX(offsetX - node.getXShift());
             node.setTranslateY(offsetY - node.getYShift());
 
-            AbstractVertex v = GUINode.this.vertex;
-            v.location.x = Parameters.stFrame.mainPanel.invScaleX(offsetX);
-            v.location.y = Parameters.stFrame.mainPanel.invScaleY(offsetY);
-            Edge.redrawEdges(v, false);
+            AbstractLayoutVertex v = GUINode.this.vertex;
+            v.setX(Parameters.stFrame.mainPanel.invScaleX(offsetX));
+            v.setY(Parameters.stFrame.mainPanel.invScaleY(offsetY));
+            LayoutEdge.redrawEdges(v, false);
         }
     };
 
@@ -219,14 +219,14 @@ public class GUINode extends Pane
         public void handle(Event event)
         {
             event.consume();
-            if(!getVertex().getType().equals(AbstractVertex.VertexType.ROOT)){
+            if(!getVertex().getType().equals(AbstractLayoutVertex.VertexType.ROOT)){
             getChildren().add(rectLabel);
             rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
             rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
             }
         	if (vertex.getSelfGraph() != null)
         	{
-	        	for(Edge e : vertex.getSelfGraph().getEdges().values())
+	        	for(LayoutEdge e : vertex.getSelfGraph().getEdges().values())
                 {
 	        		if(e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
 	        		{
@@ -254,7 +254,7 @@ public class GUINode extends Pane
             
         	if(vertex.getSelfGraph() != null)
         	{
-	        	for(Edge e : vertex.getSelfGraph().getEdges().values())
+	        	for(LayoutEdge e : vertex.getSelfGraph().getEdges().values())
                 {
 	        		if (e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
 	        		{
