@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.swing.JFileChooser;
-import javax.swing.JTextArea;
+import javafx.scene.control.TextArea;
 
 import java.awt.Font;
 import java.awt.Color;
@@ -22,7 +22,7 @@ public class Parameters
 	public static int width = 1200, height = 800;
 	public static double boxFactor = 3.0/4.0;
 	public static StacFrame stFrame;
-	public static JTextArea rightArea;
+	public static TextArea rightArea;
 	public static CodeArea bytecodeArea;
 	public static CodeArea decompiledArea;
     public static SearchArea searchArea;
@@ -53,7 +53,6 @@ public class Parameters
 			text.append(v.getRightPanelContent() + "\n");
 
 		rightArea.setText(text.toString());
-		rightArea.setCaretPosition(0);
 	}
 
 	public static File openFile(boolean includeDirectories)

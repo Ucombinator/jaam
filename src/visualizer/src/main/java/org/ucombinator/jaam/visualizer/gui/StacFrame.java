@@ -8,6 +8,7 @@ import javafx.scene.Group;
 import javafx.util.Duration;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Scene;
+import javafx.scene.control.TextArea;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -65,8 +66,8 @@ public class StacFrame extends JFrame
 	private int width, height;
 	private ArrayList<JSplitPane> horizontalSplitPanes;
 	public VizPanel mainPanel;
-	private JPanel menuPanel, rightPanel, searchPanel;
-	private JFXPanel bytecodePanel;
+	private JPanel menuPanel, searchPanel;
+	private JFXPanel bytecodePanel, rightPanel;
 	//private JPanel decompiledPanel;
 	public JCheckBox showEdge;
     public SearchField searchF;
@@ -389,13 +390,14 @@ public class StacFrame extends JFrame
 				{
 					public void actionPerformed(ActionEvent ev)
 					{
-						String newFontSizeStr = JOptionPane.showInputDialog(null, "The current font size is: " +
-								Parameters.font.getSize() + ". Please enter a new font size");
+						String newFontSizeStr = JOptionPane.showInputDialog(null,
+								"The current font size is: " + Parameters.font.getSize()
+										+ ". Please enter a new font size");
 						int newFontSize = Integer.parseInt(newFontSizeStr);
 						Parameters.font = new Font("Serif", Font.PLAIN, newFontSize);
 						Parameters.jfxFont = new javafx.scene.text.Font("Serif", newFontSize);
 						Parameters.bytecodeArea.resetFont();
-						Parameters.rightArea.setFont(Parameters.font);
+						Parameters.rightArea.setFont(Parameters.jfxFont);
 						Parameters.repaintAll();
 					}
 				}
@@ -724,7 +726,8 @@ public class StacFrame extends JFrame
 				public void actionPerformed(ActionEvent e)
 				{
 					methodExpanded = !methodExpanded;
-					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD, methodExpanded);
+					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
+							methodExpanded);
 					Platform.runLater(new Runnable() {
 						@Override
 						public void run() {
@@ -761,7 +764,8 @@ public class StacFrame extends JFrame
 				public void actionPerformed(ActionEvent e)
 				{
 					chainExpanded = !chainExpanded;
-					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN,chainExpanded);
+					Parameters.stFrame.mainPanel.getPanelRoot()
+							.toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN,chainExpanded);
 					Platform.runLater(new Runnable() {
 						@Override
 						public void run() {
@@ -809,7 +813,7 @@ public class StacFrame extends JFrame
 		// Declare each panel
 		//decompiledPanel = new JPanel();
 		bytecodePanel = new JFXPanel();
-		rightPanel = new JPanel();
+		rightPanel = new JFXPanel();
         searchPanel = new JPanel();
 		this.mainPanel = new VizPanel();
 
@@ -831,14 +835,13 @@ public class StacFrame extends JFrame
 		decompiledPanel.setFont(Parameters.font);*/
 		
 		JLabel rightL = new JLabel("Description", JLabel.CENTER);
-		Parameters.rightArea = new JTextArea();
+		Parameters.rightArea = new TextArea();
 		Parameters.rightArea.setEditable(false);
-        ((DefaultCaret)Parameters.rightArea.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 		rightPanel.setLayout(new BorderLayout());
 		rightPanel.add(rightL, BorderLayout.NORTH);
-		JScrollPane scrollR = new JScrollPane (Parameters.rightArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		rightPanel.add(scrollR, BorderLayout.CENTER);
+		ScrollPane scrollR = new ScrollPane();
+		scrollR.setContent(Parameters.rightArea);
+		rightPanel.setScene(new Scene(scrollR));
 		rightPanel.setFont(Parameters.font);
 		
         JLabel searchL = new JLabel("Search Results", JLabel.CENTER);
@@ -977,7 +980,8 @@ public class StacFrame extends JFrame
 				int code = ev.getKeyCode();
 				if(code == 'L')
 				{
-					String lim = JOptionPane.showInputDialog(null, "Set limit on the number of vertices:");
+					String lim = JOptionPane.showInputDialog(null,
+							"Set limit on the number of vertices:");
 					Parameters.limitV = Long.parseLong(lim);
 					Parameters.repaintAll();
 				}
