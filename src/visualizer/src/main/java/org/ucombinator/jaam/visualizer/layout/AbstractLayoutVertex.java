@@ -13,7 +13,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 
-public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayoutVertex> implements Comparable<AbstractLayoutVertex>
+public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayoutVertex>
+        implements Comparable<AbstractLayoutVertex>
 {
     public static Color highlightColor = Color.ORANGE;
     private Color color = Color.RED;
@@ -110,7 +111,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         return ((Integer)(this.getMinInstructionLine())).compareTo(v.getMinInstructionLine());
     }
 
-    private boolean isVisible;
     public boolean isHighlighted; //Select or Highlight this vertex, incoming edges, or outgoing edges
     private boolean drawEdges;
 
@@ -121,6 +121,9 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     // These searches may be different for different subclasses, so we implement them there.
     public abstract boolean searchByMethod(String query);
+
+    // This is needed so that we can show the code for the methods that correspond to selected vertices
+    public abstract HashSet<LayoutMethodVertex> getMethodVertices();
 
     static int colorIndex = 0;
     public AbstractLayoutVertex(String label, VertexType type, boolean drawEdges) {
@@ -183,7 +186,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     public void setVisible(boolean isVisible)
     {
-        this.isVisible = isVisible;
         if(this.getGraphics() != null)
             this.getGraphics().setVisible(isVisible);
     }

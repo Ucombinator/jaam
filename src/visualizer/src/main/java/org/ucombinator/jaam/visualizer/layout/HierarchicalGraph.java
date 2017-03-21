@@ -119,26 +119,25 @@ public class HierarchicalGraph
 		return this.edges.containsKey(LayoutEdge.createID(first.getId(), second.getId()));
 	}
 
-	public static ArrayList<LayoutEdge> computeDummyEdges(AbstractLayoutVertex root)
+	public static ArrayList<LayoutEdge> computeDummyEdges(LayoutRootVertex root)
 	{
 		ArrayList<LayoutEdge> dummies = new ArrayList<LayoutEdge>();
 
-		// Visit first vertex of root method
 		root.cleanAll();
-		visit(root, new HashMap<String, AbstractLayoutVertex>(), dummies);
+		for(AbstractLayoutVertex v : root.getInnerGraph().getVertices().values())
+			visit(v, new HashMap<String, AbstractLayoutVertex>(), dummies);
 		return dummies;
 	}
 
 	private static void visit(AbstractLayoutVertex root, HashMap<String, AbstractLayoutVertex> hash, ArrayList<LayoutEdge> dummies)
 	{
-		//System.out.println("Root: " + root);
 		Iterator<AbstractLayoutVertex> it = root.getOutgoingNeighbors().iterator();
 		root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
 		String rootMethod;
 
 		if (root instanceof LayoutInstructionVertex)
 			rootMethod = ((LayoutInstructionVertex) root).getInstruction().getMethodName();
-		else // root instanceof LayoutMethodVertex
+		else // if (root instanceof LayoutMethodVertex)
 			rootMethod = ((LayoutMethodVertex) root).getMethodName();
 
 		while(it.hasNext())

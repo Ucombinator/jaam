@@ -2,7 +2,6 @@ package org.ucombinator.jaam.visualizer.gui;
 
 import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
-import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Group;
@@ -43,16 +42,13 @@ import javax.swing.JMenuItem;
 import javax.swing.BorderFactory;
 import javax.swing.SwingConstants;
 
-import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.JLabel;
 import javax.swing.JButton;
-import javax.swing.text.DefaultCaret;
 
-import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
-import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.layout.LayoutRootVertex;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 import org.ucombinator.jaam.visualizer.main.TakeInput;
 
@@ -864,10 +860,8 @@ public class StacFrame extends JFrame
 
 		ArrayList<JComponent> left = new ArrayList<JComponent>();
 		left.add(bytecodePanel);
-		//left.add(decompiledPanel);
 
 		ArrayList<Double> leftWeights = new ArrayList<Double>();
-		//leftWeights.add(0.6);
 		layoutRowWeights.add(leftWeights);
 
 		ArrayList<JComponent> center = new ArrayList<JComponent>();
@@ -885,7 +879,7 @@ public class StacFrame extends JFrame
 		layout.add(left);
 		layoutColumnWeights.add(0.2);
 		layout.add(center);
-		layoutColumnWeights.add(0.75);
+		layoutColumnWeights.add(0.9);
 		layout.add(right);
 		buildWindow(layout, layoutRowWeights, layoutColumnWeights);
 	}
@@ -905,8 +899,8 @@ public class StacFrame extends JFrame
 	public void initSearch()
 	{
 		this.mainPanel.resetHighlighted(null);
-		Parameters.bytecodeArea.clear();
-		Parameters.rightArea.setText("");
+		/*Parameters.bytecodeArea.clear();
+		Parameters.rightArea.setText("");*/
 	}
 
 	public String getSearchInput(searchType search)
@@ -949,7 +943,7 @@ public class StacFrame extends JFrame
 
 	public void searchByID(String input)
 	{
-		AbstractLayoutVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
+		LayoutRootVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
 		StringTokenizer token = new StringTokenizer(input,", ");
 
 		int id1, id2;

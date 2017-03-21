@@ -3,20 +3,20 @@ package org.ucombinator.jaam.visualizer.layout;
 import java.util.HashSet;
 
 /**
- * Created by timothyjohnson on 2/15/17.
+ * Created by timothyjohnson on 3/20/17.
  */
-public class LayoutChainVertex extends AbstractLayoutVertex {
+public class LayoutRootVertex extends AbstractLayoutVertex {
 
-    public LayoutChainVertex(boolean drawEdges) {
-        super("", VertexType.CHAIN, drawEdges);
+    public LayoutRootVertex() {
+        super("root", VertexType.ROOT, false);
     }
 
     public String getRightPanelContent() {
-        return "Chain vertex, size = " + this.getInnerGraph().getVertices().size() + "\n";
+        return "Root vertex";
     }
 
     public String getShortDescription() {
-        return "Chain vertex, size = " + this.getInnerGraph().getVertices().size();
+        return "Root vertex";
     }
 
     public boolean searchByMethod(String query) {

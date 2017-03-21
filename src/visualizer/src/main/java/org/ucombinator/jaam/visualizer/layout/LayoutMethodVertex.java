@@ -1,5 +1,7 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import java.util.HashSet;
+
 /**
  * Created by timothyjohnson on 2/15/17.
  */
@@ -38,5 +40,11 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
     public void computeLoopHeight()
     {
         this.setLoopHeight(0);
+    }
+
+    public HashSet<LayoutMethodVertex> getMethodVertices() {
+        HashSet<LayoutMethodVertex> result = new HashSet<LayoutMethodVertex>();
+        result.add(this);
+        return result;
     }
 }

@@ -14,6 +14,7 @@ public class TakeInput extends Thread
 {
 	BufferedReader parseInput;
 	PacketInput packetInput;
+	public static boolean fakeData = true;
 
 	public void run(String file, boolean fromPackets)
 	{
@@ -57,9 +58,34 @@ public class TakeInput extends Thread
 
 	public void parsePackets(String file)
 	{
-		if(file.equals(""))
-			packetInput = new PacketInput(System.in);
-		try
+		if(file.equals("")) {
+			int dummyInstructions = 8;
+			for(int i = 0; i < dummyInstructions; i++) {
+				if(i < 5) {
+					Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
+							"Main.main", i, true);
+					Main.graph.addVertex((i + 1), inst, true);
+				}
+				else {
+					Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
+							"Main.func", i, true);
+					Main.graph.addVertex((i + 1), inst, true);
+				}
+			}
+
+			// Main.main
+			Main.graph.addEdge(0, 1);
+			Main.graph.addEdge(1, 2);
+			Main.graph.addEdge(1, 3);
+			Main.graph.addEdge(2, 4);
+			Main.graph.addEdge(3, 4);
+
+			// Main.func
+			Main.graph.addEdge(4, 5);
+			Main.graph.addEdge(5, 6);
+			Main.graph.addEdge(5, 7);
+		}
+		else try
 		{
 			packetInput = new PacketInput(new FileInputStream(file));
 			Packet packet = packetInput.read();

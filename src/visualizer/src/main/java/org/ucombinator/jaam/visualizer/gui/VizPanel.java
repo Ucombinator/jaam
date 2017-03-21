@@ -26,12 +26,8 @@ import java.awt.Color;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
-import org.ucombinator.jaam.visualizer.graph.Edge;
+import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
-import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
-import org.ucombinator.jaam.visualizer.layout.LayerFactory;
 import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 
@@ -43,10 +39,10 @@ public class VizPanel extends JFXPanel
 	public HashSet<AbstractLayoutVertex> highlighted;
 
 	public static float hues[]; //Used for shading nodes from green to red
-	private AbstractLayoutVertex panelRoot;
-	private javafx.scene.paint.Color[] colors = {javafx.scene.paint.Color.AQUAMARINE,
-			javafx.scene.paint.Color.GREEN, javafx.scene.paint.Color.AZURE,
-			javafx.scene.paint.Color.BLUEVIOLET, javafx.scene.paint.Color.DARKTURQUOISE};
+	private LayoutRootVertex panelRoot;
+	private javafx.scene.paint.Color[] colors = {javafx.scene.paint.Color.GREEN, javafx.scene.paint.Color.AZURE,
+			javafx.scene.paint.Color.AQUAMARINE, javafx.scene.paint.Color.BLUEVIOLET,
+			javafx.scene.paint.Color.DARKTURQUOISE};
 	public static int maxLoopHeight;
 
 	// The dimensions of the background for our graph
@@ -55,7 +51,7 @@ public class VizPanel extends JFXPanel
 	// Store the count for vertex width and height when everything is expanded
 	public double maxVertexWidth, maxVertexHeight;
 
-	public AbstractLayoutVertex getPanelRoot()
+	public LayoutRootVertex getPanelRoot()
 	{
 		return this.panelRoot;
 	}
@@ -84,7 +80,7 @@ public class VizPanel extends JFXPanel
 		this.setBackground(Color.WHITE);		
 	}
 
-	public void initFX(AbstractLayoutVertex root)
+	public void initFX(LayoutRootVertex root)
 	{
 		if(root == null)
 		{
