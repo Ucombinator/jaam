@@ -59,7 +59,7 @@ public class TakeInput extends Thread
 	public void parsePackets(String file)
 	{
 		if(file.equals("")) {
-			int dummyInstructions = 8;
+			int dummyInstructions = 14;
 			for(int i = 0; i < dummyInstructions; i++) {
 				if(i < 5) {
 					Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
@@ -83,7 +83,14 @@ public class TakeInput extends Thread
 			// Main.func
 			Main.graph.addEdge(4, 5);
 			Main.graph.addEdge(5, 6);
-			Main.graph.addEdge(5, 7);
+			Main.graph.addEdge(6, 7);
+			Main.graph.addEdge(6, 8);
+			Main.graph.addEdge(7, 9);
+			Main.graph.addEdge(8, 9);
+			Main.graph.addEdge(9, 10);
+			Main.graph.addEdge(10, 11);
+			Main.graph.addEdge(11, 12);
+			Main.graph.addEdge(12,13);
 		}
 		else try
 		{

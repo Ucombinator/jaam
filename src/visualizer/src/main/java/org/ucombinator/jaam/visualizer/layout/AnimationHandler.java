@@ -137,9 +137,52 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 				
 		event.consume();
 	}
-	
+
 	private void animateRecursive(final AbstractLayoutVertex v, ParallelTransition pt)
 	{
+		// TODO: Move arrows as well as nodes.
+		System.out.println("Size of node " + v.getId() + ": " + v.getWidth() + ", " + v.getHeight());
+		System.out.println("Location: " + v.getX() + ", " + v.getY());
+		GUINode node = v.getGraphics();
+		double newWidth = Parameters.stFrame.mainPanel.scaleX(v.getWidth());
+		double newHeight = Parameters.stFrame.mainPanel.scaleY(v.getHeight());
+		double currWidth = node.getWidth() * node.getTotalParentScaleX();
+		double currHeight = node.getHeight() * node.getTotalParentScaleY();
+
+		double toScaleX = newWidth / currWidth;
+		double toScaleY = newHeight / currHeight;
+		System.out.println(String.format("Scale X: %.3f", toScaleX));
+		System.out.println(String.format("Scale Y: %.3f", toScaleY));
+
+		// Shift to keep upper left corner in the same place after scaling
+		System.out.println("Compare widths: " + currWidth + ", " + newWidth);
+		System.out.println("Compare heights: " + currHeight + ", " + newHeight);
+		double xShift = 0.5 * currWidth * (toScaleX - 1);
+		double yShift = 0.5 * currHeight * (toScaleY - 1);
+		//double xShift = 0;
+		//double yShift = 0;
+		System.out.println("Shift: " + xShift + ", " + yShift);
+		double toX = Parameters.stFrame.mainPanel.scaleX(v.getX()) + xShift;
+		double toY = Parameters.stFrame.mainPanel.scaleY(v.getY()) + yShift;
+
+		if(!(v instanceof LayoutRootVertex)) {
+			node.setTotalScaleX(toScaleX * node.getTotalParentScaleX());
+			node.setTotalScaleY(toScaleY * node.getTotalParentScaleY());
+			if (toScaleX != node.getScaleX() || toScaleY != node.getScaleY()) {
+				ScaleTransition st = new ScaleTransition(Duration.millis(transitionTime), node);
+				st.setToX(toScaleX);
+				st.setToY(toScaleY);
+				pt.getChildren().addAll(st);
+			}
+
+			if (toX != node.getTranslateX() || toY != node.getTranslateY()) {
+				TranslateTransition tt = new TranslateTransition(Duration.millis(transitionTime), node);
+				tt.setToX(toX);
+				tt.setToY(toY);
+				pt.getChildren().addAll(tt);
+			}
+		}
+
 		Iterator<AbstractLayoutVertex> it = v.getInnerGraph().getVertices().values().iterator();
 		while(it.hasNext()){
 			AbstractLayoutVertex next = it.next();
@@ -148,33 +191,6 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 			}
 		}
 
-		// TODO: Move arrows as well as nodes.
-		GUINode node = v.getGraphics();
-		double pixelWidth = Parameters.stFrame.mainPanel.scaleX(v.getWidth());
-		double pixelHeight = Parameters.stFrame.mainPanel.scaleY(v.getHeight());
-		double toScaleX = pixelWidth / node.getWidth();
-		double toScaleY = pixelHeight / node.getHeight();
-
-		double xShift = 0.5*node.getWidth()*(toScaleX - 1);
-		double yShift = 0.5*node.getHeight()*(toScaleY - 1);
-		double toX = Parameters.stFrame.mainPanel.scaleX(v.getX()) + xShift;
-		double toY = Parameters.stFrame.mainPanel.scaleY(v.getY()) + yShift;
-
-		if(toScaleX != node.getScaleX() || toScaleY != node.getScaleY())
-		{
-			ScaleTransition st = new ScaleTransition(Duration.millis(transitionTime), node);
-			st.setToX(toScaleX);
-			st.setToY(toScaleY);
-			pt.getChildren().addAll(st);
-		}
-
-		if(toX != node.getTranslateX() || toY != node.getTranslateY())
-		{
-			TranslateTransition tt = new TranslateTransition(Duration.millis(transitionTime), node);
-			tt.setToX(toX);
-			tt.setToY(toY);
-			pt.getChildren().addAll(tt);
-		}
 	}
 
 	private void handlePrimarySingleClick(MouseEvent event)

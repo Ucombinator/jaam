@@ -36,6 +36,9 @@ public class GUINode extends Pane
     boolean labelsEnabled = false;
     boolean isDragging;
 
+    private double totalScaleX;
+    private double totalScaleY;
+
     public GUINode(GUINode parent, AbstractLayoutVertex v)
     {
         super();
@@ -56,10 +59,11 @@ public class GUINode extends Pane
         }
 
         this.isDragging = false;
+        this.totalScaleX = 1;
+        this.totalScaleY = 1;
 
         this.addMouseEvents();
         this.setVisible(true);
-       
     }
     
     public AbstractLayoutVertex getVertex() {
@@ -274,4 +278,36 @@ public class GUINode extends Pane
 //                obj.parent.rect.setOpacity(1);
         }
     };
+
+	public GUINode getParentNode() {
+	    return this.parent;
+    }
+
+    public double getTotalParentScaleX() {
+	    if (this.parent != null)
+	        return this.parent.totalScaleX;
+	    else return 1;
+    }
+
+    public double getTotalParentScaleY() {
+	    if (this.parent != null)
+	        return this.parent.totalScaleY;
+	    else return 1;
+    }
+
+	public void setTotalScaleX(double scale) {
+	    this.totalScaleX = scale;
+    }
+
+	public double getTotalScaleX() {
+	    return this.totalScaleX;
+    }
+
+    public void setTotalScaleY(double scale) {
+	    this.totalScaleY = scale;
+    }
+
+    public double getTotalScaleY() {
+	    return this.totalScaleY;
+    }
 }

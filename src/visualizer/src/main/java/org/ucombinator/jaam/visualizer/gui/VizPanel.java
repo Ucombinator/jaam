@@ -46,7 +46,7 @@ public class VizPanel extends JFXPanel
 	public static int maxLoopHeight;
 
 	// The dimensions of the background for our graph
-	public double rootWidth = 500.0, rootHeight = 500.0;
+	public final double rootWidth = 500.0, rootHeight = 500.0;
 
 	// Store the count for vertex width and height when everything is expanded
 	public double maxVertexWidth, maxVertexHeight;
@@ -111,22 +111,22 @@ public class VizPanel extends JFXPanel
 
 	public double scaleX(double coordinate)
 	{
-		return factorX*(coordinate * rootWidth / this.maxVertexWidth);
+		return factorX * (coordinate * rootWidth / this.maxVertexWidth);
 	}
 
 	public double scaleY(double coordinate)
 	{
-		return factorY*(coordinate * rootHeight / this.maxVertexHeight);
+		return factorY * (coordinate * rootHeight / this.maxVertexHeight);
 	}
 
 	public double invScaleX(double pixelCoordinate)
 	{
-		return (pixelCoordinate * this.maxVertexWidth / rootWidth);
+		return (pixelCoordinate * this.maxVertexWidth / rootWidth) / factorX;
 	}
 
 	public double invScaleY(double pixelCoordinate)
 	{
-		return (pixelCoordinate * this.maxVertexHeight / rootHeight);
+		return (pixelCoordinate * this.maxVertexHeight / rootHeight) / factorY;
 	}
 
 	public double getZoomLevel()

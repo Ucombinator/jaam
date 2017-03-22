@@ -28,7 +28,6 @@ public class LayoutAlgorithm
 		initializeSizes(parentVertex);
 		defaultLayout(parentVertex);
 	}
-	
 
 	/*********************************************************************/
 	/**********LAYS OUT EACH LEVEL OF THE CLUSTERED GRAPH******************/
@@ -64,7 +63,7 @@ public class LayoutAlgorithm
 		itClear = graph.getVertices().values().iterator();
 			while(itClear.hasNext()){itClear.next().setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);}
 		if(root!=null){
-			assingXandYtoInnerNodesAndGiveParentBBox(root, MARGIN_PADDING, MARGIN_PADDING);
+			assignXandYtoInnerNodesAndGiveParentBBox(root, MARGIN_PADDING, MARGIN_PADDING);
 			parentVertex.setWidth(bboxWidth.get(root.getStrID()) + 2 * MARGIN_PADDING);
 			parentVertex.setHeight(bboxHeight.get(root.getStrID()) + 2 * MARGIN_PADDING);
 		}else{
@@ -75,12 +74,12 @@ public class LayoutAlgorithm
 	}
 	
 	/**
-	 * Preconditions: Height and Width of the inner nodes of the graph is (resursively known)
+	 * Preconditions: Height and Width of the inner nodes of the graph is (recursively known)
 	 * input: graph and left/top offset
 	 * Changes of Status: assigns X and Y to the inner vertices of the graph
 	 * Output: returns the W and H to be assign to the parent node
 	 * */
-	public static void assingXandYtoInnerNodesAndGiveParentBBox(AbstractLayoutVertex root, double left, double top)
+	public static void assignXandYtoInnerNodesAndGiveParentBBox(AbstractLayoutVertex root, double left, double top)
 	{
 		root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
 		Iterator<AbstractLayoutVertex> it = root.getOutgoingNeighbors().iterator();
@@ -118,7 +117,7 @@ public class LayoutAlgorithm
 		while(itGray.hasNext())
 		{
 			AbstractLayoutVertex curVer = itGray.next();
-			assingXandYtoInnerNodesAndGiveParentBBox(curVer,currentWidth + left+AX,NODES_PADDING + top + root.getHeight());
+			assignXandYtoInnerNodesAndGiveParentBBox(curVer,currentWidth + left+AX,NODES_PADDING + top + root.getHeight());
 			currentWidth += bboxWidth.get(curVer.getStrID()) + NODES_PADDING;
 			currentHeight = Math.max(currentHeight, bboxHeight.get(curVer.getStrID()));
 		}
