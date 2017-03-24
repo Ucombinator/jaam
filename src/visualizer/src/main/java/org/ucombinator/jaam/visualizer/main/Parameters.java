@@ -9,9 +9,9 @@ import javafx.scene.control.TextArea;
 import java.awt.Font;
 import java.awt.Color;
 
+import org.ucombinator.jaam.visualizer.gui.SearchResults;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.gui.CodeArea;
-import org.ucombinator.jaam.visualizer.gui.SearchArea;
 import org.ucombinator.jaam.visualizer.gui.StacFrame;
 
 // TODO: Remove stFrame variable and make StacFrame a singleton class
@@ -25,7 +25,7 @@ public class Parameters
 	public static TextArea rightArea;
 	public static CodeArea bytecodeArea;
 	public static CodeArea decompiledArea;
-    public static SearchArea searchArea;
+    public static SearchResults searchResults;
 	public static String currDirectory = "./";
 	public static javafx.scene.paint.Color fxColorFocus = javafx.scene.paint.Color.BLUE,
 			fxColorSelection = javafx.scene.paint.Color.ALICEBLUE,
@@ -95,7 +95,7 @@ public class Parameters
 		{
 			//bytecodeArea.setDescription();
 			setRightText();
-			searchArea.writeText();
+			searchResults.writeText();
 		}
 
 		stFrame.repaint();

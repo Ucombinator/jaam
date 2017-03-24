@@ -4,47 +4,32 @@ import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
+import javafx.geometry.Pos;
+import javafx.geometry.Insets;
 import javafx.scene.Group;
+import javafx.scene.layout.*;
 import javafx.util.Duration;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.Label;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.control.CheckBox;
+import javafx.event.EventHandler;
 
 import java.io.File;
 import java.util.ArrayList;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.GridLayout;
-import java.awt.FlowLayout;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.Font;
 import java.util.StringTokenizer;
 
-import javax.swing.JCheckBox;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.BorderFactory;
-import javax.swing.SwingConstants;
-
-import javax.swing.KeyStroke;
-import javax.swing.JLabel;
-import javax.swing.JButton;
+import javax.swing.*;
 
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
@@ -65,12 +50,10 @@ public class StacFrame extends JFrame
 	private int width, height;
 	private ArrayList<JSplitPane> horizontalSplitPanes;
 	public VizPanel mainPanel;
-	private JPanel menuPanel, searchPanel;
-	private JFXPanel bytecodePanel, rightPanel;
-	//private JPanel decompiledPanel;
-	public JCheckBox showEdge;
-    public SearchField searchF;
-	
+	private JPanel searchPanel;
+	private JFXPanel menuPanel, bytecodePanel, rightPanel;
+	public CheckBox showEdge;
+
 	public enum searchType
 	{
 		ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
@@ -192,7 +175,7 @@ public class StacFrame extends JFrame
             }
         );
         searchTags.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK));
-        
+
 		JMenuItem searchLeaves = new JMenuItem("All leaves");
 		menuSearch.add(searchLeaves);
 		searchLeaves.addActionListener
@@ -206,7 +189,7 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-		
+
 		JMenuItem searchSources = new JMenuItem("All sources");
 		menuSearch.add(searchSources);
 		searchSources.addActionListener
@@ -220,76 +203,6 @@ public class StacFrame extends JFrame
 					}
 				}
 		);
-		
-		JMenuItem searchOutgoing = new JMenuItem("Outgoing neighborhood (open)");
-		menuSearch.add(searchOutgoing);
-		searchOutgoing.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						searchAndHighlight(searchType.OUT_OPEN);
-						Parameters.repaintAll();
-					}
-				}
-		);
-
-		JMenuItem searchOutgoingClosed = new JMenuItem("Outgoing neighborhood (closed)");
-		menuSearch.add(searchOutgoingClosed);
-		searchOutgoingClosed.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						searchAndHighlight(searchType.OUT_CLOSED);
-						Parameters.repaintAll();
-					}
-				}
-		);
-
-		JMenuItem searchIncoming = new JMenuItem("Incoming neighborhood (open)");
-		menuSearch.add(searchIncoming);
-		searchIncoming.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						searchAndHighlight(searchType.IN_OPEN);
-						Parameters.repaintAll();
-					}
-				}
-		);
-
-		JMenuItem searchIncomingClosed = new JMenuItem("Incoming neighborhood (closed)");
-		menuSearch.add(searchIncomingClosed);
-		searchIncomingClosed.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						searchAndHighlight(searchType.IN_CLOSED);
-						Parameters.repaintAll();
-					}
-				}
-		);
-
-		JMenuItem searchPathToRoot = new JMenuItem("Path to Root");
-		menuSearch.add(searchPathToRoot);
-		searchPathToRoot.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						searchAndHighlight(searchType.ROOT_PATH);
-						Parameters.repaintAll();
-					}
-				}
-		);*/
 
         // TODO: Re-implement this menu item.
 		/*JMenuItem clearAll = new JMenuItem("Clear All");
@@ -310,22 +223,6 @@ public class StacFrame extends JFrame
 		//Navigation menu
 		menuNavigation = new JMenu("Navigation");
 		menuBar.add(menuNavigation);
-		
-        /*JMenuItem rearrange = new JMenuItem("Rearrange graph");
-        menuNavigation.add(rearrange);
-        rearrange.addActionListener
-        (
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						Main.graph.root.rearrangeByWidth();
-						Main.graph.root.centerizeXCoordinate();
-						Parameters.repaintAll();
-					}
-				}
-		);
-        rearrange.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, ActionEvent.CTRL_MASK));*/
 
 		JMenuItem resetGraph = new JMenuItem("Reset view");
 		menuNavigation.add(resetGraph);
@@ -474,326 +371,8 @@ public class StacFrame extends JFrame
 		//centerPanel and mainPanel
 		this.setLayout(new BorderLayout());
 		setSplitScreen();
-
 		this.addKeyboard(mainPanel);
-        
-        JPanel topPanel = new JPanel();
-        topPanel.setBorder(BorderFactory.createEtchedBorder());
-        topPanel.setLayout(new BorderLayout());
-        this.getContentPane().add(topPanel, BorderLayout.NORTH);
-
-		//menuPanel
-		this.menuPanel = new JPanel();
-		this.menuPanel.setBorder(BorderFactory.createEtchedBorder());
-		this.menuPanel.setLayout(new FlowLayout());
-        topPanel.add(this.menuPanel, BorderLayout.CENTER);
-
-		JPanel controlPanel = new JPanel();
-		controlPanel.setBorder(BorderFactory.createEtchedBorder());
-		controlPanel.setLayout(new GridLayout(1,1));
-		this.menuPanel.add(controlPanel);
-		
-		showEdge = new JCheckBox("Show edges");
-		showEdge.setEnabled(true);
-		showEdge.setSelected(true);
-		showEdge.addItemListener
-		(
-			new ItemListener()
-			{
-				public void itemStateChanged(ItemEvent e)
-				{
-					Platform.runLater(new Runnable() {
-						
-						@Override
-						public void run() {
-							// TODO: When this is checked off and then back on, the edges don't reappear.
-							Parameters.edgeVisible = showEdge.isSelected();
-							mainPanel.getPanelRoot().setEdgeVisibility(Parameters.edgeVisible);
-							for(AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
-								v.setEdgeVisibility(showEdge.isSelected());
-						}
-					});
-
-				}
-			}
-		);
-		controlPanel.add(showEdge);
-		
-		JPanel sizePanel = new JPanel();
-		sizePanel.setBorder(BorderFactory.createEtchedBorder());
-		sizePanel.setLayout(new GridLayout(1,3));
-		this.menuPanel.add(sizePanel);
-		
-		JButton sizeMinus = new JButton("-");
-		sizeMinus.setEnabled(true);
-		sizeMinus.addActionListener
-		(
-			new ActionListener()
-			{
-				public void actionPerformed(ActionEvent e)
-				{
-					ParallelTransition pt = new ParallelTransition();
-					for(AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
-					{
-						GUINode node = v.getGraphics();
-						ScaleTransition st = new ScaleTransition(Duration.millis(300), node);
-						st.setToX(node.getScaleX() * Parameters.boxFactor);
-						st.setToY(node.getScaleY() * Parameters.boxFactor);
-						pt.getChildren().add(st);
-					}
-					pt.play();
-				}
-			}
-		);
-		sizePanel.add(sizeMinus);
-		
-		JLabel sizeL = new JLabel("Box size");
-		sizeL.setHorizontalAlignment(SwingConstants.CENTER);
-		sizePanel.add(sizeL);
-		
-		JButton sizePlus = new JButton("+");
-		sizePlus.setEnabled(true);
-		sizePlus.addActionListener
-		(
-			new ActionListener()
-			{
-				public void actionPerformed(ActionEvent e)
-				{
-					ParallelTransition pt = new ParallelTransition();
-					for(AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
-					{
-						GUINode node = v.getGraphics();
-						ScaleTransition st = new ScaleTransition(Duration.millis(300), node);
-						st.setToX(node.getScaleX() * 1.0 / Parameters.boxFactor);
-						st.setToY(node.getScaleY() * 1.0 / Parameters.boxFactor);
-						pt.getChildren().add(st);
-					}
-					pt.play();
-				}
-			}
-		);
-		sizePanel.add(sizePlus);
-		
-/********************************************************************************/
-		JPanel xScalePanel = new JPanel();
-		xScalePanel.setBorder(BorderFactory.createEtchedBorder());
-		xScalePanel.setLayout(new GridLayout(1,3));
-		this.menuPanel.add(xScalePanel);
-		
-		JButton xScalePanelMinus = new JButton("-");
-		xScalePanelMinus.setEnabled(true);
-		xScalePanelMinus.addActionListener
-		(
-			new ActionListener()
-			{
-				public void actionPerformed(ActionEvent e)
-				{
-					Platform.runLater(new Runnable() { 
-			            @Override
-			            public void run() {
-							Parameters.stFrame.mainPanel.decrementScaleXFactor();
-							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
-							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
-							Parameters.stFrame.mainPanel.getPanelRoot().reset();
-			            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-			            	Parameters.stFrame.mainPanel.resetPanelSize();
-
-							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
-			            }
-			        });
-				}
-			}
-		);
-		xScalePanel.add(xScalePanelMinus);
-		
-		JLabel xScaleL = new JLabel("X scale");
-		xScaleL.setHorizontalAlignment(SwingConstants.CENTER);
-		xScalePanel.add(xScaleL);
-		
-		JButton xScalePlus = new JButton("+");
-		xScalePlus.setEnabled(true);
-		xScalePlus.addActionListener
-		(
-			new ActionListener()
-			{
-				public void actionPerformed(ActionEvent e)
-				{
-					Platform.runLater(new Runnable() { 
-			            @Override
-			            public void run() {
-							Parameters.stFrame.mainPanel.incrementScaleXFactor();
-							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
-							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
-							Parameters.stFrame.mainPanel.getPanelRoot().reset();
-			            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-			            	Parameters.stFrame.mainPanel.resetPanelSize();
-
-							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
-			            }
-			        });
-				}
-			}
-		);
-		xScalePanel.add(xScalePlus);
-/************************************************************************************/
-		
-		
-		JPanel yScalePanel = new JPanel();
-		yScalePanel.setBorder(BorderFactory.createEtchedBorder());
-		yScalePanel.setLayout(new GridLayout(1,3));
-		this.menuPanel.add(yScalePanel);
-		
-		JButton yScalePanelMinus = new JButton("-");
-		yScalePanelMinus.setEnabled(true);
-		yScalePanelMinus.addActionListener
-		(
-			new ActionListener()
-			{
-				public void actionPerformed(ActionEvent e)
-				{
-					Platform.runLater(new Runnable() { 
-			            @Override
-			            public void run() {
-							Parameters.stFrame.mainPanel.decrementScaleYFactor();
-							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
-							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
-							Parameters.stFrame.mainPanel.getPanelRoot().reset();
-			            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-			            	Parameters.stFrame.mainPanel.resetPanelSize();
-
-							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
-			            }
-			        });
-				}
-			}
-		);
-		yScalePanel.add(yScalePanelMinus);
-		
-		JLabel yScaleL = new JLabel("Y scale");
-		yScaleL.setHorizontalAlignment(SwingConstants.CENTER);
-		yScalePanel.add(yScaleL);
-		
-		JButton yScalePlus = new JButton("+");
-		yScalePlus.setEnabled(true);
-		yScalePlus.addActionListener
-		(
-			new ActionListener()
-			{
-				public void actionPerformed(ActionEvent e)
-				{
-					Platform.runLater(new Runnable() { 
-			            @Override
-			            public void run() {
-							Parameters.stFrame.mainPanel.incrementScaleYFactor();
-							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
-							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
-							Parameters.stFrame.mainPanel.getPanelRoot().reset();
-			            	LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-			            	Parameters.stFrame.mainPanel.resetPanelSize();
-
-							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
-			            }
-			        });
-				}
-			}
-		);
-		yScalePanel.add(yScalePlus);
-
-/***************************************************************************************/
-		
-		JPanel collpasePanel = new JPanel();
-		this.menuPanel.add(collpasePanel);
-		
-		
-		final Color activeColor = Color.CYAN;
-		final Color inactiveColor = Color.BLACK;
-
-		final JButton methodCollapse = new JButton("M");
-		methodCollapse.setOpaque(true);
-		methodCollapse.setForeground(inactiveColor);
-		
-		methodCollapse.setEnabled(true);
-		methodCollapse.addActionListener
-		(
-			new ActionListener()
-			{
-				boolean methodExpanded = true;
-				public void actionPerformed(ActionEvent e)
-				{
-					methodExpanded = !methodExpanded;
-					Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
-							methodExpanded);
-					Platform.runLater(new Runnable() {
-						@Override
-						public void run() {
-							if(methodCollapse.getForeground()==activeColor){
-								methodCollapse.setForeground(inactiveColor);
-							}else{
-								methodCollapse.setForeground(activeColor);
-							}
-							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
-							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
-							Parameters.stFrame.mainPanel.getPanelRoot().reset();
-							LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-							Parameters.stFrame.mainPanel.resetPanelSize();
-
-							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
-						}
-					});
-				}
-			}
-		);
-		collpasePanel.add(methodCollapse);
-	
-		
-		final JButton chainCollapse = new JButton("C");
-		chainCollapse.setForeground(inactiveColor);
-		chainCollapse.setEnabled(true);
-
-		chainCollapse.addActionListener
-		(
-			new ActionListener()
-			{
-				boolean chainExpanded = true;
-				public void actionPerformed(ActionEvent e)
-				{
-					chainExpanded = !chainExpanded;
-					Parameters.stFrame.mainPanel.getPanelRoot()
-							.toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN,chainExpanded);
-					Platform.runLater(new Runnable() {
-						@Override
-						public void run() {
-							if(chainCollapse.getForeground()==activeColor){
-								chainCollapse.setForeground(inactiveColor);
-							}else{
-								chainCollapse.setForeground(activeColor);
-							}
-							GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
-							((Group)rootGraphics.getParent()).getChildren().remove(rootGraphics);
-							Parameters.stFrame.mainPanel.getPanelRoot().reset();
-							LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-							Parameters.stFrame.mainPanel.resetPanelSize();
-
-							Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-							Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
-						}
-					});
-				}
-			}
-		);
-		collpasePanel.add(chainCollapse);
-		
-		
-/***************************************************************************************/		
-        
-        // Search bar
-        this.searchF = new SearchField();
-        this.getContentPane().add(searchF, BorderLayout.SOUTH);
+		this.getContentPane().add(this.menuPanel, BorderLayout.NORTH);
 
 		this.setVisible(true);
 		this.repaint();
@@ -808,6 +387,319 @@ public class StacFrame extends JFrame
 	}
 
 	public void makeJFXPanels() {
+		// Why is this still not visible?
+		menuPanel = new JFXPanel();
+		/*BorderPane menuPane = new BorderPane();
+		menuPane.setTop(new Label("Menu test"));
+		menuPanel.setScene(new Scene(menuPane));*/
+
+		FlowPane menuFlowPane = new FlowPane();
+		menuFlowPane.setPadding(new Insets(5, 0, 5, 0));
+		menuFlowPane.setVgap(5);
+		menuFlowPane.setHgap(5);
+		menuFlowPane.setPrefWrapLength(400);
+		menuFlowPane.setMinHeight(50);
+
+		menuPanel.setScene(new Scene(menuFlowPane));
+
+		GridPane controlPanel = new GridPane();
+		controlPanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
+				BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+
+		showEdge = new CheckBox("Show edges");
+		showEdge.setSelected(true);
+		showEdge.setOnAction
+				(
+						new EventHandler<javafx.event.ActionEvent>()
+						{
+							@Override
+							public void handle(javafx.event.ActionEvent e) {
+								Platform.runLater(new Runnable() {
+
+									@Override
+									public void run() {
+										// TODO: When this is checked off and then back on, the edges don't reappear.
+										Parameters.edgeVisible = showEdge.isSelected();
+										mainPanel.getPanelRoot().setEdgeVisibility(Parameters.edgeVisible);
+										for (AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+											v.setEdgeVisibility(showEdge.isSelected());
+									}
+								});
+							}
+						}
+				);
+		controlPanel.add(showEdge, 0, 0);
+		menuFlowPane.getChildren().add(controlPanel);
+
+		GridPane sizePanel = new GridPane();
+		sizePanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
+				BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+
+		menuFlowPane.getChildren().add(sizePanel);
+
+		Button sizeMinus = new Button("-");
+		sizeMinus.setOnAction
+				(
+						new EventHandler<javafx.event.ActionEvent>()
+
+						{
+							@Override
+							public void handle(javafx.event.ActionEvent e) {
+								ParallelTransition pt = new ParallelTransition();
+								for (AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values()) {
+									GUINode node = v.getGraphics();
+									ScaleTransition st = new ScaleTransition(Duration.millis(300), node);
+									st.setToX(node.getScaleX() * Parameters.boxFactor);
+									st.setToY(node.getScaleY() * Parameters.boxFactor);
+									pt.getChildren().add(st);
+								}
+								pt.play();
+							}
+						}
+				);
+		sizePanel.add(sizeMinus, 0, 0);
+
+		Label sizeL = new Label("Box size");
+		sizeL.setAlignment(Pos.CENTER);
+		sizePanel.add(sizeL, 1, 0);
+
+		Button sizePlus = new Button("+");
+		sizePlus.setOnAction
+				(
+						new EventHandler<javafx.event.ActionEvent>()
+
+						{
+							@Override
+							public void handle(javafx.event.ActionEvent e) {
+								ParallelTransition pt = new ParallelTransition();
+								for (AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values()) {
+									GUINode node = v.getGraphics();
+									ScaleTransition st = new ScaleTransition(Duration.millis(300), node);
+									st.setToX(node.getScaleX() * 1.0 / Parameters.boxFactor);
+									st.setToY(node.getScaleY() * 1.0 / Parameters.boxFactor);
+									pt.getChildren().add(st);
+								}
+								pt.play();
+							}
+						}
+				);
+		sizePanel.add(sizePlus, 2, 0);
+
+		GridPane xScalePanel = new GridPane();
+		xScalePanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
+				BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+
+		menuFlowPane.getChildren().add(xScalePanel);
+
+		Button xScalePanelMinus = new Button("-");
+		xScalePanelMinus.setOnAction
+				(
+						new EventHandler<javafx.event.ActionEvent>()
+
+						{
+							@Override
+							public void handle(javafx.event.ActionEvent event) {
+								Platform.runLater(new Runnable() {
+									@Override
+									public void run() {
+										Parameters.stFrame.mainPanel.decrementScaleXFactor();
+										GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+										((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
+										Parameters.stFrame.mainPanel.getPanelRoot().reset();
+										LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.resetPanelSize();
+
+										Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+									}
+								});
+							}
+						}
+				);
+		xScalePanel.add(xScalePanelMinus, 0, 0);
+
+		Label xScaleL = new Label("X scale");
+		xScaleL.setAlignment(Pos.CENTER);
+		xScalePanel.add(xScaleL, 1, 0);
+
+		Button xScalePlus = new Button("+");
+		xScalePlus.setOnAction
+				(
+						new EventHandler<javafx.event.ActionEvent>()
+
+						{
+							@Override
+							public void handle(javafx.event.ActionEvent e) {
+								Platform.runLater(new Runnable() {
+									@Override
+									public void run() {
+										Parameters.stFrame.mainPanel.incrementScaleXFactor();
+										GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+										((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
+										Parameters.stFrame.mainPanel.getPanelRoot().reset();
+										LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.resetPanelSize();
+
+										Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+									}
+								});
+							}
+						}
+				);
+		xScalePanel.add(xScalePlus, 2, 0);
+
+
+		GridPane yScalePanel = new GridPane();
+		yScalePanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
+				BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+		menuFlowPane.getChildren().add(yScalePanel);
+
+		Button yScalePanelMinus = new Button("-");
+		yScalePanelMinus.setOnAction
+				(
+						new EventHandler<javafx.event.ActionEvent>()
+
+						{
+							@Override
+							public void handle(javafx.event.ActionEvent event) {
+								Platform.runLater(new Runnable() {
+									@Override
+									public void run() {
+										Parameters.stFrame.mainPanel.decrementScaleYFactor();
+										GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+										((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
+										Parameters.stFrame.mainPanel.getPanelRoot().reset();
+										LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.resetPanelSize();
+
+										Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+									}
+								});
+							}
+						}
+				);
+		yScalePanel.add(yScalePanelMinus, 0, 0);
+
+		Label yScaleL = new Label("Y scale");
+		yScaleL.setAlignment(Pos.CENTER);
+		yScalePanel.add(yScaleL, 1, 0);
+
+		Button yScalePlus = new Button("+");
+		yScalePlus.setOnAction
+				(
+						new EventHandler<javafx.event.ActionEvent>()
+
+						{
+							@Override
+							public void handle(javafx.event.ActionEvent event) {
+								Platform.runLater(new Runnable() {
+									@Override
+									public void run() {
+										Parameters.stFrame.mainPanel.incrementScaleYFactor();
+										GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+										((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
+										Parameters.stFrame.mainPanel.getPanelRoot().reset();
+										LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.resetPanelSize();
+
+										Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+									}
+								});
+							}
+						}
+				);
+		yScalePanel.add(yScalePlus, 2, 0);
+
+
+		FlowPane collapsePanel = new FlowPane();
+		collapsePanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
+				BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+		menuFlowPane.getChildren().add(collapsePanel);
+
+		final javafx.scene.paint.Color activeColor = javafx.scene.paint.Color.CYAN;
+		final javafx.scene.paint.Color inactiveColor = javafx.scene.paint.Color.BLACK;
+
+		final Button methodCollapse = new Button("M");
+		methodCollapse.setTextFill(inactiveColor);
+		methodCollapse.setOnAction
+				(
+						new EventHandler<javafx.event.ActionEvent>()
+
+						{
+							boolean methodExpanded = true;
+
+							@Override
+							public void handle(javafx.event.ActionEvent e) {
+								methodExpanded = !methodExpanded;
+								Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
+										methodExpanded);
+
+								Platform.runLater(new Runnable() {
+									@Override
+									public void run() {
+										if (methodCollapse.getTextFill() == activeColor) {
+											methodCollapse.setTextFill(inactiveColor);
+										} else {
+											methodCollapse.setTextFill(activeColor);
+										}
+
+										GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+										((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
+										Parameters.stFrame.mainPanel.getPanelRoot().reset();
+										LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.resetPanelSize();
+
+										Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+									}
+								});
+							}
+						}
+				);
+		collapsePanel.getChildren().add(methodCollapse);
+
+		final Button chainCollapse = new Button("C");
+		chainCollapse.setTextFill(inactiveColor);
+		chainCollapse.setOnAction
+				(
+						new EventHandler<javafx.event.ActionEvent>()
+						{
+							boolean chainExpanded = true;
+
+							@Override
+							public void handle(javafx.event.ActionEvent e) {
+								chainExpanded = !chainExpanded;
+								Parameters.stFrame.mainPanel.getPanelRoot()
+										.toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN, chainExpanded);
+								Platform.runLater(new Runnable() {
+									@Override
+									public void run() {
+										if (chainCollapse.getTextFill() == activeColor) {
+											chainCollapse.setTextFill(inactiveColor);
+										} else {
+											chainCollapse.setTextFill(activeColor);
+										}
+
+										GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+										((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
+										Parameters.stFrame.mainPanel.getPanelRoot().reset();
+										LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.resetPanelSize();
+
+										Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+									}
+								});
+							}
+						}
+				);
+		collapsePanel.getChildren().add(chainCollapse);
+		System.out.println("Menu sections: " + menuFlowPane.getChildren().size());
+
+
 		// TODO: Set sizes to fill parent
 		bytecodePanel = new JFXPanel();
 		BorderPane leftRoot = new BorderPane();
@@ -845,10 +737,10 @@ public class StacFrame extends JFrame
 
         searchPanel = new JPanel();
         JLabel searchL = new JLabel("Search Results", JLabel.CENTER);
-        Parameters.searchArea = new SearchArea();
+        Parameters.searchResults = new SearchResults();
         searchPanel.setLayout(new BorderLayout());
         searchPanel.add(searchL,BorderLayout.NORTH);
-        JScrollPane scrollS = new JScrollPane (Parameters.searchArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+        JScrollPane scrollS = new JScrollPane (Parameters.searchResults, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         searchPanel.add(scrollS, BorderLayout.CENTER);
         searchPanel.setFont(Parameters.font);
@@ -972,9 +864,6 @@ public class StacFrame extends JFrame
 
 			public void keyPressed(KeyEvent ev)
 			{
-				if(SearchField.focused)
-					return;
-
 				int code = ev.getKeyCode();
 				if(code == 'L')
 				{

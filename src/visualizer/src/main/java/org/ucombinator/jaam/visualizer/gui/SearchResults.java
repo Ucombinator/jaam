@@ -14,13 +14,13 @@ import java.awt.Component;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 
-public class SearchArea extends JPanel
+public class SearchResults extends JPanel
 {
     public JTree searchTree;
     private DefaultMutableTreeNode root;
     public static int nodeHeight = 40;
     
-	public SearchArea()
+	public SearchResults()
 	{
         this.setLayout(new BorderLayout());
         
@@ -28,7 +28,7 @@ public class SearchArea extends JPanel
         this.searchTree = new JTree(root);
         this.searchTree.setShowsRootHandles(true);
         this.searchTree.setRootVisible(false);
-        this.searchTree.setRowHeight(SearchArea.nodeHeight);
+        this.searchTree.setRowHeight(SearchResults.nodeHeight);
         this.searchTree.setCellRenderer(new SearchRenderer());
 
         this.add(this.searchTree, BorderLayout.CENTER);
@@ -100,8 +100,8 @@ public class SearchArea extends JPanel
     /*public void fixCaretPosition()
     {
         Rectangle window = this.searchTree.getVisibleRect();
-        int first = this.searchTree.getClosestRowForLocation(window.x, window.y + SearchArea.nodeHeight);
-        int last  = this.searchTree.getClosestRowForLocation(window.x, window.y + window.height - SearchArea.nodeHeight);
+        int first = this.searchTree.getClosestRowForLocation(window.x, window.y + SearchResults.nodeHeight);
+        int last  = this.searchTree.getClosestRowForLocation(window.x, window.y + window.height - SearchResults.nodeHeight);
         
         if(first < 0)
             return;
