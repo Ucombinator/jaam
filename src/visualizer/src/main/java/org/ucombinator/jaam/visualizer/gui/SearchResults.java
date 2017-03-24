@@ -3,7 +3,6 @@ package org.ucombinator.jaam.visualizer.gui;
 import javax.swing.JPanel;
 import javax.swing.JLabel;
 import java.awt.Color;
-import java.awt.Rectangle;
 import java.awt.BorderLayout;
 
 import javax.swing.JTree;
