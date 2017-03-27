@@ -16,21 +16,30 @@ class Taint extends Main("taint") {
   footer("")
 
   // TODO: specify required options
-  val className = opt[String](descr = "TODO:document")
-  val method = opt[String](descr = "TODO:document")
+  val className = opt[String](descr = "FQN (package and class) of the class being analyzed")
+  val method = opt[String](descr = "signature of the method being analyzed; e.g., \"void main(java.lang.String[])\"")
+  val instruction = opt[Int](descr = "index into the Unit Chain that identifies the instruction", validate = { _ >= 0 })
   val implicitFlows = opt[Boolean](descr = "TODO:implement", default = Some(false))
   val file = trailArg[java.io.File](descr = "a .jaam file to be printed")
+  // really, this just gets used as the class path
   val jars = opt[String](descr = "colon-separated list of jar files")
+  val rtJar = opt[String](descr = "The RT.jar file to use for analysis",
+      default = Some("resources/rt.jar"), required = true)
 
   def run(conf: Conf) {
-    Taint.run(className(), method(), implicitFlows(),
-        "resources/rt.jar:" + jars(), file())
+    val classpath = jars.toOption match {
+      case Some(str) => rtJar() + ":" + str
+      case None => rtJar()
+    }
+    Taint.run(className(), method(), instruction(), implicitFlows(),
+        classpath, file())
   }
 }
 
 object Taint {
-  def run(className: String, method: String, implicitFlows: Boolean,
-      jars: String, file: java.io.File) {
+  // TODO implement implicit flows
+  def run(className: String, method: String, instruction: Int,
+      implicitFlows: Boolean, jars: String, file: java.io.File) {
     Options.v().set_verbose(true)
     Options.v().set_output_format(Options.output_format_jimple)
     Options.v().set_include_all(true)
@@ -51,11 +60,11 @@ object Taint {
     val m = clazz.getMethod(method)
     m.retrieveActiveBody()
     val graph = taintGraph(m)
-    val taintStore = propagateTaints(graph, ???) // TODO:Petey
+    // val taintStore = propagateTaints(graph, ???) // TODO:Petey
     // Need to figure out what the incoming arguments to the function
     // look like - are they Locals? Refs? - and mark them in an initial
     // taint store.
-    println(taintStore)
+    println(graph)
   }
 
   // TODO petey/michael: is InvokeExpr the only expr with side effects?
