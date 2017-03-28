@@ -9,7 +9,7 @@ import soot._
 import soot.jimple._
 import soot.options.Options
 
-import org.ucombinator.jaam.serializer._
+import org.ucombinator.jaam.serializer.{Stmt => JaamStmt, _}
 
 class Taint extends Main("taint") {
   banner("Identify explicit intra-procedural information flows in a method")
@@ -37,6 +37,15 @@ class Taint extends Main("taint") {
 }
 
 object Taint {
+  def getByIndex(sootMethod : SootMethod, index: Int) : Stmt = {
+    assert(index >= 0, "index must be nonnegative")
+    val units = Soot.getBody(sootMethod).getUnits().toList
+    assert(index < units.length, "index must not overflow the list of units")
+    val unit = units(index)
+    assert(unit.isInstanceOf[Stmt], "the index specifies a Soot Unit that is not a Stmt. It is a " + unit.getClass)
+    unit.asInstanceOf[Stmt]
+  }
+
   // TODO implement implicit flows
   def run(className: String, method: String, instruction: Int,
       implicitFlows: Boolean, jars: String, file: java.io.File) {
@@ -59,12 +68,14 @@ object Taint {
     val clazz = Scene.v().forceResolve(className, SootClass.BODIES)
     val m = clazz.getMethod(method)
     m.retrieveActiveBody()
+    val stmt = getByIndex(m, instruction)
     val graph = taintGraph(m)
     // val taintStore = propagateTaints(graph, ???) // TODO:Petey
     // Need to figure out what the incoming arguments to the function
     // look like - are they Locals? Refs? - and mark them in an initial
     // taint store.
     println(graph)
+    println(stmt)
   }
 
   // TODO petey/michael: is InvokeExpr the only expr with side effects?
