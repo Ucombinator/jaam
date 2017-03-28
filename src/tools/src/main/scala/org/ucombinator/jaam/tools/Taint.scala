@@ -1,5 +1,8 @@
 package org.ucombinator.jaam.tools
 
+import java.io.FileOutputStream
+import java.io.PrintStream
+
 import scala.collection.JavaConversions._
 
 import scala.collection.immutable
@@ -20,7 +23,7 @@ class Taint extends Main("taint") {
   val method = opt[String](descr = "signature of the method being analyzed; e.g., \"void main(java.lang.String[])\"")
   val instruction = opt[Int](descr = "index into the Unit Chain that identifies the instruction", validate = { _ >= 0 })
   val implicitFlows = opt[Boolean](descr = "TODO:implement", default = Some(false))
-  val file = trailArg[java.io.File](descr = "a .jaam file to be printed")
+  val file = trailArg[java.io.File](descr = "a .dot file to be printed")
   // really, this just gets used as the class path
   val jars = opt[String](descr = "colon-separated list of jar files")
   val rtJar = opt[String](descr = "The RT.jar file to use for analysis",
@@ -77,7 +80,9 @@ object Taint {
     }
     val graph = taintGraph(m)
     // TODO print this to a file instead of to the terminal
-    printOrigins(graph, addrs)
+    Console.withOut(new PrintStream(new FileOutputStream(file))) {
+      printOrigins(graph, addrs)
+    }
   }
 
   def dotString(addr: TaintAddress): String = {

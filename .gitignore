@@ -22,3 +22,6 @@ project/project/target
 ### Soot/jaam generated files
 *.jaam
 sootOutput
+
+### GraphViz generated files
+*.dot
