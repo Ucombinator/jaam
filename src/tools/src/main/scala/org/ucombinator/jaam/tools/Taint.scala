@@ -6,10 +6,10 @@ import scala.collection.immutable
 import scala.collection.mutable
 
 import soot._
-import soot.jimple._
+import soot.jimple.{Stmt => SootStmt, _}
 import soot.options.Options
 
-import org.ucombinator.jaam.serializer.{Stmt => JaamStmt, _}
+import org.ucombinator.jaam.serializer._
 
 class Taint extends Main("taint") {
   banner("Identify explicit intra-procedural information flows in a method")
@@ -37,13 +37,13 @@ class Taint extends Main("taint") {
 }
 
 object Taint {
-  def getByIndex(sootMethod : SootMethod, index: Int) : Stmt = {
+  def getByIndex(sootMethod : SootMethod, index: Int) : SootStmt = {
     assert(index >= 0, "index must be nonnegative")
     val units = Soot.getBody(sootMethod).getUnits().toList
     assert(index < units.length, "index must not overflow the list of units")
     val unit = units(index)
-    assert(unit.isInstanceOf[Stmt], "the index specifies a Soot Unit that is not a Stmt. It is a " + unit.getClass)
-    unit.asInstanceOf[Stmt]
+    assert(unit.isInstanceOf[SootStmt], "the index specifies a Soot Unit that is not a Stmt. It is a " + unit.getClass)
+    unit.asInstanceOf[SootStmt]
   }
 
   // TODO implement implicit flows
@@ -69,6 +69,11 @@ object Taint {
     val m = clazz.getMethod(method)
     m.retrieveActiveBody()
     val stmt = getByIndex(m, instruction)
+    val addrs: Set[TaintAddress] = stmt match {
+      case sootStmt: IfStmt => addrsOf(sootStmt.getCondition, None)
+      case sootStmt: SwitchStmt => addrsOf(sootStmt.getKey, None)
+      case _ => Set.empty
+    }
     val graph = taintGraph(m)
     // val taintStore = propagateTaints(graph, ???) // TODO:Petey
     // Need to figure out what the incoming arguments to the function
@@ -76,11 +81,28 @@ object Taint {
     // taint store.
     println(graph)
     println(stmt)
+    println(origins(graph, addrs, Set.empty))
+  }
+
+  def origins(graph: Map[TaintAddress, Set[TaintAddress]],
+      queue: Set[TaintAddress], seen: Set[TaintAddress]): Set[TaintAddress] = {
+    if (queue.isEmpty) {
+      seen
+    } else {
+      val current = queue.head
+      val rest = queue.tail
+      if (seen contains current) {
+        origins(graph, rest, seen)
+      } else {
+        val newQueue = rest ++ graph.getOrElse(current, Set.empty)
+        origins(graph, newQueue, seen + current)
+      }
+    }
   }
 
   // TODO petey/michael: is InvokeExpr the only expr with side effects?
   def addrsOf(expr: Value,
-      taintStore: mutable.Map[TaintAddress, Set[TaintAddress]]):
+      taintStore: Option[mutable.Map[TaintAddress, Set[TaintAddress]]]):
       Set[TaintAddress] = {
     expr match {
       case l : Local => Set(LocalTaintAddress(l))
@@ -96,13 +118,17 @@ object Taint {
       case cast : CastExpr => addrsOf(cast.getOp, taintStore)
       case invoke : InvokeExpr =>
         val target = invoke.getMethod
-        for {
-          index <- Range(0, invoke.getArgCount)
-        } {
-          val arg = invoke.getArg(index)
-          val from = addrsOf(arg, taintStore)
-          val to = ParameterTaintAddress(target, index)
-          taintStore(to) = taintStore.getOrElse(to, Set.empty) ++ from
+        taintStore match {
+          case None => {}
+          case Some(ts) =>
+            for {
+              index <- Range(0, invoke.getArgCount)
+            } {
+              val arg = invoke.getArg(index)
+              val from = addrsOf(arg, taintStore)
+              val to = ParameterTaintAddress(target, index)
+              ts(to) = ts.getOrElse(to, Set.empty) ++ from
+            }
         }
         Set(ReturnTaintAddress(invoke))
       case _ =>
@@ -118,30 +144,30 @@ object Taint {
     for (unit <- method.getActiveBody.getUnits.toList) {
       unit match {
         case sootStmt : DefinitionStmt =>
-          val from = addrsOf(sootStmt.getRightOp, taintStore)
+          val from = addrsOf(sootStmt.getRightOp, Some(taintStore))
           for {
-            addr <- addrsOf(sootStmt.getLeftOp, taintStore)
+            addr <- addrsOf(sootStmt.getLeftOp, Some(taintStore))
           } taintStore(addr) = taintStore.getOrElse(addr, Set.empty) ++ from
         case sootStmt : InvokeStmt =>
-          addrsOf(sootStmt.getInvokeExpr, taintStore)
+          addrsOf(sootStmt.getInvokeExpr, Some(taintStore))
         case sootStmt : IfStmt =>
-          addrsOf(sootStmt.getCondition, taintStore)
+          addrsOf(sootStmt.getCondition, Some(taintStore))
         case sootStmt : SwitchStmt =>
-          addrsOf(sootStmt.getKey, taintStore)
+          addrsOf(sootStmt.getKey, Some(taintStore))
         // this is only true for intraprocedural
         case sootStmt : ReturnStmt =>
-          addrsOf(sootStmt.getOp, taintStore)
+          addrsOf(sootStmt.getOp, Some(taintStore))
         case sootStmt : EnterMonitorStmt =>
-          addrsOf(sootStmt.getOp, taintStore)
+          addrsOf(sootStmt.getOp, Some(taintStore))
         case sootStmt : ExitMonitorStmt =>
-          addrsOf(sootStmt.getOp, taintStore)
+          addrsOf(sootStmt.getOp, Some(taintStore))
         case _ : ReturnVoidStmt => {}
         case _ : NopStmt => {}
         case _ : GotoStmt => {}
         // TODO
         // Set(RefTaintAddress(CaughtExceptionRef))
         case sootStmt : ThrowStmt =>
-          addrsOf(sootStmt.getOp, taintStore)
+          addrsOf(sootStmt.getOp, Some(taintStore))
         case _ =>
           println(unit)
           ???
