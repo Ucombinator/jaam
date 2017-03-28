@@ -5,7 +5,7 @@ import scala.collection.JavaConversions._
 import scala.collection.immutable
 import scala.collection.mutable
 
-import soot._
+import soot.{Unit => SootUnit, _}
 import soot.jimple.{Stmt => SootStmt, _}
 import soot.options.Options
 
@@ -72,6 +72,7 @@ object Taint {
     val addrs: Set[TaintAddress] = stmt match {
       case sootStmt: IfStmt => addrsOf(sootStmt.getCondition, None)
       case sootStmt: SwitchStmt => addrsOf(sootStmt.getKey, None)
+      // TODO should we print a warning here?
       case _ => Set.empty
     }
     val graph = taintGraph(m)
@@ -79,25 +80,29 @@ object Taint {
     // Need to figure out what the incoming arguments to the function
     // look like - are they Locals? Refs? - and mark them in an initial
     // taint store.
-    println(graph)
-    println(stmt)
-    println(origins(graph, addrs, Set.empty))
+    printOrigins(graph, addrs)
   }
 
-  def origins(graph: Map[TaintAddress, Set[TaintAddress]],
-      queue: Set[TaintAddress], seen: Set[TaintAddress]): Set[TaintAddress] = {
-    if (queue.isEmpty) {
-      seen
-    } else {
-      val current = queue.head
-      val rest = queue.tail
-      if (seen contains current) {
-        origins(graph, rest, seen)
-      } else {
-        val newQueue = rest ++ graph.getOrElse(current, Set.empty)
-        origins(graph, newQueue, seen + current)
+  def printOrigins(graph: Map[TaintAddress, Set[TaintAddress]],
+      queue: Set[TaintAddress]): Unit = {
+    def innerPrint(queue: Set[TaintAddress], seen: Set[TaintAddress]): Unit = {
+      if (queue.nonEmpty) {
+        val current = queue.head
+        val rest = queue.tail
+        if (seen contains current) {
+          innerPrint(rest, seen)
+        } else {
+          val immediates = graph.getOrElse(current, Set.empty)
+          for {
+            immediate <- immediates
+          } println(current + " -> " + immediate + ";")
+          innerPrint(rest ++ immediates, seen + current)
+        }
       }
     }
+    println("digraph origins {")
+    innerPrint(queue, Set.empty)
+    println("}")
   }
 
   // TODO petey/michael: is InvokeExpr the only expr with side effects?
