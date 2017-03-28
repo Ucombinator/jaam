@@ -76,11 +76,18 @@ object Taint {
       case _ => Set.empty
     }
     val graph = taintGraph(m)
-    // val taintStore = propagateTaints(graph, ???) // TODO:Petey
-    // Need to figure out what the incoming arguments to the function
-    // look like - are they Locals? Refs? - and mark them in an initial
-    // taint store.
+    // TODO print this to a file instead of to the terminal
     printOrigins(graph, addrs)
+  }
+
+  def dotString(addr: TaintAddress): String = {
+    addr match {
+      case LocalTaintAddress(local) => "\"Local[" + local + "]\""
+      case RefTaintAddress(ref) => "\"Ref[" + ref + "]\""
+      case ParameterTaintAddress(m, index) =>
+        "\"Param[" + m + ", " + index + "]\""
+      case ReturnTaintAddress(ie) => "\"Return[" + ie.getMethod.getName + "]\""
+    }
   }
 
   def printOrigins(graph: Map[TaintAddress, Set[TaintAddress]],
@@ -95,7 +102,7 @@ object Taint {
           val immediates = graph.getOrElse(current, Set.empty)
           for {
             immediate <- immediates
-          } println(current + " -> " + immediate + ";")
+          } println(dotString(current) + " -> " + dotString(immediate) + ";")
           innerPrint(rest ++ immediates, seen + current)
         }
       }
