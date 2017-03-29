@@ -19,23 +19,29 @@ class Taint extends Main("taint") {
   footer("")
 
   // TODO: specify required options
-  val className = opt[String](descr = "FQN (package and class) of the class being analyzed")
-  val method = opt[String](descr = "signature of the method being analyzed; e.g., \"void main(java.lang.String[])\"")
-  val instruction = opt[Int](descr = "index into the Unit Chain that identifies the instruction", validate = { _ >= 0 })
-  val implicitFlows = opt[Boolean](descr = "TODO:implement", default = Some(false))
-  val file = trailArg[java.io.File](descr = "a .dot file to be printed")
+  val className = opt[String](descr = "FQN (package and class) of the class " +
+      "being analyzed")
+  val method = opt[String](descr = "signature of the method being analyzed; " +
+      "e.g., \"void main(java.lang.String[])\"")
+  val instruction = opt[Int](descr = "index into the Unit Chain that identifies"
+     + " the instruction", validate = { _ >= 0 })
+  val implicitFlows = opt[Boolean](descr = "TODO:implement")
+  val output = opt[java.io.File](descr = "a .dot file to be printed")
   // really, this just gets used as the class path
-  val jars = opt[String](descr = "colon-separated list of jar files")
+  val path = opt[String](descr = "java classpath (including jar files), " +
+      "colon-separated")
+  val jaamFile = opt[String](descr = "jaam file with a call graph",
+      required = true)
   val rtJar = opt[String](descr = "The RT.jar file to use for analysis",
       default = Some("resources/rt.jar"), required = true)
 
   def run(conf: Conf) {
-    val classpath = jars.toOption match {
+    val classpath = path.toOption match {
       case Some(str) => rtJar() + ":" + str
       case None => rtJar()
     }
     Taint.run(className(), method(), instruction(), implicitFlows(),
-        classpath, file())
+        classpath, jaamFile(), output.toOption)
   }
 }
 
@@ -51,13 +57,14 @@ object Taint {
 
   // TODO implement implicit flows
   def run(className: String, method: String, instruction: Int,
-      implicitFlows: Boolean, jars: String, file: java.io.File) {
+      implicitFlows: Boolean, classpath: String, jaamFile: String,
+      output: Option[java.io.File]) {
     Options.v().set_verbose(true)
     Options.v().set_output_format(Options.output_format_jimple)
     Options.v().set_include_all(true)
     Options.v().set_keep_line_number(true)
     Options.v().set_allow_phantom_refs(true)
-    Options.v().set_soot_classpath(jars)
+    Options.v().set_soot_classpath(classpath)
     Options.v().set_prepend_classpath(false)
     Options.v().set_src_prec(Options.src_prec_only_class)
     // TODO I just copied this from Coverage2
@@ -75,13 +82,19 @@ object Taint {
     val addrs: Set[TaintAddress] = stmt match {
       case sootStmt: IfStmt => addrsOf(sootStmt.getCondition, None)
       case sootStmt: SwitchStmt => addrsOf(sootStmt.getKey, None)
-      // TODO should we print a warning here?
-      case _ => Set.empty
+      case _ =>
+        // TODO should we use some standard output method for this?
+        println("WARNING: No condition found at the specified statement.")
+        Set.empty
     }
     val graph = taintGraph(m)
-    // TODO print this to a file instead of to the terminal
-    Console.withOut(new PrintStream(new FileOutputStream(file))) {
-      printOrigins(graph, addrs)
+    output match {
+      case None =>
+        printOrigins(graph, addrs)
+      case Some(file) =>
+        Console.withOut(new PrintStream(new FileOutputStream(file))) {
+          printOrigins(graph, addrs)
+        }
     }
   }
 
