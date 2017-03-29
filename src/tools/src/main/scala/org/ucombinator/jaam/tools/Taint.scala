@@ -51,6 +51,11 @@ object Taint {
     assert(index >= 0, "index must be nonnegative")
     val units = Soot.getBody(sootMethod).getUnits().toList
     assert(index < units.length, "index must not overflow the list of units")
+    /*
+    for {
+      (unit, index) <- units.zipWithIndex
+    } println(index + ":\t" + unit)
+    */
     val unit = units(index)
     assert(unit.isInstanceOf[SootStmt], "the index specifies a Soot Unit that is not a Stmt. It is a " + unit.getClass)
     unit.asInstanceOf[SootStmt]
