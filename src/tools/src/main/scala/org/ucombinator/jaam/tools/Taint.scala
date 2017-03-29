@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.tools
 
 import java.io.FileOutputStream
+import java.io.FileInputStream
 import java.io.PrintStream
 
 import scala.collection.JavaConversions._
@@ -87,6 +88,21 @@ object Taint {
         println("WARNING: No condition found at the specified statement.")
         Set.empty
     }
+
+    /*
+    var reverseCallGraph = Map.empty[SootMethod, Set[SootMethod]]
+    val pi = new PacketInput(new FileInputStream(jaamFile))
+    var packet: Packet = null
+    while ({packet = pi.read(); !packet.isInstanceOf[EOF]}) {
+      packet match {
+        case s: State =>
+          val m = Coverage2.freshenMethod(s.stmt.method)
+          // reverseCallGraph
+        case _ => {}
+      }
+    }
+     */
+
     val graph = taintGraph(m)
     output match {
       case None =>
@@ -167,44 +183,52 @@ object Taint {
     }
   }
 
+  private var taintGraphs = Map.empty[SootMethod,
+          Map[TaintAddress, Set[TaintAddress]]]
   def taintGraph(method: SootMethod):
       immutable.Map[TaintAddress, Set[TaintAddress]] = {
-    val taintStore = mutable.Map[TaintAddress, Set[TaintAddress]]()
+    taintGraphs.get(method) match {
+      case Some(g) => g
+      case None =>
+        val graph = mutable.Map[TaintAddress, Set[TaintAddress]]()
 
-    for (unit <- method.getActiveBody.getUnits.toList) {
-      unit match {
-        case sootStmt : DefinitionStmt =>
-          val from = addrsOf(sootStmt.getRightOp, Some(taintStore))
-          for {
-            addr <- addrsOf(sootStmt.getLeftOp, Some(taintStore))
-          } taintStore(addr) = taintStore.getOrElse(addr, Set.empty) ++ from
-        case sootStmt : InvokeStmt =>
-          addrsOf(sootStmt.getInvokeExpr, Some(taintStore))
-        case sootStmt : IfStmt =>
-          addrsOf(sootStmt.getCondition, Some(taintStore))
-        case sootStmt : SwitchStmt =>
-          addrsOf(sootStmt.getKey, Some(taintStore))
-        // this is only true for intraprocedural
-        case sootStmt : ReturnStmt =>
-          addrsOf(sootStmt.getOp, Some(taintStore))
-        case sootStmt : EnterMonitorStmt =>
-          addrsOf(sootStmt.getOp, Some(taintStore))
-        case sootStmt : ExitMonitorStmt =>
-          addrsOf(sootStmt.getOp, Some(taintStore))
-        case _ : ReturnVoidStmt => {}
-        case _ : NopStmt => {}
-        case _ : GotoStmt => {}
-        // TODO
-        // Set(RefTaintAddress(CaughtExceptionRef))
-        case sootStmt : ThrowStmt =>
-          addrsOf(sootStmt.getOp, Some(taintStore))
-        case _ =>
-          println(unit)
-          ???
-      }
+        for (unit <- method.getActiveBody.getUnits.toList) {
+          unit match {
+            case sootStmt : DefinitionStmt =>
+              val from = addrsOf(sootStmt.getRightOp, Some(graph))
+              for {
+                addr <- addrsOf(sootStmt.getLeftOp, Some(graph))
+              } graph(addr) = graph.getOrElse(addr, Set.empty) ++ from
+            case sootStmt : InvokeStmt =>
+              addrsOf(sootStmt.getInvokeExpr, Some(graph))
+            case sootStmt : IfStmt =>
+              addrsOf(sootStmt.getCondition, Some(graph))
+            case sootStmt : SwitchStmt =>
+              addrsOf(sootStmt.getKey, Some(graph))
+            // this is only true for intraprocedural
+            case sootStmt : ReturnStmt =>
+              addrsOf(sootStmt.getOp, Some(graph))
+            case sootStmt : EnterMonitorStmt =>
+              addrsOf(sootStmt.getOp, Some(graph))
+            case sootStmt : ExitMonitorStmt =>
+              addrsOf(sootStmt.getOp, Some(graph))
+            case _ : ReturnVoidStmt => {}
+            case _ : NopStmt => {}
+            case _ : GotoStmt => {}
+            // TODO
+            // Set(RefTaintAddress(CaughtExceptionRef))
+            case sootStmt : ThrowStmt =>
+              addrsOf(sootStmt.getOp, Some(graph))
+            case _ =>
+              println(unit)
+              ???
+          }
+        }
+
+        val tg = graph.toMap
+        taintGraphs += (method -> tg)
+        tg
     }
-
-    taintStore.toMap
   }
 
   def propagateTaints(

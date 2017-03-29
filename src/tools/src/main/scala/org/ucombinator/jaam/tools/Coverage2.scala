@@ -86,6 +86,13 @@ object Coverage2 {
     }
   }
 
+  def freshenMethod(m: SootMethod): SootMethod = {
+    // Use forceResolve instead of loadClass b/c previous soot calls mean it has already completed resolving
+    val c = Scene.v.forceResolve(m.getDeclaringClass.getName, SootClass.BODIES)
+    val params = m.getParameterTypes.map(freshenType(_))
+    c.getMethod(m.getName, params, freshenType(m.getReturnType))
+  }
+
   def jaamMethods(jaamFile: String) : Map[soot.SootMethod, Map[Int, SootUnit]] = {
     var methods = Map[soot.SootMethod, Map[Int, SootUnit]]()
     val stream = new FileInputStream(jaamFile)
@@ -94,12 +101,10 @@ object Coverage2 {
     while ({packet = pi.read(); !packet.isInstanceOf[EOF]}) {
       packet match {
         case s: State =>
-          val m = s.stmt.method
-          // Use forceResolve instead of loadClass b/c previous soot calls mean it has already completed resolving
-          val c2 = Scene.v().forceResolve(m.getDeclaringClass.getName, SootClass.BODIES)
-          val params = m.getParameterTypes.map(freshenType(_))
-          val m2 = c2.getMethod(m.getName, params, freshenType(m.getReturnType))
-          methods += (m2 -> (methods.getOrElse(m2, Map[Int, SootUnit]()) + (s.stmt.index -> s.stmt.stmt)))
+          val m = freshenMethod(s.stmt.method)
+          val oldMap = methods.getOrElse(m, Map[Int, SootUnit]())
+          val newMap = oldMap + (s.stmt.index -> s.stmt.stmt)
+          methods += (m -> newMap)
         case _ => {} // Ignore anything else.
       }
     }
