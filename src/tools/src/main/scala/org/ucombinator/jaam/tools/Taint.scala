@@ -48,17 +48,12 @@ class Taint extends Main("taint") {
 }
 
 object Taint {
-  private var reverseCallGraph = Map.empty[SootMethod, Set[SootMethod]]
+  private var _invocations = Map.empty[SootMethod, Set[InvokeInfo]]
 
   def getByIndex(sootMethod : SootMethod, index: Int) : SootStmt = {
     assert(index >= 0, "index must be nonnegative")
     val units = Soot.getBody(sootMethod).getUnits().toList
     assert(index < units.length, "index must not overflow the list of units")
-    /*
-    for {
-      (unit, index) <- units.zipWithIndex
-    } println(index + ":\t" + unit)
-    */
     val unit = units(index)
     assert(unit.isInstanceOf[SootStmt], "the index specifies a Soot Unit that is not a Stmt. It is a " + unit.getClass)
     unit.asInstanceOf[SootStmt]
@@ -68,7 +63,7 @@ object Taint {
   def run(className: String, method: String, instruction: Int,
       implicitFlows: Boolean, classpath: String, jaamFile: String,
       output: Option[java.io.File]) {
-    Options.v().set_verbose(true)
+    Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
     Options.v().set_include_all(true)
     Options.v().set_keep_line_number(true)
@@ -89,15 +84,15 @@ object Taint {
     m.retrieveActiveBody()
     val stmt = getByIndex(m, instruction)
     val addrs: Set[TaintAddress] = stmt match {
-      case sootStmt: IfStmt => addrsOf(sootStmt.getCondition, m, None)
-      case sootStmt: SwitchStmt => addrsOf(sootStmt.getKey, m, None)
+      case sootStmt: IfStmt => addrsOf(sootStmt.getCondition, m)
+      case sootStmt: SwitchStmt => addrsOf(sootStmt.getKey, m)
       case _ =>
         // TODO should we use some standard output method for this?
         println("WARNING: No condition found at the specified statement.")
         Set.empty
     }
 
-    def getInvocations(expr: Value): Set[SootMethod] = {
+    def getInvocations(expr: Value): Set[InvokeExpr] = {
       expr match {
         case unop : UnopExpr => getInvocations(unop.getOp)
         case binop : BinopExpr =>
@@ -107,12 +102,12 @@ object Taint {
           // TODO this could throw an exception
         case cast : CastExpr => getInvocations(cast.getOp)
         case invoke : InvokeExpr =>
-          Set(Coverage2.freshenMethod(invoke.getMethod))
+          Set(invoke)
         case _ => Set.empty
       }
     }
 
-    def getInvokedMethods(stmt: SootStmt): Set[SootMethod] = {
+    def getInvokeExprs(stmt: SootStmt): Set[InvokeExpr] = {
       stmt match {
         case sootStmt : DefinitionStmt =>
           getInvocations(sootStmt.getRightOp) ++
@@ -143,21 +138,22 @@ object Taint {
       }
     }
 
-    // initialize reverseCallGraph
+    // initialize _invocations
     val pi = new PacketInput(new FileInputStream(jaamFile))
     var packet: Packet = null
     while ({packet = pi.read(); !packet.isInstanceOf[EOF]}) {
       packet match {
         case s: State =>
-          val invocations = getInvokedMethods(s.stmt.stmt)
-          if (invocations nonEmpty) {
-            val m = Coverage2.freshenMethod(s.stmt.method)
-            for {
-              called <- invocations
-            } {
-              val calling = reverseCallGraph.getOrElse(called, Set.empty) + m
-              reverseCallGraph = reverseCallGraph + (called -> calling)
-            }
+          val iExprs = getInvokeExprs(s.stmt.stmt)
+          for {
+            iExpr <- iExprs
+          } {
+            val called = Coverage2.freshenMethod(iExpr.getMethod)
+            val caller = Coverage2.freshenMethod(s.stmt.method)
+            println(caller + " calls " + called)
+            val invokeInfo = InvokeInfo(caller, iExpr)
+            val calling = _invocations.getOrElse(called, Set.empty) + invokeInfo
+            _invocations = _invocations + (called -> calling)
           }
         case _ => {}
       }
@@ -171,10 +167,16 @@ object Taint {
           printOrigins(addrs)
         }
     }
+
+    for {
+      (to, froms) <- _taintGraph
+      from <- froms
+    } println(to + " <- " + from)
   }
 
-  def isCalledBy(m: SootMethod): Set[SootMethod] = {
-    reverseCallGraph.getOrElse(m, Set.empty)
+  case class InvokeInfo(val m: SootMethod, val ie: InvokeExpr)
+  def getCallers(m: SootMethod): Set[InvokeInfo] = {
+    _invocations.getOrElse(m, Set.empty)
   }
 
   private var returnsMap = Map.empty[SootMethod, Set[ReturnStmt]]
@@ -200,9 +202,7 @@ object Taint {
         "\"Local[" + local + ", " + m.getName + "]\""
       case RefTaintAddress(m, ref) => "\"Ref[" + ref + ", " + m.getName + "]\""
       case ParameterTaintAddress(m, index) =>
-        "\"Param[" + m + ", " + index + "]\""
-      case ReturnTaintAddress(m, ie) =>
-        "\"Return[" + ie.getMethod.getName + "]\""
+        "\"Param[" + index + ", " + m.getName + "]\""
     }
   }
 
@@ -211,12 +211,10 @@ object Taint {
       if (queue.nonEmpty) {
         val current = queue.head
         val rest = queue.tail
-        val m = current.m
-        val graph = taintGraph(m)
         if (seen contains current) {
           innerPrint(rest, seen)
         } else {
-          val immediates = graph.getOrElse(current, Set.empty)
+          val immediates = readTaintGraph(current)
           for {
             immediate <- immediates
           } println(dotString(current) + " -> " + dotString(immediate) + ";")
@@ -233,88 +231,105 @@ object Taint {
   }
 
   // TODO petey/michael: is InvokeExpr the only expr with side effects?
-  def addrsOf(expr: Value, m: SootMethod,
-      taintStore: Option[mutable.Map[TaintAddress, Set[TaintAddress]]]):
-      Set[TaintAddress] = {
+  def addrsOf(expr: Value, m: SootMethod): Set[TaintAddress] = {
     expr match {
       case l : Local => Set(LocalTaintAddress(m, l))
       // TODO this could throw an exception
+      case pr: ParameterRef => Set(ParameterTaintAddress(m, pr.getIndex))
       case r : Ref => Set(RefTaintAddress(m, r))
       case _ : Constant => Set.empty
-      case unop : UnopExpr => addrsOf(unop.getOp, m, taintStore)
+      case unop : UnopExpr => addrsOf(unop.getOp, m)
       case binop : BinopExpr =>
         // TODO in the case of division, this could throw an exception
-        addrsOf(binop.getOp1, m, taintStore) ++
-          addrsOf(binop.getOp2, m, taintStore)
-      case io : InstanceOfExpr => addrsOf(io.getOp, m, taintStore)
+        addrsOf(binop.getOp1, m) ++
+          addrsOf(binop.getOp2, m)
+      case io : InstanceOfExpr => addrsOf(io.getOp, m)
         // TODO this could throw an exception
-      case cast : CastExpr => addrsOf(cast.getOp, m, taintStore)
+      case cast : CastExpr => addrsOf(cast.getOp, m)
       case invoke : InvokeExpr =>
         val target = invoke.getMethod
-        taintStore match {
-          case None => {}
-          case Some(ts) =>
-            for {
-              index <- Range(0, invoke.getArgCount)
-            } {
-              val arg = invoke.getArg(index)
-              val from = addrsOf(arg, m, taintStore)
-              val to = ParameterTaintAddress(target, index)
-              ts(to) = ts.getOrElse(to, Set.empty) ++ from
-            }
+        getReturns(target) flatMap { (r: ReturnStmt) =>
+          addrsOf(r.getOp, target)
         }
-        Set(ReturnTaintAddress(m, invoke))
       case _ =>
         println(expr)
         ???
     }
   }
 
-  private var taintGraphs = Map.empty[SootMethod,
-          Map[TaintAddress, Set[TaintAddress]]]
-  def taintGraph(method: SootMethod):
-      immutable.Map[TaintAddress, Set[TaintAddress]] = {
-    taintGraphs.get(method) match {
-      case Some(g) => g
-      case None =>
-        val graph = mutable.Map[TaintAddress, Set[TaintAddress]]()
+  private var graphed = Set.empty[SootMethod]
+  private var _taintGraph = Map.empty[TaintAddress, Set[TaintAddress]]
+  def updateTaintGraph(to: TaintAddress, from: Set[TaintAddress]): Unit = {
+    graph(to.m)
+    val newFrom = _taintGraph.getOrElse(to, Set.empty) ++ from
+    _taintGraph = _taintGraph + (to -> newFrom)
+  }
+  def readTaintGraph(to: TaintAddress): Set[TaintAddress] = {
+    graph(to.m)
+    _taintGraph.getOrElse(to, Set.empty)
+  }
+  def graph(method: SootMethod): Unit = {
+    if (!graphed.contains(method)) {
+      graphed = graphed + method
+
+      if (method.hasActiveBody) {
+        var index = 0;
+        Console.withOut(System.out) {
+          println(method.getName)
+          println()
+        }
+
+        for {
+          invokeInfo <- getCallers(method)
+          index <- Range(0, invokeInfo.ie.getArgCount)
+        } {
+          val arg = invokeInfo.ie.getArg(index)
+          val from = addrsOf(arg, invokeInfo.m)
+          val to = ParameterTaintAddress(method, index)
+          updateTaintGraph(to, from)
+        }
 
         for (unit <- method.getActiveBody.getUnits.toList) {
+          Console.withOut(System.out) {
+            println(index + ":\t" + unit)
+            index = index+1
+          }
           unit match {
             case sootStmt : DefinitionStmt =>
-              val from = addrsOf(sootStmt.getRightOp, method, Some(graph))
+              val from = addrsOf(sootStmt.getRightOp, method)
               for {
-                addr <- addrsOf(sootStmt.getLeftOp, method, Some(graph))
-              } graph(addr) = graph.getOrElse(addr, Set.empty) ++ from
+                addr <- addrsOf(sootStmt.getLeftOp, method)
+              } updateTaintGraph(addr, from)
             case sootStmt : InvokeStmt =>
-              addrsOf(sootStmt.getInvokeExpr, method, Some(graph))
+              addrsOf(sootStmt.getInvokeExpr, method)
             case sootStmt : IfStmt =>
-              addrsOf(sootStmt.getCondition, method, Some(graph))
+              addrsOf(sootStmt.getCondition, method)
             case sootStmt : SwitchStmt =>
-              addrsOf(sootStmt.getKey, method, Some(graph))
+              addrsOf(sootStmt.getKey, method)
             // this is only true for intraprocedural
             case sootStmt : ReturnStmt =>
-              addrsOf(sootStmt.getOp, method, Some(graph))
+              addrsOf(sootStmt.getOp, method)
             case sootStmt : EnterMonitorStmt =>
-              addrsOf(sootStmt.getOp, method, Some(graph))
+              addrsOf(sootStmt.getOp, method)
             case sootStmt : ExitMonitorStmt =>
-              addrsOf(sootStmt.getOp, method, Some(graph))
+              addrsOf(sootStmt.getOp, method)
             case _ : ReturnVoidStmt => {}
             case _ : NopStmt => {}
             case _ : GotoStmt => {}
             // TODO
             // Set(RefTaintAddress(CaughtExceptionRef))
             case sootStmt : ThrowStmt =>
-              addrsOf(sootStmt.getOp, method, Some(graph))
+              addrsOf(sootStmt.getOp, method)
             case _ =>
               println(unit)
               ???
           }
         }
-
-        val tg = graph.toMap
-        taintGraphs += (method -> tg)
-        tg
+      } else {
+        Console.withOut(System.out) {
+          println("No active body (library code?)")
+        }
+      }
     }
   }
 
@@ -355,6 +370,4 @@ case class LocalTaintAddress(override val m: SootMethod, val local: Local)
 case class RefTaintAddress(override val m: SootMethod, val ref: Ref)
   extends TaintAddress
 case class ParameterTaintAddress(override val m: SootMethod, val index: Int)
-  extends TaintAddress
-case class ReturnTaintAddress(override val m: SootMethod, val ie: InvokeExpr)
   extends TaintAddress
