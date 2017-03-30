@@ -108,6 +108,7 @@ object Taint {
     }
      */
 
+    println(getReturns(m))
     val graph = taintGraph(m)
     output match {
       case None =>
@@ -119,11 +120,20 @@ object Taint {
     }
   }
 
+  def getReturns(m: SootMethod): Set[SootStmt] = {
+    Soot.getBody(m).getUnits().toSet flatMap { (unit: SootUnit) =>
+      unit match {
+        case r: ReturnStmt => Some[SootStmt](r)
+        case _ => None
+      }
+    }
+  }
+
   def dotString(addr: TaintAddress): String = {
     addr match {
-      case LocalTaintAddress(local, m) =>
+      case LocalTaintAddress(m, local) =>
         "\"Local[" + local + ", " + m.getName + "]\""
-      case RefTaintAddress(ref, m) => "\"Ref[" + ref + ", " + m.getName + "]\""
+      case RefTaintAddress(m, ref) => "\"Ref[" + ref + ", " + m.getName + "]\""
       case ParameterTaintAddress(m, index) =>
         "\"Param[" + m + ", " + index + "]\""
       case ReturnTaintAddress(m, ie) =>
@@ -149,6 +159,9 @@ object Taint {
       }
     }
     println("digraph origins {")
+    for {
+      root <- queue
+    } println(dotString(root) + " [shape=box];")
     innerPrint(queue, Set.empty)
     println("}")
   }
@@ -158,9 +171,9 @@ object Taint {
       taintStore: Option[mutable.Map[TaintAddress, Set[TaintAddress]]]):
       Set[TaintAddress] = {
     expr match {
-      case l : Local => Set(LocalTaintAddress(l, m))
+      case l : Local => Set(LocalTaintAddress(m, l))
       // TODO this could throw an exception
-      case r : Ref => Set(RefTaintAddress(r, m))
+      case r : Ref => Set(RefTaintAddress(m, r))
       case _ : Constant => Set.empty
       case unop : UnopExpr => addrsOf(unop.getOp, m, taintStore)
       case binop : BinopExpr =>
@@ -269,9 +282,9 @@ object Taint {
 abstract sealed class TaintValue
 
 abstract sealed class TaintAddress extends TaintValue
-case class LocalTaintAddress(val local: Local, val m: SootMethod)
+case class LocalTaintAddress(val m: SootMethod, val local: Local)
   extends TaintAddress
-case class RefTaintAddress(val ref: Ref, val m: SootMethod) extends TaintAddress
+case class RefTaintAddress(val m: SootMethod, val ref: Ref) extends TaintAddress
 case class ParameterTaintAddress(val target: SootMethod, val index: Int)
   extends TaintAddress
 case class ReturnTaintAddress(val m: SootMethod, val ie: InvokeExpr)
