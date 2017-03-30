@@ -25,6 +25,7 @@ class LoopDepthCounter extends Main("loop") {
   banner("Analyze the number of depth of each loop in the application code")
   footer("")
 
+  val graph = opt[Boolean](descr = "Print loops to GraphViz file")
   val loop = opt[Boolean](descr = "Run loop detection")
   val rec = opt[Boolean](descr = "Run recursion detection")
   val alloc = opt[Boolean](descr = "Run allocation detection")
@@ -40,7 +41,7 @@ class LoopDepthCounter extends Main("loop") {
     val all = !(loop() || rec() || alloc())
     var color = !nocolor()
     LoopDepthCounter.main(mainClass(), mainMethod(), jars().split(":"), 
-                          PrintOption(all, loop(), rec(), alloc(), color, remove_duplicates()))
+                          PrintOption(all, loop(), rec(), alloc(), color, remove_duplicates(), graph()))
   }
 }
 
