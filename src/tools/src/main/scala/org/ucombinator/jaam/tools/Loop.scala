@@ -21,6 +21,30 @@ import soot.toolkits.graph.LoopNestTree
 import Console._
 import collection.mutable.ListBuffer
 
+class LoopDepthCounter extends Main("loop") {
+  banner("Analyze the number of depth of each loop in the application code")
+  footer("")
+
+  val loop = opt[Boolean](descr = "Run loop detection")
+  val rec = opt[Boolean](descr = "Run recursion detection")
+  val alloc = opt[Boolean](descr = "Run allocation detection")
+  val nocolor = opt[Boolean](descr = "No coloring option if you want to redirect the output to some file or text editor",
+                             default = Some(false))
+  var remove_duplicates = opt[Boolean](name = "remove-duplicates", descr = "Only output deepest loop, may lose suspicious loops", default = Some(false))
+
+  val mainClass = trailArg[String](descr = "The name of the main class")
+  val mainMethod = trailArg[String](descr = "The name of entrance method")
+  val jars = trailArg[String](descr = "Colon separated list of application's JAR files, not includes library")
+
+  def run(conf: Conf) {
+    val all = !(loop() || rec() || alloc())
+    var color = !nocolor()
+    LoopDepthCounter.main(mainClass(), mainMethod(), jars().split(":"), 
+                          PrintOption(all, loop(), rec(), alloc(), color, remove_duplicates()))
+  }
+}
+
+
 // TODO duplicate
 
 /* TODO Failure apps

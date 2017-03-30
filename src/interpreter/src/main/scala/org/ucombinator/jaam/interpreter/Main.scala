@@ -21,6 +21,9 @@ package org.ucombinator.jaam.interpreter
 // TODO/research: increase context sensitivity when constructors go up inheritance hierarchy
 // TODO: way to interrupt process but with normal termination
 
+import java.util.zip.ZipInputStream
+import java.io.FileInputStream
+
 import scala.collection.JavaConversions._
 import scala.collection.immutable
 import scala.collection.immutable.::
@@ -1081,6 +1084,7 @@ object State {
   val initialStringBasePointer = InitialStringBasePointer
   val initialStringArrayBasePointer = InitialStringArrayBasePointer
 
+  /*
   // TODO: factor these into helpers
   // `String[]` argument of `main(String[])`
   System.store.update(
@@ -1103,7 +1107,7 @@ object State {
     ArrayRefAddr(initialStringArrayBasePointer), D.atomicTop)
   System.store.update(
     ArrayLengthAddr(initialStringArrayBasePointer), D.atomicTop)
-
+  */
   def inject(stmt : Stmt) : State = {
     val ks = KontStack(HaltKontAddr)
     State(stmt, initialFramePointer, ks)
@@ -1167,7 +1171,7 @@ object System {
     System.appLibClasses.exists((c.getPackageName()+".").startsWith(_))
 
   def isJavaLibraryClass(sootClass: SootClass) = {
-    sootClass.isJavaLibraryClass || sootClass.getName.startsWith("org.w3c")
+    sootClass.isJavaLibraryClass || sootClass.getName.startsWith("org.w3c") || sootClass.getName.startsWith("jdk.")
   }
 
   private def addToMultiMap[K, V](table: mutable.Map[K, Set[V]])(key: K, value: V) {
@@ -1435,35 +1439,80 @@ object Main {
     }
   }
 
+  def getAllClassNames(classPath: String): List[String] = {
+    def getClassNames(jarFile: String): List[String] = {
+      Log.info(s"Getting all class names from ${jarFile}")
+      val zip = new ZipInputStream(new FileInputStream(jarFile))
+      var ans: List[String] = List()
+      var entry = zip.getNextEntry
+      while (entry != null) {
+        if (!entry.isDirectory && entry.getName().endsWith(".class")) {
+          val className = entry.getName().replace('/', '.')
+          ans = (className.substring(0, className.length() - ".class".length()))::ans
+        }
+        entry = zip.getNextEntry
+      }
+      ans
+    }
+    val classPaths = classPath.split(":").toList
+    (for (path <- classPaths if path.endsWith("jar")) yield getClassNames(path)).flatten
+  }
+
   def cha() {
+    //val allAppClassess = conf.classpath().toString.split(":").map(getAllClassNames(_))
     Soot.initialize(conf, {
       //Options.v().set_verbose(true)
-      //Options.v().set_include_all(false)
-
-      //Options.v.set_whole_program(true)
+      Options.v().set_include_all(false)
+      Options.v.set_whole_program(true)
       Options.v().set_app(true)
+      Options.v().set_soot_classpath(conf.rtJar().toString + ":" + conf.classpath().toString)
 
-      //soot.options.Options.v().set_main_class(conf.mainClass())
-      Scene.v().setMainClass(Scene.v().loadClassAndSupport(conf.mainClass()))
-      Scene.v().loadNecessaryClasses()
+      for (className <- getAllClassNames(conf.classpath().toString)) {
+        //addBasicClass and setApplicationClass seem equivalent to cg
+        //Scene.v().addBasicClass(className, SootClass.HIERARCHY)
+        val c = Scene.v().loadClassAndSupport(className)
+        c.setApplicationClass
+      }
+
+      //Options.v().setPhaseOption("cg", "verbose:true")
+      Options.v().setPhaseOption("cg.cha", "enabled:true")
+
+      // Spark looks not as good as CHA according to the number of reachable methods
+      // but point-to analysis can be used to refine call graph, see example
+      // http://www.programcreek.com/java-api-examples/index.php?api=soot.jimple.toolkits.callgraph.CallGraph
+      //Options.v().setPhaseOption("cg.spark", "enabled:true,on-fly-cg:true")
+
+      Options.v().set_main_class(conf.mainClass())
+      //Scene.v().setMainClass(Scene.v().loadClassAndSupport(conf.mainClass()))
+      //Scene.v().loadNecessaryClasses()
+      Scene.v().loadBasicClasses()
+      Scene.v().loadDynamicClasses()
     })
 
-    Options.v().setPhaseOption("cg", "verbose:true")
     CHATransformer.v().transform()
     val cg = Scene.v().getCallGraph()
+    Log.info("Total number of reachable methods (include Java library): " + Scene.v().getReachableMethods().size())
+    for (m <- Scene.v().getReachableMethods().listener.toList) {
+      Log.debug("  " + m)
+    }
 
     var seen = Set[State]() // includes everything including todo elements
-    var todo = List[State]()
+    var todo = Set[State]()
+    var seenMethods = Set[SootMethod]()
+    var stateCount = 0
     var edgeCount = 0
 
     val outSerializer = new serializer.PacketOutput(new FileOutputStream(conf.outfile()))
 
     def addState(s: State) {
       if (!seen(s)) {
+        stateCount += 1
         Log.debug("addState:"+s)
         seen += s
-        todo = s :: todo
+        todo += s
         outSerializer.write(s.toPacket)
+
+        seenMethods += s.stmt.sootMethod
       }
     }
 
@@ -1480,33 +1529,65 @@ object Main {
     try {
       val mainMethod = Soot.getSootClass(conf.mainClass()).getMethodByName(conf.method())
       val initialState = State.inject(Stmt.methodEntry(mainMethod))
+      val javaMethodsToAppMethods = mutable.Map[SootMethod, Set[SootMethod]]()
+      def getReachableAppMethods(m: SootMethod, level: Option[Int]): Set[SootMethod] = {
+        assert(System.isJavaLibraryClass(m.getDeclaringClass))
+        def search(todo: Set[SootMethod], seen: Set[SootMethod],
+                   result: Set[SootMethod], level: Option[Int]): Set[SootMethod] = {
+          if (todo.isEmpty) return result
+          level match {
+            case None => result
+            case Some(n) =>
+              val outMethods = todo.map((m: SootMethod) => cg.edgesOutOf(m).toSet.map((e: Edge) => e.tgt.method)).flatten
+              val (jMethods, appMethods) = outMethods.partition((m: SootMethod) => System.isJavaLibraryClass(m.getDeclaringClass))
+              val (newSeen, notSeen) = jMethods.partition((m: SootMethod) => seen.contains(m))
+              search(notSeen, seen++todo, appMethods++result, if (n==0) None else Some(n-1))
+          }
+        }
+
+        if (javaMethodsToAppMethods.contains(m)) { return javaMethodsToAppMethods(m) }
+        val appMethods = search(Set(m), Set[SootMethod](), Set[SootMethod](), level)
+        javaMethodsToAppMethods += ((m, appMethods))
+        appMethods
+      }
 
       addState(initialState)
-
       while (todo.nonEmpty) {
         val state = todo.head
         todo = todo.tail
-        Log.debug("Processing:"+state)
+        Log.info("Processing:"+state)
 
-        if (state.stmt.sootStmt.containsInvokeExpr()) {
-          for (edge <- cg.edgesOutOf(state.stmt.sootStmt)) {
-            val m = edge.tgt().method()
-
-            if (m.isPhantom) { /*println(s"Warning: phantom method ${m}, will not analyze")*/ }
-            else if (m.isAbstract) { /*println(s"Warning: abstract method ${m}, will not analyze")*/ }
-            else if (m.isNative) { /*println(s"Warning: native method ${m}, will not analyze")*/ }
-            else {
-              val entryState = State.inject(Stmt.methodEntry(m))
+        for (edge <- cg.edgesOutOf(state.stmt.sootStmt)) {
+          val m = edge.tgt().method()
+          Log.debug("  -->" + m)
+          if (m.isPhantom) { } else if (m.isAbstract) {  } else if (m.isNative) {  }
+          else if (System.isJavaLibraryClass(m.getDeclaringClass)) {
+            // Here we construct spurious edges between `m` and reachable application methods
+            // by stepover searching the reachable methods with some level
+            val rms = getReachableAppMethods(m, Some(1))
+            for (rm <- rms) {
+              Log.info(s" inside of $m calls $rm")
+              val entryState = State.inject(Stmt.methodEntry(rm))
               addState(entryState)
               addEdge(state, entryState)
             }
           }
-        } else if (
+          else {
+            val entryState = State.inject(Stmt.methodEntry(m))
+            addState(entryState)
+            addEdge(state, entryState)
+          }
+        }
+
+        //} else if (
+        if (
           state.stmt.sootStmt.isInstanceOf[ReturnStmt] ||
           state.stmt.sootStmt.isInstanceOf[ReturnVoidStmt]) {
           for (edge <- cg.edgesInto(state.stmt.sootMethod)) {
             // TODO: do something for non-explicit edges (they have a null stmt and unit) (probably are due to throwing exceptions)
-            if (edge.isExplicit()) {
+            val clazz = edge.src.method.getDeclaringClass
+            if (edge.isExplicit() && !System.isJavaLibraryClass(clazz)) {
+              Log.info(s"  goes back to ${edge.src.method}")
               val returnState = State.inject(Stmt(edge.srcStmt(), edge.src()).nextSyntactic)
               addState(returnState)
               addEdge(state, returnState)
@@ -1522,6 +1603,36 @@ object Main {
       }
     } finally {
       outSerializer.close()
+
+      val allAppMethods = getAllClassNames(conf.classpath().toString)
+                          .map(Scene.v().loadClassAndSupport(_))
+                          .map(_.getMethods).flatten.toSet
+      val seenAndInJar = seenMethods.intersect(allAppMethods)
+      val seenButNotInJar = seenMethods.diff(allAppMethods)
+      val inJarButNotSeen = allAppMethods.diff(seenMethods)
+      Log.info(s"number of states: ${stateCount}")
+      Log.info(s"number of edges: ${edgeCount}")
+      Log.info(s"number of covered methods: ${seenMethods.size}")
+      Log.info(s"number of methods in app's jar file: ${allAppMethods.size}")
+      Log.info(s"number of methods covered and in jar file: ${seenAndInJar.size}")
+      Log.info(s"number of methods covered but not in jar file: ${seenButNotInJar.size}")
+      Log.info(s"number of methods not covered but in jar file: ${inJarButNotSeen.size}")
+
+      // Many of the methods not covered but appeared in jar file are maybe never been called,
+      // we can safely omit these methods if the call graph is correct.
+      val (called, notCalled) = inJarButNotSeen.partition(cg.edgesInto(_).toList.size > 0)
+      Log.info(s"number of methods not covered but in jar file and have been called: ${called.size}")
+      Log.info(s"real method coverage: ${seenAndInJar.size.toDouble/(allAppMethods.size-notCalled.size)}")
+
+      // Print methods not covered but may have been called
+      for (m <- called) {
+        val into = cg.edgesInto(m).toList
+        Log.info(s"  number of edges into ${m}: ${into.size}")
+        for (edge <- into) {
+          val caller = edge.src.method
+          Log.debug(s"    may called by: ${caller}")
+        }
+      }
     }
   }
 

@@ -1,19 +1,17 @@
-/**
- * Created by timothyjohnson on 10/5/16.
- */
+package org.ucombinator.jaam.visualizer.gui;
+
 // A column in our GUI is constructed from an array of panels
 // We automatically add expandable split panes between each adjacent pair of panels
 import java.util.ArrayList;
-import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JComponent;
 
 public class GUIPanelColumn
 {
-    ArrayList<JPanel> panels;
+    ArrayList<JComponent> panels;
     ArrayList<JSplitPane> splitPanes;
 
-    public GUIPanelColumn(ArrayList<JPanel> panelList, ArrayList<Double> weights)
+    public GUIPanelColumn(ArrayList<JComponent> panelList, ArrayList<Double> weights)
     {
         assert(panelList.size() > 0);
         this.panels = panelList;
@@ -38,7 +36,7 @@ public class GUIPanelColumn
             splitPanes.get(i).resetToPreferredSizes();
         }
 
-        System.out.println("Finished constructing column! Panels = " + Integer.toString(panels.size()) + ", split panes = " + Integer.toString(splitPanes.size()));
+        //System.out.println("Finished constructing column! Panels = " + Integer.toString(panels.size()) + ", split panes = " + Integer.toString(splitPanes.size()));
     }
 
     // Returns our JPanel if there is only one panel,

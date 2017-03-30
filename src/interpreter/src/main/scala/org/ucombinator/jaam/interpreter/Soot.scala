@@ -101,13 +101,14 @@ object Soot {
 
     // Run transformations and analyses according to the configured options.
     // Transformation could include jimple, shimple, and CFG generation
-    PackManager.v().runPacks()
     Scene.v().loadBasicClasses()
+    PackManager.v().runPacks()
   }
 
   def getBody(m : SootMethod) = {
     if (m.isNative) { throw new Exception("Attempt to Soot.getBody on native method: " + m) }
     if (m.isAbstract) { throw new Exception("Attempt to Soot.getBody on abstract method: " + m) }
+    // TODO: do we need to test for phantom here?
     if (!m.hasActiveBody()) {
       SootResolver.v().resolveClass(m.getDeclaringClass.getName, SootClass.BODIES)
       m.retrieveActiveBody()
