@@ -1,23 +1,22 @@
 package org.ucombinator.jaam.tools
 
 import java.util.zip.ZipInputStream
-import java.io.FileInputStream
+import java.io.{BufferedOutputStream, FileInputStream, FileOutputStream}
 
 import scala.language.implicitConversions
 import scala.collection.JavaConversions._
-
+import scala.collection.mutable.HashMap
 import soot.options.Options
 import soot.tagkit.{GenericAttribute, SourceFileTag}
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.jimple.{Stmt => SootStmt, _}
 import soot.jimple.toolkits.callgraph._
 import soot.jimple.Jimple
-
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
-import soot.toolkits.graph.Block;
-import soot.toolkits.graph.BlockGraph;
-import soot.toolkits.graph.ExceptionalBlockGraph;
-import soot.toolkits.graph.LoopNestTree;
+import soot.toolkits.graph.Block
+import soot.toolkits.graph.BlockGraph
+import soot.toolkits.graph.ExceptionalBlockGraph
+import soot.toolkits.graph.LoopNestTree
 
 import Console._
 import collection.mutable.ListBuffer
@@ -122,7 +121,7 @@ object Soot {
   def methodFullName(m: SootMethod): String = m.getDeclaringClass.getName + "." + m.getName
 }
 
-case class PrintOption(all: Boolean, loop: Boolean, rec: Boolean, alloc: Boolean, color: Boolean, rmDup: Boolean)
+case class PrintOption(all: Boolean, loop: Boolean, rec: Boolean, alloc: Boolean, color: Boolean, rmDup: Boolean, graph: Boolean)
 
 object LoopDepthCounter {
   var opt: PrintOption = null
@@ -179,20 +178,34 @@ object LoopDepthCounter {
           this.stack >= that
       }
     }
+
+    /**
+      *
+      * @param m  method
+      * @param nLoop  loop depth
+      * @param printing  indicates whether called from toString or toList (for coloring)
+      * @return
+      */
+    def methodName(m: SootMethod, nLoop: Int, printing: Boolean): String = {
+      val mName = Soot.methodFullName(m)
+      "  " + (if (nLoop > 0 && opt.color && printing) s"$RED$mName($nLoop)$RESET"
+      else if (nLoop > 0) s"$mName($nLoop)"
+      else mName)
+    }
+
+    def aux(stack: Stack, printing: Boolean): List[String] = {
+      stack match {
+        case Halt => List()
+        case CallStack(e, m, al, s, loop) =>  methodName(m, loop, printing) :: aux(s, printing)
+      }
+    }
+
+    def toList(): List[String] = {
+      methodName(currentMethod, nLoop, false)::aux(stack, false).reverse
+    }
+
     override def toString(): String = {
-      def methodName(m: SootMethod, nLoop: Int): String = {
-        val mName = Soot.methodFullName(m)
-        "  " + (if (nLoop > 0 && opt.color) s"$RED$mName($nLoop)$RESET"
-                else if (nLoop > 0) s"$mName($nLoop)"
-                else mName)
-      }
-      def aux(stack: Stack): List[String] = {
-        stack match {
-          case Halt => List()
-          case CallStack(e, m, al, s, loop) =>  methodName(m, loop) :: aux(s)
-        }
-      }
-      ((methodName(currentMethod, nLoop)::aux(stack)).reverse).mkString("\n")+"\n"
+      ((methodName(currentMethod, nLoop, true)::aux(stack, true)).reverse).mkString("\n")+"\n"
     }
     
     def toStringAndHighlightMethod(recMethod: SootMethod): String = {
@@ -274,7 +287,7 @@ object LoopDepthCounter {
   }
 
   // Using set to remove equivalent items
-  val loopResults: ListBuffer[LoopResult] = ListBuffer()
+  var loopResults: ListBuffer[LoopResult] = ListBuffer()
   val recResults: ListBuffer[RecResult] = ListBuffer()
   val allocResults: ListBuffer[AllocResult] = ListBuffer()
 
@@ -291,11 +304,13 @@ object LoopDepthCounter {
     
     if (opt.all || opt.loop) {
       if (opt.rmDup) {
-        val reduced = removeDuplicates(loopResults.toList, List())
-        loopResults.clear
-        for (x <- reduced) { loopResults += x.asInstanceOf[LoopResult] }
+        removeDups(loopResults.toList)
       }
-      loopResults.sortBy(_.depth).foreach(println) 
+      loopResults = loopResults.sortBy(_.depth)
+      loopResults.foreach(println)
+      if (opt.graph) {
+        writeToGraph(loopResults.toList)
+      }
     }
     if (opt.all || opt.rec)   { 
       recResults.foreach(println) 
@@ -304,15 +319,64 @@ object LoopDepthCounter {
       if (opt.rmDup) {
         val reduced = removeDuplicates(allocResults.toList, List())
         allocResults.clear
-        reduced.foreach(allocResults += _.asInstanceOf[AllocResult])
+        reduced.foreach(allocResults += _.asInstanceOf[AllocResult]) // TODO use removeDups
       }
-      allocResults.sortBy(_.depth).foreach(println) 
+      allocResults.sortBy(_.depth).foreach(println)
     }
     
     println("Summary:")
     if (opt.all || opt.loop)  { println(s"  number of loops: ${loopResults.size}") }
     if (opt.all || opt.rec)   { println(s"  number of recursions: ${recResults.size}") }
     if (opt.all || opt.alloc) { println(s"  number of object allocations: ${allocResults.size}") }
+  }
+
+  /***
+    * Produce list of loops with duplicates removed
+    * @param loops
+    */
+  def removeDups(loops: List[LoopDepthCounter.Result]) = {
+    val reduced = removeDuplicates(loops, List())
+    loopResults.clear
+    for (x <- reduced) { loopResults += x.asInstanceOf[LoopResult] }
+    loops
+  }
+
+  /***
+    * Write a GraphViz file from the loops.
+    * @param loops
+    */
+  def writeToGraph(loops: List[LoopResult]) = {
+    val out = new FileOutputStream("out.gv")
+    out.write("strict digraph G {\n".getBytes())
+    var counter = 1
+      for (loop <- loops) {
+        val subgraphbegin = s"subgraph $counter {" + "\n"
+        out.write(subgraphbegin.getBytes())
+
+        val list = loop.stack.toList()
+        val loophead = list.head
+        val loopheadNode = "\"" + s"$loophead$counter" + "\"" + "[label=\"" + s"$loophead" + "\"" + "];\n"
+        out.write(loopheadNode.getBytes())
+
+        // write the labels for nodes
+        for (item <- list.drop(1)) {
+          val nodeString = "\"" + s"$item$counter" + "\"[label = \"" + s"$item" + "\"];\n"
+          out.write(nodeString.getBytes());
+        }
+
+        // write node relations
+        for (item <- list.drop(1)) {
+          val relationString = "\"" + s"$item$counter" + "\" -> \n"
+          out.write(relationString.getBytes());
+        }
+        val count = "\"" + s"$loophead$counter" + "\"\n"
+        out.write(count.getBytes())
+
+        out.write("}\n".getBytes()) // end subgraph
+
+        counter += 1
+      }
+    out.write("}\n".getBytes()) // end outer graph
   }
 
   def getDispatchedMethods(invokeExpr: InvokeExpr): List[SootMethod] = {
