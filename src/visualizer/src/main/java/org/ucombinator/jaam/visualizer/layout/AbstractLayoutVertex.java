@@ -5,7 +5,6 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.Location;
-import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -18,11 +17,11 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 {
     public static Color highlightColor = Color.ORANGE;
     private Color color = Color.RED;
-    private javafx.scene.paint.Color[] colors = {javafx.scene.paint.Color.LIGHTCORAL,
-            javafx.scene.paint.Color.LIGHTBLUE, javafx.scene.paint.Color.LIGHTCYAN,
-            javafx.scene.paint.Color.LIGHTSEAGREEN, javafx.scene.paint.Color.LIGHTSALMON,
-            javafx.scene.paint.Color.LIGHTSKYBLUE, javafx.scene.paint.Color.LIGHTGOLDENRODYELLOW,
-            javafx.scene.paint.Color.LIGHTGREY};
+    private Color[] colors = {Color.LIGHTCORAL,
+            Color.LIGHTBLUE, Color.LIGHTCYAN,
+            Color.LIGHTSEAGREEN, Color.LIGHTSALMON,
+            Color.LIGHTSKYBLUE, Color.LIGHTGOLDENRODYELLOW,
+            Color.LIGHTGREY};
 
     public static final double DEFAULT_WIDTH = 1.0;
     public static final double DEFAULT_HEIGHT = 1.0;

@@ -130,10 +130,14 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	private void handlePrimaryDoubleClick(MouseEvent event)
 	{
 		AbstractLayoutVertex v = (((GUINode)(event.getSource())).getVertex());
-		if(v.isExpanded())
-			collapsing(v);
-		else
-			expanding(v);
+
+		// Collapsing the root vertex leaves us with a blank screen.
+		if(!(v instanceof LayoutRootVertex)) {
+			if (v.isExpanded())
+				collapsing(v);
+			else
+				expanding(v);
+		}
 				
 		event.consume();
 	}
