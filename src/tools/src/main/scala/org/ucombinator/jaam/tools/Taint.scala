@@ -52,7 +52,7 @@ object Taint {
 
   def getByIndex(sootMethod : SootMethod, index: Int) : SootStmt = {
     assert(index >= 0, "index must be nonnegative")
-    val units = Soot.getBody(sootMethod).getUnits().toList
+    val units = sootMethod.retrieveActiveBody.getUnits.toList
     assert(index < units.length, "index must not overflow the list of units")
     val unit = units(index)
     assert(unit.isInstanceOf[SootStmt], "the index specifies a Soot Unit that is not a Stmt. It is a " + unit.getClass)
@@ -150,7 +150,6 @@ object Taint {
           } {
             val called = Coverage2.freshenMethod(iExpr.getMethod)
             val caller = Coverage2.freshenMethod(s.stmt.method)
-            println(caller + " calls " + called)
             val invokeInfo = InvokeInfo(caller, iExpr)
             val calling = _invocations.getOrElse(called, Set.empty) + invokeInfo
             _invocations = _invocations + (called -> calling)
@@ -168,10 +167,12 @@ object Taint {
         }
     }
 
+    /*
     for {
       (to, froms) <- _taintGraph
       from <- froms
     } println(to + " <- " + from)
+     */
   }
 
   case class InvokeInfo(val m: SootMethod, val ie: InvokeExpr)
@@ -184,7 +185,12 @@ object Taint {
     returnsMap.get(m) match {
       case Some(rs) => rs
       case None =>
-        val units = Soot.getBody(m).getUnits().toSet
+        var units = Set.empty[SootUnit]
+        try {
+          units = m.retrieveActiveBody.getUnits.toSet
+        } catch {
+          case _: RuntimeException => // {}
+        }
         val result = units flatMap { (unit: SootUnit) =>
           unit match {
             case r: ReturnStmt => Some(r)
@@ -199,10 +205,12 @@ object Taint {
   def dotString(addr: TaintAddress): String = {
     addr match {
       case LocalTaintAddress(m, local) =>
-        "\"Local[" + local + ", " + m.getName + "]\""
-      case RefTaintAddress(m, ref) => "\"Ref[" + ref + ", " + m.getName + "]\""
+        "\"Local[" + local + ", " + fqn(m) + "]\""
+      case RefTaintAddress(m, ref) => "\"Ref[" + ref + ", " + fqn(m) + "]\""
       case ParameterTaintAddress(m, index) =>
-        "\"Param[" + index + ", " + m.getName + "]\""
+        "\"Param[" + index + ", " + fqn(m) + "]\""
+      case ConstantTaintAddress(m) =>
+        "\"Const[" + fqn(m) + "]\""
     }
   }
 
@@ -237,7 +245,7 @@ object Taint {
       // TODO this could throw an exception
       case pr: ParameterRef => Set(ParameterTaintAddress(m, pr.getIndex))
       case r : Ref => Set(RefTaintAddress(m, r))
-      case _ : Constant => Set.empty
+      case _ : Constant => Set(ConstantTaintAddress(m))
       case unop : UnopExpr => addrsOf(unop.getOp, m)
       case binop : BinopExpr =>
         // TODO in the case of division, this could throw an exception
@@ -251,31 +259,48 @@ object Taint {
         getReturns(target) flatMap { (r: ReturnStmt) =>
           addrsOf(r.getOp, target)
         }
+      case na : NewArrayExpr =>
+        addrsOf(na.getSize, m)
+      case _ : NewExpr => Set.empty
+      case nma : NewMultiArrayExpr =>
+        nma.getSizes.toSet flatMap { (exp: Value) => addrsOf(exp, m) }
       case _ =>
         println(expr)
         ???
     }
   }
 
+  def fqn(method: SootMethod): String = {
+    method.getDeclaringClass.getName + "." + method.getName
+  }
+
   private var graphed = Set.empty[SootMethod]
   private var _taintGraph = Map.empty[TaintAddress, Set[TaintAddress]]
   def updateTaintGraph(to: TaintAddress, from: Set[TaintAddress]): Unit = {
     graph(to.m)
-    val newFrom = _taintGraph.getOrElse(to, Set.empty) ++ from
-    _taintGraph = _taintGraph + (to -> newFrom)
+    to match {
+      case _: ConstantTaintAddress => {}
+      case _ =>
+        val newFrom = _taintGraph.getOrElse(to, Set.empty) ++ from
+        _taintGraph = _taintGraph + (to -> newFrom)
+    }
   }
   def readTaintGraph(to: TaintAddress): Set[TaintAddress] = {
     graph(to.m)
-    _taintGraph.getOrElse(to, Set.empty)
+    to match {
+      case _: ConstantTaintAddress => Set.empty
+      case _ => _taintGraph.getOrElse(to, Set.empty)
+    }
   }
   def graph(method: SootMethod): Unit = {
     if (!graphed.contains(method)) {
       graphed = graphed + method
 
-      if (method.hasActiveBody) {
+      try {
+        val units = method.retrieveActiveBody.getUnits.toList
         var index = 0;
         Console.withOut(System.out) {
-          println(method.getName)
+          println(fqn(method))
           println()
         }
 
@@ -289,7 +314,7 @@ object Taint {
           updateTaintGraph(to, from)
         }
 
-        for (unit <- method.getActiveBody.getUnits.toList) {
+        for (unit <- units) {
           Console.withOut(System.out) {
             println(index + ":\t" + unit)
             index = index+1
@@ -325,10 +350,9 @@ object Taint {
               ???
           }
         }
-      } else {
-        Console.withOut(System.out) {
-          println("No active body (library code?)")
-        }
+      } catch {
+        // if no active body can be created, assume it's library code
+        case _: RuntimeException => {}
       }
     }
   }
@@ -371,3 +395,4 @@ case class RefTaintAddress(override val m: SootMethod, val ref: Ref)
   extends TaintAddress
 case class ParameterTaintAddress(override val m: SootMethod, val index: Int)
   extends TaintAddress
+case class ConstantTaintAddress(override val m: SootMethod) extends TaintAddress
