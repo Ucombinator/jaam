@@ -20,8 +20,7 @@ import javafx.util.Duration;
 import javafx.scene.layout.Pane;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Group;
-
-import java.awt.Color;
+import javafx.scene.paint.Color;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -40,9 +39,7 @@ public class VizPanel extends JFXPanel
 
 	public static float hues[]; //Used for shading nodes from green to red
 	private LayoutRootVertex panelRoot;
-	private javafx.scene.paint.Color[] colors = {javafx.scene.paint.Color.GREEN, javafx.scene.paint.Color.AZURE,
-			javafx.scene.paint.Color.AQUAMARINE, javafx.scene.paint.Color.BLUEVIOLET,
-			javafx.scene.paint.Color.DARKTURQUOISE};
+	private Color[] colors = {Color.GREEN, Color.AZURE, Color.AQUAMARINE, Color.BLUEVIOLET, Color.DARKTURQUOISE};
 	public static int maxLoopHeight;
 
 	// The dimensions of the background for our graph
@@ -77,7 +74,7 @@ public class VizPanel extends JFXPanel
 			scrollPane = createZoomPane(contentGroup);
 			this.setScene(new Scene(scrollPane));
 		}
-		this.setBackground(Color.WHITE);		
+		//this.setBackground(Color.WHITE);
 	}
 
 	public void initFX(LayoutRootVertex root)
@@ -95,9 +92,12 @@ public class VizPanel extends JFXPanel
 			this.panelRoot = root;
 		}
 		drawNodes(null, this.panelRoot);
-		drawEdges(null, this.panelRoot);
+		drawEdges(this.panelRoot);
 	}
-	
+
+	public void resetContent() {
+		this.initContentGroup();
+	}
 
 	public void resetPanelSize() {
 		this.maxVertexWidth = this.panelRoot.getWidth();
@@ -185,10 +185,10 @@ public class VizPanel extends JFXPanel
 	{
 		GUINode node = new GUINode(parent, v);
 
-		if (parent == null){
+		if (parent == null) {
 			contentGroup.getChildren().add(node);
 		}
-		else{
+		else {
 			parent.getChildren().add(node);
 		}
 
@@ -215,15 +215,38 @@ public class VizPanel extends JFXPanel
 		while (it.hasNext())
 		{
 			AbstractLayoutVertex child = it.next();
-			if(v.isExpanded()){
+			if(v.isExpanded()) {
 				drawNodes(node, child);
+			}
+			else {
+				// TODO: Click on the "C" button to collapse all chains, then try to expand a chain.
+				// The internal nodes in the chain should appear, but their GUINodes are still null, which gives an error.
+				// This is an attempt to fix the bug, but it still doesn't work yet.
+				//initializeCollapsedNodes(node, child);
 			}
 		}
 	}
 
-	public void drawEdges(GUINode parent, AbstractLayoutVertex v)
+	public void initializeCollapsedNodes(GUINode parent, AbstractLayoutVertex v) {
+		GUINode node = new GUINode(parent, v);
+		if (parent == null) {
+			contentGroup.getChildren().add(node);
+		}
+		else {
+			parent.getChildren().add(node);
+		}
+
+		Iterator<AbstractLayoutVertex> it = v.getInnerGraph().getVertices().values().iterator();
+		while (it.hasNext())
+		{
+			AbstractLayoutVertex child = it.next();
+			initializeCollapsedNodes(node, child);
+		}
+	}
+
+	public void drawEdges(AbstractLayoutVertex v)
 	{
-		//System.out.println("Edges of vertex: " + v.getStrID());
+		System.out.println("Edges of vertex: " + v.getStrID());
 		if(!Parameters.edgeVisible){
 			return;
 		}
@@ -231,13 +254,16 @@ public class VizPanel extends JFXPanel
 		GUINode node = v.getGraphics();
 		if(v.isExpanded())
 		{
+			System.out.println(v.getStrID());
+
 			//Edge.arrowLength = this.getWidthPerVertex() / 10.0;
-			for(LayoutEdge e : v.getInnerGraph().getEdges().values())
-				e.draw(this, node);
+			for(LayoutEdge e : v.getInnerGraph().getEdges().values()) {
+				System.out.println("Drawing edge: " + e.getID());
+				e.draw(node);
+			}
 		
 			for(AbstractLayoutVertex child : v.getInnerGraph().getVertices().values())
-				drawEdges(node, child);
-			
+				drawEdges(child);
 		}
 	}
 
@@ -288,13 +314,13 @@ public class VizPanel extends JFXPanel
 		});
 
 		
-		final EventHandler<ScrollEvent> voindHandle =  new EventHandler<ScrollEvent>()
+		final EventHandler<ScrollEvent> zoomInProgressHandle =  new EventHandler<ScrollEvent>()
 		{
 			@Override
 			public void handle(ScrollEvent event)
 			{
 				event.consume();
-				System.out.println("voindHandle");
+				System.out.println("zoomInProgressHandle");
 			}
 		}; 
 		
@@ -305,8 +331,8 @@ public class VizPanel extends JFXPanel
 			public void handle(ScrollEvent event)
 			{
 				event.consume();
-				System.out.println("ZOOOOOOOOOOOM");
-				zoomPane.setOnScroll(voindHandle);
+				System.out.println("ZOOOOOOOOOOOM: " + event.getDeltaY());
+				zoomPane.setOnScroll(zoomInProgressHandle);
 				
 
 				if (event.getDeltaY() == 0)
@@ -319,8 +345,8 @@ public class VizPanel extends JFXPanel
 				final Point2D scrollOffset = figureScrollOffset(scrollContent, scroller);
 
 				ScaleTransition st = new ScaleTransition(Duration.millis(5),group);
-				st.setToX(group.getScaleX()*scaleFactor);
-				st.setToY(group.getScaleX()*scaleFactor);
+				st.setToX(group.getScaleX() * scaleFactor);
+				st.setToY(group.getScaleX() * scaleFactor);
 //				group.setScaleX(group.getScaleX() * scaleFactor);
 //				group.setScaleY(group.getScaleY() * scaleFactor);
 				Parameters.stFrame.mainPanel.getPanelRoot().toggleEdges();
@@ -333,18 +359,20 @@ public class VizPanel extends JFXPanel
 					public void handle(ActionEvent event)
 					{
 
+						// TODO: Our repositioning fails miserably.
 						// move viewport so that old center remains in the center after the scaling
-						repositionScroller(scrollContent, scroller, scaleFactor, scrollOffset);
+						//repositionScroller(scrollContent, scroller, scaleFactor, scrollOffset);
+
 						Parameters.stFrame.mainPanel.getPanelRoot().toggleEdges();
 						// Adjust stroke width of lines and length of arrows
 						VizPanel.this.scaleLines();
 						zoomPane.setOnScroll(activeHandle);
+						System.out.println("Total scale: " + group.getScaleX());
 					}
 				});
 			}
 		}; 
-		
-		
+
 		zoomPane.setOnScroll(activeHandle);
 
 		// Panning via drag....

@@ -210,6 +210,18 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
     }
 
+    public void resetGraphics() {
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
+            v.resetGraphics();
+        }
+
+        for(LayoutEdge e : this.getInnerGraph().getEdges().values()) {
+            e.graphics = null;
+        }
+
+        this.graphics = null;
+    }
+
     /*
     public void calculateHeight()
     {
@@ -769,9 +781,10 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     }
 
     public void toggleNodesOfType(VertexType type, boolean isExpanded) {
-        if(this.getType()==type){
+        if(this.getType() == type){
             this.setExpanded(isExpanded);
         }
+
         Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVertices().values().iterator();
         while(it.hasNext()){
             it.next().toggleNodesOfType(type, isExpanded);
@@ -779,26 +792,26 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     }
 
     public void toggleEdges() {
-        Iterator<LayoutEdge> it = this.getInnerGraph().getEdges().values().iterator();
-        while(it.hasNext()){
-            LayoutEdge e = it.next();
-            if(e.getGraphics()!=null){
+        Iterator<LayoutEdge> itEdges = this.getInnerGraph().getEdges().values().iterator();
+        while(itEdges.hasNext()) {
+            LayoutEdge e = itEdges.next();
+            if(e.getGraphics() != null) {
                 e.getGraphics().setVisible(!e.getGraphics().isVisible() && Parameters.edgeVisible);
             }
         }
 
-        Iterator<AbstractLayoutVertex> itN = this.getInnerGraph().getVertices().values().iterator();
-        while(itN.hasNext()){
-            itN.next().toggleEdges();
+        Iterator<AbstractLayoutVertex> itNodes = this.getInnerGraph().getVertices().values().iterator();
+        while(itNodes.hasNext()){
+            itNodes.next().toggleEdges();
         }
     }
 
-    public void reset(){
-        this.setGraphics(null);
+    public void reset() {
+        /*this.setGraphics(null);
         Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVertices().values().iterator();
         while(it.hasNext()){
             it.next().reset();
-        }
+        }*/
     }
 
     public HashSet<Instruction> getInstructions() {

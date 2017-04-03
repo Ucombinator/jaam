@@ -50,6 +50,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         graphics = new Group();
         line = new Line();
         arrowhead = new Polygon();
+        System.out.println("Created new edge: " + this.getID());
     }
 
     public EDGE_TYPE getType() {
@@ -76,30 +77,33 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         return destVertex;
     }
 
-    public void draw(VizPanel panel, GUINode node)
+    public void draw(GUINode node)
     {
+        //System.out.println("Drawing edges for " + node.getVertex().toString());
         if (this.source == this.dest)
         {
-			/*System.out.println("Error in Edge.draw(): The source and destination vertices are the same.");
+			System.out.println("Error in Edge.draw(): The source and destination vertices are the same.");
 			System.out.println(this.source +"---"+ this.dest);
 			System.out.println(this.sourceVertex.getLabel() +"---"+ this.destVertex.getLabel());
-			System.out.println(this.getType());*/
+			System.out.println(this.getType());
             return;
         }
         else if (sourceVertex.getX() == destVertex.getX() && sourceVertex.getY() == destVertex.getY())
         {
-			/*System.out.println("Error in Edge.draw(): The two vertices are at the same location.");
+			System.out.println("Error in Edge.draw(): The two vertices are at the same location.");
 			System.out.println(this.source + " --- " + this.dest);
 			System.out.println(this.sourceVertex.getLabel() + " --- " + this.destVertex.getLabel());
-			System.out.println(this.getType());*/
+			System.out.println(this.getType());
             return;
         }
         else if(!sourceVertex.getDrawEdges() || !destVertex.getDrawEdges()) {
+            System.out.println("Draw source: " + sourceVertex.getDrawEdges() + "\nDraw dest: " + destVertex.getDrawEdges());
             return;
         }
         else if((sourceVertex.getGraphics() == null) || (destVertex.getGraphics() == null))
             return;
 
+        System.out.println("Passed checks for drawing edge: " + this.getID());
         this.node = node;
         GUINode sourceNode = sourceVertex.getGraphics();
         GUINode destNode = destVertex.getGraphics();
@@ -222,11 +226,21 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
             this.graphics.getChildren().add(marker2);
         }
 
+        System.out.println("Creating line graphics...");
         this.graphics.getChildren().add(line);
         this.graphics.getChildren().add(arrowhead);
 
-        if(node != null)
+        if(!this.graphics.isVisible()) {
+            System.out.println("Error! Edge is invisible.");
+        }
+
+        if(node != null) {
+            System.out.println("Adding line graphics to node...");
             node.getChildren().add(graphics);
+        }
+        else {
+            System.out.println("Error! The node for this edge does not exist.");
+        }
     }
 
     public Rectangle getMarker(double x, double y)
@@ -262,7 +276,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
                         e.node.getChildren().remove(e.graphics);
 
                     // ...And draw new ones
-                    e.draw(Parameters.stFrame.mainPanel, e.node);
+                    e.draw(e.node);
                 }
             }
         }
@@ -296,6 +310,10 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     public void setVisible(boolean isVisible)
     {
         this.graphics.setVisible(isVisible);
+    }
+
+    public boolean isVisible() {
+        return this.graphics.isVisible();
     }
 
     public void setScale()

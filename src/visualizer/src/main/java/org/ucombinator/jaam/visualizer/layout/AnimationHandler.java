@@ -19,6 +19,7 @@ import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 import org.ucombinator.jaam.visualizer.graph.Edge;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.main.Parameters;
+import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.input.MouseEvent>
 {
@@ -54,9 +55,11 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	
 	private void collapsing(AbstractLayoutVertex v)
 	{
-		System.out.println("Collapsing node: " + v.getId() + ", " + v.getGraphics().toString());
+		System.out.println("\nCollapsing node: " + v.getId() + ", " + v.getGraphics().toString());
 		Iterator<Node> it = v.getGraphics().getChildren().iterator();
-		while(it.hasNext())
+
+		// Fade edges out?
+		/*while(it.hasNext())
 		{
 			final Node n = it.next();
 			if(!n.getClass().equals(Rectangle.class))
@@ -73,12 +76,17 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 				
 				ft.play();
 			}
-		}
+		}*/
 
 		v.setExpanded(false);
-		final AbstractLayoutVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
+		VizPanel panel = Parameters.stFrame.mainPanel;
+		final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
+		panel.resetContent();
 		LayoutAlgorithm.layout(panelRoot);
-		ParallelTransition pt = new ParallelTransition();
+		panel.drawNodes(null, panel.getPanelRoot());
+		panel.drawEdges(panelRoot);
+
+		/*ParallelTransition pt = new ParallelTransition();
 		animateRecursive(panelRoot, pt);
 		pt.play();
 
@@ -87,13 +95,16 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 			public void handle(ActionEvent event) {
 				LayoutEdge.redrawEdges(panelRoot, true);
 			}
-		});
+		});*/
 	}
 
 	private void expanding(AbstractLayoutVertex v)
 	{
+		System.out.println("\nExpanding node: " + v.getId() + ", " + v.getGraphics().toString());
 		Iterator<Node> it = v.getGraphics().getChildren().iterator();
-		while(it.hasNext())
+
+		// Fade edges in?
+		/*while(it.hasNext())
 		{
 			final Node n = it.next();
 			if(!n.getClass().equals(Rectangle.class))
@@ -110,21 +121,26 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 				
 				ft.play();
 			}
-		}
+		}*/
 
 		v.setExpanded(true);
-		final AbstractLayoutVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
+		VizPanel panel = Parameters.stFrame.mainPanel;
+		final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
+		panel.resetContent();
 		LayoutAlgorithm.layout(panelRoot);
-		ParallelTransition pt = new ParallelTransition();
-		animateRecursive(panelRoot, pt);
-		pt.play();
+		panel.drawNodes(null, panelRoot);
+		panel.drawEdges(panelRoot);
 
-		pt.setOnFinished(new EventHandler<ActionEvent>() {
-			@Override
-			public void handle(ActionEvent event) {
-				LayoutEdge.redrawEdges(panelRoot, true);
-			}
-		});
+		//ParallelTransition pt = new ParallelTransition();
+		//animateRecursive(panelRoot, pt);
+		//pt.play();
+
+		//pt.setOnFinished(new EventHandler<ActionEvent>() {
+		//	@Override
+		//	public void handle(ActionEvent event) {
+				//LayoutEdge.redrawEdges(panelRoot, true);
+		//	}
+		//});
 	}
 	
 	private void handlePrimaryDoubleClick(MouseEvent event)
@@ -145,33 +161,37 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	private void animateRecursive(final AbstractLayoutVertex v, ParallelTransition pt)
 	{
 		// TODO: Move arrows as well as nodes.
-		System.out.println("Size of node " + v.getId() + ": " + v.getWidth() + ", " + v.getHeight());
-		System.out.println("Location: " + v.getX() + ", " + v.getY());
-		GUINode node = v.getGraphics();
-		double newWidth = Parameters.stFrame.mainPanel.scaleX(v.getWidth());
-		double newHeight = Parameters.stFrame.mainPanel.scaleY(v.getHeight());
-		double currWidth = node.getWidth() * node.getTotalParentScaleX();
-		double currHeight = node.getHeight() * node.getTotalParentScaleY();
-
-		double toScaleX = newWidth / currWidth;
-		double toScaleY = newHeight / currHeight;
-		System.out.println(String.format("Scale X: %.3f", toScaleX));
-		System.out.println(String.format("Scale Y: %.3f", toScaleY));
-
-		// Shift to keep upper left corner in the same place after scaling
-		System.out.println("Compare widths: " + currWidth + ", " + newWidth);
-		System.out.println("Compare heights: " + currHeight + ", " + newHeight);
-		double xShift = 0.5 * currWidth * (toScaleX - 1);
-		double yShift = 0.5 * currHeight * (toScaleY - 1);
-		//double xShift = 0;
-		//double yShift = 0;
-		System.out.println("Shift: " + xShift + ", " + yShift);
-		double toX = Parameters.stFrame.mainPanel.scaleX(v.getX()) + xShift;
-		double toY = Parameters.stFrame.mainPanel.scaleY(v.getY()) + yShift;
-
 		if(!(v instanceof LayoutRootVertex)) {
+			boolean toPrint = (v instanceof LayoutMethodVertex);
+			System.out.println("Size of node " + v.getId() + ": " + v.getWidth() + ", " + v.getHeight());
+			System.out.println("Location: " + v.getX() + ", " + v.getY());
+			System.out.println("Node: " + v.getGraphics());
+			GUINode node = v.getGraphics();
+			double newWidth = Parameters.stFrame.mainPanel.scaleX(v.getWidth());
+			double newHeight = Parameters.stFrame.mainPanel.scaleY(v.getHeight());
+			double currWidth = node.getWidth() * node.getTotalParentScaleX();
+			double currHeight = node.getHeight() * node.getTotalParentScaleY();
+
+			double toScaleX = newWidth / currWidth;
+			double toScaleY = newHeight / currHeight;
 			node.setTotalScaleX(toScaleX * node.getTotalParentScaleX());
 			node.setTotalScaleY(toScaleY * node.getTotalParentScaleY());
+			System.out.println(String.format("Scale X: %.3f", toScaleX));
+			System.out.println(String.format("Scale Y: %.3f", toScaleY));
+
+			// Shift to keep upper left corner in the same place after scaling
+			System.out.println("Compare widths: " + currWidth + ", " + newWidth);
+			System.out.println("Compare heights: " + currHeight + ", " + newHeight);
+			double xShift = node.getXShift();
+			double yShift = node.getYShift();
+			//double xShift = 0;
+			//double yShift = 0;
+			System.out.println("Shift: " + xShift + ", " + yShift);
+			double toX = Parameters.stFrame.mainPanel.scaleX(v.getX() + xShift);
+			double toY = Parameters.stFrame.mainPanel.scaleY(v.getY() + yShift);
+			System.out.println(String.format("Translate X: %.3f", toX));
+			System.out.println(String.format("Translate Y: %.3f", toY));
+
 			if (toScaleX != node.getScaleX() || toScaleY != node.getScaleY()) {
 				ScaleTransition st = new ScaleTransition(Duration.millis(transitionTime), node);
 				st.setToX(toScaleX);
@@ -190,11 +210,10 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		Iterator<AbstractLayoutVertex> it = v.getInnerGraph().getVertices().values().iterator();
 		while(it.hasNext()){
 			AbstractLayoutVertex next = it.next();
-			if(v.isExpanded()){
+			if(v.isExpanded()) {
 				animateRecursive(next, pt);
 			}
 		}
-
 	}
 
 	private void handlePrimarySingleClick(MouseEvent event)

@@ -10,8 +10,8 @@ public class LayoutAlgorithm
 	// This works on a graph whose vertices have been assigned a bounding box
 	final static double MARGIN_PADDING = .25;
 	final static double NODES_PADDING = .5;
-	static HashMap<String, Double> bboxWidth;
-	static HashMap<String, Double> bboxHeight;
+	private static HashMap<String, Double> bboxWidthTable;
+	private static HashMap<String, Double> bboxHeightTable;
 	
 	private static void initializeSizes(AbstractLayoutVertex parentVertex){
 		parentVertex.setWidth(AbstractLayoutVertex.DEFAULT_WIDTH);
@@ -23,14 +23,14 @@ public class LayoutAlgorithm
 	}
 	
 	public static void layout(AbstractLayoutVertex parentVertex) {
-		bboxWidth = new HashMap<String, Double>();
-		bboxHeight = new HashMap<String, Double>();
+		bboxWidthTable = new HashMap<String, Double>();
+		bboxHeightTable = new HashMap<String, Double>();
 		initializeSizes(parentVertex);
 		defaultLayout(parentVertex);
 	}
 
 	/*********************************************************************/
-	/**********LAYS OUT EACH LEVEL OF THE CLUSTERED GRAPH******************/
+	/********* LAYS OUT EACH LEVEL OF THE CLUSTERED GRAPH *****************/
 	/*********************************************************************/
 	public static void defaultLayout(AbstractLayoutVertex parentVertex){
 		HierarchicalGraph graph = parentVertex.getInnerGraph();
@@ -51,33 +51,40 @@ public class LayoutAlgorithm
 		}
 		
 		/*******************************************************************************************/
-		/************************ACTUAL LAYOUT FOR THE CURRENT LEVEL/GRAPH**************************/
+		/*********************** ACTUAL LAYOUT FOR THE CURRENT LEVEL/GRAPH *************************/
 		/*******************************************************************************************/
 		AbstractLayoutVertex root = graph.getRoot();
 		Iterator<AbstractLayoutVertex> itClear = graph.getVertices().values().iterator();
 		// Initialize all the nodes to be WHITE
-			while(itClear.hasNext()){itClear.next().setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);}
-		if(root!=null){
+		while(itClear.hasNext()) {
+			itClear.next().setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
+		}
+
+		if(root != null) {
 			storeBBoxWidthAndHeight(root);
 		}
+
+		// TODO: Why is this repeated from a few lines above?
 		itClear = graph.getVertices().values().iterator();
-			while(itClear.hasNext()){itClear.next().setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);}
-		if(root!=null){
+		while(itClear.hasNext()) {
+			itClear.next().setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
+		}
+
+		if(root != null) {
 			assignXandYtoInnerNodesAndGiveParentBBox(root, MARGIN_PADDING, MARGIN_PADDING);
-			parentVertex.setWidth(bboxWidth.get(root.getStrID()) + 2 * MARGIN_PADDING);
-			parentVertex.setHeight(bboxHeight.get(root.getStrID()) + 2 * MARGIN_PADDING);
-		}else{
+			parentVertex.setWidth(bboxWidthTable.get(root.getStrID()) + 2 * MARGIN_PADDING);
+			parentVertex.setHeight(bboxHeightTable.get(root.getStrID()) + 2 * MARGIN_PADDING);
+		} else {
 			parentVertex.setWidth(AbstractLayoutVertex.DEFAULT_WIDTH);
 			parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
 		}
-		
 	}
 	
 	/**
-	 * Preconditions: Height and Width of the inner nodes of the graph is (recursively known)
-	 * input: graph and left/top offset
+	 * Preconditions: Height and Width of the inner nodes of the graph is known (recursively)
+	 * Input: graph and left/top offset
 	 * Changes of Status: assigns X and Y to the inner vertices of the graph
-	 * Output: returns the W and H to be assign to the parent node
+	 * Output: returns the W and H to be assigned to the parent node
 	 * */
 	public static void assignXandYtoInnerNodesAndGiveParentBBox(AbstractLayoutVertex root, double left, double top)
 	{
@@ -101,14 +108,14 @@ public class LayoutAlgorithm
 		while(itGray.hasNext())
 		{
 			AbstractLayoutVertex curVer = itGray.next();
-			currentWidth += bboxWidth.get(curVer.getStrID()) + NODES_PADDING;
+			currentWidth += bboxWidthTable.get(curVer.getStrID()) + NODES_PADDING;
 		}
-		
-		
+
+		// TODO: What is AX?
 		double AX;
-		if(root.getWidth() >= currentWidth-NODES_PADDING){
-			AX = (root.getWidth()-(currentWidth-NODES_PADDING))/2;
-		}else{
+		if(root.getWidth() >= currentWidth - NODES_PADDING) {
+			AX = (root.getWidth() - (currentWidth - NODES_PADDING))/2;
+		} else {
 			AX = 0;
 		}
 		
@@ -117,21 +124,13 @@ public class LayoutAlgorithm
 		while(itGray.hasNext())
 		{
 			AbstractLayoutVertex curVer = itGray.next();
-			assignXandYtoInnerNodesAndGiveParentBBox(curVer,currentWidth + left+AX,NODES_PADDING + top + root.getHeight());
-			currentWidth += bboxWidth.get(curVer.getStrID()) + NODES_PADDING;
-			currentHeight = Math.max(currentHeight, bboxHeight.get(curVer.getStrID()));
+			assignXandYtoInnerNodesAndGiveParentBBox(curVer,currentWidth + left + AX,NODES_PADDING + top + root.getHeight());
+			currentWidth += bboxWidthTable.get(curVer.getStrID()) + NODES_PADDING;
+			currentHeight = Math.max(currentHeight, bboxHeightTable.get(curVer.getStrID()));
 		}
-		
-		
-		
-//		if(root.getWidth() <= currentWidth){
-//			root.setX(left + ((bboxWidth.get(root.getStrID()) - root.getWidth()) / 2.0));  //left-most corner x
-//		}else{
-//			
-//		}
-		root.setX(left + ((bboxWidth.get(root.getStrID()) - root.getWidth()) / 2.0));  //left-most corner x
+
+		root.setX(left + ((bboxWidthTable.get(root.getStrID()) - root.getWidth()) / 2.0));  //left-most corner x
 		root.setY(top);							    					//top-most corner y
-		
 		root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
 	}
 	
@@ -167,24 +166,23 @@ public class LayoutAlgorithm
 			currentHeight = Math.max(currentHeight, boundBox[1]);
 		}
 		
-		double bboxWIDTH, bboxHEIGHT = 0.0;
-		
-		bboxWIDTH = Math.max(root.getWidth(), currentWidth - NODES_PADDING);
+		double currBboxWidth, currBboxHeight;
+		currBboxWidth = Math.max(root.getWidth(), currentWidth - NODES_PADDING);
 		if(grayChildren.size() == 0)
 		{
-			bboxHEIGHT = root.getHeight();
+			currBboxHeight = root.getHeight();
 		}
 		else
 		{
-			bboxHEIGHT = NODES_PADDING + root.getHeight() + currentHeight;
+			currBboxHeight = NODES_PADDING + root.getHeight() + currentHeight;
 		}
 		
 		root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
 		
-		bboxWidth.put(root.getStrID(), bboxWIDTH);
-		bboxHeight.put(root.getStrID(), bboxHEIGHT);
+		bboxWidthTable.put(root.getStrID(), currBboxWidth);
+		bboxHeightTable.put(root.getStrID(), currBboxHeight);
 		
-		double[] result = {bboxWIDTH,bboxHEIGHT};
+		double[] result = {currBboxWidth, currBboxHeight};
 		return result;
 	}
 	

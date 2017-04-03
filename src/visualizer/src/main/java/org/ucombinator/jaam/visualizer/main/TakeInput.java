@@ -59,38 +59,8 @@ public class TakeInput extends Thread
 	public void parsePackets(String file)
 	{
 		if(file.equals("")) {
-			int dummyInstructions = 14;
-			for(int i = 0; i < dummyInstructions; i++) {
-				if(i < 5) {
-					Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
-							"Main.main", i, true);
-					Main.graph.addVertex((i + 1), inst, true);
-				}
-				else {
-					Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
-							"Main.func", i, true);
-					Main.graph.addVertex((i + 1), inst, true);
-				}
-			}
-
-			// Main.main
-			Main.graph.addEdge(0, 1);
-			Main.graph.addEdge(1, 2);
-			Main.graph.addEdge(1, 3);
-			Main.graph.addEdge(2, 4);
-			Main.graph.addEdge(3, 4);
-
-			// Main.func
-			Main.graph.addEdge(4, 5);
-			Main.graph.addEdge(5, 6);
-			Main.graph.addEdge(6, 7);
-			Main.graph.addEdge(6, 8);
-			Main.graph.addEdge(7, 9);
-			Main.graph.addEdge(8, 9);
-			Main.graph.addEdge(9, 10);
-			Main.graph.addEdge(10, 11);
-			Main.graph.addEdge(11, 12);
-			Main.graph.addEdge(12,13);
+			readSmallDummyGraph();
+			//readLargeDummyGraph();
 		}
 		else try
 		{
@@ -143,6 +113,64 @@ public class TakeInput extends Thread
 		{
 			System.out.println(e);
 		}
+	}
+
+	public static void readSmallDummyGraph() {
+		int dummyInstructions = 6;
+		for (int i = 0; i < dummyInstructions; i++) {
+			if (i < 3) {
+				Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
+						"Main.main", i, true);
+				Main.graph.addVertex((i + 1), inst, true);
+			} else {
+				Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
+						"Main.func", i, true);
+				Main.graph.addVertex((i + 1), inst, true);
+			}
+		}
+
+		Main.graph.addEdge(0, 1);
+		Main.graph.addEdge(1, 2);
+		Main.graph.addEdge(2, 3);
+		Main.graph.addEdge(3, 4);
+		Main.graph.addEdge(4, 5);
+	}
+
+	public static void readLargeDummyGraph() {
+		int dummyInstructions = 16;
+		for(int i = 0; i < dummyInstructions; i++) {
+			if(i < 5) {
+				Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
+						"Main.main", i, true);
+				Main.graph.addVertex((i + 1), inst, true);
+			}
+			else {
+				Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
+						"Main.func", i, true);
+				Main.graph.addVertex((i + 1), inst, true);
+			}
+		}
+
+		// Main.main
+		Main.graph.addEdge(0, 1);
+		Main.graph.addEdge(1, 2);
+		Main.graph.addEdge(1, 3);
+		Main.graph.addEdge(2, 4);
+		Main.graph.addEdge(3, 4);
+
+		// Main.func
+		Main.graph.addEdge(4, 5);
+		Main.graph.addEdge(5, 6);
+		Main.graph.addEdge(6, 7);
+		Main.graph.addEdge(6, 8);
+		Main.graph.addEdge(7, 9);
+		Main.graph.addEdge(8, 9);
+		Main.graph.addEdge(9, 10);
+		Main.graph.addEdge(10, 11);
+		Main.graph.addEdge(11, 12);
+		Main.graph.addEdge(12,13);
+		Main.graph.addEdge(13,14);
+		Main.graph.addEdge(14,15);
 	}
 
 	/*public static void loadDecompiledCode()

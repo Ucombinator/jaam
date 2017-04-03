@@ -156,16 +156,18 @@ public class GUINode extends Pane
     // top left corner stationary when the node is scaled about its center.
     public double getXShift()
     {
-        double currentWidth = this.getScaleX() * this.getWidth();
-        double oldWidth = this.getWidth();
+        double currentWidth = this.getScaleX() * this.vertex.getWidth();
+        double oldWidth = this.vertex.getWidth();
         return (oldWidth - currentWidth) / 2;
+        //return 0;
     }
 
     public double getYShift()
     {
-        double currentHeight = this.getScaleY() * this.getHeight();
-        double oldHeight = this.getHeight();
+        double currentHeight = this.getScaleY() * this.vertex.getHeight();
+        double oldHeight = this.vertex.getHeight();
         return (oldHeight - currentHeight) / 2;
+        //return 0;
     }
 
     EventHandler<MouseEvent> onMousePressedEventHandler = new EventHandler<MouseEvent>()

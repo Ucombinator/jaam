@@ -510,7 +510,7 @@ public class StacFrame extends JFrame
 										Parameters.stFrame.mainPanel.resetPanelSize();
 
 										Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-										Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.drawEdges(Parameters.stFrame.mainPanel.getPanelRoot());
 									}
 								});
 							}
@@ -541,7 +541,7 @@ public class StacFrame extends JFrame
 										Parameters.stFrame.mainPanel.resetPanelSize();
 
 										Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-										Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.drawEdges(Parameters.stFrame.mainPanel.getPanelRoot());
 									}
 								});
 							}
@@ -574,7 +574,7 @@ public class StacFrame extends JFrame
 										Parameters.stFrame.mainPanel.resetPanelSize();
 
 										Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-										Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.drawEdges(Parameters.stFrame.mainPanel.getPanelRoot());
 									}
 								});
 							}
@@ -605,7 +605,7 @@ public class StacFrame extends JFrame
 										Parameters.stFrame.mainPanel.resetPanelSize();
 
 										Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-										Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.drawEdges(Parameters.stFrame.mainPanel.getPanelRoot());
 									}
 								});
 							}
@@ -653,7 +653,7 @@ public class StacFrame extends JFrame
 										Parameters.stFrame.mainPanel.resetPanelSize();
 
 										Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-										Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.drawEdges(Parameters.stFrame.mainPanel.getPanelRoot());
 									}
 								});
 							}
@@ -690,7 +690,7 @@ public class StacFrame extends JFrame
 										Parameters.stFrame.mainPanel.resetPanelSize();
 
 										Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-										Parameters.stFrame.mainPanel.drawEdges(null, Parameters.stFrame.mainPanel.getPanelRoot());
+										Parameters.stFrame.mainPanel.drawEdges(Parameters.stFrame.mainPanel.getPanelRoot());
 									}
 								});
 							}
