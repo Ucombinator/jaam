@@ -74,8 +74,6 @@ object Taint {
     // TODO I just copied this from Coverage2
     Options.v().set_whole_program(true)
     soot.Main.v().autoSetOptions()
-    val mainClass = Scene.v().loadClassAndSupport(className)
-    Scene.v().setMainClass(mainClass)
     Scene.v().loadNecessaryClasses()
 
     // val mName = className + "." + method
