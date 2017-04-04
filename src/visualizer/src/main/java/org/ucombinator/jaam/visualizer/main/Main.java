@@ -3,17 +3,28 @@ package org.ucombinator.jaam.visualizer.main;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.StacFrame;
 
-public class Main
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+
+public class Main extends Application
 {
 	public static Graph graph;
 
-	public static void main(String[] args)
+	public void start(Stage stage)
 	{
-		Parameters.stFrame = new StacFrame();
+		org.ucombinator.jaam.visualizer.main.Parameters.stFrame = new StacFrame();
+		Scene scene = new Scene(org.ucombinator.jaam.visualizer.main.Parameters.stFrame, org.ucombinator.jaam.visualizer.main.Parameters.width,
+				org.ucombinator.jaam.visualizer.main.Parameters.height);
+		stage.setTitle("JAAM Visualizer");
+		stage.setScene(scene);
+		stage.show();
+
 		TakeInput ti = new TakeInput();
 		String file = "";
+		ti.run(file, true);
 
-		for (int i = 0; i < args.length; i++)
+		/*for (int i = 0; i < args.length; i++)
 		{
 			if (args[i].equalsIgnoreCase("--refresh") || args[i].equalsIgnoreCase("-r"))
 			{
@@ -51,8 +62,6 @@ public class Main
 			{
 				System.out.println("ignoring invalid input option:\"" + args[i] + "\"");
 			}
-		}
-		
-		ti.run(file, true);
+		}*/
 	}
 }

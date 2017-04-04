@@ -5,33 +5,34 @@ import javax.swing.JLabel;
 import java.awt.Color;
 import java.awt.BorderLayout;
 
-import javax.swing.JTree;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeCellRenderer;
-import javax.swing.tree.DefaultTreeModel;
+//import javax.swing.JTree;
+//import javax.swing.tree.DefaultMutableTreeNode;
+//import javax.swing.tree.DefaultTreeCellRenderer;
+//import javax.swing.tree.DefaultTreeModel;
 import java.awt.Component;
 
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
+import javafx.scene.layout.BorderPane;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 
-public class SearchResults extends JPanel
+public class SearchResults extends BorderPane
 {
-    public JTree searchTree;
-    private DefaultMutableTreeNode root;
+    public TreeView searchTree;
+    private TreeItem root;
     public static int nodeHeight = 40;
     
 	public SearchResults()
 	{
-        this.setLayout(new BorderLayout());
-        
-        this.root = new DefaultMutableTreeNode("Search Results");
-        this.searchTree = new JTree(root);
-        this.searchTree.setShowsRootHandles(true);
-        this.searchTree.setRootVisible(false);
-        this.searchTree.setRowHeight(SearchResults.nodeHeight);
-        this.searchTree.setCellRenderer(new SearchRenderer());
+        this.root = new TreeItem("Search Results");
+        this.searchTree = new TreeView(root);
+        this.searchTree.setShowRoot(true);
+        this.root.setExpanded(true);
+        this.setCenter(searchTree);
 
-        this.add(this.searchTree, BorderLayout.CENTER);
         /*this.searchTree.addMouseListener
 		(
 			new MouseListener()
@@ -85,15 +86,15 @@ public class SearchResults extends JPanel
 	//Set the text for the area
 	public void writeText()
 	{
-        this.root.removeAllChildren();
+        this.root.getChildren().clear();
         if(Parameters.stFrame.mainPanel.highlighted.size() > 0) {
             // We don't want to include the panel root, so we start our check with its children
             for(AbstractLayoutVertex v : Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
                 v.addTreeNodes(this.root);
 
             // TODO: Auto-expand nodes?
-            DefaultTreeModel model = (DefaultTreeModel)this.searchTree.getModel();
-            model.reload(this.root);
+            //DefaultTreeModel model = (DefaultTreeModel)this.searchTree.getModel();
+            //model.reload(this.root);
         }
 	}
     
@@ -142,7 +143,7 @@ public class SearchResults extends JPanel
         }
     }*/
     
-    private class SearchRenderer extends DefaultTreeCellRenderer
+    /*private class SearchRenderer extends DefaultTreeCellRenderer
     {
         public Component getTreeCellRendererComponent(JTree tree, Object obj, boolean selected, boolean expanded,
                                                       boolean leaf, int row, boolean hasFocus)
@@ -162,7 +163,7 @@ public class SearchResults extends JPanel
                 label.setBackground(Parameters.colorHighlight);
                 label.setForeground(Color.BLACK);
             }
-            else*/ if (ver.isHighlighted)
+            else if (ver.isHighlighted)
             {
                 label.setBackground(Color.WHITE);
                 label.setForeground(Color.BLACK);
@@ -174,5 +175,5 @@ public class SearchResults extends JPanel
             }
             return label;
         }
-    }
+    }*/
 }

@@ -7,7 +7,9 @@ import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.Location;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 
-import javax.swing.tree.DefaultMutableTreeNode;
+//import javax.swing.tree.DefaultMutableTreeNode;
+import javafx.scene.control.TreeView;
+import javafx.scene.control.TreeItem;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -189,14 +191,14 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
             this.getGraphics().setVisible(isVisible);
     }
 
-    public boolean addTreeNodes(DefaultMutableTreeNode parentNode) {
+    public boolean addTreeNodes(TreeItem parentNode) {
         boolean addedNodes = false;
-        DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(this);
+        TreeItem newNode = new TreeItem(this);
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
             addedNodes |= v.addTreeNodes(newNode);
 
         if(Parameters.stFrame.mainPanel.highlighted.contains(this) || addedNodes) {
-            parentNode.add(newNode);
+            parentNode.getChildren().add(newNode);
             return true;
         }
         else

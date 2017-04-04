@@ -3,7 +3,6 @@ package org.ucombinator.jaam.visualizer.main;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Stack;
-import javafx.application.Platform;
 
 import org.ucombinator.jaam.serializer.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -28,32 +27,8 @@ public class TakeInput extends Thread
 		Main.graph.identifyLoops();
 		Main.graph.calcLoopHeights();*/
 
-		// Run these panels on JavaFX thread instead of Swing thread
-		Platform.runLater(new Runnable() {
-			@Override
-			public void run()
-			{
-				Parameters.stFrame.mainPanel.initFX(null);
-			}
-		});
+		Parameters.stFrame.mainPanel.initFX(null);
 		Parameters.mouseLastTime = System.currentTimeMillis();
-	}
-	
-	private void setFileInput(String file)
-	{
-		try
-		{
-			this.parseInput = new BufferedReader(new FileReader(file));
-			
-			if(this.parseInput == null)
-				System.out.println("null file");
-			else
-				Parameters.stFrame.setTitle("STAC Visualizer: " + file);			
-		}
-		catch(IOException ex)
-		{
-			ex.printStackTrace();
-		}
 	}
 
 	public void parsePackets(String file)

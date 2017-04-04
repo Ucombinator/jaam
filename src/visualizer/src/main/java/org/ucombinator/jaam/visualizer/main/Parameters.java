@@ -19,7 +19,7 @@ public class Parameters
 {
 	public static boolean debugMode = false;
 	public static boolean edgeVisible = true;
-	public static int width = 1200, height = 800;
+	public final static int width = 1000, height = 600;
 	public static double boxFactor = 3.0/4.0;
 	public static StacFrame stFrame;
 	public static TextArea rightArea;
@@ -45,7 +45,11 @@ public class Parameters
 	
 	public static int debug1, debug2;
 	public static long limitV = Long.MAX_VALUE;
-	
+
+	public static void setFrame(StacFrame stFrame) {
+		Parameters.stFrame = stFrame;
+	}
+
 	public static void setRightText()
 	{
 		StringBuilder text = new StringBuilder();
@@ -98,7 +102,7 @@ public class Parameters
 			searchResults.writeText();
 		}
 
-		stFrame.repaint();
+		//stFrame.repaint();
 
         /*if(Parameters.fixCaret)
         {

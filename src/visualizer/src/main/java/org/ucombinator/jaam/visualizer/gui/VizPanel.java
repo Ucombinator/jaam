@@ -10,14 +10,11 @@ import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 
-import javafx.embed.swing.JFXPanel;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.StackPane;
-import javafx.util.Duration;
 import javafx.scene.layout.Pane;
+import javafx.util.Duration;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
@@ -30,11 +27,9 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 
-public class VizPanel extends JFXPanel
+public class VizPanel extends ScrollPane
 {
 	private Group contentGroup;
-	private Pane testPane;
-	private ScrollPane scrollPane;
 	public HashSet<AbstractLayoutVertex> highlighted;
 
 	public static float hues[]; //Used for shading nodes from green to red
@@ -56,25 +51,12 @@ public class VizPanel extends JFXPanel
 	public VizPanel()
 	{
 		super();
-		initContentGroup();
-		highlighted = new HashSet<AbstractLayoutVertex>();
-	}
-
-	private void initContentGroup() {
 		contentGroup = new Group();
+		contentGroup.setVisible(true);
+		this.setContent(contentGroup);
 
-		if (Parameters.debugMode)
-		{
-			testPane = new Pane();
-			testPane.getChildren().add(contentGroup);
-			this.setScene(new Scene(testPane));
-		}
-		else
-		{
-			scrollPane = createZoomPane(contentGroup);
-			this.setScene(new Scene(scrollPane));
-		}
-		//this.setBackground(Color.WHITE);
+		createZoomPane();
+		highlighted = new HashSet<AbstractLayoutVertex>();
 	}
 
 	public void initFX(LayoutRootVertex root)
@@ -91,12 +73,13 @@ public class VizPanel extends JFXPanel
 		{
 			this.panelRoot = root;
 		}
+
 		drawNodes(null, this.panelRoot);
 		drawEdges(this.panelRoot);
 	}
 
 	public void resetContent() {
-		this.initContentGroup();
+		contentGroup = new Group();
 	}
 
 	public void resetPanelSize() {
@@ -292,24 +275,16 @@ public class VizPanel extends JFXPanel
 	// Next three methods copied from solution here: https://community.oracle.com/thread/2541811
 	// Feature request (inactive) to have an easier way to zoom inside a ScrollPane:
 	// https://bugs.openjdk.java.net/browse/JDK-8091618
-	private ScrollPane createZoomPane(final Group group)
+	private void createZoomPane()
 	{
 		final double SCALE_DELTA = 1.1;
-		final StackPane zoomPane = new StackPane();
-
-		zoomPane.getChildren().add(group);
-
-		final ScrollPane scroller = new ScrollPane();
-		final Group scrollContent = new Group(zoomPane);
-		scroller.setContent(scrollContent);
-
-		scroller.viewportBoundsProperty().addListener(new ChangeListener<Bounds>()
+		this.viewportBoundsProperty().addListener(new ChangeListener<Bounds>()
 		{
 			@Override
 			public void changed(ObservableValue<? extends Bounds> observable,
 								Bounds oldValue, Bounds newValue)
 			{
-				zoomPane.setMinSize(newValue.getWidth(), newValue.getHeight());
+				VizPanel.this.setMinSize(newValue.getWidth(), newValue.getHeight());
 			}
 		});
 
@@ -331,8 +306,8 @@ public class VizPanel extends JFXPanel
 			public void handle(ScrollEvent event)
 			{
 				event.consume();
-				System.out.println("ZOOOOOOOOOOOM: " + event.getDeltaY());
-				zoomPane.setOnScroll(zoomInProgressHandle);
+				System.out.println("ZOOM: " + event.getDeltaY());
+				VizPanel.this.setOnScroll(zoomInProgressHandle);
 				
 
 				if (event.getDeltaY() == 0)
@@ -342,11 +317,11 @@ public class VizPanel extends JFXPanel
 						: 1 / SCALE_DELTA;
 
 				// amount of scrolling in each direction in scrollContent coordinate units
-				final Point2D scrollOffset = figureScrollOffset(scrollContent, scroller);
+				final Point2D scrollOffset = figureScrollOffset();
 
-				ScaleTransition st = new ScaleTransition(Duration.millis(5),group);
-				st.setToX(group.getScaleX() * scaleFactor);
-				st.setToY(group.getScaleX() * scaleFactor);
+				ScaleTransition st = new ScaleTransition(Duration.millis(5), contentGroup);
+				st.setToX(contentGroup.getScaleX() * scaleFactor);
+				st.setToY(contentGroup.getScaleX() * scaleFactor);
 //				group.setScaleX(group.getScaleX() * scaleFactor);
 //				group.setScaleY(group.getScaleY() * scaleFactor);
 				Parameters.stFrame.mainPanel.getPanelRoot().toggleEdges();
@@ -361,23 +336,23 @@ public class VizPanel extends JFXPanel
 
 						// TODO: Our repositioning fails miserably.
 						// move viewport so that old center remains in the center after the scaling
-						//repositionScroller(scrollContent, scroller, scaleFactor, scrollOffset);
+						//repositionScroller(scrollContent, VizPanel.this, scaleFactor, scrollOffset);
 
 						Parameters.stFrame.mainPanel.getPanelRoot().toggleEdges();
 						// Adjust stroke width of lines and length of arrows
 						VizPanel.this.scaleLines();
-						zoomPane.setOnScroll(activeHandle);
-						System.out.println("Total scale: " + group.getScaleX());
+						VizPanel.this.setOnScroll(activeHandle);
+						System.out.println("Total scale: " + contentGroup.getScaleX());
 					}
 				});
 			}
 		}; 
 
-		zoomPane.setOnScroll(activeHandle);
+		this.setOnScroll(activeHandle);
 
 		// Panning via drag....
 		final ObjectProperty<Point2D> lastMouseCoordinates = new SimpleObjectProperty<Point2D>();
-		scrollContent.setOnMousePressed(new EventHandler<MouseEvent>() {
+		contentGroup.setOnMousePressed(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				lastMouseCoordinates.set(new Point2D(event.getX(), event.getY()));
@@ -385,65 +360,63 @@ public class VizPanel extends JFXPanel
 		});
 
 		// Fix drag location when node is scaled
-		scrollContent.setOnMouseDragged(new EventHandler<MouseEvent>()
+		contentGroup.setOnMouseDragged(new EventHandler<MouseEvent>()
 		{
 			@Override
 			public void handle(MouseEvent event)
 			{
 				double deltaX = event.getX() - lastMouseCoordinates.get().getX();
-				double extraWidth = scrollContent.getLayoutBounds().getWidth() - scroller.getViewportBounds().getWidth();
-				double deltaH = deltaX * (scroller.getHmax() - scroller.getHmin()) / extraWidth;
-				double desiredH = scroller.getHvalue() - deltaH;
-				scroller.setHvalue(Math.max(0, Math.min(scroller.getHmax(), desiredH)));
+				double extraWidth = contentGroup.getLayoutBounds().getWidth() - VizPanel.this.getViewportBounds().getWidth();
+				double deltaH = deltaX * (VizPanel.this.getHmax() - VizPanel.this.getHmin()) / extraWidth;
+				double desiredH = VizPanel.this.getHvalue() - deltaH;
+				VizPanel.this.setHvalue(Math.max(0, Math.min(VizPanel.this.getHmax(), desiredH)));
 
 				double deltaY = event.getY() - lastMouseCoordinates.get().getY();
-				double extraHeight = scrollContent.getLayoutBounds().getHeight() - scroller.getViewportBounds().getHeight();
-				double deltaV = deltaY * (scroller.getHmax() - scroller.getHmin()) / extraHeight;
-				double desiredV = scroller.getVvalue() - deltaV;
-				scroller.setVvalue(Math.max(0, Math.min(scroller.getVmax(), desiredV)));
+				double extraHeight = contentGroup.getLayoutBounds().getHeight() - VizPanel.this.getViewportBounds().getHeight();
+				double deltaV = deltaY * (VizPanel.this.getHmax() - VizPanel.this.getHmin()) / extraHeight;
+				double desiredV = VizPanel.this.getVvalue() - deltaV;
+				VizPanel.this.setVvalue(Math.max(0, Math.min(VizPanel.this.getVmax(), desiredV)));
 			}
 		});
-
-		return scroller;
 	}
 
-	private Point2D figureScrollOffset(Node scrollContent, ScrollPane scroller)
+	private Point2D figureScrollOffset()
 	{
-		double extraWidth = scrollContent.getLayoutBounds().getWidth() - scroller.getViewportBounds().getWidth();
-		double hScrollProportion = (scroller.getHvalue() - scroller.getHmin()) / (scroller.getHmax() - scroller.getHmin());
+		double extraWidth = contentGroup.getLayoutBounds().getWidth() - VizPanel.this.getViewportBounds().getWidth();
+		double hScrollProportion = (VizPanel.this.getHvalue() - VizPanel.this.getHmin()) / (VizPanel.this.getHmax() - VizPanel.this.getHmin());
 		double scrollXOffset = hScrollProportion * Math.max(0, extraWidth);
-		double extraHeight = scrollContent.getLayoutBounds().getHeight() - scroller.getViewportBounds().getHeight();
-		double vScrollProportion = (scroller.getVvalue() - scroller.getVmin()) / (scroller.getVmax() - scroller.getVmin());
+		double extraHeight = contentGroup.getLayoutBounds().getHeight() - VizPanel.this.getViewportBounds().getHeight();
+		double vScrollProportion = (VizPanel.this.getVvalue() - VizPanel.this.getVmin()) / (VizPanel.this.getVmax() - VizPanel.this.getVmin());
 		double scrollYOffset = vScrollProportion * Math.max(0, extraHeight);
 		return new Point2D(scrollXOffset, scrollYOffset);
 	}
 
-	private void repositionScroller(Node scrollContent, ScrollPane scroller, double scaleFactor, Point2D scrollOffset)
+	private void repositionScroller(double scaleFactor, Point2D scrollOffset)
 	{
 		double scrollXOffset = scrollOffset.getX();
 		double scrollYOffset = scrollOffset.getY();
-		double extraWidth = scrollContent.getLayoutBounds().getWidth() - scroller.getViewportBounds().getWidth();
+		double extraWidth = contentGroup.getLayoutBounds().getWidth() - VizPanel.this.getViewportBounds().getWidth();
 		if (extraWidth > 0)
 		{
-			double halfWidth = scroller.getViewportBounds().getWidth() / 2 ;
+			double halfWidth = VizPanel.this.getViewportBounds().getWidth() / 2 ;
 			double newScrollXOffset = (scaleFactor - 1) *  halfWidth + scaleFactor * scrollXOffset;
-			scroller.setHvalue(scroller.getHmin() + newScrollXOffset * (scroller.getHmax() - scroller.getHmin()) / extraWidth);
+			VizPanel.this.setHvalue(VizPanel.this.getHmin() + newScrollXOffset * (VizPanel.this.getHmax() - VizPanel.this.getHmin()) / extraWidth);
 		}
 		else
 		{
-			scroller.setHvalue(scroller.getHmin());
+			VizPanel.this.setHvalue(VizPanel.this.getHmin());
 		}
 
-		double extraHeight = scrollContent.getLayoutBounds().getHeight() - scroller.getViewportBounds().getHeight();
+		double extraHeight = contentGroup.getLayoutBounds().getHeight() - VizPanel.this.getViewportBounds().getHeight();
 		if (extraHeight > 0)
 		{
-			double halfHeight = scroller.getViewportBounds().getHeight() / 2 ;
+			double halfHeight = VizPanel.this.getViewportBounds().getHeight() / 2 ;
 			double newScrollYOffset = (scaleFactor - 1) * halfHeight + scaleFactor * scrollYOffset;
-			scroller.setVvalue(scroller.getVmin() + newScrollYOffset * (scroller.getVmax() - scroller.getVmin()) / extraHeight);
+			VizPanel.this.setVvalue(VizPanel.this.getVmin() + newScrollYOffset * (VizPanel.this.getVmax() - VizPanel.this.getVmin()) / extraHeight);
 		}
 		else
 		{
-			scroller.setHvalue(scroller.getHmin());
+			VizPanel.this.setHvalue(VizPanel.this.getHmin());
 		}
 	}
 
