@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.gui;
 
+import com.sun.org.apache.regexp.internal.RE;
 import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
 import javafx.geometry.Orientation;
@@ -291,13 +292,33 @@ public class StacFrame extends BorderPane
 		);
 	}
 
-	public void buildCenter(ArrayList<Region> layout, ArrayList<Double> layoutColumnWeights)
+	public void buildCenter(ArrayList<ArrayList<Region>> layout, ArrayList<Double> dividerPositions)
 	{
 		horizontalSplitPane = new SplitPane();
 		horizontalSplitPane.setOrientation(Orientation.HORIZONTAL);
 
-		for(Region r : layout)
-			horizontalSplitPane.getItems().add(r);
+		for(ArrayList<Region> column : layout) {
+			if(column.size() == 1) {
+				horizontalSplitPane.getItems().add(column.get(0));
+			}
+			else {
+				SplitPane verticalSplitPane = new SplitPane();
+				verticalSplitPane.setOrientation(Orientation.VERTICAL);
+				for(Region r : column) {
+					verticalSplitPane.getItems().add(r);
+				}
+
+				horizontalSplitPane.getItems().add(verticalSplitPane);
+			}
+		}
+
+		for(int i = 0; i < layout.size() - 1; i++)
+			horizontalSplitPane.setDividerPosition(i, dividerPositions.get(i));
+
+		double[] positions = horizontalSplitPane.getDividerPositions();
+		System.out.println("Divider positions:");
+		for(double d : positions)
+			System.out.println(d);
 
 		this.setCenter(horizontalSplitPane);
 	}
@@ -325,7 +346,8 @@ public class StacFrame extends BorderPane
             splitPanes.get(i).resetToPreferredSizes();
         }
 
-		//System.out.println("Finished constructing column! Panels = " + Integer.toString(panels.size()) + ", split panes = " + Integer.toString(splitPanes.size()));
+		//System.out.println("Finished constructing column! Panels = " + Integer.toString(panels.size())
+			+ ", split panes = " + Integer.toString(splitPanes.size()));
 	}*/
 
 	public void makeLayout()
@@ -647,16 +669,23 @@ public class StacFrame extends BorderPane
 
 		// Build data structure to hold panes
 		// We need an ancestor of both panes and scroll panes; the lowest one is Region.
-		ArrayList<Region> layout = new ArrayList<Region>();
+		ArrayList<ArrayList<Region>> layout = new ArrayList<ArrayList<Region>>();
 		ArrayList<Double> layoutColumnWeights = new ArrayList<Double>();
 
-		layout.add(mainPanel);
-		layout.add(bytecodePanel);
-		layout.add(rightPanel);
-		layout.add(searchPanel);
-		layoutColumnWeights.add(0.5);
-		layoutColumnWeights.add(0.5);
-		layoutColumnWeights.add(0.5);
+		ArrayList<Region> left = new ArrayList<Region>();
+		ArrayList<Region> center = new ArrayList<Region>();
+		ArrayList<Region> right = new ArrayList<Region>();
+
+		center.add(mainPanel);
+		left.add(bytecodePanel);
+		right.add(rightPanel);
+		right.add(searchPanel);
+
+		layout.add(left);
+		layout.add(center);
+		layout.add(right);
+		layoutColumnWeights.add(0.2);
+		layoutColumnWeights.add(0.7);
 		buildCenter(layout, layoutColumnWeights);
 	}
     

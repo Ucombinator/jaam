@@ -307,7 +307,7 @@ public class VizPanel extends ScrollPane
 			{
 				event.consume();
 				System.out.println("ZOOM: " + event.getDeltaY());
-				VizPanel.this.setOnScroll(zoomInProgressHandle);
+				//VizPanel.this.setOnScroll(zoomInProgressHandle);
 				
 
 				if (event.getDeltaY() == 0)
@@ -322,13 +322,8 @@ public class VizPanel extends ScrollPane
 				ScaleTransition st = new ScaleTransition(Duration.millis(5), contentGroup);
 				st.setToX(contentGroup.getScaleX() * scaleFactor);
 				st.setToY(contentGroup.getScaleX() * scaleFactor);
-//				group.setScaleX(group.getScaleX() * scaleFactor);
-//				group.setScaleY(group.getScaleY() * scaleFactor);
 				Parameters.stFrame.mainPanel.getPanelRoot().toggleEdges();
-				st.play();
-				
-				final EventHandler<ScrollEvent> activeHandle = this;
-				
+
 				st.setOnFinished(new EventHandler<ActionEvent>() {
 					@Override
 					public void handle(ActionEvent event)
@@ -341,12 +336,13 @@ public class VizPanel extends ScrollPane
 						Parameters.stFrame.mainPanel.getPanelRoot().toggleEdges();
 						// Adjust stroke width of lines and length of arrows
 						VizPanel.this.scaleLines();
-						VizPanel.this.setOnScroll(activeHandle);
 						System.out.println("Total scale: " + contentGroup.getScaleX());
 					}
 				});
+
+				st.play();
 			}
-		}; 
+		};
 
 		this.setOnScroll(activeHandle);
 
