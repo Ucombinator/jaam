@@ -90,6 +90,7 @@ public class StacFrame extends BorderPane
 		//Search menu
 		menuSearch = new Menu("Search");
 		menuBar.getMenus().add(menuSearch);
+
 		MenuItem searchByID = new MenuItem("by ID");
 		menuSearch.getItems().add(searchByID);
 		searchByID.setOnAction(
@@ -107,7 +108,7 @@ public class StacFrame extends BorderPane
 
 		MenuItem searchByInst = new MenuItem("by Statement");
 		menuSearch.getItems().add(searchByInst);
-		searchByID.setOnAction(
+		searchByInst.setOnAction(
 				new EventHandler<ActionEvent>()
 				{
 					public void handle(ActionEvent ev)
@@ -254,6 +255,7 @@ public class StacFrame extends BorderPane
 					public void handle(ActionEvent ev)
 					{
 						TextInputDialog dialog = new TextInputDialog();
+						dialog.showAndWait();
 						int newFontSize = Integer.parseInt(dialog.getResult());
 						Parameters.font = new Font("Serif", Font.PLAIN, newFontSize);
 						Parameters.jfxFont = new javafx.scene.text.Font("Serif", newFontSize);
@@ -733,8 +735,10 @@ public class StacFrame extends BorderPane
 		String input = "";
 		if(search != searchType.ALL_LEAVES && search != searchType.ALL_SOURCES && search != searchType.TAG)
 		{
+			System.out.println("Showing dialog...");
 			TextInputDialog dialog = new TextInputDialog();
 			dialog.setHeaderText(title);
+			dialog.showAndWait();
 			input = dialog.getResult();
 			if(input == null)
 				return "";
