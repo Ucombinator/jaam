@@ -36,6 +36,8 @@ public class StacFrame extends BorderPane
 	private Menu menuFile, menuSearch, menuNavigation, menuCustomize, menuHelp;
 	public VizPanel mainPanel; //TODO: Make private
 	private SplitPane horizontalSplitPane;
+	private Tab mainTab;
+	private TabPane tabPane;
 	private FlowPane buttonsFlowPane;
 	private MenuBar menuBar;
 	private BorderPane searchPanel, bytecodePanel, rightPanel;
@@ -294,8 +296,11 @@ public class StacFrame extends BorderPane
 		);
 	}
 
-	public void buildCenter(ArrayList<ArrayList<Region>> layout, ArrayList<Double> dividerPositions)
+	public void buildMainTab(ArrayList<ArrayList<Region>> layout, ArrayList<Double> dividerPositions)
 	{
+		mainTab = new Tab();
+		mainTab.setText("GraphView");
+		 
 		horizontalSplitPane = new SplitPane();
 		horizontalSplitPane.setOrientation(Orientation.HORIZONTAL);
 
@@ -322,7 +327,8 @@ public class StacFrame extends BorderPane
 		for(double d : positions)
 			System.out.println(d);
 
-		this.setCenter(horizontalSplitPane);
+		mainTab.setContent(horizontalSplitPane);
+		tabPane.getTabs().add(mainTab);
 	}
 
 	// We only have one pane per column, so this is unnecessary for now.
@@ -688,7 +694,11 @@ public class StacFrame extends BorderPane
 		layout.add(right);
 		layoutColumnWeights.add(0.2);
 		layoutColumnWeights.add(0.7);
-		buildCenter(layout, layoutColumnWeights);
+		
+		tabPane = new TabPane();
+		buildMainTab(layout, layoutColumnWeights);
+		this.setCenter(tabPane);
+		
 	}
     
 	public void loadGraph(boolean fromMessages)

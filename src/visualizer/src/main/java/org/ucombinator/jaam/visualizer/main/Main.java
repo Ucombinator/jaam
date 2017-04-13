@@ -1,7 +1,11 @@
 package org.ucombinator.jaam.visualizer.main;
 
+import java.awt.Toolkit;
+
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.StacFrame;
+
+
 
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -17,6 +21,8 @@ public class Main extends Application
 		Scene scene = new Scene(org.ucombinator.jaam.visualizer.main.Parameters.stFrame, org.ucombinator.jaam.visualizer.main.Parameters.width,
 				org.ucombinator.jaam.visualizer.main.Parameters.height);
 		stage.setTitle("JAAM Visualizer");
+		stage.setWidth(Toolkit.getDefaultToolkit().getScreenSize().getWidth());
+		stage.setHeight(Toolkit.getDefaultToolkit().getScreenSize().getHeight());
 		stage.setScene(scene);
 		stage.show();
 
