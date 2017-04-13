@@ -7,13 +7,20 @@ import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
+import javafx.scene.ImageCursor;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.event.EventHandler;
 import javafx.event.ActionEvent;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 
 import java.awt.Font;
@@ -72,6 +79,21 @@ public class StacFrame extends BorderPane
 		loadMessages.setOnAction(new EventHandler<ActionEvent>() {
 			public void handle(ActionEvent t) {
 				loadGraph(true);
+			}
+		});
+		
+		MenuItem loadImage = new MenuItem("Load image");
+		menuFile.getItems().add(loadImage);
+		StacFrame stacFrame = this;
+		loadImage.setOnAction(new EventHandler<ActionEvent>() {
+			public void handle(ActionEvent t) {
+				System.out.println("what?");
+				FileChooser fileChooser = new FileChooser();
+				fileChooser.setTitle("Open Resource File");
+				File savedFile = fileChooser.showOpenDialog(stacFrame.getScene().getWindow());
+				if (savedFile != null) {
+				buildImageTab(savedFile);
+				}
 			}
 		});
 		//loadMessages.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
@@ -331,6 +353,22 @@ public class StacFrame extends BorderPane
 		tabPane.getTabs().add(mainTab);
 	}
 
+	
+	public void buildImageTab(File savedFile)
+	{
+		Tab imageTab = new Tab();
+		imageTab.setText("Image View");
+		 
+		ImageView imageView = new ImageView();
+        imageView.setImage(new Image("file:"+savedFile.getAbsolutePath()));
+        
+
+        ScrollPane sp = new ScrollPane();
+        sp.setContent(imageView);
+        
+        imageTab.setContent(sp);
+		tabPane.getTabs().add(imageTab);
+	}
 	// We only have one pane per column, so this is unnecessary for now.
 	/*public SplitPane createColumn(ArrayList<Region> panelList, ArrayList<Double> weights)
 	{
