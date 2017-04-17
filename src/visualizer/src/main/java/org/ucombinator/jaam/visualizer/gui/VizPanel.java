@@ -80,6 +80,8 @@ public class VizPanel extends ScrollPane
 
 	public void resetContent() {
 		contentGroup = new Group();
+		contentGroup.setVisible(true);
+		this.setContent(contentGroup);
 	}
 
 	public void resetPanelSize() {
