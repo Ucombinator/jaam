@@ -18,10 +18,12 @@ import javafx.scene.shape.Rectangle;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.layout.AnimationHandler;
+import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class GUINode extends Pane
 {
+    protected static boolean showId = true;
     protected static final double TEXT_VERTICAL_PADDING = 15;
     protected static final double TEXT_HORIZONTAL_PADDING = 15;
 	double dragX, dragY;
@@ -56,6 +58,10 @@ public class GUINode extends Pane
         else
         {
         	this.getChildren().addAll(this.backRect, this.rect);
+        }
+
+        if(GUINode.showId) {
+            this.getChildren().addAll(new Text("ID: " + this.getVertex().getId()));
         }
 
         this.isDragging = false;
@@ -198,8 +204,9 @@ public class GUINode extends Pane
             node.setTranslateY(offsetY - node.getYShift());
 
             AbstractLayoutVertex v = GUINode.this.vertex;
-            v.setX(Parameters.stFrame.mainPanel.invScaleX(offsetX));
-            v.setY(Parameters.stFrame.mainPanel.invScaleY(offsetY));
+            VizPanel mainPanel = ((StacFrame) Main.getOuterFrame().getCurrentFrame()).mainPanel;
+            v.setX(mainPanel.invScaleX(offsetX));
+            v.setY(mainPanel.invScaleY(offsetY));
             LayoutEdge.redrawEdges(v, false);
         }
     };

@@ -15,6 +15,7 @@ import java.util.HashSet;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
 import org.ucombinator.jaam.visualizer.graph.Instruction;
+import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class CodeArea extends TextFlow
@@ -38,25 +39,27 @@ public class CodeArea extends TextFlow
 			int row = CodeArea.this.getChildren().indexOf(lineText);
 			Instruction lineInstr = CodeArea.this.description.get(row);
 
+			VizPanel mainPanel = ((StacFrame) Main.getOuterFrame().getCurrentFrame()).mainPanel;
+
 			if (event.isShiftDown()) {
 				if (lineInstr.isRealInstruction()) {
 					if (lineInstr.isSelected()) {
-						Parameters.stFrame.mainPanel.searchByJimpleIndex(
+						mainPanel.searchByJimpleIndex(
 								lineInstr.getMethodName(), lineInstr.getJimpleIndex(), false, false);
 					} else {
 						Parameters.vertexHighlight = true;
-						Parameters.stFrame.mainPanel.searchByJimpleIndex(
+						mainPanel.searchByJimpleIndex(
 								lineInstr.getMethodName(), lineInstr.getJimpleIndex(), false, true);
 					}
 				}
 			} else {
 				if (lineInstr.isRealInstruction()) {
 					Parameters.vertexHighlight = true;
-					Parameters.stFrame.mainPanel.searchByJimpleIndex(
+					mainPanel.searchByJimpleIndex(
 							lineInstr.getMethodName(), lineInstr.getJimpleIndex(), true, true);
 				}
 			}
-			Parameters.repaintAll();
+			Main.getOuterFrame().getCurrentFrame().repaintAll();
 		}
 	};
 
@@ -76,7 +79,8 @@ public class CodeArea extends TextFlow
 	// Rewrite the text area based on which vertices are highlighted
 	public void setDescription()
 	{
-		HashSet<AbstractLayoutVertex> highlighted = Parameters.stFrame.mainPanel.highlighted;
+		VizPanel mainPanel = ((StacFrame) Main.getOuterFrame().getCurrentFrame()).mainPanel;
+		HashSet<AbstractLayoutVertex> highlighted = mainPanel.highlighted;
 		if(highlighted.size() > 0)
 		{
 			//TODO: Add function for getting all methods

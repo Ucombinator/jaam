@@ -14,11 +14,13 @@ import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
+import javafx.stage.FileChooser;
 import javafx.util.Duration;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Iterator;
 
@@ -29,8 +31,9 @@ import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class VizPanel extends ScrollPane
 {
+	private StacFrame stFrame;
 	private Group contentGroup;
-	public HashSet<AbstractLayoutVertex> highlighted;
+	public HashSet<AbstractLayoutVertex> highlighted; // TODO: Make private
 
 	public static float hues[]; //Used for shading nodes from green to red
 	private LayoutRootVertex panelRoot;
@@ -48,9 +51,10 @@ public class VizPanel extends ScrollPane
 		return this.panelRoot;
 	}
 
-	public VizPanel()
+	public VizPanel(StacFrame stFrame)
 	{
 		super();
+		this.stFrame = stFrame;
 		contentGroup = new Group();
 		contentGroup.setVisible(true);
 		this.setContent(contentGroup);
@@ -59,20 +63,12 @@ public class VizPanel extends ScrollPane
 		highlighted = new HashSet<AbstractLayoutVertex>();
 	}
 
-	public void initFX(LayoutRootVertex root)
+	public void initFX(Graph graph)
 	{
-		if(root == null)
-		{
-			//System.out.println("Running layout...");
-			Graph g = Main.graph;
-			this.panelRoot = LayerFactory.getLayeredGraph(g);
-			LayoutAlgorithm.layout(this.panelRoot);
-			resetPanelSize();
-		}
-		else
-		{
-			this.panelRoot = root;
-		}
+		//System.out.println("Running layout...");
+		this.panelRoot = LayerFactory.getLayeredGraph(graph);
+		LayoutAlgorithm.layout(this.panelRoot);
+		resetPanelSize();
 
 		drawNodes(null, this.panelRoot);
 		drawEdges(this.panelRoot);
@@ -134,7 +130,7 @@ public class VizPanel extends ScrollPane
 			// Unhighlight currently highlighted vertices
 			for (AbstractLayoutVertex v : this.highlighted) {
 				highlighted.remove(v);
-				v.setHighlighted(false);
+				v.setHighlighted(false, this);
 			}
 		}
 
@@ -143,13 +139,13 @@ public class VizPanel extends ScrollPane
 			HashSet<AbstractLayoutVertex> toAddHighlights = panelRoot.getVerticesWithInstructionID(index, method);
 			for (AbstractLayoutVertex v : toAddHighlights) {
 				highlighted.add(v);
-				v.setHighlighted(true);
+				v.setHighlighted(true, this);
 			}
 		} else {
 			HashSet<AbstractLayoutVertex> toRemoveHighlights = panelRoot.getVerticesWithInstructionID(index, method);
 			for(AbstractLayoutVertex v : toRemoveHighlights) {
 				highlighted.remove(v);
-				v.setHighlighted(false);
+				v.setHighlighted(false, this);
 			}
 		}
 	}
@@ -157,12 +153,12 @@ public class VizPanel extends ScrollPane
 	public void resetHighlighted(AbstractLayoutVertex newHighlighted)
 	{
 		for(AbstractLayoutVertex currHighlighted : this.highlighted)
-			currHighlighted.setHighlighted(false);
+			currHighlighted.setHighlighted(false, this);
 		highlighted = new HashSet<AbstractLayoutVertex>();
 
 		if(newHighlighted != null) {
 			highlighted.add(newHighlighted);
-			newHighlighted.setHighlighted(true);
+			newHighlighted.setHighlighted(true, this);
 		}
 	}
 
@@ -308,7 +304,7 @@ public class VizPanel extends ScrollPane
 			public void handle(ScrollEvent event)
 			{
 				event.consume();
-				System.out.println("ZOOM: " + event.getDeltaY());
+				//System.out.println("ZOOM: " + event.getDeltaY());
 				//VizPanel.this.setOnScroll(zoomInProgressHandle);
 				
 
@@ -324,7 +320,7 @@ public class VizPanel extends ScrollPane
 				ScaleTransition st = new ScaleTransition(Duration.millis(5), contentGroup);
 				st.setToX(contentGroup.getScaleX() * scaleFactor);
 				st.setToY(contentGroup.getScaleX() * scaleFactor);
-				Parameters.stFrame.mainPanel.getPanelRoot().toggleEdges();
+				VizPanel.this.stFrame.mainPanel.getPanelRoot().toggleEdges();
 
 				st.setOnFinished(new EventHandler<ActionEvent>() {
 					@Override
@@ -335,10 +331,10 @@ public class VizPanel extends ScrollPane
 						// move viewport so that old center remains in the center after the scaling
 						//repositionScroller(scrollContent, VizPanel.this, scaleFactor, scrollOffset);
 
-						Parameters.stFrame.mainPanel.getPanelRoot().toggleEdges();
+						VizPanel.this.stFrame.mainPanel.getPanelRoot().toggleEdges();
 						// Adjust stroke width of lines and length of arrows
 						VizPanel.this.scaleLines();
-						System.out.println("Total scale: " + contentGroup.getScaleX());
+						//System.out.println("Total scale: " + contentGroup.getScaleX());
 					}
 				});
 
@@ -422,12 +418,12 @@ public class VizPanel extends ScrollPane
 	{
 		//System.out.println("Scaling lines and arrowheads...");
 		for(LayoutEdge e : this.panelRoot.getInnerGraph().getEdges().values())
-			e.setScale();
+			e.setScale(this);
 
 		for(AbstractLayoutVertex v : this.panelRoot.getInnerGraph().getVertices().values())
 		{
 			for(LayoutEdge e : v.getInnerGraph().getEdges().values())
-				e.setScale();
+				e.setScale(this);
 		}
 	}
 

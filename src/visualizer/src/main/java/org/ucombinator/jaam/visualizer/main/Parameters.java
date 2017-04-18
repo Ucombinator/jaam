@@ -3,12 +3,13 @@ package org.ucombinator.jaam.visualizer.main;
 import java.io.File;
 import java.io.IOException;
 
-import javax.swing.JFileChooser;
+//import javax.swing.JFileChooser;
 import javafx.scene.control.TextArea;
 
 import java.awt.Font;
 import java.awt.Color;
 
+import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.gui.SearchResults;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.gui.CodeArea;
@@ -19,13 +20,8 @@ public class Parameters
 {
 	public static boolean debugMode = false;
 	public static boolean edgeVisible = true;
-	public final static int width = 1000, height = 600;
+	public static final int width = 1000, height = 600;
 	public static double boxFactor = 3.0/4.0;
-	public static StacFrame stFrame;
-	public static TextArea rightArea;
-	public static CodeArea bytecodeArea;
-	public static CodeArea decompiledArea;
-    public static SearchResults searchResults;
 	public static String currDirectory = "./";
 	public static javafx.scene.paint.Color fxColorFocus = javafx.scene.paint.Color.BLUE,
 			fxColorSelection = javafx.scene.paint.Color.ALICEBLUE,
@@ -45,71 +41,6 @@ public class Parameters
 	
 	public static int debug1, debug2;
 	public static long limitV = Long.MAX_VALUE;
-
-	public static void setFrame(StacFrame stFrame) {
-		Parameters.stFrame = stFrame;
-	}
-
-	public static void setRightText()
-	{
-		StringBuilder text = new StringBuilder();
-		for(AbstractLayoutVertex v : stFrame.mainPanel.highlighted)
-			text.append(v.getRightPanelContent() + "\n");
-
-		rightArea.setText(text.toString());
-	}
-
-	public static File openFile(boolean includeDirectories)
-	{
-		try
-		{
-			JFileChooser choose = new javax.swing.JFileChooser(new File(currDirectory).getCanonicalPath());
-			if(includeDirectories)
-				choose.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-
-			int ret = choose.showOpenDialog(null);
-			if(ret == JFileChooser.APPROVE_OPTION)
-			{
-				currDirectory = Parameters.folderFromPath(choose.getSelectedFile().getAbsolutePath());
-				return choose.getSelectedFile();
-			}
-			else return null;
-		}
-		catch(IOException ex)
-		{
-			return null;
-		}
-	}
-
-	public static String folderFromPath (String path)
-	{
-		int lastSlash = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
-		if(lastSlash == -1)
-			return "/";
-		
-		String folder = path.substring(0,lastSlash);
-				
-		return folder;
-	}
-
-	public static void repaintAll()
-	{
-		System.out.println("Repainting all...");
-		if (!Parameters.debugMode)
-		{
-			//bytecodeArea.setDescription();
-			setRightText();
-			searchResults.writeText();
-		}
-
-		//stFrame.repaint();
-
-        /*if(Parameters.fixCaret)
-        {
-            Parameters.fixCaret = false;
-            Parameters.fixCaretPositions();
-        }*/
-	}
 
 	public static String getHTMLVerbatim(String str)
 	{

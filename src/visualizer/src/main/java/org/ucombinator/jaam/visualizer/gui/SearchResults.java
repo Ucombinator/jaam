@@ -84,13 +84,13 @@ public class SearchResults extends BorderPane
  	}
 
 	//Set the text for the area
-	public void writeText()
+	public void writeText(VizPanel mainPanel)
 	{
         this.root.getChildren().clear();
-        if(Parameters.stFrame.mainPanel.highlighted.size() > 0) {
+        if(mainPanel.highlighted.size() > 0) {
             // We don't want to include the panel root, so we start our check with its children
-            for(AbstractLayoutVertex v : Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
-                v.addTreeNodes(this.root);
+            for(AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+                v.addTreeNodes(this.root, mainPanel);
 
             // TODO: Auto-expand nodes?
             //DefaultTreeModel model = (DefaultTreeModel)this.searchTree.getModel();

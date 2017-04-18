@@ -3,22 +3,22 @@ package org.ucombinator.jaam.visualizer.main;
 import java.awt.Toolkit;
 
 import org.ucombinator.jaam.visualizer.graph.Graph;
-import org.ucombinator.jaam.visualizer.gui.StacFrame;
-
 
 
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.ucombinator.jaam.visualizer.gui.OuterFrame;
 
 public class Main extends Application
 {
-	public static Graph graph;
+	private static Stage stage;
+	private static OuterFrame outerFrame;
 
-	public void start(Stage stage)
-	{
-		org.ucombinator.jaam.visualizer.main.Parameters.stFrame = new StacFrame();
-		Scene scene = new Scene(org.ucombinator.jaam.visualizer.main.Parameters.stFrame, org.ucombinator.jaam.visualizer.main.Parameters.width,
+	public void start(Stage stage) {
+		this.stage = stage;
+		this.outerFrame = new OuterFrame();
+		Scene scene = new Scene(outerFrame, org.ucombinator.jaam.visualizer.main.Parameters.width,
 				org.ucombinator.jaam.visualizer.main.Parameters.height);
 		stage.setTitle("JAAM Visualizer");
 		stage.setWidth(Toolkit.getDefaultToolkit().getScreenSize().getWidth());
@@ -26,9 +26,9 @@ public class Main extends Application
 		stage.setScene(scene);
 		stage.show();
 
-		TakeInput ti = new TakeInput();
-		String file = "";
-		ti.run(file, true);
+		/*TakeInput ti = new TakeInput();
+		String file = "graphs/Factorial.jaam";
+		ti.run(file, true);*/
 
 		/*for (int i = 0; i < args.length; i++)
 		{
@@ -69,5 +69,9 @@ public class Main extends Application
 				System.out.println("ignoring invalid input option:\"" + args[i] + "\"");
 			}
 		}*/
+	}
+
+	public static OuterFrame getOuterFrame() {
+		return outerFrame;
 	}
 }

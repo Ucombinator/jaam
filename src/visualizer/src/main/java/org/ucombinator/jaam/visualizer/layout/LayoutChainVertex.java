@@ -1,5 +1,7 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import org.ucombinator.jaam.visualizer.gui.VizPanel;
+
 import java.util.HashSet;
 
 /**
@@ -19,13 +21,13 @@ public class LayoutChainVertex extends AbstractLayoutVertex {
         return "Chain vertex, size = " + this.getInnerGraph().getVertices().size();
     }
 
-    public boolean searchByMethod(String query) {
+    public boolean searchByMethod(String query, VizPanel mainPanel) {
         boolean found = false;
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
-            found = found || v.searchByMethod(query);
+            found = found || v.searchByMethod(query, mainPanel);
         }
 
-        this.setHighlighted(found);
+        this.setHighlighted(found, mainPanel);
         return found;
     }
 

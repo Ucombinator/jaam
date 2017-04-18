@@ -5,6 +5,8 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.Location;
+import org.ucombinator.jaam.visualizer.gui.OuterFrame;
+import org.ucombinator.jaam.visualizer.gui.VizPanel;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 
 //import javax.swing.tree.DefaultMutableTreeNode;
@@ -121,7 +123,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     public abstract String getShortDescription();
 
     // These searches may be different for different subclasses, so we implement them there.
-    public abstract boolean searchByMethod(String query);
+    public abstract boolean searchByMethod(String query, VizPanel mainPanel);
 
     // This is needed so that we can show the code for the methods that correspond to selected vertices
     public abstract HashSet<LayoutMethodVertex> getMethodVertices();
@@ -177,10 +179,10 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         this.innerGraph = innerGraph;
     }
 
-    public void recomputeGraphicsSize()
+    public void recomputeGraphicsSize(VizPanel mainPanel)
     {
-        double pixelWidth = Parameters.stFrame.mainPanel.scaleX(this.location.width);
-        double pixelHeight = Parameters.stFrame.mainPanel.scaleY(this.location.height);
+        double pixelWidth = mainPanel.scaleX(this.location.width);
+        double pixelHeight = mainPanel.scaleY(this.location.height);
         this.getGraphics().rect.setWidth(pixelWidth);
         this.getGraphics().rect.setHeight(pixelHeight);
     }
@@ -191,13 +193,13 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
             this.getGraphics().setVisible(isVisible);
     }
 
-    public boolean addTreeNodes(TreeItem parentNode) {
+    public boolean addTreeNodes(TreeItem parentNode, VizPanel mainPanel) {
         boolean addedNodes = false;
         TreeItem newNode = new TreeItem(this);
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
-            addedNodes |= v.addTreeNodes(newNode);
+            addedNodes |= v.addTreeNodes(newNode, mainPanel);
 
-        if(Parameters.stFrame.mainPanel.highlighted.contains(this) || addedNodes) {
+        if(mainPanel.highlighted.contains(this) || addedNodes) {
             parentNode.getChildren().add(newNode);
             return true;
         }
@@ -707,46 +709,46 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     }
     */
 
-    public void searchByID(int id)
+    public void searchByID(int id, VizPanel mainPanel)
     {
-        this.searchByIDRange(id, id);
+        this.searchByIDRange(id, id, mainPanel);
     }
 
-    public void searchByIDRange(int id1, int id2)
+    public void searchByIDRange(int id1, int id2, VizPanel mainPanel)
     {
         if(this.getId() >= id1 && this.getId() <= id2) {
-            this.setHighlighted(true);
-            Parameters.stFrame.mainPanel.highlighted.add(this);
+            this.setHighlighted(true, mainPanel);
+            mainPanel.highlighted.add(this);
             System.out.println("Search successful: " + this.getId());
         }
 
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
-            v.searchByIDRange(id1, id2);
+            v.searchByIDRange(id1, id2, mainPanel);
     }
 
-    public void searchByInstruction(String query)
+    public void searchByInstruction(String query, VizPanel mainPanel)
     {
         if(this instanceof LayoutInstructionVertex) {
             String instStr = ((LayoutInstructionVertex) this).getInstruction().getText();
             if(instStr.contains(query)) {
-                this.setHighlighted(true);
-                Parameters.stFrame.mainPanel.highlighted.add(this);
+                this.setHighlighted(true, mainPanel);
+                mainPanel.highlighted.add(this);
             }
         }
 
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
-            v.searchByInstruction(query);
+            v.searchByInstruction(query, mainPanel);
     }
 
-    public void setHighlighted(boolean isHighlighted)
+    public void setHighlighted(boolean isHighlighted, VizPanel mainPanel)
     {
         if(isHighlighted) {
             this.getGraphics().setFill(highlightColor);
-            Parameters.stFrame.mainPanel.highlighted.add(this);
+            mainPanel.highlighted.add(this);
         }
         else {
             this.getGraphics().setFill(this.getColor());
-            Parameters.stFrame.mainPanel.highlighted.remove(this);
+            mainPanel.highlighted.remove(this);
         }
     }
 

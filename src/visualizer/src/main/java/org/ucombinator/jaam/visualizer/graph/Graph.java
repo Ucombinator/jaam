@@ -78,7 +78,7 @@ public class Graph
 		}
 		else
 		{
-			currMethod = new Method(methodName);
+			currMethod = new Method(this, methodName);
 			this.methods.put(methodName, currMethod);
 		}
 

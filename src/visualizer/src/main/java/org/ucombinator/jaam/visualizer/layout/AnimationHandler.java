@@ -18,6 +18,8 @@ import javafx.util.Duration;
 import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 import org.ucombinator.jaam.visualizer.graph.Edge;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
+import org.ucombinator.jaam.visualizer.gui.StacFrame;
+import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
@@ -79,7 +81,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		}*/
 
 		v.setExpanded(false);
-		VizPanel panel = Parameters.stFrame.mainPanel;
+		VizPanel panel = ((StacFrame) Main.getOuterFrame().getCurrentFrame()).mainPanel;
 		final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
 		panel.resetContent();
 		LayoutAlgorithm.layout(panelRoot);
@@ -87,7 +89,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		panel.drawEdges(panelRoot);
 
 		/*ParallelTransition pt = new ParallelTransition();
-		animateRecursive(panelRoot, pt);
+		animateRecursive(panelRoot, pt, panel);
 		pt.play();
 
 		pt.setOnFinished(new EventHandler<ActionEvent>() {
@@ -124,7 +126,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		}*/
 
 		v.setExpanded(true);
-		VizPanel panel = Parameters.stFrame.mainPanel;
+		VizPanel panel = ((StacFrame) Main.getOuterFrame().getCurrentFrame()).mainPanel;
 		final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
 		panel.resetContent();
 		LayoutAlgorithm.layout(panelRoot);
@@ -132,7 +134,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		panel.drawEdges(panelRoot);
 
 		//ParallelTransition pt = new ParallelTransition();
-		//animateRecursive(panelRoot, pt);
+		//animateRecursive(panelRoot, pt, panel);
 		//pt.play();
 
 		//pt.setOnFinished(new EventHandler<ActionEvent>() {
@@ -158,7 +160,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		event.consume();
 	}
 
-	private void animateRecursive(final AbstractLayoutVertex v, ParallelTransition pt)
+	private void animateRecursive(final AbstractLayoutVertex v, ParallelTransition pt, VizPanel mainPanel)
 	{
 		// TODO: Move arrows as well as nodes.
 		if(!(v instanceof LayoutRootVertex)) {
@@ -167,8 +169,8 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 			System.out.println("Location: " + v.getX() + ", " + v.getY());
 			System.out.println("Node: " + v.getGraphics());
 			GUINode node = v.getGraphics();
-			double newWidth = Parameters.stFrame.mainPanel.scaleX(v.getWidth());
-			double newHeight = Parameters.stFrame.mainPanel.scaleY(v.getHeight());
+			double newWidth = mainPanel.scaleX(v.getWidth());
+			double newHeight = mainPanel.scaleY(v.getHeight());
 			double currWidth = node.getWidth() * node.getTotalParentScaleX();
 			double currHeight = node.getHeight() * node.getTotalParentScaleY();
 
@@ -187,8 +189,8 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 			//double xShift = 0;
 			//double yShift = 0;
 			System.out.println("Shift: " + xShift + ", " + yShift);
-			double toX = Parameters.stFrame.mainPanel.scaleX(v.getX() + xShift);
-			double toY = Parameters.stFrame.mainPanel.scaleY(v.getY() + yShift);
+			double toX = mainPanel.scaleX(v.getX() + xShift);
+			double toY = mainPanel.scaleY(v.getY() + yShift);
 			System.out.println(String.format("Translate X: %.3f", toX));
 			System.out.println(String.format("Translate Y: %.3f", toY));
 
@@ -211,7 +213,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		while(it.hasNext()){
 			AbstractLayoutVertex next = it.next();
 			if(v.isExpanded()) {
-				animateRecursive(next, pt);
+				animateRecursive(next, pt, mainPanel);
 			}
 		}
 	}
@@ -221,8 +223,9 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		event.consume();
 		AbstractLayoutVertex v = ((GUINode)(event.getSource())).getVertex();
 
-		Parameters.stFrame.mainPanel.resetHighlighted(v);
-		Parameters.bytecodeArea.setDescription();
-		Parameters.setRightText();
+		StacFrame currentFrame = (StacFrame) Main.getOuterFrame().getCurrentFrame();
+		currentFrame.mainPanel.resetHighlighted(v);
+		currentFrame.getBytecodeArea().setDescription();
+		currentFrame.setRightText();
 	}
 }

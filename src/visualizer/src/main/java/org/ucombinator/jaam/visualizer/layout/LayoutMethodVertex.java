@@ -1,5 +1,7 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import org.ucombinator.jaam.visualizer.gui.VizPanel;
+
 import java.util.HashSet;
 
 /**
@@ -26,12 +28,12 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
         return this.getMethodName();
     }
 
-    public boolean searchByMethod(String query) {
+    public boolean searchByMethod(String query, VizPanel mainPanel) {
         boolean found = query.contains(this.getMethodName());
-        this.setHighlighted(found);
+        this.setHighlighted(found, mainPanel);
 
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
-            v.searchByMethod(query);
+            v.searchByMethod(query, mainPanel);
         }
 
         return found;

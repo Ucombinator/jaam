@@ -103,7 +103,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         else if((sourceVertex.getGraphics() == null) || (destVertex.getGraphics() == null))
             return;
 
-        System.out.println("Passed checks for drawing edge: " + this.getID());
+        //System.out.println("Passed checks for drawing edge: " + this.getID());
         this.node = node;
         GUINode sourceNode = sourceVertex.getGraphics();
         GUINode destNode = destVertex.getGraphics();
@@ -226,7 +226,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
             this.graphics.getChildren().add(marker2);
         }
 
-        System.out.println("Creating line graphics...");
+        //System.out.println("Creating line graphics...");
         this.graphics.getChildren().add(line);
         this.graphics.getChildren().add(arrowhead);
 
@@ -235,7 +235,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         }
 
         if(node != null) {
-            System.out.println("Adding line graphics to node...");
+            //System.out.println("Adding line graphics to node...");
             node.getChildren().add(graphics);
         }
         else {
@@ -316,11 +316,11 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         return this.graphics.isVisible();
     }
 
-    public void setScale()
+    public void setScale(VizPanel mainPanel)
     {
         if(this.node != null) {
             // Make the line for our edge thinner
-            double zoomLevel = Parameters.stFrame.mainPanel.getZoomLevel();
+            double zoomLevel = mainPanel.getZoomLevel();
             line.setStrokeWidth(defaultStrokeWidth / zoomLevel);
 
             // TODO: The arrowhead will scale around the center, not the tip.

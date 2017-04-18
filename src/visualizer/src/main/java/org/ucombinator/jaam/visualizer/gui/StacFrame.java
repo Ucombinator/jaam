@@ -1,36 +1,26 @@
 package org.ucombinator.jaam.visualizer.gui;
 
-import com.sun.org.apache.regexp.internal.RE;
 import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
-import javafx.scene.ImageCursor;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.event.EventHandler;
 import javafx.event.ActionEvent;
 
-import java.io.File;
-import java.net.URI;
-import java.net.URL;
 import java.util.ArrayList;
 
-import java.awt.Font;
 import java.util.StringTokenizer;
 
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 import org.ucombinator.jaam.visualizer.layout.LayoutRootVertex;
 import org.ucombinator.jaam.visualizer.main.Parameters;
-import org.ucombinator.jaam.visualizer.main.TakeInput;
+import org.ucombinator.jaam.visualizer.graph.Graph;
 
 /**
  * JFrame showing a map
@@ -40,13 +30,15 @@ import org.ucombinator.jaam.visualizer.main.TakeInput;
 
 public class StacFrame extends BorderPane
 {
-	private Menu menuFile, menuSearch, menuNavigation, menuCustomize, menuHelp;
+
 	public VizPanel mainPanel; //TODO: Make private
+	private TextArea rightArea;
+	private CodeArea bytecodeArea;
+	private SearchResults searchResults;
+	private Graph graph;
+
 	private SplitPane horizontalSplitPane;
-	private Tab mainTab;
-	private TabPane tabPane;
 	private FlowPane buttonsFlowPane;
-	private MenuBar menuBar;
 	private BorderPane searchPanel, bytecodePanel, rightPanel;
 	public CheckBox showEdge;
 
@@ -55,276 +47,67 @@ public class StacFrame extends BorderPane
 		ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
 	}
 	
-	public StacFrame()
+	public StacFrame(Graph graph)
 	{
-		makeMenuBar();
+		this.graph = graph;
 		if (Parameters.debugMode)
 			makeSimpleLayout();
 		else
 			makeLayout();
 
+		this.mainPanel.initFX(this.graph);
 		this.setVisible(true);
 	}
-	
-	public void makeMenuBar()
-	{
-		menuBar = new MenuBar();
-		
-		//File menu
-		// TODO: Add hotkeys for commands
-		menuFile = new Menu("File");
-		menuBar.getMenus().add(menuFile);
-		MenuItem loadMessages = new MenuItem("Load graph from message file");
-		menuFile.getItems().add(loadMessages);
-		loadMessages.setOnAction(new EventHandler<ActionEvent>() {
-			public void handle(ActionEvent t) {
-				loadGraph(true);
-			}
-		});
-		
-		MenuItem loadImage = new MenuItem("Load image");
-		menuFile.getItems().add(loadImage);
-		StacFrame stacFrame = this;
-		loadImage.setOnAction(new EventHandler<ActionEvent>() {
-			public void handle(ActionEvent t) {
-				System.out.println("what?");
-				FileChooser fileChooser = new FileChooser();
-				fileChooser.setTitle("Open Resource File");
-				File savedFile = fileChooser.showOpenDialog(stacFrame.getScene().getWindow());
-				if (savedFile != null) {
-				buildImageTab(savedFile);
-				}
-			}
-		});
-		//loadMessages.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
 
-		/*final MenuItem loadJavaCode = new MenuItem("Load matching decompiled code");
-		menuFile.add(loadJavaCode);
-		loadJavaCode.addActionListener(
-				new ActionListener()
-				{
-					@Override
-					public void actionPerformed(ActionEvent e)
-					{
-						TakeInput.loadDecompiledCode();
-					}
-				}
-		);*/
-		
-		//Search menu
-		menuSearch = new Menu("Search");
-		menuBar.getMenus().add(menuSearch);
-
-		MenuItem searchByID = new MenuItem("by ID");
-		menuSearch.getItems().add(searchByID);
-		searchByID.setOnAction(
-				new EventHandler<ActionEvent>()
-				{
-					public void handle(ActionEvent ev)
-					{
-						initSearch();
-						String query = getSearchInput(searchType.ID);
-						searchByID(query);
-						Parameters.repaintAll();
-					}
-				}
-		);
-
-		MenuItem searchByInst = new MenuItem("by Statement");
-		menuSearch.getItems().add(searchByInst);
-		searchByInst.setOnAction(
-				new EventHandler<ActionEvent>()
-				{
-					public void handle(ActionEvent ev)
-					{
-						initSearch();
-						String query = getSearchInput(searchType.INSTRUCTION);
-						StacFrame.this.mainPanel.getPanelRoot().searchByInstruction(query);
-						Parameters.repaintAll();
-					}
-				}
-		);
-
-		MenuItem searchByMethod = new MenuItem("by Method");
-		menuSearch.getItems().add(searchByMethod);
-		searchByMethod.setOnAction(
-				new EventHandler<ActionEvent>()
-				{
-					public void handle(ActionEvent ev)
-					{
-						initSearch();
-						String query = getSearchInput(searchType.METHOD);
-						Parameters.stFrame.mainPanel.getPanelRoot().searchByMethod(query);
-						Parameters.repaintAll();
-					}
-				}
-		);
-
-        /*MenuItem searchTags = new MenuItem("Allocation Tags");
-        menuSearch.add(searchTags);
-        searchTags.addActionListener
-        (
-            new ActionListener()
-            {
-                public void actionPerformed(ActionEvent ev)
-                {
-                    searchAndHighlight(searchType.TAG);
-                    Parameters.repaintAll();
-                }
-            }
-        );
-        searchTags.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK));
-
-		MenuItem searchLeaves = new MenuItem("All leaves");
-		menuSearch.add(searchLeaves);
-		searchLeaves.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						searchAndHighlight(searchType.ALL_LEAVES);
-						Parameters.repaintAll();
-					}
-				}
-		);
-
-		MenuItem searchSources = new MenuItem("All sources");
-		menuSearch.add(searchSources);
-		searchSources.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						searchAndHighlight(searchType.ALL_SOURCES);
-						Parameters.repaintAll();
-					}
-				}
-		);
-
-        // TODO: Re-implement this menu item.
-		/*MenuItem clearAll = new MenuItem("Clear All");
-		menuSearch.add(clearAll);
-		clearAll.addActionListener
-		(
-				new ActionListener()
-				{
-					public void actionPerformed(ActionEvent ev)
-					{
-						Main.graph.clearHighlights();
-						StacFrame.this.initSearch();
-						Parameters.repaintAll();
-					}
-				}
-		);*/
-
-		//Navigation menu
-		menuNavigation = new Menu("Navigation");
-		menuBar.getMenus().add(menuNavigation);
-
-		MenuItem resetGraph = new MenuItem("Reset view");
-		menuNavigation.getItems().add(resetGraph);
-		resetGraph.setOnAction(
-				new EventHandler<ActionEvent>()
-				{
-					public void handle(ActionEvent ev)
-					{
-						// TODO: Write reset function
-						//Main.graph.resetZoom();
-						Parameters.repaintAll();
-					}
-				}
-		);
-		
-		MenuItem collapse = new MenuItem("Collapse nodes");
-		menuNavigation.getItems().add(collapse);
-		collapse.setOnAction(
-				new EventHandler<ActionEvent>()
-				{
-					public void handle(ActionEvent ev)
-					{
-						// TODO: Write new collapse function
-						//Main.graph.collapseOnce();
-						//Main.graph.root.centerizeXCoordinate();
-						Parameters.repaintAll();
-					}
-				}
-		);
-
-		MenuItem expand = new MenuItem("Expand nodes");
-		menuNavigation.getItems().add(expand);
-		expand.setOnAction(
-				new EventHandler<ActionEvent>()
-				{
-					public void handle(ActionEvent ev)
-					{
-						// TODO: Write new expand function
-						//Main.graph.deCollapseOnce();
-						//Main.graph.root.centerizeXCoordinate();
-						Parameters.repaintAll();
-					}
-				}
-		);
-		
-		//Customize display
-		menuCustomize = new Menu("Customize");
-		menuBar.getMenus().add(menuCustomize);
-		
-		MenuItem changeFont = new MenuItem("Change font size");
-		menuCustomize.getItems().add(changeFont);
-		changeFont.setOnAction(
-				new EventHandler<ActionEvent>()
-				{
-					public void handle(ActionEvent ev)
-					{
-						TextInputDialog dialog = new TextInputDialog();
-						dialog.showAndWait();
-						int newFontSize = Integer.parseInt(dialog.getResult());
-						Parameters.font = new Font("Serif", Font.PLAIN, newFontSize);
-						Parameters.jfxFont = new javafx.scene.text.Font("Serif", newFontSize);
-						Parameters.bytecodeArea.resetFont();
-						Parameters.rightArea.setFont(Parameters.jfxFont);
-						Parameters.repaintAll();
-					}
-				}
-		);
-		
-		// Help menu
-		menuHelp = new Menu("Help");
-		menuBar.getMenus().add(menuHelp);
-		MenuItem help = new MenuItem("Shortcuts");
-		menuHelp.getItems().add(help);
-		help.setOnAction(
-				new EventHandler<ActionEvent>()
-				{
-					public void handle(ActionEvent ev)
-					{
-						Alert alert = new Alert(Alert.AlertType.INFORMATION);
-						alert.setTitle("Help");
-						alert.setContentText("The following keyboard shortcuts are implemented.\n"
-								+ "(Outdated, needs to be fixed)"
-								+ "R: Reset zoom level to show entire graph \n"
-								+ "C: Collapse all nodes by method \n"
-								+ "E: Expand all nodes \n"
-								+ "F: Change font size \n"
-								+ "Left click: Select a vertex \n"
-								+ "Left double click: Collapse/Uncollapse a node \n"
-								+ "Shift-click: Select/de-select multiple vertices \n"
-								+ "H: Open this list of shortcuts");
-						alert.showAndWait();
-					}
-				}
-		);
+	public TextArea getRightArea() {
+		return this.rightArea;
 	}
 
-	public void buildMainTab(ArrayList<ArrayList<Region>> layout, ArrayList<Double> dividerPositions)
+	public CodeArea getBytecodeArea() {
+		return this.bytecodeArea;
+	}
+
+	public SearchResults getSearchResults() {
+		return this.searchResults;
+	}
+
+	public Graph getGraph() {
+		return this.graph;
+	}
+
+	public void repaintAll()
 	{
-		mainTab = new Tab();
-		mainTab.setText("GraphView");
-		 
+		System.out.println("Repainting all...");
+		if (!Parameters.debugMode)
+		{
+			bytecodeArea.setDescription();
+			setRightText();
+			searchResults.writeText(this.mainPanel);
+		}
+
+		//stFrame.repaint();
+
+        /*if(Parameters.fixCaret)
+        {
+            Parameters.fixCaret = false;
+            Parameters.fixCaretPositions();
+        }*/
+	}
+
+	public void setRightText()
+	{
+		StringBuilder text = new StringBuilder();
+		for(AbstractLayoutVertex v : this.mainPanel.highlighted)
+			text.append(v.getRightPanelContent() + "\n");
+
+		this.getRightArea().setText(text.toString());
+	}
+
+	public void buildCenter(ArrayList<ArrayList<Region>> layout, ArrayList<Double> dividerPositions)
+	{
 		horizontalSplitPane = new SplitPane();
 		horizontalSplitPane.setOrientation(Orientation.HORIZONTAL);
+		this.setCenter(horizontalSplitPane);
 
 		for(ArrayList<Region> column : layout) {
 			if(column.size() == 1) {
@@ -348,27 +131,8 @@ public class StacFrame extends BorderPane
 		System.out.println("Divider positions:");
 		for(double d : positions)
 			System.out.println(d);
-
-		mainTab.setContent(horizontalSplitPane);
-		tabPane.getTabs().add(mainTab);
 	}
 
-	
-	public void buildImageTab(File savedFile)
-	{
-		Tab imageTab = new Tab();
-		imageTab.setText("Image View");
-		 
-		ImageView imageView = new ImageView();
-        imageView.setImage(new Image("file:"+savedFile.getAbsolutePath()));
-        
-
-        ScrollPane sp = new ScrollPane();
-        sp.setContent(imageView);
-        
-        imageTab.setContent(sp);
-		tabPane.getTabs().add(imageTab);
-	}
 	// We only have one pane per column, so this is unnecessary for now.
 	/*public SplitPane createColumn(ArrayList<Region> panelList, ArrayList<Double> weights)
 	{
@@ -399,19 +163,18 @@ public class StacFrame extends BorderPane
 	public void makeLayout()
 	{
 		setSplitScreen();
-		this.setTop(this.menuBar);
 		this.setBottom(this.buttonsFlowPane);
 		this.setVisible(true);
 	}
 
 	public void makeSimpleLayout()
 	{
-		this.mainPanel = new VizPanel();
+		this.mainPanel = new VizPanel(this);
 		this.setCenter(this.mainPanel);
 	}
 
 	public void makePanes() {
-		this.mainPanel = new VizPanel();
+		this.mainPanel = new VizPanel(this);
 
 		buttonsFlowPane = new FlowPane();
 		buttonsFlowPane.setPadding(new Insets(5, 0, 5, 0));
@@ -511,15 +274,15 @@ public class StacFrame extends BorderPane
 						{
 							@Override
 							public void handle(ActionEvent event) {
-								Parameters.stFrame.mainPanel.decrementScaleXFactor();
-								GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+								StacFrame.this.mainPanel.decrementScaleXFactor();
+								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
 								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								Parameters.stFrame.mainPanel.getPanelRoot().reset();
-								LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-								Parameters.stFrame.mainPanel.resetPanelSize();
+								StacFrame.this.mainPanel.getPanelRoot().reset();
+								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.resetPanelSize();
 
-								Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-								Parameters.stFrame.mainPanel.drawEdges(Parameters.stFrame.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawNodes(null, StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawEdges(StacFrame.this.mainPanel.getPanelRoot());
 							}
 						}
 				);
@@ -537,15 +300,15 @@ public class StacFrame extends BorderPane
 						{
 							@Override
 							public void handle(ActionEvent e) {
-								Parameters.stFrame.mainPanel.incrementScaleXFactor();
-								GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+								StacFrame.this.mainPanel.incrementScaleXFactor();
+								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
 								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								Parameters.stFrame.mainPanel.getPanelRoot().reset();
-								LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-								Parameters.stFrame.mainPanel.resetPanelSize();
+								StacFrame.this.mainPanel.getPanelRoot().reset();
+								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.resetPanelSize();
 
-								Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-								Parameters.stFrame.mainPanel.drawEdges(Parameters.stFrame.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawNodes(null, StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawEdges(StacFrame.this.mainPanel.getPanelRoot());
 							}
 						}
 				);
@@ -565,15 +328,15 @@ public class StacFrame extends BorderPane
 						{
 							@Override
 							public void handle(ActionEvent event) {
-								Parameters.stFrame.mainPanel.decrementScaleYFactor();
-								GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+								StacFrame.this.mainPanel.decrementScaleYFactor();
+								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
 								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								Parameters.stFrame.mainPanel.getPanelRoot().reset();
-								LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-								Parameters.stFrame.mainPanel.resetPanelSize();
+								StacFrame.this.mainPanel.getPanelRoot().reset();
+								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.resetPanelSize();
 
-								Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-								Parameters.stFrame.mainPanel.drawEdges(Parameters.stFrame.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawNodes(null, StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawEdges(StacFrame.this.mainPanel.getPanelRoot());
 							}
 						}
 				);
@@ -591,15 +354,15 @@ public class StacFrame extends BorderPane
 						{
 							@Override
 							public void handle(ActionEvent event) {
-								Parameters.stFrame.mainPanel.incrementScaleYFactor();
-								GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+								StacFrame.this.mainPanel.incrementScaleYFactor();
+								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
 								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								Parameters.stFrame.mainPanel.getPanelRoot().reset();
-								LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-								Parameters.stFrame.mainPanel.resetPanelSize();
+								StacFrame.this.mainPanel.getPanelRoot().reset();
+								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.resetPanelSize();
 
-								Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-								Parameters.stFrame.mainPanel.drawEdges(Parameters.stFrame.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawNodes(null, StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawEdges(StacFrame.this.mainPanel.getPanelRoot());
 							}
 						}
 				);
@@ -626,7 +389,7 @@ public class StacFrame extends BorderPane
 							@Override
 							public void handle(ActionEvent e) {
 								methodExpanded = !methodExpanded;
-								Parameters.stFrame.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
+								StacFrame.this.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
 										methodExpanded);
 
 								if (methodCollapse.getTextFill() == activeColor) {
@@ -635,14 +398,14 @@ public class StacFrame extends BorderPane
 									methodCollapse.setTextFill(activeColor);
 								}
 
-								GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
 								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								Parameters.stFrame.mainPanel.getPanelRoot().reset();
-								LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-								Parameters.stFrame.mainPanel.resetPanelSize();
+								StacFrame.this.mainPanel.getPanelRoot().reset();
+								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.resetPanelSize();
 
-								Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-								Parameters.stFrame.mainPanel.drawEdges(Parameters.stFrame.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawNodes(null, StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawEdges(StacFrame.this.mainPanel.getPanelRoot());
 							}
 						}
 				);
@@ -659,7 +422,7 @@ public class StacFrame extends BorderPane
 							@Override
 							public void handle(ActionEvent e) {
 								chainExpanded = !chainExpanded;
-								Parameters.stFrame.mainPanel.getPanelRoot()
+								StacFrame.this.mainPanel.getPanelRoot()
 										.toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN, chainExpanded);
 								if (chainCollapse.getTextFill() == activeColor) {
 									chainCollapse.setTextFill(inactiveColor);
@@ -667,14 +430,14 @@ public class StacFrame extends BorderPane
 									chainCollapse.setTextFill(activeColor);
 								}
 
-								GUINode rootGraphics = Parameters.stFrame.mainPanel.getPanelRoot().getGraphics();
+								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
 								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								Parameters.stFrame.mainPanel.getPanelRoot().reset();
-								LayoutAlgorithm.layout(Parameters.stFrame.mainPanel.getPanelRoot());
-								Parameters.stFrame.mainPanel.resetPanelSize();
+								StacFrame.this.mainPanel.getPanelRoot().reset();
+								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.resetPanelSize();
 
-								Parameters.stFrame.mainPanel.drawNodes(null, Parameters.stFrame.mainPanel.getPanelRoot());
-								Parameters.stFrame.mainPanel.drawEdges(Parameters.stFrame.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawNodes(null, StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawEdges(StacFrame.this.mainPanel.getPanelRoot());
 							}
 						}
 				);
@@ -686,25 +449,25 @@ public class StacFrame extends BorderPane
 		bytecodePanel = new BorderPane();
 		Label leftLabel = new Label("Code");
 		ScrollPane scrollLeft = new ScrollPane();
-		Parameters.bytecodeArea = new CodeArea();
-		scrollLeft.setContent(Parameters.bytecodeArea);
+		this.bytecodeArea = new CodeArea();
+		scrollLeft.setContent(this.bytecodeArea);
 		bytecodePanel.setTop(leftLabel);
 		bytecodePanel.setCenter(scrollLeft);
 
 		rightPanel = new BorderPane();
 		Label rightLabel = new Label("Description");
 		ScrollPane rightScroll = new ScrollPane();
-		Parameters.rightArea = new TextArea();
-		Parameters.rightArea.setEditable(false);
-		rightScroll.setContent(Parameters.rightArea);
+		this.rightArea = new TextArea();
+		this.rightArea.setEditable(false);
+		rightScroll.setContent(this.rightArea);
 		rightPanel.setTop(rightLabel);
 		rightPanel.setCenter(rightScroll);
 
 		searchPanel = new BorderPane();
 		Label searchL = new Label("Search Results");
-		Parameters.searchResults = new SearchResults();
+		this.searchResults = new SearchResults();
 		ScrollPane scrollS = new ScrollPane();
-		scrollS.setContent(Parameters.searchResults);
+		scrollS.setContent(this.searchResults);
 		searchPanel.setTop(searchL);
 		searchPanel.setCenter(scrollS);
 	}
@@ -732,28 +495,24 @@ public class StacFrame extends BorderPane
 		layout.add(right);
 		layoutColumnWeights.add(0.2);
 		layoutColumnWeights.add(0.7);
-		
-		tabPane = new TabPane();
-		buildMainTab(layout, layoutColumnWeights);
-		this.setCenter(tabPane);
-		
-	}
-    
-	public void loadGraph(boolean fromMessages)
-	{
-		File file = Parameters.openFile(false);
-		if(file == null)
-			return;
 
-		TakeInput ti = new TakeInput();
-		ti.run(file.getAbsolutePath(), fromMessages);
-		Parameters.repaintAll();
+		buildCenter(layout, layoutColumnWeights);
 	}
 
 	// Clean up info from previous searches
-	public void initSearch()
+	public void initSearch(searchType search)
 	{
 		this.mainPanel.resetHighlighted(null);
+		String query = getSearchInput(search);
+
+		if(search == searchType.ID)
+			searchByID(query); // TODO: Fix inconsistency with panel root
+		else if(search == searchType.INSTRUCTION)
+			this.mainPanel.getPanelRoot().searchByInstruction(query, mainPanel);
+		else if(search == searchType.METHOD)
+			this.mainPanel.getPanelRoot().searchByMethod(query, mainPanel);
+
+		this.repaintAll();
 		/*Parameters.bytecodeArea.clear();
 		Parameters.rightArea.setText("");*/
 	}
@@ -802,7 +561,7 @@ public class StacFrame extends BorderPane
 
 	public void searchByID(String input)
 	{
-		LayoutRootVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
+		LayoutRootVertex panelRoot = this.mainPanel.getPanelRoot();
 		StringTokenizer token = new StringTokenizer(input,", ");
 
 		int id1, id2;
@@ -814,11 +573,11 @@ public class StacFrame extends BorderPane
 				continue;
 			if (tok.indexOf('-') == -1) {
 				id1 = Integer.parseInt(tok.trim());
-				panelRoot.searchByID(id1);
+				panelRoot.searchByID(id1, mainPanel);
 			} else {
 				id1 = Integer.parseInt(tok.substring(0, tok.indexOf('-')).trim());
 				id2 = Integer.parseInt(tok.substring(tok.lastIndexOf('-') + 1).trim());
-				panelRoot.searchByIDRange(id1, id2);
+				panelRoot.searchByIDRange(id1, id2, mainPanel);
 			}
 		}
 	}

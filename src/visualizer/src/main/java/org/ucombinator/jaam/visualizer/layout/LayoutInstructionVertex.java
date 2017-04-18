@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.layout;
 
 import org.ucombinator.jaam.visualizer.graph.Instruction;
+import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 import java.util.HashSet;
 
@@ -36,9 +37,9 @@ public class LayoutInstructionVertex extends AbstractLayoutVertex {
         return this.instruction.getText();
     }
 
-    public boolean searchByMethod(String query) {
+    public boolean searchByMethod(String query, VizPanel mainPanel) {
         boolean found = this.instruction.getMethodName().contains(query);
-        this.setHighlighted(found);
+        this.setHighlighted(found, mainPanel);
         return found;
     }
 
