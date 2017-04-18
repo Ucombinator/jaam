@@ -35,7 +35,6 @@ public class GUINode extends Pane
 
 	private ArrayList<LayoutEdge> edges = new ArrayList<LayoutEdge>();
 
-    boolean labelsEnabled = false;
     boolean isDragging;
 
     private double totalScaleX;
@@ -50,19 +49,11 @@ public class GUINode extends Pane
         
         this.rect = new Rectangle();
         this.backRect = new Rectangle();
-        this.rectLabel = new Text(v.getLabel());
-        if(labelsEnabled)
-        {
-        	this.getChildren().addAll(this.backRect, this.rect, this.rectLabel);
-        }
-        else
-        {
-        	this.getChildren().addAll(this.backRect, this.rect);
-        }
-
-        if(GUINode.showId) {
-            this.getChildren().addAll(new Text("ID: " + this.getVertex().getId()));
-        }
+        //this.rectLabel = new Text(v.getId() + ", " + v.getLabel());
+        this.rectLabel = new Text(Integer.toString(v.getId()));
+        this.getChildren().addAll(this.backRect, this.rect, this.rectLabel);
+        rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
+        rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
 
         this.isDragging = false;
         this.totalScaleX = 1;
@@ -204,7 +195,7 @@ public class GUINode extends Pane
             node.setTranslateY(offsetY - node.getYShift());
 
             AbstractLayoutVertex v = GUINode.this.vertex;
-            VizPanel mainPanel = ((StacFrame) Main.getOuterFrame().getCurrentFrame()).mainPanel;
+            VizPanel mainPanel = ((StacFrame) Main.getOuterFrame().getCurrentFrame()).getMainPanel();
             v.setX(mainPanel.invScaleX(offsetX));
             v.setY(mainPanel.invScaleY(offsetY));
             LayoutEdge.redrawEdges(v, false);
@@ -232,11 +223,6 @@ public class GUINode extends Pane
         public void handle(Event event)
         {
             event.consume();
-            if(!getVertex().getType().equals(AbstractLayoutVertex.VertexType.ROOT)){
-            getChildren().add(rectLabel);
-            rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
-            rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
-            }
         	if (vertex.getSelfGraph() != null)
         	{
 	        	for(LayoutEdge e : vertex.getSelfGraph().getEdges().values())
@@ -249,11 +235,6 @@ public class GUINode extends Pane
 	        		}
 	        	}
         	}
-        	
-            GUINode obj = (GUINode) (event.getSource());
-//            obj.rect.setOpacity(1);
-//            if (obj.parent != null)
-//                obj.parent.rect.setOpacity(0.3);
         }
     };
 
@@ -263,7 +244,7 @@ public class GUINode extends Pane
         public void handle(Event event)
         {
             event.consume();
-            getChildren().remove(rectLabel);
+            //getChildren().remove(rectLabel);
             
         	if(vertex.getSelfGraph() != null)
         	{
@@ -277,14 +258,6 @@ public class GUINode extends Pane
 	        		}
 	        	}
         	}
-        	
-
-            
-            GUINode obj = (GUINode) (event.getSource());
-            
-//            obj.rect.setOpacity(.3);
-//            if(obj.parent != null)
-//                obj.parent.rect.setOpacity(1);
         }
     };
 

@@ -10,8 +10,8 @@ import java.util.HashSet;
  */
 public class LayoutInstructionVertex extends AbstractLayoutVertex {
 
-    Instruction instruction;
-    LayoutMethodVertex methodVertex;
+    private Instruction instruction;
+    private LayoutMethodVertex methodVertex;
 
     public LayoutInstructionVertex(Instruction instruction, LayoutMethodVertex methodVertex, boolean drawEdges) {
         super(instruction.getText(), VertexType.INSTRUCTION, drawEdges);

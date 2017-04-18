@@ -16,18 +16,16 @@ public class LayerFactory
 	private static final boolean create_chains = true;
 	private static final boolean chains_expanded = true;
 	private static final boolean methods_expanded = true;
-	
 	private static final int CHAIN_LENGTH = 3 ; // This value should ALWAYS be LARGER THAN OR EQUAL 3 (otherwise it will break)
-	
-	static HashMap<String, Vertex> id_to_vertex = new HashMap<String, Vertex>();
-	static HashMap<String, AbstractVertex> id_to_abs_vertex = new HashMap<String, AbstractVertex>();
 
 	public static LayoutRootVertex getLayeredGraph(Graph graph){
 		return get2layer(graph);
 	}
 	
-	public static LayoutRootVertex get2layer(Graph graph)
+	private static LayoutRootVertex get2layer(Graph graph)
 	{
+		HashMap<String, Vertex> id_to_vertex = new HashMap<String, Vertex>();
+		HashMap<String, AbstractVertex> id_to_abs_vertex = new HashMap<String, AbstractVertex>();
 		HierarchicalGraph methodGraph = new HierarchicalGraph();
 		
 		// We partition the vertex set of Main.graph into buckets corresponding to the methods.

@@ -32,7 +32,7 @@ public class LayoutAlgorithm
 	/*********************************************************************/
 	/********* LAYS OUT EACH LEVEL OF THE CLUSTERED GRAPH *****************/
 	/*********************************************************************/
-	public static void defaultLayout(AbstractLayoutVertex parentVertex){
+	private static void defaultLayout(AbstractLayoutVertex parentVertex){
 		HierarchicalGraph graph = parentVertex.getInnerGraph();
 		Collection<AbstractLayoutVertex> vertices = graph.getVertices().values();
 		Iterator<AbstractLayoutVertex> it = vertices.iterator();
@@ -86,7 +86,7 @@ public class LayoutAlgorithm
 	 * Changes of Status: assigns X and Y to the inner vertices of the graph
 	 * Output: returns the W and H to be assigned to the parent node
 	 * */
-	public static void assignXandYtoInnerNodesAndGiveParentBBox(AbstractLayoutVertex root, double left, double top)
+	private static void assignXandYtoInnerNodesAndGiveParentBBox(AbstractLayoutVertex root, double left, double top)
 	{
 		root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
 		Iterator<AbstractLayoutVertex> it = root.getOutgoingNeighbors().iterator();
@@ -140,7 +140,7 @@ public class LayoutAlgorithm
 	 * Changes of Status: assigns X and Y to the inner vertices of the graph
 	 * Output: returns the W and H to be assign to the parent node
 	 * */
-	public static double[] storeBBoxWidthAndHeight(AbstractLayoutVertex root)
+	private static double[] storeBBoxWidthAndHeight(AbstractLayoutVertex root)
 	{
 		root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
 		Iterator<AbstractLayoutVertex> it = root.getOutgoingNeighbors().iterator();

@@ -1,9 +1,6 @@
 package org.ucombinator.jaam.visualizer.graph;
 
 import java.util.ArrayList;
-import java.util.Iterator;
-
-import org.ucombinator.jaam.visualizer.main.Main;
 
 public class Vertex extends AbstractVertex
 {
@@ -39,7 +36,11 @@ public class Vertex extends AbstractVertex
 		this.instruction = inst;
 		this.drawEdges = drawEdges;
 	}
-	
+
+	public int getInputId() {
+		return this.inputId;
+	}
+
 	public String getMethodName()
 	{
 		return this.instruction.getMethodName();
@@ -83,5 +84,12 @@ public class Vertex extends AbstractVertex
 	}
 
 	public void setRealInstruction(Instruction inst) {this.instruction = inst; }
-	
+
+	/*public void save(PacketOutput output) {
+
+		org.ucombinator.jaam.serializer.Node currentNode = new org.ucombinator.jaam.serializer.Node(this.getId());
+		org.ucombinator.jaam.serializer.State currentState = new org.ucombinator.jaam.serializer.State(
+				org.ucombinator.jaam.serializer.Id[org.ucombinator.jaam.serializer.Node](this.getId()), this, "", "");
+		org.ucombinator.jaam.serializer.Edge;
+	}*/
 }

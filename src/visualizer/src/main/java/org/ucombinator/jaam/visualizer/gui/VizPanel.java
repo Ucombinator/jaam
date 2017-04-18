@@ -26,25 +26,23 @@ import java.util.Iterator;
 
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
-import org.ucombinator.jaam.visualizer.main.Main;
-import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class VizPanel extends ScrollPane
 {
 	private StacFrame stFrame;
 	private Group contentGroup;
-	public HashSet<AbstractLayoutVertex> highlighted; // TODO: Make private
-
-	public static float hues[]; //Used for shading nodes from green to red
+	private HashSet<AbstractLayoutVertex> highlighted;
 	private LayoutRootVertex panelRoot;
-	private Color[] colors = {Color.GREEN, Color.AZURE, Color.AQUAMARINE, Color.BLUEVIOLET, Color.DARKTURQUOISE};
-	public static int maxLoopHeight;
 
 	// The dimensions of the background for our graph
-	public final double rootWidth = 500.0, rootHeight = 500.0;
+	private final double rootWidth = 500.0, rootHeight = 500.0;
 
 	// Store the count for vertex width and height when everything is expanded
-	public double maxVertexWidth, maxVertexHeight;
+	private double maxVertexWidth, maxVertexHeight;
+
+	private double factorX = 1;
+	private double factorY = 1;
+	private static final double factorMultiple = 1.1;
 
 	public LayoutRootVertex getPanelRoot()
 	{
@@ -61,6 +59,10 @@ public class VizPanel extends ScrollPane
 
 		createZoomPane();
 		highlighted = new HashSet<AbstractLayoutVertex>();
+	}
+
+	public HashSet<AbstractLayoutVertex> getHighlighted() {
+		return this.highlighted;
 	}
 
 	public void initFX(Graph graph)
@@ -84,11 +86,6 @@ public class VizPanel extends ScrollPane
 		this.maxVertexWidth = this.panelRoot.getWidth();
 		this.maxVertexHeight = this.panelRoot.getHeight();		
 	}
-
-	double factorX = 1;
-	double factorY = 1;
-	double factorMultiple = 1.1;
-	double maxFactorMultiple = 3;
 
 	public double scaleX(double coordinate)
 	{
@@ -227,15 +224,14 @@ public class VizPanel extends ScrollPane
 
 	public void drawEdges(AbstractLayoutVertex v)
 	{
-		System.out.println("Edges of vertex: " + v.getStrID());
-		if(!Parameters.edgeVisible){
+		if(!stFrame.isEdgeVisible()) {
 			return;
 		}
 		
 		GUINode node = v.getGraphics();
 		if(v.isExpanded())
 		{
-			System.out.println(v.getStrID());
+			System.out.println("Drawing edges of vertex: " + v.getStrID());
 
 			//Edge.arrowLength = this.getWidthPerVertex() / 10.0;
 			for(LayoutEdge e : v.getInnerGraph().getEdges().values()) {
@@ -320,7 +316,7 @@ public class VizPanel extends ScrollPane
 				ScaleTransition st = new ScaleTransition(Duration.millis(5), contentGroup);
 				st.setToX(contentGroup.getScaleX() * scaleFactor);
 				st.setToY(contentGroup.getScaleX() * scaleFactor);
-				VizPanel.this.stFrame.mainPanel.getPanelRoot().toggleEdges();
+				VizPanel.this.stFrame.getMainPanel().getPanelRoot().toggleEdges(VizPanel.this.stFrame.isEdgeVisible());
 
 				st.setOnFinished(new EventHandler<ActionEvent>() {
 					@Override
@@ -331,7 +327,7 @@ public class VizPanel extends ScrollPane
 						// move viewport so that old center remains in the center after the scaling
 						//repositionScroller(scrollContent, VizPanel.this, scaleFactor, scrollOffset);
 
-						VizPanel.this.stFrame.mainPanel.getPanelRoot().toggleEdges();
+						VizPanel.this.stFrame.getMainPanel().getPanelRoot().toggleEdges(VizPanel.this.stFrame.isEdgeVisible());
 						// Adjust stroke width of lines and length of arrows
 						VizPanel.this.scaleLines();
 						//System.out.println("Total scale: " + contentGroup.getScaleX());

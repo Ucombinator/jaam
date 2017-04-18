@@ -39,7 +39,7 @@ public class CodeArea extends TextFlow
 			int row = CodeArea.this.getChildren().indexOf(lineText);
 			Instruction lineInstr = CodeArea.this.description.get(row);
 
-			VizPanel mainPanel = ((StacFrame) Main.getOuterFrame().getCurrentFrame()).mainPanel;
+			VizPanel mainPanel = ((StacFrame) Main.getOuterFrame().getCurrentFrame()).getMainPanel();
 
 			if (event.isShiftDown()) {
 				if (lineInstr.isRealInstruction()) {
@@ -47,14 +47,12 @@ public class CodeArea extends TextFlow
 						mainPanel.searchByJimpleIndex(
 								lineInstr.getMethodName(), lineInstr.getJimpleIndex(), false, false);
 					} else {
-						Parameters.vertexHighlight = true;
 						mainPanel.searchByJimpleIndex(
 								lineInstr.getMethodName(), lineInstr.getJimpleIndex(), false, true);
 					}
 				}
 			} else {
 				if (lineInstr.isRealInstruction()) {
-					Parameters.vertexHighlight = true;
 					mainPanel.searchByJimpleIndex(
 							lineInstr.getMethodName(), lineInstr.getJimpleIndex(), true, true);
 				}
@@ -79,8 +77,8 @@ public class CodeArea extends TextFlow
 	// Rewrite the text area based on which vertices are highlighted
 	public void setDescription()
 	{
-		VizPanel mainPanel = ((StacFrame) Main.getOuterFrame().getCurrentFrame()).mainPanel;
-		HashSet<AbstractLayoutVertex> highlighted = mainPanel.highlighted;
+		VizPanel mainPanel = ((StacFrame) Main.getOuterFrame().getCurrentFrame()).getMainPanel();
+		HashSet<AbstractLayoutVertex> highlighted = mainPanel.getHighlighted();
 		if(highlighted.size() > 0)
 		{
 			//TODO: Add function for getting all methods
@@ -107,12 +105,16 @@ public class CodeArea extends TextFlow
 		}
 	}
 	
-	//Set the text for the area to the sum of all of the lines in the description
+	// Set the text for the area to the sum of all of the lines in the description
 	private void writeText()
 	{
 		this.getChildren().clear();
 		for(Instruction line : description) {
-			Text lineText = new Text(line.getText() + "\n");
+			String lineStr = line.getText() + "\n";
+			if(line.getJimpleIndex() >= 0) // Print line numbers for actual instruction lines
+				lineStr = line.getJimpleIndex() + " " + lineStr;
+
+			Text lineText = new Text(lineStr);
 			lineText.setOnMouseClicked(onMouseClickedEventHandler);
 			this.getChildren().add(lineText);
 		}
@@ -122,14 +124,15 @@ public class CodeArea extends TextFlow
 	{
 		for(int i = 0; i < this.description.size(); i++)
 		{
-			//TODO: Find new color for applying both highlights?
 			Instruction line = this.description.get(i);
 			Text lineText = (Text) this.getChildren().get(i);
             /*if(line.isSelected()) {
-				lineText.setFill(lineSelectionColor);
+            	lineText.setStyle("-fx-highlight-fill: orange");
+				//lineText.setFill(lineSelectionColor);
 			}
 			else {
-            	lineText.setFill(Color.WHITE);
+				lineText.setStyle("-fx-highlight-fill: white");
+            	//lineText.setFill(Color.WHITE);
 			}*/
 		}
 	}

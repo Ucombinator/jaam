@@ -6,11 +6,11 @@ import org.ucombinator.jaam.visualizer.main.Main;
 
 public class Method
 {
-	public Class ourClass;
+	private Class ourClass;
 	private final String methodName;
 	//private final String functionName;
-	ArrayList<Vertex> vertices;
-	ArrayList<Instruction> instructionList;
+	private ArrayList<Vertex> vertices;
+	private ArrayList<Instruction> instructionList;
 
 	public Method()
 	{

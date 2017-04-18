@@ -100,14 +100,15 @@ public class HierarchicalGraph
 		}
 	}
 	
-	public AbstractLayoutVertex getRoot(){
-		if(this.vertices.values().size()==0){
+	public AbstractLayoutVertex getRoot() {
+		if(this.vertices.values().size() == 0){
 			//System.out.println("getRoot on empty graph");
 			return null;
 		}
 
 		ArrayList<AbstractLayoutVertex> arrayList = new ArrayList<AbstractLayoutVertex>(this.vertices.values());
 		Collections.sort(arrayList);
+		//System.out.println("Root ID: " + arrayList.get(0).getId());
 		return arrayList.get(0);
 	}
 
@@ -121,6 +122,7 @@ public class HierarchicalGraph
 
 	public static ArrayList<LayoutEdge> computeDummyEdges(LayoutRootVertex root)
 	{
+		System.out.println("Creating dummy edges...");
 		ArrayList<LayoutEdge> dummies = new ArrayList<LayoutEdge>();
 
 		root.cleanAll();
@@ -154,6 +156,7 @@ public class HierarchicalGraph
 				if(!nextVertexMethod.equals(rootMethod))
 				{
 					if(hash.containsKey(nextVertexMethod)){
+						System.out.println("Adding dummy edge: " + hash.get(nextVertexMethod).getId() + "-->" + absVertex.getId());
 						dummies.add(new LayoutEdge(hash.get(nextVertexMethod), absVertex, LayoutEdge.EDGE_TYPE.EDGE_DUMMY));
 					}
 				}

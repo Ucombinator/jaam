@@ -30,13 +30,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     public static final double DEFAULT_WIDTH = 1.0;
     public static final double DEFAULT_HEIGHT = 1.0;
 
-    public Color getColor() {
-        return this.color;
-    }
-    public void setColor(Color color) {
-        this.color = color;
-    }
-
     private HierarchicalGraph selfGraph = null;
     private HierarchicalGraph innerGraph = null;
 
@@ -66,6 +59,12 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     }
     private VertexType vertexType;
 
+    public Color getColor() {
+        return this.color;
+    }
+    public void setColor(Color color) {
+        this.color = color;
+    }
     public void setWidth(double width) {
         this.location.width = width;
     }
@@ -199,7 +198,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
             addedNodes |= v.addTreeNodes(newNode, mainPanel);
 
-        if(mainPanel.highlighted.contains(this) || addedNodes) {
+        if(mainPanel.getHighlighted().contains(this) || addedNodes) {
             parentNode.getChildren().add(newNode);
             return true;
         }
@@ -220,7 +219,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         }
 
         for(LayoutEdge e : this.getInnerGraph().getEdges().values()) {
-            e.graphics = null;
+            e.resetGraphics();
         }
 
         this.graphics = null;
@@ -718,7 +717,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     {
         if(this.getId() >= id1 && this.getId() <= id2) {
             this.setHighlighted(true, mainPanel);
-            mainPanel.highlighted.add(this);
+            mainPanel.getHighlighted().add(this);
             System.out.println("Search successful: " + this.getId());
         }
 
@@ -732,7 +731,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
             String instStr = ((LayoutInstructionVertex) this).getInstruction().getText();
             if(instStr.contains(query)) {
                 this.setHighlighted(true, mainPanel);
-                mainPanel.highlighted.add(this);
+                mainPanel.getHighlighted().add(this);
             }
         }
 
@@ -744,11 +743,11 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     {
         if(isHighlighted) {
             this.getGraphics().setFill(highlightColor);
-            mainPanel.highlighted.add(this);
+            mainPanel.getHighlighted().add(this);
         }
         else {
             this.getGraphics().setFill(this.getColor());
-            mainPanel.highlighted.remove(this);
+            mainPanel.getHighlighted().remove(this);
         }
     }
 
@@ -795,18 +794,18 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         }
     }
 
-    public void toggleEdges() {
+    public void toggleEdges(boolean isEdgeVisible) {
         Iterator<LayoutEdge> itEdges = this.getInnerGraph().getEdges().values().iterator();
         while(itEdges.hasNext()) {
             LayoutEdge e = itEdges.next();
             if(e.getGraphics() != null) {
-                e.getGraphics().setVisible(!e.getGraphics().isVisible() && Parameters.edgeVisible);
+                e.getGraphics().setVisible(!e.getGraphics().isVisible() && isEdgeVisible);
             }
         }
 
         Iterator<AbstractLayoutVertex> itNodes = this.getInnerGraph().getVertices().values().iterator();
         while(itNodes.hasNext()){
-            itNodes.next().toggleEdges();
+            itNodes.next().toggleEdges(isEdgeVisible);
         }
     }
 

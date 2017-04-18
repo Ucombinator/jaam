@@ -1,8 +1,8 @@
 package org.ucombinator.jaam.visualizer.graph;
 
 import java.io.File;
+
 import java.util.ArrayList;
-import java.util.Map.Entry;
 import java.util.HashMap;
 
 public class Graph
@@ -54,7 +54,7 @@ public class Graph
 	public void addVertex(int vIndex, Instruction instruction, boolean drawEdges)
 	{
 		System.out.println("Adding vertex: " + instruction.getText());
-		Vertex ver = this.containsVertex(vIndex);
+		Vertex ver = this.containsInputVertex(vIndex);
 		
 		if(ver == null)
 		{
@@ -87,18 +87,19 @@ public class Graph
 
 	public void addEdge(int src, int dest)
 	{
+		System.out.println("Adding input edge: " + src + ", " + dest);
 		Vertex vSrc, vDest;
 
 		if(src != dest)
 		{
-			vSrc = this.containsVertex(src);
+			vSrc = this.containsInputVertex(src);
 			if (vSrc == null)
 			{
 				vSrc = new Vertex(src);
 				this.vertices.add(vSrc);
 			}
 
-			vDest = this.containsVertex(dest);
+			vDest = this.containsInputVertex(dest);
 			if (vDest == null)
 			{
 				vDest = new Vertex(dest);
@@ -127,13 +128,13 @@ public class Graph
 
     public void addTag(int nodeId, String tag)
     {
-        Vertex ver = this.containsVertex(nodeId);
+        Vertex ver = this.containsInputVertex(nodeId);
         if(ver==null)
             return;
         
         int t = this.tagPresent(tag);
         
-        if(t<0)
+        if(t < 0)
         {
             t = this.tagsList.size();
             this.tagsList.add(tag);
@@ -155,16 +156,27 @@ public class Graph
         return -1;
     }
 	
-	public Vertex containsVertex(int id)
+	public Vertex containsInputVertex(int id)
 	{
 		for(Vertex v : this.vertices)
 		{
-			if(v.getId() == id)
+			if(v.getInputId() == id)
 				return v;
 		}
 
 		return null;
 	}
+
+	/*public void save(String filename) {
+		try {
+			PacketOutput output = new PacketOutput(new FileOutputStream(filename));
+			for (Vertex v : this.vertices)
+				v.save(output);
+		}
+		catch(Exception e) {
+			System.out.println(e);
+		}
+	}*/
 
 	// Next three methods modified from "A New Algorithm for Identifying Loops in Decompilation"
 	// TODO: Run this on each method graph separately

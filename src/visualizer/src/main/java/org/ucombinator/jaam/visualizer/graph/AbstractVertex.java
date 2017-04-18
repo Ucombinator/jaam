@@ -3,7 +3,6 @@ package org.ucombinator.jaam.visualizer.graph;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-
 public abstract class AbstractVertex<T extends AbstractVertex>
 {
 	private static int idCounter = 0; // Used to assign unique id numbers to each vertex

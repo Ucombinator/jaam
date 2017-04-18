@@ -31,7 +31,7 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
 public class StacFrame extends BorderPane
 {
 
-	public VizPanel mainPanel; //TODO: Make private
+	private VizPanel mainPanel;
 	private TextArea rightArea;
 	private CodeArea bytecodeArea;
 	private SearchResults searchResults;
@@ -40,7 +40,9 @@ public class StacFrame extends BorderPane
 	private SplitPane horizontalSplitPane;
 	private FlowPane buttonsFlowPane;
 	private BorderPane searchPanel, bytecodePanel, rightPanel;
-	public CheckBox showEdge;
+	private CheckBox showEdge;
+
+	private boolean edgeVisible;
 
 	public enum searchType
 	{
@@ -57,6 +59,11 @@ public class StacFrame extends BorderPane
 
 		this.mainPanel.initFX(this.graph);
 		this.setVisible(true);
+		edgeVisible = true;
+	}
+
+	public VizPanel getMainPanel() {
+		return this.mainPanel;
 	}
 
 	public TextArea getRightArea() {
@@ -73,6 +80,14 @@ public class StacFrame extends BorderPane
 
 	public Graph getGraph() {
 		return this.graph;
+	}
+
+	public boolean isEdgeVisible() {
+		return edgeVisible;
+	}
+
+	public void setEdgeVisible(boolean isEdgeVisible) {
+		this.edgeVisible = isEdgeVisible;
 	}
 
 	public void repaintAll()
@@ -97,7 +112,7 @@ public class StacFrame extends BorderPane
 	public void setRightText()
 	{
 		StringBuilder text = new StringBuilder();
-		for(AbstractLayoutVertex v : this.mainPanel.highlighted)
+		for(AbstractLayoutVertex v : this.mainPanel.getHighlighted())
 			text.append(v.getRightPanelContent() + "\n");
 
 		this.getRightArea().setText(text.toString());
@@ -132,33 +147,6 @@ public class StacFrame extends BorderPane
 		for(double d : positions)
 			System.out.println(d);
 	}
-
-	// We only have one pane per column, so this is unnecessary for now.
-	/*public SplitPane createColumn(ArrayList<Region> panelList, ArrayList<Double> weights)
-	{
-		assert(panelList.size() > 0);
-		SplitPane splitPane = new SplitPane();
-		splitPane.setOrientation(Orientation.VERTICAL);
-
-		for(Region p : panelList) {
-			splitPane.getItems().add(p);
-		}
-
-		for(int i = 0; i < panelList.size() - 1; i++) {
-			splitPane.getDividers().get(i).setPosition(weights.get(i));
-		}
-
-		return splitPane;
-
-        /*for(int i = 0; i < splitPanes.size(); i++)
-        {
-            splitPanes.get(i).setResizeWeight(weights.get(i));
-            splitPanes.get(i).resetToPreferredSizes();
-        }
-
-		//System.out.println("Finished constructing column! Panels = " + Integer.toString(panels.size())
-			+ ", split panes = " + Integer.toString(splitPanes.size()));
-	}*/
 
 	public void makeLayout()
 	{
@@ -196,8 +184,8 @@ public class StacFrame extends BorderPane
 							@Override
 							public void handle(ActionEvent e) {
 								// TODO: When this is checked off and then back on, the edges don't reappear.
-								Parameters.edgeVisible = showEdge.isSelected();
-								mainPanel.getPanelRoot().setEdgeVisibility(Parameters.edgeVisible);
+								edgeVisible = showEdge.isSelected();
+								mainPanel.getPanelRoot().setEdgeVisibility(edgeVisible);
 								for (AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
 									v.setEdgeVisibility(showEdge.isSelected());
 							}

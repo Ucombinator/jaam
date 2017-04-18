@@ -11,18 +11,16 @@ import org.ucombinator.jaam.visualizer.graph.Instruction;
 
 public class TakeInput extends Thread
 {
-	PacketInput packetInput;
-
 	public Graph parsePackets(String file)
 	{
 		Graph graph = new Graph();
 		if(file.equals("")) {
-			readSmallDummyGraph(graph);
+			//readSmallDummyGraph(graph);
 			//readLargeDummyGraph(graph);
 		}
 		else try
 		{
-			packetInput = new PacketInput(new FileInputStream(file));
+			PacketInput packetInput = new PacketInput(new FileInputStream(file));
 			Packet packet = packetInput.read();
 
 			while(!(packet instanceof EOF))

@@ -87,7 +87,7 @@ public class SearchResults extends BorderPane
 	public void writeText(VizPanel mainPanel)
 	{
         this.root.getChildren().clear();
-        if(mainPanel.highlighted.size() > 0) {
+        if(mainPanel.getHighlighted().size() > 0) {
             // We don't want to include the panel root, so we start our check with its children
             for(AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
                 v.addTreeNodes(this.root, mainPanel);

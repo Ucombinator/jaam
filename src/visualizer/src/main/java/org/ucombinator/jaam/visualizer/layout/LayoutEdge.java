@@ -13,23 +13,23 @@ import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.layout.LayoutEdge>
 {
-    Group graphics;
-    Line line;
-    Polygon arrowhead;
-    Rectangle marker1, marker2;
-    static final boolean markCenters = false;
+    private Group graphics;
+    private Line line;
+    private Polygon arrowhead;
+    private Rectangle marker1, marker2;
+    private static final boolean markCenters = false;
 
     public enum EDGE_TYPE {EDGE_REGULAR, EDGE_DUMMY};
     private EDGE_TYPE type;
 
-    int source, dest;
+    private int source, dest;
     private AbstractLayoutVertex sourceVertex, destVertex;
     private GUINode node;
-    protected String strId;
+    private String strId;
 
-    static double defaultStrokeWidth = 1;
-    static double arrowheadAngleDiff = 0.15 * Math.PI;
-    public static double arrowLength = 10;
+    private static double defaultStrokeWidth = 1;
+    private static double arrowheadAngleDiff = 0.15 * Math.PI;
+    private static double arrowLength = 10;
 
     private LayoutEdge(int source, int dest)
     {
@@ -50,7 +50,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         graphics = new Group();
         line = new Line();
         arrowhead = new Polygon();
-        System.out.println("Created new edge: " + this.getID());
+        System.out.println("Created new layout edge: " + this.getID());
     }
 
     public EDGE_TYPE getType() {
@@ -102,6 +102,10 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         }
         else if((sourceVertex.getGraphics() == null) || (destVertex.getGraphics() == null))
             return;
+        else if(node == null) {
+            System.out.println("Error! The node for this edge does not exist.");
+            return;
+        }
 
         //System.out.println("Passed checks for drawing edge: " + this.getID());
         this.node = node;
@@ -234,13 +238,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
             System.out.println("Error! Edge is invisible.");
         }
 
-        if(node != null) {
-            //System.out.println("Adding line graphics to node...");
-            node.getChildren().add(graphics);
-        }
-        else {
-            System.out.println("Error! The node for this edge does not exist.");
-        }
+        node.getChildren().add(graphics);
     }
 
     public Rectangle getMarker(double x, double y)
@@ -305,6 +303,10 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     public void setGraphics(Group graphics)
     {
         this.graphics = graphics;
+    }
+
+    public void resetGraphics() {
+        this.setGraphics(null);
     }
 
     public void setVisible(boolean isVisible)

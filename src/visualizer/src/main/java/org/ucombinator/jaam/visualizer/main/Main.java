@@ -12,11 +12,9 @@ import org.ucombinator.jaam.visualizer.gui.OuterFrame;
 
 public class Main extends Application
 {
-	private static Stage stage;
 	private static OuterFrame outerFrame;
 
 	public void start(Stage stage) {
-		this.stage = stage;
 		this.outerFrame = new OuterFrame();
 		Scene scene = new Scene(outerFrame, org.ucombinator.jaam.visualizer.main.Parameters.width,
 				org.ucombinator.jaam.visualizer.main.Parameters.height);
