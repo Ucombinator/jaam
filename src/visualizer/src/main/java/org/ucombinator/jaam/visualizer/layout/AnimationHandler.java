@@ -1,5 +1,5 @@
+package org.ucombinator.jaam.visualizer.layout;
 
-import java.util.HashMap;
 import java.util.Iterator;
 
 import javafx.animation.FadeTransition;
@@ -14,6 +14,11 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
+
+import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
+import org.ucombinator.jaam.visualizer.graph.Edge;
+import org.ucombinator.jaam.visualizer.gui.GUINode;
+import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.input.MouseEvent>
 {
@@ -47,9 +52,9 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		}
 	}
 	
-	private void collapsing(AbstractVertex v)
+	private void collapsing(AbstractLayoutVertex v)
 	{
-		System.out.println("Collapsing node: " + v.id + ", " + v.getGraphics().toString());
+		System.out.println("Collapsing node: " + v.getId() + ", " + v.getGraphics().toString());
 		Iterator<Node> it = v.getGraphics().getChildren().iterator();
 		while(it.hasNext())
 		{
@@ -71,7 +76,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		}
 
 		v.setExpanded(false);
-		final AbstractVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
+		final AbstractLayoutVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
 		LayoutAlgorithm.layout(panelRoot);
 		ParallelTransition pt = new ParallelTransition();
 		animateRecursive(panelRoot, pt);
@@ -80,12 +85,12 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		pt.setOnFinished(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
-				Edge.redrawEdges(panelRoot, true);
+				LayoutEdge.redrawEdges(panelRoot, true);
 			}
 		});
 	}
 
-	private void expanding(AbstractVertex v)
+	private void expanding(AbstractLayoutVertex v)
 	{
 		Iterator<Node> it = v.getGraphics().getChildren().iterator();
 		while(it.hasNext())
@@ -108,7 +113,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		}
 
 		v.setExpanded(true);
-		final AbstractVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
+		final AbstractLayoutVertex panelRoot = Parameters.stFrame.mainPanel.getPanelRoot();
 		LayoutAlgorithm.layout(panelRoot);
 		ParallelTransition pt = new ParallelTransition();
 		animateRecursive(panelRoot, pt);
@@ -117,14 +122,14 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		pt.setOnFinished(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
-				Edge.redrawEdges(panelRoot, true);
+				LayoutEdge.redrawEdges(panelRoot, true);
 			}
 		});
 	}
 	
 	private void handlePrimaryDoubleClick(MouseEvent event)
 	{
-		AbstractVertex v = (((GUINode)(event.getSource())).getVertex());
+		AbstractLayoutVertex v = (((GUINode)(event.getSource())).getVertex());
 		if(v.isExpanded())
 			collapsing(v);
 		else
@@ -133,11 +138,11 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		event.consume();
 	}
 	
-	private void animateRecursive(final AbstractVertex v, ParallelTransition pt)
+	private void animateRecursive(final AbstractLayoutVertex v, ParallelTransition pt)
 	{
-		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
+		Iterator<AbstractLayoutVertex> it = v.getInnerGraph().getVertices().values().iterator();
 		while(it.hasNext()){
-			AbstractVertex next = it.next();
+			AbstractLayoutVertex next = it.next();
 			if(v.isExpanded()){
 				animateRecursive(next, pt);
 			}
@@ -175,7 +180,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	private void handlePrimarySingleClick(MouseEvent event)
 	{
 		event.consume();
-		AbstractVertex v = ((GUINode)(event.getSource())).getVertex();
+		AbstractLayoutVertex v = ((GUINode)(event.getSource())).getVertex();
 
 		Parameters.stFrame.mainPanel.resetHighlighted(v);
 		Parameters.bytecodeArea.setDescription();

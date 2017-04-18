@@ -1,3 +1,4 @@
+package org.ucombinator.jaam.visualizer.gui;
 
 // A column in our GUI is constructed from an array of panels
 // We automatically add expandable split panes between each adjacent pair of panels

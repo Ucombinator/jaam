@@ -1,8 +1,7 @@
+package org.ucombinator.jaam.visualizer.gui;
 
 import javax.swing.JPanel;
 import javax.swing.JLabel;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.BorderLayout;
@@ -11,8 +10,10 @@ import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreePath;
 import java.awt.Component;
+
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class SearchArea extends JPanel
 {
@@ -43,7 +44,7 @@ public class SearchArea extends JPanel
                     TreePath path = searchTree.getPathForLocation(e.getX(), e.getY());
                     //System.out.println("TreePath = " + path);
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode)(path.getLastPathComponent());
-                    AbstractVertex ver = (AbstractVertex)(node.getUserObject());
+                    org.ucombinator.jaam.visualizer.graph.AbstractVertex ver = (org.ucombinator.jaam.visualizer.graph.AbstractVertex)(node.getUserObject());
                     
                     if(!ver.isVisible)
                         return;
@@ -88,7 +89,7 @@ public class SearchArea extends JPanel
         this.root.removeAllChildren();
         if(Parameters.stFrame.mainPanel.highlighted.size() > 0) {
             // We don't want to include the panel root, so we start our check with its children
-            for(AbstractVertex v : Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+            for(AbstractLayoutVertex v : Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
                 v.addTreeNodes(this.root);
 
             // TODO: Auto-expand nodes?
@@ -97,7 +98,7 @@ public class SearchArea extends JPanel
         }
 	}
     
-    public void fixCaretPosition()
+    /*public void fixCaretPosition()
     {
         Rectangle window = this.searchTree.getVisibleRect();
         int first = this.searchTree.getClosestRowForLocation(window.x, window.y + SearchArea.nodeHeight);
@@ -107,12 +108,12 @@ public class SearchArea extends JPanel
             return;
         
         DefaultMutableTreeNode node;
-        AbstractVertex ver;
+        AbstractLayoutVertex ver;
         
         for(int i = first; i <= last; i++)
         {
             node = (DefaultMutableTreeNode)(this.searchTree.getPathForRow(i).getLastPathComponent());
-            ver = (AbstractVertex)(node.getUserObject());
+            ver = (AbstractLayoutVertex) node.getUserObject();
             if(ver.isSelected())
                 return;
         }
@@ -122,17 +123,17 @@ public class SearchArea extends JPanel
             if (i >= 0)
             {
                 node = (DefaultMutableTreeNode)(this.searchTree.getPathForRow(i).getLastPathComponent());
-                ver = (AbstractVertex)(node.getUserObject());
+                ver = (AbstractLayoutVertex) node.getUserObject() ;
                 if (ver.isSelected())
                 {
                     this.searchTree.scrollRowToVisible(i);
                     return;
                 }
             }
-            if (j<this.searchTree.getRowCount())
+            if (j < this.searchTree.getRowCount())
             {
                 node = (DefaultMutableTreeNode)(this.searchTree.getPathForRow(j).getLastPathComponent());
-                ver = (AbstractVertex)(node.getUserObject());
+                ver = (AbstractLayoutVertex) node.getUserObject();
                 if (ver.isSelected())
                 {
                     this.searchTree.scrollRowToVisible(j);
@@ -140,7 +141,7 @@ public class SearchArea extends JPanel
                 }
             }
         }
-    }
+    }*/
     
     private class SearchRenderer extends DefaultTreeCellRenderer
     {
@@ -152,17 +153,17 @@ public class SearchArea extends JPanel
 
             if (node == root)
                 return label;
-            AbstractVertex ver = (AbstractVertex) node.getUserObject();
+            AbstractLayoutVertex ver = (AbstractLayoutVertex) node.getUserObject();
 
             label.setText(ver.getShortDescription());
             label.setFont(Parameters.font);
             label.setOpaque(true);
-            if (ver.isSelected)
+            /*if (ver.isSelected())
             {
                 label.setBackground(Parameters.colorHighlight);
                 label.setForeground(Color.BLACK);
             }
-            else if (ver.isHighlighted)
+            else*/ if (ver.isHighlighted)
             {
                 label.setBackground(Color.WHITE);
                 label.setForeground(Color.BLACK);

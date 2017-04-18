@@ -1,3 +1,4 @@
+package org.ucombinator.jaam.visualizer.gui;
 
 import javafx.animation.ScaleTransition;
 import javafx.beans.property.ObjectProperty;
@@ -20,20 +21,29 @@ import javafx.scene.layout.Pane;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Group;
 
-import javax.swing.table.AbstractTableModel;
 import java.awt.Color;
+
 import java.util.HashSet;
 import java.util.Iterator;
+
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
+import org.ucombinator.jaam.visualizer.graph.Edge;
+import org.ucombinator.jaam.visualizer.graph.Graph;
+import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
+import org.ucombinator.jaam.visualizer.layout.LayerFactory;
+import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class VizPanel extends JFXPanel
 {
 	private Group contentGroup;
 	private Pane testPane;
 	private ScrollPane scrollPane;
-	HashSet<AbstractVertex> highlighted;
+	public HashSet<AbstractLayoutVertex> highlighted;
 
 	public static float hues[]; //Used for shading nodes from green to red
-	private AbstractVertex panelRoot;
+	private AbstractLayoutVertex panelRoot;
 	private javafx.scene.paint.Color[] colors = {javafx.scene.paint.Color.AQUAMARINE,
 			javafx.scene.paint.Color.GREEN, javafx.scene.paint.Color.AZURE,
 			javafx.scene.paint.Color.BLUEVIOLET, javafx.scene.paint.Color.DARKTURQUOISE};
@@ -45,7 +55,7 @@ public class VizPanel extends JFXPanel
 	// Store the count for vertex width and height when everything is expanded
 	public double maxVertexWidth, maxVertexHeight;
 
-	public AbstractVertex getPanelRoot()
+	public AbstractLayoutVertex getPanelRoot()
 	{
 		return this.panelRoot;
 	}
@@ -54,7 +64,7 @@ public class VizPanel extends JFXPanel
 	{
 		super();
 		initContentGroup();
-		highlighted = new HashSet<AbstractVertex>();
+		highlighted = new HashSet<AbstractLayoutVertex>();
 	}
 
 	private void initContentGroup() {
@@ -74,14 +84,13 @@ public class VizPanel extends JFXPanel
 		this.setBackground(Color.WHITE);		
 	}
 
-	public void initFX(AbstractVertex root)
+	public void initFX(AbstractLayoutVertex root)
 	{
 		if(root == null)
 		{
 			//System.out.println("Running layout...");
-			Graph g = Main.graph;			
+			Graph g = Main.graph;
 			this.panelRoot = LayerFactory.getLayeredGraph(g);
-			this.panelRoot.assignParents();
 			LayoutAlgorithm.layout(this.panelRoot);
 			resetPanelSize();
 		}
@@ -142,7 +151,7 @@ public class VizPanel extends JFXPanel
 	{
 		if(removeCurrent) {
 			// Unhighlight currently highlighted vertices
-			for (AbstractVertex v : this.highlighted) {
+			for (AbstractLayoutVertex v : this.highlighted) {
 				highlighted.remove(v);
 				v.setHighlighted(false);
 			}
@@ -150,25 +159,25 @@ public class VizPanel extends JFXPanel
 
 		if(addChosen) {
 			//Next we add the highlighted vertices
-			HashSet<AbstractVertex> toAddHighlights = panelRoot.getVerticesWithInstructionID(index, method);
-			for (AbstractVertex v : toAddHighlights) {
+			HashSet<AbstractLayoutVertex> toAddHighlights = panelRoot.getVerticesWithInstructionID(index, method);
+			for (AbstractLayoutVertex v : toAddHighlights) {
 				highlighted.add(v);
 				v.setHighlighted(true);
 			}
 		} else {
-			HashSet<AbstractVertex> toRemoveHighlights = panelRoot.getVerticesWithInstructionID(index, method);
-			for(AbstractVertex v : toRemoveHighlights) {
+			HashSet<AbstractLayoutVertex> toRemoveHighlights = panelRoot.getVerticesWithInstructionID(index, method);
+			for(AbstractLayoutVertex v : toRemoveHighlights) {
 				highlighted.remove(v);
 				v.setHighlighted(false);
 			}
 		}
 	}
 
-	public void resetHighlighted(AbstractVertex newHighlighted)
+	public void resetHighlighted(AbstractLayoutVertex newHighlighted)
 	{
-		for(AbstractVertex currHighlighted : this.highlighted)
+		for(AbstractLayoutVertex currHighlighted : this.highlighted)
 			currHighlighted.setHighlighted(false);
-		highlighted = new HashSet<AbstractVertex>();
+		highlighted = new HashSet<AbstractLayoutVertex>();
 
 		if(newHighlighted != null) {
 			highlighted.add(newHighlighted);
@@ -176,7 +185,7 @@ public class VizPanel extends JFXPanel
 		}
 	}
 
-	public void drawNodes(GUINode parent, AbstractVertex v)
+	public void drawNodes(GUINode parent, AbstractLayoutVertex v)
 	{
 		GUINode node = new GUINode(parent, v);
 
@@ -206,17 +215,17 @@ public class VizPanel extends JFXPanel
 		if (v.getInnerGraph().getVertices().size() == 0)
 			return;
 
-		Iterator<AbstractVertex> it = v.getInnerGraph().getVertices().values().iterator();
+		Iterator<AbstractLayoutVertex> it = v.getInnerGraph().getVertices().values().iterator();
 		while (it.hasNext())
 		{
-			AbstractVertex child = it.next();
+			AbstractLayoutVertex child = it.next();
 			if(v.isExpanded()){
 				drawNodes(node, child);
 			}
 		}
 	}
 
-	public void drawEdges(GUINode parent, AbstractVertex v)
+	public void drawEdges(GUINode parent, AbstractLayoutVertex v)
 	{
 		//System.out.println("Edges of vertex: " + v.getStrID());
 		if(!Parameters.edgeVisible){
@@ -227,17 +236,16 @@ public class VizPanel extends JFXPanel
 		if(v.isExpanded())
 		{
 			//Edge.arrowLength = this.getWidthPerVertex() / 10.0;
-			for(Edge e : v.getInnerGraph().getEdges().values())
+			for(LayoutEdge e : v.getInnerGraph().getEdges().values())
 				e.draw(this, node);
 		
-			for(AbstractVertex child : v.getInnerGraph().getVertices().values())
+			for(AbstractLayoutVertex child : v.getInnerGraph().getVertices().values())
 				drawEdges(node, child);
 			
 		}
 	}
 
-
-	public static void computeHues()
+	/*public static void computeHues()
 	{
 		float start = 0.4f; //green
 		float end = 0.0f; //red
@@ -257,19 +265,7 @@ public class VizPanel extends JFXPanel
 			// Linear interpolation of color values
 			hues[i] = start - ((float) i)/(maxLoopHeight + 1)*(start - end);
 		}
-	}
-
-	// Currently unused: Do we need it?
-	// Checks if an edge between two different vertices should be highlighted
-	// We highlight it only if the vertices on both ends want it to be highlighted
-	public boolean isHighlightedEdge(AbstractVertex v, AbstractVertex nbr)
-	{
-		if(!v.isOutgoingHighlighted || !nbr.isIncomingHighlighted)
-			return false;
-		else if(Parameters.highlightOutgoing && !Parameters.highlightIncoming && v.isOutgoingHighlighted)
-			return false;
-		else return !(Parameters.highlightIncoming && !Parameters.highlightOutgoing && nbr.isIncomingHighlighted);
-	}
+	}*/
 
 	// Next three methods copied from solution here: https://community.oracle.com/thread/2541811
 	// Feature request (inactive) to have an easier way to zoom inside a ScrollPane:
@@ -430,12 +426,12 @@ public class VizPanel extends JFXPanel
 	public void scaleLines()
 	{
 		//System.out.println("Scaling lines and arrowheads...");
-		for(Edge e : this.panelRoot.getInnerGraph().getEdges().values())
+		for(LayoutEdge e : this.panelRoot.getInnerGraph().getEdges().values())
 			e.setScale();
 
-		for(AbstractVertex v : this.panelRoot.getInnerGraph().getVertices().values())
+		for(AbstractLayoutVertex v : this.panelRoot.getInnerGraph().getVertices().values())
 		{
-			for(Edge e : v.getInnerGraph().getEdges().values())
+			for(LayoutEdge e : v.getInnerGraph().getEdges().values())
 				e.setScale();
 		}
 	}

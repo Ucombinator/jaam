@@ -1,12 +1,18 @@
+package org.ucombinator.jaam.visualizer.main;
 
 import java.io.File;
 import java.io.IOException;
 
 import javax.swing.JFileChooser;
-import javax.swing.JTextArea;
+import javafx.scene.control.TextArea;
 
 import java.awt.Font;
 import java.awt.Color;
+
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.gui.CodeArea;
+import org.ucombinator.jaam.visualizer.gui.SearchArea;
+import org.ucombinator.jaam.visualizer.gui.StacFrame;
 
 // TODO: Remove stFrame variable and make StacFrame a singleton class
 public class Parameters
@@ -16,7 +22,7 @@ public class Parameters
 	public static int width = 1200, height = 800;
 	public static double boxFactor = 3.0/4.0;
 	public static StacFrame stFrame;
-	public static JTextArea rightArea;
+	public static TextArea rightArea;
 	public static CodeArea bytecodeArea;
 	public static CodeArea decompiledArea;
     public static SearchArea searchArea;
@@ -29,11 +35,12 @@ public class Parameters
 			colorHighlight = new Color(Integer.parseInt("2B8CBE", 16));
 	public static int transparency = 160;
 	public static Font font = new Font("Serif", Font.PLAIN, 14);
+	public static javafx.scene.text.Font jfxFont = new javafx.scene.text.Font("Serif", 14);
 	
 	public static boolean debug = false;
 	public static long interval = 5000;
 	public static long mouseLastTime;
-	public static boolean highlightIncoming = false, highlightOutgoing = false, vertexHighlight = true;
+	public static boolean vertexHighlight = true;
     public static boolean fixCaret = false;
 	
 	public static int debug1, debug2;
@@ -42,11 +49,10 @@ public class Parameters
 	public static void setRightText()
 	{
 		StringBuilder text = new StringBuilder();
-		for(AbstractVertex v : stFrame.mainPanel.highlighted)
+		for(AbstractLayoutVertex v : stFrame.mainPanel.highlighted)
 			text.append(v.getRightPanelContent() + "\n");
 
 		rightArea.setText(text.toString());
-		rightArea.setCaretPosition(0);
 	}
 
 	public static File openFile(boolean includeDirectories)
@@ -87,7 +93,7 @@ public class Parameters
 		System.out.println("Repainting all...");
 		if (!Parameters.debugMode)
 		{
-			bytecodeArea.setDescription();
+			//bytecodeArea.setDescription();
 			setRightText();
 			searchArea.writeText();
 		}
@@ -100,12 +106,6 @@ public class Parameters
             Parameters.fixCaretPositions();
         }*/
 	}
-    
-    public static void fixCaretPositions()
-    {
-        bytecodeArea.fixCaretPosition();
-        searchArea.fixCaretPosition();
-    }
 
 	public static String getHTMLVerbatim(String str)
 	{

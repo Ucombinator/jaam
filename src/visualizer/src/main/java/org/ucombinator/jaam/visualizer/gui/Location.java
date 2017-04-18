@@ -1,8 +1,9 @@
+package org.ucombinator.jaam.visualizer.gui;
 
 public class Location
 {
-    protected double left, right, top, bottom;
-    protected double x, y, width, height;
+    public double left, right, top, bottom;
+    public double x, y, width, height;
 
     // Default constructor
     public Location()
