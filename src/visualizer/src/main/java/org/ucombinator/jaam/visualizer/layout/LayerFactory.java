@@ -31,11 +31,11 @@ public class LayerFactory
 		// We partition the vertex set of Main.graph into buckets corresponding to the methods.
 		HashMap<String, HashSet<Vertex>> methodBuckets = new HashMap<String, HashSet<Vertex>>();
 		for(Vertex vertex: graph.getVertices()) {
-			System.out.println("Reading vertex: " + vertex.getInstructionText());
+			//System.out.println("Reading vertex: " + vertex.getInstructionText());
 			String method = vertex.getMethodName();
 			if(!methodBuckets.containsKey(method)){
 				methodBuckets.put(method, new HashSet<Vertex>());
-				System.out.println("Creating bucket for method: " + method);
+				//System.out.println("Creating bucket for method: " + method);
 			}
 			methodBuckets.get(method).add(vertex);
 		}
@@ -43,7 +43,7 @@ public class LayerFactory
 		// Add a vertex for each method to the methodGraph.
 		HashMap<String, AbstractLayoutVertex> methodVertices = new HashMap<>();
 		for(String method: methodBuckets.keySet()) {
-			System.out.println("Creating method node for method: " + method);
+			//System.out.println("Creating method node for method: " + method);
 			LayoutMethodVertex vertex = new LayoutMethodVertex(method, true);
 			vertex.setExpanded(methods_expanded);
 			methodVertices.put(method, vertex);

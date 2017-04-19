@@ -231,7 +231,7 @@ public class VizPanel extends ScrollPane
 		GUINode node = v.getGraphics();
 		if(v.isExpanded())
 		{
-			System.out.println("Drawing edges of vertex: " + v.getStrID());
+			//System.out.println("Drawing edges of vertex: " + v.getStrID());
 
 			//Edge.arrowLength = this.getWidthPerVertex() / 10.0;
 			for(LayoutEdge e : v.getInnerGraph().getEdges().values()) {

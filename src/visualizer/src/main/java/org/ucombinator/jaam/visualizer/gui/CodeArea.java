@@ -97,7 +97,7 @@ public class CodeArea extends TextFlow
 				description.add(new Instruction(methodName, methodName, -1, false));
 				description.addAll(currInstructions);
 				description.add(new Instruction("", methodName, -1, false));
-				System.out.println("Instructions printed: " + description.size());
+				//System.out.println("Instructions printed: " + description.size());
 			}
 
 			this.writeText();

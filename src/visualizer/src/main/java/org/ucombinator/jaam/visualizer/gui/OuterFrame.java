@@ -1,5 +1,8 @@
 package org.ucombinator.jaam.visualizer.gui;
 
+import javafx.application.Platform;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.*;
@@ -41,12 +44,20 @@ public class OuterFrame extends BorderPane {
         menuBar.getMenus().add(menuFile);
         MenuItem loadMessages = new MenuItem("Load graph from message file");
         menuFile.getItems().add(loadMessages);
+
+        OuterFrame outFrame = this;
         loadMessages.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent t) {
-                // TODO: Make new StacFrame in tab
-                loadGraph(true);
+			                    	Platform.runLater(new Runnable() {
+			                			@Override
+			                			public void run() {
+			                				loadGraph(true,outFrame);
+			                			}
+			                		});
             }
         });
+        
+
 
         MenuItem loadImage = new MenuItem("Load image");
         menuFile.getItems().add(loadImage);
@@ -308,14 +319,13 @@ public class OuterFrame extends BorderPane {
         this.setCenter(this.tabPane);
     }
 
-    public void loadGraph(boolean fromMessages)
+    public void loadGraph(boolean fromMessages, OuterFrame outFrame)
     {
-        File file = GUIUtils.openFile(this, "Load graph file");
+        File file = GUIUtils.openFile(outFrame, "Load graph file");
         if(file == null) {
             System.out.println("Error! Invalid file.");
             return;
         }
-
         TakeInput ti = new TakeInput();
         Graph graph = ti.parsePackets(file.getAbsolutePath());
         StacFrame newFrame = new StacFrame(graph);
@@ -323,7 +333,7 @@ public class OuterFrame extends BorderPane {
         Tab newTab = new Tab();
         newTab.setText(file.getName());
         newTab.setContent(newFrame);
-        this.tabPane.getTabs().add(newTab);
+        outFrame.tabPane.getTabs().add(newTab);
     }
 
     public StacFrame getCurrentFrame() {

@@ -122,12 +122,14 @@ public class HierarchicalGraph
 
 	public static ArrayList<LayoutEdge> computeDummyEdges(LayoutRootVertex root)
 	{
-		System.out.println("Creating dummy edges...");
+		System.out.println("Creating dummy edges: start...");
 		ArrayList<LayoutEdge> dummies = new ArrayList<LayoutEdge>();
 
 		root.cleanAll();
 		for(AbstractLayoutVertex v : root.getInnerGraph().getVertices().values())
 			visit(v, new HashMap<String, AbstractLayoutVertex>(), dummies);
+		
+		System.out.println("Creating dummy edges: done!");
 		return dummies;
 	}
 

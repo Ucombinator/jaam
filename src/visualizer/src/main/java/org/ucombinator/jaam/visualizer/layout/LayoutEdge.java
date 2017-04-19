@@ -50,7 +50,6 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         graphics = new Group();
         line = new Line();
         arrowhead = new Polygon();
-        System.out.println("Created new layout edge: " + this.getID());
     }
 
     public EDGE_TYPE getType() {
