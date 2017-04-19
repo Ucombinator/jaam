@@ -327,10 +327,16 @@ public class OuterFrame extends BorderPane {
     }
 
     public StacFrame getCurrentFrame() {
-        Tab currentTab = this.tabPane.getSelectionModel().getSelectedItem();
+        Tab currentTab = this.getCurrentTab();
         if(currentTab.getContent() instanceof StacFrame)
             return (StacFrame) currentTab.getContent();
         else
             return null;
     }
+    
+    public Tab getCurrentTab() {
+        return this.tabPane.getSelectionModel().getSelectedItem();
+    }
+    
+    
 }

@@ -2,23 +2,32 @@ package org.ucombinator.jaam.visualizer.gui;
 
 import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
 import javafx.util.Duration;
 import javafx.event.EventHandler;
 import javafx.event.ActionEvent;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import java.util.StringTokenizer;
 
+import javax.imageio.ImageIO;
+
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 import org.ucombinator.jaam.visualizer.layout.LayoutRootVertex;
+import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 
@@ -430,7 +439,57 @@ public class StacFrame extends BorderPane
 						}
 				);
 		collapsePanel.getChildren().add(chainCollapse);
-		System.out.println("Menu sections: " + buttonsFlowPane.getChildren().size());
+		
+		
+		
+
+		
+		FlowPane utiltiesPanel = new FlowPane();
+		utiltiesPanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
+				BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+		buttonsFlowPane.getChildren().add(utiltiesPanel);
+
+		
+		String extension = "png";
+		final Button exportImageButton = new Button(extension.toUpperCase());
+		exportImageButton.setOnAction
+				(
+						new EventHandler<ActionEvent>()
+
+						{
+							@Override
+							public void handle(ActionEvent e) {
+								e.consume();
+								
+					            FileChooser fileChooser = new FileChooser();
+					              
+					            //Set extension filter
+					            
+					            FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(extension.toUpperCase()+" files (*."+extension+")", "*."+extension);
+					            fileChooser.getExtensionFilters().add(extFilter);
+					            fileChooser.setInitialFileName(Main.getOuterFrame().getCurrentTab().getText()+"."+extension);
+					              
+					            //Show save file dialog
+					            File file = fileChooser.showSaveDialog(Main.getOuterFrame().getScene().getWindow());
+					              
+					            if(file != null){
+								    WritableImage image = mainPanel.snapshot(new SnapshotParameters(), null);
+
+								    System.out.println(file.getAbsolutePath());
+								    // TODO: probably use a file chooser here
+								    File newFile = new File(file.getAbsolutePath());
+
+								    try {
+								        ImageIO.write(SwingFXUtils.fromFXImage(image, null), extension, newFile);
+								    } catch (IOException exception) {
+								        // TODO: handle exception here
+								    }					            }
+					              
+
+							}
+						}
+				);
+		utiltiesPanel.getChildren().add(exportImageButton);
 
 
 		// TODO: Set sizes to fill parent
