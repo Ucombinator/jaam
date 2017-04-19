@@ -321,6 +321,7 @@ public class OuterFrame extends BorderPane {
 
     public void loadGraph(boolean fromMessages, OuterFrame outFrame)
     {
+    	System.out.println("Load graph: start...");
         File file = GUIUtils.openFile(outFrame, "Load graph file");
         if(file == null) {
             System.out.println("Error! Invalid file.");
@@ -328,12 +329,16 @@ public class OuterFrame extends BorderPane {
         }
         TakeInput ti = new TakeInput();
         Graph graph = ti.parsePackets(file.getAbsolutePath());
+        
+        System.out.println("--> Create visualization: start...");
         StacFrame newFrame = new StacFrame(graph);
+        System.out.println("<-- Create visualization: Done!");
 
         Tab newTab = new Tab();
         newTab.setText(file.getName());
         newTab.setContent(newFrame);
         outFrame.tabPane.getTabs().add(newTab);
+        System.out.println("Load graph: done!");
     }
 
     public StacFrame getCurrentFrame() {
