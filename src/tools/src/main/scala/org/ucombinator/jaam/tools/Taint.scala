@@ -198,10 +198,8 @@ object Taint {
           val iExprs = getInvokeExprs(stmt)
           for {
             iExpr <- iExprs
+            called <- LoopDepthCounter.getDispatchedMethods(iExpr) map Coverage2.freshenMethod
           } {
-            // TODO getMethod needs to consider virtual dispatch
-            val called = Coverage2.freshenMethod(iExpr.getMethod)
-
             for {
               index <- Range(0, iExpr.getArgCount)
             } {
