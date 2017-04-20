@@ -18,6 +18,7 @@ class Conf(args : Seq[String]) extends ScallopConf(args = args) {
   addSubcommand(new Coverage2)
   addSubcommand(new MissingReturns)
   addSubcommand(new LoopDepthCounter)
+  addSubcommand(new LoopAnalyzer)
   addSubcommand(new ListItems)
   addSubcommand(new FindMain)
   addSubcommand(new Taint)
