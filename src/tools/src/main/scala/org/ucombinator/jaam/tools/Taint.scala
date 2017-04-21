@@ -178,7 +178,10 @@ object Taint {
       }
     }
 
-    // initialize invocations map and returns map
+    // This block of code performs taint propagations across method boundaries.
+    // When it calls updateTaintGraph, it does not call graph(). This allows
+    // taint propagation to call graph lazily, potentially saving lots of
+    // computation.
     val classNames = getAllClasses(classpath)
     for {
       clazz <- classNames.map(Scene.v.forceResolve(_, SootClass.BODIES))
@@ -200,22 +203,34 @@ object Taint {
             iExpr <- iExprs
             called <- LoopDepthCounter.getDispatchedMethods(iExpr) map Coverage2.freshenMethod
           } {
+            // track propagation of arguments from invocation
             for {
               index <- Range(0, iExpr.getArgCount)
             } {
               val arg = iExpr.getArg(index)
               val from = addrsOf(arg, method)
-              val to = ParameterTaintAddress(method, index)
-              updateTaintGraph(to, from)
+              val to = ParameterTaintAddress(called, index)
+              updateTaintGraph(to, from, false)
             }
 
+            // track propagation of receiver
+            iExpr match {
+              case iie: InstanceInvokeExpr =>
+                val from = addrsOf(iie.getBase, method)
+                val to = ThisRefTaintAddress(called)
+                updateTaintGraph(to, from, false)
+              case _ => {}
+            }
+
+            // track propagation from returns
             val ita = InvokeTaintAddress(method, iExpr)
             val returns = getReturns(called)
             val returnAddrs: Set[TaintAddress] = returns flatMap {
+              // note that ReturnVoidStmt can be ignored
               (r: ReturnStmt) =>
                 addrsOf(r.getOp, called)
             }
-            updateTaintGraph(ita, returnAddrs)
+            updateTaintGraph(ita, returnAddrs, false)
           }
         }
       }
@@ -273,6 +288,7 @@ object Taint {
     addr match {
       case LocalTaintAddress(m, local) =>
         "\"Local[" + local + ", " + fqn(m) + "]\""
+      case ThisRefTaintAddress(m) => "\"This[" + fqn(m) + "]\""
       case RefTaintAddress(m, ref) => "\"Ref[" + ref + ", " + fqn(m) + "]\""
       case ParameterTaintAddress(m, index) =>
         "\"Param[" + index + ", " + fqn(m) + "]\""
@@ -332,6 +348,7 @@ object Taint {
       case l : Local => Set(LocalTaintAddress(m, l))
       // TODO this could throw an exception
       case pr: ParameterRef => Set(ParameterTaintAddress(m, pr.getIndex))
+      case t: ThisRef => Set(ThisRefTaintAddress(m))
       case r : Ref => Set(RefTaintAddress(m, r))
       // case _ : Constant => Set(ConstantTaintAddress(m))
       case c : Constant => Set(ConstantTaintAddress(m, c))
@@ -360,8 +377,11 @@ object Taint {
   }
 
   private var graphed = Set.empty[SootMethod]
-  def updateTaintGraph(to: TaintAddress, from: Set[TaintAddress]): Unit = {
-    graph(Coverage2.freshenMethod(to.m))
+  def updateTaintGraph(to: TaintAddress, from: Set[TaintAddress],
+      shouldGraph: Boolean = true): Unit = {
+    if (shouldGraph) {
+      graph(Coverage2.freshenMethod(to.m))
+    }
     to match {
       case _: ConstantTaintAddress => {}
       case _ =>
@@ -384,8 +404,8 @@ object Taint {
         val units = method.retrieveActiveBody.getUnits.toList
         var index = 0;
         Console.withOut(System.out) {
-          println("graphing " + fqn(method))
           println()
+          println("graphing " + fqn(method))
         }
 
         for (unit <- units) {
@@ -394,7 +414,7 @@ object Taint {
             println(index + ":\t" + unit)
             index = index+1
           }
-           */
+          */
           unit match {
             case sootStmt : DefinitionStmt =>
               val from = addrsOf(sootStmt.getRightOp, method)
@@ -443,6 +463,7 @@ case class LocalTaintAddress(override val m: SootMethod, val local: Local)
   extends TaintAddress
 case class RefTaintAddress(override val m: SootMethod, val ref: Ref)
   extends TaintAddress
+case class ThisRefTaintAddress(override val m: SootMethod) extends TaintAddress
 case class ParameterTaintAddress(override val m: SootMethod, val index: Int)
   extends TaintAddress
 case class ConstantTaintAddress(override val m: SootMethod, c: Constant)
