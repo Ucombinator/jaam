@@ -196,41 +196,45 @@ object Taint {
       for {
         unit <- units
       } {
-        if (unit.isInstanceOf[SootStmt]) {
-          val stmt: SootStmt = unit.asInstanceOf[SootStmt]
-          val iExprs = getInvokeExprs(stmt)
-          for {
-            iExpr <- iExprs
-            called <- LoopDepthCounter.getDispatchedMethods(iExpr) map Coverage2.freshenMethod
-          } {
-            // track propagation of arguments from invocation
+        unit match {
+          case stmt: SootStmt =>
+            val iExprs = getInvokeExprs(stmt)
             for {
-              index <- Range(0, iExpr.getArgCount)
+              iExpr <- iExprs
+              called <- LoopDepthCounter.getDispatchedMethods(iExpr) map Coverage2.freshenMethod
             } {
-              val arg = iExpr.getArg(index)
-              val from = addrsOf(arg, method)
-              val to = ParameterTaintAddress(called, index)
-              updateTaintGraph(to, from, false)
-            }
-
-            // track propagation of receiver
-            iExpr match {
-              case iie: InstanceInvokeExpr =>
-                val from = addrsOf(iie.getBase, method)
-                val to = ThisRefTaintAddress(called)
+              // track propagation of arguments from invocation
+              for {
+                index <- Range(0, iExpr.getArgCount)
+              } {
+                val arg = iExpr.getArg(index)
+                val from = addrsOf(arg, method)
+                val to = ParameterTaintAddress(called, index)
                 updateTaintGraph(to, from, false)
-              case _ => {}
-            }
+              }
 
-            // track propagation from returns
-            val ita = InvokeTaintAddress(method, iExpr)
-            val returns = getReturns(called)
-            val returnAddrs: Set[TaintAddress] = returns flatMap {
-              // note that ReturnVoidStmt can be ignored
-              (r: ReturnStmt) =>
-                addrsOf(r.getOp, called)
+              // track propagation of receiver
+              iExpr match {
+                case iie: InstanceInvokeExpr =>
+                  val from = addrsOf(iie.getBase, method)
+                  val to = ThisRefTaintAddress(called)
+                  updateTaintGraph(to, from, false)
+                case _ => {}
+              }
+
+              // track propagation from returns
+              val ita = InvokeTaintAddress(method, iExpr)
+              val returns = getReturns(called)
+              val returnAddrs: Set[TaintAddress] = returns flatMap {
+                // note that ReturnVoidStmt can be ignored
+                (r: ReturnStmt) =>
+                  addrsOf(r.getOp, called)
+              }
+              updateTaintGraph(ita, returnAddrs, false)
             }
-            updateTaintGraph(ita, returnAddrs, false)
+          case _ =>
+            Console.withOut(System.out) {
+              println("WARNING: expected SootStmt but got " + unit.getClass)
           }
         }
       }
@@ -376,12 +380,23 @@ object Taint {
     method.getDeclaringClass.getName + "." + method.getName
   }
 
+  // This variable keeps track of which methods have already been graphed to
+  // prevent infinite looping.
   private var graphed = Set.empty[SootMethod]
+  // This method updates _taintGraph, the global map from addresses to the
+  // addresses that affect them.
+  // It also calls graph(), which allows us to lazily propagate taints only for
+  // addresses reachable from the loop condition we're analyzing.
   def updateTaintGraph(to: TaintAddress, from: Set[TaintAddress],
       shouldGraph: Boolean = true): Unit = {
+    // Most of the time, we check to make sure the method in question has been
+    // graphed before anything else.
     if (shouldGraph) {
       graph(Coverage2.freshenMethod(to.m))
     }
+    // Constants can't store explicit taints. Also, their current construction
+    // makes two instances of the same value in the same method equivalent,
+    // which would create spurious taint flows.
     to match {
       case _: ConstantTaintAddress => {}
       case _ =>
@@ -389,15 +404,21 @@ object Taint {
         _taintGraph = _taintGraph + (to -> newFrom)
     }
   }
+  // This method reads from _taintGraph. Like updateTaintGraph, it calls
+  // graph() for lazy taint propagation.
   def readTaintGraph(to: TaintAddress): Set[TaintAddress] = {
+    // Make sure that the method being read has been graphed.
     graph(Coverage2.freshenMethod(to.m))
     to match {
       case _: ConstantTaintAddress => Set.empty
       case _ => _taintGraph.getOrElse(to, Set.empty)
     }
   }
+  // This is the primary workhorse function. It takes a method and adds nodes
+  // and edges to _taintGraph (via updateTaintGraph) for its data flows.
   def graph(method: SootMethod): Unit = {
     if (!graphed.contains(method)) {
+      // Mark this method as graphed - this must happen before recurring!!
       graphed = graphed + method
 
       try {
@@ -410,6 +431,8 @@ object Taint {
 
         for (unit <- units) {
           /*
+           * This commented block is useful for debugging; it prints Jimple code
+           * and instruction numbers.
           Console.withOut(System.out) {
             println(index + ":\t" + unit)
             index = index+1
