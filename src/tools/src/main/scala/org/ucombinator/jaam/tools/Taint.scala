@@ -286,6 +286,21 @@ object Taint {
     }
   }
 
+  private def skipIntermediates(addrs: Set[TaintAddress],
+      fakes: Set[TaintAddress] = Set.empty): Set[TaintAddress] = {
+    val (real, fake) = addrs partition {
+      case a@ (_: InvokeTaintAddress | _: ParameterTaintAddress) =>
+        readTaintGraph(a) isEmpty
+      case _ => true
+    }
+    if (fake isEmpty) {
+      real
+    } else {
+      val next = (fake -- fakes) flatMap readTaintGraph
+      val skipped = skipIntermediates(next, fakes ++ fake)
+      real ++ skipped
+    }
+  }
   def printOrigins(queue: Set[TaintAddress]): Unit = {
     def innerPrint(queue: Set[TaintAddress], seen: Set[TaintAddress]): Unit = {
       if (queue.nonEmpty) {
@@ -295,10 +310,11 @@ object Taint {
           innerPrint(rest, seen)
         } else {
           val immediates = readTaintGraph(current)
+          val successors = skipIntermediates(immediates)
           for {
-            immediate <- immediates
-          } println(dotString(current) + " -> " + dotString(immediate) + ";")
-          innerPrint(rest ++ immediates, seen + current)
+            succ <- successors
+          } println(dotString(current) + " -> " + dotString(succ) + ";")
+          innerPrint(rest ++ successors, seen + current)
         }
       }
     }
