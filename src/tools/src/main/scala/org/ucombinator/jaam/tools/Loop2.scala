@@ -101,7 +101,7 @@ object LoopAnalyzer {
   }
 
   private var graphed = Set.empty[SootMethod]
-  def graph(m: SootMethod, cg: CallGraph): Unit = {
+  def graph(m: SootMethod, src: SootMethod, cg: CallGraph): Unit = {
     if (!graphed.contains(m)) {
       graphed = graphed + m
       val iterator = cg.edgesOutOf(m)
@@ -110,9 +110,13 @@ object LoopAnalyzer {
         val stmt = Stmt(edge.srcStmt, m)
         val dest = Coverage2.freshenMethod(edge.tgt)
         val depth = getLoopDepth(stmt)
-        println("  \"" + Taint.fqn(m) + "\" -> \"" + Taint.fqn(dest) +
+        if (depth > 0) {
+          println("  \"" + Taint.fqn(src) + "\" -> \"" + Taint.fqn(dest) +
             "\" [label=" + depth + "]")
-        graph(dest, cg)
+          graph(dest, dest, cg)
+        } else {
+          graph(dest, src, cg)
+        }
       }
     }
   }
@@ -150,7 +154,8 @@ object LoopAnalyzer {
 
     Console.withOut(graphStream) {
       println("digraph loops {")
-      graph(m, cg)
+      println("ranksep=\"10\";");
+      graph(m, m, cg)
       println("}")
     }
   }
