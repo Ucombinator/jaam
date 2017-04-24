@@ -260,11 +260,11 @@ object LoopAnalyzer {
     }
   }
 
-  private var graphed = Set.empty[SootMethod]
+  private var graphed = Set.empty[String]
   def graph(m: SootMethod, src: SootMethod, cg: CallGraph, allLoops: Boolean):
       Unit = {
-    if (!graphed.contains(m)) {
-      graphed = graphed + m
+    if (!graphed.contains(m.getSubSignature)) {
+      graphed = graphed + m.getSubSignature
       val iterator = cg.edgesOutOf(m)
       while (iterator.hasNext) {
         val edge = iterator.next
@@ -330,6 +330,7 @@ object LoopAnalyzer {
 }
 
 case class Stmt(val stmt: SootStmt, val m: SootMethod) {
+  assert(stmt != null, "trying to create a Stmt with a null object")
   val index = if (stmt.hasTag(Stmt.indexTag)) {
     BigInt(stmt.getTag(Stmt.indexTag).getValue).intValue
   } else {
