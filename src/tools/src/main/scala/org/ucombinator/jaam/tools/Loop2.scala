@@ -135,6 +135,11 @@ object LoopAnalyzer {
     Options.v().set_app(true)
     soot.Main.v().autoSetOptions()
 
+    Options.v.set_main_class(mainClass)
+    val clazz = Scene.v.forceResolve(mainClass, SootClass.BODIES)
+    Scene.v.setMainClass(clazz)
+    val m = Coverage2.freshenMethod(clazz.getMethodByName(mainMethod))
+
     for {
       className <- Taint.getAllClasses(classpath)
     } {
@@ -148,11 +153,6 @@ object LoopAnalyzer {
 
     CHATransformer.v.transform
     val cg = Scene.v.getCallGraph
-
-    Options.v.set_main_class(mainClass)
-    val clazz = Scene.v.forceResolve(mainClass, SootClass.BODIES)
-    Scene.v.setMainClass(clazz)
-    val m = Coverage2.freshenMethod(clazz.getMethodByName(mainMethod))
 
     Console.withOut(graphStream) {
       println("digraph loops {")
