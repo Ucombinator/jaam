@@ -109,6 +109,14 @@ public class HierarchicalGraph
 		ArrayList<AbstractLayoutVertex> arrayList = new ArrayList<AbstractLayoutVertex>(this.vertices.values());
 		Collections.sort(arrayList);
 		//System.out.println("Root ID: " + arrayList.get(0).getId());
+
+		// Return the first vertex with no incoming edges
+		for(AbstractLayoutVertex v : arrayList) {
+			if(v.getIncomingNeighbors().size() == 0)
+				return v;
+		}
+
+		// Otherwise, return the first vertex, period.
 		return arrayList.get(0);
 	}
 
@@ -154,10 +162,10 @@ public class HierarchicalGraph
 			else
 				nextVertexMethod = ((LayoutMethodVertex) absVertex).getMethodName();
 
-			if(absVertex.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE){
+			if(absVertex.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
 				if(!nextVertexMethod.equals(rootMethod))
 				{
-					if(hash.containsKey(nextVertexMethod)){
+					if(hash.containsKey(nextVertexMethod)) {
 						System.out.println("Adding dummy edge: " + hash.get(nextVertexMethod).getId() + "-->" + absVertex.getId());
 						dummies.add(new LayoutEdge(hash.get(nextVertexMethod), absVertex, LayoutEdge.EDGE_TYPE.EDGE_DUMMY));
 					}

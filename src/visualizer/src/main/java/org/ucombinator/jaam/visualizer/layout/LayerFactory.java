@@ -62,7 +62,7 @@ public class LayerFactory
 					AbstractLayoutVertex absVertex = methodVertices.get(vertex.getMethodName());
 					AbstractLayoutVertex absNeigh = methodVertices.get(neighbor.getMethodName());
 					
-					if(absVertex != absNeigh){	// We are not distinguishing recursive calls
+					if(absVertex != absNeigh) {	// We are not distinguishing recursive calls
 						LayoutEdge e = new LayoutEdge(absVertex, absNeigh, LayoutEdge.EDGE_TYPE.EDGE_REGULAR);
 						edges.put(tempID, e);
 						methodGraph.addEdge(e);
@@ -75,7 +75,7 @@ public class LayerFactory
 		for(AbstractLayoutVertex methodVertexAbs: methodGraph.getVertices().values()) {
 			// Add vertices of the inner graph.
 			LayoutMethodVertex methodVertex = (LayoutMethodVertex) methodVertexAbs;
-			HashMap<String,String> idMapping = new HashMap<>(); // first id is the Main.graph vertex id and the second id the New vertex id
+			HashMap<String,String> idMapping = new HashMap<>(); // first id is the graph vertex id and the second id the New vertex id
 			for(Vertex oldV: methodBuckets.get(methodVertex.getMethodName())) {
 				LayoutInstructionVertex newV = new LayoutInstructionVertex(oldV.getInstruction(), methodVertex, true);
 

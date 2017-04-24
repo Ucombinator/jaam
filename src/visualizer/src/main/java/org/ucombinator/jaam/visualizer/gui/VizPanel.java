@@ -225,6 +225,7 @@ public class VizPanel extends ScrollPane
 	public void drawEdges(AbstractLayoutVertex v)
 	{
 		if(!stFrame.isEdgeVisible()) {
+			System.out.println("Skipping drawEdges - edges set to invisible...");
 			return;
 		}
 		

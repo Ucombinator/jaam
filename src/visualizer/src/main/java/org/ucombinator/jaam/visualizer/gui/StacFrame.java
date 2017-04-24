@@ -66,9 +66,9 @@ public class StacFrame extends BorderPane
 		else
 			makeLayout();
 
+		edgeVisible = true;
 		this.mainPanel.initFX(this.graph);
 		this.setVisible(true);
-		edgeVisible = true;
 	}
 
 	public VizPanel getMainPanel() {
