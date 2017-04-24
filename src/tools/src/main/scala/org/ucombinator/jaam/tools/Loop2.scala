@@ -149,7 +149,9 @@ object LoopAnalyzer {
     CHATransformer.v.transform
     val cg = Scene.v.getCallGraph
 
+    Options.v.set_main_class(mainClass)
     val clazz = Scene.v.forceResolve(mainClass, SootClass.BODIES)
+    Scene.v.setMainClass(clazz)
     val m = Coverage2.freshenMethod(clazz.getMethodByName(mainMethod))
 
     Console.withOut(graphStream) {
