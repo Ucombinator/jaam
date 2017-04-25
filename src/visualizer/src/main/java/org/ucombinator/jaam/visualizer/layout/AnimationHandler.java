@@ -2,25 +2,18 @@ package org.ucombinator.jaam.visualizer.layout;
 
 import java.util.Iterator;
 
-import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.TranslateTransition;
 import javafx.animation.ParallelTransition;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.event.EventType;
 import javafx.scene.Node;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
-import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
-import org.ucombinator.jaam.visualizer.graph.Edge;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.StacFrame;
 import org.ucombinator.jaam.visualizer.main.Main;
-import org.ucombinator.jaam.visualizer.main.Parameters;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.input.MouseEvent>
@@ -85,8 +78,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
 		panel.resetContent();
 		LayoutAlgorithm.layout(panelRoot);
-		panel.drawNodes(null, panel.getPanelRoot());
-		panel.drawEdges(panelRoot);
+		panel.drawGraph();
 
 		/*ParallelTransition pt = new ParallelTransition();
 		animateRecursive(panelRoot, pt, panel);
@@ -130,8 +122,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 		final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
 		panel.resetContent();
 		LayoutAlgorithm.layout(panelRoot);
-		panel.drawNodes(null, panelRoot);
-		panel.drawEdges(panelRoot);
+		panel.drawGraph();
 
 		//ParallelTransition pt = new ParallelTransition();
 		//animateRecursive(panelRoot, pt, panel);

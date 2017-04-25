@@ -24,9 +24,8 @@ public class Main extends Application
 		stage.setScene(scene);
 		stage.show();
 
-		/*TakeInput ti = new TakeInput();
-		String file = "graphs/Factorial.jaam";
-		ti.run(file, true);*/
+		// Read dummy graph
+		//outerFrame.loadGraph(false);
 
 		/*for (int i = 0; i < args.length; i++)
 		{
