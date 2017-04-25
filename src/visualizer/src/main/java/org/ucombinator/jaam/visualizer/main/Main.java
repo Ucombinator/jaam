@@ -25,7 +25,7 @@ public class Main extends Application
 		stage.show();
 
 		// Read dummy graph
-		outerFrame.loadGraph(false);
+		//outerFrame.loadGraph(false);
 
 		/*for (int i = 0; i < args.length; i++)
 		{
