@@ -34,25 +34,17 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     private HierarchicalGraph innerGraph = null;
 
     private GUINode graphics;
-
     private boolean isExpanded;
-    private String strId;
-    private String name;
-    private int index, parentIndex;
-    private HashSet<AbstractLayoutVertex> outgoingLayoutNeighbors;
-    private HashSet<AbstractLayoutVertex> incomingLayoutNeighbors;
 
     // A location stores coordinates for a subtree.
     private Location location = new Location();
     private boolean updateLocation = false;
 
-    //Used for shading vertices based on the number of nested loops they contain
-    //loopHeight is stored for all vertices
+    // Used for shading vertices based on the number of nested loops they contain
     private int loopHeight;
-    private Vertex loopHeader;
-    private ArrayList<Vertex> loopChildren;
+    private AbstractLayoutVertex loopHeader;
+    private ArrayList<AbstractLayoutVertex> loopChildren;
     private int dfsPathPos;
-    private boolean traversed;
 
     public enum VertexType {
         INSTRUCTION, METHOD, CHAIN, ROOT
@@ -101,12 +93,43 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         this.graphics = graphics;
     }
 
+    public void setDFSPosition(int pos) {
+        this.dfsPathPos = pos;
+    }
+
+    public int getDFSPosition() {
+        return this.dfsPathPos;
+    }
+
     public int getLoopHeight() {
         return this.loopHeight;
     }
 
     public void setLoopHeight(int loopHeight) {
         this.loopHeight = loopHeight;
+    }
+
+    public void setLoopHeader(AbstractLayoutVertex v)
+    {
+        this.loopHeader = v;
+    }
+
+    public AbstractLayoutVertex getLoopHeader()
+    {
+        return this.loopHeader;
+    }
+
+    public void addLoopChild(AbstractLayoutVertex v)
+    {
+        if(this != v)
+            loopChildren.add(v);
+        else
+            System.out.println("Error! Cannot add self as header in loop decomposition.");
+    }
+
+    public ArrayList<AbstractLayoutVertex> getLoopChildren()
+    {
+        return loopChildren;
     }
 
     public int compareTo(AbstractLayoutVertex v) {
@@ -128,16 +151,19 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     public abstract HashSet<LayoutMethodVertex> getMethodVertices();
 
     static int colorIndex = 0;
+
     public AbstractLayoutVertex(String label, VertexType type, boolean drawEdges) {
         super(label);
         this.graphics = null;
         this.isExpanded = true;
-        this.outgoingLayoutNeighbors = new HashSet<AbstractLayoutVertex>();
-        this.incomingLayoutNeighbors = new HashSet<AbstractLayoutVertex>();
 
         this.innerGraph = new HierarchicalGraph();
         this.vertexType = type;
         this.drawEdges = drawEdges;
+
+        this.loopChildren = new ArrayList<AbstractLayoutVertex>();
+        this.loopHeight = -1;
+        this.dfsPathPos = -1;
 
         if(this.vertexType == VertexType.ROOT){
             this.setColor(Color.WHITE);
@@ -160,6 +186,15 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         }
 
         return minIndex;
+    }
+
+    public int getMaxLoopHeight() {
+        int maxLoopHeight = 0;
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
+            maxLoopHeight = Math.max(maxLoopHeight, v.getMaxLoopHeight());
+        }
+
+        return maxLoopHeight;
     }
 
     public boolean getDrawEdges() {

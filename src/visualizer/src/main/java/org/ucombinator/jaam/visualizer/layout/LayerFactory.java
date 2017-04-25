@@ -41,7 +41,7 @@ public class LayerFactory
 		}
 		
 		// Add a vertex for each method to the methodGraph.
-		HashMap<String, AbstractLayoutVertex> methodVertices = new HashMap<>();
+		HashMap<String, LayoutMethodVertex> methodVertices = new HashMap<>();
 		for(String method: methodBuckets.keySet()) {
 			//System.out.println("Creating method node for method: " + method);
 			LayoutMethodVertex vertex = new LayoutMethodVertex(method, true);
@@ -115,6 +115,10 @@ public class LayerFactory
 
 			start.getSelfGraph().addEdge(new LayoutEdge(start, end, LayoutEdge.EDGE_TYPE.EDGE_DUMMY));
 		}
+
+		for(LayoutMethodVertex m: methodVertices.values())
+			m.identifyLoops();
+		root.computeHues();
 
 		createChainVertices(root, CHAIN_LENGTH);
 		return root;

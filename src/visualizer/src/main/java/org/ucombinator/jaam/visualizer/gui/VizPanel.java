@@ -240,28 +240,6 @@ public class VizPanel extends ScrollPane
 		}
 	}
 
-	/*public static void computeHues()
-	{
-		float start = 0.4f; //green
-		float end = 0.0f; //red
-
-		VizPanel.maxLoopHeight = 0;
-		for(Vertex v : Main.graph.vertices)
-		{
-			if(v.loopHeight > maxLoopHeight)
-				maxLoopHeight = v.loopHeight;
-		}
-		
-		System.out.println("Max loop height: " + maxLoopHeight);
-		
-		hues = new float[maxLoopHeight + 1];
-		for(int i = 0; i <= maxLoopHeight; i++)
-		{
-			// Linear interpolation of color values
-			hues[i] = start - ((float) i)/(maxLoopHeight + 1)*(start - end);
-		}
-	}*/
-
 	// Next three methods copied from solution here: https://community.oracle.com/thread/2541811
 	// Feature request (inactive) to have an easier way to zoom inside a ScrollPane:
 	// https://bugs.openjdk.java.net/browse/JDK-8091618

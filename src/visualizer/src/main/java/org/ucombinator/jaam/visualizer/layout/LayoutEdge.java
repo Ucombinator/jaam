@@ -119,10 +119,6 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         double destCenterY = (destBounds.getMinY() + destBounds.getMaxY()) / 2.0;
         double sourceExitX, sourceExitY, destEnterX, destEnterY;
 
-        System.out.println("Printing edge source bounds for node " + sourceNode.getVertex().getId());
-        System.out.println("X = " + sourceBounds.getMinX() + ", " + sourceBounds.getMaxX());
-        System.out.println("Y = " + sourceBounds.getMinY() + ", " + sourceBounds.getMaxY());
-
         // To find which side a line exits from, we compute both diagonals of the rectangle and determine whether
         // the other end lies above or below each diagonal. The positive diagonal uses the positive slope, and the
         // negative diagonal uses the negative slope.
@@ -161,8 +157,6 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
             sourceExitY = sourceBounds.getMaxY();
             sourceExitX = sourceCenterX + invSlope * (sourceExitY - sourceCenterY);
         }
-
-        System.out.println("Printing source exit: (x, y) = (" + sourceExitX + ", " + sourceExitY + ")");
 
         double destDiagSlope = destBounds.getHeight() / destBounds.getWidth();
         double destInterceptPos = destCenterY - destCenterX * destDiagSlope;

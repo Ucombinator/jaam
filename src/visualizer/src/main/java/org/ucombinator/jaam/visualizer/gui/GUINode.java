@@ -50,8 +50,7 @@ public class GUINode extends Pane
         
         this.rect = new Rectangle();
         //this.backRect = new Rectangle();
-        this.rectLabel = new Text(v.getId() + ", " + v.getLabel());
-        this.rectLabel = new Text(Integer.toString(v.getId()));
+        this.rectLabel = new Text(v.getId() + ", " + v.getLoopHeight());
         this.getChildren().addAll(/*this.backRect,*/ this.rect, this.rectLabel);
         this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
         this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
