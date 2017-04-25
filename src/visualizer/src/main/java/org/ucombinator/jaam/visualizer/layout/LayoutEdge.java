@@ -82,7 +82,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         //System.out.println("Drawing edges for " + node.getVertex().toString());
         if (this.source == this.dest)
         {
-			System.out.println("Error in Edge.draw(): The source and destination vertices are the same.");
+			System.out.println("Error in Edge.drawGraph(): The source and destination vertices are the same.");
 			System.out.println(this.source +"---"+ this.dest);
 			System.out.println(this.sourceVertex.getLabel() +"---"+ this.destVertex.getLabel());
 			System.out.println(this.getType());
@@ -90,7 +90,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         }
         else if (sourceVertex.getX() == destVertex.getX() && sourceVertex.getY() == destVertex.getY())
         {
-			System.out.println("Error in Edge.draw(): The two vertices are at the same location.");
+			System.out.println("Error in Edge.drawGraph(): The two vertices are at the same location.");
 			System.out.println(this.source + " --- " + this.dest);
 			System.out.println(this.sourceVertex.getLabel() + " --- " + this.destVertex.getLabel());
 			System.out.println(this.getType());
@@ -273,7 +273,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
                     if(e.node != null)
                         e.node.getChildren().remove(e.graphics);
 
-                    // ...And draw new ones
+                    // ...And drawGraph new ones
                     e.draw(e.node);
                 }
             }

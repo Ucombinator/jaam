@@ -278,9 +278,7 @@ public class StacFrame extends BorderPane
 								StacFrame.this.mainPanel.getPanelRoot().reset();
 								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
 								StacFrame.this.mainPanel.resetPanelSize();
-
-								StacFrame.this.mainPanel.drawNodes(null, StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.drawEdges(StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawGraph();
 							}
 						}
 				);
@@ -305,8 +303,7 @@ public class StacFrame extends BorderPane
 								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
 								StacFrame.this.mainPanel.resetPanelSize();
 
-								StacFrame.this.mainPanel.drawNodes(null, StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.drawEdges(StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawGraph();
 							}
 						}
 				);
@@ -332,9 +329,7 @@ public class StacFrame extends BorderPane
 								StacFrame.this.mainPanel.getPanelRoot().reset();
 								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
 								StacFrame.this.mainPanel.resetPanelSize();
-
-								StacFrame.this.mainPanel.drawNodes(null, StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.drawEdges(StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawGraph();
 							}
 						}
 				);
@@ -359,8 +354,7 @@ public class StacFrame extends BorderPane
 								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
 								StacFrame.this.mainPanel.resetPanelSize();
 
-								StacFrame.this.mainPanel.drawNodes(null, StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.drawEdges(StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawGraph();
 							}
 						}
 				);
@@ -401,9 +395,7 @@ public class StacFrame extends BorderPane
 								StacFrame.this.mainPanel.getPanelRoot().reset();
 								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
 								StacFrame.this.mainPanel.resetPanelSize();
-
-								StacFrame.this.mainPanel.drawNodes(null, StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.drawEdges(StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawGraph();
 							}
 						}
 				);
@@ -433,9 +425,7 @@ public class StacFrame extends BorderPane
 								StacFrame.this.mainPanel.getPanelRoot().reset();
 								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
 								StacFrame.this.mainPanel.resetPanelSize();
-
-								StacFrame.this.mainPanel.drawNodes(null, StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.drawEdges(StacFrame.this.mainPanel.getPanelRoot());
+								StacFrame.this.mainPanel.drawGraph();
 							}
 						}
 				);

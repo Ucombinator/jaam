@@ -48,15 +48,14 @@ public class OuterFrame extends BorderPane {
         OuterFrame outFrame = this;
         loadMessages.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent t) {
-			                    	Platform.runLater(new Runnable() {
-			                			@Override
-			                			public void run() {
-			                				loadGraph(true,outFrame);
-			                			}
-			                		});
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        outFrame.loadGraph(true);
+                    }
+                });
             }
         });
-        
 
 
         MenuItem loadImage = new MenuItem("Load image");
@@ -319,25 +318,35 @@ public class OuterFrame extends BorderPane {
         this.setCenter(this.tabPane);
     }
 
-    public void loadGraph(boolean fromMessages, OuterFrame outFrame)
+    public void loadGraph(boolean chooseFile)
     {
-    	System.out.println("Load graph: start...");
-        File file = GUIUtils.openFile(outFrame, "Load graph file");
-        if(file == null) {
-            System.out.println("Error! Invalid file.");
-            return;
-        }
+        Graph graph;
         TakeInput ti = new TakeInput();
-        Graph graph = ti.parsePackets(file.getAbsolutePath());
+        String filename = "";
+
+    	System.out.println("Load graph: start...");
+
+    	if(chooseFile) {
+            File file = GUIUtils.openFile(this, "Load graph file");
+            if (file == null) {
+                System.out.println("Error! Invalid file.");
+                return;
+            }
+            graph = ti.parsePackets(file.getAbsolutePath());
+            filename = file.getName();
+        }
+        else {
+            graph = ti.parsePackets("");
+        }
         
         System.out.println("--> Create visualization: start...");
         StacFrame newFrame = new StacFrame(graph);
         System.out.println("<-- Create visualization: Done!");
 
         Tab newTab = new Tab();
-        newTab.setText(file.getName());
+        newTab.setText(filename);
         newTab.setContent(newFrame);
-        outFrame.tabPane.getTabs().add(newTab);
+        this.tabPane.getTabs().add(newTab);
         System.out.println("Load graph: done!");
     }
 

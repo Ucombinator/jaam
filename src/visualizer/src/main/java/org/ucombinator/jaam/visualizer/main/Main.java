@@ -24,6 +24,9 @@ public class Main extends Application
 		stage.setScene(scene);
 		stage.show();
 
+		// Read dummy graph
+		outerFrame.loadGraph(false);
+
 		/*for (int i = 0; i < args.length; i++)
 		{
 			if (args[i].equalsIgnoreCase("--refresh") || args[i].equalsIgnoreCase("-r"))

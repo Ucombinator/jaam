@@ -5,12 +5,9 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.Location;
-import org.ucombinator.jaam.visualizer.gui.OuterFrame;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
-import org.ucombinator.jaam.visualizer.main.Parameters;
 
 //import javax.swing.tree.DefaultMutableTreeNode;
-import javafx.scene.control.TreeView;
 import javafx.scene.control.TreeItem;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -188,10 +185,10 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         return minIndex;
     }
 
-    public int getMaxLoopHeight() {
+    public int calcMaxLoopHeight() {
         int maxLoopHeight = 0;
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
-            maxLoopHeight = Math.max(maxLoopHeight, v.getMaxLoopHeight());
+            maxLoopHeight = Math.max(maxLoopHeight, v.calcMaxLoopHeight());
         }
 
         return maxLoopHeight;
