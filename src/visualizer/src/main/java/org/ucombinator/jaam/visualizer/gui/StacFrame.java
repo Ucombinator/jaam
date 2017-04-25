@@ -39,7 +39,6 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
 
 public class StacFrame extends BorderPane
 {
-
 	private VizPanel mainPanel;
 	private TextArea rightArea;
 	private CodeArea bytecodeArea;
@@ -161,6 +160,7 @@ public class StacFrame extends BorderPane
 	{
 		setSplitScreen();
 		this.setBottom(this.buttonsFlowPane);
+		this.setPrefPanelSizes();
 		this.setVisible(true);
 	}
 
@@ -168,6 +168,7 @@ public class StacFrame extends BorderPane
 	{
 		this.mainPanel = new VizPanel(this);
 		this.setCenter(this.mainPanel);
+		this.setVisible(true);
 	}
 
 	public void makePanes() {
@@ -544,6 +545,12 @@ public class StacFrame extends BorderPane
 		layoutColumnWeights.add(0.7);
 
 		buildCenter(layout, layoutColumnWeights);
+	}
+
+	public void setPrefPanelSizes() {
+		this.rightArea.setPrefColumnCount(100);
+		this.rightArea.setPrefRowCount(100);
+		this.searchResults.setPrefSize(1000, 500);
 	}
 
 	// Clean up info from previous searches
