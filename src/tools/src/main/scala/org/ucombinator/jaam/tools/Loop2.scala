@@ -109,20 +109,24 @@ object LoopAnalyzer {
       println(str)
     }
   }
+
+  def encode(s: String): String = s.replace("\"", "\\\"")
+  def string(s: String): String = "\"" + encode(s) + "\""
+
   def emitEdge(from: String, to: String, isLoop: Boolean = false,
       label: Option[String] = None): Unit = {
     val end = label match {
       case None => ""
       case Some(l) => " [" + l + "]"
     }
-    val edge = "  \"" + from + "\" -> \"" + to + "\"" + end + ";"
+    val edge = "  " + string(from) + " -> " + string(to) + end + ";"
     emit(edge)
     if (isLoop) {
       emitNodeAnnotation(to, "shape=diamond")
     }
   }
   def emitNodeAnnotation(node: String, annotation: String): Unit = {
-    val str = "  \"" + node + "\" [" + annotation + "];"
+    val str = "  " + string(node) + " [" + annotation + "];"
     emit(str)
   }
   private def emitLineage(src: String, trees: Set[LoopTree], stmt: SootStmt,
