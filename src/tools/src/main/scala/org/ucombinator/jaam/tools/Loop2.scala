@@ -65,7 +65,7 @@ object LoopAnalyzer {
           body = m.retrieveActiveBody
         } catch {
           case _: RuntimeException =>
-            println("Unable to retrieve body for " + m.getName)
+            // println("Unable to retrieve body for " + m.getName)
         }
         val result = if (body != null) {
           new LoopNestTree(body).toSet
@@ -171,41 +171,20 @@ object LoopAnalyzer {
   }
   */
 
-  abstract class Node {
-    val children: Set[Node]
-    val tag: String
-    val annotation = ""
-    def encode(s: String): String = s.replace("\"", "\\\"")
-    def quote(s: String): String = "\"" + encode(s) + "\""
-    override def toString: String = {
-      val edges = children.toList map { (child: Node) =>
-        "  " + quote(tag) + " -> " + quote(child.tag) + ";"
-      }
-      val strs = if (annotation == "") {
-        edges
-      } else {
-        annotation :: edges
-      }
-      strs.mkString("\n")
-    }
-  }
-  case class LoopNode(val loop: SootLoop, override val children: Set[Node])
-      extends Node {
-    override val tag = loop.getHead.toString()
-    override val annotation = "  " + quote(tag) + " [shape=diamond];"
+  case class LoopTree(val loop: SootLoop, val children: Set[LoopTree]) {
     def contains(stmt: SootStmt): Boolean = {
       loop.getLoopStatements.contains(stmt)
     }
-    def isParent(other: LoopNode): Boolean = {
+    def isParent(other: LoopTree): Boolean = {
       other.loop.getLoopStatements.toSet.subsetOf(loop.getLoopStatements.toSet)
     }
-    def insert(child: LoopNode): LoopNode = {
-      val grandchildren: Set[LoopNode] = children flatMap {
-        case ln: LoopNode if child.isParent(ln) => Some(ln)
+    def insert(child: LoopTree): LoopTree = {
+      val grandchildren: Set[LoopTree] = children flatMap {
+        case ln: LoopTree if child.isParent(ln) => Some(ln)
         case _ => None
       }
-      val parents: Set[LoopNode] = children flatMap {
-        case ln: LoopNode if ln.isParent(child) => Some(ln)
+      val parents: Set[LoopTree] = children flatMap {
+        case ln: LoopTree if ln.isParent(child) => Some(ln)
         case _ => None
       }
       if (parents.nonEmpty) {
@@ -214,17 +193,17 @@ object LoopAnalyzer {
         assert(grandchildren.isEmpty, "malformed tree")
         val parent = parents.head
         val newParent = parent.insert(child)
-        LoopNode(loop, (children - parent) + newParent)
+        LoopTree(loop, (children - parent) + newParent)
       } else {
         // child becomes a direct descendant containing 0 or more children
-        val node = LoopNode(child.loop, child.children ++ grandchildren)
-        LoopNode(loop, (children -- grandchildren) + node)
+        val node = LoopTree(child.loop, child.children ++ grandchildren)
+        LoopTree(loop, (children -- grandchildren) + node)
       }
     }
     // assumes that its loop contains the stmt in question
-    def parent(stmt: SootStmt): LoopNode = {
+    def parent(stmt: SootStmt): LoopTree = {
       val parents = children flatMap {
-        case ln: LoopNode if ln.loop.getLoopStatements.contains(stmt) =>
+        case ln: LoopTree if ln.loop.getLoopStatements.contains(stmt) =>
           Some(ln)
         case _ => None
       }
@@ -237,88 +216,131 @@ object LoopAnalyzer {
       }
     }
   }
-  object LoopNode {
-    def apply(loop: SootLoop): LoopNode = new LoopNode(loop, Set.empty)
+  object LoopTree {
+    def apply(loop: SootLoop): LoopTree = new LoopTree(loop, Set.empty)
   }
 
+  def encode(s: String): String = s.replace("\"", "\\\"")
+  def quote(s: String): String = "\"" + encode(s) + "\""
+
+  abstract class Node {
+    val tag: String
+    val annotation = ""
+    override def toString: String = ""
+  }
+  case class LoopNode(val loop: SootLoop) extends Node {
+    override val tag = loop.getHead.toString()
+    override def toString = "  " + quote(tag) + " [shape=diamond];\n"
+  }
   // TODO we might have uniqueness problems with SootMethod objects.
   // For now, SootMethod.getSignature will do.
-  case class MethodNode(override val tag: String,
-                        override val children: Set[Node]) extends Node {
+  case class MethodNode(override val tag: String) extends Node {
   }
 
-  // TODO how do we want these to render?
-  def loopString(loop: SootLoop): String = {
-    loop.getHead.toString
-  }
-
-  private def printGraph(node: Node, seen: Set[Node]): Set[Node] = {
-    if (seen contains node) {
-      seen
-    } else {
-      println(node.toString)
-      node.children.foldLeft(seen + node)({ (seen: Set[Node], child: Node) =>
-        printGraph(child, seen)
+  case class LoopGraph(private val g: Map[Node, Set[Node]]) {
+    def apply(n: Node): Set[Node] = g.getOrElse(n, Set.empty)
+    def keySet: Set[String] = g.keySet flatMap {
+      case MethodNode(sig) => Some(sig)
+      case _ => None
+    }
+    def +(binding: (Node, Set[Node])): LoopGraph = {
+      val (k, v) = binding
+      LoopGraph(g + (k -> (this(k) ++ v)))
+    }
+    // TODO if things get slow, this should be easy to optimize
+    def ++(binding: (Node, Set[LoopTree])): LoopGraph = {
+      val (node, forest) = binding
+      forest.foldLeft(this)({ (g: LoopGraph, tree: LoopTree) =>
+        val treeNode = LoopNode(tree.loop)
+        (g + (node -> Set(treeNode))) ++ (treeNode -> tree.children)
       })
     }
+    // TODO remove method leaves
+    def prune: LoopGraph = ???
+    // TODO remove loopless method calls, replacing them with downstream loops
+    def condense: LoopGraph = ???
+    def printGraph(from: Node, seen: Set[Node] = Set.empty): Unit = {
+      if (!seen.contains(from)) {
+        // don't print a newline; toString includes a newline if we want one
+        print(from)
+        for {
+          to <- this(from)
+        } {
+          println("  " + quote(from.tag) + " -> " + quote(to.tag) + ";")
+        }
+        // enforce a BFS order
+        for {
+          to <- this(from)
+        } {
+          printGraph(to, seen + from)
+        }
+      }
+    }
+
+    def build(m: SootMethod, cg: CallGraph): LoopGraph = {
+      val mNode = MethodNode(m.getSignature)
+      if (g isDefinedAt mNode) {
+        this
+      } else {
+        val iterator = cg.edgesOutOf(m)
+        val forest = getLoopForest(m)
+        var newGraph = this ++ (mNode -> forest)
+        while (iterator.hasNext) {
+          val edge = iterator.next
+          val sootStmt = edge.srcStmt
+          val stmt = Stmt(sootStmt, m)
+          val dest = Coverage2.freshenMethod(edge.tgt)
+          val destNode = MethodNode(dest.getSignature)
+          val parents = forest filter { _ contains sootStmt }
+          if (parents.isEmpty) {
+            newGraph = newGraph + (mNode -> Set[Node](destNode))
+          } else {
+            assert(parents.size == 1, "multiple parents")
+            val parent = LoopNode(parents.head.parent(sootStmt).loop)
+            newGraph = newGraph + (parent -> Set[Node](destNode))
+          }
+          newGraph = newGraph.build(dest, cg)
+        }
+        newGraph
+      }
+    }
+  }
+  object LoopGraph {
+    def empty: LoopGraph = new LoopGraph(Map.empty)
   }
 
-  private var loopForests = Map.empty[SootMethod, Set[LoopNode]]
-  private def getLoopForest(m: SootMethod): Set[LoopNode] = {
+  private var loopForests = Map.empty[SootMethod, Set[LoopTree]]
+  private def getLoopForest(m: SootMethod): Set[LoopTree] = {
     loopForests.get(m) match {
       case None =>
         val loops = getLoops(m)
-        var forest = Set(LoopNode(loops.head))
-        for {
-          loop <- loops.tail
-        } {
-          val leaf = LoopNode(loop)
-          val parents = forest.filter { (tree: LoopNode) =>
-            tree.isParent(leaf)
-          }
-          if (parents.isEmpty) {
-            val children = forest.filter { (tree: LoopNode) =>
-              leaf.isParent(tree)
+        var forest = Set.empty[LoopTree]
+        if (loops.nonEmpty) {
+          forest = Set(LoopTree(loops.head))
+          for {
+            loop <- loops.tail
+          } {
+            val leaf = LoopTree(loop)
+            val parents = forest.filter { (tree: LoopTree) =>
+              tree.isParent(leaf)
             }
-            // This is correct even if children is empty
-            val tree = LoopNode(loop, children.asInstanceOf[Set[Node]])
-            forest = (forest -- children) + tree
-          } else {
-            assert(parents.size <= 1, "multiple parents")
-            val parent = parents.head
-            forest = (forest - parent) + parent.insert(leaf)
+            if (parents.isEmpty) {
+              val children = forest.filter { (tree: LoopTree) =>
+                leaf.isParent(tree)
+              }
+              // This is correct even if children is empty
+              val tree = LoopTree(loop, children)
+              forest = (forest -- children) + tree
+            } else {
+              assert(parents.size <= 1, "multiple parents")
+              val parent = parents.head
+              forest = (forest - parent) + parent.insert(leaf)
+            }
           }
+          loopForests = loopForests + (m -> forest)
         }
-        loopForests = loopForests + (m -> forest)
         forest
       case Some(forest) => forest
-    }
-  }
-
-  private var graphed = Set.empty[String]
-  def graph(m: SootMethod, src: SootMethod, cg: CallGraph, allLoops: Boolean):
-      Unit = {
-    if (!graphed.contains(m.getSignature)) {
-      graphed = graphed + m.getSignature
-      val iterator = cg.edgesOutOf(m)
-      while (iterator.hasNext) {
-        val edge = iterator.next
-        val sootStmt = edge.srcStmt
-        val stmt = Stmt(sootStmt, m)
-        val dest = Coverage2.freshenMethod(edge.tgt)
-        val depth = getLoopDepth(stmt)
-        if (depth > 0) {
-          val forest = getLoopForest(m)
-          if (allLoops) {
-            // emitLoopForest(Taint.fqn(src), forest, sootStmt, Taint.fqn(dest))
-          } else {
-            // emitLineage(Taint.fqn(src), forest, sootStmt, Taint.fqn(dest))
-          }
-          graph(dest, dest, cg, allLoops)
-        } else {
-          graph(dest, src, cg, allLoops)
-        }
-      }
     }
   }
 
@@ -355,10 +377,12 @@ object LoopAnalyzer {
     CHATransformer.v.transform
     val cg = Scene.v.getCallGraph
 
+    val graph = LoopGraph.empty.build(m, cg)
+
     Console.withOut(graphStream) {
       println("digraph loops {")
       println("ranksep=\"10\";");
-      graph(m, m, cg, allLoops)
+      graph.printGraph(MethodNode(m.getSignature))
       println("}")
     }
   }
