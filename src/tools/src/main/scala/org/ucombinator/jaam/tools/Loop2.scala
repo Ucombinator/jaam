@@ -110,9 +110,7 @@ object LoopAnalyzer {
     }
   }
 
-  def encode(s: String): String = s.replace("\"", "\\\"")
-  def string(s: String): String = "\"" + encode(s) + "\""
-
+  /*
   def emitEdge(from: String, to: String, isLoop: Boolean = false,
       label: Option[String] = None): Unit = {
     val end = label match {
@@ -129,9 +127,9 @@ object LoopAnalyzer {
     val str = "  " + string(node) + " [" + annotation + "];"
     emit(str)
   }
-  private def emitLineage(src: String, trees: Set[LoopTree], stmt: SootStmt,
+  private def emitLineage(src: String, trees: Set[Node], stmt: SootStmt,
       dest: String): Unit = {
-    val containing = trees filter { (tree: LoopTree) => tree.contains(stmt) }
+    val containing = trees filter { (tree: LoopNode) => tree.contains(stmt) }
     if (containing.isEmpty) {
       emitEdge(src, dest)
     } else {
@@ -142,7 +140,7 @@ object LoopAnalyzer {
       emitLineage(nodeLabel, next.children, stmt, dest)
     }
   }
-  private def justEmitForest(src: String, forest: Set[LoopTree]): Unit = {
+  private def justEmitForest(src: String, forest: Set[Node]): Unit = {
     for {
       tree <- forest
     } {
@@ -151,7 +149,7 @@ object LoopAnalyzer {
       justEmitForest(text, tree.children)
     }
   }
-  private def emitLoopForest(src: String, forest: Set[LoopTree], stmt: SootStmt,
+  private def emitLoopForest(src: String, forest: Set[LoopNode], stmt: SootStmt,
       dest: String): Unit = {
     var containing = 0
     for {
@@ -171,20 +169,44 @@ object LoopAnalyzer {
       emitEdge(src, dest)
     }
   }
+  */
 
-  private def isParent(mParent: SootLoop, mChild: SootLoop): Boolean = {
-    mChild.getLoopStatements.toSet.subsetOf(mParent.getLoopStatements.toSet)
+  abstract class Node {
+    val children: Set[Node]
+    val tag: String
+    val annotation = ""
+    def encode(s: String): String = s.replace("\"", "\\\"")
+    def quote(s: String): String = "\"" + encode(s) + "\""
+    override def toString: String = {
+      val edges = children.toList map { (child: Node) =>
+        "  " + quote(tag) + " -> " + quote(child.tag) + ";"
+      }
+      val strs = if (annotation == "") {
+        edges
+      } else {
+        annotation :: edges
+      }
+      strs.mkString("\n")
+    }
   }
-  case class LoopTree(val loop: SootLoop, val children: Set[LoopTree]) {
+  case class LoopNode(val loop: SootLoop, override val children: Set[Node])
+      extends Node {
+    override val tag = loop.getHead.toString()
+    override val annotation = "  " + quote(tag) + " [shape=diamond];"
     def contains(stmt: SootStmt): Boolean = {
       loop.getLoopStatements.contains(stmt)
     }
-    def insert(child: SootLoop): LoopTree = {
-      val grandchildren = children filter { (ln: LoopTree) =>
-        isParent(child, ln.loop)
+    def isParent(other: LoopNode): Boolean = {
+      other.loop.getLoopStatements.toSet.subsetOf(loop.getLoopStatements.toSet)
+    }
+    def insert(child: LoopNode): LoopNode = {
+      val grandchildren: Set[LoopNode] = children flatMap {
+        case ln: LoopNode if child.isParent(ln) => Some(ln)
+        case _ => None
       }
-      val parents = children filter { (ln: LoopTree) =>
-        isParent(ln.loop, child)
+      val parents: Set[LoopNode] = children flatMap {
+        case ln: LoopNode if ln.isParent(child) => Some(ln)
+        case _ => None
       }
       if (parents.nonEmpty) {
         assert(parents.size <= 1,
@@ -192,17 +214,19 @@ object LoopAnalyzer {
         assert(grandchildren.isEmpty, "malformed tree")
         val parent = parents.head
         val newParent = parent.insert(child)
-        LoopTree(loop, (children - parent) + newParent)
+        LoopNode(loop, (children - parent) + newParent)
       } else {
         // child becomes a direct descendant containing 0 or more children
-        val node = LoopTree(child, grandchildren)
-        LoopTree(loop, (children -- grandchildren) + node)
+        val node = LoopNode(child.loop, child.children ++ grandchildren)
+        LoopNode(loop, (children -- grandchildren) + node)
       }
     }
     // assumes that its loop contains the stmt in question
-    def parent(stmt: SootStmt): LoopTree = {
-      val parents = children filter { (parent: LoopTree) =>
-        parent.loop.getLoopStatements.contains(stmt)
+    def parent(stmt: SootStmt): LoopNode = {
+      val parents = children flatMap {
+        case ln: LoopNode if ln.loop.getLoopStatements.contains(stmt) =>
+          Some(ln)
+        case _ => None
       }
       if (parents.isEmpty) {
         this
@@ -213,8 +237,14 @@ object LoopAnalyzer {
       }
     }
   }
-  object LoopTree {
-    def apply(loop: SootLoop): LoopTree = new LoopTree(loop, Set.empty)
+  object LoopNode {
+    def apply(loop: SootLoop): LoopNode = new LoopNode(loop, Set.empty)
+  }
+
+  // TODO we might have uniqueness problems with SootMethod objects.
+  // For now, SootMethod.getSignature will do.
+  case class MethodNode(override val tag: String,
+                        override val children: Set[Node]) extends Node {
   }
 
   // TODO how do we want these to render?
@@ -222,40 +252,41 @@ object LoopAnalyzer {
     loop.getHead.toString
   }
 
-  private def printTree(tree: LoopTree): Unit = {
-    for {
-      child <- tree.children
-    } {
-      emitEdge(loopString(tree.loop), loopString(child.loop))
+  private def printGraph(node: Node, seen: Set[Node]): Set[Node] = {
+    if (seen contains node) {
+      seen
+    } else {
+      println(node.toString)
+      node.children.foldLeft(seen + node)({ (seen: Set[Node], child: Node) =>
+        printGraph(child, seen)
+      })
     }
-    for {
-      child <- tree.children
-    } printTree(child)
   }
 
-  private var loopForests = Map.empty[SootMethod, Set[LoopTree]]
-  private def getLoopForest(m: SootMethod): Set[LoopTree] = {
+  private var loopForests = Map.empty[SootMethod, Set[LoopNode]]
+  private def getLoopForest(m: SootMethod): Set[LoopNode] = {
     loopForests.get(m) match {
       case None =>
         val loops = getLoops(m)
-        var forest = Set(LoopTree(loops.head))
+        var forest = Set(LoopNode(loops.head))
         for {
           loop <- loops.tail
         } {
-          val parents = forest.filter { (tree: LoopTree) =>
-            isParent(tree.loop, loop)
+          val leaf = LoopNode(loop)
+          val parents = forest.filter { (tree: LoopNode) =>
+            tree.isParent(leaf)
           }
           if (parents.isEmpty) {
-            val children = forest.filter { (tree: LoopTree) =>
-              isParent(loop, tree.loop)
+            val children = forest.filter { (tree: LoopNode) =>
+              leaf.isParent(tree)
             }
             // This is correct even if children is empty
-            val tree = LoopTree(loop, children)
+            val tree = LoopNode(loop, children.asInstanceOf[Set[Node]])
             forest = (forest -- children) + tree
           } else {
             assert(parents.size <= 1, "multiple parents")
             val parent = parents.head
-            forest = (forest - parent) + parent.insert(loop)
+            forest = (forest - parent) + parent.insert(leaf)
           }
         }
         loopForests = loopForests + (m -> forest)
@@ -267,8 +298,8 @@ object LoopAnalyzer {
   private var graphed = Set.empty[String]
   def graph(m: SootMethod, src: SootMethod, cg: CallGraph, allLoops: Boolean):
       Unit = {
-    if (!graphed.contains(m.getSubSignature)) {
-      graphed = graphed + m.getSubSignature
+    if (!graphed.contains(m.getSignature)) {
+      graphed = graphed + m.getSignature
       val iterator = cg.edgesOutOf(m)
       while (iterator.hasNext) {
         val edge = iterator.next
@@ -279,9 +310,9 @@ object LoopAnalyzer {
         if (depth > 0) {
           val forest = getLoopForest(m)
           if (allLoops) {
-            emitLoopForest(Taint.fqn(src), forest, sootStmt, Taint.fqn(dest))
+            // emitLoopForest(Taint.fqn(src), forest, sootStmt, Taint.fqn(dest))
           } else {
-            emitLineage(Taint.fqn(src), forest, sootStmt, Taint.fqn(dest))
+            // emitLineage(Taint.fqn(src), forest, sootStmt, Taint.fqn(dest))
           }
           graph(dest, dest, cg, allLoops)
         } else {
