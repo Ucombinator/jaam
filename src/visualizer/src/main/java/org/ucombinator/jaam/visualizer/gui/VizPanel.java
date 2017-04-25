@@ -10,17 +10,12 @@ import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 
-import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.Pane;
-import javafx.stage.FileChooser;
 import javafx.util.Duration;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Group;
-import javafx.scene.paint.Color;
 
-import java.io.File;
 import java.util.HashSet;
 import java.util.Iterator;
 
@@ -174,7 +169,7 @@ public class VizPanel extends ScrollPane
 		double translateY = scaleY(v.getY());
 		double width = scaleX(v.getWidth());
 		double height = scaleY(v.getHeight());
-		node.setLocation(translateX, translateY, width, height);
+		node.setTranslateLocation(translateX, translateY, width, height);
 
 		// Move these to initialization?
 		node.setArcWidth(scaleX(0.5));

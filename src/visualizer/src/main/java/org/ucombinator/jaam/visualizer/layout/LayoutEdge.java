@@ -111,13 +111,17 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.node = node;
         GUINode sourceNode = sourceVertex.getGraphics();
         GUINode destNode = destVertex.getGraphics();
-        Bounds sourceBounds = sourceNode.getBoundsInParent();
-        Bounds destBounds = destNode.getBoundsInParent();
+        Bounds sourceBounds = sourceNode.getRectBoundsInParent();
+        Bounds destBounds = destNode.getRectBoundsInParent();
         double sourceCenterX = (sourceBounds.getMinX() + sourceBounds.getMaxX()) / 2.0;
         double sourceCenterY = (sourceBounds.getMinY() + sourceBounds.getMaxY()) / 2.0;
         double destCenterX = (destBounds.getMinX() + destBounds.getMaxX()) / 2.0;
         double destCenterY = (destBounds.getMinY() + destBounds.getMaxY()) / 2.0;
         double sourceExitX, sourceExitY, destEnterX, destEnterY;
+
+        System.out.println("Printing edge source bounds for node " + sourceNode.getVertex().getId());
+        System.out.println("X = " + sourceBounds.getMinX() + ", " + sourceBounds.getMaxX());
+        System.out.println("Y = " + sourceBounds.getMinY() + ", " + sourceBounds.getMaxY());
 
         // To find which side a line exits from, we compute both diagonals of the rectangle and determine whether
         // the other end lies above or below each diagonal. The positive diagonal uses the positive slope, and the
@@ -157,6 +161,8 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
             sourceExitY = sourceBounds.getMaxY();
             sourceExitX = sourceCenterX + invSlope * (sourceExitY - sourceCenterY);
         }
+
+        System.out.println("Printing source exit: (x, y) = (" + sourceExitX + ", " + sourceExitY + ")");
 
         double destDiagSlope = destBounds.getHeight() / destBounds.getWidth();
         double destInterceptPos = destCenterY - destCenterX * destDiagSlope;

@@ -2,6 +2,8 @@ package org.ucombinator.jaam.visualizer.gui;
 
 import java.util.ArrayList;
 
+import javafx.geometry.BoundingBox;
+import javafx.geometry.Bounds;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Text;
 import javafx.event.Event;
@@ -19,7 +21,6 @@ import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.layout.AnimationHandler;
 import org.ucombinator.jaam.visualizer.main.Main;
-import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class GUINode extends Pane
 {
@@ -28,7 +29,7 @@ public class GUINode extends Pane
     protected static final double TEXT_HORIZONTAL_PADDING = 15;
 	double dragX, dragY;
     public Rectangle rect;
-    protected Rectangle backRect;
+    //protected Rectangle backRect;
     protected Text rectLabel;
     private AbstractLayoutVertex vertex;
 	private GUINode parent;
@@ -48,12 +49,12 @@ public class GUINode extends Pane
         this.vertex.setGraphics(this);
         
         this.rect = new Rectangle();
-        this.backRect = new Rectangle();
-        //this.rectLabel = new Text(v.getId() + ", " + v.getLabel());
+        //this.backRect = new Rectangle();
+        this.rectLabel = new Text(v.getId() + ", " + v.getLabel());
         this.rectLabel = new Text(Integer.toString(v.getId()));
-        this.getChildren().addAll(this.backRect, this.rect, this.rectLabel);
-        rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
-        rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
+        this.getChildren().addAll(/*this.backRect,*/ this.rect, this.rectLabel);
+        this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
+        this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
 
         this.isDragging = false;
         this.totalScaleX = 1;
@@ -84,7 +85,7 @@ public class GUINode extends Pane
     // Next several methods: Pass on calls to underlying rectangle
     public void setFill(Color c)
     {
-    	this.backRect.setFill(Color.WHITE);
+    	//this.backRect.setFill(Color.WHITE);
     	this.rect.setFill(c);
     	if(vertex.getType()== AbstractLayoutVertex.VertexType.CHAIN){
         	Stop[] stops = new Stop[]{new Stop(0.6,c), new Stop(0.4,Color.WHITE)};
@@ -92,7 +93,6 @@ public class GUINode extends Pane
         } else if(vertex.getType() == AbstractLayoutVertex.VertexType.ROOT){
         	this.rect.setFill(javafx.scene.paint.Color.WHITE);
         }
-
     }
 
     public void setStroke(Color c)
@@ -108,23 +108,47 @@ public class GUINode extends Pane
     public void setArcHeight(double height)
     {
         this.rect.setArcHeight(height);
-        this.backRect.setArcHeight(height);
+        //this.backRect.setArcHeight(height);
     }
 
     public void setArcWidth(double width)
     {
         this.rect.setArcWidth(width);
-        this.backRect.setArcWidth(width);
+        //this.backRect.setArcWidth(width);
     }
 
-    public void setLocation(double x, double y, double width, double height)
+    public void setTranslateLocation(double x, double y) {
+        this.setTranslateX(x);
+        this.setTranslateY(y);
+        this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
+        this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
+    }
+
+    public void setTranslateLocation(double x, double y, double width, double height)
     {
         this.setTranslateX(x);
         this.setTranslateY(y);
         this.rect.setWidth(width);
         this.rect.setHeight(height);
-        this.backRect.setWidth(width);
-        this.backRect.setHeight(height);
+        this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
+        this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
+        //this.backRect.setWidth(width);
+        //this.backRect.setHeight(height);
+    }
+
+    // Returns the bounding box for just the rectangle in the coordinate system for the parent of our node.
+    public Bounds getRectBoundsInParent() {
+        Bounds nodeBounds = this.getBoundsInParent();
+        Bounds rectBounds = this.rect.getBoundsInParent();
+        BoundingBox totalBounds = new BoundingBox(nodeBounds.getMinX() + rectBounds.getMinX(),
+                nodeBounds.getMinY() + rectBounds.getMinY(), rectBounds.getWidth(), rectBounds.getHeight());
+        return totalBounds;
+    }
+
+    public void printLocation() {
+        Bounds bounds = this.getBoundsInParent();
+        System.out.println("Node x = " + bounds.getMinX() + ", " + bounds.getMaxX());
+        System.out.println("Node y = " + bounds.getMinY() + ", " + bounds.getMaxY());
     }
 
     // Halve the distance from the current opacity to 1.
@@ -191,11 +215,12 @@ public class GUINode extends Pane
             node.isDragging = true;
             double offsetX = event.getScreenX() + dragX;
             double offsetY = event.getScreenY() + dragY;
-            node.setTranslateX(offsetX - node.getXShift());
-            node.setTranslateY(offsetY - node.getYShift());
+            double totalTranslateX = offsetX - node.getXShift();
+            double totalTranslateY = offsetY - node.getYShift();
+            node.setTranslateLocation(totalTranslateX, totalTranslateY);
 
             AbstractLayoutVertex v = GUINode.this.vertex;
-            VizPanel mainPanel = ((StacFrame) Main.getOuterFrame().getCurrentFrame()).getMainPanel();
+            VizPanel mainPanel = Main.getOuterFrame().getCurrentFrame().getMainPanel();
             v.setX(mainPanel.invScaleX(offsetX));
             v.setY(mainPanel.invScaleY(offsetY));
             LayoutEdge.redrawEdges(v, false);
