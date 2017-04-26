@@ -273,23 +273,17 @@ public class VizPanel extends StackPane
 
 	private void drawEdges(AbstractLayoutVertex v)
 	{
-		if(!stFrame.isEdgeVisible()) {
-			System.out.println("Skipping drawEdges - edges set to invisible...");
-			return;
-		}
-		
 		GUINode node = v.getGraphics();
-		if(v.isExpanded())
-		{
-			//System.out.println("Drawing edges of vertex: " + v.getStrID());
-
+		if(v.isExpanded()) {
+			// TODO: Adjust arrow length?
 			//Edge.arrowLength = this.getWidthPerVertex() / 10.0;
-			for(LayoutEdge e : v.getInnerGraph().getEdges().values()) {
+			for (LayoutEdge e : v.getInnerGraph().getEdges().values()) {
 				System.out.println("Drawing edge: " + e.getID());
 				e.draw(node);
+				e.setVisible(v.isEdgeVisible());
 			}
-		
-			for(AbstractLayoutVertex child : v.getInnerGraph().getVertices().values())
+
+			for (AbstractLayoutVertex child : v.getInnerGraph().getVertices().values())
 				drawEdges(child);
 		}
 	}

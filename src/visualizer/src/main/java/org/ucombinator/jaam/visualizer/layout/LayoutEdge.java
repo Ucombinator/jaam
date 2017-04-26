@@ -234,11 +234,11 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.graphics.getChildren().add(line);
         this.graphics.getChildren().add(arrowhead);
 
-        if(!this.graphics.isVisible()) {
-            System.out.println("Error! Edge is invisible.");
-        }
-
         node.getChildren().add(graphics);
+        graphics.setVisible(node.getVertex().isExpanded() && this.sourceVertex.isEdgeVisible()
+                && this.destVertex.isEdgeVisible() && this.isVisible());
+
+        System.out.println("Visibility: " + graphics.isVisible());
     }
 
     public Rectangle getMarker(double x, double y)
@@ -273,7 +273,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
                     if(e.node != null)
                         e.node.getChildren().remove(e.graphics);
 
-                    // ...And drawGraph new ones
+                    // ...And draw new ones
                     e.draw(e.node);
                 }
             }

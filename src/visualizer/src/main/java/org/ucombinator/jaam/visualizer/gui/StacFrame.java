@@ -26,6 +26,7 @@ import javax.imageio.ImageIO;
 
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
+import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.layout.LayoutRootVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.main.Parameters;
@@ -91,23 +92,6 @@ public class StacFrame extends BorderPane
 
 	public Graph getGraph() {
 		return this.graph;
-	}
-
-	public boolean isEdgeVisible() {
-		return edgeVisible;
-	}
-	
-	public boolean isLabelVisible() {
-		return labelsVisible;
-	}
-	
-
-	public void setEdgeVisible(boolean isEdgeVisible) {
-		this.edgeVisible = isEdgeVisible;
-	}
-	
-	public void setLabelsVisible(boolean isLabelVisible) {
-		this.labelsVisible = isLabelVisible;
 	}
 
 	public void repaintAll()
@@ -208,8 +192,7 @@ public class StacFrame extends BorderPane
 								// TODO: When this is checked off and then back on, the edges don't reappear.
 								edgeVisible = showEdge.isSelected();
 								mainPanel.getPanelRoot().setEdgeVisibility(edgeVisible);
-//								for (AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
-//									v.setEdgeVisibility(showEdge.isSelected());
+								LayoutEdge.redrawEdges(mainPanel.getPanelRoot(), true);
 							}
 						}
 				);
@@ -224,7 +207,6 @@ public class StacFrame extends BorderPane
 						{
 							@Override
 							public void handle(ActionEvent e) {
-								// TODO: When this is checked off and then back on, the edges don't reappear.
 								labelsVisible = showLabels.isSelected();
 								mainPanel.getPanelRoot().setLabelVisibility(labelsVisible);
 							}
@@ -334,7 +316,6 @@ public class StacFrame extends BorderPane
 								StacFrame.this.mainPanel.getPanelRoot().reset();
 								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
 								StacFrame.this.mainPanel.resetPanelSize();
-
 								StacFrame.this.mainPanel.drawGraph();
 							}
 						}
@@ -385,7 +366,6 @@ public class StacFrame extends BorderPane
 								StacFrame.this.mainPanel.getPanelRoot().reset();
 								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
 								StacFrame.this.mainPanel.resetPanelSize();
-
 								StacFrame.this.mainPanel.drawGraph();
 							}
 						}
@@ -427,6 +407,7 @@ public class StacFrame extends BorderPane
 								StacFrame.this.mainPanel.getPanelRoot().reset();
 								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
 								StacFrame.this.mainPanel.resetPanelSize();
+								StacFrame.this.mainPanel.getPanelRoot().setEdgeVisibility(edgeVisible);
 								StacFrame.this.mainPanel.drawGraph();
 							}
 						}

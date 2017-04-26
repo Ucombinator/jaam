@@ -15,8 +15,8 @@ public class TakeInput extends Thread
 	{
 		Graph graph = new Graph();
 		if(file.equals("")) {
-			readSmallDummyGraph(graph);
-			//readLargeDummyGraph(graph);
+			//readSmallDummyGraph(graph);
+			readLargeDummyGraph(graph);
 		}
 		else try
 		{
@@ -100,12 +100,12 @@ public class TakeInput extends Thread
 			if(i < 5) {
 				Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
 						"Main.main", i, true);
-				graph.addVertex((i + 1), inst, true);
+				graph.addVertex(i, inst, true);
 			}
 			else {
 				Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
 						"Main.func", i, true);
-				graph.addVertex((i + 1), inst, true);
+				graph.addVertex(i, inst, true);
 			}
 		}
 

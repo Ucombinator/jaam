@@ -33,6 +33,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     private GUINode graphics;
     private boolean isExpanded;
     private boolean isLabelVisible;
+    private boolean isEdgeVisible;
     
 
 	// A location stores coordinates for a subtree.
@@ -156,6 +157,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         this.graphics = null;
         this.isExpanded = true;
         this.isLabelVisible = true;
+        this.isEdgeVisible = true;
 
         this.innerGraph = new HierarchicalGraph();
         this.vertexType = type;
@@ -801,6 +803,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     public void setExpanded(boolean expanded) {
         this.isExpanded = expanded;
+
     }
 
     public boolean isLabelVisible() {
@@ -809,12 +812,21 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 	public void setLabelVisible(boolean isLabelVisible) {
 		this.isLabelVisible = isLabelVisible;
 	}
-	
+
+	public boolean isEdgeVisible() {
+        return isEdgeVisible;
+    }
+
+    public void setEdgeVisible(boolean isEdgeVisible) {
+        this.isEdgeVisible = isEdgeVisible;
+    }
+
     public void setEdgeVisibility(boolean isEdgeVisible)
     {
-        for(LayoutEdge e : this.innerGraph.getEdges().values()){
+        this.setEdgeVisible(isEdgeVisible);
+        for(LayoutEdge e : this.innerGraph.getEdges().values())
             e.setVisible(isEdgeVisible);
-        }
+
         for(AbstractLayoutVertex v : this.innerGraph.getVertices().values())
             v.setEdgeVisibility(isEdgeVisible);
     }
@@ -823,12 +835,10 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     {
     	this.setLabelVisible(isLabelVisible);
     	this.getGraphics().setLabelVisible(isLabelVisible);
+
         for(AbstractLayoutVertex v : this.innerGraph.getVertices().values())
             v.setLabelVisibility(isLabelVisible);
     }
-    
-    
- 
     
     
 	public void printCoordinates()
