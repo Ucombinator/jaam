@@ -100,14 +100,23 @@ public class HierarchicalGraph
 		}
 	}
 	
-	public AbstractLayoutVertex getRoot(){
-		if(this.vertices.values().size()==0){
+	public AbstractLayoutVertex getRoot() {
+		if(this.vertices.values().size() == 0){
 			//System.out.println("getRoot on empty graph");
 			return null;
 		}
 
 		ArrayList<AbstractLayoutVertex> arrayList = new ArrayList<AbstractLayoutVertex>(this.vertices.values());
 		Collections.sort(arrayList);
+		//System.out.println("Root ID: " + arrayList.get(0).getId());
+
+		// Return the first vertex with no incoming edges
+		for(AbstractLayoutVertex v : arrayList) {
+			if(v.getIncomingNeighbors().size() == 0)
+				return v;
+		}
+
+		// Otherwise, return the first vertex, period.
 		return arrayList.get(0);
 	}
 
@@ -119,26 +128,28 @@ public class HierarchicalGraph
 		return this.edges.containsKey(LayoutEdge.createID(first.getId(), second.getId()));
 	}
 
-	public static ArrayList<LayoutEdge> computeDummyEdges(AbstractLayoutVertex root)
+	public static ArrayList<LayoutEdge> computeDummyEdges(LayoutRootVertex root)
 	{
+		System.out.println("Creating dummy edges: start...");
 		ArrayList<LayoutEdge> dummies = new ArrayList<LayoutEdge>();
 
-		// Visit first vertex of root method
 		root.cleanAll();
-		visit(root, new HashMap<String, AbstractLayoutVertex>(), dummies);
+		for(AbstractLayoutVertex v : root.getInnerGraph().getVertices().values())
+			visit(v, new HashMap<String, AbstractLayoutVertex>(), dummies);
+		
+		System.out.println("Creating dummy edges: done!");
 		return dummies;
 	}
 
 	private static void visit(AbstractLayoutVertex root, HashMap<String, AbstractLayoutVertex> hash, ArrayList<LayoutEdge> dummies)
 	{
-		//System.out.println("Root: " + root);
 		Iterator<AbstractLayoutVertex> it = root.getOutgoingNeighbors().iterator();
 		root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
 		String rootMethod;
 
 		if (root instanceof LayoutInstructionVertex)
 			rootMethod = ((LayoutInstructionVertex) root).getInstruction().getMethodName();
-		else // root instanceof LayoutMethodVertex
+		else // if (root instanceof LayoutMethodVertex)
 			rootMethod = ((LayoutMethodVertex) root).getMethodName();
 
 		while(it.hasNext())
@@ -151,10 +162,11 @@ public class HierarchicalGraph
 			else
 				nextVertexMethod = ((LayoutMethodVertex) absVertex).getMethodName();
 
-			if(absVertex.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE){
+			if(absVertex.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
 				if(!nextVertexMethod.equals(rootMethod))
 				{
-					if(hash.containsKey(nextVertexMethod)){
+					if(hash.containsKey(nextVertexMethod)) {
+						System.out.println("Adding dummy edge: " + hash.get(nextVertexMethod).getId() + "-->" + absVertex.getId());
 						dummies.add(new LayoutEdge(hash.get(nextVertexMethod), absVertex, LayoutEdge.EDGE_TYPE.EDGE_DUMMY));
 					}
 				}

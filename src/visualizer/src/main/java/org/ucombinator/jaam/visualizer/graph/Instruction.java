@@ -20,10 +20,10 @@ public class Instruction implements Comparable<Instruction>
 		this.isSelected = false;
 	}
 	
-	public Instruction(String str, String method, int jimpleIndex, boolean isInstr)
+	public Instruction(String str, String methodName, int jimpleIndex, boolean isInstr)
 	{
 		this.text = str;
-		this.methodName = method;
+		this.methodName = methodName;
 		this.isInstr = isInstr;
 		this.jimpleIndex = jimpleIndex;
 		this.descriptionIndex = -1;

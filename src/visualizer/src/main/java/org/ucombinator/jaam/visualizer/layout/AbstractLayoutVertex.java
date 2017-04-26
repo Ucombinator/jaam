@@ -5,26 +5,51 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.Location;
-import org.ucombinator.jaam.visualizer.main.Main;
-import org.ucombinator.jaam.visualizer.main.Parameters;
+import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
-import javax.swing.tree.DefaultMutableTreeNode;
+//import javax.swing.tree.DefaultMutableTreeNode;
+import javafx.scene.control.TreeItem;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 
-public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayoutVertex> implements Comparable<AbstractLayoutVertex>
+public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayoutVertex>
+        implements Comparable<AbstractLayoutVertex>
 {
     public static Color highlightColor = Color.ORANGE;
     private Color color = Color.RED;
-    private javafx.scene.paint.Color[] colors = {javafx.scene.paint.Color.LIGHTCORAL,
-            javafx.scene.paint.Color.LIGHTBLUE, javafx.scene.paint.Color.LIGHTCYAN,
-            javafx.scene.paint.Color.LIGHTSEAGREEN, javafx.scene.paint.Color.LIGHTSALMON,
-            javafx.scene.paint.Color.LIGHTSKYBLUE, javafx.scene.paint.Color.LIGHTGOLDENRODYELLOW,
-            javafx.scene.paint.Color.LIGHTGREY};
+    private Color[] colors = {Color.LIGHTCORAL,
+            Color.LIGHTBLUE, Color.LIGHTCYAN,
+            Color.LIGHTSEAGREEN, Color.LIGHTSALMON,
+            Color.LIGHTSKYBLUE, Color.LIGHTGOLDENRODYELLOW,
+            Color.LIGHTGREY};
 
     public static final double DEFAULT_WIDTH = 1.0;
     public static final double DEFAULT_HEIGHT = 1.0;
+
+    private HierarchicalGraph selfGraph = null;
+    private HierarchicalGraph innerGraph = null;
+
+    private GUINode graphics;
+    private boolean isExpanded;
+    private boolean isLabelVisible;
+    private boolean isEdgeVisible;
+    
+
+	// A location stores coordinates for a subtree.
+    private Location location = new Location();
+    private boolean updateLocation = false;
+
+    // Used for shading vertices based on the number of nested loops they contain
+    private int loopHeight;
+    private AbstractLayoutVertex loopHeader;
+    private ArrayList<AbstractLayoutVertex> loopChildren;
+    private int dfsPathPos;
+
+    public enum VertexType {
+        INSTRUCTION, METHOD, CHAIN, ROOT
+    }
+    private VertexType vertexType;
 
     public Color getColor() {
         return this.color;
@@ -32,36 +57,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     public void setColor(Color color) {
         this.color = color;
     }
-
-    private HierarchicalGraph selfGraph = null;
-    private HierarchicalGraph innerGraph = null;
-
-    private GUINode graphics;
-
-    private boolean isExpanded;
-    private String strId;
-    private String name;
-    private int index, parentIndex;
-    private HashSet<AbstractLayoutVertex> outgoingLayoutNeighbors;
-    private HashSet<AbstractLayoutVertex> incomingLayoutNeighbors;
-
-    // A location stores coordinates for a subtree.
-    private Location location = new Location();
-    private boolean updateLocation = false;
-
-    //Used for shading vertices based on the number of nested loops they contain
-    //loopHeight is stored for all vertices
-    private int loopHeight;
-    private Vertex loopHeader;
-    private ArrayList<Vertex> loopChildren;
-    private int dfsPathPos;
-    private boolean traversed;
-
-    public enum VertexType {
-        INSTRUCTION, METHOD, CHAIN, ROOT
-    }
-    private VertexType vertexType;
-
     public void setWidth(double width) {
         this.location.width = width;
     }
@@ -98,6 +93,14 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         this.graphics = graphics;
     }
 
+    public void setDFSPosition(int pos) {
+        this.dfsPathPos = pos;
+    }
+
+    public int getDFSPosition() {
+        return this.dfsPathPos;
+    }
+
     public int getLoopHeight() {
         return this.loopHeight;
     }
@@ -106,11 +109,33 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         this.loopHeight = loopHeight;
     }
 
+    public void setLoopHeader(AbstractLayoutVertex v)
+    {
+        this.loopHeader = v;
+    }
+
+    public AbstractLayoutVertex getLoopHeader()
+    {
+        return this.loopHeader;
+    }
+
+    public void addLoopChild(AbstractLayoutVertex v)
+    {
+        if(this != v)
+            loopChildren.add(v);
+        else
+            System.out.println("Error! Cannot add self as header in loop decomposition.");
+    }
+
+    public ArrayList<AbstractLayoutVertex> getLoopChildren()
+    {
+        return loopChildren;
+    }
+
     public int compareTo(AbstractLayoutVertex v) {
         return ((Integer)(this.getMinInstructionLine())).compareTo(v.getMinInstructionLine());
     }
 
-    private boolean isVisible;
     public boolean isHighlighted; //Select or Highlight this vertex, incoming edges, or outgoing edges
     private boolean drawEdges;
 
@@ -120,19 +145,27 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     public abstract String getShortDescription();
 
     // These searches may be different for different subclasses, so we implement them there.
-    public abstract boolean searchByMethod(String query);
+    public abstract boolean searchByMethod(String query, VizPanel mainPanel);
+
+    // This is needed so that we can show the code for the methods that correspond to selected vertices
+    public abstract HashSet<LayoutMethodVertex> getMethodVertices();
 
     static int colorIndex = 0;
+
     public AbstractLayoutVertex(String label, VertexType type, boolean drawEdges) {
         super(label);
         this.graphics = null;
         this.isExpanded = true;
-        this.outgoingLayoutNeighbors = new HashSet<AbstractLayoutVertex>();
-        this.incomingLayoutNeighbors = new HashSet<AbstractLayoutVertex>();
+        this.isLabelVisible = true;
+        this.isEdgeVisible = true;
 
         this.innerGraph = new HierarchicalGraph();
         this.vertexType = type;
         this.drawEdges = drawEdges;
+
+        this.loopChildren = new ArrayList<AbstractLayoutVertex>();
+        this.loopHeight = -1;
+        this.dfsPathPos = -1;
 
         if(this.vertexType == VertexType.ROOT){
             this.setColor(Color.WHITE);
@@ -157,6 +190,15 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         return minIndex;
     }
 
+    public int calcMaxLoopHeight() {
+        int maxLoopHeight = 0;
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
+            maxLoopHeight = Math.max(maxLoopHeight, v.calcMaxLoopHeight());
+        }
+
+        return maxLoopHeight;
+    }
+
     public boolean getDrawEdges() {
         return this.drawEdges;
     }
@@ -173,29 +215,28 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         this.innerGraph = innerGraph;
     }
 
-    public void recomputeGraphicsSize()
+    public void recomputeGraphicsSize(VizPanel mainPanel)
     {
-        double pixelWidth = Parameters.stFrame.mainPanel.scaleX(this.location.width);
-        double pixelHeight = Parameters.stFrame.mainPanel.scaleY(this.location.height);
+        double pixelWidth = mainPanel.scaleX(this.location.width);
+        double pixelHeight = mainPanel.scaleY(this.location.height);
         this.getGraphics().rect.setWidth(pixelWidth);
         this.getGraphics().rect.setHeight(pixelHeight);
     }
 
     public void setVisible(boolean isVisible)
     {
-        this.isVisible = isVisible;
         if(this.getGraphics() != null)
             this.getGraphics().setVisible(isVisible);
     }
 
-    public boolean addTreeNodes(DefaultMutableTreeNode parentNode) {
+    public boolean addTreeNodes(TreeItem parentNode, VizPanel mainPanel) {
         boolean addedNodes = false;
-        DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(this);
+        TreeItem newNode = new TreeItem(this);
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
-            addedNodes |= v.addTreeNodes(newNode);
+            addedNodes |= v.addTreeNodes(newNode, mainPanel);
 
-        if(Parameters.stFrame.mainPanel.highlighted.contains(this) || addedNodes) {
-            parentNode.add(newNode);
+        if(mainPanel.getHighlighted().contains(this) || addedNodes) {
+            parentNode.getChildren().add(newNode);
             return true;
         }
         else
@@ -207,6 +248,18 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         double xDiff = x - this.location.x;
         double yDiff = y - this.location.y;
         return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
+    }
+
+    public void resetGraphics() {
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
+            v.resetGraphics();
+        }
+
+        for(LayoutEdge e : this.getInnerGraph().getEdges().values()) {
+            e.resetGraphics();
+        }
+
+        this.graphics = null;
     }
 
     /*
@@ -692,46 +745,46 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     }
     */
 
-    public void searchByID(int id)
+    public void searchByID(int id, VizPanel mainPanel)
     {
-        this.searchByIDRange(id, id);
+        this.searchByIDRange(id, id, mainPanel);
     }
 
-    public void searchByIDRange(int id1, int id2)
+    public void searchByIDRange(int id1, int id2, VizPanel mainPanel)
     {
         if(this.getId() >= id1 && this.getId() <= id2) {
-            this.setHighlighted(true);
-            Parameters.stFrame.mainPanel.highlighted.add(this);
+            this.setHighlighted(true, mainPanel);
+            mainPanel.getHighlighted().add(this);
             System.out.println("Search successful: " + this.getId());
         }
 
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
-            v.searchByIDRange(id1, id2);
+            v.searchByIDRange(id1, id2, mainPanel);
     }
 
-    public void searchByInstruction(String query)
+    public void searchByInstruction(String query, VizPanel mainPanel)
     {
         if(this instanceof LayoutInstructionVertex) {
             String instStr = ((LayoutInstructionVertex) this).getInstruction().getText();
             if(instStr.contains(query)) {
-                this.setHighlighted(true);
-                Parameters.stFrame.mainPanel.highlighted.add(this);
+                this.setHighlighted(true, mainPanel);
+                mainPanel.getHighlighted().add(this);
             }
         }
 
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
-            v.searchByInstruction(query);
+            v.searchByInstruction(query, mainPanel);
     }
 
-    public void setHighlighted(boolean isHighlighted)
+    public void setHighlighted(boolean isHighlighted, VizPanel mainPanel)
     {
         if(isHighlighted) {
             this.getGraphics().setFill(highlightColor);
-            Parameters.stFrame.mainPanel.highlighted.add(this);
+            mainPanel.getHighlighted().add(this);
         }
         else {
             this.getGraphics().setFill(this.getColor());
-            Parameters.stFrame.mainPanel.highlighted.remove(this);
+            mainPanel.getHighlighted().remove(this);
         }
     }
 
@@ -750,15 +803,45 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     public void setExpanded(boolean expanded) {
         this.isExpanded = expanded;
+
+    }
+
+    public boolean isLabelVisible() {
+		return isLabelVisible;
+	}
+	public void setLabelVisible(boolean isLabelVisible) {
+		this.isLabelVisible = isLabelVisible;
+	}
+
+	public boolean isEdgeVisible() {
+        return isEdgeVisible;
+    }
+
+    public void setEdgeVisible(boolean isEdgeVisible) {
+        this.isEdgeVisible = isEdgeVisible;
     }
 
     public void setEdgeVisibility(boolean isEdgeVisible)
     {
+        this.setEdgeVisible(isEdgeVisible);
         for(LayoutEdge e : this.innerGraph.getEdges().values())
             e.setVisible(isEdgeVisible);
+
+        for(AbstractLayoutVertex v : this.innerGraph.getVertices().values())
+            v.setEdgeVisibility(isEdgeVisible);
     }
 
-    public void printCoordinates()
+    public void setLabelVisibility(boolean isLabelVisible)
+    {
+    	this.setLabelVisible(isLabelVisible);
+    	this.getGraphics().setLabelVisible(isLabelVisible);
+
+        for(AbstractLayoutVertex v : this.innerGraph.getVertices().values())
+            v.setLabelVisibility(isLabelVisible);
+    }
+    
+    
+	public void printCoordinates()
     {
         System.out.println("Vertex " + this.getId() + this.location.toString());
     }
@@ -768,36 +851,37 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     }
 
     public void toggleNodesOfType(VertexType type, boolean isExpanded) {
-        if(this.getType()==type){
+        if(this.getType() == type){
             this.setExpanded(isExpanded);
         }
+
         Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVertices().values().iterator();
         while(it.hasNext()){
             it.next().toggleNodesOfType(type, isExpanded);
         }
     }
 
-    public void toggleEdges() {
-        Iterator<LayoutEdge> it = this.getInnerGraph().getEdges().values().iterator();
-        while(it.hasNext()){
-            LayoutEdge e = it.next();
-            if(e.getGraphics()!=null){
-                e.getGraphics().setVisible(!e.getGraphics().isVisible() && Parameters.edgeVisible);
+    public void toggleEdges(boolean isEdgeVisible) {
+        Iterator<LayoutEdge> itEdges = this.getInnerGraph().getEdges().values().iterator();
+        while(itEdges.hasNext()) {
+            LayoutEdge e = itEdges.next();
+            if(e.getGraphics() != null) {
+                e.getGraphics().setVisible(!e.getGraphics().isVisible() && isEdgeVisible);
             }
         }
 
-        Iterator<AbstractLayoutVertex> itN = this.getInnerGraph().getVertices().values().iterator();
-        while(itN.hasNext()){
-            itN.next().toggleEdges();
+        Iterator<AbstractLayoutVertex> itNodes = this.getInnerGraph().getVertices().values().iterator();
+        while(itNodes.hasNext()){
+            itNodes.next().toggleEdges(isEdgeVisible);
         }
     }
 
-    public void reset(){
-        this.setGraphics(null);
+    public void reset() {
+        /*this.setGraphics(null);
         Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVertices().values().iterator();
         while(it.hasNext()){
             it.next().reset();
-        }
+        }*/
     }
 
     public HashSet<Instruction> getInstructions() {

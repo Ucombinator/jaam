@@ -16,37 +16,38 @@ public class LayerFactory
 	private static final boolean create_chains = true;
 	private static final boolean chains_expanded = true;
 	private static final boolean methods_expanded = true;
-	
 	private static final int CHAIN_LENGTH = 3 ; // This value should ALWAYS be LARGER THAN OR EQUAL 3 (otherwise it will break)
-	
-	static HashMap<String, Vertex> id_to_vertex = new HashMap<String, Vertex>();
-	static HashMap<String, AbstractVertex> id_to_abs_vertex = new HashMap<String, AbstractVertex>();
 
-	public static AbstractLayoutVertex getLayeredGraph(Graph graph){
+	public static LayoutRootVertex getLayeredGraph(Graph graph){
 		return get2layer(graph);
 	}
 	
-	public static AbstractLayoutVertex get2layer(Graph graph)
+	private static LayoutRootVertex get2layer(Graph graph)
 	{
+		HashMap<String, Vertex> id_to_vertex = new HashMap<String, Vertex>();
+		HashMap<String, AbstractVertex> id_to_abs_vertex = new HashMap<String, AbstractVertex>();
 		HierarchicalGraph methodGraph = new HierarchicalGraph();
 		
 		// We partition the vertex set of Main.graph into buckets corresponding to the methods.
 		HashMap<String, HashSet<Vertex>> methodBuckets = new HashMap<String, HashSet<Vertex>>();
 		for(Vertex vertex: graph.getVertices()) {
+			//System.out.println("Reading vertex: " + vertex.getInstructionText());
 			String method = vertex.getMethodName();
 			if(!methodBuckets.containsKey(method)){
 				methodBuckets.put(method, new HashSet<Vertex>());
+				//System.out.println("Creating bucket for method: " + method);
 			}
 			methodBuckets.get(method).add(vertex);
 		}
 		
 		// Add a vertex for each method to the methodGraph.
-		HashMap<String, AbstractLayoutVertex> methodVertices = new HashMap<>();
+		HashMap<String, LayoutMethodVertex> methodVertices = new HashMap<>();
 		for(String method: methodBuckets.keySet()) {
-				LayoutMethodVertex vertex = new LayoutMethodVertex(method, true);
-				vertex.setExpanded(methods_expanded);
-				methodVertices.put(method, vertex);
-				methodGraph.addVertex(vertex);
+			//System.out.println("Creating method node for method: " + method);
+			LayoutMethodVertex vertex = new LayoutMethodVertex(method, true);
+			vertex.setExpanded(methods_expanded);
+			methodVertices.put(method, vertex);
+			methodGraph.addVertex(vertex);
 		}
 
 		// Add edges to the methodGraph.
@@ -61,7 +62,7 @@ public class LayerFactory
 					AbstractLayoutVertex absVertex = methodVertices.get(vertex.getMethodName());
 					AbstractLayoutVertex absNeigh = methodVertices.get(neighbor.getMethodName());
 					
-					if(absVertex != absNeigh){	// We are not distinguishing recursive calls
+					if(absVertex != absNeigh) {	// We are not distinguishing recursive calls
 						LayoutEdge e = new LayoutEdge(absVertex, absNeigh, LayoutEdge.EDGE_TYPE.EDGE_REGULAR);
 						edges.put(tempID, e);
 						methodGraph.addEdge(e);
@@ -71,23 +72,21 @@ public class LayerFactory
 		}
 		
 		// Create inner graph for each method vertex.
-		for(AbstractLayoutVertex methodVertex: methodGraph.getVertices().values()) {
-			//Create inner-vertices of the inner-methods graph.
-
+		for(AbstractLayoutVertex methodVertexAbs: methodGraph.getVertices().values()) {
 			// Add vertices of the inner graph.
-			HashMap<String,String> idMapping = new HashMap<>(); // first id is the Main.graph vertex id and the second id the New vertex id
-			for(Vertex oldV: methodBuckets.get(methodVertex.getLabel())){
-				LayoutInstructionVertex newV = new LayoutInstructionVertex(oldV.getInstruction(), true);
+			LayoutMethodVertex methodVertex = (LayoutMethodVertex) methodVertexAbs;
+			HashMap<String,String> idMapping = new HashMap<>(); // first id is the graph vertex id and the second id the New vertex id
+			for(Vertex oldV: methodBuckets.get(methodVertex.getMethodName())) {
+				LayoutInstructionVertex newV = new LayoutInstructionVertex(oldV.getInstruction(), methodVertex, true);
 
 				id_to_vertex.put(oldV.getStrID(), oldV);
 				id_to_abs_vertex.put(oldV.getStrID(), newV);
 				idMapping.put(oldV.getStrID(), newV.getStrID());
-
 				methodVertex.getInnerGraph().addVertex(newV);
 			}
 			
 			// Add the edges of the inner graph.
-			for(Vertex v: methodBuckets.get(methodVertex.getLabel())){
+			for(Vertex v: methodBuckets.get(methodVertex.getMethodName())){
 				for(Object neighborObj: v.getOutgoingNeighbors()){
 					Vertex neighbor = (Vertex) neighborObj;
 					if(v.getMethodName().equals(neighbor.getMethodName())){
@@ -103,7 +102,7 @@ public class LayerFactory
 			}
 		}
 		
-		AbstractLayoutVertex root = new LayoutMethodVertex("root", true);
+		LayoutRootVertex root = new LayoutRootVertex();
 		root.setInnerGraph(methodGraph);
 		ArrayList<LayoutEdge> dummies = HierarchicalGraph.computeDummyEdges(root);
 		
@@ -117,13 +116,17 @@ public class LayerFactory
 			start.getSelfGraph().addEdge(new LayoutEdge(start, end, LayoutEdge.EDGE_TYPE.EDGE_DUMMY));
 		}
 
+		for(LayoutMethodVertex m: methodVertices.values())
+			m.identifyLoops();
+		root.computeHues();
+
 		createChainVertices(root, CHAIN_LENGTH);
 		return root;
 	}
 
 	static void createChainVertices(AbstractLayoutVertex parent, int k){
 		Iterator<AbstractLayoutVertex> it = parent.getInnerGraph().getVertices().values().iterator();
-		while(it.hasNext()){
+		while(it.hasNext()) {
 			AbstractLayoutVertex absVertex = it.next();
 			absVertex.setVertexStatus(AbstractVertex.VertexStatus.WHITE);
 			createChainVertices(absVertex, k);

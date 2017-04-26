@@ -2,8 +2,8 @@ package org.ucombinator.jaam.visualizer.graph;
 
 public class Edge
 {
-	int source, dest;
-	protected String strId;
+	private int source, dest;
+	private String strId;
 
 	private Edge(int source, int dest)
 	{

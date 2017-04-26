@@ -3,7 +3,6 @@ package org.ucombinator.jaam.visualizer.main;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Stack;
-import javafx.application.Platform;
 
 import org.ucombinator.jaam.serializer.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -12,56 +11,16 @@ import org.ucombinator.jaam.visualizer.graph.Instruction;
 
 public class TakeInput extends Thread
 {
-	BufferedReader parseInput;
-	PacketInput packetInput;
-
-	public void run(String file, boolean fromPackets)
+	public Graph parsePackets(String file)
 	{
-		Main.graph = new Graph();
-		this.parsePackets(file);
-
-		/*Main.graph.finalizeParentsForRootChildren();
-		Main.graph.mergeAllByMethod();
-		Main.graph.computeInstLists();
-		Main.graph.collectAllTags();
-		Main.graph.identifyLoops();
-		Main.graph.calcLoopHeights();*/
-
-		// Run these panels on JavaFX thread instead of Swing thread
-		Platform.runLater(new Runnable() {
-			@Override
-			public void run()
-			{
-				Parameters.stFrame.mainPanel.initFX(null);
-			}
-		});
-		Parameters.mouseLastTime = System.currentTimeMillis();
-	}
-	
-	private void setFileInput(String file)
-	{
-		try
-		{
-			this.parseInput = new BufferedReader(new FileReader(file));
-			
-			if(this.parseInput == null)
-				System.out.println("null file");
-			else
-				Parameters.stFrame.setTitle("STAC Visualizer: " + file);			
+		Graph graph = new Graph();
+		if(file.equals("")) {
+			//readSmallDummyGraph(graph);
+			readLargeDummyGraph(graph);
 		}
-		catch(IOException ex)
+		else try
 		{
-			ex.printStackTrace();
-		}
-	}
-
-	public void parsePackets(String file)
-	{
-		if(file.equals(""))
-			packetInput = new PacketInput(System.in);
-		try
-		{
-			packetInput = new PacketInput(new FileInputStream(file));
+			PacketInput packetInput = new PacketInput(new FileInputStream(file));
 			Packet packet = packetInput.read();
 
 			while(!(packet instanceof EOF))
@@ -73,13 +32,13 @@ public class TakeInput extends Thread
 					int edgeId = edgePacket.id().id();
 					int srcId = edgePacket.src().id();
 					int destId = edgePacket.dst().id();
-					Main.graph.addEdge(srcId, destId);
+					graph.addEdge(srcId, destId);
 				}
 				else if(packet instanceof ErrorState)
 				{
 					// TODO: Add description for ErrorState on initialization
 					int id = ((ErrorState) packet).id().id();
-					Main.graph.addErrorState(id);
+					graph.addErrorState(id);
 				}
 				//Name collision with java.lang.Thread.State
 				else if(packet instanceof org.ucombinator.jaam.serializer.State)
@@ -90,7 +49,7 @@ public class TakeInput extends Thread
 					String instruction = statePacket.stmt().stmt().toString();
 					int jimpleIndex = statePacket.stmt().index();
 					Instruction inst = new Instruction(instruction, methodName, jimpleIndex, true);
-					Main.graph.addVertex(id, inst, true);
+					graph.addVertex(id, inst, true);
 				}
                 
                 else if(packet instanceof org.ucombinator.jaam.serializer.NodeTag)
@@ -100,7 +59,7 @@ public class TakeInput extends Thread
                     int tagId = tag.id().id();
                     int nodeId = tag.node().id();
                     String tagStr = ((org.ucombinator.jaam.serializer.Tag)tag.tag()).toString();
-                    Main.graph.addTag(nodeId,tagStr);
+                    graph.addTag(nodeId,tagStr);
                 }
 
                 packet = packetInput.read();
@@ -110,29 +69,89 @@ public class TakeInput extends Thread
 		{
 			System.out.println(e);
 		}
+
+		return graph;
+	}
+
+	public static void readSmallDummyGraph(Graph graph) {
+		int dummyInstructions = 6;
+		for (int i = 0; i < dummyInstructions; i++) {
+			if (i < 3) {
+				Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
+						"Main.main", i, true);
+				graph.addVertex(i, inst, true);
+			} else {
+				Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
+						"Main.func", i, true);
+				graph.addVertex(i, inst, true);
+			}
+		}
+
+		graph.addEdge(0, 1);
+		graph.addEdge(1, 2);
+		graph.addEdge(2, 3);
+		graph.addEdge(3, 4);
+		graph.addEdge(4, 5);
+	}
+
+	public static void readLargeDummyGraph(Graph graph) {
+		int dummyInstructions = 16;
+		for(int i = 0; i < dummyInstructions; i++) {
+			if(i < 5) {
+				Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
+						"Main.main", i, true);
+				graph.addVertex(i, inst, true);
+			}
+			else {
+				Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
+						"Main.func", i, true);
+				graph.addVertex(i, inst, true);
+			}
+		}
+
+		// Main.main
+		graph.addEdge(0, 1);
+		graph.addEdge(1, 2);
+		graph.addEdge(1, 3);
+		graph.addEdge(2, 4);
+		graph.addEdge(3, 4);
+
+		// Main.func
+		graph.addEdge(4, 5);
+		graph.addEdge(5, 6);
+		graph.addEdge(6, 7);
+		graph.addEdge(6, 8);
+		graph.addEdge(7, 9);
+		graph.addEdge(8, 9);
+		graph.addEdge(9, 10);
+		graph.addEdge(10, 11);
+		graph.addEdge(11, 12);
+		graph.addEdge(12,13);
+		graph.addEdge(13,14);
+		graph.addEdge(14,15);
 	}
 
 	/*public static void loadDecompiledCode()
 	{
-		if(Main.graph != null)
+		if(graph != null)
 		{
 			File file = Parameters.openFile(true);
 			if(file.isDirectory())
 			{
 				ArrayList<File> javaFiles = getJavaFilesRec(file);
-				Main.graph.matchClassesToCode(file.getAbsolutePath() + "/", javaFiles);
+				graph.matchClassesToCode(file.getAbsolutePath() + "/", javaFiles);
 			}
 			else if(file.getAbsolutePath().endsWith(".java"))
 			{
 				//For now, we assume that there is only one class, because otherwise the user
 				//would load a directory.
-				if(Main.graph.classes.size() == 1)
+				if(graph.classes.size() == 1)
 				{
-					Class ourClass = Main.graph.classes.entrySet().iterator().next().getValue();
+					Class ourClass = graph.classes.entrySet().iterator().next().getValue();
 					ourClass.parseJavaFile(file.getAbsolutePath());
 				}
 				else
-					System.out.println("Cannot load single class. Number of classes: " + Main.graph.classes.size());
+					System.out.println("Cannot load single class. Number of classes: " + graph.classes.size());
 			}
 		}
 		else
