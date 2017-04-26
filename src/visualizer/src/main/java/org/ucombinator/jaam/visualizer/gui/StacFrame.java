@@ -49,8 +49,10 @@ public class StacFrame extends BorderPane
 	private FlowPane buttonsFlowPane;
 	private BorderPane searchPanel, bytecodePanel, rightPanel;
 	private CheckBox showEdge;
+	private CheckBox showLabels;
 
 	private boolean edgeVisible;
+	private boolean labelsVisible;
 
 	public enum searchType
 	{
@@ -66,6 +68,7 @@ public class StacFrame extends BorderPane
 			makeLayout();
 
 		edgeVisible = true;
+		labelsVisible = true;
 		this.mainPanel.initFX(this.graph);
 		this.setVisible(true);
 	}
@@ -93,9 +96,18 @@ public class StacFrame extends BorderPane
 	public boolean isEdgeVisible() {
 		return edgeVisible;
 	}
+	
+	public boolean isLabelVisible() {
+		return labelsVisible;
+	}
+	
 
 	public void setEdgeVisible(boolean isEdgeVisible) {
 		this.edgeVisible = isEdgeVisible;
+	}
+	
+	public void setLabelsVisible(boolean isLabelVisible) {
+		this.labelsVisible = isLabelVisible;
 	}
 
 	public void repaintAll()
@@ -185,7 +197,7 @@ public class StacFrame extends BorderPane
 		controlPanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
 				BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
 
-		showEdge = new CheckBox("Show edges");
+		showEdge = new CheckBox("Edges");
 		showEdge.setSelected(true);
 		showEdge.setOnAction
 				(
@@ -196,12 +208,32 @@ public class StacFrame extends BorderPane
 								// TODO: When this is checked off and then back on, the edges don't reappear.
 								edgeVisible = showEdge.isSelected();
 								mainPanel.getPanelRoot().setEdgeVisibility(edgeVisible);
-								for (AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
-									v.setEdgeVisibility(showEdge.isSelected());
+//								for (AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+//									v.setEdgeVisibility(showEdge.isSelected());
 							}
 						}
 				);
 		controlPanel.add(showEdge, 0, 0);
+		
+		
+		showLabels = new CheckBox("Labels");
+		showLabels.setSelected(true);
+		showLabels.setOnAction
+				(
+						new EventHandler<ActionEvent>()
+						{
+							@Override
+							public void handle(ActionEvent e) {
+								// TODO: When this is checked off and then back on, the edges don't reappear.
+								labelsVisible = showLabels.isSelected();
+								mainPanel.getPanelRoot().setLabelVisibility(labelsVisible);
+							}
+						}
+				);
+		controlPanel.add(showLabels, 0, 1);
+		
+		
+		
 		buttonsFlowPane.getChildren().add(controlPanel);
 
 		GridPane sizePanel = new GridPane();

@@ -51,6 +51,7 @@ public class GUINode extends Pane
         this.rect = new Rectangle();
         //this.backRect = new Rectangle();
         this.rectLabel = new Text(v.getId() + ", " + v.getLoopHeight());
+        this.rectLabel.setVisible(v.isLabelVisible());
         this.getChildren().addAll(/*this.backRect,*/ this.rect, this.rectLabel);
         this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
         this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
@@ -316,4 +317,9 @@ public class GUINode extends Pane
     public double getTotalScaleY() {
 	    return this.totalScaleY;
     }
+
+	public void setLabelVisible(boolean isLabelVisible) {
+		vertex.setLabelVisible(isLabelVisible);
+		this.rectLabel.setVisible(isLabelVisible);
+	}
 }

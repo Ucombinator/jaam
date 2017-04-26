@@ -32,8 +32,10 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     private GUINode graphics;
     private boolean isExpanded;
+    private boolean isLabelVisible;
+    
 
-    // A location stores coordinates for a subtree.
+	// A location stores coordinates for a subtree.
     private Location location = new Location();
     private boolean updateLocation = false;
 
@@ -153,6 +155,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         super(label);
         this.graphics = null;
         this.isExpanded = true;
+        this.isLabelVisible = true;
 
         this.innerGraph = new HierarchicalGraph();
         this.vertexType = type;
@@ -800,13 +803,35 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         this.isExpanded = expanded;
     }
 
+    public boolean isLabelVisible() {
+		return isLabelVisible;
+	}
+	public void setLabelVisible(boolean isLabelVisible) {
+		this.isLabelVisible = isLabelVisible;
+	}
+	
     public void setEdgeVisibility(boolean isEdgeVisible)
     {
-        for(LayoutEdge e : this.innerGraph.getEdges().values())
+        for(LayoutEdge e : this.innerGraph.getEdges().values()){
             e.setVisible(isEdgeVisible);
+        }
+        for(AbstractLayoutVertex v : this.innerGraph.getVertices().values())
+            v.setEdgeVisibility(isEdgeVisible);
     }
 
-    public void printCoordinates()
+    public void setLabelVisibility(boolean isLabelVisible)
+    {
+    	this.setLabelVisible(isLabelVisible);
+    	this.getGraphics().setLabelVisible(isLabelVisible);
+        for(AbstractLayoutVertex v : this.innerGraph.getVertices().values())
+            v.setLabelVisibility(isLabelVisible);
+    }
+    
+    
+ 
+    
+    
+	public void printCoordinates()
     {
         System.out.println("Vertex " + this.getId() + this.location.toString());
     }
