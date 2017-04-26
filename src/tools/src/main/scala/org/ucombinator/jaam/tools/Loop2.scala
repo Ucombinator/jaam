@@ -148,8 +148,7 @@ object LoopAnalyzer {
   }
   // TODO we might have uniqueness problems with SootMethod objects.
   // For now, SootMethod.getSignature will do.
-  case class MethodNode(override val tag: String) extends Node {
-  }
+  case class MethodNode(override val tag: String) extends Node
 
   case class LoopGraph(val m: SootMethod, private val g: Map[Node, Set[Node]]) {
     private val mNode = MethodNode(m.getSignature)
@@ -210,8 +209,10 @@ object LoopAnalyzer {
     }
     override def toString: String = {
       val builder = new StringBuilder
-      def inner(from: Node, seen: Set[Node]): Unit = {
+      var seen = Set.empty[Node]
+      def inner(from: Node): Unit = {
         if (!seen.contains(from)) {
+          seen = seen + from
           builder ++= from.toString
           for {
             to <- this(from)
@@ -222,11 +223,11 @@ object LoopAnalyzer {
           for {
             to <- this(from)
           } {
-            inner(to, seen + from)
+            inner(to)
           }
         }
       }
-      inner(mNode, Set.empty)
+      inner(mNode)
       builder.toString
     }
 
