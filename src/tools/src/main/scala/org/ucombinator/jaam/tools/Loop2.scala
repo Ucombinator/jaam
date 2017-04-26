@@ -163,43 +163,49 @@ object LoopAnalyzer {
     }
     // TODO remove method leaves
     def prune: LoopGraph = {
-      var keepers = Set.empty[Node]
-      var throwers = Set.empty[(Node, Node)]
-      var processing = Set.empty[Node]
+      var keepMap = Map.empty[Node, Boolean]
+      var parentMap = Map.empty[Node, Set[Node]]
       def analyze(n: Node, path: List[Node]): Unit = {
-        if (n.isInstanceOf[LoopNode] || processing.contains(n)) {
-          keepers = keepers + n
-        } else {
-          processing = processing + n
-          val succs = this(n)
-          for {
-            succ <- succs
-          } {
-            analyze(succ, n :: path)
-          }
-          val keep = succs.foldLeft(keepers.contains(n))({
-              (keep: Boolean, succ: Node) =>
-            keep || (keepers.contains(succ))
-          })
-          if (keep) {
-            keepers = keepers + n
+        if (!keepMap.isDefinedAt(n)) {
+          if (path.contains(n)) {
+            keepMap = keepMap + (n -> true)
           } else {
-            if (path.nonEmpty) {
-              val pair = (n, path.head)
-              throwers = throwers + pair
-            } else {
-              println("WARNING: tried to remove a node with no path: (" +
-                  n + ")")
+            val succs = this(n)
+            for {
+              succ <- succs
+            } {
+              val parents = (parentMap.getOrElse(succ, Set.empty) + n)
+              parentMap = parentMap + (succ -> parents)
+              analyze(succ, n :: path)
             }
+            val keep = succs.foldLeft(n.isInstanceOf[LoopNode] ||
+                                      keepMap.getOrElse(n, false))({
+                (keep: Boolean, succ: Node) =>
+              keepMap.get(succ) match {
+                case Some(keepSucc) => keep || keepSucc
+                case None =>
+                  println("WARNING: " + succ +
+                      " should already have been analyzed")
+                  keep
+              }
+            })
+            keepMap = keepMap + (n -> keep)
           }
-          processing = processing - n
         }
       }
       analyze(mNode, List())
-      val newGraph = throwers.foldLeft(g)({
-          (g: Map[Node, Set[Node]], pair: (Node, Node)) =>
-        val (thrower, parent) = pair
-        (g - thrower) + (parent -> (g.getOrElse(parent, Set.empty) - thrower))
+      val newGraph = keepMap.foldLeft(g)({
+          (g: Map[Node, Set[Node]], pair: (Node, Boolean)) =>
+        val (n, keep) = pair
+        if (keep) {
+          g
+        } else {
+          val parents = parentMap.getOrElse(n, Set.empty)
+          parents.foldLeft(g - n)({
+              (g: Map[Node, Set[Node]], parent: Node) =>
+            g + (parent -> (g.getOrElse(parent, Set.empty) - n))
+          })
+        }
       })
       LoopGraph(m, newGraph)
     }
