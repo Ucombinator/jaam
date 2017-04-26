@@ -20,8 +20,12 @@ class LoopAnalyzer extends Main("loop2") {
   // val graph = opt[Boolean](descr = "Print loops to GraphViz dot file")
   // val rec = opt[Boolean](descr = "Run recursion detection")
   // TODO name this
-  val all = opt[Boolean](descr =
-      "Print loops even if no methods are called within them")
+  val prune = toggle(
+      descrYes = "Remove methods without outgoing edges from graph",
+      descrNo = "Do not remove methods without outgoing edges from graph",
+      default = Some(true))
+  val shrink = toggle(descrYes = "Skip methods without loops",
+      descrNo = "Include methods without loops", default = Some(true))
 
   val mainClass = trailArg[String](descr = "The name of the main class")
   val mainMethod = trailArg[String](descr = "The name of the main method")
@@ -35,7 +39,7 @@ class LoopAnalyzer extends Main("loop2") {
       case Some(f) => new PrintStream(new FileOutputStream(f))
     }
     LoopAnalyzer.main(mainClass(), mainMethod(), classpath(), outStream,
-        all())
+        prune(), shrink())
   }
 }
 
@@ -223,7 +227,7 @@ object LoopAnalyzer {
   def encode(s: String): String = s.replace("\"", "\\\"")
   def quote(s: String): String = "\"" + encode(s) + "\""
 
-  abstract class Node {
+  abstract sealed class Node {
     val tag: String
     val annotation = ""
     override def toString: String = ""
@@ -258,7 +262,9 @@ object LoopAnalyzer {
     // TODO remove method leaves
     def prune: LoopGraph = ???
     // TODO remove loopless method calls, replacing them with downstream loops
-    def condense: LoopGraph = ???
+    def shrink: LoopGraph = {
+      ???
+    }
     def printGraph(from: Node, seen: Set[Node] = Set.empty): Unit = {
       if (!seen.contains(from)) {
         // don't print a newline; toString includes a newline if we want one
@@ -345,7 +351,7 @@ object LoopAnalyzer {
   }
 
   def main(mainClass: String, mainMethod: String, classpath: String,
-      graphStream: PrintStream, allLoops: Boolean): Unit = {
+      graphStream: PrintStream, prune: Boolean, shrink: Boolean): Unit = {
     Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
     Options.v().set_keep_line_number(true)
@@ -378,11 +384,21 @@ object LoopAnalyzer {
     val cg = Scene.v.getCallGraph
 
     val graph = LoopGraph.empty.build(m, cg)
+    val pruned = if (prune) {
+      graph.prune
+    } else {
+      graph
+    }
+    val shrunk = if (shrink) {
+      pruned.shrink
+    } else {
+      pruned
+    }
 
     Console.withOut(graphStream) {
       println("digraph loops {")
       println("ranksep=\"10\";");
-      graph.printGraph(MethodNode(m.getSignature))
+      shrunk.printGraph(MethodNode(m.getSignature))
       println("}")
     }
   }
