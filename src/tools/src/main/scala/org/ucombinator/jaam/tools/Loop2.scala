@@ -81,100 +81,6 @@ object LoopAnalyzer {
     }
   }
 
-  private var loopsContaining = Map.empty[Stmt, Set[SootLoop]]
-  def getLoopsContaining(stmt: Stmt): Set[SootLoop] = {
-    loopsContaining.get(stmt) match {
-      case Some(loops) => loops
-      case None =>
-        val loops = getLoops(stmt.m)
-        val result = loops filter { (loop: SootLoop) =>
-          loop.getLoopStatements.contains(stmt.stmt)
-        }
-        loopsContaining = loopsContaining + (stmt -> result)
-        result
-    }
-  }
-
-  private var loopDepths = Map.empty[Stmt, Int]
-  def getLoopDepth(stmt: Stmt): Int = {
-    loopDepths.get(stmt) match {
-      case Some(i) => i
-      case None =>
-        val result = getLoopsContaining(stmt).size
-        loopDepths = loopDepths + (stmt -> result)
-        result
-    }
-  }
-
-  private var emitted = Set.empty[String]
-  private def emit(str: String): Unit = {
-    if (!emitted.contains(str)) {
-      emitted = emitted + str
-      println(str)
-    }
-  }
-
-  /*
-  def emitEdge(from: String, to: String, isLoop: Boolean = false,
-      label: Option[String] = None): Unit = {
-    val end = label match {
-      case None => ""
-      case Some(l) => " [" + l + "]"
-    }
-    val edge = "  " + string(from) + " -> " + string(to) + end + ";"
-    emit(edge)
-    if (isLoop) {
-      emitNodeAnnotation(to, "shape=diamond")
-    }
-  }
-  def emitNodeAnnotation(node: String, annotation: String): Unit = {
-    val str = "  " + string(node) + " [" + annotation + "];"
-    emit(str)
-  }
-  private def emitLineage(src: String, trees: Set[Node], stmt: SootStmt,
-      dest: String): Unit = {
-    val containing = trees filter { (tree: LoopNode) => tree.contains(stmt) }
-    if (containing.isEmpty) {
-      emitEdge(src, dest)
-    } else {
-      assert(containing.size == 1, "bad tree structure")
-      val next = containing.head
-      val nodeLabel = loopString(next.loop)
-      emitEdge(src, nodeLabel, true)
-      emitLineage(nodeLabel, next.children, stmt, dest)
-    }
-  }
-  private def justEmitForest(src: String, forest: Set[Node]): Unit = {
-    for {
-      tree <- forest
-    } {
-      val text = loopString(tree.loop)
-      emitEdge(src, text, true)
-      justEmitForest(text, tree.children)
-    }
-  }
-  private def emitLoopForest(src: String, forest: Set[LoopNode], stmt: SootStmt,
-      dest: String): Unit = {
-    var containing = 0
-    for {
-      tree <- forest
-    } {
-      val text = loopString(tree.loop)
-      emitEdge(src, text, true)
-      if (tree.contains(stmt)) {
-        containing = containing + 1
-        emitLoopForest(text, tree.children, stmt, dest)
-      } else {
-        justEmitForest(text, tree.children)
-      }
-    }
-    assert(containing <= 1, "bad tree structure")
-    if (containing == 0) {
-      emitEdge(src, dest)
-    }
-  }
-  */
-
   case class LoopTree(val loop: SootLoop, val children: Set[LoopTree]) {
     def contains(stmt: SootStmt): Boolean = {
       loop.getLoopStatements.contains(stmt)
@@ -232,8 +138,12 @@ object LoopAnalyzer {
     val annotation = ""
     override def toString: String = ""
   }
-  case class LoopNode(val loop: SootLoop) extends Node {
-    override val tag = loop.getHead.toString()
+  case class LoopNode(val m: SootMethod, val loop: SootLoop) extends Node {
+    override val tag = {
+      val sootStmt = loop.getHead
+      val stmt = Stmt(sootStmt, m)
+      m.getSignature + " line " + stmt.index + "\n" + sootStmt.toString()
+    }
     override def toString = "  " + quote(tag) + " [shape=diamond];\n"
   }
   // TODO we might have uniqueness problems with SootMethod objects.
@@ -253,26 +163,48 @@ object LoopAnalyzer {
       LoopGraph(m, g + (k -> (this(k) ++ v)))
     }
     // TODO remove method leaves
-    def prune: LoopGraph = ???
-    // TODO remove loopless method calls, replacing them with downstream loops
-    /*
-    private def getDownstreamLoops(n: Node, seen: Set[Node]):
-        (Set[LoopNode], Set[Node]) = {
-      if (seen.contains(n)) {
-        (Set.empty, seen)
-      } else {
-        val (methods, loops) = this(n) partition {
-          case _: MethodNode => true
-          case _: LoopNode => false
-          case _ => ???
+    def prune: LoopGraph = {
+      var keepers = Set.empty[Node]
+      var throwers = Set.empty[(Node, Node)]
+      var processing = Set.empty[Node]
+      def analyze(n: Node, path: List[Node]): Unit = {
+        if (n.isInstanceOf[LoopNode] || processing.contains(n)) {
+          keepers = keepers + n
+        } else {
+          processing = processing + n
+          val succs = this(n)
+          for {
+            succ <- succs
+          } {
+            analyze(succ, n :: path)
+          }
+          val keep = succs.foldLeft(keepers.contains(n))({
+              (keep: Boolean, succ: Node) =>
+            keep || (keepers.contains(succ))
+          })
+          if (keep) {
+            keepers = keepers + n
+          } else {
+            if (path.nonEmpty) {
+              val pair = (n, path.head)
+              throwers = throwers + pair
+            } else {
+              println("WARNING: tried to remove a node with no path: (" +
+                  n + ")")
+            }
+          }
+          processing = processing - n
         }
-        methods.foldLeft((loops, seen + n))({
-            (results: Set[Node], m: MethodNode) =>
-          getDownstreamLoops(m, seen)
-        })
       }
+      analyze(mNode, List())
+      val newGraph = throwers.foldLeft(g)({
+          (g: Map[Node, Set[Node]], pair: (Node, Node)) =>
+        val (thrower, parent) = pair
+        (g - thrower) + (parent -> (g.getOrElse(parent, Set.empty) - thrower))
+      })
+      LoopGraph(m, newGraph)
     }
-    */
+    // TODO remove loopless method calls, replacing them with downstream loops
     def shrink: LoopGraph = {
       ???
     }
@@ -280,7 +212,6 @@ object LoopAnalyzer {
       val builder = new StringBuilder
       def inner(from: Node, seen: Set[Node]): Unit = {
         if (!seen.contains(from)) {
-          // don't print a newline; toString includes a newline if we want one
           builder ++= from.toString
           for {
             to <- this(from)
@@ -306,10 +237,10 @@ object LoopAnalyzer {
         g + (from -> (g.getOrElse(from, Set.empty) + to))
       }
       private def addForest(g: Map[Node, Set[Node]], node: Node,
-          forest: Set[LoopTree]): Map[Node, Set[Node]] = {
+          forest: Set[LoopTree], m: SootMethod): Map[Node, Set[Node]] = {
         forest.foldLeft(g)({ (g: Map[Node, Set[Node]], tree: LoopTree) =>
-          val treeNode = LoopNode(tree.loop)
-          addForest(add(g, node, treeNode), treeNode, tree.children)
+          val treeNode = LoopNode(m, tree.loop)
+          addForest(add(g, node, treeNode), treeNode, tree.children, m)
         })
       }
     def apply(m: SootMethod, cg: CallGraph): LoopGraph = {
@@ -322,7 +253,7 @@ object LoopAnalyzer {
         } else {
           val iterator = cg.edgesOutOf(m)
           val forest = getLoopForest(m)
-          var newGraph = addForest(g, mNode, forest)
+          var newGraph = addForest(g, mNode, forest, m)
           while (iterator.hasNext) {
             val edge = iterator.next
             val sootStmt = edge.srcStmt
@@ -334,7 +265,7 @@ object LoopAnalyzer {
               newGraph = add(newGraph, mNode, destNode)
             } else {
               assert(parents.size == 1, "multiple parents")
-              val parent = LoopNode(parents.head.parent(sootStmt).loop)
+              val parent = LoopNode(m, parents.head.parent(sootStmt).loop)
               newGraph = add(newGraph, parent, destNode)
             }
             newGraph = build(dest, newGraph)
