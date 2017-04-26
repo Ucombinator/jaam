@@ -241,7 +241,8 @@ object LoopAnalyzer {
   case class MethodNode(override val tag: String) extends Node {
   }
 
-  case class LoopGraph(private val g: Map[Node, Set[Node]]) {
+  case class LoopGraph(val m: SootMethod, private val g: Map[Node, Set[Node]]) {
+    private val mNode = MethodNode(m.getSignature)
     def apply(n: Node): Set[Node] = g.getOrElse(n, Set.empty)
     def keySet: Set[String] = g.keySet flatMap {
       case MethodNode(sig) => Some(sig)
@@ -249,70 +250,100 @@ object LoopAnalyzer {
     }
     def +(binding: (Node, Set[Node])): LoopGraph = {
       val (k, v) = binding
-      LoopGraph(g + (k -> (this(k) ++ v)))
-    }
-    // TODO if things get slow, this should be easy to optimize
-    def ++(binding: (Node, Set[LoopTree])): LoopGraph = {
-      val (node, forest) = binding
-      forest.foldLeft(this)({ (g: LoopGraph, tree: LoopTree) =>
-        val treeNode = LoopNode(tree.loop)
-        (g + (node -> Set(treeNode))) ++ (treeNode -> tree.children)
-      })
+      LoopGraph(m, g + (k -> (this(k) ++ v)))
     }
     // TODO remove method leaves
     def prune: LoopGraph = ???
     // TODO remove loopless method calls, replacing them with downstream loops
+    /*
+    private def getDownstreamLoops(n: Node, seen: Set[Node]):
+        (Set[LoopNode], Set[Node]) = {
+      if (seen.contains(n)) {
+        (Set.empty, seen)
+      } else {
+        val (methods, loops) = this(n) partition {
+          case _: MethodNode => true
+          case _: LoopNode => false
+          case _ => ???
+        }
+        methods.foldLeft((loops, seen + n))({
+            (results: Set[Node], m: MethodNode) =>
+          getDownstreamLoops(m, seen)
+        })
+      }
+    }
+    */
     def shrink: LoopGraph = {
       ???
     }
-    def printGraph(from: Node, seen: Set[Node] = Set.empty): Unit = {
-      if (!seen.contains(from)) {
-        // don't print a newline; toString includes a newline if we want one
-        print(from)
-        for {
-          to <- this(from)
-        } {
-          println("  " + quote(from.tag) + " -> " + quote(to.tag) + ";")
-        }
-        // enforce a BFS order
-        for {
-          to <- this(from)
-        } {
-          printGraph(to, seen + from)
+    override def toString: String = {
+      val builder = new StringBuilder
+      def inner(from: Node, seen: Set[Node]): Unit = {
+        if (!seen.contains(from)) {
+          // don't print a newline; toString includes a newline if we want one
+          builder ++= from.toString
+          for {
+            to <- this(from)
+          } {
+            builder ++= "  " + quote(from.tag) + " -> " + quote(to.tag) + ";\n"
+          }
+          // enforce a BFS order
+          for {
+            to <- this(from)
+          } {
+            inner(to, seen + from)
+          }
         }
       }
+      inner(mNode, Set.empty)
+      builder.toString
     }
 
-    def build(m: SootMethod, cg: CallGraph): LoopGraph = {
-      val mNode = MethodNode(m.getSignature)
-      if (g isDefinedAt mNode) {
-        this
-      } else {
-        val iterator = cg.edgesOutOf(m)
-        val forest = getLoopForest(m)
-        var newGraph = this ++ (mNode -> forest)
-        while (iterator.hasNext) {
-          val edge = iterator.next
-          val sootStmt = edge.srcStmt
-          val stmt = Stmt(sootStmt, m)
-          val dest = Coverage2.freshenMethod(edge.tgt)
-          val destNode = MethodNode(dest.getSignature)
-          val parents = forest filter { _ contains sootStmt }
-          if (parents.isEmpty) {
-            newGraph = newGraph + (mNode -> Set[Node](destNode))
-          } else {
-            assert(parents.size == 1, "multiple parents")
-            val parent = LoopNode(parents.head.parent(sootStmt).loop)
-            newGraph = newGraph + (parent -> Set[Node](destNode))
-          }
-          newGraph = newGraph.build(dest, cg)
-        }
-        newGraph
-      }
-    }
   }
   object LoopGraph {
-    def empty: LoopGraph = new LoopGraph(Map.empty)
+      private def add(g: Map[Node, Set[Node]], from: Node, to: Node):
+          Map[Node, Set[Node]] = {
+        g + (from -> (g.getOrElse(from, Set.empty) + to))
+      }
+      private def addForest(g: Map[Node, Set[Node]], node: Node,
+          forest: Set[LoopTree]): Map[Node, Set[Node]] = {
+        forest.foldLeft(g)({ (g: Map[Node, Set[Node]], tree: LoopTree) =>
+          val treeNode = LoopNode(tree.loop)
+          addForest(add(g, node, treeNode), treeNode, tree.children)
+        })
+      }
+    def apply(m: SootMethod, cg: CallGraph): LoopGraph = {
+      // TODO if things get slow, this should be easy to optimize
+      def build(m: SootMethod, g: Map[Node, Set[Node]]):
+          Map[Node, Set[Node]] = {
+        val mNode = MethodNode(m.getSignature)
+        if (g isDefinedAt mNode) {
+          g
+        } else {
+          val iterator = cg.edgesOutOf(m)
+          val forest = getLoopForest(m)
+          var newGraph = addForest(g, mNode, forest)
+          while (iterator.hasNext) {
+            val edge = iterator.next
+            val sootStmt = edge.srcStmt
+            val stmt = Stmt(sootStmt, m)
+            val dest = Coverage2.freshenMethod(edge.tgt)
+            val destNode = MethodNode(dest.getSignature)
+            val parents = forest filter { _ contains sootStmt }
+            if (parents.isEmpty) {
+              newGraph = add(newGraph, mNode, destNode)
+            } else {
+              assert(parents.size == 1, "multiple parents")
+              val parent = LoopNode(parents.head.parent(sootStmt).loop)
+              newGraph = add(newGraph, parent, destNode)
+            }
+            newGraph = build(dest, newGraph)
+          }
+          newGraph
+        }
+      }
+      LoopGraph(m, build(m, Map.empty))
+    }
   }
 
   private var loopForests = Map.empty[SootMethod, Set[LoopTree]]
@@ -383,7 +414,7 @@ object LoopAnalyzer {
     CHATransformer.v.transform
     val cg = Scene.v.getCallGraph
 
-    val graph = LoopGraph.empty.build(m, cg)
+    val graph = LoopGraph(m, cg)
     val pruned = if (prune) {
       graph.prune
     } else {
@@ -398,7 +429,7 @@ object LoopAnalyzer {
     Console.withOut(graphStream) {
       println("digraph loops {")
       println("ranksep=\"10\";");
-      shrunk.printGraph(MethodNode(m.getSignature))
+      print(shrunk)
       println("}")
     }
   }
