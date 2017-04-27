@@ -220,7 +220,8 @@ public class LayerFactory
 					last.getSelfGraph().deleteEdge(chain.get(chain.size() - 1), last);
 					last.getSelfGraph().deleteEdge(last, chain.get(chain.size() - 1));
 
-
+					chainVertex.calcMaxLoopHeight();
+					//System.out.println("Loop height for chain: " + chainVertex.getLoopHeight());
 				}
 				/********************************************************************************/
 				itChildren = grayChildren.iterator();

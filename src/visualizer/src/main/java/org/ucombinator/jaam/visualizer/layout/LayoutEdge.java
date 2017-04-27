@@ -238,7 +238,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         graphics.setVisible(node.getVertex().isExpanded() && this.sourceVertex.isEdgeVisible()
                 && this.destVertex.isEdgeVisible() && this.isVisible());
 
-        System.out.println("Visibility: " + graphics.isVisible());
+        //System.out.println("Visibility: " + graphics.isVisible());
     }
 
     public Rectangle getMarker(double x, double y)

@@ -192,10 +192,10 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     public int calcMaxLoopHeight() {
         int maxLoopHeight = 0;
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
-            maxLoopHeight = Math.max(maxLoopHeight, v.calcMaxLoopHeight());
-        }
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
+            maxLoopHeight = Math.max(maxLoopHeight, v.getLoopHeight());
 
+        this.setLoopHeight(maxLoopHeight);
         return maxLoopHeight;
     }
 

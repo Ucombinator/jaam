@@ -22,8 +22,6 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
 
 public class VizPanel extends StackPane
 {
-	private StacFrame stFrame;
-
 	private ScrollPane graphScrollPane;
 	private Group graphContentGroup;
 	private HashSet<AbstractLayoutVertex> highlighted;
@@ -44,10 +42,9 @@ public class VizPanel extends StackPane
 		return this.panelRoot;
 	}
 
-	public VizPanel(StacFrame stFrame)
+	public VizPanel()
 	{
 		super();
-		this.stFrame = stFrame;
 
 		this.graphScrollPane = new ScrollPane();
 		graphContentGroup = new Group();
@@ -278,7 +275,7 @@ public class VizPanel extends StackPane
 			// TODO: Adjust arrow length?
 			//Edge.arrowLength = this.getWidthPerVertex() / 10.0;
 			for (LayoutEdge e : v.getInnerGraph().getEdges().values()) {
-				System.out.println("Drawing edge: " + e.getID());
+				//System.out.println("Drawing edge: " + e.getID());
 				e.draw(node);
 				e.setVisible(v.isEdgeVisible());
 			}

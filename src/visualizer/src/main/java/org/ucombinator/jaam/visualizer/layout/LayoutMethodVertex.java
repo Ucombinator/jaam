@@ -64,13 +64,7 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
 		}
 
 		this.calcLoopHeights();
-
-		int methodLoopHeight = 0;
-		for(AbstractLayoutVertex v : vertices)
-		{
-			methodLoopHeight = Math.max(methodLoopHeight, v.getLoopHeight());
-			this.setLoopHeight(methodLoopHeight);
-		}
+		this.calcMaxLoopHeight();
 	}
 
 	public AbstractLayoutVertex travLoopsDFS(AbstractLayoutVertex v0, int dfsPathPos)

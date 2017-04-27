@@ -162,13 +162,13 @@ public class StacFrame extends BorderPane
 
 	public void makeSimpleLayout()
 	{
-		this.mainPanel = new VizPanel(this);
+		this.mainPanel = new VizPanel();
 		this.setCenter(this.mainPanel);
 		this.setVisible(true);
 	}
 
 	public void makePanes() {
-		this.mainPanel = new VizPanel(this);
+		this.mainPanel = new VizPanel();
 
 		buttonsFlowPane = new FlowPane();
 		buttonsFlowPane.setPadding(new Insets(5, 0, 5, 0));

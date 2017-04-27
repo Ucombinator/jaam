@@ -367,7 +367,10 @@ public class OuterFrame extends BorderPane {
         System.out.println("<-- Create visualization: Done!");
 
         Tab newTab = new Tab();
-        newTab.setText(filename);
+        if(filename.equals(""))
+            newTab.setText("Sample");
+        else
+            newTab.setText(filename);
         newTab.setContent(newFrame);
         this.tabPane.getTabs().add(newTab);
         System.out.println("Load graph: done!");
