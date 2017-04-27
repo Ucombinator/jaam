@@ -49,17 +49,8 @@ public class LayoutRootVertex extends AbstractLayoutVertex {
 
     public void computeHues()
 	{
-		float start = 0.4f; //green
-		float end = 0.0f; //red
-
 		this.maxLoopHeight = this.calcMaxLoopHeight();
 		System.out.println("Max loop height: " + maxLoopHeight);
-
-		this.hues = new float[maxLoopHeight + 1];
-		for(int i = 0; i <= maxLoopHeight; i++)
-		{
-			// Linear interpolation of color values
-			this.hues[i] = start - ((float) i)/(maxLoopHeight + 1)*(start - end);
-		}
+		this.setColor(maxLoopHeight + 1);
 	}
 }

@@ -374,6 +374,8 @@ public class OuterFrame extends BorderPane {
         newTab.setContent(newFrame);
         this.tabPane.getTabs().add(newTab);
         System.out.println("Load graph: done!");
+
+        tabPane.getSelectionModel().select(newTab);
     }
 
     public StacFrame getCurrentFrame() {

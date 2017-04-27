@@ -20,6 +20,7 @@ import javafx.scene.shape.Rectangle;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.layout.AnimationHandler;
+import org.ucombinator.jaam.visualizer.layout.LayoutRootVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 
 public class GUINode extends Pane
@@ -29,7 +30,6 @@ public class GUINode extends Pane
     protected static final double TEXT_HORIZONTAL_PADDING = 15;
 	double dragX, dragY;
     public Rectangle rect;
-    //protected Rectangle backRect;
     protected Text rectLabel;
     private AbstractLayoutVertex vertex;
 	private GUINode parent;
@@ -52,7 +52,12 @@ public class GUINode extends Pane
         //this.backRect = new Rectangle();
         this.rectLabel = new Text(v.getId() + ", " + v.getLoopHeight());
         this.rectLabel.setVisible(v.isLabelVisible());
-        this.getChildren().addAll(/*this.backRect,*/ this.rect, this.rectLabel);
+
+        if(v instanceof LayoutRootVertex)
+            this.getChildren().add(this.rect);
+        else
+            this.getChildren().addAll(this.rect, this.rectLabel);
+
         this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
         this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
 
@@ -85,9 +90,8 @@ public class GUINode extends Pane
     // Next several methods: Pass on calls to underlying rectangle
     public void setFill(Color c)
     {
-    	//this.backRect.setFill(Color.WHITE);
     	this.rect.setFill(c);
-    	if(vertex.getType()== AbstractLayoutVertex.VertexType.CHAIN){
+    	if(vertex.getType() == AbstractLayoutVertex.VertexType.CHAIN){
         	Stop[] stops = new Stop[]{new Stop(0.6,c), new Stop(0.4,Color.WHITE)};
             this.rect.setFill(new LinearGradient(0, 0, 8, 8, false, CycleMethod.REPEAT, stops));
         } else if(vertex.getType() == AbstractLayoutVertex.VertexType.ROOT){
@@ -102,7 +106,7 @@ public class GUINode extends Pane
 
     public void setStrokeWidth(double strokeWidth)
     {
-        this.rect.setStrokeWidth(0.001);
+        this.rect.setStrokeWidth(strokeWidth);
     }
 
     public void setArcHeight(double height)

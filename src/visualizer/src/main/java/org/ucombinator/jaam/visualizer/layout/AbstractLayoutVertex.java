@@ -132,6 +132,18 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         return loopChildren;
     }
 
+    public void setColor(int maxLoopHeight) {
+        if(this instanceof LayoutInstructionVertex) {
+            double hue = (0.4 - 0.4 * (((double) this.loopHeight) / maxLoopHeight)) * 360;
+            System.out.println("Setting hue: " + hue);
+            this.color = Color.hsb(hue, 0.9, 0.9);
+        }
+        else {
+            for (AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
+                v.setColor(maxLoopHeight);
+        }
+    }
+
     public int compareTo(AbstractLayoutVertex v) {
         return ((Integer)(this.getMinInstructionLine())).compareTo(v.getMinInstructionLine());
     }
