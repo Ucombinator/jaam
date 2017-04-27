@@ -252,7 +252,6 @@ object LoopAnalyzer {
           while (iterator.hasNext) {
             val edge = iterator.next
             val sootStmt = edge.srcStmt
-            val stmt = Statement(sootStmt, m)
             val dest = Coverage2.freshenMethod(edge.tgt)
 
             // class initializers can't recur but Soot thinks they do
