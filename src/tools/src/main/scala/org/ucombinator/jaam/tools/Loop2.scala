@@ -1,7 +1,10 @@
 package org.ucombinator.jaam.tools
 
 import java.io.FileOutputStream
+import java.io.FileInputStream
 import java.io.PrintStream
+import java.util.jar.JarEntry
+import java.util.jar.JarInputStream
 
 import scala.collection.JavaConversions._
 
@@ -32,13 +35,18 @@ class LoopAnalyzer extends Main("loop2") {
   val classpath = trailArg[String](descr =
       "Colon-separated list of JAR files and directories")
   val output = opt[String](descr = "An output file for the dot output")
+  val coverage = opt[String](descr = "An output file for the coverage output")
 
   def run(conf: Conf): Unit = {
     val outStream: PrintStream = output.toOption match {
       case None => System.out
       case Some(f) => new PrintStream(new FileOutputStream(f))
     }
-    LoopAnalyzer.main(mainClass(), mainMethod(), classpath(), outStream,
+    val coverageStream: PrintStream = coverage.toOption match {
+      case None => System.out
+      case Some(f) => new PrintStream(new FileOutputStream(f))
+    }
+    LoopAnalyzer.main(mainClass(), mainMethod(), classpath(), outStream, coverageStream,
         prune(), shrink())
   }
 }
@@ -310,8 +318,41 @@ object LoopAnalyzer {
     }
   }
 
+  def computeCoverage(classPath: String, graph: LoopGraph): Unit = {
+    def add(map0: Map[String, Int], string: String): Map[String, Int] = {
+      var map = map0
+      for (ss <- string.split('.').inits) {
+        val path = ss.mkString(".")
+        map += (path -> (map.getOrElse(path, 0) + 1))
+      }
+      return map
+    }
+    var expected = Map[String, Int]()
+    var actual = Map[String, Int]()
+    var missing = Map[String, Set[String]]()
+    for (s <- Taint.getAllClasses(classPath)) {
+      val c = Scene.v().loadClass(s, SootClass.SIGNATURES)
+      for (m <- c.getMethods()) {
+        val name = c.getPackageName + "." + c.getName
+        expected = add(expected, name)
+        if (!graph.keySet.contains(m.getSignature)) {
+          missing += (name -> (missing.getOrElse(name, Set()) + m.getSubSignature))
+        } else {
+          actual = add(actual, name)
+        }
+      }
+    }
+
+    for (k <- expected.keys.toList.sorted) {
+      println("expected=" + expected.getOrElse(k, 0) + " found=" + actual.getOrElse(k, 0) + " name=" + k)
+      for (s <- missing.getOrElse(k, Set()).toList.sorted) {
+        println("  missing=" + s)
+      }
+    }
+  }
+
   def main(mainClass: String, mainMethod: String, classpath: String,
-      graphStream: PrintStream, prune: Boolean, shrink: Boolean): Unit = {
+      graphStream: PrintStream, coverageStream: PrintStream, prune: Boolean, shrink: Boolean): Unit = {
     Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
     Options.v().set_keep_line_number(true)
@@ -355,11 +396,17 @@ object LoopAnalyzer {
       pruned
     }
 
+    // TODO: print unpruned size
+
     Console.withOut(graphStream) {
       println("digraph loops {")
       println("ranksep=\"10\";");
       print(shrunk)
       println("}")
+    }
+
+    Console.withOut(coverageStream) {
+      computeCoverage(classpath, graph)
     }
   }
 }
