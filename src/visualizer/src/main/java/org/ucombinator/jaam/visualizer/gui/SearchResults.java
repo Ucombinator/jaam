@@ -3,36 +3,36 @@ package org.ucombinator.jaam.visualizer.gui;
 import javax.swing.JPanel;
 import javax.swing.JLabel;
 import java.awt.Color;
-import java.awt.Rectangle;
 import java.awt.BorderLayout;
 
-import javax.swing.JTree;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeCellRenderer;
-import javax.swing.tree.DefaultTreeModel;
+//import javax.swing.JTree;
+//import javax.swing.tree.DefaultMutableTreeNode;
+//import javax.swing.tree.DefaultTreeCellRenderer;
+//import javax.swing.tree.DefaultTreeModel;
 import java.awt.Component;
 
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
+import javafx.scene.layout.BorderPane;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 
-public class SearchArea extends JPanel
+public class SearchResults extends BorderPane
 {
-    public JTree searchTree;
-    private DefaultMutableTreeNode root;
+    public TreeView searchTree;
+    private TreeItem root;
     public static int nodeHeight = 40;
     
-	public SearchArea()
+	public SearchResults()
 	{
-        this.setLayout(new BorderLayout());
-        
-        this.root = new DefaultMutableTreeNode("Search Results");
-        this.searchTree = new JTree(root);
-        this.searchTree.setShowsRootHandles(true);
-        this.searchTree.setRootVisible(false);
-        this.searchTree.setRowHeight(SearchArea.nodeHeight);
-        this.searchTree.setCellRenderer(new SearchRenderer());
+        this.root = new TreeItem("Search Results");
+        this.searchTree = new TreeView(root);
+        this.searchTree.setShowRoot(true);
+        this.root.setExpanded(true);
+        this.setCenter(searchTree);
 
-        this.add(this.searchTree, BorderLayout.CENTER);
         /*this.searchTree.addMouseListener
 		(
 			new MouseListener()
@@ -84,25 +84,25 @@ public class SearchArea extends JPanel
  	}
 
 	//Set the text for the area
-	public void writeText()
+	public void writeText(VizPanel mainPanel)
 	{
-        this.root.removeAllChildren();
-        if(Parameters.stFrame.mainPanel.highlighted.size() > 0) {
+        this.root.getChildren().clear();
+        if(mainPanel.getHighlighted().size() > 0) {
             // We don't want to include the panel root, so we start our check with its children
-            for(AbstractLayoutVertex v : Parameters.stFrame.mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
-                v.addTreeNodes(this.root);
+            for(AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+                v.addTreeNodes(this.root, mainPanel);
 
             // TODO: Auto-expand nodes?
-            DefaultTreeModel model = (DefaultTreeModel)this.searchTree.getModel();
-            model.reload(this.root);
+            //DefaultTreeModel model = (DefaultTreeModel)this.searchTree.getModel();
+            //model.reload(this.root);
         }
 	}
     
     /*public void fixCaretPosition()
     {
         Rectangle window = this.searchTree.getVisibleRect();
-        int first = this.searchTree.getClosestRowForLocation(window.x, window.y + SearchArea.nodeHeight);
-        int last  = this.searchTree.getClosestRowForLocation(window.x, window.y + window.height - SearchArea.nodeHeight);
+        int first = this.searchTree.getClosestRowForLocation(window.x, window.y + SearchResults.nodeHeight);
+        int last  = this.searchTree.getClosestRowForLocation(window.x, window.y + window.height - SearchResults.nodeHeight);
         
         if(first < 0)
             return;
@@ -143,7 +143,7 @@ public class SearchArea extends JPanel
         }
     }*/
     
-    private class SearchRenderer extends DefaultTreeCellRenderer
+    /*private class SearchRenderer extends DefaultTreeCellRenderer
     {
         public Component getTreeCellRendererComponent(JTree tree, Object obj, boolean selected, boolean expanded,
                                                       boolean leaf, int row, boolean hasFocus)
@@ -163,7 +163,7 @@ public class SearchArea extends JPanel
                 label.setBackground(Parameters.colorHighlight);
                 label.setForeground(Color.BLACK);
             }
-            else*/ if (ver.isHighlighted)
+            else if (ver.isHighlighted)
             {
                 label.setBackground(Color.WHITE);
                 label.setForeground(Color.BLACK);
@@ -175,5 +175,5 @@ public class SearchArea extends JPanel
             }
             return label;
         }
-    }
+    }*/
 }

@@ -1,19 +1,22 @@
 package org.ucombinator.jaam.visualizer.layout;
 
 import org.ucombinator.jaam.visualizer.graph.Instruction;
+import org.ucombinator.jaam.visualizer.gui.VizPanel;
+
+import java.util.HashSet;
 
 /**
  * Created by timothyjohnson on 2/15/17.
  */
 public class LayoutInstructionVertex extends AbstractLayoutVertex {
 
-    Instruction instruction;
-    LayoutMethodVertex methodVertex;
+    private Instruction instruction;
+    private LayoutMethodVertex methodVertex;
 
-    public LayoutInstructionVertex(Instruction instruction, boolean drawEdges) {
+    public LayoutInstructionVertex(Instruction instruction, LayoutMethodVertex methodVertex, boolean drawEdges) {
         super(instruction.getText(), VertexType.INSTRUCTION, drawEdges);
         this.instruction = instruction;
-        this.methodVertex = null;
+        this.methodVertex = methodVertex;
     }
 
     @Override
@@ -34,9 +37,15 @@ public class LayoutInstructionVertex extends AbstractLayoutVertex {
         return this.instruction.getText();
     }
 
-    public boolean searchByMethod(String query) {
+    public boolean searchByMethod(String query, VizPanel mainPanel) {
         boolean found = this.instruction.getMethodName().contains(query);
-        this.setHighlighted(found);
+        this.setHighlighted(found, mainPanel);
         return found;
+    }
+
+    public HashSet<LayoutMethodVertex> getMethodVertices() {
+        HashSet<LayoutMethodVertex> result = new HashSet<LayoutMethodVertex>();
+        result.add(this.methodVertex);
+        return result;
     }
 }

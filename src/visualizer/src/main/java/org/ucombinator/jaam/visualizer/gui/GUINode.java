@@ -2,6 +2,8 @@ package org.ucombinator.jaam.visualizer.gui;
 
 import java.util.ArrayList;
 
+import javafx.geometry.BoundingBox;
+import javafx.geometry.Bounds;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Text;
 import javafx.event.Event;
@@ -18,23 +20,26 @@ import javafx.scene.shape.Rectangle;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.layout.AnimationHandler;
-import org.ucombinator.jaam.visualizer.main.Parameters;
+import org.ucombinator.jaam.visualizer.main.Main;
 
 public class GUINode extends Pane
 {
+    protected static boolean showId = true;
     protected static final double TEXT_VERTICAL_PADDING = 15;
     protected static final double TEXT_HORIZONTAL_PADDING = 15;
 	double dragX, dragY;
     public Rectangle rect;
-    protected Rectangle backRect;
+    //protected Rectangle backRect;
     protected Text rectLabel;
     private AbstractLayoutVertex vertex;
 	private GUINode parent;
 
 	private ArrayList<LayoutEdge> edges = new ArrayList<LayoutEdge>();
 
-    boolean labelsEnabled = false;
     boolean isDragging;
+
+    private double totalScaleX;
+    private double totalScaleY;
 
     public GUINode(GUINode parent, AbstractLayoutVertex v)
     {
@@ -44,22 +49,19 @@ public class GUINode extends Pane
         this.vertex.setGraphics(this);
         
         this.rect = new Rectangle();
-        this.backRect = new Rectangle();
-        this.rectLabel = new Text(v.getLabel());
-        if(labelsEnabled)
-        {
-        	this.getChildren().addAll(this.backRect, this.rect, this.rectLabel);
-        }
-        else
-        {
-        	this.getChildren().addAll(this.backRect, this.rect);
-        }
+        //this.backRect = new Rectangle();
+        this.rectLabel = new Text(v.getId() + ", " + v.getLoopHeight());
+        this.rectLabel.setVisible(v.isLabelVisible());
+        this.getChildren().addAll(/*this.backRect,*/ this.rect, this.rectLabel);
+        this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
+        this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
 
         this.isDragging = false;
+        this.totalScaleX = 1;
+        this.totalScaleY = 1;
 
         this.addMouseEvents();
         this.setVisible(true);
-       
     }
     
     public AbstractLayoutVertex getVertex() {
@@ -83,7 +85,7 @@ public class GUINode extends Pane
     // Next several methods: Pass on calls to underlying rectangle
     public void setFill(Color c)
     {
-    	this.backRect.setFill(Color.WHITE);
+    	//this.backRect.setFill(Color.WHITE);
     	this.rect.setFill(c);
     	if(vertex.getType()== AbstractLayoutVertex.VertexType.CHAIN){
         	Stop[] stops = new Stop[]{new Stop(0.6,c), new Stop(0.4,Color.WHITE)};
@@ -91,7 +93,6 @@ public class GUINode extends Pane
         } else if(vertex.getType() == AbstractLayoutVertex.VertexType.ROOT){
         	this.rect.setFill(javafx.scene.paint.Color.WHITE);
         }
-
     }
 
     public void setStroke(Color c)
@@ -107,23 +108,47 @@ public class GUINode extends Pane
     public void setArcHeight(double height)
     {
         this.rect.setArcHeight(height);
-        this.backRect.setArcHeight(height);
+        //this.backRect.setArcHeight(height);
     }
 
     public void setArcWidth(double width)
     {
         this.rect.setArcWidth(width);
-        this.backRect.setArcWidth(width);
+        //this.backRect.setArcWidth(width);
     }
 
-    public void setLocation(double x, double y, double width, double height)
+    public void setTranslateLocation(double x, double y) {
+        this.setTranslateX(x);
+        this.setTranslateY(y);
+        this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
+        this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
+    }
+
+    public void setTranslateLocation(double x, double y, double width, double height)
     {
         this.setTranslateX(x);
         this.setTranslateY(y);
         this.rect.setWidth(width);
         this.rect.setHeight(height);
-        this.backRect.setWidth(width);
-        this.backRect.setHeight(height);
+        this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
+        this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
+        //this.backRect.setWidth(width);
+        //this.backRect.setHeight(height);
+    }
+
+    // Returns the bounding box for just the rectangle in the coordinate system for the parent of our node.
+    public Bounds getRectBoundsInParent() {
+        Bounds nodeBounds = this.getBoundsInParent();
+        Bounds rectBounds = this.rect.getBoundsInParent();
+        BoundingBox totalBounds = new BoundingBox(nodeBounds.getMinX() + rectBounds.getMinX(),
+                nodeBounds.getMinY() + rectBounds.getMinY(), rectBounds.getWidth(), rectBounds.getHeight());
+        return totalBounds;
+    }
+
+    public void printLocation() {
+        Bounds bounds = this.getBoundsInParent();
+        System.out.println("Node x = " + bounds.getMinX() + ", " + bounds.getMaxX());
+        System.out.println("Node y = " + bounds.getMinY() + ", " + bounds.getMaxY());
     }
 
     // Halve the distance from the current opacity to 1.
@@ -152,16 +177,18 @@ public class GUINode extends Pane
     // top left corner stationary when the node is scaled about its center.
     public double getXShift()
     {
-        double currentWidth = this.getScaleX() * this.getWidth();
-        double oldWidth = this.getWidth();
+        double currentWidth = this.getScaleX() * this.vertex.getWidth();
+        double oldWidth = this.vertex.getWidth();
         return (oldWidth - currentWidth) / 2;
+        //return 0;
     }
 
     public double getYShift()
     {
-        double currentHeight = this.getScaleY() * this.getHeight();
-        double oldHeight = this.getHeight();
+        double currentHeight = this.getScaleY() * this.vertex.getHeight();
+        double oldHeight = this.vertex.getHeight();
         return (oldHeight - currentHeight) / 2;
+        //return 0;
     }
 
     EventHandler<MouseEvent> onMousePressedEventHandler = new EventHandler<MouseEvent>()
@@ -188,12 +215,14 @@ public class GUINode extends Pane
             node.isDragging = true;
             double offsetX = event.getScreenX() + dragX;
             double offsetY = event.getScreenY() + dragY;
-            node.setTranslateX(offsetX - node.getXShift());
-            node.setTranslateY(offsetY - node.getYShift());
+            double totalTranslateX = offsetX - node.getXShift();
+            double totalTranslateY = offsetY - node.getYShift();
+            node.setTranslateLocation(totalTranslateX, totalTranslateY);
 
             AbstractLayoutVertex v = GUINode.this.vertex;
-            v.setX(Parameters.stFrame.mainPanel.invScaleX(offsetX));
-            v.setY(Parameters.stFrame.mainPanel.invScaleY(offsetY));
+            VizPanel mainPanel = Main.getOuterFrame().getCurrentFrame().getMainPanel();
+            v.setX(mainPanel.invScaleX(offsetX));
+            v.setY(mainPanel.invScaleY(offsetY));
             LayoutEdge.redrawEdges(v, false);
         }
     };
@@ -219,11 +248,6 @@ public class GUINode extends Pane
         public void handle(Event event)
         {
             event.consume();
-            if(!getVertex().getType().equals(AbstractLayoutVertex.VertexType.ROOT)){
-            getChildren().add(rectLabel);
-            rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
-            rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
-            }
         	if (vertex.getSelfGraph() != null)
         	{
 	        	for(LayoutEdge e : vertex.getSelfGraph().getEdges().values())
@@ -236,11 +260,6 @@ public class GUINode extends Pane
 	        		}
 	        	}
         	}
-        	
-            GUINode obj = (GUINode) (event.getSource());
-//            obj.rect.setOpacity(1);
-//            if (obj.parent != null)
-//                obj.parent.rect.setOpacity(0.3);
         }
     };
 
@@ -250,7 +269,7 @@ public class GUINode extends Pane
         public void handle(Event event)
         {
             event.consume();
-            getChildren().remove(rectLabel);
+            //getChildren().remove(rectLabel);
             
         	if(vertex.getSelfGraph() != null)
         	{
@@ -264,14 +283,43 @@ public class GUINode extends Pane
 	        		}
 	        	}
         	}
-        	
-
-            
-            GUINode obj = (GUINode) (event.getSource());
-            
-//            obj.rect.setOpacity(.3);
-//            if(obj.parent != null)
-//                obj.parent.rect.setOpacity(1);
         }
     };
+
+	public GUINode getParentNode() {
+	    return this.parent;
+    }
+
+    public double getTotalParentScaleX() {
+	    if (this.parent != null)
+	        return this.parent.totalScaleX;
+	    else return 1;
+    }
+
+    public double getTotalParentScaleY() {
+	    if (this.parent != null)
+	        return this.parent.totalScaleY;
+	    else return 1;
+    }
+
+	public void setTotalScaleX(double scale) {
+	    this.totalScaleX = scale;
+    }
+
+	public double getTotalScaleX() {
+	    return this.totalScaleX;
+    }
+
+    public void setTotalScaleY(double scale) {
+	    this.totalScaleY = scale;
+    }
+
+    public double getTotalScaleY() {
+	    return this.totalScaleY;
+    }
+
+	public void setLabelVisible(boolean isLabelVisible) {
+		vertex.setLabelVisible(isLabelVisible);
+		this.rectLabel.setVisible(isLabelVisible);
+	}
 }

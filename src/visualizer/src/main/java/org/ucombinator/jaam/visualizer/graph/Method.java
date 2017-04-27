@@ -6,11 +6,11 @@ import org.ucombinator.jaam.visualizer.main.Main;
 
 public class Method
 {
-	public Class ourClass;
+	private Class ourClass;
 	private final String methodName;
 	//private final String functionName;
-	ArrayList<Vertex> vertices;
-	ArrayList<Instruction> instructionList;
+	private ArrayList<Vertex> vertices;
+	private ArrayList<Instruction> instructionList;
 
 	public Method()
 	{
@@ -20,7 +20,7 @@ public class Method
 		instructionList = new ArrayList<Instruction>();
 	}
 
-	public Method(String methodName)
+	public Method(Graph graph, String methodName)
 	{
 		this.methodName = methodName;
 
@@ -30,7 +30,7 @@ public class Method
 
 			//Remove beginning angle bracket and ending colon
 			String className = splitMethodName[0].substring(1, splitMethodName[0].length() - 1);
-			this.addClass(className);
+			this.addClass(graph, className);
 
 			//this.functionName = splitMethodName[1];
 		}
@@ -49,13 +49,13 @@ public class Method
 		return this.ourClass.getClassName();
 	}
 
-	public void addClass(String className)
+	public void addClass(Graph graph, String className)
 	{
-		this.ourClass = Main.graph.getClasses().get(className);
+		this.ourClass = graph.getClasses().get(className);
 		if(this.ourClass == null)
 		{
 			this.ourClass = new Class(className);
-			Main.graph.getClasses().put(className, this.ourClass);
+			graph.getClasses().put(className, this.ourClass);
 		}
 
 		this.ourClass.addMethod(this);
