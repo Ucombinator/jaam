@@ -204,7 +204,40 @@ object LoopAnalyzer {
     }
     // TODO remove loopless method calls, replacing them with downstream loops
     def shrink: LoopGraph = {
-      ???
+      var keepers = Set(mNode)
+      var newGraph = g
+      def analyze(n: Node, path: List[Node]): Set[Node] = {
+        n match {
+          case m: MethodNode if path.contains(n) =>
+            val toKeep = path.dropWhile(_ != n) flatMap {
+              case m: MethodNode => Some(m)
+              case _ => None
+            }
+            keepers = keepers ++ toKeep
+            Set(n)
+          case _ =>
+            val descMap = this(n).foldLeft(Map.empty[Node, Set[Node]])({
+                (map: Map[Node, Set[Node]], child: Node) =>
+              map + (child -> analyze(child, n :: path))
+            })
+            if (keepers.contains(n) || n.isInstanceOf[LoopNode]) {
+              for {
+                child <- this(n)
+              } {
+                val descendants = descMap(child)
+                // This guard isn't strictly necessary but it's correct
+                if (descendants != Set(child)) {
+                  val newChildren = ((newGraph(n) - child) ++ descendants)
+                  newGraph = newGraph + (n -> newChildren)
+                }
+              }
+              Set(n)
+            } else {
+              descMap.keys.foldLeft(Set.empty[Node])(_ ++ descMap(_))
+            }
+        }
+      }
+      LoopGraph(m, newGraph)
     }
     override def toString: String = {
       val builder = new StringBuilder
