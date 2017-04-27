@@ -247,7 +247,7 @@ object LoopAnalyzer {
           val forest = getLoopForest(m)
           // g keeps track of the methods we've seen, so adding the empty set
           // to it prevents an infinite loop.
-          var newGraph = g + (mNode -> Set.empty)
+          var newGraph: Map[Node, Set[Node]] = g + (mNode -> Set.empty)
           newGraph = addForest(g, mNode, forest, m)
           while (iterator.hasNext) {
             val edge = iterator.next
