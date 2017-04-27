@@ -133,9 +133,8 @@ object LoopAnalyzer {
   }
   case class LoopNode(val m: SootMethod, val loop: SootLoop) extends Node {
     override val tag = {
-      val sootStmt = loop.getHead
-      val stmt = Statement(sootStmt, m)
-      m.getSignature + " line " + stmt.index + "\n" + sootStmt.toString()
+      val stmt = Statement(loop.getHead, m)
+      m.getSignature + "\ninstruction #" + stmt.index
     }
     override def toString = "  " + quote(tag) + " [shape=diamond];\n"
   }
@@ -418,6 +417,9 @@ object LoopAnalyzer {
     Options.v().set_app(true)
     soot.Main.v().autoSetOptions()
 
+    Options.v().setPhaseOption("cg", "verbose:true")
+    Options.v().setPhaseOption("cg.cha", "enabled:true")
+
     Options.v.set_main_class(mainClass)
     val clazz = Scene.v.forceResolve(mainClass, SootClass.BODIES)
     Scene.v.setMainClass(clazz)
@@ -433,7 +435,6 @@ object LoopAnalyzer {
     Scene.v.loadNecessaryClasses
 
     PackManager.v.runPacks
-
     CHATransformer.v.transform
     val cg = Scene.v.getCallGraph
 
