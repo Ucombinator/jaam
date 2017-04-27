@@ -251,16 +251,20 @@ object LoopAnalyzer {
             val sootStmt = edge.srcStmt
             val stmt = Stmt(sootStmt, m)
             val dest = Coverage2.freshenMethod(edge.tgt)
-            val destNode = MethodNode(dest.getSignature)
-            val parents = forest filter { _ contains sootStmt }
-            if (parents.isEmpty) {
-              newGraph = add(newGraph, mNode, destNode)
-            } else {
-              assert(parents.size == 1, "multiple parents")
-              val parent = LoopNode(m, parents.head.parent(sootStmt).loop)
-              newGraph = add(newGraph, parent, destNode)
+
+            // class initializers can't recur but Soot thinks they do
+            if (m.getSignature != dest.getSignature || m.getName != "<clinit>"){
+              val destNode = MethodNode(dest.getSignature)
+              val parents = forest filter { _ contains sootStmt }
+              if (parents.isEmpty) {
+                newGraph = add(newGraph, mNode, destNode)
+              } else {
+                assert(parents.size == 1, "multiple parents")
+                val parent = LoopNode(m, parents.head.parent(sootStmt).loop)
+                newGraph = add(newGraph, parent, destNode)
+              }
+              newGraph = build(dest, newGraph)
             }
-            newGraph = build(dest, newGraph)
           }
           newGraph
         }
