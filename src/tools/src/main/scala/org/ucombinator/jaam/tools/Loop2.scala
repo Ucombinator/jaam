@@ -126,7 +126,7 @@ object LoopAnalyzer {
   case class LoopNode(val m: SootMethod, val loop: SootLoop) extends Node {
     override val tag = {
       val sootStmt = loop.getHead
-      val stmt = Stmt(sootStmt, m)
+      val stmt = Statement(sootStmt, m)
       m.getSignature + " line " + stmt.index + "\n" + sootStmt.toString()
     }
     override def toString = "  " + quote(tag) + " [shape=diamond];\n"
@@ -252,7 +252,7 @@ object LoopAnalyzer {
           while (iterator.hasNext) {
             val edge = iterator.next
             val sootStmt = edge.srcStmt
-            val stmt = Stmt(sootStmt, m)
+            val stmt = Statement(sootStmt, m)
             val dest = Coverage2.freshenMethod(edge.tgt)
 
             // class initializers can't recur but Soot thinks they do
@@ -365,22 +365,22 @@ object LoopAnalyzer {
   }
 }
 
-case class Stmt(val stmt: SootStmt, val m: SootMethod) {
-  assert(stmt != null, "trying to create a Stmt with a null object")
-  val index = if (stmt.hasTag(Stmt.indexTag)) {
-    BigInt(stmt.getTag(Stmt.indexTag).getValue).intValue
+case class Statement(val stmt: SootStmt, val m: SootMethod) {
+  assert(stmt != null, "trying to create a Statement with a null object")
+  val index = if (stmt.hasTag(Statement.indexTag)) {
+    BigInt(stmt.getTag(Statement.indexTag).getValue).intValue
   } else {
     // label everything in m so the amortized work is linear
     for ((u, i) <- Soot.getBody(m).getUnits().toList.zipWithIndex) {
-      u.addTag(new GenericAttribute(Stmt.indexTag, BigInt(i).toByteArray))
+      u.addTag(new GenericAttribute(Statement.indexTag, BigInt(i).toByteArray))
     }
 
-    assert(stmt.hasTag(Stmt.indexTag),
+    assert(stmt.hasTag(Statement.indexTag),
         "SootStmt "+stmt+" not found in SootMethod " + m)
-    BigInt(stmt.getTag(Stmt.indexTag).getValue).intValue
+    BigInt(stmt.getTag(Statement.indexTag).getValue).intValue
   }
 }
 
-object Stmt {
-  val indexTag = "org.ucombinator.jaam.Stmt.indexTag"
+object Statement {
+  val indexTag = "org.ucombinator.jaam.Statement.indexTag"
 }
