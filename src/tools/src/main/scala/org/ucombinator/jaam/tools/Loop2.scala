@@ -154,7 +154,7 @@ object LoopAnalyzer {
       val (k, v) = binding
       LoopGraph(m, g + (k -> (this(k) ++ v)))
     }
-    // TODO remove method leaves
+    // remove method leaves
     def prune: LoopGraph = {
       var keepMap = Map.empty[Node, Boolean]
       var parentMap = Map.empty[Node, Set[Node]]
@@ -202,9 +202,10 @@ object LoopAnalyzer {
       })
       LoopGraph(m, newGraph)
     }
-    // TODO remove loopless method calls, replacing them with downstream loops
+    // remove loopless method calls, replacing them with downstream loops
     def shrink: LoopGraph = {
       var keepers = Set(mNode)
+      var descMap = Map.empty[Node, Set[Node]]
       var newGraph = g
       def analyze(n: Node, path: List[Node]): Set[Node] = {
         n match {
@@ -216,27 +217,34 @@ object LoopAnalyzer {
             keepers = keepers ++ toKeep
             Set(n)
           case _ =>
-            val descMap = this(n).foldLeft(Map.empty[Node, Set[Node]])({
-                (map: Map[Node, Set[Node]], child: Node) =>
-              map + (child -> analyze(child, n :: path))
-            })
+            // recur and store the resulting sets of descendants
+            for {
+              child <- this(n)
+            } {
+              if (!descMap.isDefinedAt(child)) {
+                descMap = descMap + (child -> analyze(child, n :: path))
+              }
+            }
+            // in the case that n should be kept,
             if (keepers.contains(n) || n.isInstanceOf[LoopNode]) {
+              // replace each child with the set returned by its call to analyze
               for {
                 child <- this(n)
               } {
-                val descendants = descMap(child)
-                // This guard isn't strictly necessary but it's correct
-                if (descendants != Set(child)) {
-                  val newChildren = ((newGraph(n) - child) ++ descendants)
-                  newGraph = newGraph + (n -> newChildren)
-                }
+                val newChildren = ((newGraph(n) - child) ++ descMap(child))
+                newGraph = newGraph + (n -> newChildren)
               }
               Set(n)
             } else {
-              descMap.keys.foldLeft(Set.empty[Node])(_ ++ descMap(_))
+              // otherwise, roll all of the children's sets together
+              this(n).foldLeft(Set.empty[Node])({
+                (descendants: Set[Node], child: Node) =>
+                  descendants ++ descMap(child)
+              })
             }
         }
       }
+      analyze(mNode, List.empty)
       LoopGraph(m, newGraph)
     }
     override def toString: String = {
