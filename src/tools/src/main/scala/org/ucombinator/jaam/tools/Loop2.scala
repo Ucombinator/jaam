@@ -204,13 +204,23 @@ object LoopAnalyzer {
     }
     // remove loopless method calls, replacing them with downstream loops
     def shrink: LoopGraph = {
+      // keepers is a set of MethodNode objects that should remain. All LoopNode
+      // objects are kept, so there's no need to add them to a set.
       var keepers = Set(mNode)
+      // descMap keeps track of the descendants to be kept from a node. Nodes
+      // that should be kept return a set containing just themselves; nodes that
+      // are to be discarded return the merged results from their children.
       var descMap = Map.empty[Node, Set[Node]]
       var newGraph = g
+      def shouldKeep(n: Node): Boolean = {
+        keepers.contains(n) || n.isInstanceOf[LoopNode]
+      }
       def analyze(n: Node, path: List[Node]): Set[Node] = {
         n match {
+          // if there is a loop,
           case m: MethodNode if path.contains(n) =>
-            val toKeep = path.dropWhile(_ != n) flatMap {
+            // get the method nodes in the loop and mark them
+            val toKeep = n :: path.takeWhile(_ != n) flatMap {
               case m: MethodNode => Some(m)
               case _ => None
             }
@@ -226,17 +236,19 @@ object LoopAnalyzer {
               }
             }
             // in the case that n should be kept,
-            if (keepers.contains(n) || n.isInstanceOf[LoopNode]) {
+            if (shouldKeep(n)) {
               // replace each child with the set returned by its call to analyze
               for {
-                child <- this(n)
+                child <- this(n) filter { !shouldKeep(_) }
               } {
                 val newChildren = ((newGraph(n) - child) ++ descMap(child))
                 newGraph = newGraph + (n -> newChildren)
               }
+              // and keep n
               Set(n)
             } else {
               // otherwise, roll all of the children's sets together
+              // crucially, the set returned does not include n
               this(n).foldLeft(Set.empty[Node])({
                 (descendants: Set[Node], child: Node) =>
                   descendants ++ descMap(child)
