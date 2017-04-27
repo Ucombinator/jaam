@@ -44,21 +44,6 @@ class LoopAnalyzer extends Main("loop2") {
 }
 
 object LoopAnalyzer {
-  def getTargets(u: SootUnit, cg: CallGraph): Set[SootMethod] = {
-    var targets = Set.empty[SootMethod]
-    val iterator = cg.edgesOutOf(u)
-    while(iterator.hasNext) {
-      val e: Edge = iterator.next
-      e.getTgt match {
-        case m: SootMethod => targets = targets + m
-        case _ => {}
-      }
-    }
-    targets
-  }
-  private def stmtCount(loop: SootLoop): Int = {
-    loop.getLoopStatements.size
-  }
   private var loops = Map.empty[SootMethod, Set[SootLoop]]
   def getLoops(m: SootMethod): Set[SootLoop] = {
     loops.get(m) match {
