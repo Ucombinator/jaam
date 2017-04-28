@@ -142,7 +142,8 @@ object LoopAnalyzer {
   // For now, SootMethod.getSignature will do.
   case class MethodNode(override val tag: String) extends Node
 
-  case class LoopGraph(val m: SootMethod, private val g: Map[Node, Set[Node]]) {
+  case class LoopGraph(val m: SootMethod, private val g: Map[Node, Set[Node]],
+      private val recurEdges: Set[(Node, Node)]) {
     private val mNode = MethodNode(m.getSignature)
     def apply(n: Node): Set[Node] = g.getOrElse(n, Set.empty)
     def keySet: Set[String] = g.keySet flatMap {
@@ -151,15 +152,19 @@ object LoopAnalyzer {
     }
     def +(binding: (Node, Set[Node])): LoopGraph = {
       val (k, v) = binding
-      LoopGraph(m, g + (k -> (this(k) ++ v)))
+      LoopGraph(m, g + (k -> (this(k) ++ v)), recurEdges)
     }
     // remove method leaves
     def prune: LoopGraph = {
       var keepMap = Map.empty[Node, Boolean]
       var parentMap = Map.empty[Node, Set[Node]]
+      var recursionEdges = recurEdges
       def analyze(n: Node, path: List[Node]): Unit = {
         if (!keepMap.isDefinedAt(n)) {
           if (path.contains(n)) {
+            val loopNodes = n :: path.takeWhile(_ != n)
+            val rotated = loopNodes.tail :+ n
+            recursionEdges = recursionEdges ++ loopNodes.zip(rotated)
             keepMap = keepMap + (n -> true)
           } else {
             val succs = this(n)
@@ -199,7 +204,7 @@ object LoopAnalyzer {
           })
         }
       })
-      LoopGraph(m, newGraph)
+      LoopGraph(m, newGraph, recursionEdges)
     }
     // remove loopless method calls, replacing them with downstream loops
     def shrink: LoopGraph = {
@@ -211,6 +216,7 @@ object LoopAnalyzer {
       // are to be discarded return the merged results from their children.
       var descMap = Map.empty[Node, Set[Node]]
       var newGraph = g
+      var recursionEdges = recurEdges
       def shouldKeep(n: Node): Boolean = {
         keepers.contains(n) || n.isInstanceOf[LoopNode]
       }
@@ -219,7 +225,10 @@ object LoopAnalyzer {
           // if there is a loop,
           case m: MethodNode if path.contains(n) =>
             // get the method nodes in the loop and mark them
-            val toKeep = n :: path.takeWhile(_ != n) flatMap {
+            val loopNodes = n :: path.takeWhile(_ != n)
+            val rotated = loopNodes.tail :+ n
+            recursionEdges = recursionEdges ++ loopNodes.zip(rotated)
+            val toKeep = loopNodes flatMap {
               case m: MethodNode => Some(m)
               case _ => None
             }
@@ -256,7 +265,7 @@ object LoopAnalyzer {
         }
       }
       analyze(mNode, List.empty)
-      LoopGraph(m, newGraph)
+      LoopGraph(m, newGraph, recursionEdges)
     }
     override def toString: String = {
       val builder = new StringBuilder
@@ -268,7 +277,11 @@ object LoopAnalyzer {
           for {
             to <- this(from)
           } {
-            builder ++= "  " + quote(from.tag) + " -> " + quote(to.tag) + ";\n"
+            val maybeBold = if (recurEdges.contains((from, to))) {
+              " [penwidth=3]"
+            } else ""
+            builder ++= "  " + quote(from.tag) + " -> " + quote(to.tag) +
+              maybeBold + ";\n"
           }
           // enforce a BFS order
           for {
@@ -331,7 +344,7 @@ object LoopAnalyzer {
           newGraph
         }
       }
-      LoopGraph(m, build(m, Map.empty))
+      LoopGraph(m, build(m, Map.empty), Set.empty)
     }
   }
 
