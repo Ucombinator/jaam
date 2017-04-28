@@ -50,7 +50,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 	
 	private void collapsing(AbstractLayoutVertex v)
 	{
-		System.out.println("\nCollapsing node: " + v.getId() + ", " + v.getGraphics().toString());
+		//System.out.println("\nCollapsing node: " + v.getId() + ", " + v.getGraphics().toString());
 		Iterator<Node> it = v.getGraphics().getChildren().iterator();
 
 		// Fade edges out?
@@ -94,7 +94,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
 
 	private void expanding(AbstractLayoutVertex v)
 	{
-		System.out.println("\nExpanding node: " + v.getId() + ", " + v.getGraphics().toString());
+		//System.out.println("\nExpanding node: " + v.getId() + ", " + v.getGraphics().toString());
 		Iterator<Node> it = v.getGraphics().getChildren().iterator();
 
 		// Fade edges in?

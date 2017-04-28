@@ -145,11 +145,6 @@ public class StacFrame extends BorderPane
 
 		for(int i = 0; i < layout.size() - 1; i++)
 			horizontalSplitPane.setDividerPosition(i, dividerPositions.get(i));
-
-		double[] positions = horizontalSplitPane.getDividerPositions();
-		System.out.println("Divider positions:");
-		for(double d : positions)
-			System.out.println(d);
 	}
 
 	public void makeLayout()
@@ -496,11 +491,12 @@ public class StacFrame extends BorderPane
 		utiltiesPanel.getChildren().add(exportImageButton);
 
 
-		// TODO: Set sizes to fill parent
+		// TODO: Set sizes to fill parent. (Right now we just make the sizes all very large.)
 		bytecodePanel = new BorderPane();
 		Label leftLabel = new Label("Code");
 		ScrollPane scrollLeft = new ScrollPane();
 		this.bytecodeArea = new CodeArea();
+		this.bytecodeArea.setStyle("-fx-padding: 0 0 0 5"); // Add left margin of five pixels
 		scrollLeft.setContent(this.bytecodeArea);
 		bytecodePanel.setTop(leftLabel);
 		bytecodePanel.setCenter(scrollLeft);
