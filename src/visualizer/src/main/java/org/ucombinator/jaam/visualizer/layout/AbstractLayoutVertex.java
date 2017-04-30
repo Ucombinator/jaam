@@ -5,6 +5,7 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.Location;
+import org.ucombinator.jaam.visualizer.gui.StacFrame;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 //import javax.swing.tree.DefaultMutableTreeNode;
@@ -885,14 +886,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         while(itNodes.hasNext()){
             itNodes.next().toggleEdges(isEdgeVisible);
         }
-    }
-
-    public void reset() {
-        /*this.setGraphics(null);
-        Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVertices().values().iterator();
-        while(it.hasNext()){
-            it.next().reset();
-        }*/
     }
 
     public HashSet<Instruction> getInstructions() {

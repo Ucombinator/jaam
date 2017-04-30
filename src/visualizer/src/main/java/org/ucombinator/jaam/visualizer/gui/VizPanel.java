@@ -81,7 +81,7 @@ public class VizPanel extends StackPane
 
 	public void resetPanelSize() {
 		this.maxVertexWidth = this.panelRoot.getWidth();
-		this.maxVertexHeight = this.panelRoot.getHeight();		
+		this.maxVertexHeight = this.panelRoot.getHeight();
 	}
 
 	public double scaleX(double coordinate)
@@ -195,6 +195,18 @@ public class VizPanel extends StackPane
 		buttonBox.setPickOnBounds(false);
 	}
 
+	public void resetZoom() {
+		factorX = 1;
+		factorY = 1;
+	}
+
+	public void resetAndRedraw(boolean edgeVisible) {
+		this.resetPanelSize();
+		this.resetZoom();
+		this.getPanelRoot().setEdgeVisibility(edgeVisible);
+		this.drawGraph();
+	}
+
 	private void zoom(int zoomDistance) {
 		factorX *= Math.pow(factorMultiple, zoomDistance);
 		factorY *= Math.pow(factorMultiple, zoomDistance);
@@ -239,32 +251,8 @@ public class VizPanel extends StackPane
 		while (it.hasNext())
 		{
 			AbstractLayoutVertex child = it.next();
-			if(v.isExpanded()) {
+			if(v.isExpanded())
 				drawNodes(node, child);
-			}
-			else {
-				// TODO: Click on the "C" button to collapse all chains, then try to expand a chain.
-				// The internal nodes in the chain should appear, but their GUINodes are still null, which gives an error.
-				// This is an attempt to fix the bug, but it still doesn't work yet.
-				//initializeCollapsedNodes(node, child);
-			}
-		}
-	}
-
-	public void initializeCollapsedNodes(GUINode parent, AbstractLayoutVertex v) {
-		GUINode node = new GUINode(parent, v);
-		if (parent == null) {
-			graphContentGroup.getChildren().add(node);
-		}
-		else {
-			parent.getChildren().add(node);
-		}
-
-		Iterator<AbstractLayoutVertex> it = v.getInnerGraph().getVertices().values().iterator();
-		while (it.hasNext())
-		{
-			AbstractLayoutVertex child = it.next();
-			initializeCollapsedNodes(node, child);
 		}
 	}
 

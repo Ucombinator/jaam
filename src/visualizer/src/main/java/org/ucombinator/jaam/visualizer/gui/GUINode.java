@@ -136,8 +136,6 @@ public class GUINode extends Pane
         this.rect.setHeight(height);
         this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
         this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
-        //this.backRect.setWidth(width);
-        //this.backRect.setHeight(height);
     }
 
     // Returns the bounding box for just the rectangle in the coordinate system for the parent of our node.
@@ -219,6 +217,21 @@ public class GUINode extends Pane
             node.isDragging = true;
             double offsetX = event.getScreenX() + dragX;
             double offsetY = event.getScreenY() + dragY;
+            Bounds parentBounds = GUINode.this.getParentNode().rect.getBoundsInLocal();
+            double maxOffsetX = parentBounds.getMaxX();
+            double maxOffsetY = parentBounds.getMaxY();
+
+            // This truncation of the offset confines the upper left corner of our node to its parent.
+            if(offsetX < 0)
+                offsetX = 0;
+            else if(offsetX > maxOffsetX)
+                offsetX = maxOffsetX;
+
+            if(offsetY < 0)
+                offsetY = 0;
+            else if(offsetY > maxOffsetY)
+                offsetY = maxOffsetY;
+
             double totalTranslateX = offsetX - node.getXShift();
             double totalTranslateY = offsetY - node.getYShift();
             node.setTranslateLocation(totalTranslateX, totalTranslateY);

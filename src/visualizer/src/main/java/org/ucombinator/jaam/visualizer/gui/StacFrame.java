@@ -284,7 +284,6 @@ public class StacFrame extends BorderPane
 								StacFrame.this.mainPanel.decrementScaleXFactor();
 								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
 								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								StacFrame.this.mainPanel.getPanelRoot().reset();
 								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
 								StacFrame.this.mainPanel.resetPanelSize();
 								StacFrame.this.mainPanel.drawGraph();
@@ -308,7 +307,6 @@ public class StacFrame extends BorderPane
 								StacFrame.this.mainPanel.incrementScaleXFactor();
 								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
 								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								StacFrame.this.mainPanel.getPanelRoot().reset();
 								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
 								StacFrame.this.mainPanel.resetPanelSize();
 								StacFrame.this.mainPanel.drawGraph();
@@ -334,7 +332,6 @@ public class StacFrame extends BorderPane
 								StacFrame.this.mainPanel.decrementScaleYFactor();
 								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
 								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								StacFrame.this.mainPanel.getPanelRoot().reset();
 								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
 								StacFrame.this.mainPanel.resetPanelSize();
 								StacFrame.this.mainPanel.drawGraph();
@@ -358,7 +355,6 @@ public class StacFrame extends BorderPane
 								StacFrame.this.mainPanel.incrementScaleYFactor();
 								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
 								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								StacFrame.this.mainPanel.getPanelRoot().reset();
 								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
 								StacFrame.this.mainPanel.resetPanelSize();
 								StacFrame.this.mainPanel.drawGraph();
@@ -399,11 +395,8 @@ public class StacFrame extends BorderPane
 
 								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
 								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								StacFrame.this.mainPanel.getPanelRoot().reset();
 								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.resetPanelSize();
-								StacFrame.this.mainPanel.getPanelRoot().setEdgeVisibility(edgeVisible);
-								StacFrame.this.mainPanel.drawGraph();
+								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 							}
 						}
 				);
@@ -430,10 +423,8 @@ public class StacFrame extends BorderPane
 
 								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
 								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								StacFrame.this.mainPanel.getPanelRoot().reset();
 								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.resetPanelSize();
-								StacFrame.this.mainPanel.drawGraph();
+								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 							}
 						}
 				);
