@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.gui;
 
 import javafx.animation.ScaleTransition;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
@@ -160,24 +161,55 @@ public class VizPanel extends StackPane
 		drawEdges(panelRoot);
 	}
 
+	
+	private boolean zoomEnabled = true;
+	private boolean zoomButtonReleased = false;
+	
+	private void keepButton(int zoom, Button button){
+		if(zoomEnabled && !zoomButtonReleased){
+			zoomEnabled = false;
+			VizPanel.this.zoom(zoom, button);
+		}
+		if(zoomButtonReleased){
+			zoomButtonReleased = false;	
+		}
+	}
+	
 	private void drawZoomButtons() {
 		VBox buttonBox = new VBox(5);
 		Button zoomIn = new Button("+");
 		Button zoomOut = new Button("-");
-
-		zoomIn.setOnAction(new EventHandler<ActionEvent>() {
+		
+		zoomIn.setOnMousePressed(new EventHandler<Event>() {
 			@Override
-			public void handle(ActionEvent event) {
-				VizPanel.this.zoom(1);
+			public void handle(Event event) {
+				keepButton(1,zoomIn);
 			}
 		});
-
-		zoomOut.setOnAction(new EventHandler<ActionEvent>() {
+		
+		zoomIn.setOnMouseReleased(new EventHandler<Event>() {
 			@Override
-			public void handle(ActionEvent event) {
-				VizPanel.this.zoom(-1);
+			public void handle(Event event) {
+				zoomButtonReleased = true;
 			}
 		});
+		
+		
+		zoomOut.setOnMousePressed(new EventHandler<Event>() {
+			@Override
+			public void handle(Event event) {
+				keepButton(-1,zoomOut);
+			}
+		});
+		
+		zoomOut.setOnMouseReleased(new EventHandler<Event>() {
+			@Override
+			public void handle(Event event) {
+				zoomButtonReleased = true;
+			}
+		});
+			
+		
 
 		// We add the buttons directly to our StackPane, so when we scroll they stay in the same place.
 		buttonBox.getChildren().add(zoomIn);
@@ -217,13 +249,20 @@ public class VizPanel extends StackPane
 		this.initZoom();
 	}
 
-	private void zoom(int zoomDistance) {
+	private void zoom(int zoomDistance, Button button) {
 		factorX *= Math.pow(factorMultiple, zoomDistance);
 		factorY *= Math.pow(factorMultiple, zoomDistance);
 
 		ScaleTransition st = new ScaleTransition(new Duration(100), panelRoot.getGraphics());
 		st.setToX(factorX);
 		st.setToY(factorY);
+		st.setOnFinished(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				zoomEnabled = true;
+				keepButton(zoomDistance, button);
+			}
+		});
 		st.play();
 	}
 
