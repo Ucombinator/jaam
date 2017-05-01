@@ -205,66 +205,9 @@ public class StacFrame extends BorderPane
 		controlPanel.add(sep, 1, 0);
 		sep.setVisible(false);
 		controlPanel.add(showLabels, 2, 0);
-		
-		
+
 		buttonsFlowPane.getChildren().add(controlPanel);
 		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
-
-		GridPane sizePanel = new GridPane();
-		sizePanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
-				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
-
-		buttonsFlowPane.getChildren().add(sizePanel);
-		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
-		
-
-		Button sizeMinus = new Button("-");
-		sizeMinus.setOnAction
-				(
-						new EventHandler<ActionEvent>()
-
-						{
-							@Override
-							public void handle(ActionEvent e) {
-								ParallelTransition pt = new ParallelTransition();
-								for (AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values()) {
-									GUINode node = v.getGraphics();
-									ScaleTransition st = new ScaleTransition(Duration.millis(300), node);
-									st.setToX(node.getScaleX() * Parameters.boxFactor);
-									st.setToY(node.getScaleY() * Parameters.boxFactor);
-									pt.getChildren().add(st);
-								}
-								pt.play();
-							}
-						}
-				);
-		sizePanel.add(sizeMinus, 0, 0);
-
-		Label sizeL = new Label(" Box size ");
-		sizeL.setAlignment(Pos.CENTER);
-		sizePanel.add(sizeL, 1, 0);
-
-		Button sizePlus = new Button("+");
-		sizePlus.setOnAction
-				(
-						new EventHandler<ActionEvent>()
-
-						{
-							@Override
-							public void handle(ActionEvent e) {
-								ParallelTransition pt = new ParallelTransition();
-								for (AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values()) {
-									GUINode node = v.getGraphics();
-									ScaleTransition st = new ScaleTransition(Duration.millis(300), node);
-									st.setToX(node.getScaleX() * 1.0 / Parameters.boxFactor);
-									st.setToY(node.getScaleY() * 1.0 / Parameters.boxFactor);
-									pt.getChildren().add(st);
-								}
-								pt.play();
-							}
-						}
-				);
-		sizePanel.add(sizePlus, 2, 0);
 
 		GridPane xScalePanel = new GridPane();
 		xScalePanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
@@ -455,9 +398,8 @@ public class StacFrame extends BorderPane
 										ImageIO.write(SwingFXUtils.fromFXImage(image, null), extension, newFile);
 									} catch (IOException exception) {
 										// TODO: handle exception here
-									}					            }
-
-
+									}
+								}
 							}
 						}
 				);
