@@ -217,20 +217,22 @@ public class GUINode extends Pane
             node.isDragging = true;
             double offsetX = event.getScreenX() + dragX;
             double offsetY = event.getScreenY() + dragY;
-            Bounds parentBounds = GUINode.this.getParentNode().rect.getBoundsInLocal();
-            double maxOffsetX = parentBounds.getMaxX();
-            double maxOffsetY = parentBounds.getMaxY();
+            if(GUINode.this.getParentNode() != null) {
+                Bounds parentBounds = GUINode.this.getParentNode().rect.getBoundsInLocal();
+                double maxOffsetX = parentBounds.getMaxX();
+                double maxOffsetY = parentBounds.getMaxY();
 
-            // This truncation of the offset confines the upper left corner of our node to its parent.
-            if(offsetX < 0)
-                offsetX = 0;
-            else if(offsetX > maxOffsetX)
-                offsetX = maxOffsetX;
+                // This truncation of the offset confines the upper left corner of our node to its parent.
+                if (offsetX < 0)
+                    offsetX = 0;
+                else if (offsetX > maxOffsetX)
+                    offsetX = maxOffsetX;
 
-            if(offsetY < 0)
-                offsetY = 0;
-            else if(offsetY > maxOffsetY)
-                offsetY = maxOffsetY;
+                if (offsetY < 0)
+                    offsetY = 0;
+                else if (offsetY > maxOffsetY)
+                    offsetY = maxOffsetY;
+            }
 
             double totalTranslateX = offsetX - node.getXShift();
             double totalTranslateY = offsetY - node.getYShift();
