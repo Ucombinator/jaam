@@ -6,7 +6,6 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.Insets;
-import javafx.scene.Group;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
 import javafx.scene.image.WritableImage;
@@ -16,6 +15,7 @@ import javafx.util.Duration;
 import javafx.event.EventHandler;
 import javafx.event.ActionEvent;
 
+import java.awt.MenuItem;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -162,11 +162,11 @@ public class StacFrame extends BorderPane
 		buttonsFlowPane.setVgap(5);
 		buttonsFlowPane.setHgap(5);
 		buttonsFlowPane.setPrefWrapLength(400);
-		buttonsFlowPane.setMinHeight(50);
+		buttonsFlowPane.setMinHeight(30);
 
 		GridPane controlPanel = new GridPane();
 		controlPanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
-				BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
 
 		showEdge = new CheckBox("Edges");
 		showEdge.setSelected(true);
@@ -184,6 +184,7 @@ public class StacFrame extends BorderPane
 							}
 						}
 				);
+	
 		controlPanel.add(showEdge, 0, 0);
 		
 		
@@ -202,17 +203,22 @@ public class StacFrame extends BorderPane
 							}
 						}
 				);
-		controlPanel.add(showLabels, 0, 1);
-		
+		Separator sep = new Separator(Orientation.HORIZONTAL);
+		controlPanel.add(sep, 1, 0);
+		sep.setVisible(false);
+		controlPanel.add(showLabels, 2, 0);
 		
 		
 		buttonsFlowPane.getChildren().add(controlPanel);
+		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
 
 		GridPane sizePanel = new GridPane();
 		sizePanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
-				BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
 
 		buttonsFlowPane.getChildren().add(sizePanel);
+		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
+		
 
 		Button sizeMinus = new Button("-");
 		sizeMinus.setOnAction
@@ -236,7 +242,7 @@ public class StacFrame extends BorderPane
 				);
 		sizePanel.add(sizeMinus, 0, 0);
 
-		Label sizeL = new Label("Box size");
+		Label sizeL = new Label(" Box size ");
 		sizeL.setAlignment(Pos.CENTER);
 		sizePanel.add(sizeL, 1, 0);
 
@@ -264,9 +270,10 @@ public class StacFrame extends BorderPane
 
 		GridPane xScalePanel = new GridPane();
 		xScalePanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
-				BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
 
 		buttonsFlowPane.getChildren().add(xScalePanel);
+		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
 
 		Button xScalePanelMinus = new Button("-");
 		xScalePanelMinus.setOnAction
@@ -283,7 +290,7 @@ public class StacFrame extends BorderPane
 				);
 		xScalePanel.add(xScalePanelMinus, 0, 0);
 
-		Label xScaleL = new Label("X scale");
+		Label xScaleL = new Label(" X scale ");
 		xScaleL.setAlignment(Pos.CENTER);
 		xScalePanel.add(xScaleL, 1, 0);
 
@@ -305,9 +312,10 @@ public class StacFrame extends BorderPane
 
 		GridPane yScalePanel = new GridPane();
 		yScalePanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
-				BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
 		buttonsFlowPane.getChildren().add(yScalePanel);
-
+		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
+		
 		Button yScalePanelMinus = new Button("-");
 		yScalePanelMinus.setOnAction
 				(
@@ -321,11 +329,11 @@ public class StacFrame extends BorderPane
 							}
 						}
 				);
-		yScalePanel.add(yScalePanelMinus, 0, 0);
+		yScalePanel.add(yScalePanelMinus, 1, 0);
 
-		Label yScaleL = new Label("Y scale");
+		Label yScaleL = new Label(" Y scale ");
 		yScaleL.setAlignment(Pos.CENTER);
-		yScalePanel.add(yScaleL, 1, 0);
+		yScalePanel.add(yScaleL, 2, 0);
 
 		Button yScalePlus = new Button("+");
 		yScalePlus.setOnAction
@@ -340,13 +348,14 @@ public class StacFrame extends BorderPane
 							}
 						}
 				);
-		yScalePanel.add(yScalePlus, 2, 0);
+		yScalePanel.add(yScalePlus, 3, 0);
 
 
-		FlowPane collapsePanel = new FlowPane();
+		GridPane collapsePanel = new GridPane();
 		collapsePanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
-				BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
 		buttonsFlowPane.getChildren().add(collapsePanel);
+		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
 
 		final javafx.scene.paint.Color activeColor = javafx.scene.paint.Color.CYAN;
 		final javafx.scene.paint.Color inactiveColor = javafx.scene.paint.Color.BLACK;
@@ -376,7 +385,7 @@ public class StacFrame extends BorderPane
 							}
 						}
 				);
-		collapsePanel.getChildren().add(methodCollapse);
+		collapsePanel.add(methodCollapse,0,0);
 
 		final Button chainCollapse = new Button("C");
 		chainCollapse.setTextFill(inactiveColor);
@@ -401,14 +410,18 @@ public class StacFrame extends BorderPane
 							}
 						}
 				);
-		collapsePanel.getChildren().add(chainCollapse);
+		Separator sepLabels = new Separator(Orientation.HORIZONTAL);
+		collapsePanel.add(sepLabels,1,0);
+		sepLabels.setVisible(false);
+		collapsePanel.add(chainCollapse,2,0);
 
 
 
 		FlowPane utilitiesPanel = new FlowPane();
 		utilitiesPanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
-				BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
 		buttonsFlowPane.getChildren().add(utilitiesPanel);
+		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
 
 
 		String extension = "png";
