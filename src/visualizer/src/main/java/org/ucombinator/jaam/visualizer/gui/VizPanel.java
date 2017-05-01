@@ -160,18 +160,19 @@ public class VizPanel extends StackPane
 		panelRoot.setVisible(false);
 		drawNodes(null, panelRoot);
 		drawEdges(panelRoot);
+		this.resetStrokeWidth();
 		panelRoot.setVisible(true);
 	}
 	
 	private boolean zoomEnabled = true;
 	private boolean zoomButtonReleased = false;
 	
-	private void keepButton(int zoom, Button button){
-		if(zoomEnabled && !zoomButtonReleased){
+	private void keepButton(int zoom, Button button) {
+		if(zoomEnabled && !zoomButtonReleased) {
 			zoomEnabled = false;
 			VizPanel.this.zoom(zoom, button);
 		}
-		if(zoomButtonReleased){
+		if(zoomButtonReleased) {
 			zoomButtonReleased = false;	
 		}
 	}
@@ -209,8 +210,6 @@ public class VizPanel extends StackPane
 				zoomButtonReleased = true;
 			}
 		});
-			
-		
 
 		// We add the buttons directly to our StackPane, so when we scroll they stay in the same place.
 		buttonBox.getChildren().add(zoomIn);
@@ -250,6 +249,10 @@ public class VizPanel extends StackPane
 		this.initZoom();
 	}
 
+	public void resetStrokeWidth() {
+		this.getPanelRoot().resetStrokeWidth(1.0 / (Math.sqrt(factorX * factorY)));
+	}
+
 	private void zoom(int zoomDistance, Button button) {
 		factorX *= Math.pow(factorMultiple, zoomDistance);
 		factorY *= Math.pow(factorMultiple, zoomDistance);
@@ -262,6 +265,10 @@ public class VizPanel extends StackPane
 			public void handle(ActionEvent event) {
 				zoomEnabled = true;
 				keepButton(zoomDistance, button);
+
+				VizPanel.this.panelRoot.setVisible(false);
+				VizPanel.this.resetStrokeWidth();
+				VizPanel.this.panelRoot.setVisible(true);
 			}
 		});
 		st.play();
