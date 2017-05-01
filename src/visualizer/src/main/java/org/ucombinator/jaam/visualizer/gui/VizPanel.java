@@ -157,10 +157,11 @@ public class VizPanel extends StackPane
 	}
 
 	public void drawGraph() {
+		panelRoot.setVisible(false);
 		drawNodes(null, panelRoot);
 		drawEdges(panelRoot);
+		panelRoot.setVisible(true);
 	}
-
 	
 	private boolean zoomEnabled = true;
 	private boolean zoomButtonReleased = false;

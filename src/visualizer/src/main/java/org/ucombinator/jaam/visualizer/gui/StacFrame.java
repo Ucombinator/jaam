@@ -402,17 +402,15 @@ public class StacFrame extends BorderPane
 						}
 				);
 		collapsePanel.getChildren().add(chainCollapse);
-		
-		
-		
 
-		
-		FlowPane utiltiesPanel = new FlowPane();
-		utiltiesPanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
+
+
+		FlowPane utilitiesPanel = new FlowPane();
+		utilitiesPanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
 				BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
-		buttonsFlowPane.getChildren().add(utiltiesPanel);
+		buttonsFlowPane.getChildren().add(utilitiesPanel);
 
-		
+
 		String extension = "png";
 		final Button exportImageButton = new Button(extension.toUpperCase());
 		exportImageButton.setOnAction
@@ -423,36 +421,36 @@ public class StacFrame extends BorderPane
 							@Override
 							public void handle(ActionEvent e) {
 								e.consume();
-								
-					            FileChooser fileChooser = new FileChooser();
-					              
-					            //Set extension filter
-					            
-					            FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(extension.toUpperCase()+" files (*."+extension+")", "*."+extension);
-					            fileChooser.getExtensionFilters().add(extFilter);
-					            fileChooser.setInitialFileName(Main.getOuterFrame().getCurrentTab().getText()+"."+extension);
-					              
-					            //Show save file dialog
-					            File file = fileChooser.showSaveDialog(Main.getOuterFrame().getScene().getWindow());
-					              
-					            if(file != null){
-								    WritableImage image = mainPanel.snapshot(new SnapshotParameters(), null);
 
-								    System.out.println(file.getAbsolutePath());
-								    // TODO: probably use a file chooser here
-								    File newFile = new File(file.getAbsolutePath());
+								FileChooser fileChooser = new FileChooser();
 
-								    try {
-								        ImageIO.write(SwingFXUtils.fromFXImage(image, null), extension, newFile);
-								    } catch (IOException exception) {
-								        // TODO: handle exception here
-								    }					            }
-					              
+								//Set extension filter
+
+								FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(extension.toUpperCase()+" files (*."+extension+")", "*."+extension);
+								fileChooser.getExtensionFilters().add(extFilter);
+								fileChooser.setInitialFileName(Main.getOuterFrame().getCurrentTab().getText()+"."+extension);
+
+								//Show save file dialog
+								File file = fileChooser.showSaveDialog(Main.getOuterFrame().getScene().getWindow());
+
+								if(file != null){
+									WritableImage image = mainPanel.snapshot(new SnapshotParameters(), null);
+
+									System.out.println(file.getAbsolutePath());
+									// TODO: probably use a file chooser here
+									File newFile = new File(file.getAbsolutePath());
+
+									try {
+										ImageIO.write(SwingFXUtils.fromFXImage(image, null), extension, newFile);
+									} catch (IOException exception) {
+										// TODO: handle exception here
+									}					            }
+
 
 							}
 						}
 				);
-		utiltiesPanel.getChildren().add(exportImageButton);
+		utilitiesPanel.getChildren().add(exportImageButton);
 
 
 		// TODO: Set sizes to fill parent. (Right now we just make the sizes all very large.)
