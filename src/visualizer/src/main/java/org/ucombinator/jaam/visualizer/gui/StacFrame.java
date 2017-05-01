@@ -15,7 +15,6 @@ import javafx.util.Duration;
 import javafx.event.EventHandler;
 import javafx.event.ActionEvent;
 
-import java.awt.MenuItem;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,7 +24,6 @@ import java.util.StringTokenizer;
 import javax.imageio.ImageIO;
 
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.layout.LayoutRootVertex;
 import org.ucombinator.jaam.visualizer.main.Main;

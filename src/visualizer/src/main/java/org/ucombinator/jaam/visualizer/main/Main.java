@@ -10,8 +10,13 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import org.ucombinator.jaam.visualizer.gui.OuterFrame;
 
+  
+
 public class Main extends Application
 {
+	
+	public static final boolean debug = true; 
+	
 	private static OuterFrame outerFrame;
 
 	public void start(Stage stage) {
@@ -25,7 +30,9 @@ public class Main extends Application
 		stage.show();
 
 		// Read dummy graph
-		outerFrame.loadGraph(false);
+		if(debug){
+			outerFrame.loadGraph(false);
+		}
 
 		/*for (int i = 0; i < args.length; i++)
 		{
