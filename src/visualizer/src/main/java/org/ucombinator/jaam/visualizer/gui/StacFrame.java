@@ -103,14 +103,6 @@ public class StacFrame extends BorderPane
 			setRightText();
 			searchResults.writeText(this.mainPanel);
 		}
-
-		//stFrame.repaint();
-
-        /*if(Parameters.fixCaret)
-        {
-            Parameters.fixCaret = false;
-            Parameters.fixCaretPositions();
-        }*/
 	}
 
 	public void setRightText()
@@ -145,11 +137,6 @@ public class StacFrame extends BorderPane
 
 		for(int i = 0; i < layout.size() - 1; i++)
 			horizontalSplitPane.setDividerPosition(i, dividerPositions.get(i));
-
-		double[] positions = horizontalSplitPane.getDividerPositions();
-		System.out.println("Divider positions:");
-		for(double d : positions)
-			System.out.println(d);
 	}
 
 	public void makeLayout()
@@ -189,10 +176,11 @@ public class StacFrame extends BorderPane
 						{
 							@Override
 							public void handle(ActionEvent e) {
-								// TODO: When this is checked off and then back on, the edges don't reappear.
 								edgeVisible = showEdge.isSelected();
+								mainPanel.getPanelRoot().setVisible(false);
 								mainPanel.getPanelRoot().setEdgeVisibility(edgeVisible);
 								LayoutEdge.redrawEdges(mainPanel.getPanelRoot(), true);
+								mainPanel.getPanelRoot().setVisible(true);
 							}
 						}
 				);
@@ -208,7 +196,9 @@ public class StacFrame extends BorderPane
 							@Override
 							public void handle(ActionEvent e) {
 								labelsVisible = showLabels.isSelected();
+								mainPanel.getPanelRoot().setVisible(false);
 								mainPanel.getPanelRoot().setLabelVisibility(labelsVisible);
+								mainPanel.getPanelRoot().setVisible(true);
 							}
 						}
 				);
@@ -287,12 +277,7 @@ public class StacFrame extends BorderPane
 							@Override
 							public void handle(ActionEvent event) {
 								StacFrame.this.mainPanel.decrementScaleXFactor();
-								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								StacFrame.this.mainPanel.getPanelRoot().reset();
-								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.resetPanelSize();
-								StacFrame.this.mainPanel.drawGraph();
+								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 							}
 						}
 				);
@@ -311,12 +296,7 @@ public class StacFrame extends BorderPane
 							@Override
 							public void handle(ActionEvent e) {
 								StacFrame.this.mainPanel.incrementScaleXFactor();
-								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								StacFrame.this.mainPanel.getPanelRoot().reset();
-								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.resetPanelSize();
-								StacFrame.this.mainPanel.drawGraph();
+								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 							}
 						}
 				);
@@ -337,12 +317,7 @@ public class StacFrame extends BorderPane
 							@Override
 							public void handle(ActionEvent event) {
 								StacFrame.this.mainPanel.decrementScaleYFactor();
-								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								StacFrame.this.mainPanel.getPanelRoot().reset();
-								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.resetPanelSize();
-								StacFrame.this.mainPanel.drawGraph();
+								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 							}
 						}
 				);
@@ -361,12 +336,7 @@ public class StacFrame extends BorderPane
 							@Override
 							public void handle(ActionEvent event) {
 								StacFrame.this.mainPanel.incrementScaleYFactor();
-								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								StacFrame.this.mainPanel.getPanelRoot().reset();
-								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.resetPanelSize();
-								StacFrame.this.mainPanel.drawGraph();
+								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 							}
 						}
 				);
@@ -402,13 +372,7 @@ public class StacFrame extends BorderPane
 									methodCollapse.setTextFill(activeColor);
 								}
 
-								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								StacFrame.this.mainPanel.getPanelRoot().reset();
-								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.resetPanelSize();
-								StacFrame.this.mainPanel.getPanelRoot().setEdgeVisibility(edgeVisible);
-								StacFrame.this.mainPanel.drawGraph();
+								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 							}
 						}
 				);
@@ -433,27 +397,20 @@ public class StacFrame extends BorderPane
 									chainCollapse.setTextFill(activeColor);
 								}
 
-								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								StacFrame.this.mainPanel.getPanelRoot().reset();
-								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.resetPanelSize();
-								StacFrame.this.mainPanel.drawGraph();
+								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 							}
 						}
 				);
 		collapsePanel.getChildren().add(chainCollapse);
-		
-		
-		
 
-		
-		FlowPane utiltiesPanel = new FlowPane();
-		utiltiesPanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
+
+
+		FlowPane utilitiesPanel = new FlowPane();
+		utilitiesPanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
 				BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
-		buttonsFlowPane.getChildren().add(utiltiesPanel);
+		buttonsFlowPane.getChildren().add(utilitiesPanel);
 
-		
+
 		String extension = "png";
 		final Button exportImageButton = new Button(extension.toUpperCase());
 		exportImageButton.setOnAction
@@ -464,43 +421,44 @@ public class StacFrame extends BorderPane
 							@Override
 							public void handle(ActionEvent e) {
 								e.consume();
-								
-					            FileChooser fileChooser = new FileChooser();
-					              
-					            //Set extension filter
-					            
-					            FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(extension.toUpperCase()+" files (*."+extension+")", "*."+extension);
-					            fileChooser.getExtensionFilters().add(extFilter);
-					            fileChooser.setInitialFileName(Main.getOuterFrame().getCurrentTab().getText()+"."+extension);
-					              
-					            //Show save file dialog
-					            File file = fileChooser.showSaveDialog(Main.getOuterFrame().getScene().getWindow());
-					              
-					            if(file != null){
-								    WritableImage image = mainPanel.snapshot(new SnapshotParameters(), null);
 
-								    System.out.println(file.getAbsolutePath());
-								    // TODO: probably use a file chooser here
-								    File newFile = new File(file.getAbsolutePath());
+								FileChooser fileChooser = new FileChooser();
 
-								    try {
-								        ImageIO.write(SwingFXUtils.fromFXImage(image, null), extension, newFile);
-								    } catch (IOException exception) {
-								        // TODO: handle exception here
-								    }					            }
-					              
+								//Set extension filter
+
+								FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(extension.toUpperCase()+" files (*."+extension+")", "*."+extension);
+								fileChooser.getExtensionFilters().add(extFilter);
+								fileChooser.setInitialFileName(Main.getOuterFrame().getCurrentTab().getText()+"."+extension);
+
+								//Show save file dialog
+								File file = fileChooser.showSaveDialog(Main.getOuterFrame().getScene().getWindow());
+
+								if(file != null){
+									WritableImage image = mainPanel.snapshot(new SnapshotParameters(), null);
+
+									System.out.println(file.getAbsolutePath());
+									// TODO: probably use a file chooser here
+									File newFile = new File(file.getAbsolutePath());
+
+									try {
+										ImageIO.write(SwingFXUtils.fromFXImage(image, null), extension, newFile);
+									} catch (IOException exception) {
+										// TODO: handle exception here
+									}					            }
+
 
 							}
 						}
 				);
-		utiltiesPanel.getChildren().add(exportImageButton);
+		utilitiesPanel.getChildren().add(exportImageButton);
 
 
-		// TODO: Set sizes to fill parent
+		// TODO: Set sizes to fill parent. (Right now we just make the sizes all very large.)
 		bytecodePanel = new BorderPane();
 		Label leftLabel = new Label("Code");
 		ScrollPane scrollLeft = new ScrollPane();
 		this.bytecodeArea = new CodeArea();
+		this.bytecodeArea.setStyle("-fx-padding: 0 0 0 5"); // Add left margin of five pixels
 		scrollLeft.setContent(this.bytecodeArea);
 		bytecodePanel.setTop(leftLabel);
 		bytecodePanel.setCenter(scrollLeft);

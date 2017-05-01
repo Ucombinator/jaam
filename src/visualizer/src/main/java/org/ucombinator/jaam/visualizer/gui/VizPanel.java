@@ -1,19 +1,17 @@
 package org.ucombinator.jaam.visualizer.gui;
 
 import javafx.animation.ScaleTransition;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.event.EventHandler;
-import javafx.geometry.Bounds;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Group;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.ArrayList;
 
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
@@ -28,7 +26,7 @@ public class VizPanel extends StackPane
 	private LayoutRootVertex panelRoot;
 
 	// The dimensions of the background for our graph
-	private final double rootWidth = 500.0, rootHeight = 500.0;
+	private final double initRootWidth = 500.0, initRootHeight = 500.0;
 
 	// Store the count for vertex width and height when everything is expanded
 	private double maxVertexWidth, maxVertexHeight;
@@ -65,11 +63,9 @@ public class VizPanel extends StackPane
 
 	public void initFX(Graph graph)
 	{
-		//System.out.println("Running layout...");
 		this.panelRoot = LayerFactory.getLayeredGraph(graph);
-		LayoutAlgorithm.layout(this.panelRoot);
+ 		LayoutAlgorithm.layout(this.panelRoot);
 		resetPanelSize();
-
 		drawGraph();
 	}
 
@@ -81,27 +77,27 @@ public class VizPanel extends StackPane
 
 	public void resetPanelSize() {
 		this.maxVertexWidth = this.panelRoot.getWidth();
-		this.maxVertexHeight = this.panelRoot.getHeight();		
+		this.maxVertexHeight = this.panelRoot.getHeight();
 	}
 
 	public double scaleX(double coordinate)
 	{
-		return factorX * (coordinate * rootWidth / this.maxVertexWidth);
+		return coordinate * initRootWidth / this.maxVertexWidth;
 	}
 
 	public double scaleY(double coordinate)
 	{
-		return factorY * (coordinate * rootHeight / this.maxVertexHeight);
+		return coordinate * initRootHeight / this.maxVertexHeight;
 	}
 
 	public double invScaleX(double pixelCoordinate)
 	{
-		return (pixelCoordinate * this.maxVertexWidth / rootWidth) / factorX;
+		return pixelCoordinate * this.maxVertexWidth / initRootWidth;
 	}
 
 	public double invScaleY(double pixelCoordinate)
 	{
-		return (pixelCoordinate * this.maxVertexHeight / rootHeight) / factorY;
+		return pixelCoordinate * this.maxVertexHeight / initRootHeight;
 	}
 
 	public double getZoomLevel()
@@ -146,7 +142,11 @@ public class VizPanel extends StackPane
 
 	public void resetHighlighted(AbstractLayoutVertex newHighlighted)
 	{
+		ArrayList<AbstractLayoutVertex> tempHighlighted = new ArrayList<AbstractLayoutVertex>();
 		for(AbstractLayoutVertex currHighlighted : this.highlighted)
+			tempHighlighted.add(currHighlighted);
+
+		for(AbstractLayoutVertex currHighlighted : tempHighlighted)
 			currHighlighted.setHighlighted(false, this);
 		highlighted = new HashSet<AbstractLayoutVertex>();
 
@@ -157,28 +157,60 @@ public class VizPanel extends StackPane
 	}
 
 	public void drawGraph() {
+		panelRoot.setVisible(false);
 		drawNodes(null, panelRoot);
 		drawEdges(panelRoot);
+		panelRoot.setVisible(true);
 	}
-
+	
+	private boolean zoomEnabled = true;
+	private boolean zoomButtonReleased = false;
+	
+	private void keepButton(int zoom, Button button){
+		if(zoomEnabled && !zoomButtonReleased){
+			zoomEnabled = false;
+			VizPanel.this.zoom(zoom, button);
+		}
+		if(zoomButtonReleased){
+			zoomButtonReleased = false;	
+		}
+	}
+	
 	private void drawZoomButtons() {
 		VBox buttonBox = new VBox(5);
 		Button zoomIn = new Button("+");
 		Button zoomOut = new Button("-");
-
-		zoomIn.setOnAction(new EventHandler<ActionEvent>() {
+		
+		zoomIn.setOnMousePressed(new EventHandler<Event>() {
 			@Override
-			public void handle(ActionEvent event) {
-				VizPanel.this.zoom(1);
+			public void handle(Event event) {
+				keepButton(1,zoomIn);
 			}
 		});
-
-		zoomOut.setOnAction(new EventHandler<ActionEvent>() {
+		
+		zoomIn.setOnMouseReleased(new EventHandler<Event>() {
 			@Override
-			public void handle(ActionEvent event) {
-				VizPanel.this.zoom(-1);
+			public void handle(Event event) {
+				zoomButtonReleased = true;
 			}
 		});
+		
+		
+		zoomOut.setOnMousePressed(new EventHandler<Event>() {
+			@Override
+			public void handle(Event event) {
+				keepButton(-1,zoomOut);
+			}
+		});
+		
+		zoomOut.setOnMouseReleased(new EventHandler<Event>() {
+			@Override
+			public void handle(Event event) {
+				zoomButtonReleased = true;
+			}
+		});
+			
+		
 
 		// We add the buttons directly to our StackPane, so when we scroll they stay in the same place.
 		buttonBox.getChildren().add(zoomIn);
@@ -195,13 +227,43 @@ public class VizPanel extends StackPane
 		buttonBox.setPickOnBounds(false);
 	}
 
-	private void zoom(int zoomDistance) {
+	public void resetZoom() {
+		factorX = 1;
+		factorY = 1;
+	}
+
+	public void initZoom() {
+		this.panelRoot.getGraphics().setScaleX(factorX);
+		this.panelRoot.getGraphics().setScaleY(factorY);
+	}
+
+	public void resetAndRedraw(boolean edgeVisible) {
+		// Using resetZoom sets the zoom to 1 each time we change modes.
+		// Using initZoom applies the current zoom level to the new mode.
+
+		this.graphContentGroup.getChildren().remove(this.panelRoot.getGraphics());
+		LayoutAlgorithm.layout(this.panelRoot);
+		this.resetPanelSize();
+		//this.resetZoom();
+		this.getPanelRoot().setEdgeVisibility(edgeVisible);
+		this.drawGraph();
+		this.initZoom();
+	}
+
+	private void zoom(int zoomDistance, Button button) {
 		factorX *= Math.pow(factorMultiple, zoomDistance);
 		factorY *= Math.pow(factorMultiple, zoomDistance);
 
 		ScaleTransition st = new ScaleTransition(new Duration(100), panelRoot.getGraphics());
 		st.setToX(factorX);
 		st.setToY(factorY);
+		st.setOnFinished(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				zoomEnabled = true;
+				keepButton(zoomDistance, button);
+			}
+		});
 		st.play();
 	}
 
@@ -239,32 +301,8 @@ public class VizPanel extends StackPane
 		while (it.hasNext())
 		{
 			AbstractLayoutVertex child = it.next();
-			if(v.isExpanded()) {
+			if(v.isExpanded())
 				drawNodes(node, child);
-			}
-			else {
-				// TODO: Click on the "C" button to collapse all chains, then try to expand a chain.
-				// The internal nodes in the chain should appear, but their GUINodes are still null, which gives an error.
-				// This is an attempt to fix the bug, but it still doesn't work yet.
-				//initializeCollapsedNodes(node, child);
-			}
-		}
-	}
-
-	public void initializeCollapsedNodes(GUINode parent, AbstractLayoutVertex v) {
-		GUINode node = new GUINode(parent, v);
-		if (parent == null) {
-			graphContentGroup.getChildren().add(node);
-		}
-		else {
-			parent.getChildren().add(node);
-		}
-
-		Iterator<AbstractLayoutVertex> it = v.getInnerGraph().getVertices().values().iterator();
-		while (it.hasNext())
-		{
-			AbstractLayoutVertex child = it.next();
-			initializeCollapsedNodes(node, child);
 		}
 	}
 

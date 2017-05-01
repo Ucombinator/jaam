@@ -23,7 +23,7 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
     }
 
     public String getRightPanelContent() {
-        return "Method vertex: " + this.getMethodName();
+        return "Method vertex: " + this.getMethodName() + "\nLoop height: " + this.getLoopHeight() + "\n";
     }
 
     public String getShortDescription() {
@@ -150,8 +150,7 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
 
 	public void calcLoopHeights()
 	{
-		System.out.println("Calculating loop heights");
-
+		//System.out.println("Calculating loop heights");
 		// The loop height is -1 if it has not yet been calculated.
 		// We do a breadth-first search of the graph, since the vertices might not be in order in our list.
 
@@ -196,6 +195,6 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
 			currLoopHeight++;
 		}
 
-		System.out.println("Loop heights found!");
+		//System.out.println("Loop heights found!");
 	}
 }

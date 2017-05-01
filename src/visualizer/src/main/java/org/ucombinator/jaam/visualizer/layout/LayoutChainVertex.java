@@ -24,7 +24,7 @@ public class LayoutChainVertex extends AbstractLayoutVertex {
     public boolean searchByMethod(String query, VizPanel mainPanel) {
         boolean found = false;
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
-            found = found || v.searchByMethod(query, mainPanel);
+            found = v.searchByMethod(query, mainPanel) || found;
         }
 
         this.setHighlighted(found, mainPanel);

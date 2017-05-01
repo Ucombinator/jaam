@@ -30,7 +30,7 @@ public class LayoutInstructionVertex extends AbstractLayoutVertex {
 
     public String getRightPanelContent() {
         return "Method: " + this.instruction.getMethodName() + "\nInstruction: " + this.instruction.getJimpleIndex()
-                + "\n" + this.instruction.getText() + "\n";
+                + "\n" + this.instruction.getText() + "\nLoop height: " + this.getLoopHeight() + "\n";
     }
 
     public String getShortDescription() {
@@ -39,7 +39,9 @@ public class LayoutInstructionVertex extends AbstractLayoutVertex {
 
     public boolean searchByMethod(String query, VizPanel mainPanel) {
         boolean found = this.instruction.getMethodName().contains(query);
-        this.setHighlighted(found, mainPanel);
+        if(found)
+            this.setHighlighted(found, mainPanel);
+
         return found;
     }
 

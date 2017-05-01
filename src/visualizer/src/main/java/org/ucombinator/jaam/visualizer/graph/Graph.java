@@ -53,7 +53,7 @@ public class Graph
 	
 	public void addVertex(int vIndex, Instruction instruction, boolean drawEdges)
 	{
-		System.out.println("Adding vertex " + vIndex + ": " + instruction.getText());
+		//System.out.println("Adding vertex " + vIndex + ": " + instruction.getText());
 		Vertex ver = this.containsInputVertex(vIndex);
 		
 		if(ver == null)
