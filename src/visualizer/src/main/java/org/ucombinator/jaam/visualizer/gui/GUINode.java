@@ -52,7 +52,6 @@ public class GUINode extends Pane
         this.vertex.setGraphics(this);
         
         this.rect = new Rectangle();
-        //this.backRect = new Rectangle();
         this.rectLabel = new Text(v.getId() + ", " + v.getLoopHeight());
         this.rectLabel.setVisible(v.isLabelVisible());
 
@@ -235,20 +234,26 @@ public class GUINode extends Pane
             node.isDragging = true;
             double offsetX = event.getScreenX() + dragX;
             double offsetY = event.getScreenY() + dragY;
-            Bounds parentBounds = GUINode.this.getParentNode().rect.getBoundsInLocal();
-            double maxOffsetX = parentBounds.getMaxX();
-            double maxOffsetY = parentBounds.getMaxY();
+            if(GUINode.this.getParentNode() != null) {
+                Bounds thisBounds = GUINode.this.rect.getBoundsInLocal();
+                double thisWidth = thisBounds.getWidth();
+                double thisHeight = thisBounds.getHeight();
 
-            // This truncation of the offset confines the upper left corner of our node to its parent.
-            if(offsetX < 0)
-                offsetX = 0;
-            else if(offsetX > maxOffsetX)
-                offsetX = maxOffsetX;
+                Bounds parentBounds = GUINode.this.getParentNode().rect.getBoundsInLocal();
+                double maxOffsetX = parentBounds.getWidth() - thisWidth;
+                double maxOffsetY = parentBounds.getHeight() - thisHeight;
 
-            if(offsetY < 0)
-                offsetY = 0;
-            else if(offsetY > maxOffsetY)
-                offsetY = maxOffsetY;
+                // This truncation of the offset confines our box to its parent.
+                if (offsetX < 0)
+                    offsetX = 0;
+                else if (offsetX > maxOffsetX)
+                    offsetX = maxOffsetX;
+
+                if (offsetY < 0)
+                    offsetY = 0;
+                else if (offsetY > maxOffsetY)
+                    offsetY = maxOffsetY;
+            }
 
             double totalTranslateX = offsetX - node.getXShift();
             double totalTranslateY = offsetY - node.getYShift();

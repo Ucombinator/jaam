@@ -103,14 +103,6 @@ public class StacFrame extends BorderPane
 			setRightText();
 			searchResults.writeText(this.mainPanel);
 		}
-
-		//stFrame.repaint();
-
-        /*if(Parameters.fixCaret)
-        {
-            Parameters.fixCaret = false;
-            Parameters.fixCaretPositions();
-        }*/
 	}
 
 	public void setRightText()

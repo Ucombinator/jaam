@@ -1,11 +1,8 @@
 package org.ucombinator.jaam.visualizer.gui;
 
 import javafx.animation.ScaleTransition;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.geometry.Bounds;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.Group;
@@ -13,7 +10,6 @@ import javafx.scene.Group;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
