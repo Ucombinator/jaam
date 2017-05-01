@@ -49,7 +49,6 @@ public class GUINode extends Pane
         this.vertex.setGraphics(this);
         
         this.rect = new Rectangle();
-        //this.backRect = new Rectangle();
         this.rectLabel = new Text(v.getId() + ", " + v.getLoopHeight());
         this.rectLabel.setVisible(v.isLabelVisible());
 
@@ -218,11 +217,15 @@ public class GUINode extends Pane
             double offsetX = event.getScreenX() + dragX;
             double offsetY = event.getScreenY() + dragY;
             if(GUINode.this.getParentNode() != null) {
-                Bounds parentBounds = GUINode.this.getParentNode().rect.getBoundsInLocal();
-                double maxOffsetX = parentBounds.getMaxX();
-                double maxOffsetY = parentBounds.getMaxY();
+                Bounds thisBounds = GUINode.this.rect.getBoundsInLocal();
+                double thisWidth = thisBounds.getWidth();
+                double thisHeight = thisBounds.getHeight();
 
-                // This truncation of the offset confines the upper left corner of our node to its parent.
+                Bounds parentBounds = GUINode.this.getParentNode().rect.getBoundsInLocal();
+                double maxOffsetX = parentBounds.getWidth() - thisWidth;
+                double maxOffsetY = parentBounds.getHeight() - thisHeight;
+
+                // This truncation of the offset confines our box to its parent.
                 if (offsetX < 0)
                     offsetX = 0;
                 else if (offsetX > maxOffsetX)
