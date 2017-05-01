@@ -61,9 +61,9 @@ public class GUINode extends Pane
         this.highlightingRect.setStrokeWidth(10);
         
         
-        if(v instanceof LayoutRootVertex){
+        if(v instanceof LayoutRootVertex) {
             this.getChildren().add(this.rect);
-        }else{
+        } else {
             this.getChildren().addAll(this.highlightingRect, this.rect, this.rectLabel);
         }
 

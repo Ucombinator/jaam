@@ -274,11 +274,7 @@ public class StacFrame extends BorderPane
 							@Override
 							public void handle(ActionEvent event) {
 								StacFrame.this.mainPanel.decrementScaleXFactor();
-								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.resetPanelSize();
-								StacFrame.this.mainPanel.drawGraph();
+								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 							}
 						}
 				);
@@ -297,11 +293,7 @@ public class StacFrame extends BorderPane
 							@Override
 							public void handle(ActionEvent e) {
 								StacFrame.this.mainPanel.incrementScaleXFactor();
-								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.resetPanelSize();
-								StacFrame.this.mainPanel.drawGraph();
+								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 							}
 						}
 				);
@@ -322,11 +314,7 @@ public class StacFrame extends BorderPane
 							@Override
 							public void handle(ActionEvent event) {
 								StacFrame.this.mainPanel.decrementScaleYFactor();
-								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.resetPanelSize();
-								StacFrame.this.mainPanel.drawGraph();
+								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 							}
 						}
 				);
@@ -345,11 +333,7 @@ public class StacFrame extends BorderPane
 							@Override
 							public void handle(ActionEvent event) {
 								StacFrame.this.mainPanel.incrementScaleYFactor();
-								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
-								StacFrame.this.mainPanel.resetPanelSize();
-								StacFrame.this.mainPanel.drawGraph();
+								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 							}
 						}
 				);
