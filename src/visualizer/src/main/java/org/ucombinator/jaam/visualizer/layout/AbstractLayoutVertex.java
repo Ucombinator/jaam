@@ -410,7 +410,12 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         for(AbstractLayoutVertex v : this.innerGraph.getVertices().values())
             v.setLabelVisibility(isLabelVisible);
     }
-    
+
+    public void resetStrokeWidth(double factor) {
+        this.getGraphics().setStrokeWidth(factor);
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
+            v.resetStrokeWidth(factor);
+    }
     
 	public void printCoordinates()
     {
