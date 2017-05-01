@@ -1,5 +1,12 @@
 package org.ucombinator.jaam.tools
 
+// TODO: nodes for loops (allows us to group methods that are in the same loop)
+// TODO: vertical separation
+// TODO: how confident are we in the coverage of rsa_commander?
+// TODO: headlabel
+// TODO: Compound graphs so loops live inside methods?
+// TODO: test coverage
+
 import java.io.FileOutputStream
 import java.io.FileInputStream
 import java.io.PrintStream
