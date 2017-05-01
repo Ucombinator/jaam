@@ -176,10 +176,11 @@ public class StacFrame extends BorderPane
 						{
 							@Override
 							public void handle(ActionEvent e) {
-								// TODO: When this is checked off and then back on, the edges don't reappear.
 								edgeVisible = showEdge.isSelected();
+								mainPanel.getPanelRoot().setVisible(false);
 								mainPanel.getPanelRoot().setEdgeVisibility(edgeVisible);
 								LayoutEdge.redrawEdges(mainPanel.getPanelRoot(), true);
+								mainPanel.getPanelRoot().setVisible(true);
 							}
 						}
 				);
@@ -195,7 +196,9 @@ public class StacFrame extends BorderPane
 							@Override
 							public void handle(ActionEvent e) {
 								labelsVisible = showLabels.isSelected();
+								mainPanel.getPanelRoot().setVisible(false);
 								mainPanel.getPanelRoot().setLabelVisibility(labelsVisible);
+								mainPanel.getPanelRoot().setVisible(true);
 							}
 						}
 				);

@@ -9,6 +9,7 @@ import javafx.scene.Group;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.ArrayList;
 
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -62,7 +63,7 @@ public class VizPanel extends StackPane
 	public void initFX(Graph graph)
 	{
 		this.panelRoot = LayerFactory.getLayeredGraph(graph);
-		LayoutAlgorithm.layout(this.panelRoot);
+ 		LayoutAlgorithm.layout(this.panelRoot);
 		resetPanelSize();
 		drawGraph();
 	}
@@ -140,7 +141,11 @@ public class VizPanel extends StackPane
 
 	public void resetHighlighted(AbstractLayoutVertex newHighlighted)
 	{
+		ArrayList<AbstractLayoutVertex> tempHighlighted = new ArrayList<AbstractLayoutVertex>();
 		for(AbstractLayoutVertex currHighlighted : this.highlighted)
+			tempHighlighted.add(currHighlighted);
+
+		for(AbstractLayoutVertex currHighlighted : tempHighlighted)
 			currHighlighted.setHighlighted(false, this);
 		highlighted = new HashSet<AbstractLayoutVertex>();
 
