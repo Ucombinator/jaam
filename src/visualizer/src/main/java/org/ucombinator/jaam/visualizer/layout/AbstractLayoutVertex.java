@@ -1,15 +1,30 @@
 package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 
 import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.Location;
 import org.ucombinator.jaam.visualizer.gui.StacFrame;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
+import org.w3c.dom.css.CSSPrimitiveValue;
 
+
+import com.sun.javafx.geom.BaseBounds;
+import com.sun.javafx.geom.transform.BaseTransform;
+import com.sun.javafx.jmx.MXNodeAlgorithm;
+import com.sun.javafx.jmx.MXNodeAlgorithmContext;
+import com.sun.javafx.sg.prism.NGNode;
+
+import javafx.animation.FadeTransition;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.scene.Node;
 //import javax.swing.tree.DefaultMutableTreeNode;
 import javafx.scene.control.TreeItem;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -231,8 +246,12 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     {
         double pixelWidth = mainPanel.scaleX(this.location.width);
         double pixelHeight = mainPanel.scaleY(this.location.height);
-        this.getGraphics().rect.setWidth(pixelWidth);
-        this.getGraphics().rect.setHeight(pixelHeight);
+        
+        this.getGraphics().getRect().setWidth(pixelWidth);
+        this.getGraphics().getRect().setHeight(pixelHeight);
+        
+        this.getGraphics().getHighlightingRect().setWidth(pixelWidth);
+        this.getGraphics().getHighlightingRect().setHeight(pixelHeight);
     }
 
     public void setVisible(boolean isVisible)
@@ -793,14 +812,37 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         if(isHighlighted) {
             this.getGraphics().setFill(highlightColor);
             mainPanel.getHighlighted().add(this);
+            this.setGraphicsHighlighted(true);
         }
         else {
             this.getGraphics().setFill(this.getColor());
             mainPanel.getHighlighted().remove(this);
+            this.setGraphicsHighlighted(false);
         }
     }
 
-    public boolean isHighlighted()
+    private void setGraphicsHighlighted(boolean visible) {
+    	Rectangle r = this.getGraphics().getHighlightingRect();
+		FadeTransition ft = new FadeTransition(Duration.millis(300),r);
+		if(visible){
+			this.getGraphics().getHighlightingRect().setVisible(true);
+			ft.setFromValue(0f);
+			ft.setToValue(1f);
+        }else{
+        	ft.setFromValue(1f);
+			ft.setToValue(0f);
+        }
+//		AbstractLayoutVertex vertex = this;
+//		ft.setOnFinished(new EventHandler<ActionEvent>() {
+//			
+//			@Override
+//			public void handle(ActionEvent event) {
+//				//vertex.getGraphics().getHighlightingRect().setVisible(visible);
+//			}
+//		});
+		ft.play();
+	}
+	public boolean isHighlighted()
     {
         return this.isHighlighted;
     }
