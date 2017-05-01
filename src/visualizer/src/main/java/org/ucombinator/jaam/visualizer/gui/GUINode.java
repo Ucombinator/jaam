@@ -42,8 +42,6 @@ public class GUINode extends Pane
     private double totalScaleY;
 
     
-
-    
     public GUINode(GUINode parent, AbstractLayoutVertex v)
     {
         super();
@@ -143,14 +141,15 @@ public class GUINode extends Pane
     {
         this.setTranslateX(x);
         this.setTranslateY(y);
-        
+        this.setMaxWidth(width);
+        this.setMaxHeight(height);
+
         this.rect.setWidth(width);
         this.rect.setHeight(height);
         
         this.highlightingRect.setWidth(width);
         this.highlightingRect.setHeight(height);
-        
-        
+
         this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
         this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
     }
@@ -207,7 +206,6 @@ public class GUINode extends Pane
         double currentHeight = this.getScaleY() * this.vertex.getHeight();
         double oldHeight = this.vertex.getHeight();
         return (oldHeight - currentHeight) / 2;
-        //return 0;
     }
 
     EventHandler<MouseEvent> onMousePressedEventHandler = new EventHandler<MouseEvent>()

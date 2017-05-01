@@ -24,7 +24,7 @@ public class VizPanel extends StackPane
 	private LayoutRootVertex panelRoot;
 
 	// The dimensions of the background for our graph
-	private final double rootWidth = 500.0, rootHeight = 500.0;
+	private final double initRootWidth = 500.0, initRootHeight = 500.0;
 
 	// Store the count for vertex width and height when everything is expanded
 	private double maxVertexWidth, maxVertexHeight;
@@ -64,8 +64,7 @@ public class VizPanel extends StackPane
 		//System.out.println("Running layout...");
 		this.panelRoot = LayerFactory.getLayeredGraph(graph);
 		LayoutAlgorithm.layout(this.panelRoot);
-		resetPanelSize();
-
+		initPanelSize();
 		drawGraph();
 	}
 
@@ -75,29 +74,37 @@ public class VizPanel extends StackPane
 		graphScrollPane.setContent(graphContentGroup);
 	}
 
+	public void initPanelSize() {
+		this.maxVertexWidth = this.panelRoot.getWidth();
+		this.maxVertexHeight = this.panelRoot.getHeight();
+	}
+
 	public void resetPanelSize() {
+		//this.panelRoot.getGraphics().rect.setWidth(initRootWidth);
+		//this.panelRoot.getGraphics().rect.setHeight(initRootHeight);
+		System.out.println("Root width: " + this.panelRoot.getWidth());
 		this.maxVertexWidth = this.panelRoot.getWidth();
 		this.maxVertexHeight = this.panelRoot.getHeight();
 	}
 
 	public double scaleX(double coordinate)
 	{
-		return factorX * (coordinate * rootWidth / this.maxVertexWidth);
+		return factorX * (coordinate * initRootWidth / this.maxVertexWidth);
 	}
 
 	public double scaleY(double coordinate)
 	{
-		return factorY * (coordinate * rootHeight / this.maxVertexHeight);
+		return factorY * (coordinate * initRootHeight / this.maxVertexHeight);
 	}
 
 	public double invScaleX(double pixelCoordinate)
 	{
-		return (pixelCoordinate * this.maxVertexWidth / rootWidth) / factorX;
+		return (pixelCoordinate * this.maxVertexWidth / initRootWidth) / factorX;
 	}
 
 	public double invScaleY(double pixelCoordinate)
 	{
-		return (pixelCoordinate * this.maxVertexHeight / rootHeight) / factorY;
+		return (pixelCoordinate * this.maxVertexHeight / initRootHeight) / factorY;
 	}
 
 	public double getZoomLevel()
@@ -196,11 +203,23 @@ public class VizPanel extends StackPane
 		factorY = 1;
 	}
 
+	public void initZoom() {
+		this.panelRoot.getGraphics().setScaleX(factorX);
+		this.panelRoot.getGraphics().setScaleY(factorY);
+	}
+
 	public void resetAndRedraw(boolean edgeVisible) {
+		// Using resetZoom sets the zoom to 1 each time we change modes.
+		// Using initZoom applies the current zoom level to the new mode.
+
+		this.graphContentGroup.getChildren().remove(this.panelRoot.getGraphics());
+		LayoutAlgorithm.layout(this.panelRoot);
 		this.resetPanelSize();
-		this.resetZoom();
+		//this.resetZoom();
 		this.getPanelRoot().setEdgeVisibility(edgeVisible);
 		this.drawGraph();
+		this.initZoom();
+		System.out.println("Scale: " + this.factorX);
 	}
 
 	private void zoom(int zoomDistance) {

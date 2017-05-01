@@ -385,9 +385,6 @@ public class StacFrame extends BorderPane
 									methodCollapse.setTextFill(activeColor);
 								}
 
-								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
 								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 							}
 						}
@@ -413,9 +410,6 @@ public class StacFrame extends BorderPane
 									chainCollapse.setTextFill(activeColor);
 								}
 
-								GUINode rootGraphics = StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-								((Group) rootGraphics.getParent()).getChildren().remove(rootGraphics);
-								LayoutAlgorithm.layout(StacFrame.this.mainPanel.getPanelRoot());
 								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 							}
 						}
