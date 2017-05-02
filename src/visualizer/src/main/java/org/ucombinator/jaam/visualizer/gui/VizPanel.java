@@ -32,6 +32,7 @@ public class VizPanel extends StackPane
 	
 	// The dimensions of the background for our graph
 	private final double initRootWidth = 500.0, initRootHeight = 500.0;
+	private double desiredRootTranslateX, desiredRootTranslateY;
 
 	// Store the count for vertex width and height when everything is expanded
 	private double maxVertexWidth, maxVertexHeight;
@@ -59,15 +60,8 @@ public class VizPanel extends StackPane
 		resetButton.setOnMousePressed(new EventHandler<Event>() {
 			@Override
 			public void handle(Event event) {
-//				VizPanel.this.setScaleX(1);
-//				VizPanel.this.setScaleY(1);
-//				VizPanel.this.panelRoot.getGraphics().setScaleX(VizPanel.this.getScaleX());
-//				VizPanel.this.panelRoot.getGraphics().setScaleY(VizPanel.this.getScaleY());
-				VizPanel.this.panelRoot.getGraphics().setTranslateX(VizPanel.this.deriredRootTranslateX);
-				VizPanel.this.panelRoot.getGraphics().setTranslateY(VizPanel.this.deriredRootTranslateY);
-//				VizPanel.this.panelRoot.getGraphics().setPrefWidth(VizPanel.this.deriredRootWidth);
-//				VizPanel.this.panelRoot.getGraphics().setPrefHeight(VizPanel.this.deriredRootHeight);
-				
+				GUINode rootGraphics = VizPanel.this.panelRoot.getGraphics();
+				rootGraphics.setTranslateLocation(VizPanel.this.desiredRootTranslateX, VizPanel.this.desiredRootTranslateY);
 			}
 		});
 		
@@ -110,25 +104,26 @@ public class VizPanel extends StackPane
 				//System.out.println(event.getCode().toString());
 
 				VizPanel.this.graphPane.layout();
+				GUINode rootGraphics =  VizPanel.this.getPanelRoot().getGraphics();
 				switch(event.getCode().toString()) {
 					case "RIGHT":
 					{
-						VizPanel.this.graphContentGroup.setTranslateX(VizPanel.this.graphContentGroup.getTranslateX()+10);
+						rootGraphics.setTranslateX(rootGraphics.getTranslateX() + 10);
 						break;
 					}
 					case "LEFT":
 					{
-						VizPanel.this.graphContentGroup.setTranslateX(VizPanel.this.graphContentGroup.getTranslateX()-10);
+						rootGraphics.setTranslateX(rootGraphics.getTranslateX() - 10);
 						break;
 					}
 					case "UP":
 					{
-						VizPanel.this.graphContentGroup.setTranslateY(VizPanel.this.graphContentGroup.getTranslateY()-10);
+						rootGraphics.setTranslateY(rootGraphics.getTranslateY() - 10);
 						break;
 					}
 					case "DOWN":
 					{
-						VizPanel.this.graphContentGroup.setTranslateY(VizPanel.this.graphContentGroup.getTranslateY()+10);
+						rootGraphics.setTranslateY(rootGraphics.getTranslateY() + 10);
 						break;
 					}
 					case "EQUALS":
@@ -164,14 +159,12 @@ public class VizPanel extends StackPane
 	public void initFX(Graph graph)
 	{
 		this.panelRoot = LayerFactory.getLayeredGraph(graph);
-
-//		this.deriredRootWidth = this.panelRoot.getWidth();
-//		this.deriredRootHeight = this.panelRoot.getHeight();
  		LayoutAlgorithm.layout(this.panelRoot);
 		resetPanelSize();
 		drawGraph();
-		this.deriredRootTranslateX = this.panelRoot.getGraphics().getTranslateX();
-		this.deriredRootTranslateY = this.panelRoot.getGraphics().getTranslateY();
+		this.desiredRootTranslateX = this.panelRoot.getGraphics().getTranslateX();
+		this.desiredRootTranslateY = this.panelRoot.getGraphics().getTranslateY();
+
 	}
 
 	public void resetContent() {

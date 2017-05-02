@@ -25,7 +25,6 @@ import org.ucombinator.jaam.visualizer.main.Main;
 
 public class GUINode extends Pane
 {
-    protected static boolean showId = true;
     protected static final double TEXT_VERTICAL_PADDING = 15;
     protected static final double TEXT_HORIZONTAL_PADDING = 15;
 	private double dragStartX, dragStartY;
@@ -37,7 +36,6 @@ public class GUINode extends Pane
 	private ArrayList<LayoutEdge> edges = new ArrayList<LayoutEdge>();
 
     boolean isDragging;
-
     private double totalScaleX;
     private double totalScaleY;
 
@@ -53,14 +51,12 @@ public class GUINode extends Pane
         this.rectLabel = new Text(v.getId() + ", " + v.getLoopHeight());
         this.rectLabel.setVisible(v.isLabelVisible());
 
-        
         this.highlightingRect = new Rectangle();
         this.highlightingRect.setVisible(false);
         this.highlightingRect.setStroke(javafx.scene.paint.Color.BLUE);
         this.highlightingRect.setFill(javafx.scene.paint.Color.WHITE);
         this.highlightingRect.setStrokeWidth(10);
-        
-        
+
         if(v instanceof LayoutRootVertex) {
             this.getChildren().add(this.rect);
         } else {
@@ -188,7 +184,9 @@ public class GUINode extends Pane
         this.setOnMouseReleased(onMouseReleasedEventHandler);
         this.setOnMouseEntered(onMouseEnteredEventHandler);
         this.setOnMouseExited(onMouseExitedEventHandler);
-        this.setOnMouseClicked(new AnimationHandler());
+
+        if(!(this.vertex instanceof LayoutRootVertex))
+            this.setOnMouseClicked(new AnimationHandler());
     }
 
     // The next two functions compute the shift that must be applied to keep the
@@ -219,8 +217,14 @@ public class GUINode extends Pane
             double scaleFactorX = Main.getOuterFrame().getCurrentFrame().getMainPanel().getPanelRoot().getGraphics().getScaleX();
             double scaleFactorY = Main.getOuterFrame().getCurrentFrame().getMainPanel().getPanelRoot().getGraphics().getScaleY();
 
-            dragStartX = event.getScreenX() / scaleFactorX - node.getBoundsInParent().getMinX();
-            dragStartY = event.getScreenY() / scaleFactorY - node.getBoundsInParent().getMinY();
+            if(node.getVertex() instanceof LayoutRootVertex) {
+                dragStartX = event.getScreenX() - node.getTranslateX();
+                dragStartY = event.getScreenY() - node.getTranslateY();
+            }
+            else {
+                dragStartX = event.getScreenX() / scaleFactorX - node.getTranslateX();
+                dragStartY = event.getScreenY() / scaleFactorY - node.getTranslateY();
+            }
         }
     };
 
@@ -235,9 +239,11 @@ public class GUINode extends Pane
             node.isDragging = true;
             double scaleFactorX = Main.getOuterFrame().getCurrentFrame().getMainPanel().getPanelRoot().getGraphics().getScaleX();
             double scaleFactorY = Main.getOuterFrame().getCurrentFrame().getMainPanel().getPanelRoot().getGraphics().getScaleY();
-            double offsetX = event.getScreenX() / scaleFactorX - dragStartX;
-            double offsetY = event.getScreenY() / scaleFactorY - dragStartY;
+
+            double offsetX, offsetY;
             if(GUINode.this.getParentNode() != null) {
+                offsetX = event.getScreenX() / scaleFactorX - dragStartX;
+                offsetY = event.getScreenY() / scaleFactorY - dragStartY;
                 Bounds thisBounds = GUINode.this.rect.getBoundsInLocal();
                 double thisWidth = thisBounds.getWidth();
                 double thisHeight = thisBounds.getHeight();
@@ -257,10 +263,12 @@ public class GUINode extends Pane
                 else if (offsetY > maxOffsetY)
                     offsetY = maxOffsetY;
             }
+            else {
+                offsetX = event.getScreenX() - dragStartX;
+                offsetY = event.getScreenY() - dragStartY;
+            }
 
-            double totalTranslateX = offsetX - node.getXShift();
-            double totalTranslateY = offsetY - node.getYShift();
-            node.setTranslateLocation(totalTranslateX, totalTranslateY);
+            node.setTranslateLocation(offsetX, offsetY);
 
             AbstractLayoutVertex v = GUINode.this.vertex;
             VizPanel mainPanel = Main.getOuterFrame().getCurrentFrame().getMainPanel();
