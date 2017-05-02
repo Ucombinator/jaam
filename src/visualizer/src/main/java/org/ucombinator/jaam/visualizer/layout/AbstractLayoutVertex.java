@@ -1,15 +1,30 @@
 package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 
 import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.Location;
 import org.ucombinator.jaam.visualizer.gui.StacFrame;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
+import org.w3c.dom.css.CSSPrimitiveValue;
 
+
+import com.sun.javafx.geom.BaseBounds;
+import com.sun.javafx.geom.transform.BaseTransform;
+import com.sun.javafx.jmx.MXNodeAlgorithm;
+import com.sun.javafx.jmx.MXNodeAlgorithmContext;
+import com.sun.javafx.sg.prism.NGNode;
+
+import javafx.animation.FadeTransition;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.scene.Node;
 //import javax.swing.tree.DefaultMutableTreeNode;
 import javafx.scene.control.TreeItem;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -231,8 +246,12 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     {
         double pixelWidth = mainPanel.scaleX(this.location.width);
         double pixelHeight = mainPanel.scaleY(this.location.height);
-        this.getGraphics().rect.setWidth(pixelWidth);
-        this.getGraphics().rect.setHeight(pixelHeight);
+        
+        this.getGraphics().getRect().setWidth(pixelWidth);
+        this.getGraphics().getRect().setHeight(pixelHeight);
+        
+        this.getGraphics().getHighlightingRect().setWidth(pixelWidth);
+        this.getGraphics().getHighlightingRect().setHeight(pixelHeight);
     }
 
     public void setVisible(boolean isVisible)
@@ -274,489 +293,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         this.graphics = null;
     }
 
-    /*
-    public void calculateHeight()
-    {
-        double h = 0;
-        for(int i = 0; i < this.children.size(); i++)
-        {
-            if(this.children.get(i).location.height > h)
-                h = this.children.get(i).location.height;
-        }
-        this.location.height = h + 1;
-        this.location.bottom = this.location.top + this.location.height;
-
-        if(this.parent != null)
-            this.parent.calculateHeight();
-    }
-    */
-
-    //Collapse a merge parent's vertices.
-    /*
-    public void collapse()
-    {
-        //To collapse a vertex, first we check that it contains visible merge children.
-        if(this.mergeRoot != null && this.mergeRoot.isVisible)
-        {
-            this.updateLocation = true;
-            this.children = new ArrayList<org.ucombinator.jaam.visualizer.graph.AbstractVertex>();
-
-            //Set the location for our merge parent to be the same as its first child.
-            this.location.left = this.mergeRoot.location.left;
-            this.location.top = this.mergeRoot.location.top;
-            Main.graph.setMaxHeight(0);
-
-            //Remove the children of our merge parent and set them invisible.
-            double w = this.mergeRoot.disappear(this.location.left, this.location.top + 1, this);
-            if(w > 1)
-                this.location.width = w;
-            else
-                this.location.width = 1;
-
-            this.location.right = this.location.left + this.location.width;
-            this.location.x = (this.location.left + this.location.right)/2;
-
-            this.location.height = Main.graph.getMaxHeight() + 1;
-            this.location.bottom = this.location.top + this.location.height;
-            this.location.y = this.location.top + 0.5;
-
-            this.parent = this.mergeRoot.parent;
-            this.parentIndex = this.mergeRoot.parentIndex;
-            this.mergeRoot.parent.replaceChild(this);
-
-            this.setVisible(true);
-        }
-    }
-    */
-
-    //Collapse a vertex into its merge parent
-    /*
-    private double disappear(double left, double top, org.ucombinator.jaam.visualizer.graph.AbstractVertex mP)
-    {
-        double w = 0;
-        org.ucombinator.jaam.visualizer.graph.AbstractVertex v;
-
-        for(int i = 0; i < this.children.size(); i++)
-        {
-            v = this.children.get(i);
-            v.updateLocation = true;
-
-            // If our current vertex has the same merge parent, then it also should be collapsed, and we
-            // recurse to its children.
-            if(v.getParentCluster() == mP)
-            {
-                w = w + v.disappear(left + w, top, mP);
-            }
-            // Otherwise, we need to shift v.
-            else
-            {
-                while(!v.isVisible && v.getParentCluster() != null)
-                    v = v.getParentCluster();
-
-                while(!v.isVisible)
-                    v = v.mergeRoot;
-
-                v.shiftSubtree(left + w - v.location.left);
-                v.shiftSubtreeY(top - v.location.top);
-
-                if(v.location.height > Main.graph.getMaxHeight())
-                    Main.graph.setMaxHeight(v.location.height);
-
-                v.parent = mP;
-                v.parentIndex = mP.children.size();
-                mP.children.add(v);
-                w += v.location.width;
-            }
-        }
-        this.setVisible(false);
-        return w;
-    }
-    */
-
-    //Expand a vertex out of its merge parent.
-    /*
-    public void deCollapse()
-    {
-        //First check that our vertex is expandable.
-        //It must be visible and have a valid merge root.
-        if(this.isVisible || this.mergeRoot != null)
-        {
-            //If so, we set the merge start vertex to take its parent's location...
-            this.mergeRoot.location.left = this.location.left;
-            this.mergeRoot.location.top = this.location.top;
-
-            //Show it and its children in our graph...
-            this.mergeRoot.appear(this.location.left, this.location.top, this);
-
-            //Connect its edges...
-            this.mergeRoot.parent = this.parent;
-            this.mergeRoot.parentIndex = this.parentIndex;
-            this.parent.replaceChild(this.mergeRoot);
-
-            //And lastly, we set our current vertex to be invisible.
-            this.setVisible(false);
-        }
-    }
-    */
-
-    //Beginning with our starting merge vertex, display all children of the
-    //expanding merge parent.
-    /*
-    private void appear(double left, double top, org.ucombinator.jaam.visualizer.graph.AbstractVertex mP)
-    {
-        //System.out.println("Vertex appearing: " + this.getName());
-        double w = 0;
-        org.ucombinator.jaam.visualizer.graph.AbstractVertex v;
-
-        this.updateLocation = true;
-        this.location.left = left;
-        this.location.top = top;
-        this.location.y = this.location.top + 0.5;
-
-        for(int i = 0; i < this.children.size(); i++)
-        {
-            //Check each of our children. All merge siblings should appear.
-            v = this.children.get(i);
-            if(v.getParentCluster() == mP)
-            {
-                v.appear(left + w, top + 1, mP);
-                w += v.location.width;
-            }
-            //Vertices that do not have the same merge parent do not need to be changed,
-            //but we must recompute our edges to them.
-            else
-            {
-                //We walk up our merge tree until we cannot go higher, or we reach a
-                //vertex that is isExpanded.
-                while(!v.isVisible && v.getParentCluster() != null)
-                    v = v.getParentCluster();
-
-                //Then we walk back down the chain of merge roots until we find one that
-                //is visible. This should be the child to which we have an edge.
-                while(!v.isVisible)
-                    v = v.mergeRoot;
-
-                //If our current child is not correct, we replace it. This can happen when
-                //the current child is either collapsed or isExpanded to a different level
-                //than it was before.
-                if(v != this.children.get(i))
-                {
-                    this.children.remove(i);
-                    this.children.add(i, v);
-                }
-
-                //We must shift our subtrees, since our children have changed.
-                v.shiftSubtree(left + w - v.location.left);
-                v.shiftSubtreeY(top + 1 - v.location.top);
-                v.parent = this;
-                v.parentIndex = i;
-                w += v.location.width;
-            }
-        }
-
-        if(w > 1)
-            this.location.width = w;
-        else
-            this.location.width = 1;
-
-        this.location.right = this.location.left + this.location.width;
-        this.location.x = (this.location.left + this.location.right)/2;
-
-        double h = 0;
-        for(int i = 0; i < this.children.size(); i++)
-        {
-            if(this.children.get(i).location.height > h)
-                h = this.children.get(i).location.height;
-        }
-        this.location.height = h + 1;
-        this.location.bottom = this.location.top + this.location.height;
-
-        this.setVisible(true);
-        //System.out.println("Vertex has appeared!");
-    }
-    */
-
-    /*
-    public void centerizeXCoordinate()
-    {
-        int num = this.children.size();
-
-        for(int i = 0; i < num; i++)
-            this.children.get(i).centerizeXCoordinate();
-
-        if(this.children.size() > 0)
-            this.location.x = (this.children.get(0).location.x + this.children.get(num-1).location.x)/2;
-    }
-    */
-
-
-    /*
-    public void rearrangeByLoopHeight()
-    {
-        int num = this.outgoingLayoutNeighbors.size(), pos, max;
-        AbstractLayoutVertex rearranged[] = new AbstractLayoutVertex[num];
-        boolean taken[] = new boolean[num];
-        int sorted[] = new int[num];
-
-
-        // MJA todo: the next sorting is currently done by selection sort, we should convert it to counting sort
-
-        for(int i=0; i< num; i++)
-        {
-            taken[i]=false;
-        }
-
-        for(int i=0; i<num; i++)
-        {
-            pos = -1;
-            max = -1;
-
-            for(int j=0; j<num; j++)
-            {
-                if(taken[j])
-                    continue;
-                if(this.children.get(j).loopHeight>=max)
-                {
-                    max = this.children.get(j).loopHeight;
-                    pos = j;
-                }
-            }
-
-            if(pos>=0)
-            {
-                taken[pos] = true;
-                sorted[num-i-1] = pos;
-            }
-        }
-
-
-        // now rearrange
-
-        pos = 0;
-        for(int j=num-2; j>=0; pos++)
-        {
-            rearranged[pos] = this.children.get(sorted[j]);
-            j=j-2;
-        }
-
-        int l = 0;
-        if(num%2==0)
-            l = 1;
-        while(pos<num)
-        {
-            rearranged[pos] = this.children.get(sorted[l]);
-            l = l + 2;
-            pos++;
-        }
-
-        double left = this.location.left;
-
-        for(int i=0; i<num; i++)
-        {
-            rearranged[i].shiftSubtree(left-rearranged[i].location.left);
-            left += rearranged[i].location.width;
-        }
-
-
-        this.children = new ArrayList<org.ucombinator.jaam.visualizer.graph.AbstractVertex>();
-
-        for(int i=0; i<num; i++)
-        {
-            rearranged[i].parentIndex = i;
-            this.children.add(rearranged[i]);
-        }
-
-        for(int i=0; i< num; i++)
-            this.children.get(i).rearrangeByLoopHeight();
-    }
-    */
-
-    /*
-    public void rearrangeByWidth()
-    {
-        int num = this.children.size(), pos;
-        double max;
-        org.ucombinator.jaam.visualizer.graph.AbstractVertex rearranged[] = new org.ucombinator.jaam.visualizer.graph.AbstractVertex[num];
-        boolean taken[] = new boolean[num];
-        int sorted[] = new int[num];
-
-
-        // MJA todo: the next sorting is currently done by selection sort, we should convert it to counting sort
-
-        for(int i=0; i< num; i++)
-        {
-            taken[i]=false;
-        }
-
-        for(int i=0; i<num; i++)
-        {
-            pos = -1;
-            max = -1;
-
-            for(int j=0; j<num; j++)
-            {
-                if(taken[j])
-                    continue;
-                if(this.children.get(j).location.width > max)
-                {
-                    max = this.children.get(j).location.width;
-                    pos = j;
-                }
-            }
-
-            if(pos >= 0)
-            {
-                taken[pos] = true;
-                sorted[num-i-1] = pos;
-            }
-        }
-
-
-        // now rearrange
-
-        pos = 0;
-        for(int j=num-2; j>=0; pos++)
-        {
-            rearranged[pos] = this.children.get(sorted[j]);
-            j=j-2;
-        }
-
-        int l = 0;
-        if(num%2==0)
-            l = 1;
-        while(pos<num)
-        {
-            rearranged[pos] = this.children.get(sorted[l]);
-            l = l + 2;
-            pos++;
-        }
-
-        double left = this.location.left;
-
-        for(int i=0; i<num; i++)
-        {
-            rearranged[i].shiftSubtree(left-rearranged[i].location.left);
-            left += rearranged[i].location.width;
-        }
-
-
-        this.children = new ArrayList<org.ucombinator.jaam.visualizer.graph.AbstractVertex>();
-
-        for(int i=0; i<num; i++)
-        {
-            rearranged[i].parentIndex = i;
-            this.children.add(rearranged[i]);
-        }
-
-        for(int i=0; i< num; i++)
-            this.children.get(i).rearrangeByWidth();
-    }
-    */
-
-    /*
-    public void increaseWidth(org.ucombinator.jaam.visualizer.graph.AbstractVertex child, double inc)
-    {
-        org.ucombinator.jaam.visualizer.graph.AbstractVertex ver = this;
-        org.ucombinator.jaam.visualizer.graph.AbstractVertex ch = child;
-        while(ver != null)
-        {
-            ver.updateLocation = true;
-            ver.location.width += inc;
-            ver.location.right += inc;
-            ver.location.x = (ver.location.left + ver.location.right)/2;
-
-            for(int i = ch.parentIndex + 1; i < ver.children.size(); i++)
-            {
-                ver.children.get(i).shiftSubtree(inc);
-            }
-            ch = ver;
-            ver = ver.parent;
-        }
-    }
-    */
-
-    /*
-    //Shift a tree by the given increment by DFS
-    public void shiftSubtree(double inc)
-    {
-        org.ucombinator.jaam.visualizer.graph.AbstractVertex ver = this;
-        while(true)
-        {
-            ver.updateLocation = true;
-            ver.location.left += inc;
-            ver.location.right += inc;
-            ver.location.x += inc;
-
-            if(ver.children.size() > 0)
-                ver = ver.children.get(0);
-            else
-            {
-                while(ver != this && ver.parent.children.size() == ver.parentIndex + 1)
-                {
-                    ver = ver.parent;
-                }
-                if(ver == this)
-                    break;
-                else
-                    ver = ver.parent.children.get(ver.parentIndex + 1);
-            }
-        }
-    }
-    */
-
-    /*
-    //TODO: Why not use DFS here?
-    public void shiftSubtreeY(double inc)
-    {
-        this.updateLocation = true;
-        this.location.top += inc;
-        this.location.bottom += inc;
-        this.location.y += inc;
-
-        for(int i = 0; i < this.children.size(); i++)
-            this.children.get(i).shiftSubtreeY(inc);
-    }
-    */
-
-    /*
-    public void increaseHeight(double inc)
-    {
-        this.location.height += inc;
-
-        if(this.parent == null)
-            return;
-        if(this.location.height + 1 > this.parent.location.height)
-            this.parent.increaseHeight(this.location.height - this.parent.location.height + 1);
-    }
-    */
-
-    /*
-    public void addChild(org.ucombinator.jaam.visualizer.graph.AbstractVertex child)
-    {
-        child.parentIndex = this.children.size();
-        this.children.add(child);
-        child.parent = this;
-
-
-        if(this.children.size() == 1)
-        {
-            child.shiftSubtree(this.location.left - child.location.left);
-            if(child.location.width > 1)
-                this.increaseWidth(child, child.location.width - 1);
-        }
-        else
-        {
-            child.shiftSubtree(this.location.right - child.location.left);
-            this.increaseWidth(child, child.location.width);
-        }
-
-        child.shiftSubtreeY(this.location.bottom - child.location.top);
-
-        if(child.location.height + 1 > this.location.height)
-            this.increaseHeight(child.location.height - this.location.height + 1);
-    }
-    */
-
     public void searchByID(int id, VizPanel mainPanel)
     {
         this.searchByIDRange(id, id, mainPanel);
@@ -793,14 +329,37 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         if(isHighlighted) {
             this.getGraphics().setFill(highlightColor);
             mainPanel.getHighlighted().add(this);
+            this.setGraphicsHighlighted(true);
         }
         else {
             this.getGraphics().setFill(this.getColor());
             mainPanel.getHighlighted().remove(this);
+            this.setGraphicsHighlighted(false);
         }
     }
 
-    public boolean isHighlighted()
+    private void setGraphicsHighlighted(boolean visible) {
+    	Rectangle r = this.getGraphics().getHighlightingRect();
+		FadeTransition ft = new FadeTransition(Duration.millis(300),r);
+		if(visible){
+			this.getGraphics().getHighlightingRect().setVisible(true);
+			ft.setFromValue(0f);
+			ft.setToValue(1f);
+        }else{
+        	ft.setFromValue(1f);
+			ft.setToValue(0f);
+        }
+//		AbstractLayoutVertex vertex = this;
+//		ft.setOnFinished(new EventHandler<ActionEvent>() {
+//			
+//			@Override
+//			public void handle(ActionEvent event) {
+//				//vertex.getGraphics().getHighlightingRect().setVisible(visible);
+//			}
+//		});
+		ft.play();
+	}
+	public boolean isHighlighted()
     {
         return this.isHighlighted;
     }
@@ -851,7 +410,12 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         for(AbstractLayoutVertex v : this.innerGraph.getVertices().values())
             v.setLabelVisibility(isLabelVisible);
     }
-    
+
+    public void resetStrokeWidth(double factor) {
+        this.getGraphics().setStrokeWidth(factor);
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
+            v.resetStrokeWidth(factor);
+    }
     
 	public void printCoordinates()
     {

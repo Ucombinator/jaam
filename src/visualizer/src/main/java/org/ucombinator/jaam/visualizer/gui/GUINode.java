@@ -28,9 +28,9 @@ public class GUINode extends Pane
     protected static boolean showId = true;
     protected static final double TEXT_VERTICAL_PADDING = 15;
     protected static final double TEXT_HORIZONTAL_PADDING = 15;
-	double dragX, dragY;
-    public Rectangle rect;
-    protected Text rectLabel;
+	private double dragX, dragY;
+    private Rectangle rect, highlightingRect;
+    private Text rectLabel;
     private AbstractLayoutVertex vertex;
 	private GUINode parent;
 
@@ -41,6 +41,7 @@ public class GUINode extends Pane
     private double totalScaleX;
     private double totalScaleY;
 
+    
     public GUINode(GUINode parent, AbstractLayoutVertex v)
     {
         super();
@@ -49,14 +50,22 @@ public class GUINode extends Pane
         this.vertex.setGraphics(this);
         
         this.rect = new Rectangle();
-        //this.backRect = new Rectangle();
         this.rectLabel = new Text(v.getId() + ", " + v.getLoopHeight());
         this.rectLabel.setVisible(v.isLabelVisible());
 
-        if(v instanceof LayoutRootVertex)
+        
+        this.highlightingRect = new Rectangle();
+        this.highlightingRect.setVisible(false);
+        this.highlightingRect.setStroke(javafx.scene.paint.Color.BLUE);
+        this.highlightingRect.setFill(javafx.scene.paint.Color.WHITE);
+        this.highlightingRect.setStrokeWidth(10);
+        
+        
+        if(v instanceof LayoutRootVertex) {
             this.getChildren().add(this.rect);
-        else
-            this.getChildren().addAll(this.rect, this.rectLabel);
+        } else {
+            this.getChildren().addAll(this.highlightingRect, this.rect, this.rectLabel);
+        }
 
         this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
         this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
@@ -112,13 +121,13 @@ public class GUINode extends Pane
     public void setArcHeight(double height)
     {
         this.rect.setArcHeight(height);
-        //this.backRect.setArcHeight(height);
+        this.highlightingRect.setArcHeight(height);
     }
 
     public void setArcWidth(double width)
     {
         this.rect.setArcWidth(width);
-        //this.backRect.setArcWidth(width);
+        this.highlightingRect.setArcWidth(width);
     }
 
     public void setTranslateLocation(double x, double y) {
@@ -132,8 +141,15 @@ public class GUINode extends Pane
     {
         this.setTranslateX(x);
         this.setTranslateY(y);
+        this.setMaxWidth(width);
+        this.setMaxHeight(height);
+
         this.rect.setWidth(width);
         this.rect.setHeight(height);
+        
+        this.highlightingRect.setWidth(width);
+        this.highlightingRect.setHeight(height);
+
         this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
         this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
     }
@@ -190,7 +206,6 @@ public class GUINode extends Pane
         double currentHeight = this.getScaleY() * this.vertex.getHeight();
         double oldHeight = this.vertex.getHeight();
         return (oldHeight - currentHeight) / 2;
-        //return 0;
     }
 
     EventHandler<MouseEvent> onMousePressedEventHandler = new EventHandler<MouseEvent>()
@@ -218,11 +233,15 @@ public class GUINode extends Pane
             double offsetX = event.getScreenX() + dragX;
             double offsetY = event.getScreenY() + dragY;
             if(GUINode.this.getParentNode() != null) {
-                Bounds parentBounds = GUINode.this.getParentNode().rect.getBoundsInLocal();
-                double maxOffsetX = parentBounds.getMaxX();
-                double maxOffsetY = parentBounds.getMaxY();
+                Bounds thisBounds = GUINode.this.rect.getBoundsInLocal();
+                double thisWidth = thisBounds.getWidth();
+                double thisHeight = thisBounds.getHeight();
 
-                // This truncation of the offset confines the upper left corner of our node to its parent.
+                Bounds parentBounds = GUINode.this.getParentNode().rect.getBoundsInLocal();
+                double maxOffsetX = parentBounds.getWidth() - thisWidth;
+                double maxOffsetY = parentBounds.getHeight() - thisHeight;
+
+                // This truncation of the offset confines our box to its parent.
                 if (offsetX < 0)
                     offsetX = 0;
                 else if (offsetX > maxOffsetX)
@@ -341,4 +360,12 @@ public class GUINode extends Pane
 		vertex.setLabelVisible(isLabelVisible);
 		this.rectLabel.setVisible(isLabelVisible);
 	}
+
+	public Rectangle getHighlightingRect() {
+		return this.highlightingRect;
+	}
+	
+    public Rectangle getRect(){
+    	return this.rect;
+    }
 }
