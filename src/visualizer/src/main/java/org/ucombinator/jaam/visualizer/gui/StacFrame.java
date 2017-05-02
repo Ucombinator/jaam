@@ -310,6 +310,7 @@ public class StacFrame extends BorderPane
 
 							@Override
 							public void handle(ActionEvent e) {
+								
 								methodExpanded = !methodExpanded;
 								StacFrame.this.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
 										methodExpanded);
@@ -321,6 +322,7 @@ public class StacFrame extends BorderPane
 								}
 
 								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+								StacFrame.this.mainPanel.resetRootPosition();
 							}
 						}
 				);
@@ -346,6 +348,7 @@ public class StacFrame extends BorderPane
 								}
 
 								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+								StacFrame.this.mainPanel.resetRootPosition();
 							}
 						}
 				);
