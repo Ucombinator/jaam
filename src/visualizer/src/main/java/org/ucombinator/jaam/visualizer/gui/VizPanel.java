@@ -6,6 +6,7 @@ import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.Group;
 
 import java.util.HashSet;
@@ -45,6 +46,53 @@ public class VizPanel extends StackPane
 		super();
 
 		this.graphScrollPane = new ScrollPane();
+		
+//		this.graphScrollPane.setOnKeyPressed(new EventHandler<KeyEvent>() {
+//			@Override
+//			public void handle(KeyEvent event) {
+//				
+//				if (event.getEventType()!= KeyEvent.KEY_PRESSED){
+//					return;
+//				}
+//				System.out.println(event.getCode().toString());
+//				
+//				VizPanel.this.graphScrollPane.layout();
+//				
+//				System.out.println("min: " + VizPanel.this.graphScrollPane.getVmin());
+//				System.out.println("max: " + VizPanel.this.graphScrollPane.getVmax());
+//				switch(event.getCode().toString()){
+//					case "RIGHT": 
+//					{
+//						//VizPanel.this.graphScrollPane.getContent().setTranslateX(VizPanel.this.graphScrollPane.getContent().getTranslateX()+10);
+//						VizPanel.this.graphScrollPane.setVvalue(VizPanel.this.graphScrollPane.getVvalue()+0.01);
+//						break;
+//					}
+//					case "LEFT": 
+//					{
+//						VizPanel.this.graphScrollPane.setVvalue(VizPanel.this.graphScrollPane.getVvalue()-0.01);
+//						//VizPanel.this.graphScrollPane.getContent().setTranslateX(VizPanel.this.graphScrollPane.getContent().getTranslateX()-0.01);
+//						break;
+//					}
+//					case "UP": 
+//					{
+//						VizPanel.this.graphScrollPane.setHvalue(VizPanel.this.graphScrollPane.getHvalue()-0.01);
+//						//VizPanel.this.graphScrollPane.getContent().setTranslateY(VizPanel.this.graphScrollPane.getContent().getTranslateY()-10);
+//						break;
+//					}
+//					case "DOWN": 
+//					{
+//						VizPanel.this.graphScrollPane.setHvalue(VizPanel.this.graphScrollPane.getHvalue()+0.01);
+//						//VizPanel.this.graphScrollPane.getContent().setTranslateY(VizPanel.this.graphScrollPane.getContent().getTranslateY()+10);
+//						break;
+//					}
+//		            default: break;
+//				}
+//				
+//			}
+//		});
+		
+		
+		
 		graphContentGroup = new Group();
 		graphContentGroup.setVisible(true);
 		graphScrollPane.setVisible(true);
@@ -52,6 +100,10 @@ public class VizPanel extends StackPane
 		graphScrollPane.setPannable(true);
 
 		this.getChildren().add(graphScrollPane);
+			VizPanel.this.graphScrollPane.setPannable(true);
+			VizPanel.this.graphScrollPane.requestFocus();
+		
+		
 		drawZoomButtons();
 
 		highlighted = new HashSet<AbstractLayoutVertex>();
