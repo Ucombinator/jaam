@@ -26,8 +26,10 @@ public class VizPanel extends StackPane
 	private Group graphContentGroup;
 	private HashSet<AbstractLayoutVertex> highlighted;
 	private LayoutRootVertex panelRoot;
-	private Button zoomIn, zoomOut;
+	private Button zoomIn, zoomOut, resetButton;
 
+	private double deriredRootTranslateY, deriredRootTranslateX;
+	
 	// The dimensions of the background for our graph
 	private final double initRootWidth = 500.0, initRootHeight = 500.0;
 
@@ -51,6 +53,24 @@ public class VizPanel extends StackPane
 
 		zoomIn = new Button("+");
 		zoomOut = new Button("-");
+		resetButton = new Button("=");
+		
+		
+		resetButton.setOnMousePressed(new EventHandler<Event>() {
+			@Override
+			public void handle(Event event) {
+//				VizPanel.this.setScaleX(1);
+//				VizPanel.this.setScaleY(1);
+//				VizPanel.this.panelRoot.getGraphics().setScaleX(VizPanel.this.getScaleX());
+//				VizPanel.this.panelRoot.getGraphics().setScaleY(VizPanel.this.getScaleY());
+				VizPanel.this.panelRoot.getGraphics().setTranslateX(VizPanel.this.deriredRootTranslateX);
+				VizPanel.this.panelRoot.getGraphics().setTranslateY(VizPanel.this.deriredRootTranslateY);
+//				VizPanel.this.panelRoot.getGraphics().setPrefWidth(VizPanel.this.deriredRootWidth);
+//				VizPanel.this.panelRoot.getGraphics().setPrefHeight(VizPanel.this.deriredRootHeight);
+				
+			}
+		});
+		
 		zoomIn.setOnMousePressed(new EventHandler<Event>() {
 			@Override
 			public void handle(Event event) {
@@ -144,9 +164,14 @@ public class VizPanel extends StackPane
 	public void initFX(Graph graph)
 	{
 		this.panelRoot = LayerFactory.getLayeredGraph(graph);
+
+//		this.deriredRootWidth = this.panelRoot.getWidth();
+//		this.deriredRootHeight = this.panelRoot.getHeight();
  		LayoutAlgorithm.layout(this.panelRoot);
 		resetPanelSize();
 		drawGraph();
+		this.deriredRootTranslateX = this.panelRoot.getGraphics().getTranslateX();
+		this.deriredRootTranslateY = this.panelRoot.getGraphics().getTranslateY();
 	}
 
 	public void resetContent() {
@@ -257,12 +282,14 @@ public class VizPanel extends StackPane
 		// We add the buttons directly to our StackPane, so when we scroll they stay in the same place.
 		buttonBox.getChildren().add(zoomIn);
 		buttonBox.getChildren().add(zoomOut);
+		buttonBox.getChildren().add(resetButton);
 		this.getChildren().add(buttonBox);
 		buttonBox.setLayoutX(10);
 		buttonBox.setLayoutY(10);
 
 		zoomIn.setVisible(true);
 		zoomOut.setVisible(true);
+		resetButton.setVisible(true);
 		buttonBox.setVisible(true);
 
 		// Allow mouse events to be passed to visible nodes on the lower layer of our stack pane
