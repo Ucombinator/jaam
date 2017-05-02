@@ -4,30 +4,18 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
-import org.ucombinator.jaam.visualizer.graph.*;
-import org.ucombinator.jaam.visualizer.gui.GUINode;
-import org.ucombinator.jaam.visualizer.gui.Location;
-import org.ucombinator.jaam.visualizer.gui.StacFrame;
-import org.ucombinator.jaam.visualizer.gui.VizPanel;
-import org.w3c.dom.css.CSSPrimitiveValue;
-
-
-import com.sun.javafx.geom.BaseBounds;
-import com.sun.javafx.geom.transform.BaseTransform;
-import com.sun.javafx.jmx.MXNodeAlgorithm;
-import com.sun.javafx.jmx.MXNodeAlgorithmContext;
-import com.sun.javafx.sg.prism.NGNode;
-
 import javafx.animation.FadeTransition;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
-import javafx.scene.Node;
-//import javax.swing.tree.DefaultMutableTreeNode;
 import javafx.scene.control.TreeItem;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+
+import org.ucombinator.jaam.visualizer.graph.*;
+import org.ucombinator.jaam.visualizer.gui.GUINode;
+import org.ucombinator.jaam.visualizer.gui.Location;
+import org.ucombinator.jaam.visualizer.gui.VizPanel;
+import org.ucombinator.jaam.visualizer.main.Main;
 
 public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayoutVertex>
         implements Comparable<AbstractLayoutVertex>
@@ -50,7 +38,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     private boolean isExpanded;
     private boolean isLabelVisible;
     private boolean isEdgeVisible;
-    
+    private boolean drawEdges;
 
 	// A location stores coordinates for a subtree.
     private Location location = new Location();
@@ -163,11 +151,8 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         return ((Integer)(this.getMinInstructionLine())).compareTo(v.getMinInstructionLine());
     }
 
-    public boolean isHighlighted; //Select or Highlight this vertex, incoming edges, or outgoing edges
-    private boolean drawEdges;
-
-    //Subclasses must override these so that we have descriptions for each of them,
-    //and so that our generic collapsing can work for all of them
+    // Subclasses must override these so that we have descriptions for each of them,
+    // and so that our generic collapsing can work for all of them
     public abstract String getRightPanelContent();
     public abstract String getShortDescription();
 
@@ -183,12 +168,12 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         super(label);
         this.graphics = null;
         this.isExpanded = true;
-        this.isLabelVisible = true;
+        this.isLabelVisible = false; // If you change this, also change the initialization for StacFrame
         this.isEdgeVisible = true;
+        this.drawEdges = drawEdges;
 
         this.innerGraph = new HierarchicalGraph();
         this.vertexType = type;
-        this.drawEdges = drawEdges;
 
         this.loopChildren = new ArrayList<AbstractLayoutVertex>();
         this.loopHeight = -1;
@@ -359,10 +344,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 //		});
 		ft.play();
 	}
-	public boolean isHighlighted()
-    {
-        return this.isHighlighted;
-    }
 
     public void setSelfGraph(HierarchicalGraph abstractGraph) {
         this.selfGraph = abstractGraph;

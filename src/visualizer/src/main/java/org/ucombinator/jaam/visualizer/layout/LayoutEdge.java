@@ -27,6 +27,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     private GUINode node;
     private String strId;
 
+    private static double defaultStrokeWidth = 1;
     private static double arrowheadAngleDiff = 0.15 * Math.PI;
     private static double arrowLengthRatio = 0.5;
 
@@ -78,6 +79,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
 
     public void draw(GUINode node)
     {
+        //System.out.println("Drawing edges for " + node.getVertex().toString());
         if (this.source == this.dest)
         {
 			System.out.println("Error in Edge.drawGraph(): The source and destination vertices are the same.");
@@ -236,6 +238,8 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         node.getChildren().add(graphics);
         graphics.setVisible(node.getVertex().isExpanded() && this.sourceVertex.isEdgeVisible()
                 && this.destVertex.isEdgeVisible() && this.isVisible());
+
+        //System.out.println("Visibility: " + graphics.isVisible());
     }
 
     public Rectangle getMarker(double x, double y)
