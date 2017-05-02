@@ -330,20 +330,6 @@ public class VizPanel extends StackPane
 		}
 	}
 
-	// TODO: Use this when drawing edges
-	public void scaleLines()
-	{
-		//System.out.println("Scaling lines and arrowheads...");
-		for(LayoutEdge e : this.panelRoot.getInnerGraph().getEdges().values())
-			e.setScale(this);
-
-		for(AbstractLayoutVertex v : this.panelRoot.getInnerGraph().getVertices().values())
-		{
-			for(LayoutEdge e : v.getInnerGraph().getEdges().values())
-				e.setScale(this);
-		}
-	}
-
 	public void incrementScaleXFactor() {
 		factorX *= factorMultiple;
 	}

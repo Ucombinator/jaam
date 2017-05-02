@@ -27,9 +27,8 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     private GUINode node;
     private String strId;
 
-    private static double defaultStrokeWidth = 1;
     private static double arrowheadAngleDiff = 0.15 * Math.PI;
-    private static double arrowLength = 10;
+    private static double arrowLengthRatio = 0.5;
 
     private LayoutEdge(int source, int dest)
     {
@@ -198,10 +197,11 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         {
             line.getStrokeDashArray().addAll(5d, 4d);
         }
-        line.setStrokeWidth(defaultStrokeWidth);
+        line.setStrokeWidth(destVertex.getGraphics().getRect().getStrokeWidth());
 
         // Compute arrowhead
         double angle = Math.PI + Math.atan2(destEnterY - sourceExitY, destEnterX - sourceExitX);
+        double arrowLength = Math.min(10, arrowLengthRatio * destVertex.getGraphics().getRect().getWidth());
 
         double x1 = destEnterX;
         double y1 = destEnterY;
@@ -317,19 +317,4 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     public boolean isVisible() {
         return this.graphics.isVisible();
     }
-
-    public void setScale(VizPanel mainPanel)
-    {
-        if(this.node != null) {
-            // Make the line for our edge thinner
-            double zoomLevel = mainPanel.getZoomLevel();
-            line.setStrokeWidth(defaultStrokeWidth / zoomLevel);
-
-            // TODO: The arrowhead will scale around the center, not the tip.
-            // It could be shifted, but that might not make much difference in the end.
-            this.arrowhead.setScaleX(1.0 / zoomLevel);
-            this.arrowhead.setScaleY(1.0 / zoomLevel);
-        }
-    }
 }
-
