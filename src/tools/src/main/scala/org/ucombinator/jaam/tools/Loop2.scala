@@ -284,11 +284,11 @@ object LoopAnalyzer {
           for {
             to <- this(from)
           } {
-            val maybeBold = if (recurEdges.contains((from, to))) {
-              " [penwidth=3]"
-            } else ""
+            val maybeColored = if (recurEdges.contains((from, to))) {
+              " [penwidth=10, color=\"blue\"]"
+            } else " [penwidth=10]"
             builder ++= "  " + quote(from.tag) + " -> " + quote(to.tag) +
-              maybeBold + ";\n"
+              maybeColored + ";\n"
           }
           // enforce a BFS order
           for {
