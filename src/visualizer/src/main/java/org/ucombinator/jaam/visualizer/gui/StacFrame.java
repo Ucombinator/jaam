@@ -267,6 +267,7 @@ public class StacFrame extends BorderPane
 							public void handle(ActionEvent event) {
 								StacFrame.this.mainPanel.decrementScaleYFactor();
 								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+								StacFrame.this.mainPanel.resetRootPosition();
 							}
 						}
 				);
@@ -286,6 +287,7 @@ public class StacFrame extends BorderPane
 							public void handle(ActionEvent event) {
 								StacFrame.this.mainPanel.incrementScaleYFactor();
 								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+								StacFrame.this.mainPanel.resetRootPosition();
 							}
 						}
 				);

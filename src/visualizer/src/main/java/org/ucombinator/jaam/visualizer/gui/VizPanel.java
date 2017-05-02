@@ -45,6 +45,11 @@ public class VizPanel extends StackPane
 	{
 		return this.panelRoot;
 	}
+	
+	public void resetRootPosition(){
+		GUINode rootGraphics = VizPanel.this.panelRoot.getGraphics();
+		rootGraphics.setTranslateLocation(VizPanel.this.desiredRootTranslateX, VizPanel.this.desiredRootTranslateY);
+	}
 
 	public VizPanel()
 	{
@@ -60,8 +65,7 @@ public class VizPanel extends StackPane
 		resetButton.setOnMousePressed(new EventHandler<Event>() {
 			@Override
 			public void handle(Event event) {
-				GUINode rootGraphics = VizPanel.this.panelRoot.getGraphics();
-				rootGraphics.setTranslateLocation(VizPanel.this.desiredRootTranslateX, VizPanel.this.desiredRootTranslateY);
+				VizPanel.this.resetRootPosition();
 			}
 		});
 		
