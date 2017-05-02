@@ -15,7 +15,7 @@ import org.ucombinator.jaam.visualizer.gui.OuterFrame;
 public class Main extends Application
 {
 	
-	public static final boolean debug = true; 
+	public static final boolean debug = false; 
 	
 	private static OuterFrame outerFrame;
 
