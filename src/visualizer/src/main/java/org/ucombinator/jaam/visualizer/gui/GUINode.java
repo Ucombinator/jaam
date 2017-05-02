@@ -28,7 +28,7 @@ public class GUINode extends Pane
     protected static boolean showId = true;
     protected static final double TEXT_VERTICAL_PADDING = 15;
     protected static final double TEXT_HORIZONTAL_PADDING = 15;
-	private double dragX, dragY;
+	private double dragStartX, dragStartY;
     private Rectangle rect, highlightingRect;
     private Text rectLabel;
     private AbstractLayoutVertex vertex;
@@ -216,8 +216,11 @@ public class GUINode extends Pane
             event.consume();
             GUINode node = (GUINode) event.getSource();
 
-            dragX = node.getBoundsInParent().getMinX() - event.getScreenX();
-            dragY = node.getBoundsInParent().getMinY() - event.getScreenY();
+            double scaleFactorX = Main.getOuterFrame().getCurrentFrame().getMainPanel().getPanelRoot().getGraphics().getScaleX();
+            double scaleFactorY = Main.getOuterFrame().getCurrentFrame().getMainPanel().getPanelRoot().getGraphics().getScaleY();
+
+            dragStartX = event.getScreenX() / scaleFactorX - node.getBoundsInParent().getMinX();
+            dragStartY = event.getScreenY() / scaleFactorY - node.getBoundsInParent().getMinY();
         }
     };
 
@@ -230,8 +233,10 @@ public class GUINode extends Pane
             GUINode node = (GUINode) event.getSource();
 
             node.isDragging = true;
-            double offsetX = event.getScreenX() + dragX;
-            double offsetY = event.getScreenY() + dragY;
+            double scaleFactorX = Main.getOuterFrame().getCurrentFrame().getMainPanel().getPanelRoot().getGraphics().getScaleX();
+            double scaleFactorY = Main.getOuterFrame().getCurrentFrame().getMainPanel().getPanelRoot().getGraphics().getScaleY();
+            double offsetX = event.getScreenX() / scaleFactorX - dragStartX;
+            double offsetY = event.getScreenY() / scaleFactorY - dragStartY;
             if(GUINode.this.getParentNode() != null) {
                 Bounds thisBounds = GUINode.this.rect.getBoundsInLocal();
                 double thisWidth = thisBounds.getWidth();
