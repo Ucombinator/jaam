@@ -50,8 +50,8 @@ public class StacFrame extends BorderPane
 	private CheckBox showEdge;
 	private CheckBox showLabels;
 
-	private boolean edgeVisible;
-	private boolean labelsVisible;
+	private boolean edgeVisible = true;
+	private boolean labelsVisible = false; // If you change this, also change the initialization for AbstractLayoutVertex
 
 	public enum searchType
 	{
@@ -61,13 +61,11 @@ public class StacFrame extends BorderPane
 	public StacFrame(Graph graph)
 	{
 		this.graph = graph;
-		if (Parameters.debugMode)
+		if (Parameters.debugPanelMode)
 			makeSimpleLayout();
 		else
 			makeLayout();
 
-		edgeVisible = true;
-		labelsVisible = true;
 		this.mainPanel.initFX(this.graph);
 		this.setVisible(true);
 	}
@@ -95,7 +93,7 @@ public class StacFrame extends BorderPane
 	public void repaintAll()
 	{
 		System.out.println("Repainting all...");
-		if (!Parameters.debugMode)
+		if (!Parameters.debugPanelMode)
 		{
 			bytecodeArea.setDescription();
 			setRightText();
@@ -167,7 +165,7 @@ public class StacFrame extends BorderPane
 				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
 
 		showEdge = new CheckBox("Edges");
-		showEdge.setSelected(true);
+		showEdge.setSelected(edgeVisible);
 		showEdge.setOnAction
 				(
 						new EventHandler<ActionEvent>()
@@ -187,7 +185,7 @@ public class StacFrame extends BorderPane
 		
 		
 		showLabels = new CheckBox("Labels");
-		showLabels.setSelected(true);
+		showLabels.setSelected(labelsVisible);
 		showLabels.setOnAction
 				(
 						new EventHandler<ActionEvent>()
