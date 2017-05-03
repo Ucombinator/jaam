@@ -90,15 +90,12 @@ public class TakeInput extends Thread
 				if(packet instanceof LoopNode) {
 					LoopNode node = (LoopNode) packet;
 					int id = node.id().id();
-					//System.out.println("Reading vertex: " + id);
-					graph.addVertex(id, new Instruction("" + id, "foo", id, false), true);
-					//System.out.println("Method name: " + graph.containsInputVertex(id).getMethodName());
+					graph.addVertex(id, new Instruction(node.label(), "foo", id, false), true);
 				}
 				else if(packet instanceof LoopEdge) {
 					LoopEdge edge = (LoopEdge) packet;
 					int src = edge.src().id();
 					int dest = edge.dst().id();
-					//System.out.println("Adding loop edge between vertices: " + src + ", " + dest);
 					graph.addEdge(src, dest);
 				}
 
