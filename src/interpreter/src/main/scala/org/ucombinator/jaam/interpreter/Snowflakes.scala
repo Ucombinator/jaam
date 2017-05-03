@@ -27,7 +27,12 @@ case class SnowflakeAbstractClassBasePointer(name: String) extends AbstractSnowf
 case class MethodDescription(val className : String,
                              val methodName : String,
                              val parameterTypes : List[String],
-                             val returnType : String) extends CachedHashCode
+                             val returnType : String) extends CachedHashCode {
+  override def toString() = {
+    val typesStr = parameterTypes.mkString(",")
+    s"${className}::${returnType} ${methodName}(${typesStr})"
+  }
+}
 
 // Snowflakes are special-cased methods
 abstract class SnowflakeHandler {
