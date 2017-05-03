@@ -21,9 +21,6 @@ package org.ucombinator.jaam.interpreter
 // TODO/research: increase context sensitivity when constructors go up inheritance hierarchy
 // TODO: way to interrupt process but with normal termination
 
-import java.util.zip.ZipInputStream
-import java.io.FileInputStream
-
 import scala.collection.JavaConversions._
 import scala.collection.immutable
 import scala.collection.immutable.::
@@ -31,8 +28,7 @@ import scala.collection.mutable
 import scala.io.Source
 import scala.reflect.ClassTag
 
-import java.io.FileOutputStream
-import java.io.{File, BufferedReader, FileReader}
+import java.io.{File, FileOutputStream, BufferedReader, FileReader}
 
 import org.rogach.scallop._
 
@@ -1439,46 +1435,6 @@ object Main {
     }
   }
 
-  def getAllClasses(classpath: String): Set[String] = {
-    Log.info(s"Getting all class names from ${classpath}")
-    def fileToClassName(fn: String): String = {
-      val fqn = fn.replace('/', '.')
-      fqn.substring(0, fqn.length - ".class".length)
-    }
-    def getDirClasses(d: File): Set[String] = {
-      if (d.exists) {
-        if (d.isDirectory) {
-          d.listFiles.toSet flatMap getDirClasses
-        } else {
-          if (d.getName.endsWith(".class")) {
-            Set(fileToClassName(d.getName))
-          } else Set.empty
-        }
-      } else Set.empty
-    }
-    def getJarClasses(j: File): Set[String] = {
-      val zip = new ZipInputStream(new FileInputStream(j))
-      var result: Set[String] = Set.empty[String]
-      var entry = zip.getNextEntry
-      while (entry != null) {
-        if (!entry.isDirectory && entry.getName.endsWith(".class")) {
-          val className = fileToClassName(entry.getName)
-          result = result + className
-        }
-        entry = zip.getNextEntry
-      }
-      result
-    }
-    classpath.split(":").toSet flatMap { (path: String) =>
-      val f = new File(path)
-      if (path.endsWith(".jar")) {
-        getJarClasses(f)
-      } else {
-        getDirClasses(f)
-      }
-    }
-  }
-
   def cha() {
     //val allAppClassess = conf.classpath().toString.split(":").map(getAllClassNames(_))
     Soot.initialize(conf, {
@@ -1488,7 +1444,7 @@ object Main {
       Options.v().set_app(true)
       Options.v().set_soot_classpath(conf.rtJar().toString + ":" + conf.classpath().toString)
 
-      for (className <- getAllClasses(conf.classpath().toString)) {
+      for (className <- Utilities.getAllClasses(conf.classpath().toString)) {
         //addBasicClass and setApplicationClass seem equivalent to cg
         //Scene.v().addBasicClass(className, SootClass.HIERARCHY)
         val c = Scene.v().loadClassAndSupport(className)
@@ -1625,7 +1581,7 @@ object Main {
     } finally {
       outSerializer.close()
 
-      val allAppMethods = getAllClasses(conf.classpath().toString)
+      val allAppMethods = Utilities.getAllClasses(conf.classpath().toString)
                           .map(Scene.v().loadClassAndSupport(_))
                           .map(_.getMethods).flatten.toSet
       val seenAndInJar = seenMethods.intersect(allAppMethods)
