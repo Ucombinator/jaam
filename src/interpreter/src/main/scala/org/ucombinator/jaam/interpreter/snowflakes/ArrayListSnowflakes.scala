@@ -50,7 +50,7 @@ object ArrayListSnowflakes {
               System.store.update(state.addrsOf(stmt.getLeftOp), D.atomicTop)
             case _ =>
               Snowflakes.warn(state.id, None, null, null)
-              extraStates ++= ReturnSnowflake(D.atomicTop)(state, nextStmt, Some(self), args)
+              extraStates ++= ReturnAtomicSnowflake(state, nextStmt, Some(self), args)
           }
       }
 
