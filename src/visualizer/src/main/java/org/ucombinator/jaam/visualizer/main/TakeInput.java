@@ -73,6 +73,46 @@ public class TakeInput extends Thread
 		return graph;
 	}
 
+	public Graph parseLoopGraph(String file) {
+		Graph graph = new Graph();
+		if(file.equals("")) {
+			//readSmallDummyGraph(graph);
+			//readLargeDummyGraph(graph);
+		}
+		else try
+		{
+			PacketInput packetInput = new PacketInput(new FileInputStream(file));
+			Packet packet = packetInput.read();
+
+			while(!(packet instanceof EOF))
+			{
+				//Name collision with our own Edge class
+				if(packet instanceof LoopNode) {
+					LoopNode node = (LoopNode) packet;
+					int id = ((LoopNode) packet).id().id();
+					//System.out.println("Reading vertex: " + id);
+					graph.addVertex(id, new Instruction("" + id, "foo", id, false), true);
+					//System.out.println("Method name: " + graph.containsInputVertex(id).getMethodName());
+				}
+				else if(packet instanceof LoopEdge) {
+					LoopEdge edge = (LoopEdge) packet;
+					int src = edge.src().id();
+					int dest = edge.dst().id();
+					//System.out.println("Adding loop edge between vertices: " + src + ", " + dest);
+					graph.addEdge(src, dest);
+				}
+
+				packet = packetInput.read();
+			}
+		}
+		catch(FileNotFoundException e)
+		{
+			System.out.println(e);
+		}
+
+		return graph;
+	}
+
 	public static void readSmallDummyGraph(Graph graph) {
 		int dummyInstructions = 6;
 		for (int i = 0; i < dummyInstructions; i++) {

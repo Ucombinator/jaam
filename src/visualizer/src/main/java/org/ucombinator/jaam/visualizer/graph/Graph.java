@@ -61,6 +61,10 @@ public class Graph
 			ver = new Vertex(instruction, vIndex, true);
 			this.vertices.add(ver);
 		}
+		else {
+			ver.setRealInstruction(instruction);
+			//System.out.println("Setting method for dummy vertex: " + ver.getMethodName());
+		}
 		
 		this.matchVertexToMethod(ver, instruction.getMethodName());
 		ver.setDrawEdges(drawEdges);

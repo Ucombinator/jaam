@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 import java.util.HashSet;
@@ -22,6 +23,10 @@ public class LayoutRootVertex extends AbstractLayoutVertex {
 
     public String getShortDescription() {
         return "Root vertex";
+    }
+
+    public GUINode.ShapeType getShape() {
+        return GUINode.ShapeType.RECTANGLE;
     }
 
     public boolean searchByMethod(String query, VizPanel mainPanel) {

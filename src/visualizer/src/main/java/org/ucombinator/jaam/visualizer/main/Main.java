@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.main;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.shape.*;
 import javafx.stage.Stage;
 import org.ucombinator.jaam.visualizer.gui.OuterFrame;
 
@@ -24,7 +25,7 @@ public class Main extends Application
 
 		// Read dummy graph
 		if(org.ucombinator.jaam.visualizer.main.Parameters.loadSampleGraph) {
-			outerFrame.loadGraph(false);
+			outerFrame.loadGraph(false, false);
 		}
 	}
 
