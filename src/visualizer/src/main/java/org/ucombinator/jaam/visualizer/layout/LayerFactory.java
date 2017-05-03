@@ -235,28 +235,5 @@ public class LayerFactory
 			i++;
 		}
 	}
-
-	public static Color convertToFXColor(float redToGreenHue)
-	{
-		float sat = 1f;
-		float brightness = 1f;
-		java.awt.Color awtColor = getHSBColorT(redToGreenHue, sat, brightness);
-
-		int r = awtColor.getRed();
-		int g = awtColor.getGreen();
-		int b = awtColor.getBlue();
-		int a = awtColor.getAlpha();
-		double opacity = a / 255.0 ;
-		return javafx.scene.paint.Color.rgb(r, g, b, opacity);
-	}
-
-	public static java.awt.Color getHSBColorT(float H, float S, float B)
-	{
-		int rgb = java.awt.Color.HSBtoRGB(H, S, B);
-		int red = (rgb >> 16) & 0xFF;
-		int green = (rgb >> 8) & 0xFF;
-		int blue = rgb & 0xFF;
-		return new java.awt.Color(red, green, blue, Parameters.transparency);
-	}
 }
 

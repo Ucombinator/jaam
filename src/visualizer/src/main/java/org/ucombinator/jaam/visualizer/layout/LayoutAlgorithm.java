@@ -13,7 +13,7 @@ public class LayoutAlgorithm
 	private static HashMap<String, Double> bboxWidthTable;
 	private static HashMap<String, Double> bboxHeightTable;
 	
-	private static void initializeSizes(AbstractLayoutVertex parentVertex){
+	private static void initializeSizes(AbstractLayoutVertex parentVertex) {
 		parentVertex.setWidth(AbstractLayoutVertex.DEFAULT_WIDTH);
 		parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
 		Iterator<AbstractLayoutVertex> it = parentVertex.getInnerGraph().getVertices().values().iterator();

@@ -1,8 +1,6 @@
 package org.ucombinator.jaam.visualizer.gui;
 
 import javafx.application.Platform;
-import javafx.concurrent.Service;
-import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -13,6 +11,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.*;
 import javafx.scene.image.Image;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BackgroundImage;
@@ -22,12 +21,10 @@ import javafx.scene.layout.BackgroundSize;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
+import java.io.File;
 
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.main.TakeInput;
-
-import java.awt.*;  //TODO: Is this necessary?
-import java.io.File;
 
 /**
  * Created by timothyjohnson on 4/17/17.
@@ -225,36 +222,6 @@ public class OuterFrame extends BorderPane {
                 }
         );
 
-        MenuItem collapse = new MenuItem("Collapse nodes");
-        menuNavigation.getItems().add(collapse);
-        collapse.setOnAction(
-                new EventHandler<ActionEvent>()
-                {
-                    public void handle(ActionEvent ev)
-                    {
-                        // TODO: Write new collapse function
-                        //Main.graph.collapseOnce();
-                        //Main.graph.root.centerizeXCoordinate();
-                        //OuterFrame.this.repaintAll();
-                    }
-                }
-        );
-
-        MenuItem expand = new MenuItem("Expand nodes");
-        menuNavigation.getItems().add(expand);
-        expand.setOnAction(
-                new EventHandler<ActionEvent>()
-                {
-                    public void handle(ActionEvent ev)
-                    {
-                        // TODO: Write new expand function
-                        //Main.graph.deCollapseOnce();
-                        //Main.graph.root.centerizeXCoordinate();
-                        //OuterFrame.this.repaintAll();
-                    }
-                }
-        );
-
         //Customize display
         menuCustomize = new Menu("Customize");
         menuBar.getMenus().add(menuCustomize);
@@ -316,6 +283,7 @@ public class OuterFrame extends BorderPane {
 
 
         ScrollPane sp = new ScrollPane();
+        
         sp.setContent(imageView);
 
         imageTab.setContent(sp);
