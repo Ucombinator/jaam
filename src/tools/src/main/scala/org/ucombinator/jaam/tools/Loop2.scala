@@ -23,6 +23,8 @@ import soot.options.Options
 import soot.tagkit.GenericAttribute
 import soot.toolkits.graph.LoopNestTree
 
+import org.ucombinator.jaam.serializer
+
 class LoopAnalyzer extends Main("loop2") {
   banner("Analyze the depth of each loop in the application code")
   footer("")
@@ -43,6 +45,7 @@ class LoopAnalyzer extends Main("loop2") {
       "Colon-separated list of JAR files and directories")
   val output = opt[String](descr = "An output file for the dot output")
   val coverage = opt[String](descr = "An output file for the coverage output")
+  val jaam = opt[String](short = 'h', descr = "the output file for the serialized data")
 
   def run(conf: Conf): Unit = {
     val outStream: PrintStream = output.toOption match {
@@ -53,7 +56,7 @@ class LoopAnalyzer extends Main("loop2") {
       case None => System.out
       case Some(f) => new PrintStream(new FileOutputStream(f))
     }
-    LoopAnalyzer.main(mainClass(), mainMethod(), classpath(), outStream, coverageStream,
+    LoopAnalyzer.main(mainClass(), mainMethod(), classpath(), outStream, coverageStream, jaam.toOption,
         prune(), shrink())
   }
 }
@@ -302,6 +305,40 @@ object LoopAnalyzer {
       builder.toString
     }
 
+    def toJaam(s: serializer.PacketOutput) {
+      var seen = Set.empty[Node]
+      var names = Map.empty[Node, serializer.Id[serializer.LoopNode]]
+      def name(node: Node): serializer.Id[serializer.LoopNode] = {
+        names.get(node) match {
+          case Some(id) => id
+          case None =>
+            val id = serializer.Id[serializer.LoopNode](names.size)
+            names += (node -> id)
+            id
+        }
+      }
+      def inner(from: Node): Unit = {
+        if (!seen.contains(from)) {
+          seen = seen + from
+          val id = name(from)
+          val isMethod = from.isInstanceOf[MethodNode]
+          s.write(serializer.LoopNode(id, isMethod, from.toString))
+          for {
+            to <- this(from)
+          } {
+            s.write(serializer.LoopEdge(
+              name(from), name(to), recurEdges.contains((from, to))))
+          }
+          // enforce a BFS order
+          for {
+            to <- this(from)
+          } {
+            inner(to)
+          }
+        }
+      }
+      inner(mNode)
+    }
   }
   object LoopGraph {
       private def add(g: Map[Node, Set[Node]], from: Node, to: Node):
@@ -424,7 +461,7 @@ object LoopAnalyzer {
   }
 
   def main(mainClass: String, mainMethod: String, classpath: String,
-      graphStream: PrintStream, coverageStream: PrintStream, prune: Boolean, shrink: Boolean): Unit = {
+      graphStream: PrintStream, coverageStream: PrintStream, jaam: Option[String], prune: Boolean, shrink: Boolean): Unit = {
     Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
     Options.v().set_keep_line_number(true)
@@ -471,6 +508,13 @@ object LoopAnalyzer {
     }
 
     // TODO: print unpruned size
+    jaam match {
+      case None =>
+      case Some(jaamFile) =>
+        val outSerializer = new serializer.PacketOutput(new FileOutputStream(jaamFile))
+        shrunk.toJaam(outSerializer)
+        outSerializer.close()
+    }
 
     Console.withOut(graphStream) {
       println("digraph loops {")

@@ -161,8 +161,8 @@ abstract class Tag {}
 case class AllocationTag(val sootType : soot.Type) extends Tag {}
 case class ChainTag() extends Tag {}
 
-
-
+case class LoopNode(id: Id[LoopNode], isMethod: Boolean, label: String) extends Packet {}
+case class LoopEdge(src: Id[LoopNode], dst: Id[LoopNode], isRecursion: Boolean) extends Packet {}
 
 ////////////////////////////////////////
 // Types inside packets
