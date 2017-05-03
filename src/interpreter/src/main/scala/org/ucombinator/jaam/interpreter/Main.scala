@@ -937,10 +937,10 @@ Exception in thread "main" java.lang.RuntimeException: No field value in class j
         val states = for (addr <- addrs) yield {
           addr match {
             case InstanceFieldAddr(bp, field) =>
-              Snowflakes.initField(Set(addr), field)
+              DefaultReturnSnowflake.initField(Set(addr), field)
               Set(this)
             case StaticFieldAddr(field) =>
-              Snowflakes.initField(Set(addr), field)
+              DefaultReturnSnowflake.initField(Set(addr), field)
               Set(this)
             case _ =>
               System.undefined += 1
