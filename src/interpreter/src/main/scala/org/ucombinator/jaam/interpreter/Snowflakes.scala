@@ -76,30 +76,6 @@ case class ReturnSnowflake(value : D) extends SnowflakeHandler {
   }
 }
 
-case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
-  override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
-    val addrs: Option[Set[Addr]] = state.stmt.sootStmt match {
-      case stmt: DefinitionStmt => Some(state.addrsOf(stmt.getLeftOp))
-      case stmt: InvokeStmt => None
-    }
-    Snowflakes.createObject(addrs, Soot.getSootClass(name))
-    Set[AbstractState](state.copy(stmt = nextStmt))
-  }
-}
-
-case class ReturnArraySnowflake(baseType: String, dim: Int) extends SnowflakeHandler {
-  override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
-    val sizes = List.fill(dim)(D.atomicTop)
-    val sootBaseType = Soot.getSootType(baseType)
-    val at = soot.ArrayType.v(sootBaseType, dim)
-    state.stmt.sootStmt match {
-      case stmt : DefinitionStmt => Snowflakes.createArray(at, sizes, state.addrsOf(stmt.getLeftOp))
-      case stmt : InvokeStmt =>
-    }
-    Set(state.copy(stmt=nextStmt))
-  }
-}
-
 case class PutStaticSnowflake(clas : String, field : String) extends StaticSnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
     val sootField = Jimple.v.newStaticFieldRef(Soot.getSootClass(clas).getFieldByName(field).makeRef())
@@ -120,10 +96,10 @@ object Snowflakes {
   }
 
   val table = mutable.Map.empty[MethodDescription, SnowflakeHandler]
-  // A list contains statically initialized classes
-  var initializedClasses = List[SootClass]()
-  // A list contains instantiated classes
-  var instantiatedClasses = List[SootClass]()
+
+  val nativeTable = mutable.Map.empty[MethodDescription, NativeSnowflakeHandler]
+  val javaLibTable = mutable.Map.empty[MethodDescription, JavaLibrarySnowflakeHandler]
+  val appLibTable = mutable.Map.empty[MethodDescription, AppLibrarySnowflakeHandler]
 
   def get(meth : SootMethod) : Option[SnowflakeHandler] = {
     val x = MethodDescription(
@@ -137,8 +113,6 @@ object Snowflakes {
   def contains(meth : MethodDescription) : Boolean =
     table.contains(meth)
 
-  //////////////////////////
-
   def malloc(sootClass: SootClass): AbstractSnowflakeBasePointer = {
     if (sootClass.isInterface) SnowflakeInterfaceBasePointer(sootClass.getName)
     else if (sootClass.isAbstract) SnowflakeAbstractClassBasePointer(sootClass.getName)
@@ -146,133 +120,10 @@ object Snowflakes {
   }
   def malloc(at: ArrayType): AbstractSnowflakeBasePointer = { SnowflakeArrayBasePointer(at) }
   def malloc(name: String): AbstractSnowflakeBasePointer = { SnowflakeBasePointer(name) }
-
+  
   def isSnowflakeObject(v: Value): Boolean = v.isInstanceOf[ObjectValue] && isSnowflakeObject(v.asInstanceOf[ObjectValue])
   def isSnowflakeObject(v: ObjectValue): Boolean = isSnowflakeObject(v.bp)
   def isSnowflakeObject(v: BasePointer): Boolean = v.isInstanceOf[AbstractSnowflakeBasePointer]
-
-  def createArray(t: soot.Type, sizes: List[D], addrs: Set[Addr]) {
-    val bp = t match {
-      case at: ArrayType => Snowflakes.malloc(at)
-      case _ => Snowflakes.malloc(t.toString) //TODO
-    }
-    createArray(t, sizes, addrs, bp)
-  }
-
-  def createArray(at: soot.Type, sizes: List[D], addrs: Set[Addr], bp: BasePointer) {
-    sizes match {
-      case Nil =>
-        at match {
-          case pt: PrimType => System.store.update(addrs, D.atomicTop)
-          case rt: RefType => createObject(Some(addrs), Soot.getSootClass(rt.getClassName))
-        }
-      case (s :: ss) =>
-        createArray(at.asInstanceOf[ArrayType].getElementType, ss, Set(ArrayRefAddr(bp)))
-        System.store.update(addrs, D(Set(ArrayValue(at, bp))))
-        System.store.update(ArrayLengthAddr(bp), s)
-    }
-  }
-
-/*
-  TODO: createObjectOrThrow vs createObject
-  def createObjectOrThrow(sootClass: SootClass) : D = {
-    if (!initializedClasses.contains(sootClass)) {
-      throw UninitializedSnowflakeObjectException(sootClass)
-    }
-    D(Set(ObjectValue(sootClass, Snowflakes.malloc(sootClass))))
-  }
- */
-
-  def initField(addrs: Set[Addr], field: SootField) {
-    field.getType match {
-      case pt: PrimType => System.store.update(addrs, D.atomicTop)
-      case at: ArrayType => createArray(at, List.fill(at.numDimensions)(D.atomicTop), addrs)
-      case rt: RefType => createObject(Some(addrs), Soot.getSootClass(rt.getClassName))
-      case t => Log.error("Unknown field type " + t)
-    }
-  }
-
-  def initStaticFields(sootClass: SootClass) {
-    if (initializedClasses.contains(sootClass)) return
-    if (sootClass.hasSuperclass) initStaticFields(sootClass.getSuperclass)
-    for (field <- sootClass.getFields; if field.isStatic) {
-      initField(Set(StaticFieldAddr(field)), field)
-    }
-    initializedClasses = sootClass::initializedClasses
-  }
-
-  def initInstanceFields(sootClass: SootClass, bp: BasePointer) {
-    val className = sootClass.getName
-    for (field <- sootClass.getFields; if !field.isStatic) {
-      val addrs: Set[Addr] = Set(InstanceFieldAddr(bp, field))
-      initField(addrs, field)
-    }
-  }
-
-  /* Snowflakes.createObject should only used for instantiating Java library or
-     application library classes.
-     */
-  def createObject(destAddr: Option[Set[Addr]], sootClass: SootClass) {
-    def allSuperClasses(sootClass: SootClass, supers: Set[SootClass]): Set[SootClass] = {
-      if (sootClass.hasSuperclass) allSuperClasses(sootClass.getSuperclass, supers + sootClass.getSuperclass)
-      else supers
-    }
-    def allInterfaces(sootClass: SootClass): Set[SootClass] = {
-      val ifs = sootClass.getInterfaces().toSet
-      ifs.foldLeft(ifs)((acc, interfaceClass) => allInterfaces(interfaceClass)++acc)
-    }
-    def allImplementers(sootClass: SootClass): Set[SootClass] = {
-      Scene.v.getOrMakeFastHierarchy.getAllImplementersOfInterface(sootClass).toSet
-    }
-    def allSubclasses(sootClass: SootClass): Set[SootClass] = {
-      val sub = Scene.v.getOrMakeFastHierarchy.getSubclassesOf(sootClass).toSet
-      sub.foldLeft(sub)((acc, subclass) => allSubclasses(subclass)++acc)
-    }
-
-    if (!System.isLibraryClass(sootClass)) {
-      //throw new RuntimeException("Trying to use Snowflake to instantiate a non-library class: " + sootClass.getName + ", abort.")
-      Log.error("Trying to use Snowflake to instantiate a non-library class: " + sootClass.getName)
-      //return
-    }
-
-    val objectBP = Snowflakes.malloc(sootClass)
-    destAddr match {
-      case Some(addr) => System.store.update(destAddr, D(Set(ObjectValue(sootClass, objectBP))))
-      case None => {}
-    }
-    if (instantiatedClasses.contains(sootClass)) return
-    instantiatedClasses = sootClass::instantiatedClasses
-
-    if (sootClass.isInterface) {
-      //Log.error("Can not instantiate interface " + sootClass.getName + ".")
-      val impls = allImplementers(sootClass)
-      for (impl <- impls) { createObject(destAddr, impl) }
-      if (impls.isEmpty) {
-        //Log.error("interface " + sootClass.getName + " has no implementers, continue.")
-        for (iface <- allInterfaces(sootClass)) {
-          initStaticFields(iface)
-        }
-        initStaticFields(sootClass)
-      }
-      return
-    }
-    if (!sootClass.isInterface && sootClass.isAbstract) {
-      val subs = allSubclasses(sootClass)
-      for (subclass <- subs) { createObject(destAddr, subclass) }
-      if (subs.nonEmpty) return
-      //Log.error("abstract class " + sootClass.getName + " has no subclass, continue.")
-    }
-
-    for (superClass <- allSuperClasses(sootClass, Set())) {
-      initInstanceFields(superClass, objectBP)
-      initStaticFields(superClass)
-    }
-    for (iface <- allInterfaces(sootClass)) {
-      initStaticFields(iface)
-    }
-    initInstanceFields(sootClass, objectBP)
-    initStaticFields(sootClass)
-  }
 
   private def updateStore(oldStore : Store, clas : String, field : String, typ : String) =
     oldStore.update(StaticFieldAddr(Soot.getSootClass(clas).getFieldByName(field)),
@@ -322,9 +173,85 @@ object Snowflakes {
       }
     })
 
+  table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"),
+    new StaticSnowflakeHandler {
+      lazy val method = Soot.getSootClass("java.security.PrivilegedAction").getMethodByName("run")
+      override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
+        // TODO: expr as argument to apply?
+        // TODO: dest as argument to apply
+        val expr = state.stmt.sootStmt match {
+          case sootStmt : InvokeStmt => sootStmt.getInvokeExpr
+          case sootStmt : DefinitionStmt =>
+            sootStmt.getRightOp().asInstanceOf[InvokeExpr]
+        }
+
+        val dest = state.stmt.sootStmt match {
+          case sootStmt : DefinitionStmt => Some(state.addrsOf(sootStmt.getLeftOp()))
+          case sootStmt : InvokeStmt => None
+        }
+
+        state.handleInvoke2(Some((args(0), false)), method, List(), state.alloca(expr, nextStmt), dest, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/)
+      }
+    })
+
+  table.put(MethodDescription("java.lang.Thread", SootMethod.constructorName, List("java.lang.Runnable"), "void"),
+    new NonstaticSnowflakeHandler {
+      lazy val method = Soot.getSootClass("java.lang.Runnable").getMethodByName("run")
+      override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
+        // TODO: expr as argument to apply?
+        // TODO: dest as argument to apply
+        val expr = state.stmt.sootStmt match {
+          case sootStmt : InvokeStmt => sootStmt.getInvokeExpr
+          case sootStmt : DefinitionStmt =>
+            sootStmt.getRightOp().asInstanceOf[InvokeExpr]
+        }
+
+        val dest = state.stmt.sootStmt match {
+          case sootStmt : DefinitionStmt => Some(state.addrsOf(sootStmt.getLeftOp()))
+          case sootStmt : InvokeStmt => None
+        }
+
+        state.handleInvoke2(Some((args(0), false)), method, List(), state.alloca(expr, nextStmt), dest, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/) + state.copy(stmt = nextStmt)
+      }
+    })
+
+  //Path start, FileVisitor<? super Path> visitor)
+  table.put(MethodDescription("java.nio.file.Files", "walkFileTree", List("java.nio.file.Path", "java.nio.file.FileVisitor"), "java.nio.file.Path"),
+    new StaticSnowflakeHandler {
+      lazy val cls = Soot.getSootClass("java.nio.file.FileVisitor")
+
+      lazy val postVisitDirectory = cls.getMethodByName("postVisitDirectory")
+      lazy val preVisitDirectory = cls.getMethodByName("preVisitDirectory")
+      lazy val visitFile = cls.getMethodByName("visitFile")
+      lazy val visitFileFailed = cls.getMethodByName("visitFileFailed")
+
+      lazy val pathType = Soot.getSootClass("java.nio.file.Path")
+      lazy val attributesType = Soot.getSootClass("java.nio.file.attribute.BasicFileAttributes")
+      lazy val exceptionType = Soot.getSootClass("java.io.IOException")
+      lazy val pathParam = D(Set(ObjectValue(pathType, Snowflakes.malloc("java.nio.file.Files.walkFileTree.Path"))))
+      lazy val attributesParam = D(Set(ObjectValue(attributesType, Snowflakes.malloc("java.nio.file.Files.walkFileTree.BasicFileAttributes"))))
+      lazy val exceptionParam = D(Set(ObjectValue(exceptionType, Snowflakes.malloc("java.nio.file.Files.walkFileTree.IOException"))))
+
+      override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
+        // TODO: expr as argument to apply?
+        // TODO: dest as argument to apply
+        val expr = state.stmt.sootStmt match {
+          case sootStmt : InvokeStmt => sootStmt.getInvokeExpr
+          case sootStmt : DefinitionStmt =>
+            sootStmt.getRightOp().asInstanceOf[InvokeExpr]
+        }
+
+        val fp = state.alloca(expr, nextStmt)
+
+        state.handleInvoke2(Some((args(1), false)), postVisitDirectory, List(pathParam, exceptionParam), fp, None, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/) ++
+         state.handleInvoke2(Some((args(1), false)), preVisitDirectory, List(pathParam, attributesParam), fp, None, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/) ++
+         state.handleInvoke2(Some((args(1), false)), visitFile, List(pathParam, attributesParam), fp, None, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/) ++
+         state.handleInvoke2(Some((args(1), false)), visitFileFailed, List(pathParam, exceptionParam), fp, None, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/)
+      }
+    })
+
 //    table.put(MethodDescription("com.cyberpointllc.stac.hashmap.Node", "hash",
 //      List("java.lang.Object", "int"), "int"), ReturnSnowflake(D.atomicTop))
-
     /*
     table.put(MethodDescription("com.sun.net.httpserver.HttpServer", "createContext",
       List("java.lang.String", "com.sun.net.httpserver.HttpHandler"), "com.sun.net.httpserver.HttpContext"),
@@ -386,7 +313,6 @@ object Snowflakes {
       }
     })
   */
-
   // java.io.PrintStream
   //table.put(MethodDescription("java.io.PrintStream", "println", List("int"), "void"), NoOpSnowflake)
   //table.put(MethodDescription("java.io.PrintStream", "println", List("java.lang.String"), "void"), NoOpSnowflake)
@@ -446,82 +372,6 @@ object Snowflakes {
   table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"), ReturnObjectSnowflake("java.lang.Object"))
   */
 
-  table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"),
-    new StaticSnowflakeHandler {
-      lazy val method = Soot.getSootClass("java.security.PrivilegedAction").getMethodByName("run")
-      override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
-        // TODO: expr as argument to apply?
-        // TODO: dest as argument to apply
-        val expr = state.stmt.sootStmt match {
-          case sootStmt : InvokeStmt => sootStmt.getInvokeExpr
-          case sootStmt : DefinitionStmt =>
-            sootStmt.getRightOp().asInstanceOf[InvokeExpr]
-        }
-
-        val dest = state.stmt.sootStmt match {
-          case sootStmt : DefinitionStmt => Some(state.addrsOf(sootStmt.getLeftOp()))
-          case sootStmt : InvokeStmt => None
-        }
-
-        state.handleInvoke2(Some((args(0), false)), method, List(), state.alloca(expr, nextStmt), dest, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/)
-      }
-    })
-
-  table.put(MethodDescription("java.lang.Thread", SootMethod.constructorName, List("java.lang.Runnable"), "void"),
-    new NonstaticSnowflakeHandler {
-      lazy val method = Soot.getSootClass("java.lang.Runnable").getMethodByName("run")
-      override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
-        // TODO: expr as argument to apply?
-        // TODO: dest as argument to apply
-        val expr = state.stmt.sootStmt match {
-          case sootStmt : InvokeStmt => sootStmt.getInvokeExpr
-          case sootStmt : DefinitionStmt =>
-            sootStmt.getRightOp().asInstanceOf[InvokeExpr]
-        }
-
-        val dest = state.stmt.sootStmt match {
-          case sootStmt : DefinitionStmt => Some(state.addrsOf(sootStmt.getLeftOp()))
-          case sootStmt : InvokeStmt => None
-        }
-
-        state.handleInvoke2(Some((args(0), false)), method, List(), state.alloca(expr, nextStmt), dest, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/) + state.copy(stmt = nextStmt)
-      }
-    })
-
-//Path start, FileVisitor<? super Path> visitor)
-  table.put(MethodDescription("java.nio.file.Files", "walkFileTree", List("java.nio.file.Path", "java.nio.file.FileVisitor"), "java.nio.file.Path"),
-    new StaticSnowflakeHandler {
-      lazy val cls = Soot.getSootClass("java.nio.file.FileVisitor")
-
-      lazy val postVisitDirectory = cls.getMethodByName("postVisitDirectory")
-      lazy val preVisitDirectory = cls.getMethodByName("preVisitDirectory")
-      lazy val visitFile = cls.getMethodByName("visitFile")
-      lazy val visitFileFailed = cls.getMethodByName("visitFileFailed")
-
-      lazy val pathType = Soot.getSootClass("java.nio.file.Path")
-      lazy val attributesType = Soot.getSootClass("java.nio.file.attribute.BasicFileAttributes")
-      lazy val exceptionType = Soot.getSootClass("java.io.IOException")
-      lazy val pathParam = D(Set(ObjectValue(pathType, Snowflakes.malloc("java.nio.file.Files.walkFileTree.Path"))))
-      lazy val attributesParam = D(Set(ObjectValue(attributesType, Snowflakes.malloc("java.nio.file.Files.walkFileTree.BasicFileAttributes"))))
-      lazy val exceptionParam = D(Set(ObjectValue(exceptionType, Snowflakes.malloc("java.nio.file.Files.walkFileTree.IOException"))))
-
-      override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
-        // TODO: expr as argument to apply?
-        // TODO: dest as argument to apply
-        val expr = state.stmt.sootStmt match {
-          case sootStmt : InvokeStmt => sootStmt.getInvokeExpr
-          case sootStmt : DefinitionStmt =>
-            sootStmt.getRightOp().asInstanceOf[InvokeExpr]
-        }
-
-        val fp = state.alloca(expr, nextStmt)
-
-        state.handleInvoke2(Some((args(1), false)), postVisitDirectory, List(pathParam, exceptionParam), fp, None, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/) ++
-         state.handleInvoke2(Some((args(1), false)), preVisitDirectory, List(pathParam, attributesParam), fp, None, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/) ++
-         state.handleInvoke2(Some((args(1), false)), visitFile, List(pathParam, attributesParam), fp, None, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/) ++
-         state.handleInvoke2(Some((args(1), false)), visitFileFailed, List(pathParam, exceptionParam), fp, None, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/)
-      }
-    })
 
 /*
 Not needed b/c the only comparator is over String
