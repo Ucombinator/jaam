@@ -456,7 +456,6 @@ case class State(val stmt : Stmt,
   def alloca(expr : InvokeExpr, nextStmt : Stmt) : FramePointer = ZeroCFAFramePointer(expr.getMethod)
   // Allocates objects
   def malloc() : BasePointer = OneCFABasePointer(stmt, fp)
-  //def mallocFromNative() : BasePointer = OneCFABasePointer(stmt, fp)
 
   // Returns all possible addresses of an assignable expression.
   // x = 3; // Should only return 1 address.
@@ -1146,9 +1145,7 @@ object System {
     }
   }
 
-  def isLibraryClass(c: SootClass): Boolean = {
-    isAppLibraryClass(c) || System.isJavaLibraryClass(c)
-  }
+  def isLibraryClass(c: SootClass): Boolean = isAppLibraryClass(c) || System.isJavaLibraryClass(c)
 
   // Application Library package names is in resources/libclasses.txt
   // We put a dot at the end in case the package name is an exact match
@@ -1163,6 +1160,7 @@ object System {
         if (line(0) == '#') acc else line::acc
       }
   }
+
   def isAppLibraryClass(c : SootClass) : Boolean =
     System.appLibClasses.exists((c.getPackageName()+".").startsWith(_))
 
@@ -1460,7 +1458,6 @@ object Main {
       //Options.v().setPhaseOption("cg.spark", "enabled:true,on-fly-cg:true")
 
       Options.v().set_main_class(conf.mainClass())
-      //Scene.v().setMainClass(Scene.v().loadClassAndSupport(conf.mainClass()))
       //Scene.v().loadNecessaryClasses()
       Scene.v().loadBasicClasses()
       Scene.v().loadDynamicClasses()
@@ -1556,10 +1553,8 @@ object Main {
           }
         }
 
-        //} else if (
-        if (
-          state.stmt.sootStmt.isInstanceOf[ReturnStmt] ||
-          state.stmt.sootStmt.isInstanceOf[ReturnVoidStmt]) {
+        if (state.stmt.sootStmt.isInstanceOf[ReturnStmt] ||
+            state.stmt.sootStmt.isInstanceOf[ReturnVoidStmt]) {
           for (edge <- cg.edgesInto(state.stmt.sootMethod)) {
             // TODO: do something for non-explicit edges (they have a null stmt and unit) (probably are due to throwing exceptions)
             val clazz = edge.src.method.getDeclaringClass
@@ -1673,11 +1668,11 @@ object Main {
           for (n <- nexts) {
             if (!doneEdges.contains((current.id, n.id))) {
               val id = doneEdges.size // TODO: Should create an creating object so these are consistent about 0 vs 1 based
-              Log.info("Writing edge "+id+": "+current.id+" -> "+n.id)
+              Log.info(s"Writing edge $id: ${current.id} -> ${n.id}")
               doneEdges += (current.id, n.id) -> id
               outSerializer.write(serializer.Edge(serializer.Id[serializer.Edge](id), serializer.Id[serializer.Node](current.id), serializer.Id[serializer.Node](n.id)))
             } else {
-              Log.info("Skipping edge "+current.id+" -> "+n.id)
+              Log.info(s"Skipping edge ${current.id} -> ${n.id}")
             }
           }
 
@@ -1706,19 +1701,7 @@ object Main {
     finally {
       outSerializer.close()
     }
-    /*
 
-    // Store summary, print out the number of values in a single address,
-    // and how many address have that number of values.
-    val summary = System.store.map.foldLeft(Map[Int, Int]()) {
-      case (acc, (k, v)) =>
-        val size = v.values.size
-        if (acc.contains(size)) acc + (size -> (acc(size)+1))
-        else acc + (size -> 1)
-    }
-    val sorted = summary.toList.sortWith(_._1 > _._1)
-    sorted.foreach { case (size, n) => println(size + " \t " + n) }
-    */
     Log.error(s"Done!")
     // TODO: this is wrong if the process is suspended.  Maybe use com.sun.management.OperatingSystemMXBean
     val duration = java.time.Duration.between(startInstant, java.time.Instant.now())
@@ -1743,16 +1726,16 @@ object Main {
       Log.error(s"Exceeded maximum state limit (${conf.maxSteps()})")
     }
 
-    Log.error("Initialized classes: "+System.initializedClasses.size)
+    Log.error(s"Initialized classes: ${System.initializedClasses.size}")
     for (c <- System.initializedClasses.map(_.getName).toSeq.sorted) {
-      Log.error("Initialized class:  " + c)
+      Log.error("Initialized class: " + c)
     }
 
     if (System.undefined != 0) {
       Log.error(s"Undefined address number: ${System.undefined}")
     }
 
-    Log.error("States with no successor: "+System.noSucc.size)
+    Log.error(s"States with no successor: ${System.noSucc.size}")
     for (state <- System.noSucc) {
       Log.error("State " + state.id + " has no successors: " + state)
     }
