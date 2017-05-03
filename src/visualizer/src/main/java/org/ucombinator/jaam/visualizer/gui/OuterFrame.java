@@ -52,15 +52,18 @@ public class OuterFrame extends BorderPane {
         MenuItem loadMessages = new MenuItem("Load graph from message file");
         menuFile.getItems().add(loadMessages);
 
-        OuterFrame outFrame = this;
         loadMessages.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent t) {
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        outFrame.loadGraph(true);
-                    }
-                });
+                OuterFrame.this.loadGraph(true, false);
+            }
+        });
+
+        MenuItem loadLoop = new MenuItem("Load graph from loop file");
+        menuFile.getItems().add(loadLoop);
+        loadLoop.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                OuterFrame.this.loadGraph(true, true);
             }
         });
 
@@ -206,7 +209,7 @@ public class OuterFrame extends BorderPane {
 
         //Navigation menu
         menuNavigation = new Menu("Navigation");
-        menuBar.getMenus().add(menuNavigation);
+        //menuBar.getMenus().add(menuNavigation);
 
         MenuItem resetGraph = new MenuItem("Reset view");
         menuNavigation.getItems().add(resetGraph);
@@ -224,7 +227,7 @@ public class OuterFrame extends BorderPane {
 
         //Customize display
         menuCustomize = new Menu("Customize");
-        menuBar.getMenus().add(menuCustomize);
+        //menuBar.getMenus().add(menuCustomize);
 
         /*MenuItem changeFont = new MenuItem("Change font size");
         menuCustomize.getItems().add(changeFont);
@@ -247,7 +250,7 @@ public class OuterFrame extends BorderPane {
 
         // Help menu
         menuHelp = new Menu("Help");
-        menuBar.getMenus().add(menuHelp);
+        //menuBar.getMenus().add(menuHelp);
         MenuItem help = new MenuItem("Shortcuts");
         menuHelp.getItems().add(help);
         help.setOnAction(
@@ -309,7 +312,7 @@ public class OuterFrame extends BorderPane {
         this.setCenter(this.tabPane);
     }
 
-    public void loadGraph(boolean chooseFile)
+    public void loadGraph(boolean chooseFile, boolean isLoopGraph)
     {
         Graph graph;
         TakeInput ti = new TakeInput();
@@ -323,7 +326,10 @@ public class OuterFrame extends BorderPane {
                 System.out.println("Error! Invalid file.");
                 return;
             }
-            graph = ti.parsePackets(file.getAbsolutePath());
+            if(isLoopGraph)
+                graph = ti.parseLoopGraph(file.getAbsolutePath());
+            else
+                graph = ti.parsePackets(file.getAbsolutePath());
             filename = file.getName();
         }
         else {

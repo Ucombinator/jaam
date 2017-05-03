@@ -111,89 +111,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.node = node;
         GUINode sourceNode = sourceVertex.getGraphics();
         GUINode destNode = destVertex.getGraphics();
-        Bounds sourceBounds = sourceNode.getRectBoundsInParent();
-        Bounds destBounds = destNode.getRectBoundsInParent();
-        double sourceCenterX = (sourceBounds.getMinX() + sourceBounds.getMaxX()) / 2.0;
-        double sourceCenterY = (sourceBounds.getMinY() + sourceBounds.getMaxY()) / 2.0;
-        double destCenterX = (destBounds.getMinX() + destBounds.getMaxX()) / 2.0;
-        double destCenterY = (destBounds.getMinY() + destBounds.getMaxY()) / 2.0;
-        double sourceExitX, sourceExitY, destEnterX, destEnterY;
-
-        // To find which side a line exits from, we compute both diagonals of the rectangle and determine whether
-        // the other end lies above or below each diagonal. The positive diagonal uses the positive slope, and the
-        // negative diagonal uses the negative slope.
-        // Keep in mind that the increasing y direction is downward.
-        double startDiagSlope = sourceBounds.getHeight() / sourceBounds.getWidth();
-        double startInterceptPos = sourceCenterY - sourceCenterX * startDiagSlope;
-        double startInterceptNeg = sourceCenterY + sourceCenterX * startDiagSlope;
-        boolean aboveStartPosDiag = (destCenterX * startDiagSlope + startInterceptPos > destCenterY);
-        boolean aboveStartNegDiag = (-destCenterX * startDiagSlope + startInterceptNeg > destCenterY);
-
-        if (aboveStartPosDiag && aboveStartNegDiag)
-        {
-            // Top
-            double invSlope = (destCenterX - sourceCenterX) / (destCenterY - sourceCenterY);
-            sourceExitY = sourceBounds.getMinY();
-            sourceExitX = sourceCenterX + invSlope * (sourceExitY - sourceCenterY);
-        }
-        else if (!aboveStartPosDiag && aboveStartNegDiag)
-        {
-            // Left
-            double slope = (destCenterY - sourceCenterY) / (destCenterX - sourceCenterX);
-            sourceExitX = sourceBounds.getMinX();
-            sourceExitY = sourceCenterY + slope * (sourceExitX - sourceCenterX);
-        }
-        else if (aboveStartPosDiag && !aboveStartNegDiag)
-        {
-            // Right
-            double slope = (destCenterY - sourceCenterY) / (destCenterX - sourceCenterX);
-            sourceExitX = sourceBounds.getMaxX();
-            sourceExitY = sourceCenterY + slope * (sourceExitX - sourceCenterX);
-        }
-        else
-        {
-            // Bottom
-            double invSlope = (destCenterX - sourceCenterX) / (destCenterY - sourceCenterY);
-            sourceExitY = sourceBounds.getMaxY();
-            sourceExitX = sourceCenterX + invSlope * (sourceExitY - sourceCenterY);
-        }
-
-        double destDiagSlope = destBounds.getHeight() / destBounds.getWidth();
-        double destInterceptPos = destCenterY - destCenterX * destDiagSlope;
-        double destInterceptNeg = destCenterY + destCenterX * destDiagSlope;
-        boolean aboveDestPosDiag = (sourceCenterX * destDiagSlope + destInterceptPos > sourceCenterY);
-        boolean aboveDestNegDiag = (-sourceCenterX * destDiagSlope + destInterceptNeg > sourceCenterY);
-
-        if (aboveDestPosDiag && aboveDestNegDiag)
-        {
-            // Top
-            double invSlope = (sourceCenterX - destCenterX) / (sourceCenterY - destCenterY);
-            destEnterY = destBounds.getMinY();
-            destEnterX = destCenterX + invSlope * (destEnterY - destCenterY);
-        }
-        else if(!aboveDestPosDiag && aboveDestNegDiag)
-        {
-            // Left
-            double slope = (sourceCenterY - destCenterY) / (sourceCenterX - destCenterX);
-            destEnterX = destBounds.getMinX();
-            destEnterY = destCenterY + slope * (destEnterX - destCenterX);
-        }
-        else if (aboveDestPosDiag && !aboveDestNegDiag)
-        {
-            // Right
-            double slope = (sourceCenterY - destCenterY) / (sourceCenterX - destCenterX);
-            destEnterX = destBounds.getMaxX();
-            destEnterY = destCenterY + slope * (destEnterX - destCenterX);
-        }
-        else
-        {
-            // Bottom
-            double invSlope = (sourceCenterX - destCenterX) / (sourceCenterY - destCenterY);
-            destEnterY = destBounds.getMaxY();
-            destEnterX = destCenterX + invSlope * (destEnterY - destCenterY);
-        }
-
-        this.line = new Line(sourceExitX, sourceExitY, destEnterX, destEnterY);
+        this.line = GUINode.getLine(sourceNode, destNode);
         if (this.getType() == EDGE_TYPE.EDGE_DUMMY)
         {
             line.getStrokeDashArray().addAll(5d, 4d);
@@ -201,9 +119,12 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         line.setStrokeWidth(destVertex.getGraphics().getRect().getStrokeWidth());
 
         // Compute arrowhead
-        double angle = Math.PI + Math.atan2(destEnterY - sourceExitY, destEnterX - sourceExitX);
+        double angle = Math.PI + Math.atan2(line.getEndY() - line.getStartY(), line.getEndX() - line.getStartX());
+        // TODO: Adjust arrowLength by scale
         double arrowLength = Math.min(10, arrowLengthRatio * destVertex.getGraphics().getRect().getWidth());
 
+        double destEnterX = line.getEndX();
+        double destEnterY = line.getEndY();
         double x1 = destEnterX;
         double y1 = destEnterY;
         double x2 = destEnterX + arrowLength * Math.cos(angle + arrowheadAngleDiff);
@@ -217,29 +138,14 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
                 x2, y2,
                 x3, y3 });
         arrowhead.setFill(Color.BLACK);
-        //System.out.println("Arrowhead points: " + arrowhead.toString());
-
 
         this.graphics.getChildren().removeAll(this.graphics.getChildren());
-
-        // Mark the center of each node for testing
-        if(markCenters)
-        {
-            marker1 = getMarker(sourceCenterX, sourceCenterY);
-            marker2 = getMarker(destCenterX, destCenterY);
-            this.graphics.getChildren().add(marker1);
-            this.graphics.getChildren().add(marker2);
-        }
-
-        //System.out.println("Creating line graphics...");
         this.graphics.getChildren().add(line);
         this.graphics.getChildren().add(arrowhead);
 
         node.getChildren().add(graphics);
         graphics.setVisible(node.getVertex().isExpanded() && this.sourceVertex.isEdgeVisible()
                 && this.destVertex.isEdgeVisible() && this.isVisible());
-
-        //System.out.println("Visibility: " + graphics.isVisible());
     }
 
     public Rectangle getMarker(double x, double y)

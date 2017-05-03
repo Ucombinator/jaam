@@ -4,7 +4,9 @@ import java.util.ArrayList;
 
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
 import javafx.scene.layout.Pane;
+import javafx.scene.shape.*;
 import javafx.scene.text.Text;
 import javafx.event.Event;
 import javafx.event.EventHandler;
@@ -14,17 +16,15 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Stop;
-import javafx.scene.shape.Line;
-import javafx.scene.shape.Rectangle;
 
-import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
-import org.ucombinator.jaam.visualizer.layout.AnimationHandler;
-import org.ucombinator.jaam.visualizer.layout.LayoutRootVertex;
+import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 
 public class GUINode extends Pane
 {
+    public enum ShapeType {RECTANGLE, CIRCLE, DIAMOND};
+    ShapeType shape;
+
     protected static final double TEXT_VERTICAL_PADDING = 15;
     protected static final double TEXT_HORIZONTAL_PADDING = 15;
 	private double dragStartX, dragStartY;
@@ -46,6 +46,7 @@ public class GUINode extends Pane
         this.parent = parent;
         this.vertex = v;
         this.vertex.setGraphics(this);
+        shape = v.getShape();
         
         this.rect = new Rectangle();
         this.rectLabel = new Text(v.getId() + ", " + v.getLoopHeight());
@@ -205,6 +206,146 @@ public class GUINode extends Pane
         double oldHeight = this.vertex.getHeight();
         return (oldHeight - currentHeight) / 2;
     }
+
+    public static Line getLine(GUINode sourceNode, GUINode destNode) {
+        if(sourceNode == null || destNode == null) {
+            System.out.println("This should never happen!");
+            return new Line(0, 0, 0, 0);
+        }
+        else {
+            Point2D sourceIntersect = sourceNode.getLineIntersection(destNode);
+            Point2D destIntersect = destNode.getLineIntersection(sourceNode);
+
+            return new Line(sourceIntersect.getX(), sourceIntersect.getY(),
+                    destIntersect.getX(), destIntersect.getY());
+        }
+    }
+
+    private Point2D getLineIntersection(GUINode otherNode) {
+        if(this.shape == ShapeType.RECTANGLE)
+            return this.getRectangleLineIntersection(otherNode);
+        else if(this.shape == ShapeType.DIAMOND)
+            return this.getDiamondLineIntersection(otherNode);
+        else // this.shape == ShapeType.CIRCLE
+            return this.getCircleLineIntersection(otherNode);
+    }
+
+    // TODO: Fill in these two functions
+    private Point2D getCircleLineIntersection(GUINode otherNode) {
+        return new Point2D(0, 0);
+    }
+
+    private Point2D getDiamondLineIntersection(GUINode otherNode) {
+        return new Point2D(0, 0);
+    }
+
+    private Point2D getRectangleLineIntersection(GUINode otherNode) {
+        Bounds sourceBounds = this.getRectBoundsInParent();
+        Bounds destBounds = otherNode.getRectBoundsInParent();
+
+        double sourceCenterX = (sourceBounds.getMinX() + sourceBounds.getMaxX()) / 2.0;
+        double sourceCenterY = (sourceBounds.getMinY() + sourceBounds.getMaxY()) / 2.0;
+        double destCenterX = (destBounds.getMinX() + destBounds.getMaxX()) / 2.0;
+        double destCenterY = (destBounds.getMinY() + destBounds.getMaxY()) / 2.0;
+        double sourceExitX, sourceExitY;
+
+        // To find which side a line exits from, we compute both diagonals of the rectangle and determine whether
+        // the other end lies above or below each diagonal. The positive diagonal uses the positive slope, and the
+        // negative diagonal uses the negative slope.
+        // Keep in mind that the increasing y direction is downward.
+        double startDiagSlope = sourceBounds.getHeight() / sourceBounds.getWidth();
+        double startInterceptPos = sourceCenterY - sourceCenterX * startDiagSlope;
+        double startInterceptNeg = sourceCenterY + sourceCenterX * startDiagSlope;
+        boolean aboveStartPosDiag = (destCenterX * startDiagSlope + startInterceptPos > destCenterY);
+        boolean aboveStartNegDiag = (-destCenterX * startDiagSlope + startInterceptNeg > destCenterY);
+
+        if (aboveStartPosDiag && aboveStartNegDiag)
+        {
+            // Top
+            double invSlope = (destCenterX - sourceCenterX) / (destCenterY - sourceCenterY);
+            sourceExitY = sourceBounds.getMinY();
+            sourceExitX = sourceCenterX + invSlope * (sourceExitY - sourceCenterY);
+        }
+        else if (!aboveStartPosDiag && aboveStartNegDiag)
+        {
+            // Left
+            double slope = (destCenterY - sourceCenterY) / (destCenterX - sourceCenterX);
+            sourceExitX = sourceBounds.getMinX();
+            sourceExitY = sourceCenterY + slope * (sourceExitX - sourceCenterX);
+        }
+        else if (aboveStartPosDiag && !aboveStartNegDiag)
+        {
+            // Right
+            double slope = (destCenterY - sourceCenterY) / (destCenterX - sourceCenterX);
+            sourceExitX = sourceBounds.getMaxX();
+            sourceExitY = sourceCenterY + slope * (sourceExitX - sourceCenterX);
+        }
+        else
+        {
+            // Bottom
+            double invSlope = (destCenterX - sourceCenterX) / (destCenterY - sourceCenterY);
+            sourceExitY = sourceBounds.getMaxY();
+            sourceExitX = sourceCenterX + invSlope * (sourceExitY - sourceCenterY);
+        }
+
+        return new Point2D(sourceExitX, sourceExitY);
+    }
+
+    // This doesn't work, and we don't know why.
+    /*private Point2D getLineIntersection2(GUINode otherNode) {
+        Bounds sourceBounds = this.getRectBoundsInParent();
+        Bounds destBounds = otherNode.getRectBoundsInParent();
+        System.out.println("\nSource bounds: " + sourceBounds.toString());
+        System.out.println("Dest bounds: " + destBounds.toString());
+
+        double sourceCenterX = (sourceBounds.getMinX() + sourceBounds.getMaxX()) / 2.0;
+        double sourceCenterY = (sourceBounds.getMinY() + sourceBounds.getMaxY()) / 2.0;
+        double destCenterX = (destBounds.getMinX() + destBounds.getMaxX()) / 2.0;
+        double destCenterY = (destBounds.getMinY() + destBounds.getMaxY()) / 2.0;
+        Line line = new Line(sourceCenterX, sourceCenterY, destCenterX, destCenterY);
+        line.setStrokeWidth(5);
+        System.out.println("Line: " + line.toString());
+
+        // Get all points on intersection  between node and line
+        Rectangle rect = new Rectangle(sourceBounds.getMinX(), sourceBounds.getMinY(),
+                sourceBounds.getMaxX(), sourceBounds.getMaxY());
+        Path intersection = (Path) Shape.intersect(line, rect);
+        System.out.println(intersection.toString());
+        ArrayList<Point2D> points = new ArrayList<Point2D>();
+        for(PathElement elem : intersection.getElements()) {
+            if(elem instanceof MoveTo) {
+                MoveTo moveElem = (MoveTo) elem;
+                points.add(new Point2D(moveElem.getX(), moveElem.getY()));
+            }
+            else if(elem instanceof LineTo) {
+                LineTo lineElem = (LineTo) elem;
+                points.add(new Point2D(lineElem.getX(), lineElem.getY()));
+            }
+        }
+
+        // Sort points by distance from center, and take the last one
+        Point2D center = new Point2D(sourceCenterX, sourceCenterY);
+        Collections.sort(points, new Comparator<Point2D>() {
+            @Override
+            public int compare(Point2D p1, Point2D p2) {
+                double distance1 = p1.distance(center);
+                double distance2 = p2.distance(center);
+
+                return ((Double) distance1).compareTo(distance2);
+            }
+        });
+
+        //System.out.println("Points found: " + points.size());
+        if(points.size() == 0) {
+            System.out.println("Error: No points on path for edge from vertex " + this.vertex.getId() + " to " + otherNode.vertex.getId());
+            return new Point2D(0, 0);
+        }
+        else {
+            Point2D result = points.get(points.size() - 1);
+            System.out.println("Returning point: " + result.toString());
+            return result;
+        }
+    }*/
 
     EventHandler<MouseEvent> onMousePressedEventHandler = new EventHandler<MouseEvent>()
     {

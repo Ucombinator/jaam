@@ -410,6 +410,12 @@ public class StacFrame extends BorderPane
 				);
 		utilitiesPanel.getChildren().add(exportImageButton);
 
+		// TODO: Add size info to bottom bar
+		/*Label sizeInfo = new Label();
+		sizeInfo.setText("Total nodes: " + this.mainPanel.getPanelRoot().getTotalVertexCount()
+				+ "  Total edges: " + this.mainPanel.getPanelRoot().getTotalEdgeCount());
+		utilitiesPanel.getChildren().add(sizeInfo);*/
+
 
 		// TODO: Set sizes to fill parent. (Right now we just make the sizes all very large.)
 		bytecodePanel = new BorderPane();
