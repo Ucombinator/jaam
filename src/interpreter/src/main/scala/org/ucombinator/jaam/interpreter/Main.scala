@@ -46,6 +46,7 @@ import soot.tagkit._
 
 import org.ucombinator.jaam.serializer
 import org.ucombinator.jaam.interpreter.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
+import org.ucombinator.jaam.interpreter.snowflakes._
 
 // TODO: some sets could just be lists until we sort them out at the end
 // TODO: `union` might be more efficient than `_++_`
@@ -1436,7 +1437,6 @@ object Main {
   def cha() {
     //val allAppClassess = conf.classpath().toString.split(":").map(getAllClassNames(_))
     Soot.initialize(conf, {
-      //Options.v().set_verbose(true)
       Options.v().set_include_all(false)
       Options.v.set_whole_program(true)
       Options.v().set_app(true)
@@ -1465,7 +1465,7 @@ object Main {
 
     CHATransformer.v().transform()
     val cg = Scene.v().getCallGraph()
-    Log.info("Total number of reachable methods (include Java library): " + Scene.v().getReachableMethods().size())
+    Log.info("Total number of reachable methods (including Java library): " + Scene.v().getReachableMethods().size())
     for (m <- Scene.v().getReachableMethods().listener.toList) {
       Log.debug("  " + m)
     }
