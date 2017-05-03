@@ -94,27 +94,24 @@ public class Graph
 		//System.out.println("Adding input edge: " + src + ", " + dest);
 		Vertex vSrc, vDest;
 
-		if(src != dest)
+		vSrc = this.containsInputVertex(src);
+		if (vSrc == null)
 		{
-			vSrc = this.containsInputVertex(src);
-			if (vSrc == null)
-			{
-				System.out.println("Creating new source vertex: " + src);
-				vSrc = new Vertex(src);
-				this.vertices.add(vSrc);
-			}
-
-			vDest = this.containsInputVertex(dest);
-			if (vDest == null)
-			{
-				System.out.println("Creating new dest vertex: " + dest);
-				vDest = new Vertex(dest);
-				this.vertices.add(vDest);
-			}
-
-			vSrc.addOutgoingNeighbor(vDest);
-			vDest.addIncomingNeighbor(vSrc);
+			//System.out.println("Creating new source vertex: " + src);
+			vSrc = new Vertex(src);
+			this.vertices.add(vSrc);
 		}
+
+		vDest = this.containsInputVertex(dest);
+		if (vDest == null)
+		{
+			//System.out.println("Creating new dest vertex: " + dest);
+			vDest = new Vertex(dest);
+			this.vertices.add(vDest);
+		}
+
+		vSrc.addOutgoingNeighbor(vDest);
+		vDest.addIncomingNeighbor(vSrc);
 	}
 
 	public void matchClassesToCode(String basePath, ArrayList<File> javaFiles)

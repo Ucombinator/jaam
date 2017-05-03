@@ -89,7 +89,7 @@ public class TakeInput extends Thread
 				//Name collision with our own Edge class
 				if(packet instanceof LoopNode) {
 					LoopNode node = (LoopNode) packet;
-					int id = ((LoopNode) packet).id().id();
+					int id = node.id().id();
 					//System.out.println("Reading vertex: " + id);
 					graph.addVertex(id, new Instruction("" + id, "foo", id, false), true);
 					//System.out.println("Method name: " + graph.containsInputVertex(id).getMethodName());
