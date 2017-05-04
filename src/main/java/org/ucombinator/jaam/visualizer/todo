@@ -1,0 +1,58 @@
+Features to add (w/ priority):
+- Read Java code for method: 1
+- Add options menu for right-click on vertices: 1
+- Click on method name in left panel: 1
+- Create magnifier view option: 1
+
+- Highlight space vulnerabilities: 2
+- Search for merge vertices by ID: 2
+- Select merge root whenever a merge parent is selected: 2
+- Show expected format in search dialog boxes: 2
+- Change auto-scroll in left area: 2
+- Set scroll with arrow keys in left area: 2
+- Show which panel is focused on: 2
+- Set right-click drag on minimap to move currently selected area: 2
+- Fix aspect ratio: 2
+- Click on edges: 2
+- Fix flickering in menus (can’t identify reason): 2
+- Add comments in left area: 2
+- Search interface: 2
+- Show cycles for method nodes: 2
+- Different shapes for basic vertices and parent vertices: 2
+- Allow turning edges on/off per vertex: 2
+- Add tooltips for vertex names: 2
+- After expanding a single node, select all of its children: 2
+- Change undo/redo to apply to other operations (searching, selecting, etc.): 2
+
+x- Rearrange children to remove edge crossings: 3
+- Selection rectangle should be transparent: 3
+- Show only selected edges? Or shade by graph theoretic distance? 3
+- Tabbed interface: 3
+- Show path between two nodes? 3
+- Ping selected nodes in both minimap and main window simultaneously: 3
+- Ping minimap when new set of vertices is selected: 3
+- While given modifier key is held, grey out non-selected vertices and edges: 3
+- Extend box height for large labels: 3
+- Abbreviate method names correctly: 3
+- Zoom to bounding box containing selected vertices: 3
+- Match selected vertices to selected lines on left area (maybe some kind of coloring or border, maybe remove colors from main window?): 3
+
+- Allow for collapsing/expanding currently selected vertices, with user-provided label: 4
+- Allow for collapsing/expanding right area: 4
+- Background highlight for methods, differing colors (it should be planar, so finding a coloring with five or six colors is easy): 4
+- Redo loop highlighting (customized): 4
+- Rearrange positions of vertices: 4
+- Search history: 4
+- Cycle through loops for selected vertex: 4
+- Boolean operations for searches: 4
+- Taint checking: 4
+- Buffer drawing to prevent flashing? 4
+
+- Multiple windows with different views: 5
+- Expandable view for hotkeys across bottom (similar to context view?): 5
+
+- Visualize DFA for call stack: 6
+
+Investigated, but probably won’t happen:
+- Check parser for subspace.out (Skip because we want to change to using messages anyway)
+- Change mouse cursor to hourglass while loading graph (seems really annoying to do properly with threading, a progress bar might be easier)

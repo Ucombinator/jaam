@@ -1,0 +1,11 @@
+
+The visualizer must be built with sbt to receive messages using the Message class in Messaging.scala. (I.e., javac won’t work.)
+
+
+See the directions in the jaam readme to produce a graph with the analyzer, which is stored in a file ending with .jaam.
+
+Then run the visualizer with the provided script, ./bin/jaam-visualizer.sh. Load the .jaam graph by choosing the appropriate option in the File menu.
+
+Once a graph has been loaded, the left side of the visualization will show the bytecode matching the currently selected vertices and the minimap. The main screen can zoom in on any desired portion of the graph using the mouse wheel.
+
+The right side displays additional information for each selected vertex.
