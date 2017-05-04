@@ -150,7 +150,9 @@ object LoopAnalyzer {
   }
   // TODO we might have uniqueness problems with SootMethod objects.
   // For now, SootMethod.getSignature will do.
-  case class MethodNode(override val tag: String) extends Node
+  case class MethodNode(override val tag: String) extends Node {
+    override def toString = tag
+  }
 
   case class LoopGraph(val m: SootMethod, private val g: Map[Node, Set[Node]],
       private val recurEdges: Set[(Node, Node)]) {
