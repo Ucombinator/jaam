@@ -248,8 +248,7 @@ object Snowflakes {
       }
     })
 
-//    table.put(MethodDescription("com.cyberpointllc.stac.hashmap.Node", "hash",
-//      List("java.lang.Object", "int"), "int"), ReturnAtomicSnowflake)
+//    table.put(MethodDescription("com.cyberpointllc.stac.hashmap.Node", "hash", List("java.lang.Object", "int"), "int"), ReturnAtomicSnowflake)
     /*
     table.put(MethodDescription("com.sun.net.httpserver.HttpServer", "createContext",
       List("java.lang.String", "com.sun.net.httpserver.HttpHandler"), "com.sun.net.httpserver.HttpContext"),
@@ -373,7 +372,6 @@ object Snowflakes {
 
 /*
 Not needed b/c the only comparator is over String
-
   table.put(MethodDescription("java.util.Collections", "sort", List("java.util.List", "java.util.Comparator"), "void"),
     new StaticSnowflakeHandler {
       override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
