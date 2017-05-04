@@ -3,7 +3,8 @@
 # Handles execution of JAAM's Interpreter for you!
 
 : ${JAAM_dir:="$(cd $(dirname $(dirname $0)); pwd -P)"}
-: ${JAAM_interpreter:="${JAAM_dir}/jars/jaam-interpreter.jar"}
+: ${JAAM_jar:="${JAAM_dir}/jars/jaam.jar"}
+: ${JAAM_interpreter_main:="org.ucombinator.jaam.interpreter.Main"}
 : ${JAAM_java:="java"}
 : ${JAAM_rt_jar:="${JAAM_dir}/resources/rt.jar"}
 : ${JAAM_lib_classes:="${JAAM_dir}/resources/libclasses.txt"}
@@ -14,4 +15,4 @@ chosen_java_opts=${JAVA_OPTS:-"${JAAM_java_opts}"}
 JAVA_OPTS="${chosen_java_opts}"
 
 # Do the execution.
-exec "${JAAM_java}" -Xss16M -jar "${JAAM_interpreter}" -J "${JAAM_rt_jar}" -L "${JAAM_lib_classes}" "$@"
+exec "${JAAM_java}" -Xss16M -cp "${JAAM_jar}" "${JAAM_interpreter_main}"  -J "${JAAM_rt_jar}" -L "${JAAM_lib_classes}" "$@"

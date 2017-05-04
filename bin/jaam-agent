@@ -1,11 +1,10 @@
 #!/bin/bash
 
-# Handles execution of JAAM's Visualizer for you!
+# Handles execution of JAAM's Analyzer for you!
 
 : ${JAAM_dir:="$(cd $(dirname $(dirname $0)); pwd -P)"}
 : ${JAAM_jar:="${JAAM_dir}/jars/jaam.jar"}
-echo $JAAM_jar
-: ${JAAM_visualizer_main:="org.ucombinator.jaam.visualizer.main.Main"}
+: ${JAAM_analyzer_main:="org.ucombinator.jaam.agent.Main"}
 : ${JAAM_java:="java"}
 : ${JAAM_java_opts:=""}
 
@@ -14,4 +13,4 @@ chosen_java_opts=${JAVA_OPTS:-"${JAAM_java_opts}"}
 JAVA_OPTS="${chosen_java_opts}"
 
 # Do the execution.
-exec "${JAAM_java}" -Xss16M -cp "${JAAM_jar}" "${JAAM_visualizer_main}" "$@"
+exec "${JAAM_java}" -cp "${JAAM_jar}" "${JAAM_analyzer_main}" "$@"

@@ -3,7 +3,8 @@
 # Handles execution of JAAM's Tools package for you!
 
 : ${JAAM_dir:="$(cd $(dirname $(dirname $0)); pwd -P)"}
-: ${JAAM_tools:="${JAAM_dir}/jars/jaam-tools.jar"}
+: ${JAAM_jar:="${JAAM_dir}/jars/jaam.jar"}
+: ${JAAM_tools_main:="org.ucombinator.jaam.tools.Main"}
 : ${JAAM_java:="java"}
 : ${JAAM_java_opts:=""}
 
@@ -12,4 +13,4 @@ chosen_java_opts=${JAVA_OPTS:-"${JAAM_java_opts}"}
 JAVA_OPTS="${chosen_java_opts}"
 
 # Do the execution.
-exec "${JAAM_java}" -Xss16M -jar "${JAAM_tools}" "$@"
+exec "${JAAM_java}" -Xss16M -cp "${JAAM_jar}" "${JAAM_tools_main}" "$@"
