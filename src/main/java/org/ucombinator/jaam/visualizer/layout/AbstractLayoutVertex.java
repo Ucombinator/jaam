@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
@@ -21,7 +22,8 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         implements Comparable<AbstractLayoutVertex>
 {
     public static Color highlightColor = Color.ORANGE;
-    private Color color = Color.RED;
+    protected Color color = Color.RED;
+
     private Color[] colors = {Color.LIGHTCORAL,
             Color.LIGHTBLUE, Color.LIGHTCYAN,
             Color.LIGHTSEAGREEN, Color.LIGHTSALMON,
@@ -51,16 +53,10 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     private int dfsPathPos;
 
     public enum VertexType {
-        INSTRUCTION, LOOP, METHOD, CHAIN, ROOT
+        INSTRUCTION, LOOP, METHOD, CHAIN, ROOT, SHRINK
     }
     private VertexType vertexType;
 
-    public Color getColor() {
-        return this.color;
-    }
-    public void setColor(Color color) {
-        this.color = color;
-    }
     public void setWidth(double width) {
         this.location.width = width;
     }
@@ -161,6 +157,8 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     // This is needed so that we can show the code for the methods that correspond to selected vertices
     public abstract HashSet<LayoutMethodVertex> getMethodVertices();
+
+    // This is used to get the preferred visual representation of a node
     public abstract GUINode.ShapeType getShape();
 
     static int colorIndex = 0;
@@ -180,17 +178,19 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         this.loopHeight = -1;
         this.dfsPathPos = -1;
 
-        if(this.vertexType == VertexType.ROOT){
-            this.setColor(Color.WHITE);
-        } else if (this.vertexType == VertexType.METHOD){
+        if (this.vertexType == VertexType.METHOD) {
             this.setColor(colors[colorIndex++ % colors.length]);
-        } else if (this.vertexType == VertexType.CHAIN){
-            this.setColor(Color.GREEN);
-        } else if (this.vertexType == VertexType.INSTRUCTION){
-            this.setColor(Color.YELLOW);
         }
 
         this.setVisible(false);
+    }
+
+    public void setColor(Color c) {
+        this.color = c;
+    }
+
+    public Paint getFill() {
+        return this.color;
     }
 
     // Override in base case, LayoutInstructionVertex
@@ -318,7 +318,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
             this.setGraphicsHighlighted(true);
         }
         else {
-            this.getGraphics().setFill(this.getColor());
+            this.getGraphics().setFill(this.color);
             mainPanel.getHighlighted().remove(this);
             this.setGraphicsHighlighted(false);
         }
@@ -326,12 +326,12 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     private void setGraphicsHighlighted(boolean visible) {
     	Rectangle r = this.getGraphics().getHighlightingRect();
-		FadeTransition ft = new FadeTransition(Duration.millis(300),r);
-		if(visible){
+		FadeTransition ft = new FadeTransition(Duration.millis(300), r);
+		if(visible) {
 			this.getGraphics().getHighlightingRect().setVisible(true);
 			ft.setFromValue(0f);
 			ft.setToValue(1f);
-        }else{
+        } else {
         	ft.setFromValue(1f);
 			ft.setToValue(0f);
         }

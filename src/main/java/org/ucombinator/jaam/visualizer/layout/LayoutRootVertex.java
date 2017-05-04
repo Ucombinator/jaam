@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
@@ -15,6 +16,7 @@ public class LayoutRootVertex extends AbstractLayoutVertex {
 
     public LayoutRootVertex() {
         super("root", VertexType.ROOT, false);
+        this.color = Color.WHITE;
     }
 
     public String getRightPanelContent() {

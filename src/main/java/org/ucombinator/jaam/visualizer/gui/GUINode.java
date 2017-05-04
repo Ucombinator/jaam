@@ -6,16 +6,13 @@ import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
 import javafx.scene.text.Text;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
-
-import javafx.scene.paint.CycleMethod;
-import javafx.scene.paint.LinearGradient;
-import javafx.scene.paint.Stop;
 
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
@@ -93,16 +90,8 @@ public class GUINode extends Pane
         this.rectLabel.setText(text);
     }
 
-    // Next several methods: Pass on calls to underlying rectangle
-    public void setFill(Color c)
-    {
-    	this.rect.setFill(c);
-    	if(vertex.getType() == AbstractLayoutVertex.VertexType.CHAIN){
-        	Stop[] stops = new Stop[]{new Stop(0.6,c), new Stop(0.4,Color.WHITE)};
-            this.rect.setFill(new LinearGradient(0, 0, 8, 8, false, CycleMethod.REPEAT, stops));
-        } else if(vertex.getType() == AbstractLayoutVertex.VertexType.ROOT){
-        	this.rect.setFill(javafx.scene.paint.Color.WHITE);
-        }
+    public void setFill(Paint c) {
+        this.rect.setFill(c);
     }
 
     public void setStroke(Color c)

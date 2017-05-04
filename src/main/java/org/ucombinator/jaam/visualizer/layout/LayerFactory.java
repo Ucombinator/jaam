@@ -5,11 +5,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.Vertex;
-import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class LayerFactory
 {

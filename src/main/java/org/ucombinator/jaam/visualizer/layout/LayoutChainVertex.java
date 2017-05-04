@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import javafx.scene.paint.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
@@ -9,6 +10,9 @@ import java.util.HashSet;
  * Created by timothyjohnson on 2/15/17.
  */
 public class LayoutChainVertex extends AbstractLayoutVertex {
+
+    private static Color color = Color.GREEN;
+    private static Stop[] stops = new Stop[]{new Stop(0.6, color), new Stop(0.4, Color.WHITE)};
 
     public LayoutChainVertex(boolean drawEdges) {
         super("", VertexType.CHAIN, drawEdges);
@@ -47,5 +51,10 @@ public class LayoutChainVertex extends AbstractLayoutVertex {
         }
 
         return methodVertices;
+    }
+
+    @Override
+    public Paint getFill() {
+        return new LinearGradient(0, 0, 8, 8, false, CycleMethod.REPEAT, stops);
     }
 }
