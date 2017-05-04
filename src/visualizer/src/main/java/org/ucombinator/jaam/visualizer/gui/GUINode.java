@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.gui;
 
 import java.util.ArrayList;
 
+
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -154,9 +155,10 @@ public class GUINode extends Pane
     // Returns the bounding box for just the rectangle in the coordinate system for the parent of our node.
     public Bounds getRectBoundsInParent() {
         Bounds nodeBounds = this.getBoundsInParent();
+        Bounds nodeBoundsLocal = this.getBoundsInLocal();
         Bounds rectBounds = this.rect.getBoundsInParent();
-        BoundingBox totalBounds = new BoundingBox(nodeBounds.getMinX() + rectBounds.getMinX(),
-                nodeBounds.getMinY() + rectBounds.getMinY(), rectBounds.getWidth(), rectBounds.getHeight());
+        BoundingBox totalBounds = new BoundingBox(nodeBounds.getMinX() + rectBounds.getMinX() - nodeBoundsLocal.getMinX(),
+                nodeBounds.getMinY() + rectBounds.getMinY() - nodeBoundsLocal.getMinY(), rectBounds.getWidth(), rectBounds.getHeight());
         return totalBounds;
     }
 
@@ -446,9 +448,9 @@ public class GUINode extends Pane
                 {
 	        		if(e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
 	        		{
-	        		    Line line = e.getLine();
-	        		    line.setStroke(Color.ORANGERED);
-	        		    line.setStrokeWidth(line.getStrokeWidth() * 4.0);
+	        		    Shape edgePath = e.getEdgePath();
+	        		    edgePath.setStroke(Color.ORANGERED);
+	        		    edgePath.setStrokeWidth(edgePath.getStrokeWidth() * 4.0);
 	        		}
 	        	}
         	}
@@ -469,9 +471,9 @@ public class GUINode extends Pane
                 {
 	        		if (e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
 	        		{
-	        		    Line line = e.getLine();
-	        			line.setStroke(Color.BLACK);
-                        line.setStrokeWidth(line.getStrokeWidth() / 4.0);
+                        Shape edgePath = e.getEdgePath();
+                        edgePath.setStroke(Color.BLACK);
+                        edgePath.setStrokeWidth(edgePath.getStrokeWidth() / 4.0);
 	        		}
 	        	}
         	}
