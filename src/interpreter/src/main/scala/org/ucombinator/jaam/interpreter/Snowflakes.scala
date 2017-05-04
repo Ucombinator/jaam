@@ -27,7 +27,12 @@ case class SnowflakeAbstractClassBasePointer(name: String) extends AbstractSnowf
 case class MethodDescription(val className : String,
                              val methodName : String,
                              val parameterTypes : List[String],
-                             val returnType : String) extends CachedHashCode
+                             val returnType : String) extends CachedHashCode {
+  override def toString() = {
+    val typesStr = parameterTypes.mkString(",")
+    s"${className}::${returnType} ${methodName}(${typesStr})"
+  }
+}
 
 // Snowflakes are special-cased methods
 abstract class SnowflakeHandler {
@@ -59,22 +64,7 @@ abstract class NonstaticSnowflakeHandler extends SnowflakeHandler {
     }
 }
 
-object NoOpSnowflake extends SnowflakeHandler {
-  override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] =
-    Set(state.copy(stmt = nextStmt))
-}
-
 // TODO/soundness: Add JohnSnowflake for black-holes (i.e., you know nothing). Not everything becomes top, but an awful lot will.
-
-case class ReturnSnowflake(value : D) extends SnowflakeHandler {
-  override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
-    state.stmt.sootStmt match {
-      case sootStmt : DefinitionStmt => System.store.update(state.addrsOf(sootStmt.getLeftOp()), value)
-      case sootStmt : InvokeStmt => {}
-    }
-    Set(state.copy(stmt = nextStmt))
-  }
-}
 
 case class PutStaticSnowflake(clas : String, field : String) extends StaticSnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
@@ -120,7 +110,7 @@ object Snowflakes {
   }
   def malloc(at: ArrayType): AbstractSnowflakeBasePointer = { SnowflakeArrayBasePointer(at) }
   def malloc(name: String): AbstractSnowflakeBasePointer = { SnowflakeBasePointer(name) }
-  
+
   def isSnowflakeObject(v: Value): Boolean = v.isInstanceOf[ObjectValue] && isSnowflakeObject(v.asInstanceOf[ObjectValue])
   def isSnowflakeObject(v: ObjectValue): Boolean = isSnowflakeObject(v.bp)
   def isSnowflakeObject(v: BasePointer): Boolean = v.isInstanceOf[AbstractSnowflakeBasePointer]
@@ -132,7 +122,7 @@ object Snowflakes {
 
   ClassSnowflakes
 
-  //System.arraycopy
+  //java.lang.System :: static void arraycopy(java.lang.Object, int, java.lang.Object, int, int)
   table.put(MethodDescription("java.lang.System", "arraycopy",
     List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new StaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
@@ -143,7 +133,7 @@ object Snowflakes {
     }
   })
 
-  // java.lang.System
+  // java.lang.System :: static void <clinit>()
   table.put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
     new StaticSnowflakeHandler {
       override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
@@ -160,8 +150,13 @@ object Snowflakes {
     })
 
   // By skipping the code for `java.lang.Object.<init>()` we avoid a state convergence of every constructor call
+  // java.lang.Object :: void <init>()
   table.put(MethodDescription("java.lang.Object", SootMethod.constructorName, List(), "void"), NoOpSnowflake)
-  table.put(MethodDescription("java.lang.Object", "equals", List("java.lang.Object"), "boolean"), ReturnSnowflake(D.atomicTop))
+
+  // java.lang.Object :: boolean equals(java.lang.Object)
+  table.put(MethodDescription("java.lang.Object", "equals", List("java.lang.Object"), "boolean"), ReturnAtomicSnowflake)
+
+  // java.lang.Object :: java.lang.Object clone()
   table.put(MethodDescription("java.lang.Object", "clone", List(), "java.lang.Object"),
     new NonstaticSnowflakeHandler {
       override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
@@ -173,6 +168,7 @@ object Snowflakes {
       }
     })
 
+// java.securiy.AccessController :: static java.lang.Object doPrivileged(java.security.PrivilegedAction)
   table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"),
     new StaticSnowflakeHandler {
       lazy val method = Soot.getSootClass("java.security.PrivilegedAction").getMethodByName("run")
@@ -194,6 +190,7 @@ object Snowflakes {
       }
     })
 
+  // java.lang.Thread :: void <init>(java.lang.Runnable)
   table.put(MethodDescription("java.lang.Thread", SootMethod.constructorName, List("java.lang.Runnable"), "void"),
     new NonstaticSnowflakeHandler {
       lazy val method = Soot.getSootClass("java.lang.Runnable").getMethodByName("run")
@@ -216,6 +213,7 @@ object Snowflakes {
     })
 
   //Path start, FileVisitor<? super Path> visitor)
+  //java.nio.file.Files :: static java.nio.file.Path walkFileTree(java.nio.file.Path, java.nio.file.FileVisitor)
   table.put(MethodDescription("java.nio.file.Files", "walkFileTree", List("java.nio.file.Path", "java.nio.file.FileVisitor"), "java.nio.file.Path"),
     new StaticSnowflakeHandler {
       lazy val cls = Soot.getSootClass("java.nio.file.FileVisitor")
@@ -251,7 +249,7 @@ object Snowflakes {
     })
 
 //    table.put(MethodDescription("com.cyberpointllc.stac.hashmap.Node", "hash",
-//      List("java.lang.Object", "int"), "int"), ReturnSnowflake(D.atomicTop))
+//      List("java.lang.Object", "int"), "int"), ReturnAtomicSnowflake)
     /*
     table.put(MethodDescription("com.sun.net.httpserver.HttpServer", "createContext",
       List("java.lang.String", "com.sun.net.httpserver.HttpHandler"), "com.sun.net.httpserver.HttpContext"),
@@ -283,7 +281,7 @@ object Snowflakes {
 
   // For running Image Processor
   //table.put(MethodDescription("java.lang.System", "getProperty", List("java.lang.String"), "java.lang.String"),
-  //  ReturnSnowflake(D(Set(ObjectValue(Soot.classes.String, StringBasePointer("returns from getProperty")))))) // TODO: StringBasePointerTop
+  //  ReturnAtomicSnowflake(D(Set(ObjectValue(Soot.classes.String, StringBasePointer("returns from getProperty")))))) // TODO: StringBasePointerTop
   //
   //table.put(MethodDescription("java.nio.file.Paths", "get", List("java.lang.String", "java.lang.String[]"), "java.nio.file.Path"), ReturnObjectSnowflake("java.nio.file.Path"))
   //table.put(MethodDescription("java.util.HashMap", SootMethod.constructorName, List(), "void"),
@@ -298,7 +296,7 @@ object Snowflakes {
   table.put(MethodDescription("com.sun.net.httpserver.HttpServer", "createContext", List("java.lang.String", "com.sun.net.httpserver.HttpHandler"), "com.sun.net.httpserver.HttpContext"),
     new NonstaticSnowflakeHandler {
       lazy val method = Soot.getSootClass("com.sun.net.httpserver.HttpHandler").getMethodByName("handle")
-      lazy val returnSnowflake = ReturnObjectSnowflake("com.sun.net.httpserver.HttpContext")
+      lazy val ReturnAtomicSnowflake = ReturnObjectSnowflake("com.sun.net.httpserver.HttpContext")
       override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
         val expr = state.stmt.sootStmt match {
           case sootStmt : InvokeStmt => sootStmt.getInvokeExpr
@@ -308,7 +306,7 @@ object Snowflakes {
 
         val exchange = Snowflakes.createObjectOrThrow("com.sun.net.httpserver.HttpExchang") /// TODO: Put with global snowflakes?
         val s1 = state.handleInvoke2(Some((args(1), false)), method, List(exchange), state.alloca(expr, nextStmt), None, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/)
-        val s2 = returnSnowflake(state, nextStmt, Some(self), args)
+        val s2 = ReturnAtomicSnowflake(state, nextStmt, Some(self), args)
         s1 ++ s2
       }
     })
@@ -350,7 +348,7 @@ object Snowflakes {
   //private native java.lang.Class<?>[] getDeclaredClasses0();
   //private static native boolean desiredAssertionStatus0(java.lang.Class<?>);
 
-  //table.put(MethodDescription("java.lang.Class", "desiredAssertionStatus", List(), "boolean"), ReturnSnowflake(D.atomicTop))
+  //table.put(MethodDescription("java.lang.Class", "desiredAssertionStatus", List(), "boolean"), ReturnAtomicSnowflake)
 
   /*
   table.put(MethodDescription("java.security.AccessController", "checkPermission", List("java.security.Permission"), "void"), NoOpSnowflake)
@@ -360,15 +358,15 @@ object Snowflakes {
   table.put(MethodDescription("java.lang.Class", "registerNatives", List(), "void"), NoOpSnowflake)
   table.put(MethodDescription("sun.misc.Unsafe", "registerNatives", List(), "void"), NoOpSnowflake)
 
-  table.put(MethodDescription("java.lang.Double", "doubleToRawLongBits", List("double"), "long"), ReturnSnowflake(D.atomicTop))
-  table.put(MethodDescription("java.lang.Float", "floatToRawIntBits", List("float"), "int"), ReturnSnowflake(D.atomicTop))
-  table.put(MethodDescription("java.lang.Class", "isArray", List(), "boolean"), ReturnSnowflake(D.atomicTop))
-  table.put(MethodDescription("java.lang.Class", "isPrimitive", List(), "boolean"), ReturnSnowflake(D.atomicTop))
+  table.put(MethodDescription("java.lang.Double", "doubleToRawLongBits", List("double"), "long"), ReturnAtomicSnowflake)
+  table.put(MethodDescription("java.lang.Float", "floatToRawIntBits", List("float"), "int"), ReturnAtomicSnowflake)
+  table.put(MethodDescription("java.lang.Class", "isArray", List(), "boolean"), ReturnAtomicSnowflake)
+  table.put(MethodDescription("java.lang.Class", "isPrimitive", List(), "boolean"), ReturnAtomicSnowflake)
 
   table.put(MethodDescription("java.lang.Class", "getPrimitiveClass", List("java.lang.String"), "java.lang.Class"),
-    ReturnSnowflake(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer("TODO:unknown"))))))
+    ReturnAtomicSnowflake(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer("TODO:unknown"))))))
   table.put(MethodDescription("java.lang.Class", "getComponentType", List(), "java.lang.Class"),
-    ReturnSnowflake(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer("TODO:unknown"))))))
+    ReturnAtomicSnowflake(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer("TODO:unknown"))))))
   table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"), ReturnObjectSnowflake("java.lang.Object"))
   */
 
@@ -404,17 +402,17 @@ Not needed b/c the only comparator is over String
     PutStaticSnowflake("java.lang.System", "out"))
   table.put(MethodDescription("java.lang.System", "setErr0", List("java.io.PrintStream"), "void"),
     PutStaticSnowflake("java.lang.System", "err"))
-  table.put(MethodDescription("java.lang.System", "currentTimeMillis", List(), "long"), ReturnSnowflake(D.atomicTop))
-  table.put(MethodDescription("java.lang.System", "nanoTime", List(), "long"), ReturnSnowflake(D.atomicTop))
+  table.put(MethodDescription("java.lang.System", "currentTimeMillis", List(), "long"), ReturnAtomicSnowflake)
+  table.put(MethodDescription("java.lang.System", "nanoTime", List(), "long"), ReturnAtomicSnowflake)
   //public static native void arraycopy(java.lang.Object, int, java.lang.Object, int, int);
-  table.put(MethodDescription("java.lang.System", "identityHashCode", List("java.lang.Object"), "int"), ReturnSnowflake(D.atomicTop))
+  table.put(MethodDescription("java.lang.System", "identityHashCode", List("java.lang.Object"), "int"), ReturnAtomicSnowflake)
   //private static native java.util.Properties initProperties(java.util.Properties);
   //public static native java.lang.String mapLibraryName(java.lang.String);
   // java.lang.Throwable
   table.put(MethodDescription("java.lang.Throwable", SootMethod.constructorName, List(), "void"), NoOpSnowflake)
   //table.put(MethodDescription("java.lang.Throwable", SootMethod.staticInitializerName, List(), "void"), NoOpSnowflake)
   //private native java.lang.Throwable fillInStackTrace(int);
-  table.put(MethodDescription("java.lang.Throwable", "getStackTraceDepth", List(), "int"), ReturnSnowflake(D.atomicTop))
+  table.put(MethodDescription("java.lang.Throwable", "getStackTraceDepth", List(), "int"), ReturnAtomicSnowflake)
   table.put(MethodDescription("java.lang.Throwable", "fillInStackTrace", List("int"), "java.lang.Throwable"), ReturnObjectSnowflake("java.lang.Throwable"))
 
   //native java.lang.StackTraceElement getStackTraceElement(int);

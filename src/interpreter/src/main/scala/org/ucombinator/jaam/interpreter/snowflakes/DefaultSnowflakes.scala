@@ -137,6 +137,21 @@ object DefaultReturnSnowflake {
   }
 }
 
+object NoOpSnowflake extends SnowflakeHandler {
+  override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] =
+    Set(state.copy(stmt = nextStmt))
+}
+
+object ReturnAtomicSnowflake extends SnowflakeHandler {
+  override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
+    state.stmt.sootStmt match {
+      case sootStmt : DefinitionStmt => System.store.update(state.addrsOf(sootStmt.getLeftOp()), D.atomicTop)
+      case sootStmt : InvokeStmt => {}
+    }
+    Set(state.copy(stmt = nextStmt))
+  }
+}
+
 case class ReturnObjectSnowflake(name : String) extends SnowflakeHandler {
   override def apply(state : State, nextStmt : Stmt, self : Option[Value], args : List[D]) : Set[AbstractState] = {
     val addrs: Option[Set[Addr]] = state.stmt.sootStmt match {
@@ -202,7 +217,7 @@ case class DefaultReturnSnowflake(meth : SootMethod) extends SnowflakeHandler {
       case _ : PrimType =>
         // NOTE: if we eventually do something other than D.atomicTop, we need
         // to track where in the store our return value comes from
-        ReturnSnowflake(D.atomicTop)(state, nextStmt, self, args)
+        ReturnAtomicSnowflake(state, nextStmt, self, args)
       case at : ArrayType =>
         val states = ReturnArraySnowflake(at.baseType.toString, at.numDimensions)(state, nextStmt, self, args)
         val values = System.store.getOrElseBot(GlobalSnowflakeAddr).getValues

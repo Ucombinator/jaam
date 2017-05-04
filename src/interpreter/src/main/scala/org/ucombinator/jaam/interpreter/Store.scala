@@ -8,12 +8,13 @@ trait AbstractDomain[T] {
   def joinLeft(d1 : T, d2 : T) : Option[T]
   def join(d1 : T, d2 : T) : T
 }
+
 /*
 trait AbstractDomain[T <: AbstractDomain[T]] {
   val bot : T
   def maybeJoin(d: T): Option[T]
 }
- */
+*/
 
 /* mutable generic store */
 abstract class AbstractStore[K <: Addr, V](val map: mutable.Map[K, V], abstractDomain : AbstractDomain[V]) {
