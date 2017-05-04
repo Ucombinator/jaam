@@ -138,28 +138,28 @@ object LoopAnalyzer {
 
   abstract sealed class Node {
     val tag: String
-    val annotation = ""
-    override def toString: String = ""
   }
   case class LoopNode(val m: SootMethod, val loop: SootLoop) extends Node {
     override val tag = {
       val stmt = Statement(loop.getHead, m)
       m.getSignature + "\ninstruction #" + stmt.index
     }
+    val index = Statement(loop.getHead, m).index
     override def toString = "  " + quote(tag) + " [shape=diamond];\n"
   }
   // TODO we might have uniqueness problems with SootMethod objects.
   // For now, SootMethod.getSignature will do.
-  case class MethodNode(override val tag: String) extends Node {
+  case class MethodNode(val method: SootMethod) extends Node {
+    override val tag = method.getSignature()
     override def toString = tag
   }
 
   case class LoopGraph(val m: SootMethod, private val g: Map[Node, Set[Node]],
       private val recurEdges: Set[(Node, Node)]) {
-    private val mNode = MethodNode(m.getSignature)
+    private val mNode = MethodNode(m)
     def apply(n: Node): Set[Node] = g.getOrElse(n, Set.empty)
     def keySet: Set[String] = g.keySet flatMap {
-      case MethodNode(sig) => Some(sig)
+      case m: MethodNode => Some(m.tag)
       case _ => None
     }
     def +(binding: (Node, Set[Node])): LoopGraph = {
@@ -323,11 +323,16 @@ object LoopAnalyzer {
         if (!seen.contains(from)) {
           seen = seen + from
           val id = name(from)
-          val isMethod = from.isInstanceOf[MethodNode]
-          s.write(serializer.LoopNode(id, isMethod, from.toString))
+          val packet = from match {
+            case MethodNode(m) => serializer.LoopMethodNode(id, m)
+            case n@LoopNode(m, l) => serializer.LoopLoopNode(id, m, /*l,*/ n.index)
+          }
+          println("Writing: "+packet)
+          s.write(packet)
           for {
             to <- this(from)
           } {
+            println("Edge: "+name(from)+"->"+name(to))
             s.write(serializer.LoopEdge(
               name(from), name(to), recurEdges.contains((from, to))))
           }
@@ -358,7 +363,7 @@ object LoopAnalyzer {
       // TODO if things get slow, this should be easy to optimize
       def build(m: SootMethod, g: Map[Node, Set[Node]]):
           Map[Node, Set[Node]] = {
-        val mNode = MethodNode(m.getSignature)
+        val mNode = MethodNode(m)
         if (g isDefinedAt mNode) {
           g
         } else {
@@ -375,7 +380,7 @@ object LoopAnalyzer {
 
             // class initializers can't recur but Soot thinks they do
             if (m.getSignature != dest.getSignature || m.getName != "<clinit>"){
-              val destNode = MethodNode(dest.getSignature)
+              val destNode = MethodNode(dest)
               val parents = forest filter { _ contains sootStmt }
               if (parents.isEmpty) {
                 newGraph = add(newGraph, mNode, destNode)
