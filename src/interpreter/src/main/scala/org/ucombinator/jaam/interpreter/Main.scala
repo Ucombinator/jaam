@@ -953,9 +953,9 @@ Exception in thread "main" java.lang.RuntimeException: No field value in class j
   }
 
   def newExpr(lhsAddr : Set[Addr], sootClass : SootClass) = {
-    val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
     //if (System.isLibraryClass(sootClass) && !sootClass.getPackageName.startsWith("com.sun.net.httpserver")
     /*
+    val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
     if (System.isLibraryClass(sootClass) || Snowflakes.contains(md)) {
       Snowflakes.createObject(Some(lhsAddr), sootClass)
     }

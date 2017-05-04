@@ -87,21 +87,50 @@ object Snowflakes {
 
   val table = mutable.Map.empty[MethodDescription, SnowflakeHandler]
 
-  val nativeTable = mutable.Map.empty[MethodDescription, NativeSnowflakeHandler]
-  val javaLibTable = mutable.Map.empty[MethodDescription, JavaLibrarySnowflakeHandler]
-  val appLibTable = mutable.Map.empty[MethodDescription, AppLibrarySnowflakeHandler]
+  //TODO: put handlers into these tables
+  val nativeTable = mutable.Map.empty[MethodDescription, SnowflakeHandler]
+  val javaLibTable = mutable.Map.empty[MethodDescription, SnowflakeHandler]
+  val appLibTable = mutable.Map.empty[MethodDescription, SnowflakeHandler]
+
+  var nativeSF = true
+  var nativeGenericSF = true
+  var librarySF = true
+  var libraryGenericSF = true
+  var appLibrarySF = true
+  var appLibraryGenericSF = true
+
+  def get(md: MethodDescription, meth: SootMethod): Option[SnowflakeHandler] = {
+    def lookupHelper(m: mutable.Map[MethodDescription, SnowflakeHandler],
+                     cond: Boolean,
+                     default: SnowflakeHandler): Option[SnowflakeHandler] = {
+      m.get(md) match {
+        case None => if (cond) Some(default) else None
+        case Some(h) => Some(h)
+      }
+    }
+    if (meth.isNative && nativeSF) {
+      lookupHelper(nativeTable, nativeGenericSF, DefaultReturnSnowflake(meth))
+    }
+    else if (System.isJavaLibraryClass(meth.getDeclaringClass) && librarySF) {
+      lookupHelper(javaLibTable, libraryGenericSF, DefaultReturnSnowflake(meth))
+    }
+    else if (System.isAppLibraryClass(meth.getDeclaringClass) && appLibrarySF) {
+      lookupHelper(appLibTable, appLibraryGenericSF, DefaultReturnSnowflake(meth))
+    }
+    else { None }
+  }
 
   def get(meth : SootMethod) : Option[SnowflakeHandler] = {
-    val x = MethodDescription(
+    val md = MethodDescription(
       meth.getDeclaringClass.getName,
       meth.getName,
       meth.getParameterTypes.toList.map(_.toString()),
       meth.getReturnType.toString())
-    table.get(x)
+    get(md, meth)
   }
 
   def contains(meth : MethodDescription) : Boolean =
-    table.contains(meth)
+    nativeTable.contains(meth) || javaLibTable.contains(meth) || appLibTable.contains(meth)
 
   def malloc(sootClass: SootClass): AbstractSnowflakeBasePointer = {
     if (sootClass.isInterface) SnowflakeInterfaceBasePointer(sootClass.getName)
