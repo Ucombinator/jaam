@@ -13,6 +13,7 @@ import java.util.zip.{DeflaterOutputStream, InflaterInputStream}
 import scala.collection.JavaConversions._
 import soot.SootMethod
 import soot.jimple.{Stmt => SootStmt}
+import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
 import soot.util.Chain
 import org.objectweb.asm.tree.{AbstractInsnNode, InsnList}
 import com.esotericsoftware.minlog.Log
@@ -161,7 +162,9 @@ abstract class Tag {}
 case class AllocationTag(val sootType : soot.Type) extends Tag {}
 case class ChainTag() extends Tag {}
 
-case class LoopNode(id: Id[LoopNode], isMethod: Boolean, label: String) extends Packet {}
+abstract class LoopNode extends Packet {}
+case class LoopLoopNode(id: Id[LoopNode], method: SootMethod, /*loop: SootLoop,*/ statementIndex: Int) extends LoopNode {}
+case class LoopMethodNode(id: Id[LoopNode], method: SootMethod) extends LoopNode {}
 case class LoopEdge(src: Id[LoopNode], dst: Id[LoopNode], isRecursion: Boolean) extends Packet {}
 
 ////////////////////////////////////////

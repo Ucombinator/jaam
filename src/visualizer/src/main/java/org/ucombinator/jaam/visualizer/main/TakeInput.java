@@ -87,10 +87,17 @@ public class TakeInput extends Thread
 			while(!(packet instanceof EOF))
 			{
 				//Name collision with our own Edge class
-				if(packet instanceof LoopNode) {
-					LoopNode node = (LoopNode) packet;
+				if(packet instanceof LoopLoopNode) {
+					LoopLoopNode node = (LoopLoopNode) packet;
 					int id = node.id().id();
-					graph.addVertex(id, new Instruction(node.label(), "foo", id, false), true);
+					String label = node.method().getSignature() + "\ninstruction #" + node.statementIndex();
+					graph.addVertex(id, new Instruction(label, "foo", id, false), true);
+				}
+				if(packet instanceof LoopMethodNode) {
+					LoopMethodNode node = (LoopMethodNode) packet;
+					int id = node.id().id();
+					String label = node.method().getSignature();
+					graph.addVertex(id, new Instruction(label, "foo", id, false), true);
 				}
 				else if(packet instanceof LoopEdge) {
 					LoopEdge edge = (LoopEdge) packet;
