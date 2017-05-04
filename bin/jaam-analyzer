@@ -3,7 +3,8 @@
 # Handles execution of JAAM's Analyzer for you!
 
 : ${JAAM_dir:="$(cd $(dirname $(dirname $0)); pwd -P)"}
-: ${JAAM_analyzer:="${JAAM_dir}/jars/jaam-analyzer.jar"}
+: ${JAAM_jar:="${JAAM_dir}/jars/jaam.jar"}
+: ${JAAM_analyzer_main:="org.ucombinator.jaam.analyzer.Main"}
 : ${JAAM_java:="java"}
 : ${JAAM_java_opts:=""}
 
@@ -12,4 +13,4 @@ chosen_java_opts=${JAVA_OPTS:-"${JAAM_java_opts}"}
 JAVA_OPTS="${chosen_java_opts}"
 
 # Do the execution.
-exec "${JAAM_java}" -jar "${JAAM_analyzer}" "$@"
+exec "${JAAM_java}" -cp "${JAAM_jar}" "${JAAM_analyzer_main}" "$@"
