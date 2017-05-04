@@ -122,7 +122,7 @@ object Snowflakes {
 
   ClassSnowflakes
 
-  //System.arraycopy
+  //java.lang.System :: static void arraycopy(java.lang.Object, int, java.lang.Object, int, int)
   table.put(MethodDescription("java.lang.System", "arraycopy",
     List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new StaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
@@ -133,7 +133,7 @@ object Snowflakes {
     }
   })
 
-  // java.lang.System
+  // java.lang.System :: static void <clinit>()
   table.put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
     new StaticSnowflakeHandler {
       override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
@@ -150,8 +150,13 @@ object Snowflakes {
     })
 
   // By skipping the code for `java.lang.Object.<init>()` we avoid a state convergence of every constructor call
+  // java.lang.Object :: void <init>()
   table.put(MethodDescription("java.lang.Object", SootMethod.constructorName, List(), "void"), NoOpSnowflake)
+
+  // java.lang.Object :: boolean equals(java.lang.Object)
   table.put(MethodDescription("java.lang.Object", "equals", List("java.lang.Object"), "boolean"), ReturnAtomicSnowflake)
+
+  // java.lang.Object :: java.lang.Object clone()
   table.put(MethodDescription("java.lang.Object", "clone", List(), "java.lang.Object"),
     new NonstaticSnowflakeHandler {
       override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
@@ -163,6 +168,7 @@ object Snowflakes {
       }
     })
 
+// java.securiy.AccessController :: static java.lang.Object doPrivileged(java.security.PrivilegedAction)
   table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"),
     new StaticSnowflakeHandler {
       lazy val method = Soot.getSootClass("java.security.PrivilegedAction").getMethodByName("run")
@@ -184,6 +190,7 @@ object Snowflakes {
       }
     })
 
+  // java.lang.Thread :: void <init>(java.lang.Runnable)
   table.put(MethodDescription("java.lang.Thread", SootMethod.constructorName, List("java.lang.Runnable"), "void"),
     new NonstaticSnowflakeHandler {
       lazy val method = Soot.getSootClass("java.lang.Runnable").getMethodByName("run")
@@ -206,6 +213,7 @@ object Snowflakes {
     })
 
   //Path start, FileVisitor<? super Path> visitor)
+  //java.nio.file.Files :: static java.nio.file.Path walkFileTree(java.nio.file.Path, java.nio.file.FileVisitor)
   table.put(MethodDescription("java.nio.file.Files", "walkFileTree", List("java.nio.file.Path", "java.nio.file.FileVisitor"), "java.nio.file.Path"),
     new StaticSnowflakeHandler {
       lazy val cls = Soot.getSootClass("java.nio.file.FileVisitor")
