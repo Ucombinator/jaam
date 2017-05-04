@@ -121,6 +121,7 @@ public class LayerFactory
 		root.computeHues();
 
 		createChainVertices(root, CHAIN_LENGTH);
+		createLoopVertices(root);
 		return root;
 	}
 
@@ -234,6 +235,11 @@ public class LayerFactory
 			//System.out.println("i:" + i);
 			i++;
 		}
+	}
+
+	private static void createLoopVertices(AbstractLayoutVertex root) {
+		// TODO: Run loop tool to get all loops
+		// Create vertices for each one, and break method graph.
 	}
 }
 

@@ -51,7 +51,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     private int dfsPathPos;
 
     public enum VertexType {
-        INSTRUCTION, METHOD, CHAIN, ROOT
+        INSTRUCTION, LOOP, METHOD, CHAIN, ROOT
     }
     private VertexType vertexType;
 
@@ -161,7 +161,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     // This is needed so that we can show the code for the methods that correspond to selected vertices
     public abstract HashSet<LayoutMethodVertex> getMethodVertices();
-
     public abstract GUINode.ShapeType getShape();
 
     static int colorIndex = 0;

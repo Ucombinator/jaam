@@ -302,9 +302,8 @@ public class OuterFrame extends BorderPane {
             BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT,
             BackgroundPosition.CENTER, 
             new BackgroundSize(542/factor,409/factor, false, false, false, false));
-        
-        
-        
+        // TODO: What are the constants 542 and 409?
+
         //this.tabPane.setBackground(new Background(new BackgroundFill(Color.rgb(255, 255, 255), CornerRadii.EMPTY, Insets.EMPTY)));
         this.tabPane.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
         this.tabPane.setBackground(new Background(bgImg));

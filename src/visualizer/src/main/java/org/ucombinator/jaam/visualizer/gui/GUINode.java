@@ -2,7 +2,6 @@ package org.ucombinator.jaam.visualizer.gui;
 
 import java.util.ArrayList;
 
-
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
