@@ -240,4 +240,3 @@ public class LayerFactory
 		// Create vertices for each one, and break method graph.
 	}
 }
-

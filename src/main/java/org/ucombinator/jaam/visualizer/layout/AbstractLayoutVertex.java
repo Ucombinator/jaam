@@ -16,7 +16,6 @@ import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.Location;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
-import org.ucombinator.jaam.visualizer.main.Main;
 
 public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayoutVertex>
         implements Comparable<AbstractLayoutVertex>
