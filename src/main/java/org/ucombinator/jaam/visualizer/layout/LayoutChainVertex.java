@@ -36,7 +36,9 @@ public class LayoutChainVertex extends AbstractLayoutVertex {
             found = v.searchByMethod(query, mainPanel) || found;
         }
 
-        this.setHighlighted(found, mainPanel);
+        this.setHighlighted(found);
+        mainPanel.getHighlighted().add(this);
+
         return found;
     }
 

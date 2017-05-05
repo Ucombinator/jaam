@@ -286,7 +286,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     public void searchByIDRange(int id1, int id2, VizPanel mainPanel)
     {
         if(this.getId() >= id1 && this.getId() <= id2) {
-            this.setHighlighted(true, mainPanel);
+            this.setHighlighted(true);
             mainPanel.getHighlighted().add(this);
             System.out.println("Search successful: " + this.getId());
         }
@@ -300,7 +300,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         if(this instanceof LayoutInstructionVertex) {
             String instStr = ((LayoutInstructionVertex) this).getInstruction().getText();
             if(instStr.contains(query)) {
-                this.setHighlighted(true, mainPanel);
+                this.setHighlighted(true);
                 mainPanel.getHighlighted().add(this);
             }
         }
@@ -309,16 +309,14 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
             v.searchByInstruction(query, mainPanel);
     }
 
-    public void setHighlighted(boolean isHighlighted, VizPanel mainPanel)
+    public void setHighlighted(boolean isHighlighted)
     {
         if(isHighlighted) {
             this.getGraphics().setFill(highlightColor);
-            mainPanel.getHighlighted().add(this);
             this.setGraphicsHighlighted(true);
         }
         else {
             this.getGraphics().setFill(this.color);
-            mainPanel.getHighlighted().remove(this);
             this.setGraphicsHighlighted(false);
         }
     }

@@ -37,12 +37,14 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
 
     public boolean searchByMethod(String query, VizPanel mainPanel) {
         boolean found = query.contains(this.getMethodName());
-        this.setHighlighted(found, mainPanel);
+        this.setHighlighted(found);
+        mainPanel.getHighlighted().add(this);
 
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
             v.searchByMethod(query, mainPanel);
         }
 
+        //System.out.println("Found method: " + this.getMethodName());
         return found;
     }
 

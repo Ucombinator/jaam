@@ -37,7 +37,9 @@ public class LayoutRootVertex extends AbstractLayoutVertex {
             found = found || v.searchByMethod(query, mainPanel);
         }
 
-        this.setHighlighted(found, mainPanel);
+        this.setHighlighted(found);
+        mainPanel.getHighlighted().add(this);
+
         return found;
     }
 

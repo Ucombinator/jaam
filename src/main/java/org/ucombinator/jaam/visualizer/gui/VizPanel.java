@@ -212,9 +212,9 @@ public class VizPanel extends StackPane
 		if(removeCurrent) {
 			// Unhighlight currently highlighted vertices
 			for (AbstractLayoutVertex v : this.highlighted) {
-				highlighted.remove(v);
-				v.setHighlighted(false, this);
+				v.setHighlighted(false);
 			}
+			highlighted.clear();
 		}
 
 		if(addChosen) {
@@ -222,30 +222,26 @@ public class VizPanel extends StackPane
 			HashSet<AbstractLayoutVertex> toAddHighlights = panelRoot.getVerticesWithInstructionID(index, method);
 			for (AbstractLayoutVertex v : toAddHighlights) {
 				highlighted.add(v);
-				v.setHighlighted(true, this);
+				v.setHighlighted(true);
 			}
 		} else {
 			HashSet<AbstractLayoutVertex> toRemoveHighlights = panelRoot.getVerticesWithInstructionID(index, method);
 			for(AbstractLayoutVertex v : toRemoveHighlights) {
-				highlighted.remove(v);
-				v.setHighlighted(false, this);
+				v.setHighlighted(false);
 			}
+			highlighted.removeAll(toRemoveHighlights);
 		}
 	}
 
 	public void resetHighlighted(AbstractLayoutVertex newHighlighted)
 	{
-		ArrayList<AbstractLayoutVertex> tempHighlighted = new ArrayList<AbstractLayoutVertex>();
-		for(AbstractLayoutVertex currHighlighted : this.highlighted)
-			tempHighlighted.add(currHighlighted);
-
-		for(AbstractLayoutVertex currHighlighted : tempHighlighted)
-			currHighlighted.setHighlighted(false, this);
-		highlighted = new HashSet<AbstractLayoutVertex>();
+		for(AbstractLayoutVertex currHighlighted : highlighted)
+			currHighlighted.setHighlighted(false);
+		highlighted.clear();
 
 		if(newHighlighted != null) {
 			highlighted.add(newHighlighted);
-			newHighlighted.setHighlighted(true, this);
+			newHighlighted.setHighlighted(true);
 		}
 	}
 
