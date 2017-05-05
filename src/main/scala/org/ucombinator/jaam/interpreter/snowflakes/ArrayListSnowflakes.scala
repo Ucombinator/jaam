@@ -12,9 +12,9 @@ object ArrayListSnowflakes {
   lazy val ArrayList = Soot.getSootClass("java.util.ArrayList")
   lazy val Iterator = Soot.getSootClass("java.util.Iterator")
 
-  Snowflakes.table.put(MethodDescription("java.util.ArrayList", SootMethod.constructorName, List(), "void"), ArrayListSnowflakes.init())
-  Snowflakes.table.put(MethodDescription("java.util.ArrayList", "add", List("java.lang.Object"), "boolean"), ArrayListSnowflakes.add())
-  Snowflakes.table.put(MethodDescription("java.util.ArrayList", "iterator", List(), "java.util.Iterator"), ArrayListSnowflakes.iterator())
+  Snowflakes.put(MethodDescription("java.util.ArrayList", SootMethod.constructorName, List(), "void"), ArrayListSnowflakes.init())
+  Snowflakes.put(MethodDescription("java.util.ArrayList", "add", List("java.lang.Object"), "boolean"), ArrayListSnowflakes.add())
+  Snowflakes.put(MethodDescription("java.util.ArrayList", "iterator", List(), "java.util.Iterator"), ArrayListSnowflakes.iterator())
 
   case class init() extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
