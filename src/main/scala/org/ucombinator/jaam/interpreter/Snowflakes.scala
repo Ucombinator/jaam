@@ -24,10 +24,8 @@ case class SnowflakeInterfaceBasePointer(name: String) extends AbstractSnowflake
 case class SnowflakeAbstractClassBasePointer(name: String) extends AbstractSnowflakeBasePointer
 
 // Uniquely identifies a particular method somewhere in the program.
-case class MethodDescription(val className : String,
-                             val methodName : String,
-                             val parameterTypes : List[String],
-                             val returnType : String) extends CachedHashCode {
+case class MethodDescription(className: String, methodName: String,
+                             parameterTypes: List[String], returnType: String) extends CachedHashCode {
   override def toString() = {
     val typesStr = parameterTypes.mkString(",")
     s"${className}::${returnType} ${methodName}(${typesStr})"
@@ -76,6 +74,20 @@ case class PutStaticSnowflake(clas : String, field : String) extends StaticSnowf
 }
 
 object Snowflakes {
+  //val table = mutable.Map.empty[MethodDescription, SnowflakeHandler]
+  /* All natie method handlers (in both Java library and application library) should put
+     into nativeTable. */
+  private val nativeTable = mutable.Map.empty[MethodDescription, SnowflakeHandler]
+  private val javaLibTable = mutable.Map.empty[MethodDescription, SnowflakeHandler]
+  private val appTable = mutable.Map.empty[MethodDescription, SnowflakeHandler]
+
+  var nativeSF = true
+  var nativeGenericSF = true
+  var librarySF = true
+  var libraryGenericSF = true
+  var appLibrarySF = true
+  var appLibraryGenericSF = true
+
   // TODO: take state as argument? (so id is clearly the state id)
   // TODO: take reason as argument (e.g., native, java library, app library, etc.)
   def warn(id : Int, self: Option[Value], stmt : Stmt, meth : SootMethod) {
@@ -85,19 +97,20 @@ object Snowflakes {
       " method = " + meth)
   }
 
-  val table = mutable.Map.empty[MethodDescription, SnowflakeHandler]
-
-  //TODO: put handlers into these tables
-  val nativeTable = mutable.Map.empty[MethodDescription, SnowflakeHandler]
-  val javaLibTable = mutable.Map.empty[MethodDescription, SnowflakeHandler]
-  val appLibTable = mutable.Map.empty[MethodDescription, SnowflakeHandler]
-
-  var nativeSF = true
-  var nativeGenericSF = true
-  var librarySF = true
-  var libraryGenericSF = true
-  var appLibrarySF = true
-  var appLibraryGenericSF = true
+  def put(md: MethodDescription, sf: SnowflakeHandler) {
+    val clazz = Soot.getSootClass(md.className)
+    val meth = clazz.getMethodByName(md.methodName)
+    if (meth.isNative) {
+      nativeTable.put(md, sf)
+    }
+    else if (System.isJavaLibraryClass(clazz)) {
+      javaLibTable.put(md, sf)
+    }
+    else {
+      //should be a application class
+      appTable.put(md, sf)
+    }
+  }
 
   def get(md: MethodDescription, meth: SootMethod): Option[SnowflakeHandler] = {
     def lookupHelper(m: mutable.Map[MethodDescription, SnowflakeHandler],
@@ -115,7 +128,7 @@ object Snowflakes {
       lookupHelper(javaLibTable, libraryGenericSF, DefaultReturnSnowflake(meth))
     }
     else if (System.isAppLibraryClass(meth.getDeclaringClass) && appLibrarySF) {
-      lookupHelper(appLibTable, appLibraryGenericSF, DefaultReturnSnowflake(meth))
+      lookupHelper(appTable, appLibraryGenericSF, DefaultReturnSnowflake(meth))
     }
     else { None }
   }
@@ -130,7 +143,7 @@ object Snowflakes {
   }
 
   def contains(meth : MethodDescription) : Boolean =
-    nativeTable.contains(meth) || javaLibTable.contains(meth) || appLibTable.contains(meth)
+    nativeTable.contains(meth) || javaLibTable.contains(meth) || appTable.contains(meth)
 
   def malloc(sootClass: SootClass): AbstractSnowflakeBasePointer = {
     if (sootClass.isInterface) SnowflakeInterfaceBasePointer(sootClass.getName)
@@ -152,7 +165,7 @@ object Snowflakes {
   ClassSnowflakes
 
   //java.lang.System :: static void arraycopy(java.lang.Object, int, java.lang.Object, int, int)
-  table.put(MethodDescription("java.lang.System", "arraycopy",
+  put(MethodDescription("java.lang.System", "arraycopy",
     List("java.lang.Object", "int", "java.lang.Object", "int", "int"), "void"), new StaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
       assert(state.stmt.sootStmt.getInvokeExpr.getArgCount == 5)
@@ -163,7 +176,7 @@ object Snowflakes {
   })
 
   // java.lang.System :: static void <clinit>()
-  table.put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
+  put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
     new StaticSnowflakeHandler {
       override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
         var newNewStore = System.store
@@ -180,13 +193,13 @@ object Snowflakes {
 
   // By skipping the code for `java.lang.Object.<init>()` we avoid a state convergence of every constructor call
   // java.lang.Object :: void <init>()
-  table.put(MethodDescription("java.lang.Object", SootMethod.constructorName, List(), "void"), NoOpSnowflake)
+  put(MethodDescription("java.lang.Object", SootMethod.constructorName, List(), "void"), NoOpSnowflake)
 
   // java.lang.Object :: boolean equals(java.lang.Object)
-  table.put(MethodDescription("java.lang.Object", "equals", List("java.lang.Object"), "boolean"), ReturnAtomicSnowflake)
+  put(MethodDescription("java.lang.Object", "equals", List("java.lang.Object"), "boolean"), ReturnAtomicSnowflake)
 
   // java.lang.Object :: java.lang.Object clone()
-  table.put(MethodDescription("java.lang.Object", "clone", List(), "java.lang.Object"),
+  put(MethodDescription("java.lang.Object", "clone", List(), "java.lang.Object"),
     new NonstaticSnowflakeHandler {
       override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
         val newNewStore = state.stmt.sootStmt match {
@@ -198,7 +211,7 @@ object Snowflakes {
     })
 
 // java.securiy.AccessController :: static java.lang.Object doPrivileged(java.security.PrivilegedAction)
-  table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"),
+  put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"),
     new StaticSnowflakeHandler {
       lazy val method = Soot.getSootClass("java.security.PrivilegedAction").getMethodByName("run")
       override def apply(state : State, nextStmt : Stmt, args : List[D]) : Set[AbstractState] = {
@@ -220,7 +233,7 @@ object Snowflakes {
     })
 
   // java.lang.Thread :: void <init>(java.lang.Runnable)
-  table.put(MethodDescription("java.lang.Thread", SootMethod.constructorName, List("java.lang.Runnable"), "void"),
+  put(MethodDescription("java.lang.Thread", SootMethod.constructorName, List("java.lang.Runnable"), "void"),
     new NonstaticSnowflakeHandler {
       lazy val method = Soot.getSootClass("java.lang.Runnable").getMethodByName("run")
       override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
@@ -243,7 +256,7 @@ object Snowflakes {
 
   //Path start, FileVisitor<? super Path> visitor)
   //java.nio.file.Files :: static java.nio.file.Path walkFileTree(java.nio.file.Path, java.nio.file.FileVisitor)
-  table.put(MethodDescription("java.nio.file.Files", "walkFileTree", List("java.nio.file.Path", "java.nio.file.FileVisitor"), "java.nio.file.Path"),
+  put(MethodDescription("java.nio.file.Files", "walkFileTree", List("java.nio.file.Path", "java.nio.file.FileVisitor"), "java.nio.file.Path"),
     new StaticSnowflakeHandler {
       lazy val cls = Soot.getSootClass("java.nio.file.FileVisitor")
 

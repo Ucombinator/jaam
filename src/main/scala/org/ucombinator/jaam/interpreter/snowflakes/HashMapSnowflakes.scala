@@ -14,11 +14,11 @@ object HashMapSnowflakes {
   lazy val Iterator = Soot.getSootClass("java.util.Iterator")
   lazy val Entry = Soot.getSootClass("java.util.Map$" +"Entry") // Spilt up "$Entry to keep linter happy
 
-  Snowflakes.table.put(MethodDescription("java.util.HashMap", SootMethod.constructorName, List(), "void"), HashMapSnowflakes.init())
-  Snowflakes.table.put(MethodDescription("java.util.HashMap", "put", List("java.lang.Object", "java.lang.Object"), "java.lang.Object"), HashMapSnowflakes.put())
-  Snowflakes.table.put(MethodDescription("java.util.HashMap", "get", List("java.lang.Object"), "java.lang.Object"), HashMapSnowflakes.get())
-  Snowflakes.table.put(MethodDescription("java.util.Iterator", "hasNext", List(), "boolean"), hasNext())
-  Snowflakes.table.put(MethodDescription("java.util.Iterator", "next", List(), "java.lang.Object"), next())
+  Snowflakes.put(MethodDescription("java.util.HashMap", SootMethod.constructorName, List(), "void"), HashMapSnowflakes.init())
+  Snowflakes.put(MethodDescription("java.util.HashMap", "put", List("java.lang.Object", "java.lang.Object"), "java.lang.Object"), HashMapSnowflakes.put())
+  Snowflakes.put(MethodDescription("java.util.HashMap", "get", List("java.lang.Object"), "java.lang.Object"), HashMapSnowflakes.get())
+  Snowflakes.put(MethodDescription("java.util.Iterator", "hasNext", List(), "boolean"), hasNext())
+  Snowflakes.put(MethodDescription("java.util.Iterator", "next", List(), "java.lang.Object"), next())
 
   case class KeysAddr(val bp : BasePointer) extends Addr
   case class ValuesAddr(val bp : BasePointer) extends Addr

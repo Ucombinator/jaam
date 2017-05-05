@@ -9,7 +9,7 @@ import org.ucombinator.jaam.interpreter._
 
 // Note: currently enabled
 object ClassSnowflakes {
-  Snowflakes.table.put(MethodDescription("java.lang.Class", "newInstance", List(), "java.lang.Object"), newInstance)
+  Snowflakes.put(MethodDescription("java.lang.Class", "newInstance", List(), "java.lang.Object"), newInstance)
   case object newInstance extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       val local = state.stmt.sootStmt match {
@@ -53,7 +53,7 @@ object ClassSnowflakes {
     }
   }
 
-  Snowflakes.table.put(MethodDescription("java.lang.Class", "getName", List(), "java.lang.String"), getName)
+  Snowflakes.put(MethodDescription("java.lang.Class", "getName", List(), "java.lang.String"), getName)
   case object getName extends NonstaticSnowflakeHandler {
     override def apply(state : State, nextStmt : Stmt, self : Value, args : List[D]) : Set[AbstractState] = {
       val local = state.stmt.sootStmt match {
@@ -74,7 +74,7 @@ object ClassSnowflakes {
   }
 
   //private static native java.lang.Class<?> forName0(java.lang.String, boolean, java.lang.ClassLoader, java.lang.Class<?>) throws java.lang.ClassNotFoundException;
-  Snowflakes.table.put(MethodDescription("java.lang.Class", "forName0", List("java.lang.String", "boolean", "java.lang.ClassLoader", "java.lang.Class"), "java.lang.Class"), forName0)
+  Snowflakes.put(MethodDescription("java.lang.Class", "forName0", List("java.lang.String", "boolean", "java.lang.ClassLoader", "java.lang.Class"), "java.lang.Class"), forName0)
   case object forName0 extends StaticSnowflakeHandler {
     override def apply(state: State, nextStmt: Stmt, args: List[D]): Set[AbstractState] = {
 //      Log.error(s"forName0\n  state: $state\n  nextStmt: $nextStmt\n  args: $args")
