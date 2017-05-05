@@ -27,8 +27,6 @@ public class VizPanel extends StackPane
 	private HashSet<AbstractLayoutVertex> highlighted;
 	private LayoutRootVertex panelRoot;
 	private Button zoomIn, zoomOut, resetButton;
-
-	private double deriredRootTranslateY, deriredRootTranslateX;
 	
 	// The dimensions of the background for our graph
 	private final double initRootWidth = 500.0, initRootHeight = 500.0;
@@ -105,7 +103,6 @@ public class VizPanel extends StackPane
 				if (event.getEventType()!= KeyEvent.KEY_PRESSED){
 					return;
 				}
-				//System.out.println(event.getCode().toString());
 
 				VizPanel.this.graphPane.layout();
 				GUINode rootGraphics =  VizPanel.this.getPanelRoot().getGraphics();
@@ -342,7 +339,7 @@ public class VizPanel extends StackPane
 		GUINode node = new GUINode(parent, v);
 		node.setArcWidth(scaleX(0.5));
 		node.setArcHeight(scaleY(0.5));
-		node.setFill(v.getColor());
+		node.setFill(v.getFill());
 		node.setStroke(Color.BLACK);
 		node.setStrokeWidth(.5);
 		node.setOpacity(1);
