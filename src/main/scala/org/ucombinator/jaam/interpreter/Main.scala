@@ -722,34 +722,25 @@ case class State(val stmt : Stmt,
     // TODO/dragons. Here they be.
     def dispatch(self : Option[Value], meth : SootMethod) : Set[AbstractState] = {
       // TODO: group multiple "self" together
-      Snowflakes.get(meth) match {
-        case Some(h) => h(this, nextStmt, self, args)
-        case None =>
-
-          // TODO: Independently control snowflaking of app vs java library
-          // TODO: Also, consider natives returning prim separate from those returning non-prim
+      Snowflakes.dispatch(meth) match {
+        case Some(h) =>
+          // TODO: kepp self.exists(Snowflakes.isSnowflakeObject(_) ?
           // TODO: Also, allow option to abort instead of snowflake (i.e., return empty set of states with log message)
-          if (Main.conf.snowflakeLibrary() && System.isLibraryClass(meth.getDeclaringClass) ||
-              self.exists(Snowflakes.isSnowflakeObject(_)) ||
-              meth.isNative) {
-            if (meth.isNative) {
-              Log.warn("Native snowflake: "+meth+" self: "+self)
-            }
-            Snowflakes.warn(this.id, self, stmt, meth)
-            // TODO/optimize: do we need to filter out incorrect class types?
-            DefaultReturnSnowflake(meth)(this, nextStmt, self, args)
-          } else {
-              // TODO/optimize: filter out incorrect class types
-              val newKontStack = kontStack.push(meth, newFP, Frame(nextStmt, fp, destAddr))
-              self match {
-                case Some(s) => System.store.update(ThisFrameAddr(newFP), D(Set(s)))
-                case None => {} // TODO: throw exception here?
-              }
-              for (i <- 0 until args.length) {
-                System.store.update(ParameterFrameAddr(newFP, i), args(i))
-              }
-              Set(State(Stmt.methodEntry(meth), newFP, newKontStack))
-            }
+          if (meth.isNative) { Log.warn("Native snowflake: "+meth+" self: "+self) }
+          Snowflakes.warn(this.id, self, stmt, meth)
+          // TODO/optimize: do we need to filter out incorrect class types?
+          h(this, nextStmt, self, args)
+        case None =>
+          // TODO/optimize: filter out incorrect class types
+          val newKontStack = kontStack.push(meth, newFP, Frame(nextStmt, fp, destAddr))
+          self match {
+            case Some(s) => System.store.update(ThisFrameAddr(newFP), D(Set(s)))
+            case None => {} // TODO: throw exception here?
+          }
+          for (i <- 0 until args.length) {
+            System.store.update(ParameterFrameAddr(newFP, i), args(i))
+          }
+          Set(State(Stmt.methodEntry(meth), newFP, newKontStack))
       }
     }
 

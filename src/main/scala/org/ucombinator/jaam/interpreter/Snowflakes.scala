@@ -133,7 +133,7 @@ object Snowflakes {
     else { None }
   }
 
-  def get(meth : SootMethod) : Option[SnowflakeHandler] = {
+  def dispatch(meth : SootMethod) : Option[SnowflakeHandler] = {
     val md = MethodDescription(
       meth.getDeclaringClass.getName,
       meth.getName,
