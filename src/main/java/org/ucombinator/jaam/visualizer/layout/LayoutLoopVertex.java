@@ -37,8 +37,10 @@ public class LayoutLoopVertex extends AbstractLayoutVertex {
 
     public boolean searchByMethod(String query, VizPanel mainPanel) {
         boolean found = this.methodVertex.getMethodName().contains(query);
-        if(found)
-            this.setHighlighted(found, mainPanel);
+        if(found) {
+            this.setHighlighted(found);
+            mainPanel.getHighlighted().add(this);
+        }
 
         return found;
     }
