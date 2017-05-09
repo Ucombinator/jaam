@@ -16,21 +16,21 @@
 <?import javafx.scene.text.TextFlow?>
 
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="594.0" prefWidth="602.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1">
    <center>
-      <SplitPane dividerPositions="0.20066889632107024, 0.7107023411371237" prefHeight="357.0" prefWidth="600.0" BorderPane.alignment="CENTER">
+      <SplitPane dividerPositions="0.20023557126030625, 0.7491166077738516" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" BorderPane.alignment="CENTER">
          <items>
-            <BorderPane prefHeight="398.0" prefWidth="0.0">
+            <BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
                <top>
                   <Label text="Code" BorderPane.alignment="CENTER" />
                </top>
                <center>
-                  <TextFlow prefHeight="381.0" prefWidth="268.0" BorderPane.alignment="CENTER" />
+                  <TextFlow BorderPane.alignment="CENTER" />
                </center>
             </BorderPane>
-            <StackPane prefHeight="398.0" prefWidth="296.0">
+            <StackPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
                <children>
-                  <VBox prefHeight="398.0" prefWidth="85.0">
+                  <VBox>
                      <children>
                         <Button mnemonicParsing="false" text="+" />
                         <Button minWidth="10.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="27.0" text="-" />
@@ -39,22 +39,22 @@
                   </VBox>
                </children>
             </StackPane>
-            <SplitPane dividerPositions="0.5" orientation="VERTICAL" prefHeight="200.0" prefWidth="100.0">
+            <SplitPane dividerPositions="0.5" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" orientation="VERTICAL">
                <items>
-                  <BorderPane>
+                  <BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
                      <center>
-                        <TextArea prefHeight="200.0" prefWidth="200.0" />
+                        <TextArea />
                      </center>
                      <top>
                         <Label text="Description" BorderPane.alignment="CENTER" />
                      </top>
                   </BorderPane>
-                  <BorderPane prefHeight="200.0" prefWidth="200.0">
+                  <BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
                      <top>
                         <Label text="Search results" BorderPane.alignment="CENTER" />
                      </top>
                      <center>
-                        <TreeView prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+                        <TreeView BorderPane.alignment="CENTER" />
                      </center>
                   </BorderPane>
                </items>
@@ -63,9 +63,9 @@
       </SplitPane>
    </center>
    <bottom>
-      <FlowPane prefHeight="42.0" prefWidth="600.0" BorderPane.alignment="CENTER">
+      <FlowPane maxHeight="70.0" prefHeight="0.0" prefWidth="0.0" BorderPane.alignment="CENTER">
          <children>
-            <GridPane prefHeight="61.0" prefWidth="88.0">
+            <GridPane>
               <columnConstraints>
                 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
               </columnConstraints>
@@ -78,7 +78,7 @@
                   <CheckBox mnemonicParsing="false" text="Labels" GridPane.rowIndex="1" />
                </children>
             </GridPane>
-            <GridPane prefHeight="60.0" prefWidth="86.0">
+            <GridPane>
               <columnConstraints>
                 <ColumnConstraints hgrow="SOMETIMES" maxWidth="96.0" minWidth="10.0" prefWidth="36.0" />
                 <ColumnConstraints hgrow="SOMETIMES" maxWidth="157.0" minWidth="10.0" prefWidth="21.0" />
@@ -97,7 +97,7 @@
                   <Label prefHeight="17.0" prefWidth="14.0" text="X" GridPane.columnIndex="1" />
                </children>
             </GridPane>
-            <GridPane prefHeight="61.0" prefWidth="72.0">
+            <GridPane>
               <columnConstraints>
                   <ColumnConstraints hgrow="SOMETIMES" maxWidth="38.0" minWidth="10.0" prefWidth="17.0" />
                 <ColumnConstraints hgrow="SOMETIMES" maxWidth="65.0" minWidth="10.0" prefWidth="55.0" />
@@ -111,7 +111,7 @@
                   <Button mnemonicParsing="false" text="C" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                </children>
             </GridPane>
-            <GridPane prefWidth="147.0">
+            <GridPane>
               <columnConstraints>
                 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
               </columnConstraints>
