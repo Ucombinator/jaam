@@ -200,9 +200,9 @@ public class StacFrame extends BorderPane
 						}
 				);
 		Separator sep = new Separator(Orientation.HORIZONTAL);
-		controlPanel.add(sep, 1, 0);
+		controlPanel.add(sep, 0, 1);
 		sep.setVisible(false);
-		controlPanel.add(showLabels, 2, 0);
+		controlPanel.add(showLabels, 0, 2);
 
 		buttonsFlowPane.getChildren().add(controlPanel);
 		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.Pane?>
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.ucombinator.jaam.visualizer.main.SimpleController">
+   <children>
+      <TabPane fx:id="tabPane" layoutX="7.0" layoutY="35.0" prefHeight="360.0" prefWidth="586.0" tabClosingPolicy="UNAVAILABLE" />
+      <MenuBar layoutX="7.0" layoutY="6.0" prefHeight="29.0" prefWidth="586.0">
+        <menus>
+          <Menu mnemonicParsing="false" text="File">
+            <items>
+                  <MenuItem fx:id="loadGraphMenuItem" mnemonicParsing="false" onAction="#loadGraph" text="Load graph" />
+                  <MenuItem fx:id="loadLoopGraphMenuItem" mnemonicParsing="false" onAction="#loadLoopGraph" text="Load loop graph" />
+              <MenuItem fx:id="loadImageMenuItem" mnemonicParsing="false" onAction="#loadImage" text="Load image" />
+            </items>
+          </Menu>
+          <Menu mnemonicParsing="false" text="Search">
+            <items>
+              <MenuItem fx:id="searchByIdMenuItem" mnemonicParsing="false" onAction="#searchByID" text="by ID" />
+                  <MenuItem fx:id="searchByStatementMenuItem" mnemonicParsing="false" onAction="#searchByStatement" text="by Statement" />
+                  <MenuItem fx:id="searchByMethodMenuItem" mnemonicParsing="false" onAction="#searchByMethod" text="by Method" />
+            </items>
+          </Menu>
+        </menus>
+      </MenuBar>
+   </children>
+</Pane>

@@ -1,9 +1,12 @@
 package org.ucombinator.jaam.visualizer.main;
 
 import javafx.event.ActionEvent;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -12,16 +15,43 @@ import java.util.ResourceBundle;
  * Created by timothyjohnson on 5/5/17.
  */
 public class SimpleController implements Initializable {
-    @FXML // fx:id="myButton"
-    private Button myButton; // Value injected by FXMLLoader
+    @FXML // Values injected by FXMLLoader
+    private TabPane tabPane;
 
     @Override
     public void initialize(URL fxmlFileLocation, ResourceBundle resources) {
-        assert myButton != null : "fx:id=\"myButton\" was not injected: check your FXML file";
+        System.out.println("Initializing...");
     }
 
-    public void doSomething(ActionEvent event) {
-        System.out.println("Hello world!");
-        System.out.println(myButton.getText());
+    public void loadGraph(ActionEvent event) {
+        try {
+            Tab tab = new Tab();
+            tab.setContent(FXMLLoader.load(getClass().getResource("/tab.fxml")));
+            tabPane.getTabs().add(tab);
+        }
+        catch(Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    public void loadLoopGraph(ActionEvent event) {
+        System.out.println("Loading loop graph...");
+
+    }
+
+    public void loadImage(ActionEvent event) {
+        System.out.println("Loading image...");
+    }
+
+    public void searchByID(ActionEvent event) {
+        System.out.println("Searching by ID...");
+    }
+
+    public void searchByStatement(ActionEvent event) {
+        System.out.println("Searching by statement...");
+    }
+
+    public void searchByMethod(ActionEvent event) {
+        System.out.println("Searching by method...");
     }
 }

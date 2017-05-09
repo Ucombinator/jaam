@@ -15,34 +15,37 @@ public class Main extends Application
 {
 
 	private static OuterFrame outerFrame;
+	private static boolean useFXML = true;
 
 	public void start(Stage stage) {
-		this.outerFrame = new OuterFrame();
-		Scene scene = new Scene(outerFrame, org.ucombinator.jaam.visualizer.main.Parameters.width,
-				org.ucombinator.jaam.visualizer.main.Parameters.height);
-		stage.setTitle("JAAM Visualizer");
-		stage.setWidth(Toolkit.getDefaultToolkit().getScreenSize().getWidth());
-		stage.setHeight(Toolkit.getDefaultToolkit().getScreenSize().getHeight());
-		stage.setScene(scene);
-		stage.show();
-
-		// Read dummy graph
-		if(org.ucombinator.jaam.visualizer.main.Parameters.loadSampleGraph) {
-			outerFrame.loadGraph(false, false);
-		}
-
-		// TODO: Build GUI in SceneBuilder
-		// Example code for loading scene from SceneBuilder
-		/*URL url = getClass().getResource("/testgui.fxml");
-		try {
-			Pane pane = FXMLLoader.load(url);
-			Scene scene = new Scene(pane);
+		if(!useFXML) {
+			this.outerFrame = new OuterFrame();
+			Scene scene = new Scene(outerFrame, org.ucombinator.jaam.visualizer.main.Parameters.width,
+					org.ucombinator.jaam.visualizer.main.Parameters.height);
+			stage.setTitle("JAAM Visualizer");
+			stage.setWidth(Toolkit.getDefaultToolkit().getScreenSize().getWidth());
+			stage.setHeight(Toolkit.getDefaultToolkit().getScreenSize().getHeight());
 			stage.setScene(scene);
 			stage.show();
+
+			// Read dummy graph
+			if (org.ucombinator.jaam.visualizer.main.Parameters.loadSampleGraph) {
+				outerFrame.loadGraph(false, false);
+			}
 		}
-		catch(Exception e) {
-			System.out.println(e);
-		}*/
+		else {
+			// TODO: Build GUI in SceneBuilder
+			// Example code for loading scene from SceneBuilder
+			URL url = getClass().getResource("/app.fxml");
+			try {
+				Pane pane = FXMLLoader.load(url);
+				Scene scene = new Scene(pane);
+				stage.setScene(scene);
+				stage.show();
+			} catch (Exception e) {
+				System.out.println(e);
+			}
+		}
 	}
 
 	public static OuterFrame getOuterFrame() {
