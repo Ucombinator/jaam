@@ -81,11 +81,17 @@ object Snowflakes {
   private val javaLibTable = mutable.Map.empty[MethodDescription, SnowflakeHandler]
   private val appTable = mutable.Map.empty[MethodDescription, SnowflakeHandler]
 
+  // enable Snowflakes for registered native methods
   var nativeSF = true
+  // enable Generic Snowflake for other native methods
   var nativeGenericSF = true
+  // enable Snowflakes for registered Java library methdos
   var librarySF = true
+  // enable Generic Snowflake for other Java library methods
   var libraryGenericSF = true
+  // enable Snowflakes for registered application library methods
   var appLibrarySF = true
+  // enable Generic Snowflake for other application library methods
   var appLibraryGenericSF = true
 
   // TODO: take state as argument? (so id is clearly the state id)
@@ -121,6 +127,7 @@ object Snowflakes {
         case Some(h) => Some(h)
       }
     }
+
     if (meth.isNative && nativeSF) {
       lookupHelper(nativeTable, nativeGenericSF, DefaultReturnSnowflake(meth))
     }
