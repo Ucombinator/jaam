@@ -177,9 +177,8 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         this.loopHeight = -1;
         this.dfsPathPos = -1;
 
-        if (this.vertexType == VertexType.METHOD) {
-            this.setColor(colors[colorIndex++ % colors.length]);
-        }
+        if (this.vertexType == VertexType.METHOD)
+                this.setColor(colors[colorIndex++ % colors.length]);
 
         this.setVisible(false);
     }

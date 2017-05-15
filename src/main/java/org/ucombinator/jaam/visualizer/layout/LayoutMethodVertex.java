@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
@@ -44,7 +45,6 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
             v.searchByMethod(query, mainPanel);
         }
 
-        //System.out.println("Found method: " + this.getMethodName());
         return found;
     }
 
