@@ -856,14 +856,14 @@ Exception in thread "main" java.lang.RuntimeException: No field value in class j
             val id = o.toInt
             val bp = PreloadedBasePointer(o.toInt)
             val (t, members) = System.objects(id)
-            val typ = System.parseType(t)
+            val typ = Utilities.parseType(t)
             typ match {
               case typ: RefType =>
                 val c = Soot.getSootClass(typ.getClassName())
                 if (!System.loadedObjects(id)) {
                   System.loadedObjects += id
                   for (System.Field(d, f, t, v) <- members) {
-                    val d2 = Soot.getSootClass(System.parseType(d).asInstanceOf[RefType].getClassName())
+                    val d2 = Soot.getSootClass(Utilities.parseType(d).asInstanceOf[RefType].getClassName())
                     System.store.update(InstanceFieldAddr(bp, d2.getFieldByName(f)), loadObject(v))
                   }
                 }
@@ -1071,7 +1071,6 @@ object State {
   val initialStringBasePointer = InitialStringBasePointer
   val initialStringArrayBasePointer = InitialStringArrayBasePointer
 
-  /*
   // TODO: factor these into helpers
   // `String[]` argument of `main(String[])`
   System.store.update(
@@ -1094,7 +1093,7 @@ object State {
     ArrayRefAddr(initialStringArrayBasePointer), D.atomicTop)
   System.store.update(
     ArrayLengthAddr(initialStringArrayBasePointer), D.atomicTop)
-  */
+
   def inject(stmt : Stmt) : State = {
     val ks = KontStack(HaltKontAddr)
     State(stmt, initialFramePointer, ks)
@@ -1234,27 +1233,6 @@ object System {
   val loadedObjects = mutable.Set[Int]()
   val staticFields = mutable.Map[String/*class name*/, List[Field]]()
   val objects = mutable.Map[Int/*addr*/, (String/*type*/,List[Member])]()
-
-  def parseType(name: String): Type = {
-    var i = 0
-    while (name(i) == '[') {
-      i += 1
-    }
-    val baseType = name(i) match {
-      //case '[' => ArrayType.v(parseType(name.substring(1)), 1)
-      case 'Z' => BooleanType.v()
-      case 'B' => ByteType.v()
-      case 'C' => CharType.v()
-      case 'L' => Soot.getSootClass(name.substring(i + 1, name.length() - 1)).getType()
-      case 'D' => DoubleType.v()
-      case 'F' => FloatType.v()
-      case 'I' => IntType.v()
-      case 'J' => LongType.v()
-      case 'S' => ShortType.v()
-    }
-    if (i == 0) { baseType }
-    else { ArrayType.v(baseType, i) }
-  }
 
   def loadStore(file: File) {
     val f = new BufferedReader(new FileReader(file))
@@ -1407,7 +1385,6 @@ object Main {
   var conf : Conf = null;  // TODO: find a better place to put this
 
   def main(args : Array[String]) {
-
     val conf = new Conf(args)
     Main.conf = conf;
 
@@ -1434,8 +1411,6 @@ object Main {
       Options.v().set_soot_classpath(conf.rtJar().toString + ":" + conf.classpath().toString)
 
       for (className <- Utilities.getAllClasses(conf.classpath().toString)) {
-        //addBasicClass and setApplicationClass seem equivalent to cg
-        //Scene.v().addBasicClass(className, SootClass.HIERARCHY)
         val c = Scene.v().loadClassAndSupport(className)
         c.setApplicationClass
       }

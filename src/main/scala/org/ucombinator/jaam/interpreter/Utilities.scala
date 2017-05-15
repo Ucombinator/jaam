@@ -3,7 +3,45 @@ package org.ucombinator.jaam.interpreter
 import java.util.zip.ZipInputStream
 import java.io.{FileInputStream, File}
 
+import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
+
 object Utilities {
+  def stringToType(s: String): Type = {
+    s match {
+      case "boolean" => BooleanType.v()
+      case "byte" => ByteType.v()
+      case "char" => CharType.v()
+      case "double" => DoubleType.v()
+      case "float" => FloatType.v()
+      case "int" => IntType.v()
+      case "long" => LongType.v()
+      case "short" => ShortType.v()
+      case "void" => VoidType.v()
+      case clazz => Soot.getSootClass(clazz).getType()
+    }
+  }
+
+  def parseType(name: String): Type = {
+    var i = 0
+    while (name(i) == '[') {
+      i += 1
+    }
+    val baseType = name(i) match {
+      //case '[' => ArrayType.v(parseType(name.substring(1)), 1)
+      case 'Z' => BooleanType.v()
+      case 'B' => ByteType.v()
+      case 'C' => CharType.v()
+      case 'L' => Soot.getSootClass(name.substring(i + 1, name.length() - 1)).getType()
+      case 'D' => DoubleType.v()
+      case 'F' => FloatType.v()
+      case 'I' => IntType.v()
+      case 'J' => LongType.v()
+      case 'S' => ShortType.v()
+    }
+    if (i == 0) { baseType }
+    else { ArrayType.v(baseType, i) }
+  }
+
   def getAllClasses(classpath: String): Set[String] = {
     Log.info(s"Getting all class names from ${classpath}")
     def fileToClassName(fn: String): String = {

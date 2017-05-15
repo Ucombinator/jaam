@@ -30,6 +30,15 @@ case class MethodDescription(className: String, methodName: String,
     val typesStr = parameterTypes.mkString(",")
     s"${className}::${returnType} ${methodName}(${typesStr})"
   }
+
+  def getSootClass() = { Soot.getSootClass(className) }
+
+  def getSootMethod() = {
+    val clazz = getSootClass
+    val paramTypes = parameterTypes.map(Utilities.stringToType)
+    val retType = Utilities.stringToType(returnType)
+    clazz.getMethod(methodName, paramTypes, retType)
+  }
 }
 
 // Snowflakes are special-cased methods
@@ -74,9 +83,8 @@ case class PutStaticSnowflake(clas : String, field : String) extends StaticSnowf
 }
 
 object Snowflakes {
-  //val table = mutable.Map.empty[MethodDescription, SnowflakeHandler]
-  /* All natie method handlers (in both Java library and application library) should put
-     into nativeTable. */
+  /* All natie method handlers (in both Java library and application library)
+     should put into nativeTable. */
   private val nativeTable = mutable.Map.empty[MethodDescription, SnowflakeHandler]
   private val javaLibTable = mutable.Map.empty[MethodDescription, SnowflakeHandler]
   private val appTable = mutable.Map.empty[MethodDescription, SnowflakeHandler]
@@ -104,8 +112,9 @@ object Snowflakes {
   }
 
   def put(md: MethodDescription, sf: SnowflakeHandler) {
-    val clazz = Soot.getSootClass(md.className)
-    val meth = clazz.getMethodByName(md.methodName)
+    println(s"Putting ${md}")
+    val clazz = md.getSootClass
+    val meth = md.getSootMethod
     if (meth.isNative) {
       nativeTable.put(md, sf)
     }
@@ -113,8 +122,7 @@ object Snowflakes {
       javaLibTable.put(md, sf)
     }
     else {
-      //should be a application class
-      appTable.put(md, sf)
+      appTable.put(md, sf) //should be a application class
     }
   }
 
@@ -182,6 +190,7 @@ object Snowflakes {
     }
   })
 
+
   // java.lang.System :: static void <clinit>()
   put(MethodDescription("java.lang.System", SootMethod.staticInitializerName, List(), "void"),
     new StaticSnowflakeHandler {
@@ -217,7 +226,7 @@ object Snowflakes {
       }
     })
 
-// java.securiy.AccessController :: static java.lang.Object doPrivileged(java.security.PrivilegedAction)
+  // java.securiy.AccessController :: static java.lang.Object doPrivileged(java.security.PrivilegedAction)
   put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"),
     new StaticSnowflakeHandler {
       lazy val method = Soot.getSootClass("java.security.PrivilegedAction").getMethodByName("run")
@@ -291,11 +300,13 @@ object Snowflakes {
         val fp = state.alloca(expr, nextStmt)
 
         state.handleInvoke2(Some((args(1), false)), postVisitDirectory, List(pathParam, exceptionParam), fp, None, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/) ++
-         state.handleInvoke2(Some((args(1), false)), preVisitDirectory, List(pathParam, attributesParam), fp, None, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/) ++
-         state.handleInvoke2(Some((args(1), false)), visitFile, List(pathParam, attributesParam), fp, None, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/) ++
-         state.handleInvoke2(Some((args(1), false)), visitFileFailed, List(pathParam, exceptionParam), fp, None, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/)
+        state.handleInvoke2(Some((args(1), false)), preVisitDirectory, List(pathParam, attributesParam), fp, None, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/) ++
+        state.handleInvoke2(Some((args(1), false)), visitFile, List(pathParam, attributesParam), fp, None, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/) ++
+        state.handleInvoke2(Some((args(1), false)), visitFileFailed, List(pathParam, exceptionParam), fp, None, nextStmt /*TODO: this is not a real nextStmt; we just need to put something here*/)
       }
     })
+
+  println("Snowflake Initializing")
 
 //    table.put(MethodDescription("com.cyberpointllc.stac.hashmap.Node", "hash", List("java.lang.Object", "int"), "int"), ReturnAtomicSnowflake)
     /*
@@ -417,7 +428,6 @@ object Snowflakes {
     ReturnAtomicSnowflake(D(Set(ObjectValue(Soot.classes.Class, ClassBasePointer("TODO:unknown"))))))
   table.put(MethodDescription("java.security.AccessController", "doPrivileged", List("java.security.PrivilegedAction"), "java.lang.Object"), ReturnObjectSnowflake("java.lang.Object"))
   */
-
 
 /*
 Not needed b/c the only comparator is over String
