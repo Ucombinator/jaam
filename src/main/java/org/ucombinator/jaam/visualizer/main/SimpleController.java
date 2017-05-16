@@ -7,7 +7,14 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.layout.Pane;
+import org.ucombinator.jaam.visualizer.graph.Graph;
+import org.ucombinator.jaam.visualizer.gui.GUIUtils;
+import org.ucombinator.jaam.visualizer.gui.OuterFrame;
+import org.ucombinator.jaam.visualizer.gui.StacFrame;
+import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
+import java.io.File;
 import java.net.URL;
 import java.util.ResourceBundle;
 
@@ -24,34 +31,119 @@ public class SimpleController implements Initializable {
     }
 
     public void loadGraph(ActionEvent event) {
-        try {
-            Tab tab = new Tab();
-            tab.setContent(FXMLLoader.load(getClass().getResource("/tab.fxml")));
-            tabPane.getTabs().add(tab);
-        }
-        catch(Exception e) {
-            System.out.println(e);
-        }
+        loadAnyGraph(false);
     }
 
     public void loadLoopGraph(ActionEvent event) {
-        System.out.println("Loading loop graph...");
-
+        loadAnyGraph(true);
     }
 
-    public void loadImage(ActionEvent event) {
-        System.out.println("Loading image...");
+    private void loadAnyGraph(boolean isLoopGraph) {
+        Graph graph;
+        TakeInput ti = new TakeInput();
+        String filename = "";
+
+        System.out.println("Load graph: start...");
+
+        File file = GUIUtils.openFile(tabPane, "Load graph file");
+        if (file == null) {
+            System.out.println("Error! Invalid file.");
+            return;
+        }
+
+        if(isLoopGraph)
+            graph = ti.parseLoopGraph(file.getAbsolutePath());
+        else
+            graph = ti.parsePackets(file.getAbsolutePath());
+        filename = file.getName();
+
+        System.out.println("--> Create visualization: start...");
+        StacFrame newTab = new StacFrame(graph);
+        newTab.loadFXML();
+        System.out.println("<-- Create visualization: Done!");
+
+        if (filename.equals(""))
+            newTab.setText("Sample");
+        else
+            newTab.setText(filename);
+        tabPane.getTabs().add(newTab);
+        tabPane.getSelectionModel().select(newTab);
     }
 
     public void searchByID(ActionEvent event) {
-        System.out.println("Searching by ID...");
+        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+        if(currentTab instanceof StacFrame) {
+            StacFrame currentFrame = (StacFrame) currentTab;
+            currentFrame.initSearch(StacFrame.searchType.ID);
+        }
+        else {
+            System.out.println("Error! Current tab is not a StacFrame.");
+        }
     }
 
     public void searchByStatement(ActionEvent event) {
-        System.out.println("Searching by statement...");
+        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+        if(currentTab instanceof StacFrame) {
+            StacFrame currentFrame = (StacFrame) currentTab;
+            currentFrame.initSearch(StacFrame.searchType.INSTRUCTION);
+        }
+        else {
+            System.out.println("Error! Current tab is not a StacFrame.");
+        }
     }
 
     public void searchByMethod(ActionEvent event) {
-        System.out.println("Searching by method...");
+        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+        if(currentTab instanceof StacFrame) {
+            StacFrame currentFrame = (StacFrame) currentTab;
+            currentFrame.initSearch(StacFrame.searchType.METHOD);
+        }
+        else {
+            System.out.println("Error! Current tab is not a StacFrame.");
+        }
+    }
+
+    public void resetButtonPressed() {
+        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+        if(currentTab instanceof StacFrame) {
+            StacFrame currentFrame = (StacFrame) currentTab;
+            currentFrame.getMainPanel().resetRootPosition();
+        }
+        else {
+            System.out.println("Error! Current tab is not a StacFrame.");
+        }
+    }
+
+    public void zoomInPressed(ActionEvent event) {
+        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+        if(currentTab instanceof StacFrame) {
+            StacFrame currentFrame = (StacFrame) currentTab;
+            currentFrame.getMainPanel().keepButton(1, (Button) event.getSource());
+        }
+        else {
+            System.out.println("Error! Current tab is not a StacFrame.");
+        }
+    }
+
+    public void zoomOutPressed(ActionEvent event) {
+        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+        if(currentTab instanceof StacFrame) {
+            StacFrame currentFrame = (StacFrame) currentTab;
+            currentFrame.getMainPanel().keepButton(-1, (Button) event.getSource());
+        }
+        else {
+            System.out.println("Error! Current tab is not a StacFrame.");
+        }
+    }
+
+    public void zoomReleased(ActionEvent event) {
+        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+        if(currentTab instanceof StacFrame) {
+            StacFrame currentFrame = (StacFrame) currentTab;
+            currentFrame.getMainPanel().setZoomButtonReleased(true);
+        }
+        else {
+            System.out.println("Error! Current tab is not a StacFrame.");
+        }
     }
 }

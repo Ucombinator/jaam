@@ -1,7 +1,7 @@
 package org.ucombinator.jaam.visualizer.gui;
 
+import javafx.scene.control.TabPane;
 import javafx.stage.FileChooser;
-import javafx.scene.layout.Pane;
 
 import java.io.File;
 
@@ -10,7 +10,7 @@ import java.io.File;
  */
 public class GUIUtils {
 
-    public static File openFile(Pane p, String title)
+    public static File openFile(TabPane p, String title)
     {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(title);

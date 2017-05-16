@@ -14,7 +14,7 @@ public class TakeInput extends Thread
 	public Graph parsePackets(String file)
 	{
 		Graph graph = new Graph();
-		if(file.equals("")) {
+		/*if(file.equals("")) {
 			//readSmallDummyGraph(graph);
 			readLargeDummyGraph(graph);
 		}
@@ -68,14 +68,15 @@ public class TakeInput extends Thread
 		catch(FileNotFoundException e)
 		{
 			System.out.println(e);
-		}
+		}*/
 
 		return graph;
 	}
 
 	public Graph parseLoopGraph(String file) {
 		Graph graph = new Graph();
-		if(file.equals("")) {
+
+		/*if(file.equals("")) {
 			//readSmallDummyGraph(graph);
 			//readLargeDummyGraph(graph);
 		}
@@ -112,7 +113,7 @@ public class TakeInput extends Thread
 		catch(FileNotFoundException e)
 		{
 			System.out.println(e);
-		}
+		}*/
 
 		return graph;
 	}

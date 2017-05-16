@@ -6,8 +6,7 @@
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.layout.AnchorPane?>
 
-
-<AnchorPane prefHeight="515.0" prefWidth="580.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.ucombinator.jaam.visualizer.main.SimpleController">
+<AnchorPane prefHeight="515.0" prefWidth="580.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <TabPane fx:id="tabPane" prefHeight="455.0" prefWidth="630.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="30.0" />
       <MenuBar prefHeight="29.0" prefWidth="586.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -16,7 +15,6 @@
             <items>
                   <MenuItem fx:id="loadGraphMenuItem" mnemonicParsing="false" onAction="#loadGraph" text="Load graph" />
                   <MenuItem fx:id="loadLoopGraphMenuItem" mnemonicParsing="false" onAction="#loadLoopGraph" text="Load loop graph" />
-              <MenuItem fx:id="loadImageMenuItem" mnemonicParsing="false" onAction="#loadImage" text="Load image" />
             </items>
           </Menu>
           <Menu mnemonicParsing="false" text="Search">

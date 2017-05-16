@@ -1,23 +1,9 @@
 package org.ucombinator.jaam.visualizer.gui;
 
-import javax.swing.JPanel;
-import javax.swing.JLabel;
-import java.awt.Color;
-import java.awt.BorderLayout;
-
-//import javax.swing.JTree;
-//import javax.swing.tree.DefaultMutableTreeNode;
-//import javax.swing.tree.DefaultTreeCellRenderer;
-//import javax.swing.tree.DefaultTreeModel;
-import java.awt.Component;
-
-import javafx.embed.swing.JFXPanel;
-import javafx.scene.Scene;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.layout.BorderPane;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class SearchResults extends BorderPane
 {
