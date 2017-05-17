@@ -23,29 +23,28 @@ class Taint extends Main("taint") {
   footer("")
 
   // TODO: specify required options
-  val className = opt[String](descr = "FQN (package and class) of the class " +
-      "being analyzed")
-  val method = opt[String](descr = "signature of the method being analyzed; " +
-      "e.g., \"void main(java.lang.String[])\"")
-  val instruction = opt[Int](descr = "index into the Unit Chain that identifies"
-     + " the instruction", validate = { _ >= 0 })
+  val className = opt[String](descr = "FQN (package and class) of the class being analyzed")
+  val method = opt[String](descr = "signature of the method being analyzed; e.g., \"void main(java.lang.String[])\"")
+  val instruction = opt[Int](descr = "index into the Unit Chain that identifies the instruction", validate = { _ >= 0 })
   val implicitFlows = opt[Boolean](descr = "TODO:implement")
   val output = opt[java.io.File](descr = "a .dot file to be printed")
   // really, this just gets used as the class path
-  val path = opt[String](descr = "java classpath (including jar files), " +
-      "colon-separated")
+  val path = opt[String](descr = "java classpath (including jar files), colon-separated")
   // val rtJar = opt[String](descr = "The RT.jar file to use for analysis",
       // default = Some("resources/rt.jar"), required = true)
 
   def run(conf: Conf) {
-    val classpath = path.toOption match {
-      // case Some(str) => rtJar() + ":" + str
-      // case None => rtJar()
+    val cp = path.toOption match {
       case Some(str) => str
       case None => ""
     }
-    Taint.run(className(), method(), instruction(), implicitFlows(),
-        classpath, output.toOption)
+
+    val ps = output.toOption match {
+      case Some(file) => new PrintStream(new FileOutputStream(file))
+      case None => System.out
+    }
+
+    Taint.run(className(), method(), instruction(), implicitFlows(), cp, ps)
   }
 }
 
@@ -103,7 +102,7 @@ object Taint {
 
   // TODO implement implicit flows
   def run(className: String, method: String, instruction: Int,
-      implicitFlows: Boolean, classpath: String, output: Option[java.io.File]) {
+      implicitFlows: Boolean, classpath: String, output: PrintStream) {
     Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
     Options.v().set_include_all(true)
@@ -239,16 +238,12 @@ object Taint {
         }
       }
     }
+    
 
-    output match {
-      case None =>
-        printOrigins(addrs)
-      case Some(file) =>
-        Console.withOut(new PrintStream(new FileOutputStream(file))) {
-          printOrigins(addrs)
-        }
+    Console.withOut(output) {
+      printOrigins(addrs)
     }
-
+    
     /*
     for {
       (to, froms) <- _taintGraph
@@ -437,7 +432,8 @@ object Taint {
             println(index + ":\t" + unit)
             index = index+1
           }
-          */
+           */
+
           unit match {
             case sootStmt : DefinitionStmt =>
               val from = addrsOf(sootStmt.getRightOp, method)
@@ -477,21 +473,3 @@ object Taint {
   }
 }
 
-abstract sealed class TaintValue
-
-abstract sealed class TaintAddress extends TaintValue {
-  val m: SootMethod
-}
-case class LocalTaintAddress(override val m: SootMethod, val local: Local)
-  extends TaintAddress
-case class RefTaintAddress(override val m: SootMethod, val ref: Ref)
-  extends TaintAddress
-case class ThisRefTaintAddress(override val m: SootMethod) extends TaintAddress
-case class ParameterTaintAddress(override val m: SootMethod, val index: Int)
-  extends TaintAddress
-case class ConstantTaintAddress(override val m: SootMethod, c: Constant)
-  extends TaintAddress
-// case class ConstantTaintAddress(override val m: SootMethod)
-  // extends TaintAddress
-case class InvokeTaintAddress(override val m: SootMethod, ie: InvokeExpr)
-  extends TaintAddress

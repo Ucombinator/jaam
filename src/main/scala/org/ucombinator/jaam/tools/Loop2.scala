@@ -16,7 +16,7 @@ import java.util.jar.JarInputStream
 import scala.collection.JavaConversions._
 
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
-import soot.jimple.{Stmt => SootStmt}
+import soot.jimple.{Stmt => SootStmt, IfStmt}
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
 import soot.jimple.toolkits.callgraph.{CallGraph, CHATransformer, Edge}
 import soot.options.Options
@@ -24,6 +24,7 @@ import soot.tagkit.GenericAttribute
 import soot.toolkits.graph.LoopNestTree
 
 import org.ucombinator.jaam.serializer
+import org.ucombinator.jaam.serializer.TaintAddress
 
 class LoopAnalyzer extends Main("loop2") {
   banner("Analyze the depth of each loop in the application code")
@@ -325,7 +326,15 @@ object LoopAnalyzer {
           val id = name(from)
           val packet = from match {
             case MethodNode(m) => serializer.LoopMethodNode(id, m)
-            case n@LoopNode(m, l) => serializer.LoopLoopNode(id, m, /*l,*/ n.index)
+            case n@LoopNode(m, l) =>
+              val stmt = Taint.getByIndex(m, n.index+1) // add one because the loop node is apparently the instruction before...?
+              val addrs = stmt match {
+                case sootStmt: IfStmt => Taint.addrsOf(sootStmt.getCondition, m)
+                case _ =>
+                  println("TODO: investigate why the loop guard is not an IfStmt (" + stmt + ")")
+                  Set.empty[TaintAddress]
+              }
+              serializer.LoopLoopNode(id, m, addrs, n.index)
           }
           println("Writing: "+packet)
           s.write(packet)

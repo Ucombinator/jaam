@@ -11,8 +11,8 @@ import java.lang.reflect.Type
 import java.util.zip.{DeflaterOutputStream, InflaterInputStream}
 
 import scala.collection.JavaConversions._
-import soot.SootMethod
-import soot.jimple.{Stmt => SootStmt}
+import soot.{SootMethod, Local}
+import soot.jimple.{Stmt => SootStmt, Ref, Constant, InvokeExpr}
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
 import soot.util.Chain
 import org.objectweb.asm.tree.{AbstractInsnNode, InsnList}
@@ -163,7 +163,7 @@ case class AllocationTag(val sootType : soot.Type) extends Tag {}
 case class ChainTag() extends Tag {}
 
 abstract class LoopNode extends Packet {}
-case class LoopLoopNode(id: Id[LoopNode], method: SootMethod, /*loop: SootLoop,*/ statementIndex: Int) extends LoopNode {}
+case class LoopLoopNode(id: Id[LoopNode], method: SootMethod, depends: Set[TaintAddress], statementIndex: Int) extends LoopNode {}
 case class LoopMethodNode(id: Id[LoopNode], method: SootMethod) extends LoopNode {}
 case class LoopEdge(src: Id[LoopNode], dst: Id[LoopNode], isRecursion: Boolean) extends Packet {}
 
@@ -179,6 +179,26 @@ case class Id[Namespace](id : Int) {
 // Type for statements (needed because 'SootStmt' doesn't specify the
 // 'SootMethod' that it is in)
 case class Stmt(method : SootMethod, index : Int, stmt : SootStmt) {}
+
+// Type for taint addresses
+abstract sealed class TaintValue
+
+abstract sealed class TaintAddress extends TaintValue {
+  val m: SootMethod
+}
+case class LocalTaintAddress(override val m: SootMethod, val local: Local)
+  extends TaintAddress
+case class RefTaintAddress(override val m: SootMethod, val ref: Ref)
+  extends TaintAddress
+case class ThisRefTaintAddress(override val m: SootMethod) extends TaintAddress
+case class ParameterTaintAddress(override val m: SootMethod, val index: Int)
+  extends TaintAddress
+case class ConstantTaintAddress(override val m: SootMethod, c: Constant)
+  extends TaintAddress
+// case class ConstantTaintAddress(override val m: SootMethod)
+  // extends TaintAddress
+case class InvokeTaintAddress(override val m: SootMethod, ie: InvokeExpr)
+  extends TaintAddress
 
 /*
 Classes that we may eventually need to support in 'Packet':
