@@ -200,61 +200,6 @@ case class ConstantTaintAddress(override val m: SootMethod, c: Constant)
 case class InvokeTaintAddress(override val m: SootMethod, ie: InvokeExpr)
   extends TaintAddress
 
-/*
-Classes that we may eventually need to support in 'Packet':
-
-AbstractState
-  ErrorState
-  State(Stmt, FramePointer, KontStack)
-
-Stmt(SootStmt, SootMethod)
-
-FramePointer
-  InvariantFramePointer
-  ZeroCFAFramePointer(SootMethod)
-  OneCFAFramePointer(SootMethod, Stmt)
-  InitialFramePointer
-
-From
-  FromNative
-  FromJava
-
-BasePointer
-  OneCFABasePointer(Stmt, FramePointer, From)
-  InitialBasePointer
-  StringBasePointer(String)
-  ClassBasePointer(String)
-
-Value
-  AtomicValue
-    AnyAtomicValue
-  ObjectValue(SootClass, BasePointer)
-  ArrayValue(SootType, BasePointer)
-
-KontAddr
-  OneCFAKontAddr
-
-Addr
-  FrameAddr
-    LocalFrameAddr(FramePointer, Local)
-    ParameterFrameAddr(FramePointer, Int)
-    ThisFrameAddr
-    CaughtExceptionFrameAddr
-  InstanceFieldAddr
-  ArrayRefAddr
-  ArrayLengthAddr
-  StaticFieldAddr
-
-Store
-KontStack(Kont)
-
-Kont
-  RetKont(Frame, KontAddr)
-  HaltKont
-
-Frame(Stmt, FramePointer, Option[Set[Addr]]))
- */
-
 ////////////////////////////////////////
 // Internal classes
 ////////////////////////////////////////
