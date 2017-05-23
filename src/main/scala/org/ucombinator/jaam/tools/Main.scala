@@ -22,6 +22,8 @@ class Conf(args : Seq[String]) extends ScallopConf(args = args) {
   addSubcommand(new ListItems)
   addSubcommand(new FindMain)
   addSubcommand(new Taint)
+  addSubcommand(org.ucombinator.jaam.tools.jar.Jar)
+  addSubcommand(org.ucombinator.jaam.tools.decompile.Decompile)
   verify()
 }
 

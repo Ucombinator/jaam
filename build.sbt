@@ -22,7 +22,8 @@ libraryDependencies ++= Seq(
   "com.twitter" %% "chill" % "0.8.0",
   "de.javakaffee" % "kryo-serializers" % "0.38",
   "org.ucombinator.heros" % "heros" % "nightly.20161021",
-  "org.ucombinator.soot" % "soot" % "nightly.20161021"
+  "org.ucombinator.soot" % "soot" % "nightly.20161021",
+  "org.bitbucket.mstrobel" % "procyon-compilertools" % "0.5.32"
 )
 
 // Migrated from agent
@@ -86,4 +87,3 @@ assemblyShadeRules in assembly := Seq(
       cp filter {_.data.getName == "tools.jar"}
   }
 */
-
