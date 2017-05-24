@@ -30,6 +30,7 @@ object Cat {
   }
 
   private def readPacketsToBufferFromFile(file : String) = {
+    println(f"Reading $file")
     val stream = new FileInputStream(file)
     val pi = new PacketInput(stream)
     var packet: Packet = null
@@ -42,6 +43,7 @@ object Cat {
   }
 
   private def writeBufferToFile(file : String) = {
+    println(f"Writing $file")
     val outStream = new FileOutputStream(file)
     val po = new PacketOutput(outStream)
 

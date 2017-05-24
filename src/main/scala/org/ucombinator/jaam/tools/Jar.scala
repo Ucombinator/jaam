@@ -30,10 +30,10 @@ object Jar extends tools.Main("jar") {
   //val mainClass = opt[String](required = true, short = 'c', descr = "the main class")
   //val mainMethod = opt[String](required = true, short = 'm', descr = "the main method", default = Some("main"))
 
-  val jaam = opt[String](required = true, name = "output", short = 'o', descr = "the output file for the serialized data")
+  val output = opt[String](required = true, short = 'o', descr = "the output file for the serialized data")
 
   def run(conf: tools.Conf) {
-    Main.main(app.getOrElse(List()), lib.getOrElse(List()), rt.getOrElse(List()), jaam())
+    Main.main(app.getOrElse(List()), lib.getOrElse(List()), rt.getOrElse(List()), output())
   }
 }
 

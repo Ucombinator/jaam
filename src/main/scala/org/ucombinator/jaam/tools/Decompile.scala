@@ -14,7 +14,7 @@ import com.strobel.assembler.InputTypeLoader
 import com.strobel.assembler.metadata._
 import com.strobel.core.VerifyArgument
 import com.strobel.decompiler.languages.java.JavaFormattingOptions
-import com.strobel.decompiler.languages.java.ast.CompilationUnit
+import com.strobel.decompiler.languages.java.ast.{CompilationUnit, Keys}
 import com.strobel.decompiler.languages.Languages
 
 import org.ucombinator.jaam.tools //.{Main,Conf}
@@ -25,6 +25,7 @@ import com.strobel.decompiler._
 import scala.collection.mutable
 
 import org.ucombinator.jaam.serializer
+import scala.collection.JavaConverters._
 
 
 object Decompile extends tools.Main("decompile") {
@@ -84,7 +85,7 @@ object Main {
 
     def loadData(p: jar.PathElement) = p match {
       case jar.PathElement(root, path, isJar, data) =>
-        print(root + "!" + path + "!" + isJar)
+        println(root + "!" + path + "!" + isJar)
         if (!isJar) typeLoader.add(data)
         else {
           println(root + "!" + path)
@@ -139,7 +140,6 @@ object Main {
       if (exclude.contains(name)) {
         println(f"Excluding ($index of $total) $name")
       } else {
-        // TODO: catch out of memory error
         try {
           println(f"Decompiling ($index of $total) $name")
           val cu = decompile(metadataSystem, options, name)
