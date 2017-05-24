@@ -210,7 +210,7 @@ case class InvokeTaintAddress(override val m: SootMethod, ie: InvokeExpr)
 class JaamKryo extends KryoBase {
   var seenClasses = Set[Class[_]]()
 
-  // This is copies from Chill
+  // This is copied from Chill
   this.setRegistrationRequired(false)
   this.setInstantiatorStrategy(new StdInstantiatorStrategy)
   // Handle cases where we may have an odd classloader setup like with libjars
