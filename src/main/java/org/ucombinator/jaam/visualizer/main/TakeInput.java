@@ -61,6 +61,12 @@ public class TakeInput extends Thread
                     String tagStr = ((org.ucombinator.jaam.serializer.Tag)tag.tag()).toString();
                     graph.addTag(nodeId,tagStr);
                 }
+                else if (packet instanceof org.ucombinator.jaam.tools.decompile.DecompiledClass)
+                {
+                  // TODO(decompile):
+                  org.ucombinator.jaam.tools.decompile.DecompiledClass d = (org.ucombinator.jaam.tools.decompile.DecompiledClass) packet;
+                  d.compilationUnit()
+                }
 
                 packet = packetInput.read();
 			}

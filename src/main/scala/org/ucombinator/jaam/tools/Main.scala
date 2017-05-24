@@ -27,6 +27,7 @@ class Conf(args : Seq[String]) extends ScallopConf(args = args) {
   verify()
 }
 
+// TODO: auto-compute name
 abstract class Main(name: String) extends Subcommand(name) {
   def run(conf : Conf)
 }

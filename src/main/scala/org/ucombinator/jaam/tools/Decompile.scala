@@ -44,12 +44,12 @@ object Decompile extends tools.Main("decompile") {
     descrYes = "wait for user to press enter before starting (default: true)",
     noshort = true, prefix = "no-", default = Some(true))
 
-  val exclude = opt[List[String]](descr = "Class names to omit")
+  val exclude = opt[List[String]](descr = "Class names to omit", default = Some(List()))
   val input = opt[List[String]](required = true, descr = "List of jaam files")
   val output = opt[String](required = true, descr = "TODO")
 
   def run(conf: tools.Conf) {
-    Main.main(input(), output(), exclude.getOrElse(List()), rt(), lib(), app())
+    Main.main(input(), output(), exclude(), rt(), lib(), app())
   }
 }
 
@@ -81,12 +81,11 @@ object Main {
   def main(input: List[String], output: String, exclude: List[String], rt: Boolean, lib: Boolean, app: Boolean) {
     val typeLoader = new HashMapTypeLoader()
 
-    def loadData(p: tools.app.PathElement) = p match {
-      case tools.app.PathElement(root, path, isJar, data) =>
-        println(root + "!" + path + "!" + isJar)
-        if (!isJar) typeLoader.add(data)
+    def loadData(p: tools.app.App.PathElement) = p match {
+      case tools.app.App.PathElement(path, root, data) =>
+        println(f"PathElement: $path ($root)")
+        if (!path.endsWith(".jar")) typeLoader.add(data)
         else {
-          println(root + "!" + path)
           val jar = new java.util.jar.JarInputStream(
             new java.io.ByteArrayInputStream(data))
 
@@ -107,12 +106,11 @@ object Main {
       var packet: serializer.Packet = null
       while ({packet = pi.read(); !packet.isInstanceOf[serializer.EOF]}) {
       //for (packet <- pi) {
-        println("PACKET")
         packet match {
-          case tools.app.ClassData(rtData, libData, appData) =>
-            if (rt) { rtData.map(loadData(_)) }
-            if (lib) { libData.map(loadData(_)) }
-            if (app) { appData.map(loadData(_)) }
+          case packet: tools.app.App =>
+            if (rt) { packet.classpath.java.map(loadData(_)) }
+            if (lib) { packet.classpath.lib.map(loadData(_)) }
+            if (app) { packet.classpath.app.map(loadData(_)) }
         }
       }
     }

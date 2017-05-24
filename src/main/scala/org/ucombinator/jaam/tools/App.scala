@@ -23,20 +23,23 @@ object App extends tools.Main("app") {
   def run(conf: tools.Conf) {
     Main.main(app.getOrElse(List()), lib.getOrElse(List()), rt.getOrElse(List()), output())
   }
+
+  case class PathElement(path: String, root: String, data: Array[Byte])
 }
 
-case class PathElement(root: String, path: String, isJar: Boolean, data: Array[Byte])
-case class ClassData(rt: Array[PathElement], lib: Array[PathElement], app: Array[PathElement]) extends serializer.Packet
+//case class PathElement(root: String, path: String, isJar: Boolean, data: Array[Byte])
+//case class ClassData(rt: Array[PathElement], lib: Array[PathElement], app: Array[PathElement]) extends serializer.Packet
 
 case class App() extends serializer.Packet {
+  var name = None: Option[String]
   object classpath {
-    var java = Array[PathElement]()
-    var lib = Array[PathElement]()
-    var app = Array[PathElement]()
+    var java = Array[App.PathElement]()
+    var lib = Array[App.PathElement]()
+    var app = Array[App.PathElement]()
   }
   object main {
-    var className = null: String
-    var methodName = null: String
+    var className = None: Option[String]
+    var methodName = None: Option[String]
   }
 //  object java {
 //    var opts = null: String
@@ -49,7 +52,7 @@ case class App() extends serializer.Packet {
 // TODO: automatically find main and StacMain
 object Main {
   // relative to root
-  def read(root: Path, path: Path): List[PathElement] = {
+  def read(root: Path, path: Path): List[App.PathElement] = {
     println("Reading " + root + " and " + path)
     if (path.toFile.isDirectory) {
       return (for (p <- Files.newDirectoryStream(path).asScala) yield {
@@ -63,11 +66,11 @@ object Main {
     } else if (path.toString.endsWith(".class")) {
       val data = Files.readAllBytes(path)
       data.startsWith(List(0xCA, 0xFE, 0xBA, 0xBE))
-      return List(PathElement(root.toString, path.relativize(root).toString, false, data.to))
+      return List(App.PathElement(path.toString, root.toString, data))
     } else if (path.toString.endsWith(".jar")) {
       val data = Files.readAllBytes(path)
       data.startsWith(List(0x50, 0x4B, 0x03, 0x04))
-      return List(PathElement(root.toString, path.relativize(root).toString, true, data))
+      return List(App.PathElement(root.toString, root.toString, data))
     } else {
       throw new Exception("not a directory, class, or jar")
     }
@@ -77,14 +80,18 @@ object Main {
     def readList(list: List[String]) =
       list.map({ x => read(Paths.get(x), Paths.get(x))}).flatten.toArray
 
-    val appElements = readList(app)
-    val libElements = readList(lib)
-    val rtElement = readList(rt)
+//    val appElements = readList(app)
+//    val libElements = readList(lib)
+//    val rtElement = readList(rt)
+
+    val appConfig = App()
+    appConfig.classpath.app = readList(app)
+    appConfig.classpath.lib = readList(lib)
+    appConfig.classpath.java = readList(rt)
 
     val outStream = new FileOutputStream(jaam)
     val po = new serializer.PacketOutput(outStream)
-
-    po.write(ClassData(rtElement, libElements, appElements))
+    po.write(appConfig)
     // TODO: write config to jaam
     po.close()
   }
