@@ -223,6 +223,45 @@ class JaamKryo extends KryoBase {
   this.addDefaultSerializer(classOf[Chain[Object]], classOf[FieldSerializer[java.lang.Object]])
   UnmodifiableCollectionsSerializer.registerSerializers(this)
 
+  object CharsetSerializer extends Serializer[java.nio.charset.Charset] {
+    override def write(kryo: Kryo, output: Output, obj: java.nio.charset.Charset) {
+      kryo.writeObject(output, obj.asInstanceOf[java.nio.charset.Charset].name())
+    }
+
+    override def read(kryo: Kryo, input: Input, typ: Class[java.nio.charset.Charset]): java.nio.charset.Charset =
+      java.nio.charset.Charset.forName(kryo.readObject(input, classOf[String]))
+  }
+
+  // Register those Charset classes which are not public.
+  // See https://github.com/jagrutmehta/kryo-UTF/
+  // Run the following to determine what classes need to be here:
+  //   for i in ../rt.jar/sun/nio/cs/*.class; do javap $i; done|grep ' extends '|grep -v '^public'
+  this.register(java.nio.charset.Charset.forName("UTF-8").getClass(), CharsetSerializer)
+  this.register(java.nio.charset.Charset.forName("UTF-16").getClass(), CharsetSerializer)
+  this.register(java.nio.charset.Charset.forName("UTF-16BE").getClass(), CharsetSerializer)
+  this.register(java.nio.charset.Charset.forName("UTF-16LE").getClass(), CharsetSerializer)
+  this.register(java.nio.charset.Charset.forName("x-UTF-16LE-BOM").getClass(), CharsetSerializer)
+  this.register(java.nio.charset.Charset.forName("ISO_8859_1").getClass(), CharsetSerializer)
+  //this.register(java.nio.charset.Charset.forName("US_ASCII").getClass(), CharsetSerializer)
+
+  object UnmodifiableListSerializer extends Serializer[java.util.AbstractList[Object]] {
+    override def write(kryo: Kryo, output: Output, obj: java.util.AbstractList[Object]) {
+      kryo.writeObject(output, new java.util.ArrayList[Object](obj))
+    }
+
+    override def read(kryo: Kryo, input: Input, typ: Class[java.util.AbstractList[Object]]): java.util.AbstractList[Object] =
+      com.strobel.core.ArrayUtilities.asUnmodifiableList[Object](kryo.readObject(input, classOf[java.util.ArrayList[Object]])).asInstanceOf[java.util.AbstractList[Object]]
+  }
+
+  this.register(com.strobel.core.ArrayUtilities.asUnmodifiableList().getClass, UnmodifiableListSerializer)
+
+  def forceFieldSerializer(clazz: Class[_]) { this.register(clazz, new FieldSerializer(this, clazz)) }
+
+  forceFieldSerializer(classOf[com.strobel.assembler.metadata.ParameterDefinitionCollection])
+  forceFieldSerializer(classOf[com.strobel.assembler.metadata.GenericParameterCollection])
+  forceFieldSerializer(classOf[com.strobel.assembler.metadata.AnonymousLocalTypeCollection])
+  forceFieldSerializer(classOf[com.strobel.assembler.metadata.VariableDefinitionCollection])
+
   // Produces a string that documents the field structure of 'typ'
   def classSignature(typ : Type) : String = {
     typ match {
