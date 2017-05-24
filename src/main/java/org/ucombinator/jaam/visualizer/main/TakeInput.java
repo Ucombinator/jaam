@@ -65,7 +65,7 @@ public class TakeInput extends Thread
                 {
                   // TODO(decompile):
                   org.ucombinator.jaam.tools.decompile.DecompiledClass d = (org.ucombinator.jaam.tools.decompile.DecompiledClass) packet;
-                  d.compilationUnit()
+                  d.compilationUnit();
                 }
 
                 packet = packetInput.read();
