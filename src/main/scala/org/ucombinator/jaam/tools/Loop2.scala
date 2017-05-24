@@ -39,6 +39,7 @@ class LoopAnalyzer extends Main("loop2") {
       default = Some(true))
   val shrink = toggle(descrYes = "Skip methods without loops",
       descrNo = "Include methods without loops", default = Some(true))
+  val prettyPrint = toggle(descrYes = "Pretty print found loops", default = Some(false))
 
   val mainClass = trailArg[String](descr = "The name of the main class")
   val mainMethod = trailArg[String](descr = "The name of the main method")
@@ -58,7 +59,7 @@ class LoopAnalyzer extends Main("loop2") {
       case Some(f) => new PrintStream(new FileOutputStream(f))
     }
     LoopAnalyzer.main(mainClass(), mainMethod(), classpath(), outStream, coverageStream, jaam.toOption,
-        prune(), shrink())
+        prune(), shrink(), prettyPrint())
   }
 }
 
@@ -128,6 +129,22 @@ object LoopAnalyzer {
             "two disparate loops contain the same child")
         parents.head.parent(stmt)
       }
+    }
+    def prettyPrint(indent: Int = 0): Unit = {
+      println("Head:")
+      println(loop.getHead)
+      for (stmt <- loop.getLoopStatements) {
+        println("Stmt:")
+        println(stmt)
+      }
+      println()
+      println("Children:")
+      for (child <- children) {
+        child.prettyPrint(indent+1)
+        println()
+        child.prettyPrint(indent+1)
+      }
+      println("End Children:")
     }
   }
   object LoopTree {
@@ -368,7 +385,7 @@ object LoopAnalyzer {
           addForest(add(g, node, treeNode), treeNode, tree.children, m)
         })
       }
-    def apply(m: SootMethod, cg: CallGraph): LoopGraph = {
+    def apply(m: SootMethod, cg: CallGraph, prettyPrint: Boolean): LoopGraph = {
       // TODO if things get slow, this should be easy to optimize
       def build(m: SootMethod, g: Map[Node, Set[Node]]):
           Map[Node, Set[Node]] = {
@@ -378,6 +395,12 @@ object LoopAnalyzer {
         } else {
           val iterator = cg.edgesOutOf(m)
           val forest = getLoopForest(m)
+          if (prettyPrint) {
+            for (tree <- forest) {
+              println("Tree:")
+              tree.prettyPrint()
+            }
+          }
           // g keeps track of the methods we've seen, so adding the empty set
           // to it prevents an infinite loop.
           var newGraph: Map[Node, Set[Node]] = g + (mNode -> Set.empty)
@@ -404,7 +427,7 @@ object LoopAnalyzer {
           newGraph
         }
       }
-      LoopGraph(m, build(m, Map.empty), Set.empty)
+      LoopGraph(m, build(m, Map.empty), Set.empty[(Node,Node)])
     }
   }
 
@@ -477,7 +500,7 @@ object LoopAnalyzer {
   }
 
   def main(mainClass: String, mainMethod: String, classpath: String,
-      graphStream: PrintStream, coverageStream: PrintStream, jaam: Option[String], prune: Boolean, shrink: Boolean): Unit = {
+      graphStream: PrintStream, coverageStream: PrintStream, jaam: Option[String], prune: Boolean, shrink: Boolean, prettyPrint: Boolean): Unit = {
     Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
     Options.v().set_keep_line_number(true)
@@ -511,7 +534,7 @@ object LoopAnalyzer {
     CHATransformer.v.transform
     val cg = Scene.v.getCallGraph
 
-    val graph = LoopGraph(m, cg)
+    val graph = LoopGraph(m, cg, prettyPrint)
     val pruned = if (prune) {
       graph.prune
     } else {
