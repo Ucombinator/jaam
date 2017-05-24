@@ -1,7 +1,5 @@
 package org.ucombinator.jaam.tools.decompile
 
-import org.ucombinator.jaam.tools.jar._
-
 import java.io.FileOutputStream
 import java.io.OutputStreamWriter
 import java.io.FileInputStream
@@ -18,7 +16,7 @@ import com.strobel.decompiler.languages.java.ast.{CompilationUnit, Keys}
 import com.strobel.decompiler.languages.Languages
 
 import org.ucombinator.jaam.tools //.{Main,Conf}
-import org.ucombinator.jaam.tools.jar //.{Main,Conf}
+import org.ucombinator.jaam.tools.app //.{Main,Conf}
 
 import com.strobel.decompiler._
 
@@ -83,8 +81,8 @@ object Main {
   def main(input: List[String], output: String, exclude: List[String], rt: Boolean, lib: Boolean, app: Boolean) {
     val typeLoader = new HashMapTypeLoader()
 
-    def loadData(p: jar.PathElement) = p match {
-      case jar.PathElement(root, path, isJar, data) =>
+    def loadData(p: tools.app.PathElement) = p match {
+      case tools.app.PathElement(root, path, isJar, data) =>
         println(root + "!" + path + "!" + isJar)
         if (!isJar) typeLoader.add(data)
         else {
@@ -111,7 +109,7 @@ object Main {
       //for (packet <- pi) {
         println("PACKET")
         packet match {
-          case ClassData(rtData, libData, appData) =>
+          case tools.app.ClassData(rtData, libData, appData) =>
             if (rt) { rtData.map(loadData(_)) }
             if (lib) { libData.map(loadData(_)) }
             if (app) { appData.map(loadData(_)) }

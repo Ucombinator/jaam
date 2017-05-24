@@ -1,25 +1,13 @@
-package org.ucombinator.jaam.tools.jar
+package org.ucombinator.jaam.tools.app
 
 import java.io.FileOutputStream
-import java.io.OutputStreamWriter
-import java.io.IOException
 import java.nio.file._
 
-import com.strobel.assembler.InputTypeLoader
-import com.strobel.assembler.metadata._
-import com.strobel.core.VerifyArgument
-import com.strobel.decompiler.languages.java.JavaFormattingOptions
-import com.strobel.decompiler.languages.Languages
-
-import org.ucombinator.jaam.tools //.{Main,Conf}
-import org.ucombinator.jaam.serializer
-
-import com.strobel.decompiler._
-
-import scala.collection.mutable
 import scala.collection.JavaConverters._
 
-object Jar extends tools.Main("jar") {
+import org.ucombinator.jaam.{serializer, tools}
+
+object App extends tools.Main("app") {
   banner("TODO")
   footer("")
 
@@ -40,6 +28,23 @@ object Jar extends tools.Main("jar") {
 case class PathElement(root: String, path: String, isJar: Boolean, data: Array[Byte])
 case class ClassData(rt: Array[PathElement], lib: Array[PathElement], app: Array[PathElement]) extends serializer.Packet
 
+case class App() extends serializer.Packet {
+  object classpath {
+    var java = Array[PathElement]()
+    var lib = Array[PathElement]()
+    var app = Array[PathElement]()
+  }
+  object main {
+    var className = null: String
+    var methodName = null: String
+  }
+//  object java {
+//    var opts = null: String
+//  }
+}
+
+
+//jaam-tools app
 // TODO: rename to create
 // TODO: automatically find main and StacMain
 object Main {
