@@ -15,7 +15,7 @@ public class Main extends Application
 {
 
 	private static OuterFrame outerFrame;
-	private static boolean useFXML = true;
+	private static boolean useFXML = false;
 
 	public void start(Stage stage) {
 		if(!useFXML) {
