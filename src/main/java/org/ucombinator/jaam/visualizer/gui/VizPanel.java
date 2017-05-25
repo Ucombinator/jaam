@@ -117,12 +117,12 @@ public class VizPanel extends StackPane
 						rootGraphics.setTranslateX(rootGraphics.getTranslateX() - 10);
 						break;
 					}
-					case "UP":
+					case "DOWN":
 					{
 						rootGraphics.setTranslateY(rootGraphics.getTranslateY() - 10);
 						break;
 					}
-					case "DOWN":
+					case "UP":
 					{
 						rootGraphics.setTranslateY(rootGraphics.getTranslateY() + 10);
 						break;
