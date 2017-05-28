@@ -10,35 +10,36 @@ public class LayoutAlgorithm
 	// This works on a graph whose vertices have been assigned a bounding box
 	final static double MARGIN_PADDING = .25;
 	final static double NODES_PADDING = .5;
+	final static double ROOT_V_OFFSET = 2;
 	private static HashMap<String, Double> bboxWidthTable;
 	private static HashMap<String, Double> bboxHeightTable;
 	
-	private static void initializeSizes(AbstractLayoutVertex parentVertex) {
-		parentVertex.setWidth(AbstractLayoutVertex.DEFAULT_WIDTH);
-		parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
-		Iterator<AbstractLayoutVertex> it = parentVertex.getInnerGraph().getVertices().values().iterator();
-		while(it.hasNext()){
-			initializeSizes(it.next());
-		}
-	}
+
 	
 	public static void layout(AbstractLayoutVertex parentVertex) {
 		bboxWidthTable = new HashMap<String, Double>();
 		bboxHeightTable = new HashMap<String, Double>();
 		initializeSizes(parentVertex);
 		defaultLayout(parentVertex);
+		parentVertex.setY(parentVertex.getY()+ROOT_V_OFFSET);
+	}
+
+	private static void initializeSizes(AbstractLayoutVertex parentVertex) {
+		parentVertex.setWidth(AbstractLayoutVertex.DEFAULT_WIDTH);
+		parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
+		for(AbstractLayoutVertex v:parentVertex.getInnerGraph().getVertices().values()){
+			initializeSizes(v);
+		}
 	}
 
 	/*********************************************************************/
 	/********* LAYS OUT EACH LEVEL OF THE CLUSTERED GRAPH *****************/
 	/*********************************************************************/
 	private static void defaultLayout(AbstractLayoutVertex parentVertex){
+
 		HierarchicalGraph graph = parentVertex.getInnerGraph();
-		Collection<AbstractLayoutVertex> vertices = graph.getVertices().values();
-		Iterator<AbstractLayoutVertex> it = vertices.iterator();
-		while(it.hasNext())
-		{
-			AbstractLayoutVertex v = it.next();
+
+		for(AbstractLayoutVertex v: graph.getVertices().values()){
 			HierarchicalGraph inner_graph = v.getInnerGraph();
 			if (inner_graph.getVertices().size() != 0)
 			{
@@ -53,21 +54,19 @@ public class LayoutAlgorithm
 		/*******************************************************************************************/
 		/*********************** ACTUAL LAYOUT FOR THE CURRENT LEVEL/GRAPH *************************/
 		/*******************************************************************************************/
-		AbstractLayoutVertex root = graph.getRoot();
-		Iterator<AbstractLayoutVertex> itClear = graph.getVertices().values().iterator();
 		// Initialize all the nodes to be WHITE
-		while(itClear.hasNext()) {
-			itClear.next().setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
+		for(AbstractLayoutVertex v: graph.getVertices().values()){
+			v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
 		}
+
+		AbstractLayoutVertex root = graph.getRoot();
 
 		if(root != null) {
 			storeBBoxWidthAndHeight(root);
 		}
 
-		// TODO: Why is this repeated from a few lines above?
-		itClear = graph.getVertices().values().iterator();
-		while(itClear.hasNext()) {
-			itClear.next().setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
+		for(AbstractLayoutVertex v: graph.getVertices().values()){
+			v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
 		}
 
 		if(root != null) {
@@ -89,11 +88,9 @@ public class LayoutAlgorithm
 	private static void assignXandYtoInnerNodesAndGiveParentBBox(AbstractLayoutVertex root, double left, double top)
 	{
 		root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-		Iterator<AbstractLayoutVertex> it = root.getOutgoingNeighbors().iterator();
 		ArrayList<AbstractLayoutVertex> grayChildren = new ArrayList<AbstractLayoutVertex>(); 
-		while(it.hasNext())
+		for(AbstractLayoutVertex child: root.getOutgoingNeighbors())
 		{
-			AbstractLayoutVertex child = it.next();
 			if (child.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE)
 			{
 				child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
@@ -103,11 +100,9 @@ public class LayoutAlgorithm
 		
 		double currentWidth = 0;
 		double currentHeight = 0; 
-		
-		Iterator<AbstractLayoutVertex> itGray = grayChildren.iterator();
-		while(itGray.hasNext())
+
+		for(AbstractLayoutVertex curVer: grayChildren)
 		{
-			AbstractLayoutVertex curVer = itGray.next();
 			currentWidth += bboxWidthTable.get(curVer.getStrID()) + NODES_PADDING;
 		}
 
@@ -120,10 +115,8 @@ public class LayoutAlgorithm
 		}
 		
 		currentWidth = 0;
-		itGray = grayChildren.iterator();
-		while(itGray.hasNext())
+		for(AbstractLayoutVertex curVer: grayChildren)
 		{
-			AbstractLayoutVertex curVer = itGray.next();
 			assignXandYtoInnerNodesAndGiveParentBBox(curVer,currentWidth + left + AX,NODES_PADDING + top + root.getHeight());
 			currentWidth += bboxWidthTable.get(curVer.getStrID()) + NODES_PADDING;
 			currentHeight = Math.max(currentHeight, bboxHeightTable.get(curVer.getStrID()));
@@ -143,11 +136,9 @@ public class LayoutAlgorithm
 	private static double[] storeBBoxWidthAndHeight(AbstractLayoutVertex root)
 	{
 		root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-		Iterator<AbstractLayoutVertex> it = root.getOutgoingNeighbors().iterator();
-		ArrayList<AbstractLayoutVertex> grayChildren = new ArrayList<AbstractLayoutVertex>(); 
-		while(it.hasNext())
+		ArrayList<AbstractLayoutVertex> grayChildren = new ArrayList<AbstractLayoutVertex>();
+		for(AbstractLayoutVertex child: root.getOutgoingNeighbors())
 		{
-			AbstractLayoutVertex child = it.next();
 			if (child.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE)
 			{
 				child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
@@ -156,11 +147,9 @@ public class LayoutAlgorithm
 		}
 		
 		double currentWidth = 0;
-		double currentHeight = 0; 
-		Iterator<AbstractLayoutVertex> itGray = grayChildren.iterator();
-		while(itGray.hasNext())
+		double currentHeight = 0;
+		for(AbstractLayoutVertex curVer: grayChildren)
 		{
-			AbstractLayoutVertex curVer = itGray.next();
 			double[] boundBox = storeBBoxWidthAndHeight(curVer);
 			currentWidth += boundBox[0] + NODES_PADDING;
 			currentHeight = Math.max(currentHeight, boundBox[1]);

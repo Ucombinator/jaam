@@ -11,7 +11,7 @@ import org.ucombinator.jaam.visualizer.graph.Instruction;
 
 public class TakeInput extends Thread
 {
-	public Graph parsePackets(String file)
+	public Graph parseStateGraph(String file)
 	{
 		Graph graph = new Graph();
 		if(file.equals("")) {
@@ -65,7 +65,7 @@ public class TakeInput extends Thread
                 {
                   // TODO(decompile):
                   org.ucombinator.jaam.tools.decompile.DecompiledClass d = (org.ucombinator.jaam.tools.decompile.DecompiledClass) packet;
-                  d.compilationUnit();
+                  d.compilationUnit(); //gives an abstract syntax tree
                 }
 
                 packet = packetInput.read();

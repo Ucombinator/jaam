@@ -1,12 +1,20 @@
 package org.ucombinator.jaam.visualizer.layout;
 
-import javafx.scene.paint.Color;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.image.Image;
+import javafx.scene.paint.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.InputMismatchException;
 
 /**
  * Created by timothyjohnson on 2/15/17.
@@ -204,4 +212,7 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
 
 		//System.out.println("Loop heights found!");
 	}
+
+
+
 }

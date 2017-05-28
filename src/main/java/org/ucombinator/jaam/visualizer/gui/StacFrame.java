@@ -303,7 +303,7 @@ public class StacFrame extends BorderPane
 		final javafx.scene.paint.Color activeColor = javafx.scene.paint.Color.CYAN;
 		final javafx.scene.paint.Color inactiveColor = javafx.scene.paint.Color.BLACK;
 
-		final Button methodCollapse = new Button("M");
+		final Button methodCollapse = new Button("Method");
 		methodCollapse.setTextFill(inactiveColor);
 		methodCollapse.setOnAction
 				(
@@ -332,7 +332,7 @@ public class StacFrame extends BorderPane
 				);
 		collapsePanel.add(methodCollapse,0,0);
 
-		final Button chainCollapse = new Button("C");
+		final Button chainCollapse = new Button("Chain");
 		chainCollapse.setTextFill(inactiveColor);
 		chainCollapse.setOnAction
 				(

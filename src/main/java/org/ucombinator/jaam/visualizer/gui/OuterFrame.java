@@ -1,6 +1,5 @@
 package org.ucombinator.jaam.visualizer.gui;
 
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -11,7 +10,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.*;
 import javafx.scene.image.Image;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BackgroundImage;
@@ -328,11 +326,11 @@ public class OuterFrame extends BorderPane {
             if(isLoopGraph)
                 graph = ti.parseLoopGraph(file.getAbsolutePath());
             else
-                graph = ti.parsePackets(file.getAbsolutePath());
+                graph = ti.parseStateGraph(file.getAbsolutePath());
             filename = file.getName();
         }
         else {
-            graph = ti.parsePackets("");
+            graph = ti.parseStateGraph("");
         }
         
         System.out.println("--> Create visualization: start...");
