@@ -87,7 +87,7 @@ public class StacFrame extends Tab
 
 	public void loadFXML() {
 		try {
-			URL url = getClass().getResource("/test.fxml");
+			URL url = getClass().getResource("/newtab.fxml");
 			FXMLLoader fxmlLoader = new FXMLLoader(url);
 			fxmlLoader.setController(this);
 			System.out.println("Loading url: " + url);
