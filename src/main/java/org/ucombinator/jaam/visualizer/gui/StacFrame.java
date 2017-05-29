@@ -91,7 +91,7 @@ public class StacFrame extends Tab
 			FXMLLoader fxmlLoader = new FXMLLoader(url);
 			fxmlLoader.setController(this);
 			System.out.println("Loading url: " + url);
-			BorderPane borderPane = fxmlLoader.load(url);
+			BorderPane borderPane = fxmlLoader.load();
 			System.out.println("Border pane loaded: " + borderPane);
 			System.out.println("VizPanel loaded: " + this.mainPanel);
 		}

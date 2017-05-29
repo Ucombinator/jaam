@@ -25,7 +25,7 @@ public class Main extends Application
 			FXMLLoader fxmlLoader = new FXMLLoader(url);
 			fxmlLoader.setController(new SimpleController());
 
-			AnchorPane anchorPane = fxmlLoader.load(url);
+			AnchorPane anchorPane = fxmlLoader.load();
 			OuterFrame outerFrame = new OuterFrame(anchorPane);
 
 			Scene scene = new Scene(anchorPane);
