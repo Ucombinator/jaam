@@ -96,7 +96,7 @@ public class StacFrame extends Tab
 			System.out.println("VizPanel loaded: " + this.mainPanel);
 		}
 		catch (Exception e) {
-			System.out.println("Exception in loading StacFrame: " + e);
+			e.printStackTrace();
 		}
 	}
 

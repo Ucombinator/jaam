@@ -32,7 +32,7 @@ public class Main extends Application
 			stage.setScene(scene);
 			stage.show();
 		} catch (Exception e) {
-			System.out.println(e);
+			e.printStackTrace();
 		}
 	}
 

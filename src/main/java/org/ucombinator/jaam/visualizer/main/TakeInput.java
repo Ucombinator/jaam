@@ -67,7 +67,7 @@ public class TakeInput extends Thread
 		}
 		catch(FileNotFoundException e)
 		{
-			System.out.println(e);
+			e.printStackTrace();
 		}*/
 
 		return graph;
@@ -112,7 +112,7 @@ public class TakeInput extends Thread
 		}
 		catch(FileNotFoundException e)
 		{
-			System.out.println(e);
+			e.printStackTrace();
 		}*/
 
 		return graph;
