@@ -36,27 +36,8 @@ case class PathElement(path: String, root: String, data: Array[Byte]) {
     } else {
       List()
     }
-
-/*
-      var result = List[Array[Byte]]()
-      var entry: java.util.jar.JarEntry = null
-      while ({entry = jar.getNextJarEntry(); entry != null}) {
-        println(f"classData $path($root) ${entry.getName()} ${entry.getSize}")
-        val bytes = new Array[Byte](entry.getSize.toInt)
-        jar.read(bytes, 0, entry.getSize.toInt)
-        if (entry.getName.endsWith(".class")) { // TODO: be smarter about this
-          result ++= List(bytes)
-        }
-      }
-
-      result
-    }
- */
   }
 }
-
-//case class PathElement(root: String, path: String, isJar: Boolean, data: Array[Byte])
-//case class ClassData(rt: Array[PathElement], lib: Array[PathElement], app: Array[PathElement]) extends serializer.Packet
 
 case class App() extends serializer.Packet {
   var name = None: Option[String]
@@ -76,7 +57,6 @@ case class App() extends serializer.Packet {
 
 
 //jaam-tools app
-// TODO: rename to create
 // TODO: automatically find main and StacMain
 // TODO: automatically determine app vs lib classes by finding main
 // TODO: automatically find all jar files in subdirectory
@@ -95,11 +75,15 @@ object Main {
       }).toList.flatten
     } else if (path.toString.endsWith(".class")) {
       val data = Files.readAllBytes(path)
-      data.startsWith(List(0xCA, 0xFE, 0xBA, 0xBE))
+      if (!data.startsWith(List(0xCA, 0xFE, 0xBA, 0xBE))) {
+        throw new Exception(f"Malformed class file $path at $root")
+      }
       return List(PathElement(path.toString, root.toString, data))
     } else if (path.toString.endsWith(".jar")) {
       val data = Files.readAllBytes(path)
-      data.startsWith(List(0x50, 0x4B, 0x03, 0x04))
+      if (!data.startsWith(List(0x50, 0x4B, 0x03, 0x04))) {
+        throw new Exception(f"Malformed class file $path at $root")
+      }
       return List(PathElement(root.toString, root.toString, data))
     } else {
       throw new Exception("not a directory, class, or jar")
@@ -110,19 +94,15 @@ object Main {
     def readList(list: List[String]) =
       list.map({ x => read(Paths.get(x), Paths.get(x))}).flatten.toArray
 
-//    val appElements = readList(app)
-//    val libElements = readList(lib)
-//    val rtElement = readList(rt)
-
     val appConfig = App()
     appConfig.classpath.app = readList(app)
     appConfig.classpath.lib = readList(lib)
     appConfig.classpath.java = readList(rt)
 
+    // Write App to jaam
     val outStream = new FileOutputStream(jaam)
     val po = new serializer.PacketOutput(outStream)
     po.write(appConfig)
-    // TODO: write config to jaam
     po.close()
   }
 }
