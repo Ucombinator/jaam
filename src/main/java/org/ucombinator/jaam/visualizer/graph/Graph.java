@@ -4,6 +4,7 @@ import java.io.File;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 public class Graph
 {
@@ -19,8 +20,8 @@ public class Graph
 	public Graph()
 	{
 		this.vertices = new ArrayList<Vertex>();
-		this.methods = new HashMap<String, Method>();
-		this.classes = new HashMap<String, Class>();
+		this.methods = new LinkedHashMap<String, Method>();
+		this.classes = new LinkedHashMap<String, Class>();
 		this.maxIndex = -1;
 
         this.tagsList = new ArrayList<String>();
@@ -50,12 +51,12 @@ public class Graph
 		Instruction instruction = new Instruction("ErrorState", "", -1, false);
 		this.addVertex(id, instruction, false);
 	}
-	
+
 	public void addVertex(int vIndex, Instruction instruction, boolean drawEdges)
 	{
 		//System.out.println("Adding vertex " + vIndex + ": " + instruction.getText());
 		Vertex ver = this.containsInputVertex(vIndex);
-		
+
 		if(ver == null)
 		{
 			ver = new Vertex(instruction, vIndex, true);
@@ -65,10 +66,10 @@ public class Graph
 			ver.setRealInstruction(instruction);
 			//System.out.println("Setting method for dummy vertex: " + ver.getMethodName());
 		}
-		
+
 		this.matchVertexToMethod(ver, instruction.getMethodName());
 		ver.setDrawEdges(drawEdges);
-		
+
 		if(instruction.getJimpleIndex() > this.maxIndex)
 			this.maxIndex = instruction.getJimpleIndex();
 	}

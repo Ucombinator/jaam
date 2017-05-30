@@ -13,6 +13,7 @@ import javafx.scene.paint.Color;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -53,7 +54,7 @@ public class VizPanel extends StackPane
 	{
 		super();
 		this.graphPane = new Pane();
-		highlighted = new HashSet<AbstractLayoutVertex>();
+		highlighted = new LinkedHashSet<AbstractLayoutVertex>();
 
 		zoomIn = new Button("+");
 		zoomOut = new Button("-");

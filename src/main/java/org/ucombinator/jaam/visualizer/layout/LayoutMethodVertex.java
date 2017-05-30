@@ -11,10 +11,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.InputMismatchException;
+import java.util.*;
 
 /**
  * Created by timothyjohnson on 2/15/17.
@@ -57,7 +54,7 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
     }
 
     public HashSet<LayoutMethodVertex> getMethodVertices() {
-        HashSet<LayoutMethodVertex> result = new HashSet<LayoutMethodVertex>();
+        HashSet<LayoutMethodVertex> result = new LinkedHashSet<LayoutMethodVertex>();
         result.add(this);
         return result;
     }

@@ -11,6 +11,7 @@ import javafx.scene.paint.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
@@ -82,7 +83,7 @@ public class CodeArea extends TextFlow
 		if(highlighted.size() > 0)
 		{
 			//TODO: Add function for getting all methods
-			HashSet<LayoutMethodVertex> methodVertices = new HashSet<LayoutMethodVertex>();
+			HashSet<LayoutMethodVertex> methodVertices = new LinkedHashSet<LayoutMethodVertex>();
 			for(AbstractLayoutVertex v : highlighted)
 				methodVertices.addAll(v.getMethodVertices());
 

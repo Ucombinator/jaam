@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.layout;
 import javafx.scene.paint.Paint;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
@@ -45,7 +46,7 @@ public class LayoutShrinkVertex extends AbstractLayoutVertex {
 
     public HashSet<LayoutMethodVertex> getMethodVertices()
     {
-        HashSet<LayoutMethodVertex> methodVertices = new HashSet<LayoutMethodVertex>();
+        HashSet<LayoutMethodVertex> methodVertices = new LinkedHashSet<LayoutMethodVertex>();
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
             methodVertices.addAll(v.getMethodVertices());
         }

@@ -11,14 +11,14 @@ import javafx.scene.control.TreeItem;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 
 import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.Location;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
-public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayoutVertex>
-        implements Comparable<AbstractLayoutVertex>
+public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayoutVertex> implements Comparable<AbstractLayoutVertex>
 {
     public static Color highlightColor = Color.ORANGE;
     protected Color color = Color.RED;
@@ -431,7 +431,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     }
 
     public HashSet<Instruction> getInstructions() {
-        return this.getInstructions(new HashSet<Instruction>());
+        return this.getInstructions(new LinkedHashSet<Instruction>());
     }
 
     private HashSet<Instruction> getInstructions(HashSet<Instruction> instructions) {
@@ -450,7 +450,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     }
 
     public HashSet<AbstractLayoutVertex> getVerticesWithInstructionID(int id, String method_name){
-        return getVerticesWithInstructionID(id, method_name, new HashSet<AbstractLayoutVertex>());
+        return getVerticesWithInstructionID(id, method_name, new LinkedHashSet<AbstractLayoutVertex>());
     }
 
     private HashSet<AbstractLayoutVertex> getVerticesWithInstructionID(int id, String method_name, HashSet<AbstractLayoutVertex> set){

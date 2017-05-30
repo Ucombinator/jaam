@@ -1,14 +1,12 @@
 package org.ucombinator.jaam.visualizer.layout;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 
 public class HierarchicalGraph
 {
 	private HashMap<String, AbstractLayoutVertex> vertices;
 	private HashMap<String, LayoutEdge> edges;
+
 	
 	public HierarchicalGraph(HashMap<String, AbstractLayoutVertex> vertices, HashMap<String, LayoutEdge> edges)
 	{
@@ -19,7 +17,7 @@ public class HierarchicalGraph
 
 	public HierarchicalGraph()
 	{
-		this(new HashMap<String, AbstractLayoutVertex>(), new HashMap<String, LayoutEdge>());
+		this(new LinkedHashMap<String, AbstractLayoutVertex>(), new LinkedHashMap<String, LayoutEdge>());
 	}
 
 	public HashMap<String, AbstractLayoutVertex> getVertices() {
@@ -135,7 +133,7 @@ public class HierarchicalGraph
 
 		root.cleanAll();
 		for(AbstractLayoutVertex v : root.getInnerGraph().getVertices().values())
-			visit(v, new HashMap<String, AbstractLayoutVertex>(), dummies);
+			visit(v, new LinkedHashMap<String, AbstractLayoutVertex>(), dummies);
 		
 		System.out.println("Creating dummy edges: done!");
 		return dummies;

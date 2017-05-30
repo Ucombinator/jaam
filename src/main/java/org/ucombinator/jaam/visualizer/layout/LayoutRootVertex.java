@@ -5,6 +5,7 @@ import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 /**
  * Created by timothyjohnson on 3/20/17.
@@ -45,7 +46,7 @@ public class LayoutRootVertex extends AbstractLayoutVertex {
 
     public HashSet<LayoutMethodVertex> getMethodVertices()
     {
-        HashSet<LayoutMethodVertex> methodVertices = new HashSet<LayoutMethodVertex>();
+        HashSet<LayoutMethodVertex> methodVertices = new LinkedHashSet<LayoutMethodVertex>();
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
             if(v instanceof LayoutMethodVertex)
                 methodVertices.add((LayoutMethodVertex) v);
