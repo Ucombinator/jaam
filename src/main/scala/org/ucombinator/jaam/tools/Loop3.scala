@@ -69,16 +69,6 @@ object Main {
     //println("main " + Scene.v.getMainClass())
     println("pkg " + Scene.v.getPkgList())
 
-
-//    val c = getSootClass("edu.cyberapex.home.StacMain")
-//    println("Class: " + c)
-//    for (m <- c.getMethods.asScala) {
-//      println("Method: " + m)
-//      for (s <- getBody(m).getUnits.asScala) {
-//        println("Stmt: " + s)
-//      }
-//    }
-
     var class_count = 0
     var method_count = 0
     var stmt_count = 0
@@ -164,48 +154,6 @@ object Main {
         }
         println(f"end class $c")
     }
-
-/*
-    for (p <- classpath) {
-      println(f"p $p")
-      val jar = new java.util.jar.JarInputStream(
-        new java.io.FileInputStream(p))
-
-      var entry: java.util.jar.JarEntry = null
-      while ({entry = jar.getNextJarEntry(); entry != null}) {
-        class_count += 1
-        val name = entry.getName.replace("/", ".").replaceAll("\\.class$", "")
-        println(f"class $class_count: $name")
-
-        val c = getSootClass(name)
-        // The .toList prevents a concurrent access exception
-        //for (m <- c.getMethods.asScala.toList) {
-        //  method_count += 1
-        //  println(f"method $method_count: $m")
-        //  if (m.isNative) { println("skipping body because native") }
-        //  else if (m.isAbstract) { println("skipping body because abstract") }
-        //  else {
-        //    for (sootStmt <- getBody(m).getUnits.asScala) {
-        //      stmt_count += 1
-        //      println(f"stmt $stmt_count: $sootStmt")
-        //      val s = Stmt(Stmt.unitToStmt(sootStmt), m)
-        //      val ts = stmtTargets(s)
-        //      target_count += ts.size
-        //      edges += (s -> ts)
-        //      if (!ts.isEmpty) {
-        //        println(f"$target_count.$c.$m.${s.index}: $ts")
-        //      }
-        //    }
-        //  }
-        //  println(f"end method $c $m")
-        //}
-        println(f"end class $c")
-      }
-      println(f"end jar $p")
-
-      jar.close()
-    }
- */
 
     println(f"END classes=$class_count methods=$method_count stmts=$stmt_count targets=$target_count")
   }
