@@ -83,7 +83,7 @@ object Main {
 
     def loadData(p: tools.app.PathElement) = p match {
       // TODO: use PathElement.classData()
-      case tools.app.PathElement(path, root, data) =>
+      case tools.app.PathElement(path, root, role, data) =>
         println(f"PathElement: $path ($root)")
         if (!path.endsWith(".jar")) typeLoader.add(data)
         else {
