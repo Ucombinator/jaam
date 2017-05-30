@@ -46,7 +46,7 @@ object Main {
     //Scene.v.setSootClassPath(classpath)
     //Scene.v.loadNecessaryClasses
 
-    Soot.useAppProvider()
+    Soot.useJaamClassProvider()
 
     input.map(Soot.addJaamClasses)
 
