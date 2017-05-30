@@ -1,8 +1,12 @@
 package org.ucombinator.jaam.tools.loop3
 
 import org.ucombinator.jaam.tools
-import soot.{ PackManager, Scene, SootClass, SootMethod, SootResolver }
+import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.options.Options
+import soot.jimple.{Stmt => SootStmt, _}
+import org.ucombinator.jaam.interpreter.Stmt
+
+import scala.collection.immutable
 
 import scala.collection.JavaConverters._
 
@@ -81,6 +85,53 @@ object Main {
     var class_count = 0
     var method_count = 0
     var stmt_count = 0
+    var target_count = 0
+
+    var edges = immutable.Map[Stmt, Set[SootMethod]]()
+
+    def invokeExprTargets(expr: InvokeExpr): Set[SootMethod] = {
+      val m = expr.getMethod
+      val c = m.getDeclaringClass
+      println(f"m: $m c: $c")
+      val cs = expr match {
+        case expr : DynamicInvokeExpr =>
+          // Could only come from non-Java sources
+          throw new Exception(s"Unexpected DynamicInvokeExpr: $expr")
+        case expr : StaticInvokeExpr => Set(c)
+        // SpecialInvokeExpr is also a subclasses of InstanceInvokeExpr but we need to treat it special
+        case expr: SpecialInvokeExpr => Set(c)
+        case expr: InstanceInvokeExpr =>
+          if (c.isInterface) {
+            Scene.v.getActiveHierarchy.getImplementersOf(c).asScala
+          } else {
+            Scene.v.getActiveHierarchy.getSubclassesOfIncluding(c).asScala
+          }
+      }
+
+      var ms = Set[SootMethod]()
+
+      for (c2 <- cs) {
+        if (!c2.isInterface) {
+          val m2 = c2.getMethodUnsafe(m.getNumberedSubSignature)
+          if (m2 != null) {
+            ms += m2
+          }
+        }
+      }
+
+      ms
+    }
+
+    def stmtTargets(stmt: Stmt): Set[SootMethod] = stmt.sootStmt match {
+      case s: InvokeStmt => invokeExprTargets(s.getInvokeExpr)
+      case s: DefinitionStmt =>
+        s.getRightOp match {
+          case s: InvokeExpr => invokeExprTargets(s)
+          case _ => Set()
+        }
+      case _ => Set()
+    }
+
 
     for (p <- classpath) {
       println(f"p $p")
@@ -94,25 +145,35 @@ object Main {
         println(f"class $class_count: $name")
 
         val c = getSootClass(name)
-        for (m <- c.getMethods.asScala) {
+        // The .toList prevents a concurrent access exception
+        for (m <- c.getMethods.asScala.toList) {
           method_count += 1
           println(f"method $method_count: $m")
           if (m.isNative) { println("skipping body because native") }
           else if (m.isAbstract) { println("skipping body because abstract") }
           else {
-            for (s <- getBody(m).getUnits.asScala) {
+            for (sootStmt <- getBody(m).getUnits.asScala) {
               stmt_count += 1
-              println(f"stmt $stmt_count: $s")
+              println(f"stmt $stmt_count: $sootStmt")
+              val s = Stmt(Stmt.unitToStmt(sootStmt), m)
+              val ts = stmtTargets(s)
+              target_count += ts.size
+              edges += (s -> ts)
+              if (!ts.isEmpty) {
+                println(f"$target_count.$c.$m.${s.index}: $ts")
+              }
             }
           }
+          println(f"end method $c $m")
         }
-        //val bytes = new Array[Byte](entry.getSize.toInt)
-        //jar.read(bytes, 0, entry.getSize.toInt)
-        //typeLoader.add(bytes)
+        println(f"end class $c")
       }
+      println(f"end jar $p")
+
+      jar.close()
     }
 
-    println(f"END classes=$class_count methods=$method_count stmts=$stmt_count")
+    println(f"END classes=$class_count methods=$method_count stmts=$stmt_count targets=$target_count")
   }
 }
 
