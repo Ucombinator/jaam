@@ -11,20 +11,24 @@ import scala.collection.immutable
 import scala.collection.JavaConverters._
 
 object Loop3 extends tools.Main("loop3") {
-  val classpath = opt[List[String]](descr = "TODO")
+  //val classpath = opt[List[String]](descr = "TODO")
+  val input = opt[List[String]](required = true)
 
   def run(conf: tools.Conf) {
-    Main.main(classpath.getOrElse(List()))
+    //Main.main(classpath.getOrElse(List()))
+    Main.main(input.getOrElse(List()))
   }
 }
 
+import org.ucombinator.jaam.util.Soot
+
 object Main {
-  def main(classpath: List[String]) {
+  def main(input: List[String]) {
     Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
     Options.v().set_keep_line_number(true)
     Options.v().set_allow_phantom_refs(true)
-    Options.v().set_soot_classpath(classpath.mkString(":"))
+    //Options.v().set_soot_classpath(classpath.mkString(":"))
     Options.v().set_include_all(true)
     Options.v().set_prepend_classpath(false)
     Options.v().set_src_prec(Options.src_prec_only_class)
@@ -40,6 +44,10 @@ object Main {
     //Scene.v.addBasicClass(className, SootClass.HIERARCHY)
     //Scene.v.setSootClassPath(classpath)
     //Scene.v.loadNecessaryClasses
+
+    Soot.useAppProvider()
+
+    input.map(Soot.addClasses)
 
     Scene.v.loadBasicClasses()
     PackManager.v.runPacks()
@@ -132,16 +140,9 @@ object Main {
       case _ => Set()
     }
 
-
-    for (p <- classpath) {
-      println(f"p $p")
-      val jar = new java.util.jar.JarInputStream(
-        new java.io.FileInputStream(p))
-
-      var entry: java.util.jar.JarEntry = null
-      while ({entry = jar.getNextJarEntry(); entry != null}) {
+    for (name <- org.ucombinator.jaam.util.Soot.classes.keys) {
         class_count += 1
-        val name = entry.getName.replace("/", ".").replaceAll("\\.class$", "")
+        //val name = entry.getName.replace("/", ".").replaceAll("\\.class$", "")
         println(f"class $class_count: $name")
 
         val c = getSootClass(name)
@@ -159,6 +160,7 @@ object Main {
               val ts = stmtTargets(s)
               target_count += ts.size
               edges += (s -> ts)
+              // TODO: cache ts
               if (!ts.isEmpty) {
                 println(f"$target_count.$c.$m.${s.index}: $ts")
               }
@@ -167,11 +169,49 @@ object Main {
           println(f"end method $c $m")
         }
         println(f"end class $c")
+    }
+
+/*
+    for (p <- classpath) {
+      println(f"p $p")
+      val jar = new java.util.jar.JarInputStream(
+        new java.io.FileInputStream(p))
+
+      var entry: java.util.jar.JarEntry = null
+      while ({entry = jar.getNextJarEntry(); entry != null}) {
+        class_count += 1
+        val name = entry.getName.replace("/", ".").replaceAll("\\.class$", "")
+        println(f"class $class_count: $name")
+
+        val c = getSootClass(name)
+        // The .toList prevents a concurrent access exception
+        //for (m <- c.getMethods.asScala.toList) {
+        //  method_count += 1
+        //  println(f"method $method_count: $m")
+        //  if (m.isNative) { println("skipping body because native") }
+        //  else if (m.isAbstract) { println("skipping body because abstract") }
+        //  else {
+        //    for (sootStmt <- getBody(m).getUnits.asScala) {
+        //      stmt_count += 1
+        //      println(f"stmt $stmt_count: $sootStmt")
+        //      val s = Stmt(Stmt.unitToStmt(sootStmt), m)
+        //      val ts = stmtTargets(s)
+        //      target_count += ts.size
+        //      edges += (s -> ts)
+        //      if (!ts.isEmpty) {
+        //        println(f"$target_count.$c.$m.${s.index}: $ts")
+        //      }
+        //    }
+        //  }
+        //  println(f"end method $c $m")
+        //}
+        println(f"end class $c")
       }
       println(f"end jar $p")
 
       jar.close()
     }
+ */
 
     println(f"END classes=$class_count methods=$method_count stmts=$stmt_count targets=$target_count")
   }
@@ -179,3 +219,22 @@ object Main {
 
 
 // ./bin/jaam-tools loop3 --classpath ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/airplan_1/challenge_program/lib/airplan_1.jar --classpath ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/airplan_1/challenge_program/lib/commons-cli-1.3.jar --classpath ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/airplan_1/challenge_program/lib/commons-codec-1.9.jar --classpath ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/airplan_1/challenge_program/lib/commons-fileupload-1.3.1.jar --classpath ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/airplan_1/challenge_program/lib/commons-io-2.2.jar --classpath ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/airplan_1/challenge_program/lib/commons-lang3-3.4.jar --classpath ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/airplan_1/challenge_program/lib/commons-logging-1.2.jar --classpath ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/airplan_1/challenge_program/lib/httpclient-4.5.1.jar --classpath ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/airplan_1/challenge_program/lib/httpcore-4.4.3.jar --classpath ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/airplan_1/challenge_program/lib/jline-2.8.jar --classpath ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/airplan_1/challenge_program/lib/log4j-1.2.17.jar --classpath ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/airplan_1/challenge_program/lib/mapdb-2.0-beta8.jar --classpath ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/airplan_1/challenge_program/lib/netty-all-4.0.34.Final.jar --classpath ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/airplan_1/challenge_program/lib/protobuf-java-3.0.0-beta-2.jar --classpath resources/rt.jar
+
+
+// --app airplan_1.jar
+// --rt ../../../../../../../../jaam/jaam.git/resources/rt.jar
+// --lib commons-cli-1.3.jar
+// --lib commons-codec-1.9.jar
+// --lib commons-fileupload-1.3.1.jar
+// --lib commons-io-2.2.jar
+// --lib commons-lang3-3.4.jar
+// --lib commons-logging-1.2.jar
+// --lib httpclient-4.5.1.jar
+// --lib httpcore-4.4.3.jar
+// --lib jline-2.8.jar
+// --lib log4j-1.2.17.jar
+// --lib mapdb-2.0-beta8.jar
+// --lib netty-all-4.0.34.Final.jar
+// --lib protobuf-java-3.0.0-beta-2.jar
+// 
+// --app airplan_1.jar --rt ../../../../../../../../jaam/jaam.git/resources/rt.jar --lib commons-cli-1.3.jar --lib commons-codec-1.9.jar --lib commons-fileupload-1.3.1.jar --lib commons-io-2.2.jar --lib commons-lang3-3.4.jar --lib commons-logging-1.2.jar --lib httpclient-4.5.1.jar --lib httpcore-4.4.3.jar --lib jline-2.8.jar --lib log4j-1.2.17.jar --lib mapdb-2.0-beta8.jar --lib netty-all-4.0.34.Final.jar --lib protobuf-java-3.0.0-beta-2.jar

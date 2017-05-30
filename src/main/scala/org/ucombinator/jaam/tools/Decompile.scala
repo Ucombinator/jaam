@@ -1,6 +1,6 @@
 package org.ucombinator.jaam.tools.decompile
 
-import java.io.FileOutputStream
+import java.io.{ ByteArrayOutputStream, FileOutputStream }
 import java.io.OutputStreamWriter
 import java.io.FileInputStream
 import java.io.InputStreamReader
@@ -81,8 +81,9 @@ object Main {
   def main(input: List[String], output: String, exclude: List[String], rt: Boolean, lib: Boolean, app: Boolean) {
     val typeLoader = new HashMapTypeLoader()
 
-    def loadData(p: tools.app.App.PathElement) = p match {
-      case tools.app.App.PathElement(path, root, data) =>
+    def loadData(p: tools.app.PathElement) = p match {
+      // TODO: use PathElement.classData()
+      case tools.app.PathElement(path, root, data) =>
         println(f"PathElement: $path ($root)")
         if (!path.endsWith(".jar")) typeLoader.add(data)
         else {
@@ -99,6 +100,27 @@ object Main {
         }
     }
 
+    for ((entry, bytes) <- org.ucombinator.jaam.util.Jar.entries(new java.io.FileInputStream(input(0)))) {
+      println(f"name ${entry.getName()} size ${entry.getSize.toInt} comsize ${entry.getCompressedSize} bytes ${bytes.length}")
+    }
+      
+
+/*
+    var entry: java.util.jar.JarEntry = null
+    while ({entry = jar.getNextJarEntry(); entry != null}) {
+      println(f"name ${entry.getName()} size ${entry.getSize.toInt} comsize ${entry.getCompressedSize}")
+      if (entry.getSize == -1) {
+        val bytes = org.ucombinator.jaam.util.Misc.toByteArray(jar)
+        println(f"bytes: ${bytes.length}")
+      } else {
+        val bytes = new Array[Byte](entry.getSize.toInt)
+        jar.read(bytes, 0, entry.getSize.toInt)
+        typeLoader.add(bytes)
+      }
+    }
+ */
+
+/*
     for (file <- input) {
       val stream = new FileInputStream(file)
       val pi = new serializer.PacketInput(stream)
@@ -114,6 +136,7 @@ object Main {
         }
       }
     }
+ */
 
     val stream = new FileOutputStream(output)
     val po = new serializer.PacketOutput(stream)
