@@ -21,15 +21,30 @@ object Misc {
 }
 
 object Jar {
+  def jar(input: Array[Byte]): JarInputStream = {
+    jar(new ByteArrayInputStream(input))
+  }
+
+  def jar(input: InputStream): JarInputStream = {
+    new JarInputStream(input)
+  }
+
   // TODO: lots of code needs context closers
+  def entries(input: Array[Byte]): List[(JarEntry, Array[Byte])] = {
+    entries(new ByteArrayInputStream(input))
+  }
+
   def entries(input: InputStream): List[(JarEntry, Array[Byte])] = {
-    val jar = new JarInputStream(input)
+    entries(jar(input))
+  }
+
+  def entries(input: JarInputStream): List[(JarEntry, Array[Byte])] = {
     var entries = List[(JarEntry, Array[Byte])]()
 
-    var entry: java.util.jar.JarEntry = null
-    while ({entry = jar.getNextJarEntry(); entry != null}) {
+    var entry: JarEntry = null
+    while ({entry = input.getNextJarEntry(); entry != null}) {
       // `entry.getSize` may be -1 to signal unknown so we use `toByteArray`
-      entries ++= List((entry, Misc.toByteArray(jar)))
+      entries ++= List((entry, Misc.toByteArray(input)))
     }
 
     return entries
