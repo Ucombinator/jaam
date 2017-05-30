@@ -1,9 +1,6 @@
 package org.ucombinator.jaam.visualizer.layout;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 
 public class LayoutAlgorithm
 {
@@ -17,8 +14,8 @@ public class LayoutAlgorithm
 
 	
 	public static void layout(AbstractLayoutVertex parentVertex) {
-		bboxWidthTable = new HashMap<String, Double>();
-		bboxHeightTable = new HashMap<String, Double>();
+		bboxWidthTable = new LinkedHashMap<String, Double>();
+		bboxHeightTable = new LinkedHashMap<String, Double>();
 		initializeSizes(parentVertex);
 		defaultLayout(parentVertex);
 		parentVertex.setY(parentVertex.getY()+ROOT_V_OFFSET);

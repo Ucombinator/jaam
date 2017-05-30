@@ -6,6 +6,7 @@ import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 /**
  * Created by timothyjohnson on 2/15/17.
@@ -55,7 +56,7 @@ public class LayoutInstructionVertex extends AbstractLayoutVertex {
     }
 
     public HashSet<LayoutMethodVertex> getMethodVertices() {
-        HashSet<LayoutMethodVertex> result = new HashSet<LayoutMethodVertex>();
+        HashSet<LayoutMethodVertex> result = new LinkedHashSet<LayoutMethodVertex>();
         result.add(this.methodVertex);
         return result;
     }

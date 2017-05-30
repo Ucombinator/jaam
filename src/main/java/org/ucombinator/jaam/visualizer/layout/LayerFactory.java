@@ -1,9 +1,6 @@
 package org.ucombinator.jaam.visualizer.layout;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.*;
 
 import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -22,24 +19,24 @@ public class LayerFactory
 	
 	private static LayoutRootVertex get2layer(Graph graph)
 	{
-		HashMap<String, Vertex> id_to_vertex = new HashMap<String, Vertex>();
-		HashMap<String, AbstractVertex> id_to_abs_vertex = new HashMap<String, AbstractVertex>();
+		HashMap<String, Vertex> id_to_vertex =  new LinkedHashMap<String, Vertex>();
+		HashMap<String, AbstractVertex> id_to_abs_vertex = new LinkedHashMap<String, AbstractVertex>();
 		HierarchicalGraph methodGraph = new HierarchicalGraph();
 		
 		// We partition the vertex set of Main.graph into buckets corresponding to the methods.
-		HashMap<String, HashSet<Vertex>> methodBuckets = new HashMap<String, HashSet<Vertex>>();
+		HashMap<String, HashSet<Vertex>> methodBuckets = new LinkedHashMap<String, HashSet<Vertex>>();
 		for(Vertex vertex: graph.getVertices()) {
 			//System.out.println("Reading vertex: " + vertex.getInstructionText());
 			String method = vertex.getMethodName();
 			if(!methodBuckets.containsKey(method)){
-				methodBuckets.put(method, new HashSet<Vertex>());
+				methodBuckets.put(method, new LinkedHashSet<Vertex>());
 				//System.out.println("Creating bucket for method: " + method);
 			}
 			methodBuckets.get(method).add(vertex);
 		}
 		
 		// Add a vertex for each method to the methodGraph.
-		HashMap<String, LayoutMethodVertex> methodVertices = new HashMap<>();
+		HashMap<String, LayoutMethodVertex> methodVertices = new LinkedHashMap<>();
 		for(String method: methodBuckets.keySet()) {
 			//System.out.println("Creating method node for method: " + method);
 			LayoutMethodVertex vertex = new LayoutMethodVertex(method, true);
@@ -49,7 +46,7 @@ public class LayerFactory
 		}
 
 		// Add edges to the methodGraph.
-		HashMap<String, LayoutEdge> edges = new HashMap<String, LayoutEdge>();
+		HashMap<String, LayoutEdge> edges = new LinkedHashMap<String, LayoutEdge>();
 		for(Vertex vertex: graph.getVertices()){
 			// Not sure why we need an Object instead of a Vertex here
 			for(Object neighborObj: vertex.getOutgoingNeighbors()) {
@@ -73,7 +70,7 @@ public class LayerFactory
 		for(AbstractLayoutVertex methodVertexAbs: methodGraph.getVertices().values()) {
 			// Add vertices of the inner graph.
 			LayoutMethodVertex methodVertex = (LayoutMethodVertex) methodVertexAbs;
-			HashMap<String,String> idMapping = new HashMap<>(); // first id is the graph vertex id and the second id the New vertex id
+			HashMap<String,String> idMapping = new LinkedHashMap<>(); // first id is the graph vertex id and the second id the New vertex id
 			for(Vertex oldV: methodBuckets.get(methodVertex.getMethodName())) {
 				LayoutInstructionVertex newV = new LayoutInstructionVertex(oldV.getInstruction(), methodVertex, true);
 

@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.graph;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 public abstract class AbstractVertex<T extends AbstractVertex>
 {
@@ -28,8 +29,8 @@ public abstract class AbstractVertex<T extends AbstractVertex>
 
 	public AbstractVertex(String label, ArrayList<String> tags) {
 		this.label = label;
-		this.outgoingNeighbors = new HashSet<T>();
-		this.incomingNeighbors = new HashSet<T>();
+		this.outgoingNeighbors = new LinkedHashSet<T>();
+		this.incomingNeighbors = new LinkedHashSet<T>();
 		this.id = idCounter++;
 		this.vertexStatus = VertexStatus.WHITE;
 		this.tags = tags;

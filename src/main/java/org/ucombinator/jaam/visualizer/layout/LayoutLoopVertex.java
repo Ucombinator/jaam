@@ -4,6 +4,7 @@ import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 /**
  * Created by timothyjohnson on 5/4/17.
@@ -46,7 +47,7 @@ public class LayoutLoopVertex extends AbstractLayoutVertex {
     }
 
     public HashSet<LayoutMethodVertex> getMethodVertices() {
-        HashSet<LayoutMethodVertex> methods = new HashSet<LayoutMethodVertex>();
+        HashSet<LayoutMethodVertex> methods = new LinkedHashSet<LayoutMethodVertex>();
         methods.add(this.methodVertex);
         return methods;
     }
