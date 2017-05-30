@@ -5,6 +5,7 @@ import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.options.Options
 import soot.jimple.{Stmt => SootStmt, _}
 import org.ucombinator.jaam.interpreter.Stmt
+import org.ucombinator.jaam.util.Soot
 
 import scala.collection.immutable
 
@@ -47,22 +48,10 @@ object Main {
 
     Soot.useAppProvider()
 
-    input.map(Soot.addClasses)
+    input.map(Soot.addJaamClasses)
 
     Scene.v.loadBasicClasses()
     PackManager.v.runPacks()
-
-    def getSootClass(s : String) = Scene.v().loadClass(s, SootClass.SIGNATURES)
-    def getBody(m : SootMethod) = {
-      if (m.isNative) { throw new Exception("Attempt to Soot.getBody on native method: " + m) }
-      if (m.isAbstract) { throw new Exception("Attempt to Soot.getBody on abstract method: " + m) }
-      // TODO: do we need to test for phantom here?
-      if (!m.hasActiveBody()) {
-        SootResolver.v().resolveClass(m.getDeclaringClass.getName, SootClass.BODIES)
-        m.retrieveActiveBody()
-      }
-      m.getActiveBody
-    }
 
     //println("dc" + Scene.v.dynamicClasses().asScala)
     println("ap" + Scene.v.getApplicationClasses().asScala)
@@ -71,7 +60,7 @@ object Main {
     println("lib" + Scene.v.getLibraryClasses().asScala)
     println("phan" + Scene.v.getPhantomClasses().asScala)
 
-    val c = getSootClass("java.lang.Object")
+    val c = Soot.getSootClass("java.lang.Object")
     println("hier " + Scene.v.getActiveHierarchy())
     println("hier sub " + Scene.v.getActiveHierarchy().getSubclassesOf(c))
     println("fast hier " + Scene.v.getOrMakeFastHierarchy())
@@ -145,7 +134,7 @@ object Main {
         //val name = entry.getName.replace("/", ".").replaceAll("\\.class$", "")
         println(f"class $class_count: $name")
 
-        val c = getSootClass(name)
+        val c = Soot.getSootClass(name)
         // The .toList prevents a concurrent access exception
         for (m <- c.getMethods.asScala.toList) {
           method_count += 1
@@ -153,7 +142,7 @@ object Main {
           if (m.isNative) { println("skipping body because native") }
           else if (m.isAbstract) { println("skipping body because abstract") }
           else {
-            for (sootStmt <- getBody(m).getUnits.asScala) {
+            for (sootStmt <- Soot.getBody(m).getUnits.asScala) {
               stmt_count += 1
               println(f"stmt $stmt_count: $sootStmt")
               val s = Stmt(Stmt.unitToStmt(sootStmt), m)
