@@ -3,12 +3,14 @@ package org.ucombinator.jaam.visualizer.gui;
 import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.event.Event;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.Insets;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
@@ -49,6 +51,7 @@ public class StacFrame extends BorderPane
 	private BorderPane searchPanel, bytecodePanel, rightPanel;
 	private CheckBox showEdge;
 	private CheckBox showLabels;
+	private Button zoomIn, zoomOut, resetButton;
 
 	private boolean edgeVisible = true;
 	private boolean labelsVisible = false; // If you change this, also change the initialization for AbstractLayoutVertex
@@ -68,6 +71,7 @@ public class StacFrame extends BorderPane
 
 		this.mainPanel.initFX(this.graph);
 		this.setVisible(true);
+
 	}
 
 	public VizPanel getMainPanel() {
@@ -138,20 +142,20 @@ public class StacFrame extends BorderPane
 	public void makeLayout()
 	{
 		setSplitScreen();
-		this.setBottom(this.buttonsFlowPane);
+		this.setTop(this.buttonsFlowPane);
 		this.setPrefPanelSizes();
 		this.setVisible(true);
 	}
 
 	public void makeSimpleLayout()
 	{
-		this.mainPanel = new VizPanel();
+		this.mainPanel = new VizPanel(this);
 		this.setCenter(this.mainPanel);
 		this.setVisible(true);
 	}
 
 	public void makePanes() {
-		this.mainPanel = new VizPanel();
+		this.mainPanel = new VizPanel(this);
 
 		buttonsFlowPane = new FlowPane();
 		buttonsFlowPane.setPadding(new Insets(5, 0, 5, 0));
@@ -409,12 +413,151 @@ public class StacFrame extends BorderPane
 						}
 				);
 		utilitiesPanel.getChildren().add(exportImageButton);
+		utilitiesPanel.setPrefWrapLength(exportImageButton.getWidth());
 
 		// TODO: Add size info to bottom bar
 		/*Label sizeInfo = new Label();
 		sizeInfo.setText("Total nodes: " + this.mainPanel.getPanelRoot().getTotalVertexCount()
 				+ "  Total edges: " + this.mainPanel.getPanelRoot().getTotalEdgeCount());
 		utilitiesPanel.getChildren().add(sizeInfo);*/
+
+
+		zoomIn = new Button("+");
+		zoomOut = new Button("-");
+		resetButton = new Button("=");
+
+		resetButton.setOnMousePressed(new EventHandler<Event>() {
+			@Override
+			public void handle(Event event) {
+				StacFrame.this.mainPanel.resetRootPosition();
+			}
+		});
+
+		zoomIn.setOnMousePressed(new EventHandler<Event>() {
+			@Override
+			public void handle(Event event) {
+				keepButton(1,zoomIn);
+			}
+		});
+
+		zoomIn.setOnMouseReleased(new EventHandler<Event>() {
+			@Override
+			public void handle(Event event) {
+				zoomButtonReleased = true;
+			}
+		});
+
+
+		zoomOut.setOnMousePressed(new EventHandler<Event>() {
+			@Override
+			public void handle(Event event) {
+				keepButton(-1,zoomOut);
+			}
+		});
+
+		zoomOut.setOnMouseReleased(new EventHandler<Event>() {
+			@Override
+			public void handle(Event event) {
+				zoomButtonReleased = true;
+			}
+		});
+
+		FlowPane zoomPanel = new FlowPane();
+		zoomPanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
+				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+		buttonsFlowPane.getChildren().add(zoomPanel);
+
+		zoomPanel.getChildren().add(zoomIn);
+		zoomPanel.getChildren().add(zoomOut);
+		zoomPanel.getChildren().add(resetButton);
+
+
+
+		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
+
+
+
+
+
+
+
+
+
+		GridPane navigatePanel = new GridPane();
+		collapsePanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
+				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+		buttonsFlowPane.getChildren().add(navigatePanel);
+		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
+
+
+		Button left = new Button("\u2190");
+		Button right = new Button("\u2192");
+		Button up = new Button("\u2191");
+		Button down = new Button("\u2193");
+		left.setOnAction
+				(
+						new EventHandler<ActionEvent>()
+						{
+							@Override
+							public void handle(ActionEvent e) {
+								e.consume();
+
+								StacFrame.this.mainPanel.getGraphPane().layout();
+								GUINode rootGraphics =  StacFrame.this.mainPanel.getPanelRoot().getGraphics();
+								rootGraphics.setTranslateX(rootGraphics.getTranslateX() - 10);
+							}
+						}
+				);
+		right.setOnAction
+				(
+						new EventHandler<ActionEvent>()
+						{
+							@Override
+							public void handle(ActionEvent e) {
+								e.consume();
+
+								StacFrame.this.mainPanel.getGraphPane().layout();
+								GUINode rootGraphics =  StacFrame.this.mainPanel.getPanelRoot().getGraphics();
+								rootGraphics.setTranslateX(rootGraphics.getTranslateX() + 10);
+							}
+						}
+				);
+		up.setOnAction
+				(
+						new EventHandler<ActionEvent>()
+						{
+							@Override
+							public void handle(ActionEvent e) {
+								e.consume();
+
+								StacFrame.this.mainPanel.getGraphPane().layout();
+								GUINode rootGraphics =  StacFrame.this.mainPanel.getPanelRoot().getGraphics();
+								rootGraphics.setTranslateY(rootGraphics.getTranslateY() - 10);
+							}
+						}
+				);
+		down.setOnAction
+				(
+						new EventHandler<ActionEvent>()
+						{
+							@Override
+							public void handle(ActionEvent e) {
+								e.consume();
+
+								StacFrame.this.mainPanel.getGraphPane().layout();
+								GUINode rootGraphics =  StacFrame.this.mainPanel.getPanelRoot().getGraphics();
+								rootGraphics.setTranslateY(rootGraphics.getTranslateY() + 10);
+							}
+						}
+				);
+
+		int height = 10;
+		navigatePanel.add(left,0,1);
+		navigatePanel.add(right,2,1);
+		navigatePanel.add(up,1,0);
+		navigatePanel.add(down,1,2);
+
+
 
 
 		// TODO: Set sizes to fill parent. (Right now we just make the sizes all very large.)
@@ -559,5 +702,72 @@ public class StacFrame extends BorderPane
 				panelRoot.searchByIDRange(id1, id2, mainPanel);
 			}
 		}
+	}
+
+	private boolean zoomEnabled = true;
+	private boolean zoomButtonReleased = false;
+
+	public void keepButton(int zoom, Button button) {
+		if(zoomEnabled && !zoomButtonReleased) {
+			zoomEnabled = false;
+			this.mainPanel.zoom(zoom, button);
+		}
+		if(zoomButtonReleased) {
+			zoomButtonReleased = false;
+		}
+	}
+
+	public void setZoomEndable(boolean zoomEnabled){
+		this.zoomEnabled = zoomEnabled;
+	}
+
+	public void addKeyEvents(){
+		System.out.print("addKeyEvents");
+		getScene().setOnKeyPressed(new EventHandler<KeyEvent>() {
+			@Override
+			public void handle(KeyEvent event) {
+
+				if (event.getEventType()!= KeyEvent.KEY_PRESSED){
+					return;
+				}
+				System.out.print("KEY EVENT!!!!!!!");
+				StacFrame.this.mainPanel.getGraphPane().layout();
+				GUINode rootGraphics =  StacFrame.this.mainPanel.getPanelRoot().getGraphics();
+				switch(event.getCode().toString()) {
+					case "RIGHT":
+					{
+						rootGraphics.setTranslateX(rootGraphics.getTranslateX() + 10);
+						break;
+					}
+					case "LEFT":
+					{
+						rootGraphics.setTranslateX(rootGraphics.getTranslateX() - 10);
+						break;
+					}
+					case "DOWN":
+					{
+						rootGraphics.setTranslateY(rootGraphics.getTranslateY() - 10);
+						break;
+					}
+					case "UP":
+					{
+						rootGraphics.setTranslateY(rootGraphics.getTranslateY() + 10);
+						break;
+					}
+					case "EQUALS":
+					{
+						StacFrame.this.mainPanel.zoom(1, null);
+						break;
+					}
+					case "MINUS":
+					{
+						StacFrame.this.mainPanel.zoom(-1, null);
+						break;
+					}
+					default: break;
+				}
+
+			}
+		});
 	}
 }

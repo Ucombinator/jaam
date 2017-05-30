@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.gui;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import javafx.animation.ScaleTransition;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
@@ -27,7 +28,8 @@ public class VizPanel extends StackPane
 	private Group graphContentGroup;
 	private HashSet<AbstractLayoutVertex> highlighted;
 	private LayoutRootVertex panelRoot;
-	private Button zoomIn, zoomOut, resetButton;
+
+	private StacFrame stacFrame;
 	
 	// The dimensions of the background for our graph
 	private final double initRootWidth = 500.0, initRootHeight = 500.0;
@@ -50,99 +52,13 @@ public class VizPanel extends StackPane
 		rootGraphics.setTranslateLocation(VizPanel.this.desiredRootTranslateX, VizPanel.this.desiredRootTranslateY);
 	}
 
-	public VizPanel()
+	public VizPanel(StacFrame stacFrame)
 	{
 		super();
+		this.stacFrame = stacFrame;
 		this.graphPane = new Pane();
 		highlighted = new LinkedHashSet<AbstractLayoutVertex>();
 
-		zoomIn = new Button("+");
-		zoomOut = new Button("-");
-		resetButton = new Button("=");
-		
-		
-		resetButton.setOnMousePressed(new EventHandler<Event>() {
-			@Override
-			public void handle(Event event) {
-				VizPanel.this.resetRootPosition();
-			}
-		});
-		
-		zoomIn.setOnMousePressed(new EventHandler<Event>() {
-			@Override
-			public void handle(Event event) {
-				keepButton(1,zoomIn);
-			}
-		});
-
-		zoomIn.setOnMouseReleased(new EventHandler<Event>() {
-			@Override
-			public void handle(Event event) {
-				zoomButtonReleased = true;
-			}
-		});
-
-
-		zoomOut.setOnMousePressed(new EventHandler<Event>() {
-			@Override
-			public void handle(Event event) {
-				keepButton(-1,zoomOut);
-			}
-		});
-
-		zoomOut.setOnMouseReleased(new EventHandler<Event>() {
-			@Override
-			public void handle(Event event) {
-				zoomButtonReleased = true;
-			}
-		});
-
-		this.setOnKeyPressed(new EventHandler<KeyEvent>() {
-			@Override
-			public void handle(KeyEvent event) {
-
-				if (event.getEventType()!= KeyEvent.KEY_PRESSED){
-					return;
-				}
-
-				VizPanel.this.graphPane.layout();
-				GUINode rootGraphics =  VizPanel.this.getPanelRoot().getGraphics();
-				switch(event.getCode().toString()) {
-					case "RIGHT":
-					{
-						rootGraphics.setTranslateX(rootGraphics.getTranslateX() + 10);
-						break;
-					}
-					case "LEFT":
-					{
-						rootGraphics.setTranslateX(rootGraphics.getTranslateX() - 10);
-						break;
-					}
-					case "DOWN":
-					{
-						rootGraphics.setTranslateY(rootGraphics.getTranslateY() - 10);
-						break;
-					}
-					case "UP":
-					{
-						rootGraphics.setTranslateY(rootGraphics.getTranslateY() + 10);
-						break;
-					}
-					case "EQUALS":
-					{
-						VizPanel.this.zoom(1, null);
-						break;
-					}
-					case "MINUS":
-					{
-						VizPanel.this.zoom(-1, null);
-						break;
-					}
-		            default: break;
-				}
-
-			}
-		});
 
 		graphContentGroup = new Group();
 		graphContentGroup.setVisible(true);
@@ -150,8 +66,8 @@ public class VizPanel extends StackPane
 		graphPane.getChildren().add(graphContentGroup);
 
 		this.getChildren().add(graphPane);
-		this.requestFocus();
-		drawZoomButtons();
+		//this.requestFocus();
+
 	}
 
 	public HashSet<AbstractLayoutVertex> getHighlighted() {
@@ -253,39 +169,8 @@ public class VizPanel extends StackPane
 		this.resetStrokeWidth();
 		panelRoot.setVisible(true);
 	}
-	
-	private boolean zoomEnabled = true;
-	private boolean zoomButtonReleased = false;
-	
-	private void keepButton(int zoom, Button button) {
-		if(zoomEnabled && !zoomButtonReleased) {
-			zoomEnabled = false;
-			VizPanel.this.zoom(zoom, button);
-		}
-		if(zoomButtonReleased) {
-			zoomButtonReleased = false;	
-		}
-	}
-	
-	private void drawZoomButtons() {
-		VBox buttonBox = new VBox(5);
 
-		// We add the buttons directly to our StackPane, so when we scroll they stay in the same place.
-		buttonBox.getChildren().add(zoomIn);
-		buttonBox.getChildren().add(zoomOut);
-		buttonBox.getChildren().add(resetButton);
-		this.getChildren().add(buttonBox);
-		buttonBox.setLayoutX(10);
-		buttonBox.setLayoutY(10);
 
-		zoomIn.setVisible(true);
-		zoomOut.setVisible(true);
-		resetButton.setVisible(true);
-		buttonBox.setVisible(true);
-
-		// Allow mouse events to be passed to visible nodes on the lower layer of our stack pane
-		buttonBox.setPickOnBounds(false);
-	}
 
 	public void initZoom() {
 		this.panelRoot.getGraphics().setScaleX(factorX);
@@ -306,7 +191,7 @@ public class VizPanel extends StackPane
 		this.getPanelRoot().resetStrokeWidth(1.0 / (Math.sqrt(factorX * factorY)));
 	}
 
-	private void zoom(int zoomDistance, Button button) {
+	public void zoom(int zoomDistance, Button button) {
 		double scaleFactor = Math.pow(factorMultiple, zoomDistance);
 		factorX *= scaleFactor;
 		factorY *= scaleFactor;
@@ -319,8 +204,8 @@ public class VizPanel extends StackPane
 			@Override
 			public void handle(ActionEvent event) {
 				if(button != null) {
-					zoomEnabled = true;
-					keepButton(zoomDistance, button);
+					VizPanel.this.stacFrame.setZoomEndable(true);
+					VizPanel.this.stacFrame.keepButton(zoomDistance, button);
 				}
 
 				VizPanel.this.panelRoot.setVisible(false);
@@ -394,5 +279,9 @@ public class VizPanel extends StackPane
 	
 	public void decrementScaleYFactor() {
 		factorY /= factorMultiple;
+	}
+
+	public Pane getGraphPane(){
+		return this.graphPane;
 	}
 }

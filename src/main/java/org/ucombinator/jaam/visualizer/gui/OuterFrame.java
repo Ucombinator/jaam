@@ -10,6 +10,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.*;
 import javafx.scene.image.Image;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BackgroundImage;
@@ -344,6 +345,7 @@ public class OuterFrame extends BorderPane {
             newTab.setText(filename);
         newTab.setContent(newFrame);
         this.tabPane.getTabs().add(newTab);
+        newFrame.addKeyEvents();
         System.out.println("Load graph: done!");
 
         tabPane.getSelectionModel().select(newTab);

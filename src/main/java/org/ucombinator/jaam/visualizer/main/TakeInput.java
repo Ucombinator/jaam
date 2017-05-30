@@ -90,6 +90,8 @@ public class TakeInput extends Thread
 			PacketInput packetInput = new PacketInput(new FileInputStream(file));
 			Packet packet = packetInput.read();
 
+			int loop_counter = 0;
+
 			while(!(packet instanceof EOF))
 			{
 				//Name collision with our own Edge class
@@ -97,13 +99,13 @@ public class TakeInput extends Thread
 					LoopLoopNode node = (LoopLoopNode) packet;
 					int id = node.id().id();
 					String label = node.method().getSignature() + "\ninstruction #" + node.statementIndex();
-					graph.addVertex(id, new Instruction(label, "foo", id, false), true);
+					graph.addVertex(id, new Instruction(label, "Loop:"+node.method().getSignature()+":"+loop_counter++, id, false), true);
 				}
 				if(packet instanceof LoopMethodNode) {
 					LoopMethodNode node = (LoopMethodNode) packet;
 					int id = node.id().id();
 					String label = node.method().getSignature();
-					graph.addVertex(id, new Instruction(label, "foo", id, false), true);
+					graph.addVertex(id, new Instruction(label, label, id, false), true);
 				}
 				else if(packet instanceof LoopEdge) {
 					LoopEdge edge = (LoopEdge) packet;
