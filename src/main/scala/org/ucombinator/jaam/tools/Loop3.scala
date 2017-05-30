@@ -129,6 +129,11 @@ object Main {
       case _ => Set()
     }
 
+    // Get all classes loaded so Soot doesn't keep recomputing the Hierarchy
+    for (name <- org.ucombinator.jaam.util.Soot.classes.keys) {
+      Soot.getSootClass(name)
+    }
+
     for (name <- org.ucombinator.jaam.util.Soot.classes.keys) {
         class_count += 1
         //val name = entry.getName.replace("/", ".").replaceAll("\\.class$", "")
