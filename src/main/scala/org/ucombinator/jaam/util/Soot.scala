@@ -7,7 +7,7 @@ import scala.collection.JavaConverters._
 import org.objectweb.asm._
 import org.objectweb.asm.tree._
 import org.ucombinator.jaam.serializer
-import org.ucombinator.jaam.tools.app.{App, PathElement}
+import org.ucombinator.jaam.tools.app.{App, PathElement, FileRole}
 import soot.{ClassProvider, Scene, SootClass, SootMethod, SootResolver, SourceLocator}
 
 object Soot {
@@ -16,15 +16,23 @@ object Soot {
     SourceLocator.v.setClassProviders(List[ClassProvider](new JaamClassProvider).asJava)
   }
 
-
   // TODO: classes track whether app/lib/java
-  var classes = Map[String, (String, Array[Byte])]()
+  case class ClassData(source: String, role: FileRole, data: Array[Byte])
+  var classes = Map[String, ClassData]()
 
-  def addClasses(app: App): Unit = {
-    app.classpath.java.map(load)
-    app.classpath.lib.map(load)
-    app.classpath.app.map(load)
+  private def load(p: PathElement) {
+    //println(f"p ${p.path} and ${p.root}")
+    for (d <- p.classData()) {
+      //println(f"d ${d.length}")
+      val cr = new ClassReader(new ByteArrayInputStream(d))
+      val cn = new ClassNode()
+      cr.accept(cn, 0)
+      //println(f"cn.name: ${cn.name}")
+      classes += cn.name.replace('/', '.') -> ClassData("TODO:JaamClassProvider", p.role, d)
+    }
   }
+
+  def addClasses(app: App): Unit = { app.classpath.map(load) }
 
   // TODO: optional flags to load only some parts?
   def addJaamClasses(file: String): Unit = {
@@ -38,18 +46,6 @@ object Soot {
     }
   }
 
-
-  private def load(p: PathElement) {
-    //println(f"p ${p.path} and ${p.root}")
-    for (d <- p.classData()) {
-      //println(f"d ${d.length}")
-      val cr = new ClassReader(new ByteArrayInputStream(d))
-      val cn = new ClassNode()
-      cr.accept(cn, 0)
-      //println(f"cn.name: ${cn.name}")
-      classes += cn.name.replace('/', '.') -> (("TODO:JaamClassProvider", d))
-    }
-  }
 
   def getSootClass(s : String) = Scene.v().loadClass(s, SootClass.SIGNATURES)
   def getBody(m : SootMethod) = {

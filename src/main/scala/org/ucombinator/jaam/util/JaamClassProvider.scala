@@ -6,8 +6,8 @@ package org.ucombinator.jaam.util {
     override def find(cls: String): ClassSource = {
       Soot.classes.get(cls) match {
         case None => null
-        case Some((path, bytes)) =>
-          new soot.asm.JaamClassSource(path, new soot.JaamFoundFile(cls, bytes))
+        case Some(c) =>
+          new soot.asm.JaamClassSource(c.source, new soot.JaamFoundFile(cls, c.data))
       }
     }
   }
