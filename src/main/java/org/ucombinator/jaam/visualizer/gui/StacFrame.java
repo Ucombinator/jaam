@@ -148,7 +148,7 @@ public class StacFrame extends Tab
 		mainPanel.getPanelRoot().setVisible(true);
 	}
 
-	public void showLabelAction(ActionEvent event) {
+	public void showLabelsAction(ActionEvent event) {
 		labelsVisible = showLabels.isSelected();
 		mainPanel.getPanelRoot().setVisible(false);
 		mainPanel.getPanelRoot().setLabelVisibility(labelsVisible);
@@ -161,19 +161,19 @@ public class StacFrame extends Tab
 		StacFrame.this.mainPanel.resetRootPosition();
 	}
 
-	public void xScalePlusAction(ActionEvent event) {
+	public void xScalePanelPlusAction(ActionEvent event) {
 		StacFrame.this.mainPanel.incrementScaleXFactor();
 		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 		StacFrame.this.mainPanel.resetRootPosition();
 	}
 
-	public void yScaleMinusAction(ActionEvent event) {
+	public void yScalePanelMinusAction(ActionEvent event) {
 		StacFrame.this.mainPanel.decrementScaleYFactor();
 		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 		StacFrame.this.mainPanel.resetRootPosition();
 	}
 
-	public void yScalePlusAction(ActionEvent event) {
+	public void yScalePanelPlusAction(ActionEvent event) {
 		StacFrame.this.mainPanel.incrementScaleYFactor();
 		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 		StacFrame.this.mainPanel.resetRootPosition();
