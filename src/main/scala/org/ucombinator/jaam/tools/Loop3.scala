@@ -6,6 +6,7 @@ import soot.options.Options
 import soot.jimple.{Stmt => SootStmt, _}
 import org.ucombinator.jaam.interpreter.Stmt
 import org.ucombinator.jaam.util.Soot
+import org.ucombinator.jaam.tools.app.FileRole
 
 import scala.collection.immutable
 
@@ -120,14 +121,15 @@ object Main {
     }
 
     // Get all classes loaded so Soot doesn't keep recomputing the Hierarchy
-    for (name <- org.ucombinator.jaam.util.Soot.classes.keys) {
+    for (name <- Soot.classes.keys) {
       Soot.getSootClass(name)
+      println(f"class name: $name")
     }
 
-    for (name <- org.ucombinator.jaam.util.Soot.classes.keys) {
+    for (name <- Soot.classes.keys) {
         class_count += 1
         //val name = entry.getName.replace("/", ".").replaceAll("\\.class$", "")
-        println(f"class $class_count: $name")
+        println(f"class role ${Soot.classes(name).role} $class_count: $name")
 
         val c = Soot.getSootClass(name)
         // The .toList prevents a concurrent access exception
@@ -139,14 +141,18 @@ object Main {
           else {
             for (sootStmt <- Soot.getBody(m).getUnits.asScala) {
               stmt_count += 1
-              println(f"stmt $stmt_count: $sootStmt")
+              //println(f"stmt $stmt_count: $sootStmt")
               val s = Stmt(Stmt.unitToStmt(sootStmt), m)
               val ts = stmtTargets(s)
               target_count += ts.size
-              edges += (s -> ts)
+              if (edges.contains(s)) {
+                println(f"already have edge from $s")
+              }
+              edges += s -> ts
+              //edges += s -> (ts ++ edges.get(s).getOrElse(Set()))
               // TODO: cache ts
               if (!ts.isEmpty) {
-                println(f"$target_count.$c.$m.${s.index}: $ts")
+                //println(f"$target_count.$c.$m.${s.index}: $ts")
               }
             }
           }
@@ -154,6 +160,50 @@ object Main {
         }
         println(f"end class $c")
     }
+
+    var edge_count = 0
+    var app_out_count = 0
+    var app_in_count = 0
+    var app_edge_count = 0
+    var app_edge_both_count = 0
+    for ((s: Stmt, ds: Set[SootMethod]) <- edges) {
+      for (d <- ds) {
+        edge_count += 1
+        var isAppOut = false
+        var isAppIn = false
+        Soot.classes.get(s.sootMethod.getDeclaringClass.getName) match {
+          case None => println(f"couldn't find src: " + s.sootMethod.getDeclaringClass.getName + "::" + s)
+          case Some(r) =>
+            //println(f"found src $r $s")
+            if (r.role == FileRole.APP) {
+              app_out_count += 1
+              isAppOut = true
+            }
+        }
+
+        Soot.classes.get(d.getDeclaringClass.getName) match {
+          case None => println(f"couldn't find dst: " + d.getDeclaringClass.getName + "::" + d)
+          case Some(r) =>
+            //println(f"found dst $r $d")
+            if (r.role == FileRole.APP) {
+              app_in_count += 1
+              isAppIn = true
+            }
+        }
+
+        if (isAppOut || isAppIn) {
+          app_edge_count += 1
+        }
+
+        if (isAppOut && isAppIn) {
+          app_edge_both_count += 1
+        }
+      }
+    }
+
+    println(f"counts: $edge_count $app_out_count $app_in_count $app_edge_count $app_edge_both_count")
+    // TODO: computer coverage
+    // TODO: process only app methods in the first place
 
     println(f"END classes=$class_count methods=$method_count stmts=$stmt_count targets=$target_count")
   }

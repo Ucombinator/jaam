@@ -46,8 +46,8 @@ object Soot {
     }
   }
 
-
   def getSootClass(s : String) = Scene.v().loadClass(s, SootClass.SIGNATURES)
+
   def getBody(m : SootMethod) = {
     if (m.isNative) { throw new Exception("Attempt to Soot.getBody on native method: " + m) }
     if (m.isAbstract) { throw new Exception("Attempt to Soot.getBody on abstract method: " + m) }
