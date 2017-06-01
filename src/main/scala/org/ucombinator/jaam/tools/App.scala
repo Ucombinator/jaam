@@ -96,20 +96,26 @@ object Main {
         throw new Exception(f"Malformed class file $path at $root")
       }
 
+      val jar = Jar.jar(data)
+
+      def getMains(): List[String] = {
+        Jar.entries(jar).map(_._1.getName)
+          .filter(_.endsWith("StacMain.class"))
+          .map(_.stripSuffix(".class").replace('/', '.'))
+      }
+
       val detectedRole = role match {
-        case Some(r) => r
+        case Some(r) =>
+          if (r == FileRole.APP) { mains ++= getMains()}
+          r
         case None =>
-          val jar = Jar.jar(data)
           val main = jar.getManifest.getMainAttributes.getValue("Main-Class")
           if (main != null) { mains :+= main; println("manifest"); FileRole.APP }
           else {
-            Jar.entries(jar).map(_._1.getName).filter(_.endsWith("StacMain.class")) match {
+            getMains match {
               case List() => FileRole.LIB
-              case es =>
-                mains ++= es.map(_.replace('/', '.').stripSuffix(".class"))
-                FileRole.APP
+              case es => mains ++= mains; FileRole.APP
             }
-            // TODO: parameter for StacMain
           }
       }
 
@@ -181,3 +187,5 @@ object Main {
     po.close()
   }
 }
+
+// jaam-tools app --input airplan_1/ --output airplan_1.app.jaam

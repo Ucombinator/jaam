@@ -1,12 +1,19 @@
 package org.ucombinator.jaam.tools.loop3
 
+import java.io.FileOutputStream
+import java.io.FileInputStream
+import java.io.PrintStream
+import java.util.jar.JarEntry
+import java.util.jar.JarInputStream
 import org.ucombinator.jaam.tools
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.options.Options
 import soot.jimple.{Stmt => SootStmt, _}
 import org.ucombinator.jaam.interpreter.Stmt
 import org.ucombinator.jaam.util.Soot
-import org.ucombinator.jaam.tools.app.FileRole
+import org.ucombinator.jaam.tools.app.{FileRole, App}
+import org.ucombinator.jaam.tools.Coverage2
+import org.ucombinator.jaam.serializer.Serializer
 
 import scala.collection.immutable
 
@@ -15,17 +22,26 @@ import scala.collection.JavaConverters._
 object Loop3 extends tools.Main("loop3") {
   //val classpath = opt[List[String]](descr = "TODO")
   val input = opt[List[String]](required = true)
+  val output = opt[String]()
+
+  val prune = toggle(
+      descrYes = "Remove methods without outgoing edges from graph",
+      descrNo = "Do not remove methods without outgoing edges from graph",
+      default = Some(true))
+  val shrink = toggle(descrYes = "Skip methods without loops",
+      descrNo = "Include methods without loops", default = Some(true))
+  val prettyPrint = toggle(descrYes = "Pretty print found loops", default = Some(false))
 
   def run(conf: tools.Conf) {
     //Main.main(classpath.getOrElse(List()))
-    Main.main(input.getOrElse(List()))
+    Main.main(input.getOrElse(List()), output.toOption, prune(), shrink(), prettyPrint())
   }
 }
 
 import org.ucombinator.jaam.util.Soot
 
 object Main {
-  def main(input: List[String]) {
+  def main(input: List[String], jaam: Option[String], prune: Boolean, shrink: Boolean, prettyPrint: Boolean) {
     Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
     Options.v().set_keep_line_number(true)
@@ -49,7 +65,14 @@ object Main {
 
     Soot.useJaamClassProvider()
 
-    input.map(Soot.addJaamClasses)
+    val inputPackets = input.map(Serializer.readAll(_)).flatten
+
+    for (a <- inputPackets) { Soot.addClasses(a.asInstanceOf[App]) }
+    //input.map(Soot.addJaamClasses)
+    val mainClasses = for (a <- inputPackets) yield { a.asInstanceOf[App].main.className }
+    val mainMethods = for (a <- inputPackets) yield { a.asInstanceOf[App].main.className }
+    val mainClass = mainClasses(0).get // TODO: fix
+    val mainMethod = mainMethods(0).get // TODO: fix
 
     Scene.v.loadBasicClasses()
     PackManager.v.runPacks()
@@ -81,7 +104,7 @@ object Main {
       val m = expr.getMethod
       val c = m.getDeclaringClass
       println(f"m: $m c: $c")
-      val cs = expr match {
+      val cs: Set[SootClass] = expr match {
         case expr : DynamicInvokeExpr =>
           // Could only come from non-Java sources
           throw new Exception(s"Unexpected DynamicInvokeExpr: $expr")
@@ -90,9 +113,9 @@ object Main {
         case expr: SpecialInvokeExpr => Set(c)
         case expr: InstanceInvokeExpr =>
           if (c.isInterface) {
-            Scene.v.getActiveHierarchy.getImplementersOf(c).asScala
+            Scene.v.getActiveHierarchy.getImplementersOf(c).asScala.toSet
           } else {
-            Scene.v.getActiveHierarchy.getSubclassesOfIncluding(c).asScala
+            Scene.v.getActiveHierarchy.getSubclassesOfIncluding(c).asScala.toSet
           }
       }
 
@@ -206,6 +229,107 @@ object Main {
     // TODO: process only app methods in the first place
 
     println(f"END classes=$class_count methods=$method_count stmts=$stmt_count targets=$target_count")
+
+    val outStream = new PrintStream(new FileOutputStream("loop3.out.out")) // or System.out
+    val coverageStream = new PrintStream(new FileOutputStream("loop3.coverage.out"))
+
+    val appEdges = for ((s, ds) <- edges; Some(c) = Soot.classes.get(s.sootMethod.getDeclaringClass.getName)) yield { 1 }
+
+    val m = Coverage2.freshenMethod(Soot.getSootClass(mainClass).getMethodByName(mainMethod))
+    computeLoopGraph(mainClass, mainMethod, /*classpath: String,*/
+      outStream, coverageStream, jaam, prune, shrink, prettyPrint, m: SootMethod, edges)
+
+  }
+
+  // Copied from Loop2.main
+  def computeLoopGraph(mainClass: String, mainMethod: String, /*classpath: String,*/
+      graphStream: PrintStream, coverageStream: PrintStream, jaam: Option[String], prune: Boolean, shrink: Boolean, prettyPrint: Boolean, m: SootMethod, cg: Map[Stmt, Set[SootMethod]]): Unit = {
+    import org.ucombinator.jaam.tools.LoopAnalyzer
+    import org.ucombinator.jaam.serializer
+
+    val graph = makeLoopGraph(m, cg, prettyPrint)
+    val pruned = if (prune) {
+      graph.prune
+    } else {
+      graph
+    }
+    val shrunk = if (shrink) {
+      pruned.shrink
+    } else {
+      pruned
+    }
+
+    // TODO: print unpruned size
+    jaam match {
+      case None =>
+      case Some(jaamFile) =>
+        val outSerializer = new serializer.PacketOutput(new FileOutputStream(jaamFile))
+        shrunk.toJaam(outSerializer)
+        outSerializer.close()
+    }
+
+    Console.withOut(graphStream) {
+      println("digraph loops {")
+      println("ranksep=\"10\";");
+      print(shrunk)
+      println("}")
+    }
+
+//    Console.withOut(coverageStream) {
+//      tools.LoopAnalyzer.computeCoverage(classpath, graph)
+//    }
+  }
+
+  // Copied from Loop2.LoopGraph.apply
+  def makeLoopGraph(m: SootMethod, cg: Map[Stmt, Set[SootMethod]]/*CallGraph*/, prettyPrint: Boolean): tools.LoopAnalyzer.LoopGraph = {
+    import tools.LoopAnalyzer._
+    import tools.LoopAnalyzer.LoopGraph._
+    // TODO if things get slow, this should be easy to optimize
+    def build(m: SootMethod, g: Map[Node, Set[Node]]):
+        Map[Node, Set[Node]] = {
+
+      val mNode = MethodNode(m)
+      if (g isDefinedAt mNode) {
+        g
+      } else {
+        //val iterator = ??? //cg.edgesOutOf(m)
+        val forest = getLoopForest(m)
+        if (prettyPrint) {
+          for (tree <- forest) {
+            println("Tree:")
+            tree.prettyPrint()
+          }
+        }
+        // g keeps track of the methods we've seen, so adding the empty set
+        // to it prevents an infinite loop.
+        var newGraph: Map[Node, Set[Node]] = g + (mNode -> Set.empty)
+        newGraph = addForest(g, mNode, forest, m)
+        for ((src, methods) <- cg) {
+          for (tgt <- methods) {
+//        while (iterator.hasNext) {
+//          val edge = iterator.next
+          val sootStmt = src.sootStmt // ??? //edge.srcStmt
+          val dest = tools.Coverage2.freshenMethod(tgt)
+
+          // class initializers can't recur but Soot thinks they do
+          if (m.getSignature != dest.getSignature || m.getName != "<clinit>"){
+            val destNode = MethodNode(dest)
+            val parents = forest filter { _ contains sootStmt }
+            if (parents.isEmpty) {
+              newGraph = add(newGraph, mNode, destNode)
+            } else {
+              assert(parents.size == 1, "multiple parents")
+              val parent = LoopNode(m, parents.head.parent(sootStmt).loop)
+              newGraph = add(newGraph, parent, destNode)
+            }
+            newGraph = build(dest, newGraph)
+          }
+        }
+        }
+        newGraph
+      }
+    }
+    LoopGraph(m, build(m, Map.empty), Set.empty[(Node,Node)])
   }
 }
 

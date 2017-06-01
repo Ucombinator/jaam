@@ -6,7 +6,7 @@ package org.ucombinator.jaam.serializer
  * ****************************************/
 
 import java.lang.Object
-import java.io.{IOException, InputStream, OutputStream}
+import java.io.{IOException, InputStream, OutputStream, FileInputStream}
 import java.lang.reflect.Type
 import java.util.zip.{DeflaterOutputStream, InflaterInputStream}
 
@@ -17,7 +17,8 @@ import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
 import soot.util.Chain
 import org.objectweb.asm.tree.{AbstractInsnNode, InsnList}
 import com.esotericsoftware.minlog.Log
-import com.esotericsoftware.kryo.{Kryo, Registration, Serializer}
+import com.esotericsoftware.kryo
+import com.esotericsoftware.kryo.{Kryo, Registration}
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.serializers.FieldSerializer
 import org.objenesis.strategy.StdInstantiatorStrategy
@@ -25,6 +26,22 @@ import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer
 import com.twitter.chill.{AllScalaRegistrar, KryoBase, ScalaKryoInstantiator}
 
 import scala.collection.mutable
+
+object Serializer {
+  def readAll(file: String): List[Packet] = {
+    val stream = new FileInputStream(file)
+    val pi = new PacketInput(stream)
+
+    var packet: Packet = null
+    var packets = List[Packet]()
+    while ({packet = pi.read(); !packet.isInstanceOf[EOF]}) {
+      // TODO: for (packet <- pi) {
+      packets +:= packet
+    }
+
+    return packets.reverse
+  }
+}
 
 ////////////////////////////////////////
 // 'PacketInput' is used to read a ".jaam" file
@@ -223,7 +240,7 @@ class JaamKryo extends KryoBase {
   this.addDefaultSerializer(classOf[Chain[Object]], classOf[FieldSerializer[java.lang.Object]])
   UnmodifiableCollectionsSerializer.registerSerializers(this)
 
-  object CharsetSerializer extends Serializer[java.nio.charset.Charset] {
+  object CharsetSerializer extends kryo.Serializer[java.nio.charset.Charset] {
     override def write(kryo: Kryo, output: Output, obj: java.nio.charset.Charset) {
       kryo.writeObject(output, obj.asInstanceOf[java.nio.charset.Charset].name())
     }
@@ -244,7 +261,7 @@ class JaamKryo extends KryoBase {
   this.register(java.nio.charset.Charset.forName("ISO_8859_1").getClass(), CharsetSerializer)
   //this.register(java.nio.charset.Charset.forName("US_ASCII").getClass(), CharsetSerializer)
 
-  object UnmodifiableListSerializer extends Serializer[java.util.AbstractList[Object]] {
+  object UnmodifiableListSerializer extends kryo.Serializer[java.util.AbstractList[Object]] {
     override def write(kryo: Kryo, output: Output, obj: java.util.AbstractList[Object]) {
       kryo.writeObject(output, new java.util.ArrayList[Object](obj))
     }
@@ -309,7 +326,7 @@ class JaamKryo extends KryoBase {
   // Serializer for InsnList that avoids stack overflows due to recursively
   // following AbstractInsnNode.next.  This works on concert with
   // AbstractInsnNodeSerializer.
-  class InsnListSerializer() extends Serializer[InsnList] {
+  class InsnListSerializer() extends kryo.Serializer[InsnList] {
     override def write(kryo : Kryo, output : Output, collection : InsnList) {
       output.writeVarInt(collection.size(), true)
       for (element <- collection.iterator)
@@ -326,7 +343,7 @@ class JaamKryo extends KryoBase {
     }
   }
 
-  override def newDefaultSerializer(typ : Class[_]) : Serializer[_] = {
+  override def newDefaultSerializer(typ : Class[_]) : kryo.Serializer[_] = {
     if (classOf[InsnList] == typ)
       // We can't use addDefaultSerializer due to shading in the assembly
       new InsnListSerializer()

@@ -374,11 +374,11 @@ object LoopAnalyzer {
     }
   }
   object LoopGraph {
-      private def add(g: Map[Node, Set[Node]], from: Node, to: Node):
+      def add(g: Map[Node, Set[Node]], from: Node, to: Node):
           Map[Node, Set[Node]] = {
         g + (from -> (g.getOrElse(from, Set.empty) + to))
       }
-      private def addForest(g: Map[Node, Set[Node]], node: Node,
+      def addForest(g: Map[Node, Set[Node]], node: Node,
           forest: Set[LoopTree], m: SootMethod): Map[Node, Set[Node]] = {
         forest.foldLeft(g)({ (g: Map[Node, Set[Node]], tree: LoopTree) =>
           val treeNode = LoopNode(m, tree.loop)
@@ -432,7 +432,7 @@ object LoopAnalyzer {
   }
 
   private var loopForests = Map.empty[SootMethod, Set[LoopTree]]
-  private def getLoopForest(m: SootMethod): Set[LoopTree] = {
+  def getLoopForest(m: SootMethod): Set[LoopTree] = {
     loopForests.get(m) match {
       case None =>
         val loops = getLoops(m)

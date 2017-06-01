@@ -17,6 +17,7 @@ import com.strobel.decompiler.languages.Languages
 
 import org.ucombinator.jaam.tools //.{Main,Conf}
 import org.ucombinator.jaam.tools.app //.{Main,Conf}
+import org.ucombinator.jaam.tools.app.FileRole //.{Main,Conf}
 
 import com.strobel.decompiler._
 
@@ -34,7 +35,7 @@ object Decompile extends tools.Main("decompile") {
 //    descrYes = "wait for user to press enter before starting (default: off)",
 //    noshort = true, prefix = "no-", default = Some(false))
 
-  val rt = toggle(
+  val jvm = toggle(
     descrYes = "wait for user to press enter before starting (default: off)",
     noshort = true, prefix = "no-", default = Some(false))
   val lib = toggle(
@@ -49,7 +50,7 @@ object Decompile extends tools.Main("decompile") {
   val output = opt[String](required = true, descr = "TODO")
 
   def run(conf: tools.Conf) {
-    Main.main(input(), output(), exclude(), rt(), lib(), app())
+    Main.main(input(), output(), exclude(), jvm(), lib(), app())
   }
 }
 
@@ -78,7 +79,7 @@ class HashMapTypeLoader extends ITypeLoader {
 case class DecompiledClass(compilationUnit: CompilationUnit) extends serializer.Packet
 
 object Main {
-  def main(input: List[String], output: String, exclude: List[String], rt: Boolean, lib: Boolean, app: Boolean) {
+  def main(input: List[String], output: String, exclude: List[String], jvm: Boolean, lib: Boolean, app: Boolean) {
     val typeLoader = new HashMapTypeLoader()
 
     def loadData(p: tools.app.PathElement) = p match {
@@ -100,10 +101,9 @@ object Main {
         }
     }
 
-    for ((entry, bytes) <- org.ucombinator.jaam.util.Jar.entries(new java.io.FileInputStream(input(0)))) {
-      println(f"name ${entry.getName()} size ${entry.getSize.toInt} comsize ${entry.getCompressedSize} bytes ${bytes.length}")
-    }
-      
+    //for ((entry, bytes) <- org.ucombinator.jaam.util.Jar.entries(new java.io.FileInputStream(input(0)))) {
+    //  println(f"name ${entry.getName()} size ${entry.getSize.toInt} comsize ${entry.getCompressedSize} bytes ${bytes.length}")
+    //}
 
 /*
     var entry: java.util.jar.JarEntry = null
@@ -119,6 +119,21 @@ object Main {
       }
     }
  */
+
+    for (file <- input) {
+      for (a0 <- org.ucombinator.jaam.serializer.Serializer.readAll(file)) {
+        if (a0.isInstanceOf[org.ucombinator.jaam.tools.app.App]) {
+          val a = a0.asInstanceOf[org.ucombinator.jaam.tools.app.App]
+          for (pe <- a.classpath) {
+            pe.role match {
+              case FileRole.APP => if (app) loadData(pe)
+              case FileRole.LIB => if (lib) loadData(pe)
+              case FileRole.JVM => if (jvm) loadData(pe)
+            }
+          }
+        }
+      }
+    }
 
 /*
     for (file <- input) {
@@ -162,6 +177,7 @@ object Main {
         try {
           println(f"Decompiling ($index of $total) $name")
           val cu = decompile(metadataSystem, options, name)
+          println(f"Finished decompiling ($index of $total) $name")
           po.write(DecompiledClass(cu))
         } catch {
           case e: java.lang.OutOfMemoryError => println(f"Out of memory, skipping")
