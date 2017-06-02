@@ -5,17 +5,6 @@ import scala.collection.mutable
 
 import org.ucombinator.jaam.serializer._
 
-class Info extends Main("info") {
-  banner("Get simple information about a JAAM interpretation.")
-  footer("")
-
-  val file = trailArg[java.io.File](descr = "a .jaam file to be analyzed")
-
-  def run(conf: Conf) {
-    Info.analyzeForInfo(file().toString)
-  }
-}
-
 object Info {
   private val uniqueNodes = mutable.Map.empty[Id[Node], Node]
   private val uniqueEdges = mutable.Map.empty[Id[Edge], Edge]

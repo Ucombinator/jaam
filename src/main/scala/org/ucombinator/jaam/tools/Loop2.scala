@@ -27,43 +27,6 @@ import org.ucombinator.jaam.serializer
 import org.ucombinator.jaam.serializer.TaintAddress
 import org.ucombinator.jaam.util.CachedHashCode
 
-class LoopAnalyzer extends Main("loop2") {
-  banner("Analyze the depth of each loop in the application code")
-  footer("")
-
-  // val graph = opt[Boolean](descr = "Print loops to GraphViz dot file")
-  // val rec = opt[Boolean](descr = "Run recursion detection")
-  // TODO name this
-  val prune = toggle(
-      descrYes = "Remove methods without outgoing edges from graph",
-      descrNo = "Do not remove methods without outgoing edges from graph",
-      default = Some(true))
-  val shrink = toggle(descrYes = "Skip methods without loops",
-      descrNo = "Include methods without loops", default = Some(true))
-  val prettyPrint = toggle(descrYes = "Pretty print found loops", default = Some(false))
-
-  val mainClass = trailArg[String](descr = "The name of the main class")
-  val mainMethod = trailArg[String](descr = "The name of the main method")
-  val classpath = trailArg[String](descr =
-      "Colon-separated list of JAR files and directories")
-  val output = opt[String](descr = "An output file for the dot output")
-  val coverage = opt[String](descr = "An output file for the coverage output")
-  val jaam = opt[String](short = 'h', descr = "the output file for the serialized data")
-
-  def run(conf: Conf): Unit = {
-    val outStream: PrintStream = output.toOption match {
-      case None => System.out
-      case Some(f) => new PrintStream(new FileOutputStream(f))
-    }
-    val coverageStream: PrintStream = coverage.toOption match {
-      case None => System.out
-      case Some(f) => new PrintStream(new FileOutputStream(f))
-    }
-    LoopAnalyzer.main(mainClass(), mainMethod(), classpath(), outStream, coverageStream, jaam.toOption,
-        prune(), shrink(), prettyPrint())
-  }
-}
-
 object LoopAnalyzer {
   private var loops = Map.empty[SootMethod, Set[SootLoop]]
   def getLoops(m: SootMethod): Set[SootLoop] = {

@@ -8,29 +8,6 @@ import scala.collection.JavaConverters._
 import org.ucombinator.jaam.{serializer, tools}
 import org.ucombinator.jaam.util._
 
-object App extends tools.Main("app") {
-  banner("TODO")
-  footer("")
-
-  val input = opt[List[String]](short = 'i', descr = "class files, or directories (role is auto-detected)", default = Some(List()))
-  val app = opt[List[String]](short = 'a', descr = "application jars, class files, or directories", default = Some(List()))
-  val lib = opt[List[String]](short = 'l', descr = "library jars, class files, or directories", default = Some(List()))
-  val jvm = opt[List[String]](short = 'r', descr = "Java runtime jars, class files, or directories", default = Some(List()))
-  val defaultJvm = toggle(prefix = "no-", default = Some(true))
-
-  val detectMain = toggle(prefix = "no-", default = Some(true))
-  val mainClass = opt[String](short = 'c', descr = "the main class")
-  val mainMethod = opt[String](short = 'm', descr = "the main method")
-
-  val output = opt[String](required = true, short = 'o', descr = "the output file for the serialized data")
-
-  // TODO: val java-8-rt (in resource?)
-
-  def run(conf: tools.Conf) {
-    Main.main(input(), app(), lib(), jvm(), defaultJvm(), detectMain(), mainClass.toOption, mainMethod.toOption, output())
-  }
-}
-
 sealed trait FileRole
 
 object FileRole { // TODO: Move into App object?

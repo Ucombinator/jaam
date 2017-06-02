@@ -9,6 +9,7 @@ object Conf {
 }
 
 class Conf(args : Seq[String]) extends ScallopConf(args = args) {
+/*
   banner("Usage: jaam-tools [subcommand] [options]")
   addSubcommand(new Print)
   addSubcommand(new Validate)
@@ -26,13 +27,10 @@ class Conf(args : Seq[String]) extends ScallopConf(args = args) {
   addSubcommand(org.ucombinator.jaam.tools.decompile.Decompile)
   addSubcommand(org.ucombinator.jaam.tools.loop3.Loop3)
   verify()
+ */
 }
 
-// TODO: auto-compute name
-abstract class Main(name: String) extends Subcommand(name) {
-  def run(conf : Conf)
-}
-
+/*
 object Main {
   def main(args : Array[String]) {
     val options = new Conf(args)
@@ -43,3 +41,4 @@ object Main {
     }
   }
 }
+ */

@@ -6,26 +6,6 @@ import scala.collection.mutable
 import org.ucombinator.jaam.serializer._
 import com.esotericsoftware.kryo.KryoException
 
-class Validate extends Main("validate") {
-  banner("Amend an aborted JAAM serialization to allow reading.")
-  footer("")
-
-  val fixEof = opt[Boolean](descr = "whether to amend a JAAM file that ends abruptly")
-  val addMissingStates = opt[Boolean](descr = "find hanging edges and add MissingState states so they go somewhere")
-  val removeMissingStates = opt[Boolean](descr = "remove any MissingState states found in the serialization; overrides --addMissingStates")
-  val targetFile = opt[String](descr = "the .jaam file to output a corrected version, if desired")
-  val file = trailArg[java.io.File](descr = "a .jaam file to be truncated")
-
-  def run(conf: Conf) {
-    Validate.validateFile(
-      jaamFile = file().toString,
-      targetFile = targetFile.toOption,
-      shouldAppendMissingEOF = fixEof(),
-      shouldAddMissingStates = addMissingStates(),
-      shouldRemoveMissingStates = removeMissingStates())
-  }
-}
-
 object Validate {
   private val uniqueNodes = mutable.Set[Id[Node]]()
   private var shouldAddMissingStates = false

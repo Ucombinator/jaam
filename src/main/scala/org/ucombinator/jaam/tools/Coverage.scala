@@ -21,19 +21,6 @@ package reprsentation {
 
 import reprsentation._
 
-class Coverage extends Main("coverage") {
-  banner("Analyze a JAAM file against target JAR files to find JAAM coverage.")
-  footer("")
-
-  val jaamFile = trailArg[java.io.File](descr = "The JAAM file to analyze")
-  val jars = trailArg[String](descr = "Colon-separated list of JAR files to directly compare coverage against")
-  val additionalJars = opt[String](descr = "Colon-separated list of JAR files to complete class loading for inspection JAR files")
-
-  def run(conf: Conf) {
-    Coverage.findCoverage(jaamFile().toString, jars().split(":"), Conf.extractSeqFromOptString(additionalJars))
-  }
-}
-
 class ComparableMethod(val originalMethod: OriginalRepresentation) {
 
   def this(reflectMethod: Method)               = this(ReflectMethod(reflectMethod))

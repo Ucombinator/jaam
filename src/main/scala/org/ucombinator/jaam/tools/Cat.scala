@@ -6,19 +6,6 @@ import org.ucombinator.jaam.serializer._
 
 import scala.collection.mutable
 
-
-class Cat extends Main("cat") {
-  banner("Combine multile JAAM files into a single, cohesive file.")
-  footer("")
-
-  val outFile = trailArg[java.io.File](descr = "The desired output filename")
-  val inFiles = trailArg[List[String]](descr = "The list of files to be concatenated.")
-
-  def run(conf: Conf) {
-    Cat.concatenateFiles(inFiles(), outFile().toString)
-  }
-}
-
 object Cat {
   private val packetBuffer = mutable.MutableList.empty[Packet]
 

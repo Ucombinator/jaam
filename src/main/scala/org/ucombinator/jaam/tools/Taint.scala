@@ -18,36 +18,6 @@ import soot.options.Options
 
 import org.ucombinator.jaam.serializer._
 
-class Taint extends Main("taint") {
-  banner("Identify explicit intra-procedural information flows in a method")
-  footer("")
-
-  // TODO: specify required options
-  val className = opt[String](descr = "FQN (package and class) of the class being analyzed")
-  val method = opt[String](descr = "signature of the method being analyzed; e.g., \"void main(java.lang.String[])\"")
-  val instruction = opt[Int](descr = "index into the Unit Chain that identifies the instruction", validate = { _ >= 0 })
-  val implicitFlows = opt[Boolean](descr = "TODO:implement")
-  val output = opt[java.io.File](descr = "a .dot file to be printed")
-  // really, this just gets used as the class path
-  val path = opt[String](descr = "java classpath (including jar files), colon-separated")
-  // val rtJar = opt[String](descr = "The RT.jar file to use for analysis",
-      // default = Some("resources/rt.jar"), required = true)
-
-  def run(conf: Conf) {
-    val cp = path.toOption match {
-      case Some(str) => str
-      case None => ""
-    }
-
-    val ps = output.toOption match {
-      case Some(file) => new PrintStream(new FileOutputStream(file))
-      case None => System.out
-    }
-
-    Taint.run(className(), method(), instruction(), implicitFlows(), cp, ps)
-  }
-}
-
 object Taint {
   private var _returnsMap = Map.empty[SootMethod, Set[ReturnStmt]]
   private var _taintGraph = Map.empty[TaintAddress, Set[TaintAddress]]

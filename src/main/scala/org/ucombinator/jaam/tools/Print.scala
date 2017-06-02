@@ -4,21 +4,6 @@ import java.io.FileInputStream
 
 import org.ucombinator.jaam.serializer._
 
-class Print extends Main("print") {
-  banner("Print a JAAM file in human-readable format")
-  footer("")
-
-  val state = opt[Int](argName = "state id", descr = "a specific state ID to print")
-  val file = trailArg[java.io.File](descr = "a .jaam file to be printed")
-
-  def run(conf: Conf) {
-    state.toOption match {
-      case None => Print.printFile(file().toString)
-      case Some(st) => Print.printNodeFromFile(file().toString, st)
-    }
-  }
-}
-
 object Print {
   def printFile(jaamFile : String) = {
     val stream = new FileInputStream(jaamFile)

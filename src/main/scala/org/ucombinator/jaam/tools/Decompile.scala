@@ -26,34 +26,6 @@ import scala.collection.mutable
 import org.ucombinator.jaam.serializer
 import scala.collection.JavaConverters._
 
-
-object Decompile extends tools.Main("decompile") {
-  banner("TODO")
-  footer("")
-
-//  val append = toggle(
-//    descrYes = "wait for user to press enter before starting (default: off)",
-//    noshort = true, prefix = "no-", default = Some(false))
-
-  val jvm = toggle(
-    descrYes = "wait for user to press enter before starting (default: off)",
-    noshort = true, prefix = "no-", default = Some(false))
-  val lib = toggle(
-    descrYes = "wait for user to press enter before starting (default: off)",
-    noshort = true, prefix = "no-", default = Some(false))
-  val app = toggle(
-    descrYes = "wait for user to press enter before starting (default: true)",
-    noshort = true, prefix = "no-", default = Some(true))
-
-  val exclude = opt[List[String]](descr = "Class names to omit", default = Some(List()))
-  val input = opt[List[String]](required = true, descr = "List of jaam files")
-  val output = opt[String](required = true, descr = "TODO")
-
-  def run(conf: tools.Conf) {
-    Main.main(input(), output(), exclude(), jvm(), lib(), app())
-  }
-}
-
 class HashMapTypeLoader extends ITypeLoader {
   val classes = mutable.HashMap[String, Array[Byte]]()
 

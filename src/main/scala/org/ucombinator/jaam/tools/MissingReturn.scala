@@ -8,17 +8,6 @@ import soot.jimple.{Stmt => SootStmt, _}
 
 import org.ucombinator.jaam.serializer._
 
-class MissingReturns extends Main("missing-returns") {
-  banner("Find calls with no matching return")
-  footer("")
-
-  val jaamFile = trailArg[java.io.File](descr = "The JAAM file to analyze")
-
-  def run(conf: Conf) {
-    MissingReturns.missingReturns(jaamFile().toString)
-  }
-}
-
 object MissingReturns {
   def missingReturns(jaamFile : String) = {
     var states = List[State]()

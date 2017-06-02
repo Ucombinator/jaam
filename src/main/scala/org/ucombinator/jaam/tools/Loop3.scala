@@ -18,26 +18,6 @@ import org.ucombinator.jaam.serializer.Serializer
 import scala.collection.immutable
 
 import scala.collection.JavaConverters._
-
-object Loop3 extends tools.Main("loop3") {
-  //val classpath = opt[List[String]](descr = "TODO")
-  val input = opt[List[String]](required = true)
-  val output = opt[String]()
-
-  val prune = toggle(
-      descrYes = "Remove methods without outgoing edges from graph",
-      descrNo = "Do not remove methods without outgoing edges from graph",
-      default = Some(true))
-  val shrink = toggle(descrYes = "Skip methods without loops",
-      descrNo = "Include methods without loops", default = Some(true))
-  val prettyPrint = toggle(descrYes = "Pretty print found loops", default = Some(false))
-
-  def run(conf: tools.Conf) {
-    //Main.main(classpath.getOrElse(List()))
-    Main.main(input.getOrElse(List()), output.toOption, prune(), shrink(), prettyPrint())
-  }
-}
-
 import org.ucombinator.jaam.util.Soot
 
 object Main {
