@@ -61,12 +61,6 @@ public class TakeInput extends Thread
                     String tagStr = ((org.ucombinator.jaam.serializer.Tag)tag.tag()).toString();
                     graph.addTag(nodeId,tagStr);
                 }
-                else if (packet instanceof org.ucombinator.jaam.tools.decompile.DecompiledClass)
-                {
-                  // TODO(decompile):
-                  org.ucombinator.jaam.tools.decompile.DecompiledClass d = (org.ucombinator.jaam.tools.decompile.DecompiledClass) packet;
-                  d.compilationUnit(); //gives an abstract syntax tree
-                }
 
                 packet = packetInput.read();
 			}
@@ -94,6 +88,8 @@ public class TakeInput extends Thread
 
 			while(!(packet instanceof EOF))
 			{
+				System.out.println("New packet: " + packet.getClass());
+
 				//Name collision with our own Edge class
 				if(packet instanceof LoopLoopNode) {
 					LoopLoopNode node = (LoopLoopNode) packet;
@@ -112,6 +108,12 @@ public class TakeInput extends Thread
 					int src = edge.src().id();
 					int dest = edge.dst().id();
 					graph.addEdge(src, dest);
+				}
+				else if (packet instanceof org.ucombinator.jaam.tools.decompile.DecompiledClass)
+				{
+					// TODO(decompile):
+					org.ucombinator.jaam.tools.decompile.DecompiledClass d = (org.ucombinator.jaam.tools.decompile.DecompiledClass) packet;
+					System.out.println(d.compilationUnit().getText()); //gives an abstract syntax tree
 				}
 
 				packet = packetInput.read();
