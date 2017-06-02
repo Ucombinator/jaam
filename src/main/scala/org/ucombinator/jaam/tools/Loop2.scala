@@ -25,6 +25,7 @@ import soot.toolkits.graph.LoopNestTree
 
 import org.ucombinator.jaam.serializer
 import org.ucombinator.jaam.serializer.TaintAddress
+import org.ucombinator.jaam.util.CachedHashCode
 
 class LoopAnalyzer extends Main("loop2") {
   banner("Analyze the depth of each loop in the application code")
@@ -154,7 +155,7 @@ object LoopAnalyzer {
   def encode(s: String): String = s.replace("\"", "\\\"")
   def quote(s: String): String = "\"" + encode(s) + "\""
 
-  abstract sealed class Node {
+  abstract sealed class Node extends CachedHashCode {
     val tag: String
   }
   case class LoopNode(val m: SootMethod, val loop: SootLoop) extends Node {

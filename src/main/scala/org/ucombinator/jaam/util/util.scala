@@ -4,6 +4,10 @@ import java.io._
 import java.util.jar._
 import java.util.zip._
 
+trait CachedHashCode extends Product {
+  override lazy val hashCode = scala.runtime.ScalaRunTime._hashCode(this)
+}
+
 object Misc {
   def toByteArray(input: InputStream): Array[Byte] = {
     val output = new ByteArrayOutputStream()

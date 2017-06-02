@@ -43,7 +43,7 @@ object Stmt {
   def methodEntry(sootMethod : SootMethod) = Stmt(Soot.getBody(sootMethod).getUnits.getFirst, sootMethod)
 }
 
-case class Stmt(val sootStmt : SootStmt, val sootMethod : SootMethod) {
+case class Stmt(val sootStmt : SootStmt, val sootMethod : SootMethod) extends CachedHashCode {
   val index = Stmt.getIndex(sootStmt, sootMethod)
   val line = sootStmt.getJavaSourceStartLineNumber
   val column = sootStmt.getJavaSourceStartColumnNumber

@@ -68,9 +68,9 @@ object Main {
     val inputPackets = input.map(Serializer.readAll(_)).flatten
 
     for (a <- inputPackets) { Soot.addClasses(a.asInstanceOf[App]) }
-    //input.map(Soot.addJaamClasses)
+
     val mainClasses = for (a <- inputPackets) yield { a.asInstanceOf[App].main.className }
-    val mainMethods = for (a <- inputPackets) yield { a.asInstanceOf[App].main.className }
+    val mainMethods = for (a <- inputPackets) yield { a.asInstanceOf[App].main.methodName }
     val mainClass = mainClasses(0).get // TODO: fix
     val mainMethod = mainMethods(0).get // TODO: fix
 
@@ -103,7 +103,6 @@ object Main {
     def invokeExprTargets(expr: InvokeExpr): Set[SootMethod] = {
       val m = expr.getMethod
       val c = m.getDeclaringClass
-      println(f"m: $m c: $c")
       val cs: Set[SootClass] = expr match {
         case expr : DynamicInvokeExpr =>
           // Could only come from non-Java sources
@@ -154,11 +153,12 @@ object Main {
         //val name = entry.getName.replace("/", ".").replaceAll("\\.class$", "")
         println(f"class role ${Soot.classes(name).role} $class_count: $name")
 
+      if (Soot.classes(name).role == FileRole.APP) {
         val c = Soot.getSootClass(name)
         // The .toList prevents a concurrent access exception
         for (m <- c.getMethods.asScala.toList) {
           method_count += 1
-          println(f"method $method_count: $m")
+          //println(f"method $method_count: $m")
           if (m.isNative) { println("skipping body because native") }
           else if (m.isAbstract) { println("skipping body because abstract") }
           else {
@@ -179,9 +179,10 @@ object Main {
               }
             }
           }
-          println(f"end method $c $m")
+          //println(f"end method $c $m")
         }
         println(f"end class $c")
+      }
     }
 
     var edge_count = 0
@@ -233,17 +234,55 @@ object Main {
     val outStream = new PrintStream(new FileOutputStream("loop3.out.out")) // or System.out
     val coverageStream = new PrintStream(new FileOutputStream("loop3.coverage.out"))
 
-    val appEdges = for ((s, ds) <- edges; Some(c) = Soot.classes.get(s.sootMethod.getDeclaringClass.getName)) yield { 1 }
+    val appEdges =
+      for ((s, ds) <- edges;
+        Some(c) = Soot.classes.get(s.sootMethod.getDeclaringClass.getName);
+        if c.role == FileRole.APP;
+        new_ds =
+          for (d <- ds;
+            Some(c2) = Soot.classes.get(d.getDeclaringClass.getName);
+            if c2.role == FileRole.APP) yield { d };
+        if new_ds.size > 0) yield { s -> new_ds }
 
-    val m = Coverage2.freshenMethod(Soot.getSootClass(mainClass).getMethodByName(mainMethod))
+    var appEdges2 = Map[SootMethod, Map[Stmt, Set[SootMethod]]]()
+    for ((s, ds) <- appEdges) {
+      val old = appEdges2.getOrElse(s.sootMethod, Map[Stmt, Set[SootMethod]]())
+      appEdges2 += s.sootMethod -> (old + (s -> ds))
+    }
+    val targets = (for ((_, s) <- appEdges2; (_, ms) <- s; m <- ms) yield m).toSet
+    val roots = appEdges2.keys.filter(!targets.contains(_)).toSet
+
+    for (root <- roots) {
+      println(f"root: $root")
+    }
+
+    println(f"appEdges: ${appEdges.size}")
+
+    def encode(s: String): String = s.replace("\"", "\\\"")
+    def quote(s: String): String = "\"" + encode(s) + "\""
+
+    println("digraph loops {")
+    println("ranksep=\"10\";");
+    for ((s, ds) <- appEdges) {
+      for (d <- ds) {
+        println(f"  ${quote(s.sootMethod.toString)} -> ${quote(d.toString)};")
+      }
+    }
+    println("}")
+
+    val m = Soot.getSootClass(mainClass).getMethodByName(mainMethod) //Coverage2.freshenMethod(Soot.getSootClass(mainClass).getMethodByName(mainMethod))
+    val s = Stmt((Soot.getBody(m).getUnits.asScala).toList(0).asInstanceOf[SootStmt], m)
+    val fromMain = appEdges2.getOrElse(m, Map())
+    appEdges2 += m -> (fromMain + (s -> (fromMain.getOrElse(s, Set()) ++ roots)))
+
     computeLoopGraph(mainClass, mainMethod, /*classpath: String,*/
-      outStream, coverageStream, jaam, prune, shrink, prettyPrint, m: SootMethod, edges)
+      outStream, coverageStream, jaam, prune, shrink, prettyPrint, m, appEdges2)
 
   }
 
   // Copied from Loop2.main
   def computeLoopGraph(mainClass: String, mainMethod: String, /*classpath: String,*/
-      graphStream: PrintStream, coverageStream: PrintStream, jaam: Option[String], prune: Boolean, shrink: Boolean, prettyPrint: Boolean, m: SootMethod, cg: Map[Stmt, Set[SootMethod]]): Unit = {
+      graphStream: PrintStream, coverageStream: PrintStream, jaam: Option[String], prune: Boolean, shrink: Boolean, prettyPrint: Boolean, m: SootMethod, cg: Map[SootMethod, Map[Stmt, Set[SootMethod]]]): Unit = {
     import org.ucombinator.jaam.tools.LoopAnalyzer
     import org.ucombinator.jaam.serializer
 
@@ -281,7 +320,7 @@ object Main {
   }
 
   // Copied from Loop2.LoopGraph.apply
-  def makeLoopGraph(m: SootMethod, cg: Map[Stmt, Set[SootMethod]]/*CallGraph*/, prettyPrint: Boolean): tools.LoopAnalyzer.LoopGraph = {
+  def makeLoopGraph(m: SootMethod, cg: Map[SootMethod, Map[Stmt, Set[SootMethod]]], prettyPrint: Boolean): tools.LoopAnalyzer.LoopGraph = {
     import tools.LoopAnalyzer._
     import tools.LoopAnalyzer.LoopGraph._
     // TODO if things get slow, this should be easy to optimize
@@ -304,12 +343,11 @@ object Main {
         // to it prevents an infinite loop.
         var newGraph: Map[Node, Set[Node]] = g + (mNode -> Set.empty)
         newGraph = addForest(g, mNode, forest, m)
-        for ((src, methods) <- cg) {
-          for (tgt <- methods) {
-//        while (iterator.hasNext) {
-//          val edge = iterator.next
-          val sootStmt = src.sootStmt // ??? //edge.srcStmt
-          val dest = tools.Coverage2.freshenMethod(tgt)
+        for ((stmt, methods) <- cg.getOrElse(m, Map())) {
+            for (tgt <- methods) {
+              println(f"src $stmt tgt $tgt")
+          val sootStmt = stmt.sootStmt
+          val dest = tgt
 
           // class initializers can't recur but Soot thinks they do
           if (m.getSignature != dest.getSignature || m.getName != "<clinit>"){

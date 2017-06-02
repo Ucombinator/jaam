@@ -32,6 +32,7 @@ object Print {
           printEdge(p)
         case p : NodeTag =>
           printTag(p)
+        case p => println(f"Unknown:\n$p\n")
       }
     }
     pi.close()

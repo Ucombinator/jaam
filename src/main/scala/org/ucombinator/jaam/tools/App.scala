@@ -112,9 +112,9 @@ object Main {
           val main = jar.getManifest.getMainAttributes.getValue("Main-Class")
           if (main != null) { mains :+= main; println("manifest"); FileRole.APP }
           else {
-            getMains match {
+            getMains() match {
               case List() => FileRole.LIB
-              case es => mains ++= mains; FileRole.APP
+              case es => mains ++= es; FileRole.APP
             }
           }
       }
