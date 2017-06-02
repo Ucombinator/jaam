@@ -267,7 +267,7 @@ class JaamKryo extends KryoBase {
     }
 
     override def read(kryo: Kryo, input: Input, typ: Class[java.util.AbstractList[Object]]): java.util.AbstractList[Object] =
-      com.strobel.core.ArrayUtilities.asUnmodifiableList[Object](kryo.readObject(input, classOf[java.util.ArrayList[Object]])).asInstanceOf[java.util.AbstractList[Object]]
+      com.strobel.core.ArrayUtilities.asUnmodifiableList[Object](kryo.readObject(input, classOf[java.util.ArrayList[Object]]):_*).asInstanceOf[java.util.AbstractList[Object]]
   }
 
   this.register(com.strobel.core.ArrayUtilities.asUnmodifiableList().getClass, UnmodifiableListSerializer)
