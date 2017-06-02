@@ -1,36 +1,32 @@
 package org.ucombinator.jaam.visualizer.layout;
 
-import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.image.Image;
-import javafx.scene.paint.*;
+import org.ucombinator.jaam.visualizer.graph.Method;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 
 /**
  * Created by timothyjohnson on 2/15/17.
  */
 public class LayoutMethodVertex extends AbstractLayoutVertex {
 
-    private String methodName;
+    private Method method;
 
-    public LayoutMethodVertex(String methodName, boolean drawEdges) {
-        super(methodName, VertexType.METHOD, drawEdges);
-        this.methodName = methodName;
+    public LayoutMethodVertex(Method method, boolean drawEdges) {
+        super(method.getFullName(), VertexType.METHOD, drawEdges);
+        this.method = method;
     }
 
     public String getMethodName() {
-        return this.methodName;
+        return this.method.getFullName();
     }
 
     public String getRightPanelContent() {
-        return "Method vertex: " + this.getMethodName() + "\nLoop height: " + this.getLoopHeight() + "\n";
+        return "Method vertex: " + this.getMethodName() + "\nLoop height: " + this.getLoopHeight() + "\n\n"
+				+ "Decompiled class code:\n" + this.method.getOurClass().getCode();
     }
 
     public String getShortDescription() {
@@ -53,8 +49,8 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
         return found;
     }
 
-    public HashSet<LayoutMethodVertex> getMethodVertices() {
-        HashSet<LayoutMethodVertex> result = new LinkedHashSet<LayoutMethodVertex>();
+    public LinkedHashSet<LayoutMethodVertex> getMethodVertices() {
+        LinkedHashSet<LayoutMethodVertex> result = new LinkedHashSet<LayoutMethodVertex>();
         result.add(this);
         return result;
     }

@@ -9,6 +9,8 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
 //import org.ucombinator.jaam.visualizer.graph.Class;
 import org.ucombinator.jaam.visualizer.graph.Instruction;
 
+import com.strobel.decompiler.languages.java.ast.CompilationUnit;
+
 public class TakeInput extends Thread
 {
 	public Graph parseStateGraph(String file)
@@ -22,6 +24,7 @@ public class TakeInput extends Thread
 		{
 			PacketInput packetInput = new PacketInput(new FileInputStream(file));
 			Packet packet = packetInput.read();
+			int loop_counter = 0;
 
 			while(!(packet instanceof EOF))
 			{
@@ -62,42 +65,13 @@ public class TakeInput extends Thread
                     graph.addTag(nodeId,tagStr);
                 }
 
-                packet = packetInput.read();
-			}
-		}
-		catch(FileNotFoundException e)
-		{
-			System.out.println(e);
-		}
-
-		return graph;
-	}
-
-	public Graph parseLoopGraph(String file) {
-		Graph graph = new Graph();
-		if(file.equals("")) {
-			//readSmallDummyGraph(graph);
-			//readLargeDummyGraph(graph);
-		}
-		else try
-		{
-			PacketInput packetInput = new PacketInput(new FileInputStream(file));
-			Packet packet = packetInput.read();
-
-			int loop_counter = 0;
-
-			while(!(packet instanceof EOF))
-			{
-				System.out.println("New packet: " + packet.getClass());
-
-				//Name collision with our own Edge class
-				if(packet instanceof LoopLoopNode) {
+				else if(packet instanceof LoopLoopNode) {
 					LoopLoopNode node = (LoopLoopNode) packet;
 					int id = node.id().id();
 					String label = node.method().getSignature() + "\ninstruction #" + node.statementIndex();
 					graph.addVertex(id, new Instruction(label, "Loop:"+node.method().getSignature()+":"+loop_counter++, id, false), true);
 				}
-				if(packet instanceof LoopMethodNode) {
+				else if(packet instanceof LoopMethodNode) {
 					LoopMethodNode node = (LoopMethodNode) packet;
 					int id = node.id().id();
 					String label = node.method().getSignature();
@@ -111,12 +85,12 @@ public class TakeInput extends Thread
 				}
 				else if (packet instanceof org.ucombinator.jaam.tools.decompile.DecompiledClass)
 				{
-					// TODO(decompile):
-					org.ucombinator.jaam.tools.decompile.DecompiledClass d = (org.ucombinator.jaam.tools.decompile.DecompiledClass) packet;
-					System.out.println(d.compilationUnit().getText()); //gives an abstract syntax tree
+					CompilationUnit unit = ((org.ucombinator.jaam.tools.decompile.DecompiledClass) packet).compilationUnit();
+					String className = getClassName(unit);
+					graph.addClass(className, unit.getText());
 				}
 
-				packet = packetInput.read();
+                packet = packetInput.read();
 			}
 		}
 		catch(FileNotFoundException e)
@@ -127,16 +101,20 @@ public class TakeInput extends Thread
 		return graph;
 	}
 
+	private static String getClassName(CompilationUnit unit) {
+		return "";
+	}
+
 	public static void readSmallDummyGraph(Graph graph) {
 		int dummyInstructions = 6;
 		for (int i = 0; i < dummyInstructions; i++) {
 			if (i < 3) {
 				Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
-						"Main.main", i, true);
+						"<Main: main>", i, true);
 				graph.addVertex(i, inst, true);
 			} else {
 				Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
-						"Main.func", i, true);
+						"<Main: func>", i, true);
 				graph.addVertex(i, inst, true);
 			}
 		}
@@ -153,12 +131,12 @@ public class TakeInput extends Thread
 		for(int i = 0; i < dummyInstructions; i++) {
 			if(i < 5) {
 				Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
-						"Main.main", i, true);
+						"<Main: main>", i, true);
 				graph.addVertex(i, inst, true);
 			}
 			else {
 				Instruction inst = new Instruction("i" + Integer.toString(i) + " = " + Integer.toString(i),
-						"Main.func", i, true);
+						"<Main: func>", i, true);
 				graph.addVertex(i, inst, true);
 			}
 		}

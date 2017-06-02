@@ -6,37 +6,30 @@ import org.ucombinator.jaam.visualizer.main.Main;
 
 public class Method
 {
-	private Class ourClass;
 	private final String methodName;
+	private Class our_class;
 	//private final String functionName;
 	private ArrayList<Vertex> vertices;
 	private ArrayList<Instruction> instructionList;
 
 	public Method()
 	{
+		this.our_class = new Class();
 		this.methodName = "Dummy_method";
-		this.ourClass = new Class("Dummy_class");
 		vertices = new ArrayList<Vertex>();
 		instructionList = new ArrayList<Instruction>();
 	}
 
 	public Method(Graph graph, String methodName)
 	{
+		this.our_class = new Class();
 		this.methodName = methodName;
-
-		if(!methodName.equals("ErrorState"))
-		{
-			String[] splitMethodName = methodName.split(" ");
-
-			//Remove beginning angle bracket and ending colon
-			String className = splitMethodName[0].substring(1, splitMethodName[0].length() - 1);
-			this.addClass(graph, className);
-
-			//this.functionName = splitMethodName[1];
-		}
-
 		vertices = new ArrayList<Vertex>();
 		instructionList = new ArrayList<Instruction>();
+	}
+
+	public String parseClassName() {
+		return methodName.substring(methodName.indexOf("<") + 1, methodName.indexOf(" ") - 1);
 	}
 	
 	public String getFullName()
@@ -46,19 +39,15 @@ public class Method
 
 	public String getClassName()
 	{
-		return this.ourClass.getClassName();
+		return this.our_class.getClassName();
 	}
 
-	public void addClass(Graph graph, String className)
-	{
-		this.ourClass = graph.getClasses().get(className);
-		if(this.ourClass == null)
-		{
-			this.ourClass = new Class(className);
-			graph.getClasses().put(className, this.ourClass);
-		}
+	public Class getOurClass() {
+		return this.our_class;
+	}
 
-		this.ourClass.addMethod(this);
+	public void setClass(Class c) {
+		this.our_class = c;
 	}
 	
 	public void addVertex(Vertex v)

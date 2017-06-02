@@ -324,10 +324,10 @@ public class OuterFrame extends BorderPane {
                 System.out.println("Error! Invalid file.");
                 return;
             }
-            if(isLoopGraph)
+            /*if(isLoopGraph)
                 graph = ti.parseLoopGraph(file.getAbsolutePath());
-            else
-                graph = ti.parseStateGraph(file.getAbsolutePath());
+            else*/
+            graph = ti.parseStateGraph(file.getAbsolutePath());
             filename = file.getName();
         }
         else {

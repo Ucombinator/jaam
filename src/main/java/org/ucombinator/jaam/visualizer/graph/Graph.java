@@ -12,7 +12,7 @@ public class Graph
     private ArrayList<String> tagsList;
     private ArrayList<Boolean> highlightedTags;
 	private HashMap<String, Method> methods;
-	private HashMap<String, Class> classes;
+	private ArrayList<Class> classes;
 
 	private double maxHeight; // required for collapse method
 	private int maxIndex;
@@ -21,7 +21,7 @@ public class Graph
 	{
 		this.vertices = new ArrayList<Vertex>();
 		this.methods = new LinkedHashMap<String, Method>();
-		this.classes = new LinkedHashMap<String, Class>();
+		this.classes = new ArrayList<Class>();
 		this.maxIndex = -1;
 
         this.tagsList = new ArrayList<String>();
@@ -32,8 +32,15 @@ public class Graph
 		return this.vertices;
 	}
 
-	public HashMap<String, Class> getClasses() {
+	public ArrayList<Class> getClasses() {
 		return this.classes;
+	}
+
+	public Method getMethod(String methodName) {
+		if(this.methods.containsKey(methodName))
+			return this.methods.get(methodName);
+		else
+			return null;
 	}
 
 	public void setMaxHeight(double height)
@@ -115,18 +122,45 @@ public class Graph
 		vDest.addIncomingNeighbor(vSrc);
 	}
 
-	public void matchClassesToCode(String basePath, ArrayList<File> javaFiles)
-	{
-		//Search through all the files, removing basePath from the beginning and .java from the end
-		for(File file : javaFiles)
-		{
-			String path = file.getAbsolutePath();
-			String className = path.substring(basePath.length(), path.length() - 5).replace('/', '.');
+	public void addClass(String className, String classCode) {
+		System.out.println("Adding class: " + className);
+		Class c = new Class(className, classCode);
+		this.classes.add(c);
+	}
 
-			if(this.classes.containsKey(className))
-				this.classes.get(className).parseJavaFile(file.getAbsolutePath());
-			else
-				System.out.println("Cannot find class: " + className);
+	public void matchMethodsToClasses() {
+		if(classes.size() > 0) {
+			System.out.println("Matching methods to classes...");
+			for(Class c : this.classes)
+				System.out.println(c.getCode());
+
+			for (Method m : this.methods.values()) {
+				System.out.println("Looking for match for method: " + m.getFullName());
+				String fullClassName = m.parseClassName();
+				int lastDotIndex = fullClassName.lastIndexOf(".");
+				int firstDollarIndex = fullClassName.indexOf("$");
+
+				String packageName = fullClassName.substring(0, lastDotIndex);
+				String className;
+				if (firstDollarIndex >= 0)
+					className = fullClassName.substring(lastDotIndex + 1, firstDollarIndex);
+				else
+					className = fullClassName.substring(lastDotIndex + 1);
+
+				System.out.println("packageName: " + packageName);
+				System.out.println("className: " + className);
+
+				for (Class c : this.classes) {
+					if (c.getCode().contains("package " + packageName) && c.getCode().contains("class " + className)) {
+						System.out.println("Method: " + m.getFullName());
+						System.out.println("Found matching class: " + fullClassName);
+						c.setName(fullClassName);
+
+						c.addMethod(m);
+						m.setClass(c);
+					}
+				}
+			}
 		}
 	}
 

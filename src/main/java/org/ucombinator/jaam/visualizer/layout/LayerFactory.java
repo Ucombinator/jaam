@@ -39,7 +39,7 @@ public class LayerFactory
 		HashMap<String, LayoutMethodVertex> methodVertices = new LinkedHashMap<>();
 		for(String method: methodBuckets.keySet()) {
 			//System.out.println("Creating method node for method: " + method);
-			LayoutMethodVertex vertex = new LayoutMethodVertex(method, true);
+			LayoutMethodVertex vertex = new LayoutMethodVertex(graph.getMethod(method), true);
 			vertex.setExpanded(methods_expanded);
 			methodVertices.put(method, vertex);
 			methodGraph.addVertex(vertex);
@@ -110,6 +110,8 @@ public class LayerFactory
 
 			start.getSelfGraph().addEdge(new LayoutEdge(start, end, LayoutEdge.EDGE_TYPE.EDGE_DUMMY));
 		}
+
+		graph.matchMethodsToClasses();
 
 		for(LayoutMethodVertex m: methodVertices.values())
 			m.identifyLoops();
