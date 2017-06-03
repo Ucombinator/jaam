@@ -3,13 +3,10 @@ package org.ucombinator.jaam.main
 import org.rogach.scallop._
 import java.io._
 
-object Conf {
-  def extractSeqFromOptString(optString: ScallopOption[String], separator: String = ":"): Seq[String] = {
-    optString.toOption.getOrElse("").split(separator).filter(_.nonEmpty)
-  }
-}
+class MainConf(args : Seq[String]) extends ScallopConf(args = args) with Conf {
+  shortSubcommandsHelp(true)
+  // TODO: version: jvm version? Jaam-file header hash?
 
-class Conf(args : Seq[String]) extends ScallopConf(args = args) {
   banner("Usage: jaam-tools [subcommand] [options]")
   // TODO: short summary of each subcommand (w/ no options) in --help
   addSubcommand(Visualizer)
@@ -33,38 +30,19 @@ class Conf(args : Seq[String]) extends ScallopConf(args = args) {
   verify()
 }
 
-abstract class Main(name: String /* TODO: = Main.SubcommandName(getClass())*/) extends Subcommand(name) {
+abstract class Main(name: String /* TODO: = Main.SubcommandName(getClass())*/) extends Subcommand(name) with Conf {
+  // TODO: descr()
   def run(): Unit
-
-  // Change the default prefix to "no-"
-  override def toggle(
-    name: String = null,
-    default: => Option[Boolean] = None,
-    short: Char = '\u0000',
-    noshort: Boolean = false,
-    prefix: String = "no-",
-    descrYes: String = "",
-    descrNo: String = "",
-    hidden: Boolean = false) =
-    toggle(
-      name = name,
-      default = default,
-      short = short,
-      noshort = noshort,
-      prefix = prefix,
-      descrYes = descrYes,
-      descrNo = descrNo,
-      hidden = hidden)
 }
 
 object Main {
   // TODO: support '-jar" with main-class
   def conf = _conf
-  private var _conf: Conf = _
+  private var _conf: MainConf = _
 
   // short-subcommand help
   def main(args : Array[String]) {
-    _conf = new Conf(args)
+    _conf = new MainConf(args)
     _conf.subcommand match {
       case None => println("ERROR: No subcommand specified")
       case Some(m : Main) => m.run()
@@ -117,17 +95,17 @@ object App extends Main("app") {
   banner("TODO")
   footer("")
 
-  val input = opt[List[String]](short = 'i', descr = "class files, or directories (role is auto-detected)", default = Some(List()))
+  val input = opt[List[String]](descr = "class files, or directories (role is auto-detected)", default = Some(List()))
   val app = opt[List[String]](short = 'a', descr = "application jars, class files, or directories", default = Some(List()))
   val lib = opt[List[String]](short = 'l', descr = "library jars, class files, or directories", default = Some(List()))
   val jvm = opt[List[String]](short = 'r', descr = "Java runtime jars, class files, or directories", default = Some(List()))
   val defaultJvm = toggle(prefix = "no-", default = Some(true))
 
-  val detectMain = toggle(prefix = "no-", default = Some(true))
+  val detectMain = toggle(default = Some(true))
   val mainClass = opt[String](short = 'c', descr = "the main class")
   val mainMethod = opt[String](short = 'm', descr = "the main method")
 
-  val output = opt[String](required = true, short = 'o', descr = "the output file for the serialized data")
+  val output = outputOpt()
 
   // TODO: val java-8-rt (in resource?)
 
@@ -185,8 +163,8 @@ object Decompile extends Main("decompile") {
     noshort = true, prefix = "no-", default = Some(true))
 
   val exclude = opt[List[String]](descr = "Class names to omit", default = Some(List()))
-  val input = opt[List[String]](required = true, descr = "List of jaam files")
-  val output = opt[String](required = true, descr = "TODO")
+  val input = inputOpt()
+  val output = outputOpt()
 
   def run() {
     org.ucombinator.jaam.tools.decompile.Main.main(input(), output(), exclude(), jvm(), lib(), app())
@@ -303,8 +281,8 @@ object LoopAnalyzer extends Main("loop2") {
 
 object Loop3 extends Main("loop3") {
   //val classpath = opt[List[String]](descr = "TODO")
-  val input = opt[List[String]](required = true)
-  val output = opt[String]()
+  val input = inputOpt()
+  val output = outputOpt()
 
   val prune = toggle(
       descrYes = "Remove methods without outgoing edges from graph",
