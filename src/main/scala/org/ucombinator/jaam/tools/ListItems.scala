@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.tools
+package org.ucombinator.jaam.tools.listitems
 
 import java.io.File
 import java.lang.reflect.Executable

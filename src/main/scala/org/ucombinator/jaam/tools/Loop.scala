@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.tools
+package org.ucombinator.jaam.tools.loop
 
 import java.util.zip.ZipInputStream
 import java.io.{BufferedOutputStream, FileInputStream, FileOutputStream}

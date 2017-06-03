@@ -12,7 +12,7 @@ import soot.jimple.{Stmt => SootStmt, _}
 import org.ucombinator.jaam.interpreter.Stmt
 import org.ucombinator.jaam.util.Soot
 import org.ucombinator.jaam.tools.app.{FileRole, App}
-import org.ucombinator.jaam.tools.Coverage2
+import org.ucombinator.jaam.tools.coverage2.Coverage2
 import org.ucombinator.jaam.serializer.Serializer
 
 import scala.collection.immutable

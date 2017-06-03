@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.tools
+package org.ucombinator.jaam.tools.findmain
 
 import java.io.File
 import java.lang.reflect.{Method, Modifier}

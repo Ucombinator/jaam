@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.tools
+package org.ucombinator.jaam.tools.printer // TODO: avoid "print" because of conflict with Scala "print"
 
 import java.io.FileInputStream
 

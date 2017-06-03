@@ -372,7 +372,7 @@ object LoopAnalyzer {
           while (iterator.hasNext) {
             val edge = iterator.next
             val sootStmt = edge.srcStmt
-            val dest = Coverage2.freshenMethod(edge.tgt)
+            val dest = coverage2.Coverage2.freshenMethod(edge.tgt)
 
             // class initializers can't recur but Soot thinks they do
             if (m.getSignature != dest.getSignature || m.getName != "<clinit>"){
@@ -483,7 +483,7 @@ object LoopAnalyzer {
     Options.v.set_main_class(mainClass)
     val clazz = Scene.v.forceResolve(mainClass, SootClass.BODIES)
     Scene.v.setMainClass(clazz)
-    val m = Coverage2.freshenMethod(clazz.getMethodByName(mainMethod))
+    val m = coverage2.Coverage2.freshenMethod(clazz.getMethodByName(mainMethod))
 
     for {
       className <- Taint.getAllClasses(classpath)
@@ -538,7 +538,7 @@ case class Statement(val stmt: SootStmt, val m: SootMethod) {
     BigInt(stmt.getTag(Statement.indexTag).getValue).intValue
   } else {
     // label everything in m so the amortized work is linear
-    for ((u, i) <- Soot.getBody(m).getUnits().toList.zipWithIndex) {
+    for ((u, i) <- loop.Soot.getBody(m).getUnits().toList.zipWithIndex) {
       u.addTag(new GenericAttribute(Statement.indexTag, BigInt(i).toByteArray))
     }
 

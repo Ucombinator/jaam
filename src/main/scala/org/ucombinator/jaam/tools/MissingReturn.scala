@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.tools
+package org.ucombinator.jaam.tools.missingreturns
 
 import java.io.FileInputStream
 import scala.collection.mutable

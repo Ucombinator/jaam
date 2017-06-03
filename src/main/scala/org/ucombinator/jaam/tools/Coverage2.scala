@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.tools
+package org.ucombinator.jaam.tools.coverage2
 
 import scala.collection.JavaConversions._
 

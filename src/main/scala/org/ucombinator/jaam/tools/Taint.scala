@@ -81,7 +81,7 @@ object Taint {
     Options.v().set_soot_classpath(classpath)
     Options.v().set_prepend_classpath(false)
     Options.v().set_src_prec(Options.src_prec_only_class)
-    // TODO I just copied this from Coverage2
+    // TODO I just copied this from coverage2.Coverage2
     Options.v().set_whole_program(true)
     soot.Main.v().autoSetOptions()
     Scene.v.setSootClassPath(classpath)
@@ -89,7 +89,7 @@ object Taint {
 
     // val mName = className + "." + method
     val clazz = Scene.v().forceResolve(className, SootClass.BODIES)
-    val m = Coverage2.freshenMethod(clazz.getMethod(method))
+    val m = coverage2.Coverage2.freshenMethod(clazz.getMethod(method))
     m.retrieveActiveBody()
     val stmt = getByIndex(m, instruction)
     val addrs: Set[TaintAddress] = stmt match {
@@ -154,7 +154,7 @@ object Taint {
     val classNames = getAllClasses(classpath)
     for {
       clazz <- classNames.map(Scene.v.forceResolve(_, SootClass.BODIES))
-      method <- clazz.getMethods map { Coverage2.freshenMethod(_) }
+      method <- clazz.getMethods map { coverage2.Coverage2.freshenMethod(_) }
     } {
       var units = List.empty[SootUnit]
       try {
@@ -170,7 +170,7 @@ object Taint {
             val iExprs = getInvokeExprs(stmt)
             for {
               iExpr <- iExprs
-              called <- LoopDepthCounter.getDispatchedMethods(iExpr) map Coverage2.freshenMethod
+              called <- loop.LoopDepthCounter.getDispatchedMethods(iExpr) map coverage2.Coverage2.freshenMethod
             } {
               // track propagation of arguments from invocation
               for {
@@ -357,7 +357,7 @@ object Taint {
     // Most of the time, we check to make sure the method in question has been
     // graphed before anything else.
     if (shouldGraph) {
-      graph(Coverage2.freshenMethod(to.m))
+      graph(coverage2.Coverage2.freshenMethod(to.m))
     }
     // Constants can't store explicit taints. Also, their current construction
     // makes two instances of the same value in the same method equivalent,
@@ -373,7 +373,7 @@ object Taint {
   // graph() for lazy taint propagation.
   def readTaintGraph(to: TaintAddress): Set[TaintAddress] = {
     // Make sure that the method being read has been graphed.
-    graph(Coverage2.freshenMethod(to.m))
+    graph(coverage2.Coverage2.freshenMethod(to.m))
     to match {
       case _: ConstantTaintAddress => Set.empty
       case _ => _taintGraph.getOrElse(to, Set.empty)

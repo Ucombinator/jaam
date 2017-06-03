@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.tools
+package org.ucombinator.jaam.tools.info
 
 import java.io.FileInputStream
 import scala.collection.mutable

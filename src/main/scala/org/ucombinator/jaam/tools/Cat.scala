@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.tools
+package org.ucombinator.jaam.tools.cat
 
 import java.io.{FileInputStream, FileOutputStream}
 

@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.tools
+package org.ucombinator.jaam.tools.validate
 
 import java.io.{FileInputStream, FileOutputStream, IOException}
 

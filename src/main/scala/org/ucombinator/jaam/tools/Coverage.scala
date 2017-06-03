@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.tools
+package org.ucombinator.jaam.tools.coverage
 
 import java.io.{File, FileInputStream}
 import java.lang.reflect.{Constructor, Method, Modifier}
