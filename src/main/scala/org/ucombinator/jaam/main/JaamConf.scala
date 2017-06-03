@@ -4,14 +4,14 @@ import org.rogach.scallop._
 import scala.collection.immutable
 import reflect.runtime.universe.TypeTag
 
-object Conf {
+object JaamConf {
   def extractSeqFromOptString(optString: ScallopOption[String], separator: String = ":"): Seq[String] = {
     optString.toOption.getOrElse("").split(separator).filter(_.nonEmpty)
   }
 }
 
 // Rename to JaamConf
-trait Conf extends ScallopConf {
+trait JaamConf extends ScallopConf {
   appendDefaultToDescription = true
   // TODO: input/output? (as functions like toggle)
   // TODO: better usage printing with trail args (or maybe we have no trail args)

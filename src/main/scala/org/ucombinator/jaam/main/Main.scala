@@ -3,7 +3,7 @@ package org.ucombinator.jaam.main
 import org.rogach.scallop._
 import java.io._
 
-class MainConf(args : Seq[String]) extends ScallopConf(args = args) with Conf {
+class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamConf {
   shortSubcommandsHelp(true)
   // TODO: version: jvm version? Jaam-file header hash?
 
@@ -30,7 +30,7 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with Conf {
   verify()
 }
 
-abstract class Main(name: String /* TODO: = Main.SubcommandName(getClass())*/) extends Subcommand(name) with Conf {
+abstract class Main(name: String /* TODO: = Main.SubcommandName(getClass())*/) extends Subcommand(name) with JaamConf {
   // TODO: descr()
   def run(): Unit
 
@@ -225,7 +225,7 @@ object Coverage extends Main("coverage") {
   val additionalJars = opt[String](descr = "Colon-separated list of JAR files to complete class loading for inspection JAR files")
 
   def run() {
-    org.ucombinator.jaam.tools.coverage.Coverage.findCoverage(jaamFile().toString, jars().split(":"), Conf.extractSeqFromOptString(additionalJars))
+    org.ucombinator.jaam.tools.coverage.Coverage.findCoverage(jaamFile().toString, jars().split(":"), JaamConf.extractSeqFromOptString(additionalJars))
   }
 }
 
@@ -240,7 +240,7 @@ object Coverage2 extends Main("coverage2") {
   val additionalJars = opt[String](descr = "Colon-separated list of JAR files to complete class loading for inspection JAR files")
 
   def run() {
-    org.ucombinator.jaam.tools.coverage2.Coverage2.main(rtJar(), jaamFile().toString, mainClass(), jars().split(":"), Conf.extractSeqFromOptString(additionalJars))
+    org.ucombinator.jaam.tools.coverage2.Coverage2.main(rtJar(), jaamFile().toString, mainClass(), jars().split(":"), JaamConf.extractSeqFromOptString(additionalJars))
   }
 }
 
