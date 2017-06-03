@@ -73,7 +73,7 @@ case class Stmt(val sootStmt : SootStmt, val sootMethod : SootMethod) extends Ca
 }
 
 object Soot {
-  def initialize(conf : Conf, customizations: => Unit = {}) {
+  def initialize(rtJar: String, classpath: String, customizations: => Unit = {}) {
     // We choose to not use Soot in verbose mode.
     Options.v().set_verbose(false)
     // Put class bodies in Jimple format
@@ -85,7 +85,7 @@ object Soot {
     // Called methods without jar files or source are considered phantom
     Options.v().set_allow_phantom_refs(true)
     // Use the class path from the command line
-    Options.v().set_soot_classpath(conf.rtJar().toString + ":" + conf.classpath().toString)
+    Options.v().set_soot_classpath(rtJar + ":" + classpath)
     // Use only the class path from the command line
     Options.v().set_prepend_classpath(false)
     // Take definitions only from class files

@@ -10,6 +10,7 @@ object Conf {
   }
 }
 
+// Rename to JaamConf
 trait Conf extends ScallopConf {
   appendDefaultToDescription = true
   // TODO: input/output? (as functions like toggle)
@@ -23,6 +24,7 @@ trait Conf extends ScallopConf {
   //================
   val help = opt[Unit](short = 'h', descr = "show this help message")(HelpConverter)
 
+  // TODO: show subcommand help when error is in subcommand
   /**
     * Override the built-in `onError` method to ensure that `--help` information
     * is displayed every time there is an error during option parsing.

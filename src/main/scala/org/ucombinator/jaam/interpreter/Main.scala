@@ -1286,125 +1286,27 @@ object System {
 
 }
 
-/**
-  * Command-line option parsing class, from Scallop.
-  *
-  * Provides all necessary functionality to parse the arguments we want.
-  *
-  * @param args list of command-line arguments as strings
-  */
-class Conf(args : Seq[String]) extends JaamConf(args = args) {
-  // TODO: banner("")
-  // TODO: how do we turn off sorting of options by name?
-  // TODO: always print default setting
-  appendDefaultToDescription = true
-
-  val classpath   = opt[String](required = true, short = 'P', descr = "the TODO class directory")
-  val rtJar       = opt[String](required = true, short = 'J', descr = "the rt.jar file")
-  val mainClass   = opt[String](required = true, short = 'c', descr = "the main class")
-  val method      = opt[String](required = true, short = 'm', descr = "the main method", default = Some("main"))
-  val libClasses  = opt[String](short = 'L', descr = "app's library classes")
-  val _outfile     = opt[String](name = "outfile", short = 'o', descr = "the output file for the serialized data")
-  def outfile() = _outfile.getOrElse(mainClass() + ".jaam") // TODO: extend scallop to do this for us
-  val logLevel    = enum[Log.Level](
-    short = 'l',
-    descr = "the level of logging verbosity",
-    default = Some("warn"),
-    argType = "log level",
-    elems = immutable.ListMap(
-      "none" -> Log.LEVEL_NONE,
-      "error" -> Log.LEVEL_ERROR,
-      "warn" -> Log.LEVEL_WARN,
-      "info" -> Log.LEVEL_INFO,
-      "debug" -> Log.LEVEL_DEBUG,
-      "trace" -> Log.LEVEL_TRACE))
-
-  val waitForUser = toggle(
-    descrYes = "wait for user to press enter before starting (default: off)",
-    noshort = true, prefix = "no-", default = Some(false))
-
-  val globalSnowflakeAddrLast = toggle(
-    descrYes = "process states that read from the `GlobalSnowflakeAddr` last (default: on)",
-    noshort = true, prefix = "no-", default = Some(true))
-
-  val stateOrdering = enum[Boolean => Ordering[AbstractState]](
-    default = Some("max"),
-    argType = "ordering",
-    elems = immutable.ListMap(
-      "none" -> StateOrdering.none,
-      "max" -> StateOrdering.max
-        // TODO: state orderings: min insertion reverseInsertion
-    ))
-
-  val maxSteps = opt[Int](descr = "maximum number of interpretation steps")
-
-  val color = toggle(prefix = "no-", default = Some(true))
-
-  val stringTop = toggle(prefix = "no-", default = Some(true))
-
-  val snowflakeLibrary = toggle(prefix = "no-", default = Some(true))
-
-  val exceptions = toggle(prefix = "no-", default = Some(true))
-
-  val initialStore = opt[java.io.File]()
-
-  val analyzer = enum[Conf.Analyzer](
-    descr = "which analyzer to use",
-    default = Some("cha"),
-    argType = "analyzer",
-    elems = immutable.ListMap(
-      "aam" -> Conf.AAM,
-      "cha" -> Conf.CHA))
-
-  verify()
-
-  object StateOrdering {
-    def none(b: Boolean) = new Ordering[AbstractState] {
-      override def compare(x: AbstractState, y: AbstractState): Int =
-        0
-    }
-
-    def max(b: Boolean) = new Ordering[AbstractState] {
-      override def compare(x: AbstractState, y: AbstractState): Int =
-        // TODO: use `b`
-        if (x.id < y.id) { -1 }
-        else if (x.id == y.id) { 0 }
-        else { +1 }
-    }
-  }
-}
-
-object Conf {
-  sealed trait Analyzer {}
-  final case object AAM extends Analyzer {}
-  final case object CHA extends Analyzer {}
-}
-
 object Main {
-  // TODO: better way to have "final after initialization" (lazy?) and populated from Runtime.args
-  var conf : Conf = null;  // TODO: find a better place to put this
+  var conf = org.ucombinator.jaam.main.Interpreter;  // TODO: remove thisg
 
-  def main(args : Array[String]) {
-    val conf = new Conf(args)
-    Main.conf = conf;
-
+  def main() {
     if (conf.waitForUser()) {
       print("Press enter to start.")
       scala.io.StdIn.readLine()
     }
 
-    Log.setLogging(conf.logLevel())
+    Log.setLogging(conf.logLevel()) // TODO: move to main.Main
     Log.color = conf.color()
 
-    conf.analyzer() match {
-      case Conf.AAM => aam()
-      case Conf.CHA => cha()
+    conf.analyzer() match { // TODO: as separate commands
+      case org.ucombinator.jaam.main.Interpreter.AAM => aam()
+      case org.ucombinator.jaam.main.Interpreter.CHA => cha()
     }
   }
 
   def cha() {
     //val allAppClassess = conf.classpath().toString.split(":").map(getAllClassNames(_))
-    Soot.initialize(conf, {
+    Soot.initialize(conf.rtJar().toString,  conf.classpath().toString, {
       Options.v().set_include_all(false)
       Options.v.set_whole_program(true)
       Options.v().set_app(true)
@@ -1582,7 +1484,7 @@ object Main {
       case None => {}
     }
 
-    Soot.initialize(conf)
+    Soot.initialize(conf.rtJar().toString, conf.classpath().toString)
 
     // TODO: libClasses option?
     System.setAppLibraryClasses(conf.libClasses())
