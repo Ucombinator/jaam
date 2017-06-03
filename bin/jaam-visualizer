@@ -4,7 +4,6 @@
 
 : ${JAAM_dir:="$(cd $(dirname $(dirname $0)); pwd -P)"}
 : ${JAAM_jar:="${JAAM_dir}/jars/jaam.jar"}
-echo $JAAM_jar
 : ${JAAM_visualizer_main:="org.ucombinator.jaam.visualizer.main.Main"}
 : ${JAAM_java:="java"}
 : ${JAAM_java_opts:=""}
