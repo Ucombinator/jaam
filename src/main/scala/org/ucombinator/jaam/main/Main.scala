@@ -41,7 +41,6 @@ abstract class Main(name: String /* TODO: = Main.SubcommandName(getClass())*/) e
     noshort = true, prefix = "no-", default = Some(false))
 
   // Move to JaamConf
-  import org.ucombinator.jaam.interpreter.Log
   val color = toggle(prefix = "no-", default = Some(true))
 
   val logLevel    = enum[Log.Level](
@@ -65,7 +64,6 @@ object Main {
 
   // short-subcommand help
   def main(args : Array[String]) {
-    import org.ucombinator.jaam.interpreter.Log
 
     _conf = new MainConf(args)
     _conf.subcommand match {
@@ -109,9 +107,8 @@ object Visualizer extends Main("visualizer") {
 object Interpreter extends Main("interpreter") {
   // TODO: banner("")
   // TODO: how do we turn off sorting of options by name?
-  import org.ucombinator.jaam.interpreter.{Log, AbstractState}
+  import org.ucombinator.jaam.interpreter.AbstractState
   import scala.collection.immutable
-
 
   val classpath   = opt[String](required = true, short = 'P', descr = "the TODO class directory")
   val rtJar       = opt[String](required = true, short = 'J', descr = "the rt.jar file")

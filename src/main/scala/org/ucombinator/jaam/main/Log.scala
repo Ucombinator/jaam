@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.interpreter
+package org.ucombinator.jaam.main
 
 import com.esotericsoftware.minlog
 

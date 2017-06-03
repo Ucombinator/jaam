@@ -5,6 +5,8 @@ import java.io.{FileInputStream, File}
 
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 
+import org.ucombinator.jaam.main.Log
+
 object Utilities {
   def stringToType(s: String): Type = {
     s match {

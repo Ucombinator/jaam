@@ -44,6 +44,7 @@ import soot.jimple.toolkits.callgraph._
 import soot.jimple.toolkits.invoke.AccessManager
 import soot.tagkit._
 
+import org.ucombinator.jaam.main.Log
 import org.ucombinator.jaam.serializer
 import org.ucombinator.jaam.interpreter.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
 import org.ucombinator.jaam.interpreter.snowflakes._
