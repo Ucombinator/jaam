@@ -33,6 +33,29 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with Conf {
 abstract class Main(name: String /* TODO: = Main.SubcommandName(getClass())*/) extends Subcommand(name) with Conf {
   // TODO: descr()
   def run(): Unit
+
+  import scala.collection.immutable
+  // Move to conf?
+  val waitForUser = toggle(
+    descrYes = "wait for user to press enter before starting (default: off)", // TODO: note: usefull for debugging and profiling
+    noshort = true, prefix = "no-", default = Some(false))
+
+  // Move to JaamConf
+  import org.ucombinator.jaam.interpreter.Log
+  val color = toggle(prefix = "no-", default = Some(true))
+
+  val logLevel    = enum[Log.Level](
+    short = 'l',
+    descr = "the level of logging verbosity",
+    default = Some("warn"),
+    argType = "log level",
+    elems = immutable.ListMap(
+      "none" -> Log.LEVEL_NONE,
+      "error" -> Log.LEVEL_ERROR,
+      "warn" -> Log.LEVEL_WARN,
+      "info" -> Log.LEVEL_INFO,
+      "debug" -> Log.LEVEL_DEBUG,
+      "trace" -> Log.LEVEL_TRACE))
 }
 
 object Main {
@@ -42,10 +65,22 @@ object Main {
 
   // short-subcommand help
   def main(args : Array[String]) {
+    import org.ucombinator.jaam.interpreter.Log
+
     _conf = new MainConf(args)
     _conf.subcommand match {
       case None => println("ERROR: No subcommand specified")
-      case Some(m : Main) => m.run()
+      case Some(m : Main) =>
+        if (m.waitForUser()) { // TODO: move to main.Main
+          print("Press enter to start.")
+          scala.io.StdIn.readLine()
+        }
+
+        Log.setLogging(m.logLevel()) // TODO: move to main.Main
+        Log.color = m.color()
+
+
+        m.run()
       case Some(other) => println("ERROR: Bad subcommand specified: " + other)
     }
   }
@@ -86,25 +121,6 @@ object Interpreter extends Main("interpreter") {
   val _outfile     = opt[String](name = "outfile", short = 'o', descr = "the output file for the serialized data")
   def outfile() = _outfile.getOrElse(mainClass() + ".jaam") // TODO: extend scallop to do this for us
 
-  // Move to JaamConf
-  val logLevel    = enum[Log.Level](
-    short = 'l',
-    descr = "the level of logging verbosity",
-    default = Some("warn"),
-    argType = "log level",
-    elems = immutable.ListMap(
-      "none" -> Log.LEVEL_NONE,
-      "error" -> Log.LEVEL_ERROR,
-      "warn" -> Log.LEVEL_WARN,
-      "info" -> Log.LEVEL_INFO,
-      "debug" -> Log.LEVEL_DEBUG,
-      "trace" -> Log.LEVEL_TRACE))
-
-  // Move to conf?
-  val waitForUser = toggle(
-    descrYes = "wait for user to press enter before starting (default: off)",
-    noshort = true, prefix = "no-", default = Some(false))
-
   val globalSnowflakeAddrLast = toggle(
     descrYes = "process states that read from the `GlobalSnowflakeAddr` last (default: on)",
     noshort = true, prefix = "no-", default = Some(true))
@@ -119,8 +135,6 @@ object Interpreter extends Main("interpreter") {
     ))
 
   val maxSteps = opt[Int](descr = "maximum number of interpretation steps")
-
-  val color = toggle(prefix = "no-", default = Some(true))
 
   val stringTop = toggle(prefix = "no-", default = Some(true))
 
@@ -156,7 +170,12 @@ object Interpreter extends Main("interpreter") {
     }
   }
 
-  def run() { org.ucombinator.jaam.interpreter.Main.main() }
+  def run() {
+    analyzer() match { // TODO: as separate commands
+      case AAM => org.ucombinator.jaam.interpreter.Main.aam()
+      case CHA => org.ucombinator.jaam.interpreter.Main.cha()
+    }
+  }
 }
 
 // TODO: agent is special because we have to launch a new process

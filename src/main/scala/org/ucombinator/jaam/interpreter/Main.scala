@@ -1287,22 +1287,7 @@ object System {
 }
 
 object Main {
-  var conf = org.ucombinator.jaam.main.Interpreter;  // TODO: remove thisg
-
-  def main() {
-    if (conf.waitForUser()) {
-      print("Press enter to start.")
-      scala.io.StdIn.readLine()
-    }
-
-    Log.setLogging(conf.logLevel()) // TODO: move to main.Main
-    Log.color = conf.color()
-
-    conf.analyzer() match { // TODO: as separate commands
-      case org.ucombinator.jaam.main.Interpreter.AAM => aam()
-      case org.ucombinator.jaam.main.Interpreter.CHA => cha()
-    }
-  }
+  var conf = org.ucombinator.jaam.main.Interpreter;  // TODO: remove this
 
   def cha() {
     //val allAppClassess = conf.classpath().toString.split(":").map(getAllClassNames(_))
