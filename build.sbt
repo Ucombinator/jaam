@@ -42,6 +42,9 @@ javacOptions in compile += "-Xlint"
 //   @SuppressWarnings("sunapi")
 javacOptions in compile += "-XDenableSunApiLintControl"
 
+packageOptions in assembly += Package.ManifestAttributes(
+  "Premain-Class" -> "org.ucombinator.jaam.agent.Main")
+
 /* Migrated from agent
 assemblyOption in assembly :=
   (assemblyOption in assembly).value

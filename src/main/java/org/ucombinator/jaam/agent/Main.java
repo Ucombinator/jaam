@@ -28,6 +28,8 @@ import java.util.regex.*;
 // TODO: The Trampoline class is duplicated in output for some reason
 // TODO: could this be implemented using ASM?  Would that allow us to get past the REFLECTION_FIX problems?
 
+// TODO: ensure not loading extra classes due to being in the same jar as everything else in jaam
+
 public class Main {
   // Use javaagent to get an Instrumentation
   private static Instrumentation instrumentation;

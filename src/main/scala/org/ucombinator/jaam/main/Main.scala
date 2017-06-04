@@ -2,6 +2,7 @@ package org.ucombinator.jaam.main
 
 import org.rogach.scallop._
 import java.io._
+import scala.collection.JavaConverters._
 
 class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamConf {
   shortSubcommandsHelp(true)
@@ -11,6 +12,7 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamCon
   // TODO: short summary of each subcommand (w/ no options) in --help
   addSubcommand(Visualizer)
   addSubcommand(Interpreter)
+  addSubcommand(Agent)
   addSubcommand(Cat)
   addSubcommand(App)
   addSubcommand(Coverage)
@@ -171,6 +173,29 @@ object Interpreter extends Main("interpreter") {
       case AAM => org.ucombinator.jaam.interpreter.Main.aam()
       case CHA => org.ucombinator.jaam.interpreter.Main.cha()
     }
+  }
+}
+
+object Agent extends Main("agent") {
+  val arguments = trailArg[List[String]](default = Some(List()))
+
+  def run() {
+    var java = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java"
+
+    if (System.getProperty("os.name").toLowerCase().contains("win")) {
+      java += ".exe"
+    }
+
+    val agentClass = classOf[org.ucombinator.jaam.agent.Main]
+    val jar = agentClass.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()
+
+    val cmd = List(
+      java,
+      "-javaagent:" + jar,
+      "-classpath", jar,
+      agentClass.getCanonicalName()) ++ arguments()
+
+    System.exit(new ProcessBuilder(cmd.asJava).inheritIO().start().waitFor())
   }
 }
 
