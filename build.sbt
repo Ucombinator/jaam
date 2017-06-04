@@ -37,7 +37,7 @@ javacOptions in compile += "-Xlint"
 //
 //   <class> is internal proprietary API and may be removed in a future release
 //
-// NOTE: That warning is only ignored in code annotated with:
+// NOTE: That warning is ignored only in code annotated with:
 //
 //   @SuppressWarnings("sunapi")
 javacOptions in compile += "-XDenableSunApiLintControl"
