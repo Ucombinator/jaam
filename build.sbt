@@ -7,10 +7,8 @@ version := "0.1-SNAPSHOT"
 organization := "org.ucombinator"
 scalaVersion := "2.11.8"
 
-assemblyOutputPath in assembly := new File("./jars/jaam.jar")
-
-mainClass in Compile := Some("org.ucombinator.jaam.main.Main") // Silence warning about multiple main classes
-mainClass in assembly := Some("org.ucombinator.jaam.main.Main") // Actually set main class in assembly
+// Use repository containing soot-all-in-one nightly snapshot
+resolvers += "Ucombinator maven repository on github" at "https://ucombinator.github.io/maven-repo"
 
 libraryDependencies ++= Seq(
   "org.rogach" %% "scallop" % "2.0.1",
@@ -29,19 +27,43 @@ libraryDependencies ++= Seq(
   "org.bitbucket.mstrobel" % "procyon-compilertools" % "0.5.32"
 )
 
-// Turn on all warnings
-javacOptions in compile += "-Xlint"
+// Silence warning about multiple main classes
+mainClass in Compile := Some("org.ucombinator.jaam.main.Main")
 
-// Jaam Agent mucks around with internals so we expect and it can safely
-// ignore the warning:
-//
-//   <class> is internal proprietary API and may be removed in a future release
-//
-// NOTE: That warning is ignored only in code annotated with:
-//
-//   @SuppressWarnings("sunapi")
-javacOptions in compile += "-XDenableSunApiLintControl"
+// Actually set main class in assembly
+mainClass in assembly := Some("org.ucombinator.jaam.main.Main")
 
+// Flags to 'scalac'.  Try to get as much error and warn detection as possible.
+scalacOptions ++= Seq(
+  // Emit warning and location for usages of deprecated APIs.
+  "-deprecation",
+  // Explain type errors in more detail.
+  "-explaintypes",
+  // Emit warning and location for usages of features that should be imported explicitly.
+  "-feature",
+  // Generates faster bytecode by applying optimisations to the program
+  "-optimise",
+  // Enable additional warnings where generated code depends on assumptions.
+  "-unchecked",
+  "-Xlint:_"
+)
+
+javacOptions in compile ++= Seq(
+  // Turn on all warnings
+  "-Xlint",
+  // Jaam Agent mucks around with internals so we expect and it can safely
+  // ignore the warning:
+  //
+  //   <class> is internal proprietary API and may be removed in a future release
+  //
+  // NOTE: That warning is ignored only in code annotated with:
+  //
+  //   @SuppressWarnings("sunapi")
+  "-XDenableSunApiLintControl")
+
+assemblyOutputPath in assembly := new File("./jars/jaam.jar")
+
+// For Jaam Agent
 packageOptions in assembly += Package.ManifestAttributes(
   "Premain-Class" -> "org.ucombinator.jaam.agent.Main")
 
@@ -60,24 +82,6 @@ lazy val quietDiscard = new sbtassembly.MergeStrategy {
   override def summaryLogLevel = Level.Info
   override def notifyThreshold = 1
 }
-
-// Use repository containing soot-all-in-one nightly snapshot
-resolvers += "Ucombinator maven repository on github" at "https://ucombinator.github.io/maven-repo"
-
-// Flags to 'scalac'.  Try to get as much error and warn detection as possible.
-scalacOptions ++= Seq(
-  // Emit warning and location for usages of deprecated APIs.
-  "-deprecation",
-  // Explain type errors in more detail.
-  "–explaintypes",
-  // Emit warning and location for usages of features that should be imported explicitly.
-  "-feature",
-  // Generates faster bytecode by applying optimisations to the program
-  "-optimise",
-  // Enable additional warnings where generated code depends on assumptions.
-  "-unchecked",
-  "-Xlint:_"
-)
 
 // Discard META-INF (except for stuff in services which we need for jaam-agent).
 // Deduplicate everything else.
