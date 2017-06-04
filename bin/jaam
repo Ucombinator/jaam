@@ -4,13 +4,12 @@
 
 : ${JAAM_dir:="$(cd $(dirname $(dirname $0)); pwd -P)"}
 : ${JAAM_jar:="${JAAM_dir}/jars/jaam.jar"}
-: ${JAAM_main:="org.ucombinator.jaam.main.Main"}
 : ${JAAM_java:="java"}
 : ${JAAM_java_opts:=""}
 
 # Use JAVA_OPTS if provided, otherwise use the default from above.
 chosen_java_opts=${JAVA_OPTS:-"${JAAM_java_opts}"}
-JAVA_OPTS="${chosen_java_opts}"
+export JAVA_OPTS="${chosen_java_opts}"
 
 # Do the execution.
-exec "${JAAM_java}" -Xss16M -cp "${JAAM_jar}" "${JAAM_main}" "$@"
+exec "${JAAM_java}" -Xss16M -jar "${JAAM_jar}" "$@"
