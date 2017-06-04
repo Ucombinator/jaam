@@ -9,6 +9,9 @@ scalaVersion := "2.11.8"
 
 assemblyOutputPath in assembly := new File("./jars/jaam.jar")
 
+mainClass in Compile := Some("org.ucombinator.jaam.main.Main") // Silence warning about multiple main classes
+mainClass in assembly := Some("org.ucombinator.jaam.main.Main") // Actually set main class in assembly
+
 libraryDependencies ++= Seq(
   "org.rogach" %% "scallop" % "2.0.1",
   "com.esotericsoftware" % "minlog" % "1.3.0",
@@ -26,11 +29,18 @@ libraryDependencies ++= Seq(
   "org.bitbucket.mstrobel" % "procyon-compilertools" % "0.5.32"
 )
 
-// Migrated from agent
-// TODO: this option doesn't succeed at silencing the warning
-// We are mucking around with internals we expect and can safely ignore the warning:
+// Turn on all warnings
+javacOptions in compile += "-Xlint"
+
+// Jaam Agent mucks around with internals so we expect and it can safely
+// ignore the warning:
+//
 //   <class> is internal proprietary API and may be removed in a future release
-javacOptions in compile += "-XDignore.symbol.file"
+//
+// NOTE: That warning is only ignored in code annotated with:
+//
+//   @SuppressWarnings("sunapi")
+javacOptions in compile += "-XDenableSunApiLintControl"
 
 /* Migrated from agent
 assemblyOption in assembly :=

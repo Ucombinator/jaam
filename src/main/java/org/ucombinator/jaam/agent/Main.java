@@ -192,6 +192,7 @@ public class Main {
   }
 }
 
+@SuppressWarnings("sunapi")
 class ReflectionFix {
   public static void printClass(Class c) {
     if (c == java.lang.System.class) {
