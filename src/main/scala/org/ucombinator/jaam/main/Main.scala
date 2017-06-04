@@ -43,8 +43,7 @@ abstract class Main(name: String /* TODO: = Main.SubcommandName(getClass())*/) e
   // Move to JaamConf
   val color = toggle(prefix = "no-", default = Some(true))
 
-  val logLevel    = enum[Log.Level](
-    short = 'l',
+  val logLevel = enum[Log.Level](
     descr = "the level of logging verbosity",
     default = Some("warn"),
     argType = "log level",
@@ -181,11 +180,11 @@ object Cat extends Main("cat") {
   banner("Combine multile JAAM files into a single, cohesive file.")
   footer("")
 
-  val outFile = trailArg[java.io.File](descr = "The desired output filename")
-  val inFiles = trailArg[List[String]](descr = "The list of files to be concatenated.")
+  val input = inputOpt()
+  val output = outputOpt()
 
   def run() {
-    org.ucombinator.jaam.tools.cat.Cat.concatenateFiles(inFiles(), outFile().toString)
+    org.ucombinator.jaam.tools.cat.Cat.concatenateFiles(input(), output())
   }
 }
 
