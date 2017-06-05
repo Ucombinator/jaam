@@ -92,6 +92,7 @@ object Main {
         case expr: SpecialInvokeExpr => Set(c)
         case expr: InstanceInvokeExpr =>
           if (c.isInterface) {
+            // TODO: Main performance cost, but can't cache because new new hierarchy when scene changes (due to getSootClass?)
             Scene.v.getActiveHierarchy.getImplementersOf(c).asScala.toSet
           } else {
             Scene.v.getActiveHierarchy.getSubclassesOfIncluding(c).asScala.toSet
