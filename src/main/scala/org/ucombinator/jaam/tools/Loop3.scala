@@ -11,7 +11,7 @@ import soot.options.Options
 import soot.jimple.{Stmt => SootStmt, _}
 import org.ucombinator.jaam.interpreter.Stmt
 import org.ucombinator.jaam.util.Soot
-import org.ucombinator.jaam.tools.app.{FileRole, App}
+import org.ucombinator.jaam.tools.app.{Origin, App}
 import org.ucombinator.jaam.tools.coverage2.Coverage2
 import org.ucombinator.jaam.serializer.Serializer
 
@@ -133,7 +133,7 @@ object Main {
         //val name = entry.getName.replace("/", ".").replaceAll("\\.class$", "")
         println(f"class role ${Soot.classes(name).role} $class_count: $name")
 
-      if (Soot.classes(name).role == FileRole.APP) {
+      if (Soot.classes(name).role == Origin.APP) {
         val c = Soot.getSootClass(name)
         // The .toList prevents a concurrent access exception
         for (m <- c.getMethods.asScala.toList) {
@@ -179,7 +179,7 @@ object Main {
           case None => println(f"couldn't find src: " + s.sootMethod.getDeclaringClass.getName + "::" + s)
           case Some(r) =>
             //println(f"found src $r $s")
-            if (r.role == FileRole.APP) {
+            if (r.role == Origin.APP) {
               app_out_count += 1
               isAppOut = true
             }
@@ -189,7 +189,7 @@ object Main {
           case None => println(f"couldn't find dst: " + d.getDeclaringClass.getName + "::" + d)
           case Some(r) =>
             //println(f"found dst $r $d")
-            if (r.role == FileRole.APP) {
+            if (r.role == Origin.APP) {
               app_in_count += 1
               isAppIn = true
             }
@@ -217,11 +217,11 @@ object Main {
     val appEdges =
       for ((s, ds) <- edges;
         Some(c) = Soot.classes.get(s.sootMethod.getDeclaringClass.getName);
-        if c.role == FileRole.APP;
+        if c.role == Origin.APP;
         new_ds =
           for (d <- ds;
             Some(c2) = Soot.classes.get(d.getDeclaringClass.getName);
-            if c2.role == FileRole.APP) yield { d };
+            if c2.role == Origin.APP) yield { d };
         if new_ds.size > 0) yield { s -> new_ds }
 
     var appEdges2 = Map[SootMethod, Map[Stmt, Set[SootMethod]]]()

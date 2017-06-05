@@ -385,7 +385,7 @@ object LoopAnalyzer extends Main("loop2") {
       "Colon-separated list of JAR files and directories")
   val output = opt[String](descr = "An output file for the dot output")
   val coverage = opt[String](descr = "An output file for the coverage output")
-  val jaam = opt[String](short = 'h', descr = "the output file for the serialized data")
+  val jaam = opt[String](short = 'j', descr = "the output file for the serialized data")
 
   def run(): Unit = {
     val outStream: PrintStream = output.toOption match {

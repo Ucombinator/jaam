@@ -7,7 +7,7 @@ import scala.collection.JavaConverters._
 import org.objectweb.asm._
 import org.objectweb.asm.tree._
 import org.ucombinator.jaam.serializer
-import org.ucombinator.jaam.tools.app.{App, PathElement, FileRole}
+import org.ucombinator.jaam.tools.app.{App, PathElement, Origin}
 import soot.{ClassProvider, Scene, SootClass, SootMethod, SootResolver, SourceLocator}
 
 object Soot {
@@ -17,7 +17,7 @@ object Soot {
   }
 
   // TODO: classes track whether app/lib/java
-  case class ClassData(source: String, role: FileRole, data: Array[Byte])
+  case class ClassData(source: String, role: Origin, data: Array[Byte])
   var classes = Map[String, ClassData]()
 
   private def load(p: PathElement) {

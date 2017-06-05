@@ -8,15 +8,15 @@ import scala.collection.JavaConverters._
 import org.ucombinator.jaam.{serializer, tools}
 import org.ucombinator.jaam.util._
 
-sealed trait FileRole
+sealed trait Origin
 
-object FileRole { // TODO: Move into App object?
-  case object APP extends FileRole
-  case object LIB extends FileRole
-  case object JVM extends FileRole
+object Origin { // TODO: Move into App object?
+  case object APP extends Origin
+  case object LIB extends Origin
+  case object JVM extends Origin
 }
 
-case class PathElement(path: String, root: String, role: FileRole, data: Array[Byte]) {
+case class PathElement(path: String, root: String, role: Origin, data: Array[Byte]) {
   def classData(): List[Array[Byte]] = {
     if (path.endsWith(".class")) List(data)
     else if (path.endsWith(".jar")) {
@@ -51,7 +51,7 @@ object Main {
   var mains = List[String]() // TODO: set class and method name from mains (error if multiple)
 
   // relative to root
-  def read(root: Path, path: Path, role: Option[FileRole]): List[PathElement] = {
+  def read(root: Path, path: Path, role: Option[Origin]): List[PathElement] = {
     if (path.toFile.isDirectory) {
       return (for (p <- Files.newDirectoryStream(path).asScala) yield {
         try { read(root, p, role) }
@@ -66,7 +66,7 @@ object Main {
       if (!data.startsWith(List(0xCA, 0xFE, 0xBA, 0xBE))) {
         throw new Exception(f"Malformed class file $path at $root")
       }
-      return List(PathElement(path.toString, root.toString, role.getOrElse(FileRole.APP), data))
+      return List(PathElement(path.toString, root.toString, role.getOrElse(Origin.APP), data))
     } else if (path.toString.endsWith(".jar")) {
       val data = Files.readAllBytes(path)
       if (!data.startsWith(List(0x50, 0x4B, 0x03, 0x04))) {
@@ -83,15 +83,15 @@ object Main {
 
       val detectedRole = role match {
         case Some(r) =>
-          if (r == FileRole.APP) { mains ++= getMains()}
+          if (r == Origin.APP) { mains ++= getMains()}
           r
         case None =>
           val main = jar.getManifest.getMainAttributes.getValue("Main-Class")
-          if (main != null) { mains :+= main; println("manifest"); FileRole.APP }
+          if (main != null) { mains :+= main; println("manifest"); Origin.APP }
           else {
             getMains() match {
-              case List() => FileRole.LIB
-              case es => mains ++= es; FileRole.APP
+              case List() => Origin.LIB
+              case es => mains ++= es; Origin.APP
             }
           }
       }
@@ -105,14 +105,14 @@ object Main {
   }
 
   def main(input: List[String], app: List[String], lib: List[String], jvm: List[String], defaultJvm: Boolean, detectMain: Boolean, mainClass: Option[String], mainMethod: Option[String], jaam: String) {
-    def readList(list: List[String], role: Option[FileRole]) =
+    def readList(list: List[String], role: Option[Origin]) =
       list.map({ x => read(Paths.get(x), Paths.get(x), role)}).flatten.toArray
 
     val appConfig = App()
     appConfig.classpath ++= readList(input, None)
-    appConfig.classpath ++= readList(app, Some(FileRole.APP))
-    appConfig.classpath ++= readList(lib, Some(FileRole.LIB))
-    appConfig.classpath ++= readList(jvm, Some(FileRole.JVM))
+    appConfig.classpath ++= readList(app, Some(Origin.APP))
+    appConfig.classpath ++= readList(lib, Some(Origin.LIB))
+    appConfig.classpath ++= readList(jvm, Some(Origin.JVM))
     // TODO: add rt.jar (and others?)
 
     if (defaultJvm) {
@@ -120,7 +120,7 @@ object Main {
       val res = getClass.getResourceAsStream(JVM_JARS)
       for (entry <- Zip.entries(Zip.zip(res))) {
         if (entry._1.getName.endsWith(".jar")) {
-          appConfig.classpath :+= PathElement("resource:"+entry._1.getName, JVM_JARS, FileRole.JVM, entry._2)
+          appConfig.classpath :+= PathElement("resource:"+entry._1.getName, JVM_JARS, Origin.JVM, entry._2)
         }
       }
     }

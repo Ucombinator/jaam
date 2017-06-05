@@ -17,7 +17,7 @@ import com.strobel.decompiler.languages.Languages
 
 import org.ucombinator.jaam.tools
 import org.ucombinator.jaam.tools.app
-import org.ucombinator.jaam.tools.app.FileRole
+import org.ucombinator.jaam.tools.app.Origin
 
 import com.strobel.decompiler._
 
@@ -114,9 +114,9 @@ object Main {
           val a = a0.asInstanceOf[org.ucombinator.jaam.tools.app.App]
           for (pe <- a.classpath) {
             pe.role match {
-              case FileRole.APP => if (app) loadData(pe)
-              case FileRole.LIB => if (lib) loadData(pe)
-              case FileRole.JVM => if (jvm) loadData(pe)
+              case Origin.APP => if (app) loadData(pe)
+              case Origin.LIB => if (lib) loadData(pe)
+              case Origin.JVM => if (jvm) loadData(pe)
             }
           }
         }
