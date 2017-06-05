@@ -71,8 +71,12 @@ object Main {
             println(entry.getName())
             if (entry.getName.endsWith(".class")) {
               val bytes = new Array[Byte](entry.getSize.toInt)
-              val length = jar.read(bytes, 0, entry.getSize.toInt)
-              //println(f"len $length size ${entry.getSize}")
+              var pos = 0
+              while (pos != entry.getSize) {
+                val length = jar.read(bytes, pos, entry.getSize.toInt - pos)
+                if (length == -1) { throw new Exception(f"Reached end of stream at position $pos, which is before entry size ${entry.getSize}") }
+                pos += length
+              }
               typeLoader.add(bytes)
             }
           }
