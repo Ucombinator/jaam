@@ -60,10 +60,10 @@ object Main {
 
     def loadData(p: tools.app.PathElement) = p match {
       // TODO: use PathElement.classData()
-      case tools.app.PathElement(path, root, role, data) =>
+      case tools.app.PathElement(path, root, origin, data) =>
         if (path.endsWith(".class")) {
           println(f"Reading class file (from root $root) $path")
-          typeLoader.add(path, role, data)
+          typeLoader.add(path, origin, data)
         } else if (!path.endsWith(".jar")) {
           println(f"Skipping non-class, non-jar file (from root $root) $path")
         } else {
@@ -84,7 +84,7 @@ object Main {
                 if (length == -1) { throw new Exception(f"Reached end of stream at position $pos, which is before entry size ${entry.getSize}") }
                 pos += length
               }
-              typeLoader.add(path + "!" + entry.getName, role, bytes)
+              typeLoader.add(path + "!" + entry.getName, origin, bytes)
             }
           }
         }
@@ -114,7 +114,7 @@ object Main {
         if (a0.isInstanceOf[org.ucombinator.jaam.tools.app.App]) {
           val a = a0.asInstanceOf[org.ucombinator.jaam.tools.app.App]
           for (pe <- a.classpath) {
-            pe.role match {
+            pe.origin match {
               case Origin.APP => if (app) loadData(pe)
               case Origin.LIB => if (lib) loadData(pe)
               case Origin.JVM => if (jvm) loadData(pe)

@@ -16,7 +16,7 @@ object Origin { // TODO: Move into App object?
   case object JVM extends Origin
 }
 
-case class PathElement(path: String, root: String, role: Origin, data: Array[Byte]) {
+case class PathElement(path: String, root: String, origin: Origin, data: Array[Byte]) {
   def classData(): List[Array[Byte]] = {
     if (path.endsWith(".class")) List(data)
     else if (path.endsWith(".jar")) {
@@ -51,10 +51,10 @@ object Main {
   var mains = List[String]() // TODO: set class and method name from mains (error if multiple)
 
   // relative to root
-  def read(root: Path, path: Path, role: Option[Origin]): List[PathElement] = {
+  def read(root: Path, path: Path, origin: Option[Origin]): List[PathElement] = {
     if (path.toFile.isDirectory) {
       return (for (p <- Files.newDirectoryStream(path).asScala) yield {
-        try { read(root, p, role) }
+        try { read(root, p, origin) }
         catch {
           case e: Exception =>
             println("Ignoring " + root + " and " + p + " because " + e)
@@ -66,7 +66,7 @@ object Main {
       if (!data.startsWith(List(0xCA, 0xFE, 0xBA, 0xBE))) {
         throw new Exception(f"Malformed class file $path at $root")
       }
-      return List(PathElement(path.toString, root.toString, role.getOrElse(Origin.APP), data))
+      return List(PathElement(path.toString, root.toString, origin.getOrElse(Origin.APP), data))
     } else if (path.toString.endsWith(".jar")) {
       val data = Files.readAllBytes(path)
       if (!data.startsWith(List(0x50, 0x4B, 0x03, 0x04))) {
@@ -81,7 +81,7 @@ object Main {
           .map(_.stripSuffix(".class").replace('/', '.'))
       }
 
-      val detectedRole = role match {
+      val detectedOrigin = origin match {
         case Some(r) =>
           if (r == Origin.APP) { mains ++= getMains()}
           r
@@ -98,15 +98,15 @@ object Main {
 
       // TODO: set class main (do error if not found, maybe do more searching)
 
-      return List(PathElement(path.toString, root.toString, detectedRole, data))
+      return List(PathElement(path.toString, root.toString, detectedOrigin, data))
     } else {
       throw new Exception("not a directory, class, or jar")
     }
   }
 
   def main(input: List[String], app: List[String], lib: List[String], jvm: List[String], defaultJvm: Boolean, detectMain: Boolean, mainClass: Option[String], mainMethod: Option[String], jaam: String) {
-    def readList(list: List[String], role: Option[Origin]) =
-      list.map({ x => read(Paths.get(x), Paths.get(x), role)}).flatten.toArray
+    def readList(list: List[String], origin: Option[Origin]) =
+      list.map({ x => read(Paths.get(x), Paths.get(x), origin)}).flatten.toArray
 
     val appConfig = App()
     appConfig.classpath ++= readList(input, None)
@@ -126,7 +126,7 @@ object Main {
     }
 
     for (c <- appConfig.classpath) {
-      println(f"In ${c.root} found a ${c.role} file: ${c.path}")
+      println(f"In ${c.root} found a ${c.origin} file: ${c.path}")
     }
 
     appConfig.main.className = mainClass match {

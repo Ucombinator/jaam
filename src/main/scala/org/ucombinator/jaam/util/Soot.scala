@@ -17,7 +17,7 @@ object Soot {
   }
 
   // TODO: classes track whether app/lib/java
-  case class ClassData(source: String, role: Origin, data: Array[Byte])
+  case class ClassData(source: String, origin: Origin, data: Array[Byte])
   var classes = Map[String, ClassData]()
 
   private def load(p: PathElement) {
@@ -28,7 +28,7 @@ object Soot {
       val cn = new ClassNode()
       cr.accept(cn, 0)
       //println(f"cn.name: ${cn.name}")
-      classes += cn.name.replace('/', '.') -> ClassData("TODO:JaamClassProvider", p.role, d)
+      classes += cn.name.replace('/', '.') -> ClassData("TODO:JaamClassProvider", p.origin, d)
     }
   }
 

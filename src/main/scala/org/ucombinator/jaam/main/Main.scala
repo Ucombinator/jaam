@@ -218,7 +218,7 @@ object App extends Main("app") {
   banner("TODO")
   footer("")
 
-  val input = opt[List[String]](descr = "class files, or directories (role is auto-detected)", default = Some(List()))
+  val input = opt[List[String]](descr = "class files, or directories (origin is auto-detected)", default = Some(List()))
   val app = opt[List[String]](short = 'a', descr = "application jars, class files, or directories", default = Some(List()))
   val lib = opt[List[String]](short = 'l', descr = "library jars, class files, or directories", default = Some(List()))
   val jvm = opt[List[String]](short = 'r', descr = "Java runtime jars, class files, or directories", default = Some(List()))
