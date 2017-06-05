@@ -15,9 +15,9 @@ import com.strobel.decompiler.languages.java.JavaFormattingOptions
 import com.strobel.decompiler.languages.java.ast.{CompilationUnit, Keys}
 import com.strobel.decompiler.languages.Languages
 
-import org.ucombinator.jaam.tools //.{Main,Conf}
-import org.ucombinator.jaam.tools.app //.{Main,Conf}
-import org.ucombinator.jaam.tools.app.FileRole //.{Main,Conf}
+import org.ucombinator.jaam.tools
+import org.ucombinator.jaam.tools.app
+import org.ucombinator.jaam.tools.app.FileRole
 
 import com.strobel.decompiler._
 
@@ -44,7 +44,10 @@ class HashMapTypeLoader extends ITypeLoader {
     try {
       val typeDefinition = ClassFileReader.readClass(IMetadataResolver.EMPTY, new Buffer(data))
       classes += typeDefinition.getInternalName -> data
-    } catch { case e: Exception => println("While loading: " + e) }
+    } catch { case e: Exception =>
+        println("Error while loading:\n")
+        e.printStackTrace()
+    }
   }
 }
 
@@ -66,9 +69,12 @@ object Main {
           var entry: java.util.jar.JarEntry = null
           while ({entry = jar.getNextJarEntry(); entry != null}) {
             println(entry.getName())
-            val bytes = new Array[Byte](entry.getSize.toInt)
-            jar.read(bytes, 0, entry.getSize.toInt)
-            typeLoader.add(bytes)
+            if (entry.getName.endsWith(".class")) {
+              val bytes = new Array[Byte](entry.getSize.toInt)
+              val length = jar.read(bytes, 0, entry.getSize.toInt)
+              //println(f"len $length size ${entry.getSize}")
+              typeLoader.add(bytes)
+            }
           }
         }
     }
