@@ -28,6 +28,7 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamCon
   addSubcommand(Print)
   addSubcommand(Taint)
   addSubcommand(Validate)
+  addSubcommand(DecompileToFile)
 
   verify()
 }
@@ -497,5 +498,18 @@ object Validate extends Main("validate") {
       shouldAppendMissingEOF = fixEof(),
       shouldAddMissingStates = addMissingStates(),
       shouldRemoveMissingStates = removeMissingStates())
+  }
+}
+
+object DecompileToFile extends Main("decompile-to-file") {
+  banner("TODO")
+  footer("")
+
+  val input = opt[List[String]](default = Some(List()))
+  val output = opt[String](required = true)
+
+  def run() {
+    org.ucombinator.jaam.tools.decompileToFile.DecompileToFile.main(
+      input = input(), output = output())
   }
 }
