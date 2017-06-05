@@ -8,7 +8,6 @@ import java.io.IOException
 import java.nio.file.{Files, Paths}
 
 import com.strobel.assembler.InputTypeLoader
-//import com.strobel.assembler.metaITypeLoader
 import com.strobel.assembler.metadata._
 import com.strobel.core.VerifyArgument
 import com.strobel.decompiler.languages.java.JavaFormattingOptions
@@ -26,24 +25,26 @@ import scala.collection.mutable
 import org.ucombinator.jaam.serializer
 import scala.collection.JavaConverters._
 
+case class ClassData(name: String, origin: Origin, data: Array[Byte])
+
 class HashMapTypeLoader extends ITypeLoader {
-  val classes = mutable.HashMap[String, Array[Byte]]()
+  val classes = mutable.HashMap[String, ClassData]()
 
   def tryLoadType(internalName: String, buffer: Buffer): Boolean = {
     classes.get(internalName) match {
       case None => return false
       case Some(c) =>
-        buffer.reset(c.length)
-        buffer.putByteArray(c, 0, c.length)
+        buffer.reset(c.data.length)
+        buffer.putByteArray(c.data, 0, c.data.length)
         buffer.position(0)
         return true
     }
   }
 
-  def add(data: Array[Byte]) {
+  def add(name: String, origin: Origin, data: Array[Byte]) {
     try {
       val typeDefinition = ClassFileReader.readClass(IMetadataResolver.EMPTY, new Buffer(data))
-      classes += typeDefinition.getInternalName -> data
+      classes += typeDefinition.getInternalName -> ClassData(name, origin, data)
     } catch { case e: Exception =>
         println("Error while loading:\n")
         e.printStackTrace()
@@ -51,7 +52,7 @@ class HashMapTypeLoader extends ITypeLoader {
   }
 }
 
-case class DecompiledClass(compilationUnit: CompilationUnit) extends serializer.Packet
+case class DecompiledClass(name: String, origin: Origin, compilationUnit: CompilationUnit) extends serializer.Packet
 
 object Main {
   def main(input: List[String], output: String, exclude: List[String], jvm: Boolean, lib: Boolean, app: Boolean) {
@@ -62,7 +63,7 @@ object Main {
       case tools.app.PathElement(path, root, role, data) =>
         if (path.endsWith(".class")) {
           println(f"Reading class file (from root $root) $path")
-          typeLoader.add(data)
+          typeLoader.add(path, role, data)
         } else if (!path.endsWith(".jar")) {
           println(f"Skipping non-class, non-jar file (from root $root) $path")
         } else {
@@ -83,7 +84,7 @@ object Main {
                 if (length == -1) { throw new Exception(f"Reached end of stream at position $pos, which is before entry size ${entry.getSize}") }
                 pos += length
               }
-              typeLoader.add(bytes)
+              typeLoader.add(path + "!" + entry.getName, role, bytes)
             }
           }
         }
@@ -164,10 +165,12 @@ object Main {
       } else {
         try {
           println(f"Decompiling ($index of $total) $name")
-          val cu = decompile(metadataSystem, options, name)
-          println(f"Finished decompiling ($index of $total) $name")
-          if (cu.getTypes.size > 0) { // TODO: temporary fix. Procyon removes types that are a SwitchMap
-            po.write(DecompiledClass(cu))
+          decompile(metadataSystem, options, name) match {
+            case None =>
+              println(f"Skipping inner class ($index of $total) $name")
+            case Some(cu) =>
+              println(f"Finished decompiling ($index of $total) $name")
+              po.write(DecompiledClass(name, typeLoader.classes(name).origin, cu))
           }
         } catch {
           case e: java.lang.OutOfMemoryError => println(f"Out of memory, skipping")
@@ -179,7 +182,7 @@ object Main {
     po.close()
   }
 
-  def decompile(metadataSystem: MetadataSystem, options: DecompilationOptions, internalName: String): CompilationUnit = {
+  def decompile(metadataSystem: MetadataSystem, options: DecompilationOptions, internalName: String): Option[CompilationUnit] = {
       var typ: TypeReference = null
 
       if (internalName.length() == 1) {
@@ -204,6 +207,7 @@ object Main {
 
       DeobfuscationUtilities.processType(resolvedType)
 
-      return Languages.java().decompileTypeToAst(resolvedType, options)
+      if (resolvedType.isNested) { return None }
+      else { return Some(Languages.java().decompileTypeToAst(resolvedType, options)) }
   }
 }
