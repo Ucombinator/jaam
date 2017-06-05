@@ -166,7 +166,9 @@ object Main {
           println(f"Decompiling ($index of $total) $name")
           val cu = decompile(metadataSystem, options, name)
           println(f"Finished decompiling ($index of $total) $name")
-          po.write(DecompiledClass(cu))
+          if (cu.getTypes.size > 0) { // TODO: temporary fix. Procyon removes types that are a SwitchMap
+            po.write(DecompiledClass(cu))
+          }
         } catch {
           case e: java.lang.OutOfMemoryError => println(f"Out of memory, skipping")
         }
