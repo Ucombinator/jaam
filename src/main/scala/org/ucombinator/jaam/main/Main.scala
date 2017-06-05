@@ -21,8 +21,8 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamCon
   addSubcommand(FindMain)
   addSubcommand(Info)
   addSubcommand(ListItems)
-  addSubcommand(LoopDepthCounter)
-  addSubcommand(LoopAnalyzer)
+  addSubcommand(Loop)
+  addSubcommand(Loop2)
   addSubcommand(Loop3)
   addSubcommand(MissingReturns)
   addSubcommand(Print)
@@ -339,7 +339,7 @@ object ListItems extends Main("list") {
 }
 
 
-object LoopDepthCounter extends Main("loop") {
+object Loop extends Main("loop") {
   banner("Analyze the number of depth of each loop in the application code")
   footer("")
 
@@ -364,7 +364,7 @@ object LoopDepthCounter extends Main("loop") {
 }
 
 
-object LoopAnalyzer extends Main("loop2") {
+object Loop2 extends Main("loop2") {
   banner("Analyze the depth of each loop in the application code")
   footer("")
 
