@@ -60,16 +60,22 @@ object Main {
     def loadData(p: tools.app.PathElement) = p match {
       // TODO: use PathElement.classData()
       case tools.app.PathElement(path, root, role, data) =>
-        println(f"PathElement: $path ($root)")
-        if (!path.endsWith(".jar")) typeLoader.add(data)
-        else {
+        if (path.endsWith(".class")) {
+          println(f"Reading class file (from root $root) $path")
+          typeLoader.add(data)
+        } else if (!path.endsWith(".jar")) {
+          println(f"Skipping non-class, non-jar file (from root $root) $path")
+        } else {
+          println(f"Reading jar file (from root $root) $path")
           val jar = new java.util.jar.JarInputStream(
             new java.io.ByteArrayInputStream(data))
 
           var entry: java.util.jar.JarEntry = null
           while ({entry = jar.getNextJarEntry(); entry != null}) {
-            println(entry.getName())
-            if (entry.getName.endsWith(".class")) {
+            if (!entry.getName.endsWith(".class")) {
+              println(f"Skipping non-class file in jar file ${entry.getName}")
+            } else {
+              println(f"Reading class file in jar file ${entry.getName}")
               val bytes = new Array[Byte](entry.getSize.toInt)
               var pos = 0
               while (pos != entry.getSize) {
