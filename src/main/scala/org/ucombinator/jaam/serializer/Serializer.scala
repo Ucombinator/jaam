@@ -24,8 +24,11 @@ import com.esotericsoftware.kryo.serializers.FieldSerializer
 import org.objenesis.strategy.StdInstantiatorStrategy
 import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer
 import com.twitter.chill.{AllScalaRegistrar, KryoBase, ScalaKryoInstantiator}
+import com.strobel.decompiler.languages.java.ast.AstNode
+import com.strobel.decompiler.patterns.Role
 
 import scala.collection.mutable
+import scala.collection.immutable
 
 object Serializer {
   def readAll(file: String): List[Packet] = {
@@ -323,6 +326,78 @@ class JaamKryo extends KryoBase {
     r
   }
 
+  val roles: immutable.Map[(String, String), Int] = {
+    // Ensure that all Role objects have been put in the global table
+    val classes = List(
+      "com.strobel.decompiler.languages.java.ast.ArrayCreationExpression",
+      "com.strobel.decompiler.languages.java.ast.AssertStatement",
+      "com.strobel.decompiler.languages.java.ast.AssignmentExpression",
+      "com.strobel.decompiler.languages.java.ast.AstNode",
+      "com.strobel.decompiler.languages.java.ast.BinaryOperatorExpression",
+      "com.strobel.decompiler.languages.java.ast.BlockStatement",
+      "com.strobel.decompiler.languages.java.ast.BreakStatement",
+      "com.strobel.decompiler.languages.java.ast.CaseLabel",
+      "com.strobel.decompiler.languages.java.ast.CatchClause",
+      "com.strobel.decompiler.languages.java.ast.ClassOfExpression",
+      "com.strobel.decompiler.languages.java.ast.CompilationUnit",
+      "com.strobel.decompiler.languages.java.ast.ComposedType",
+      "com.strobel.decompiler.languages.java.ast.ConditionalExpression",
+      "com.strobel.decompiler.languages.java.ast.ContinueStatement",
+      "com.strobel.decompiler.languages.java.ast.DoWhileStatement",
+      "com.strobel.decompiler.languages.java.ast.EntityDeclaration",
+      "com.strobel.decompiler.languages.java.ast.ForEachStatement",
+      "com.strobel.decompiler.languages.java.ast.ForStatement",
+      "com.strobel.decompiler.languages.java.ast.GotoStatement",
+      "com.strobel.decompiler.languages.java.ast.IfElseStatement",
+      "com.strobel.decompiler.languages.java.ast.ImportDeclaration",
+      "com.strobel.decompiler.languages.java.ast.InstanceOfExpression",
+      "com.strobel.decompiler.languages.java.ast.LambdaExpression",
+      "com.strobel.decompiler.languages.java.ast.MethodDeclaration",
+      "com.strobel.decompiler.languages.java.ast.MethodGroupExpression",
+      "com.strobel.decompiler.languages.java.ast.ObjectCreationExpression",
+      "com.strobel.decompiler.languages.java.ast.ReturnStatement",
+      "com.strobel.decompiler.languages.java.ast.Roles",
+      "com.strobel.decompiler.languages.java.ast.SwitchSection",
+      "com.strobel.decompiler.languages.java.ast.SwitchStatement",
+      "com.strobel.decompiler.languages.java.ast.SynchronizedStatement",
+      "com.strobel.decompiler.languages.java.ast.ThrowStatement",
+      "com.strobel.decompiler.languages.java.ast.TryCatchStatement",
+      "com.strobel.decompiler.languages.java.ast.UnaryOperatorExpression",
+      "com.strobel.decompiler.languages.java.ast.WhileStatement",
+      "com.strobel.decompiler.languages.java.ast.WildcardType"
+    )
+    // TODO: index map by java.lang.Class (AstNode.nodeType)
+    classes.foreach(Class.forName(_))
+
+    // Build a mapping from Role name to Role
+    (for (
+      i <- 0 until (1 << Role.ROLE_INDEX_BITS);
+      role = Role.get(i);
+      if role != null)
+    yield { (role.getNodeType.toString, role.toString) -> i }).toMap
+  }
+
+  // TODO: check if can put in register instead of newDefaultserializer
+  // TODO: AstNode stores the index in flags instead of the Role (beware of the ROLE_INDEX_MASK); use setRoleUnsafe
+  class ProcyonRoleSerializer[T](typ: Class[T])
+      extends FieldSerializer[T](this, typ) {
+    override def write(kryo : Kryo, output : Output, obj : T) {
+      super.write(kryo, output, obj)
+      output.writeAscii(obj.asInstanceOf[AstNode].getRole.getNodeType.toString)
+      output.writeAscii(obj.asInstanceOf[AstNode].getRole.toString)
+    }
+
+    override def read(kryo : Kryo, input : Input, typ : Class[T]) : T = {
+      val obj = super.read(kryo, input, typ)
+      // must read string for role since otherwise only index stored
+      val c = input.readString()
+      val s = input.readString()
+      // TODO: error if not found
+      obj.asInstanceOf[AstNode].setRole(Role.get(roles((c,s)))) // TODO: if setRole throws errors, use setRoleUnsafe
+      return obj
+    }
+  }
+
   // Serializer for InsnList that avoids stack overflows due to recursively
   // following AbstractInsnNode.next.  This works on concert with
   // AbstractInsnNodeSerializer.
@@ -345,7 +420,7 @@ class JaamKryo extends KryoBase {
 
   override def newDefaultSerializer(typ : Class[_]) : kryo.Serializer[_] = {
     if (classOf[InsnList] == typ)
-      // We can't use addDefaultSerializer due to shading in the assembly
+      // We can't use addDefaultSerializer due to shading in the assembly (TODO: check if still true)
       new InsnListSerializer()
     else if (classOf[AbstractInsnNode].isAssignableFrom(typ)) {
       // Subclasses of AbstractInsnNode should not try to serialize prev or
@@ -355,6 +430,8 @@ class JaamKryo extends KryoBase {
       s.removeField("prev")
       s.removeField("next")
       s
+    } else if (classOf[AstNode].isAssignableFrom(typ)) {
+      new ProcyonRoleSerializer(typ)
     } else {
       super.newDefaultSerializer(typ)
     }
@@ -362,7 +439,7 @@ class JaamKryo extends KryoBase {
 
   // FieldSerializer.rebuildCachedFields has bugs relating to removed fields.
   // The following implementation works around these
-  class AbstractInsnNodeSerializer(kryo : Kryo, typ : Class[_])
+  class AbstractInsnNodeSerializer(kryo : Kryo, typ : Class[_]) // TODO: _ < AbstractInsnNode // TODO: kryo is unused
       extends FieldSerializer(this, typ) {
     override def rebuildCachedFields(minorRebuild : Boolean) {
       // Save and clear removedFields since the below calls to removeField

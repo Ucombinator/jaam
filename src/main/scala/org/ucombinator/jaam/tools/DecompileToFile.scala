@@ -14,8 +14,9 @@ object DecompileToFile {
         dir.mkdirs()
 
         val typeName = cu.getTypes.asScala.toList(0).getName
-        val writer = new PrintWriter(new File(dir, typeName + ".java"))
-
+        val outputFile = new File(dir, typeName + ".java")
+        println(f"Writting $outputFile")
+        val writer = new PrintWriter(outputFile)
         writer.write(cu.getText)
         writer.close()
       }
