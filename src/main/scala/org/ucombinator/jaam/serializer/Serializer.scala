@@ -326,6 +326,89 @@ class JaamKryo extends KryoBase {
     r
   }
 
+  override def newDefaultSerializer(typ : Class[_]) : kryo.Serializer[_] = {
+    if (classOf[InsnList] == typ)
+      // We can't use addDefaultSerializer due to shading in the assembly (TODO: check if still true)
+      new InsnListSerializer()
+    else if (classOf[AbstractInsnNode].isAssignableFrom(typ)) {
+      // Subclasses of AbstractInsnNode should not try to serialize prev or
+      // next. However, this requires working around a bug in
+      // rebuildCachedFields. (See AbstractInsnNodeSerializer.)
+      val s = new AbstractInsnNodeSerializer(this, typ)
+      s.removeField("prev")
+      s.removeField("next")
+      s
+    } else if (classOf[AstNode].isAssignableFrom(typ)) {
+      new ProcyonRoleSerializer(typ)
+    } else {
+      super.newDefaultSerializer(typ)
+    }
+  }
+
+  // Serializer for InsnList that avoids stack overflows due to recursively
+  // following AbstractInsnNode.next.  This works on concert with
+  // AbstractInsnNodeSerializer.
+  class InsnListSerializer() extends kryo.Serializer[InsnList] {
+    override def write(kryo : Kryo, output : Output, collection : InsnList) {
+      output.writeVarInt(collection.size(), true)
+      for (element <- collection.iterator)
+        kryo.writeClassAndObject(output, element);
+    }
+
+    override def read(kryo : Kryo, input : Input, typ : Class[InsnList]) : InsnList = {
+      val collection = new InsnList()
+      kryo.reference(collection)
+      val length = input.readVarInt(true)
+      for (i <- Seq.range(0, length))
+        collection.add(kryo.readClassAndObject(input).asInstanceOf[AbstractInsnNode])
+      return collection
+    }
+  }
+
+  // FieldSerializer.rebuildCachedFields has bugs relating to removed fields.
+  // The following implementation works around these
+  class AbstractInsnNodeSerializer(kryo : Kryo, typ : Class[_]) // TODO: _ < AbstractInsnNode // TODO: kryo is unused
+      extends FieldSerializer(this, typ) {
+    override def rebuildCachedFields(minorRebuild : Boolean) {
+      // Save and clear removedFields since the below calls to removeField
+      // will repopulate it.  Otherwise, we get a ConcurentModificationException.
+      val removed = this.removedFields
+      if (!minorRebuild) {
+        this.removedFields = new java.util.HashSet()
+      }
+      super.rebuildCachedFields(minorRebuild)
+      if (!minorRebuild) {
+        for (field <- removed) {
+          // Make sure to use toString otherwise you call a version of
+          // removeField that uses pointer equality and thus no effect
+          removeField(field.toString)
+        }
+      }
+    }
+  }
+
+  // TODO: check if can put in register instead of newDefaultserializer
+  // TODO: AstNode stores the index in flags instead of the Role (beware of the ROLE_INDEX_MASK); use setRoleUnsafe
+  class ProcyonRoleSerializer[T](typ: Class[T])
+      extends FieldSerializer[T](this, typ) {
+    override def write(kryo : Kryo, output : Output, obj : T) {
+      super.write(kryo, output, obj)
+      output.writeAscii(obj.asInstanceOf[AstNode].getRole.getNodeType.toString)
+      output.writeAscii(obj.asInstanceOf[AstNode].getRole.toString)
+    }
+
+    override def read(kryo : Kryo, input : Input, typ : Class[T]) : T = {
+      val obj = super.read(kryo, input, typ)
+      // must read string for role since otherwise only index stored
+      val c = input.readString()
+      val s = input.readString()
+      // TODO: error if not found
+      obj.asInstanceOf[AstNode].setRole(Role.get(roles((c,s)))) // TODO: if setRole throws errors, use setRoleUnsafe
+      return obj
+    }
+  }
+
+
   val roles: immutable.Map[(String, String), Int] = {
     // Ensure that all Role objects have been put in the global table
     val classes = List(
@@ -376,83 +459,6 @@ class JaamKryo extends KryoBase {
       if role != null)
     yield { (role.getNodeType.toString, role.toString) -> i }).toMap
   }
-
-  // TODO: check if can put in register instead of newDefaultserializer
-  // TODO: AstNode stores the index in flags instead of the Role (beware of the ROLE_INDEX_MASK); use setRoleUnsafe
-  class ProcyonRoleSerializer[T](typ: Class[T])
-      extends FieldSerializer[T](this, typ) {
-    override def write(kryo : Kryo, output : Output, obj : T) {
-      super.write(kryo, output, obj)
-      output.writeAscii(obj.asInstanceOf[AstNode].getRole.getNodeType.toString)
-      output.writeAscii(obj.asInstanceOf[AstNode].getRole.toString)
-    }
-
-    override def read(kryo : Kryo, input : Input, typ : Class[T]) : T = {
-      val obj = super.read(kryo, input, typ)
-      // must read string for role since otherwise only index stored
-      val c = input.readString()
-      val s = input.readString()
-      // TODO: error if not found
-      obj.asInstanceOf[AstNode].setRole(Role.get(roles((c,s)))) // TODO: if setRole throws errors, use setRoleUnsafe
-      return obj
-    }
-  }
-
-  // Serializer for InsnList that avoids stack overflows due to recursively
-  // following AbstractInsnNode.next.  This works on concert with
-  // AbstractInsnNodeSerializer.
-  class InsnListSerializer() extends kryo.Serializer[InsnList] {
-    override def write(kryo : Kryo, output : Output, collection : InsnList) {
-      output.writeVarInt(collection.size(), true)
-      for (element <- collection.iterator)
-        kryo.writeClassAndObject(output, element);
-    }
-
-    override def read(kryo : Kryo, input : Input, typ : Class[InsnList]) : InsnList = {
-      val collection = new InsnList()
-      kryo.reference(collection)
-      val length = input.readVarInt(true)
-      for (i <- Seq.range(0, length))
-        collection.add(kryo.readClassAndObject(input).asInstanceOf[AbstractInsnNode])
-      return collection
-    }
-  }
-
-  override def newDefaultSerializer(typ : Class[_]) : kryo.Serializer[_] = {
-    if (classOf[InsnList] == typ)
-      // We can't use addDefaultSerializer due to shading in the assembly (TODO: check if still true)
-      new InsnListSerializer()
-    else if (classOf[AbstractInsnNode].isAssignableFrom(typ)) {
-      // Subclasses of AbstractInsnNode should not try to serialize prev or
-      // next. However, this requires working around a bug in
-      // rebuildCachedFields. (See AbstractInsnNodeSerializer.)
-      val s = new AbstractInsnNodeSerializer(this, typ)
-      s.removeField("prev")
-      s.removeField("next")
-      s
-    } else if (classOf[AstNode].isAssignableFrom(typ)) {
-      new ProcyonRoleSerializer(typ)
-    } else {
-      super.newDefaultSerializer(typ)
-    }
-  }
-
-  // FieldSerializer.rebuildCachedFields has bugs relating to removed fields.
-  // The following implementation works around these
-  class AbstractInsnNodeSerializer(kryo : Kryo, typ : Class[_]) // TODO: _ < AbstractInsnNode // TODO: kryo is unused
-      extends FieldSerializer(this, typ) {
-    override def rebuildCachedFields(minorRebuild : Boolean) {
-      // Save and clear removedFields since the below calls to removeField
-      // will repopulate it.  Otherwise, we get a ConcurentModificationException.
-      val removed = this.removedFields
-      if (!minorRebuild)
-        this.removedFields = new java.util.HashSet()
-      super.rebuildCachedFields(minorRebuild)
-      if (!minorRebuild)
-        for (field <- removed)
-          // Make sure to use toString otherwise you call a version of
-          // removeField that uses pointer equality and thus no effect
-          removeField(field.toString)
-    }
-  }
 }
+
+
