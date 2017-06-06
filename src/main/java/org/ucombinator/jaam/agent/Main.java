@@ -89,7 +89,7 @@ public class Main {
     }
 
     // Print object graph
-    for (Class c : Main.instrumentation.getAllLoadedClasses()) {
+    for (Class<?> c : Main.instrumentation.getAllLoadedClasses()) {
       if (Rule.include(c.getName())) {
         if (failedClasses.contains(c.getName())) {
           // Avoid uninitialized classes.  I'm not sure how they get into
@@ -105,7 +105,7 @@ public class Main {
   }
 
   // Prints all the objects in the static fields
-  private static void printClass(Class c) {
+  private static void printClass(Class<?> c) {
     Field[] fields;
     try {
       fields = c.getDeclaredFields();
@@ -129,7 +129,7 @@ public class Main {
     ReflectionFix.printClass(c);
   }
 
-  private static void printObject(Object o, Class c) {
+  private static void printObject(Object o, Class<?> c) {
     if (Done.isDone(c,o)) {
       // Do nothing
     } else {
@@ -166,7 +166,7 @@ public class Main {
   }
 
   // TODO: Move to a `Util` class
-  public static String typeName(Class c) {
+  public static String typeName(Class<?> c) {
     return Array.newInstance(c,0).getClass().getName().substring(1);
   }
 
@@ -174,7 +174,7 @@ public class Main {
     return (f.getModifiers() & Modifier.STATIC) != 0;
   }
 
-  private static Object getElement(Class c, Object o, int i) {
+  private static Object getElement(Class<?> c, Object o, int i) {
     if (c.getComponentType().isPrimitive()) {
       return null;
     } else {
@@ -196,7 +196,7 @@ public class Main {
 
 @SuppressWarnings("sunapi")
 class ReflectionFix {
-  public static void printClass(Class c) {
+  public static void printClass(Class<?> c) {
     if (c == java.lang.System.class) {
       // java.lang.System.security
       Object o = java.lang.System.getSecurityManager();
@@ -228,7 +228,7 @@ class ReflectionFix {
     }
   }
 
-  public static void printObject(Object o, Class c) {
+  public static void printObject(Object o, Class<?> c) {
     if (c == java.lang.Class.class) {
       // java.lang.Class.classLoader
       Object o2 = ((java.lang.Class)o).getClassLoader();
@@ -270,7 +270,7 @@ class ReflectionFix {
   }
 
   // NOTE: needed because sun.reflect.UnsafeStaticFieldAccessorImpl is not a public class
-  private final static Class UnsafeStaticFieldAccessorImpl_class;
+  private final static Class<?> UnsafeStaticFieldAccessorImpl_class;
   static {
     try { // TODO: version of forName, etc that throws runtime exception
       UnsafeStaticFieldAccessorImpl_class = Class.forName("sun.reflect.UnsafeStaticFieldAccessorImpl");
@@ -279,7 +279,7 @@ class ReflectionFix {
     }
   }
 
-  private final static Map<Class,String[]> fieldFilterMap = new HashMap<Class,String[]>();
+  private final static Map<Class<?>,String[]> fieldFilterMap = new HashMap<Class<?>,String[]>();
   static {
     fieldFilterMap.put(sun.reflect.Reflection.class,
           new String[] {"fieldFilterMap", "methodFilterMap"});
@@ -291,7 +291,7 @@ class ReflectionFix {
           new String[] {"constantPoolOop"});
   }
 
-  private static Map<Class,String[]> methodFilterMap = new HashMap<Class,String[]>();
+  private static Map<Class<?>,String[]> methodFilterMap = new HashMap<Class<?>,String[]>();
   static {
     methodFilterMap.put(sun.misc.Unsafe.class,
             new String[] {"getUnsafe"});
@@ -347,18 +347,18 @@ class Rule {
 class Done {
   private static final class Unit {}
   private static final Unit unit = new Unit();
-  private static final HashMap<Class,IdentityHashMap<Object,Unit>> objects = new HashMap<>();
+  private static final HashMap<Class<?>,IdentityHashMap<Object,Unit>> objects = new HashMap<>();
 
-  private static void addClass(Class c) {
+  private static void addClass(Class<?> c) {
     if (objects.get(c) == null) { objects.put(c, new IdentityHashMap<>()); }
   }
 
-  public static boolean isDone(Class c,Object o) {
+  public static boolean isDone(Class<?> c, Object o) {
     addClass(c);
     return objects.get(c).get(o) != null;
   }
 
-  public static void setDone(Class c,Object o) {
+  public static void setDone(Class<?> c, Object o) {
     addClass(c);
     objects.get(c).put(o, unit);
   }
