@@ -237,50 +237,8 @@ class JaamKryo extends KryoBase {
   // for hadoop
   val classLoader = Thread.currentThread.getContextClassLoader
   this.setClassLoader(classLoader)
-  val reg = new AllScalaRegistrar
-  reg(this)
+  (new AllScalaRegistrar)(this)
   this.setAutoReset(false)
-  this.addDefaultSerializer(classOf[Chain[Object]], classOf[FieldSerializer[java.lang.Object]])
-  UnmodifiableCollectionsSerializer.registerSerializers(this)
-
-  object CharsetSerializer extends kryo.Serializer[java.nio.charset.Charset] {
-    override def write(kryo: Kryo, output: Output, obj: java.nio.charset.Charset) {
-      kryo.writeObject(output, obj.asInstanceOf[java.nio.charset.Charset].name())
-    }
-
-    override def read(kryo: Kryo, input: Input, typ: Class[java.nio.charset.Charset]): java.nio.charset.Charset =
-      java.nio.charset.Charset.forName(kryo.readObject(input, classOf[String]))
-  }
-
-  // Register those Charset classes which are not public.
-  // See https://github.com/jagrutmehta/kryo-UTF/
-  // Run the following to determine what classes need to be here:
-  //   for i in ../rt.jar/sun/nio/cs/*.class; do javap $i; done|grep ' extends '|grep -v '^public'
-  this.register(java.nio.charset.Charset.forName("UTF-8").getClass(), CharsetSerializer)
-  this.register(java.nio.charset.Charset.forName("UTF-16").getClass(), CharsetSerializer)
-  this.register(java.nio.charset.Charset.forName("UTF-16BE").getClass(), CharsetSerializer)
-  this.register(java.nio.charset.Charset.forName("UTF-16LE").getClass(), CharsetSerializer)
-  this.register(java.nio.charset.Charset.forName("x-UTF-16LE-BOM").getClass(), CharsetSerializer)
-  this.register(java.nio.charset.Charset.forName("ISO_8859_1").getClass(), CharsetSerializer)
-  //this.register(java.nio.charset.Charset.forName("US_ASCII").getClass(), CharsetSerializer)
-
-  object UnmodifiableListSerializer extends kryo.Serializer[java.util.AbstractList[Object]] {
-    override def write(kryo: Kryo, output: Output, obj: java.util.AbstractList[Object]) {
-      kryo.writeObject(output, new java.util.ArrayList[Object](obj))
-    }
-
-    override def read(kryo: Kryo, input: Input, typ: Class[java.util.AbstractList[Object]]): java.util.AbstractList[Object] =
-      com.strobel.core.ArrayUtilities.asUnmodifiableList[Object](kryo.readObject(input, classOf[java.util.ArrayList[Object]]):_*).asInstanceOf[java.util.AbstractList[Object]]
-  }
-
-  this.register(com.strobel.core.ArrayUtilities.asUnmodifiableList().getClass, UnmodifiableListSerializer)
-
-  def forceFieldSerializer(clazz: Class[_]) { this.register(clazz, new FieldSerializer(this, clazz)) }
-
-  forceFieldSerializer(classOf[com.strobel.assembler.metadata.ParameterDefinitionCollection])
-  forceFieldSerializer(classOf[com.strobel.assembler.metadata.GenericParameterCollection])
-  forceFieldSerializer(classOf[com.strobel.assembler.metadata.AnonymousLocalTypeCollection])
-  forceFieldSerializer(classOf[com.strobel.assembler.metadata.VariableDefinitionCollection])
 
   // Produces a string that documents the field structure of 'typ'
   def classSignature(typ : Type) : String = {
@@ -306,7 +264,7 @@ class JaamKryo extends KryoBase {
       output.writeString(classSignature(r.getType))
     }
 
-    r
+    return r
   }
 
   override def readClass(input : Input) : Registration = {
@@ -315,26 +273,31 @@ class JaamKryo extends KryoBase {
     val found = input.readString()
 
     if (r == null) { return null }
+
     if (found != null) {
       val expected = classSignature(r.getType)
 
       if (expected != found) {
-        throw new IOException("Differing Jaam class signatures\n Expected:\n%s Found:\n%s".format(expected, found))
+        throw new IOException(f"Differing Jaam class signatures\n Expected:\n$expected Found:\nfound")
       }
     }
 
-    r
+    return r
   }
 
+  //********************************
+  // Custom serializers
+  //********************************
+
   override def newDefaultSerializer(typ : Class[_]) : kryo.Serializer[_] = {
-    if (classOf[InsnList] == typ)
+    if (classOf[InsnList] == typ) {
       // We can't use addDefaultSerializer due to shading in the assembly (TODO: check if still true)
-      new InsnListSerializer()
-    else if (classOf[AbstractInsnNode].isAssignableFrom(typ)) {
+      InsnListSerializer
+    } else if (classOf[AbstractInsnNode].isAssignableFrom(typ)) {
       // Subclasses of AbstractInsnNode should not try to serialize prev or
       // next. However, this requires working around a bug in
       // rebuildCachedFields. (See AbstractInsnNodeSerializer.)
-      val s = new AbstractInsnNodeSerializer(this, typ)
+      val s = new AbstractInsnNodeSerializer(typ)
       s.removeField("prev")
       s.removeField("next")
       s
@@ -345,10 +308,40 @@ class JaamKryo extends KryoBase {
     }
   }
 
+  UnmodifiableCollectionsSerializer.registerSerializers(this)
+  this.addDefaultSerializer(classOf[Chain[Object]], classOf[FieldSerializer[java.lang.Object]])
+  this.addDefaultSerializer(com.strobel.core.ArrayUtilities.asUnmodifiableList().getClass, UnmodifiableListSerializer)
+
+  // Force these to be field serializer instead of collection serializer
+  for (c <- Seq(
+    classOf[com.strobel.assembler.metadata.ParameterDefinitionCollection],
+    classOf[com.strobel.assembler.metadata.GenericParameterCollection],
+    classOf[com.strobel.assembler.metadata.AnonymousLocalTypeCollection],
+    classOf[com.strobel.assembler.metadata.VariableDefinitionCollection])) {
+    this.addDefaultSerializer(c, new FieldSerializer(this, c))
+  }
+
+  // Register those Charset classes which are not public.
+  // See https://github.com/jagrutmehta/kryo-UTF/
+  // Run the following to determine what classes need to be here:
+  //   for i in ../rt.jar/sun/nio/cs/*.class; do javap $i; done|grep ' extends '|grep -v '^public'
+  for (name <- Seq("UTF-8", "UTF-16", "UTF-16BE", "UTF-16LE", "x-UTF-16LE-BOM", "ISO_8859_1" /*, "US_ASCII"*/)) {
+    this.addDefaultSerializer(java.nio.charset.Charset.forName(name).getClass(), CharsetSerializer)
+  }
+
+  object CharsetSerializer extends kryo.Serializer[java.nio.charset.Charset] {
+    override def write(kryo: Kryo, output: Output, obj: java.nio.charset.Charset) {
+      kryo.writeObject(output, obj.asInstanceOf[java.nio.charset.Charset].name())
+    }
+
+    override def read(kryo: Kryo, input: Input, typ: Class[java.nio.charset.Charset]): java.nio.charset.Charset =
+      java.nio.charset.Charset.forName(kryo.readObject(input, classOf[String]))
+  }
+
   // Serializer for InsnList that avoids stack overflows due to recursively
   // following AbstractInsnNode.next.  This works on concert with
   // AbstractInsnNodeSerializer.
-  class InsnListSerializer() extends kryo.Serializer[InsnList] {
+  object InsnListSerializer extends kryo.Serializer[InsnList] {
     override def write(kryo : Kryo, output : Output, collection : InsnList) {
       output.writeVarInt(collection.size(), true)
       for (element <- collection.iterator)
@@ -367,7 +360,7 @@ class JaamKryo extends KryoBase {
 
   // FieldSerializer.rebuildCachedFields has bugs relating to removed fields.
   // The following implementation works around these
-  class AbstractInsnNodeSerializer(kryo : Kryo, typ : Class[_]) // TODO: _ < AbstractInsnNode // TODO: kryo is unused
+  class AbstractInsnNodeSerializer[T](typ : Class[T])
       extends FieldSerializer(this, typ) {
     override def rebuildCachedFields(minorRebuild : Boolean) {
       // Save and clear removedFields since the below calls to removeField
@@ -387,27 +380,40 @@ class JaamKryo extends KryoBase {
     }
   }
 
-  // TODO: check if can put in register instead of newDefaultserializer
-  // TODO: AstNode stores the index in flags instead of the Role (beware of the ROLE_INDEX_MASK); use setRoleUnsafe
+  object UnmodifiableListSerializer extends kryo.Serializer[java.util.AbstractList[Object]] {
+    override def write(kryo: Kryo, output: Output, obj: java.util.AbstractList[Object]) {
+      kryo.writeObject(output, new java.util.ArrayList[Object](obj))
+    }
+
+    override def read(kryo: Kryo, input: Input, typ: Class[java.util.AbstractList[Object]]): java.util.AbstractList[Object] =
+      com.strobel.core.ArrayUtilities.asUnmodifiableList[Object](kryo.readObject(input, classOf[java.util.ArrayList[Object]]):_*).asInstanceOf[java.util.AbstractList[Object]]
+  }
+
+  // Procyon keeps a global table of Role objects, so we have to deserialize
+  // into the objects in that table.  This is complicated by the fact that it
+  // never stores direct references to those objects.  It just stores the
+  // index of that object into the table.  Fortunately, AstNode seems to be
+  // the only place that uses Role objects.
   class ProcyonRoleSerializer[T](typ: Class[T])
       extends FieldSerializer[T](this, typ) {
     override def write(kryo : Kryo, output : Output, obj : T) {
       super.write(kryo, output, obj)
-      output.writeAscii(obj.asInstanceOf[AstNode].getRole.getNodeType.toString)
-      output.writeAscii(obj.asInstanceOf[AstNode].getRole.toString)
+      val role = obj.asInstanceOf[AstNode].getRole
+      output.writeAscii(role.getNodeType.toString)
+      output.writeAscii(role.toString)
     }
 
     override def read(kryo : Kryo, input : Input, typ : Class[T]) : T = {
       val obj = super.read(kryo, input, typ)
-      // must read string for role since otherwise only index stored
-      val c = input.readString()
-      val s = input.readString()
-      // TODO: error if not found
-      obj.asInstanceOf[AstNode].setRole(Role.get(roles((c,s)))) // TODO: if setRole throws errors, use setRoleUnsafe
+      val nodeType = input.readString()
+      val name = input.readString()
+      roles.get((nodeType,name)) match {
+        case None => throw new Exception(f"Error deserializing a $typ: could not find Role for $nodeType and $name")
+        case Some(index) => obj.asInstanceOf[AstNode].setRole(Role.get(index))
+      }
       return obj
     }
   }
-
 
   val roles: immutable.Map[(String, String), Int] = {
     // Ensure that all Role objects have been put in the global table
@@ -449,10 +455,9 @@ class JaamKryo extends KryoBase {
       "com.strobel.decompiler.languages.java.ast.WhileStatement",
       "com.strobel.decompiler.languages.java.ast.WildcardType"
     )
-    // TODO: index map by java.lang.Class (AstNode.nodeType)
     classes.foreach(Class.forName(_))
 
-    // Build a mapping from Role name to Role
+    // Build a mapping from nodeType and name to a Role index
     (for (
       i <- 0 until (1 << Role.ROLE_INDEX_BITS);
       role = Role.get(i);
