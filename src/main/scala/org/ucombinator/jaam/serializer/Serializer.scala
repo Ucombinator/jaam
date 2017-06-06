@@ -10,7 +10,7 @@ import java.io.{IOException, InputStream, OutputStream, FileInputStream}
 import java.lang.reflect.Type
 import java.util.zip.{DeflaterOutputStream, InflaterInputStream}
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import soot.{SootMethod, Local}
 import soot.jimple.{Stmt => SootStmt, Ref, Constant, InvokeExpr}
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
@@ -344,7 +344,7 @@ class JaamKryo extends KryoBase {
   object InsnListSerializer extends kryo.Serializer[InsnList] {
     override def write(kryo : Kryo, output : Output, collection : InsnList) {
       output.writeVarInt(collection.size(), true)
-      for (element <- collection.iterator)
+      for (element <- collection.iterator.asScala)
         kryo.writeClassAndObject(output, element);
     }
 
@@ -371,7 +371,7 @@ class JaamKryo extends KryoBase {
       }
       super.rebuildCachedFields(minorRebuild)
       if (!minorRebuild) {
-        for (field <- removed) {
+        for (field <- removed.asScala) {
           // Make sure to use toString otherwise you call a version of
           // removeField that uses pointer equality and thus no effect
           removeField(field.toString)
@@ -386,7 +386,7 @@ class JaamKryo extends KryoBase {
     }
 
     override def read(kryo: Kryo, input: Input, typ: Class[java.util.AbstractList[Object]]): java.util.AbstractList[Object] =
-      com.strobel.core.ArrayUtilities.asUnmodifiableList[Object](kryo.readObject(input, classOf[java.util.ArrayList[Object]]):_*).asInstanceOf[java.util.AbstractList[Object]]
+      com.strobel.core.ArrayUtilities.asUnmodifiableList[Object](kryo.readObject(input, classOf[java.util.ArrayList[Object]]).asScala:_*).asInstanceOf[java.util.AbstractList[Object]]
   }
 
   // Procyon keeps a global table of Role objects, so we have to deserialize
