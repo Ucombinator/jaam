@@ -5,58 +5,53 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
-<?import org.ucombinator.jaam.visualizer.gui.CodeArea?>
-<?import org.ucombinator.jaam.visualizer.gui.SearchResults?>
+<?import javafx.scene.text.TextFlow?>
 <?import org.ucombinator.jaam.visualizer.gui.VizPanel?>
 
-<BorderPane fx:id="borderPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="594.0" prefWidth="602.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.ucombinator.jaam.visualizer.gui.StacFrame">
+<BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="594.0" prefWidth="602.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1">
    <center>
-      <SplitPane dividerPositions="0.2, 0.735" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" BorderPane.alignment="CENTER">
+      <SplitPane dividerPositions="0.20023557126030625, 0.5" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" BorderPane.alignment="CENTER">
          <items>
             <BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
                <top>
                   <Label text="Code" BorderPane.alignment="CENTER" />
                </top>
                <center>
-                  <CodeArea fx:id="bytecodeArea" BorderPane.alignment="CENTER" />
+                  <TextFlow BorderPane.alignment="CENTER" />
                </center>
             </BorderPane>
-            <VizPanel fx:id="mainPanel" prefHeight="511.0" prefWidth="231.0">
-               <children>
-                  <VBox>
-                     <children>
-                        <Button fx:id="zoomIn" mnemonicParsing="false" text="+" />
-                        <Button fx:id="zoomOut" minWidth="10.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="27.0" text="-" />
-                        <Button fx:id="resetButton" mnemonicParsing="false" text="=" />
-                     </children>
-                  </VBox>
-                  <Pane fx:id="graphPane" prefHeight="200.0" prefWidth="200.0" />
-               </children>
-            </VizPanel>
-            <SplitPane dividerPositions="0.5469924812030075" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" orientation="VERTICAL">
+            <VizPanel />
+            <SplitPane dividerPositions="0.5" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" orientation="VERTICAL">
                <items>
                   <BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
                      <center>
-                        <TextArea fx:id="rightArea" />
+                        <TextArea />
                      </center>
                      <top>
                         <Label text="Description" BorderPane.alignment="CENTER" />
                      </top>
                   </BorderPane>
-                  <SearchResults fx:id="searchResults" />
+                  <BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
+                     <top>
+                        <Label text="Search results" BorderPane.alignment="CENTER" />
+                     </top>
+                     <center>
+                        <TreeView BorderPane.alignment="CENTER" />
+                     </center>
+                  </BorderPane>
                </items>
             </SplitPane>
          </items>
       </SplitPane>
    </center>
-   <bottom>
+   <top>
       <FlowPane maxHeight="70.0" prefHeight="0.0" prefWidth="0.0" BorderPane.alignment="CENTER">
          <children>
             <GridPane>
@@ -117,7 +112,14 @@
                   <Button mnemonicParsing="false" text="PNG" />
                </children>
             </GridPane>
+            <VBox>
+               <children>
+                  <Button fx:id="zoomIn" mnemonicParsing="false" onMousePressed="#zoomInPressed" onMouseReleased="#zoomReleased" text="+" />
+                  <Button fx:id="zoomOut" minWidth="10.0" mnemonicParsing="false" onMousePressed="#zoomOutPressed" onMouseReleased="#zoomReleased" prefHeight="27.0" prefWidth="27.0" text="-" />
+                  <Button mnemonicParsing="false" onMousePressed="#resetButtonPressed" text="=" />
+               </children>
+            </VBox>
          </children>
       </FlowPane>
-   </bottom>
+   </top>
 </BorderPane>

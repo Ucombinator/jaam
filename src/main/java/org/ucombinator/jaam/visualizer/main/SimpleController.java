@@ -103,47 +103,7 @@ public class SimpleController implements Initializable {
         }
     }
 
-    public void resetButtonPressed() {
-        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-        if(currentTab instanceof StacFrame) {
-            StacFrame currentFrame = (StacFrame) currentTab;
-            currentFrame.getMainPanel().resetRootPosition();
-        }
-        else {
-            System.out.println("Error! Current tab is not a StacFrame.");
-        }
-    }
-
-    public void zoomInPressed(ActionEvent event) {
-        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-        if(currentTab instanceof StacFrame) {
-            StacFrame currentFrame = (StacFrame) currentTab;
-            currentFrame.getMainPanel().keepButton(1, (Button) event.getSource());
-        }
-        else {
-            System.out.println("Error! Current tab is not a StacFrame.");
-        }
-    }
-
-    public void zoomOutPressed(ActionEvent event) {
-        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-        if(currentTab instanceof StacFrame) {
-            StacFrame currentFrame = (StacFrame) currentTab;
-            currentFrame.getMainPanel().keepButton(-1, (Button) event.getSource());
-        }
-        else {
-            System.out.println("Error! Current tab is not a StacFrame.");
-        }
-    }
-
-    public void zoomReleased(ActionEvent event) {
-        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-        if(currentTab instanceof StacFrame) {
-            StacFrame currentFrame = (StacFrame) currentTab;
-            currentFrame.getMainPanel().setZoomButtonReleased(true);
-        }
-        else {
-            System.out.println("Error! Current tab is not a StacFrame.");
-        }
+    public TabPane getTabPane() {
+        return this.tabPane;
     }
 }

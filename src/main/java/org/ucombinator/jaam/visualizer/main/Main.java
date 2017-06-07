@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.TabPane;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
@@ -17,13 +18,15 @@ import java.net.URL;
 public class Main extends Application
 {
 	private static OuterFrame outerFrame;
+	private static SimpleController controller;
 
 	public void start(Stage stage) {
 		URL url = getClass().getResource("/app.fxml");
 		System.out.println("Loading url: " + url);
 		try {
 			FXMLLoader fxmlLoader = new FXMLLoader(url);
-			fxmlLoader.setController(new SimpleController());
+			controller = new SimpleController();
+			fxmlLoader.setController(controller);
 
 			AnchorPane anchorPane = fxmlLoader.load();
 			OuterFrame outerFrame = new OuterFrame(anchorPane);
@@ -38,5 +41,9 @@ public class Main extends Application
 
 	public static OuterFrame getOuterFrame() {
 		return outerFrame;
+	}
+
+	public static TabPane getTabPane() {
+		return controller.getTabPane();
 	}
 }

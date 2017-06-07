@@ -33,8 +33,7 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
  *
  */
 
-public class StacFrame extends Tab
-{
+public class StacFrame extends Tab {
 	@FXML
 	private VizPanel mainPanel;
 	//@FXML
@@ -59,18 +58,11 @@ public class StacFrame extends Tab
 	private final javafx.scene.paint.Color inactiveColor = javafx.scene.paint.Color.BLACK;
 	private boolean edgeVisible, labelsVisible;
 
-	public enum searchType
-	{
+	public enum searchType {
 		ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
 	}
-	
-	public StacFrame(Graph graph)
-	{
-		// Call constructors for custom GUI panels?
-		/*this.mainPanel = new VizPanel();
-		this.bytecodeArea = new CodeArea();
-		this.searchResults = new SearchResults();*/
 
+	public StacFrame(Graph graph) {
 		methodsExpanded = true;
 		chainsExpanded = true;
 		edgeVisible = true;
@@ -87,15 +79,14 @@ public class StacFrame extends Tab
 
 	public void loadFXML() {
 		try {
-			URL url = getClass().getResource("/newtab.fxml");
+			URL url = getClass().getResource("/tab.fxml");
 			FXMLLoader fxmlLoader = new FXMLLoader(url);
 			fxmlLoader.setController(this);
 			System.out.println("Loading url: " + url);
 			BorderPane borderPane = fxmlLoader.load();
 			System.out.println("Border pane loaded: " + borderPane);
 			System.out.println("VizPanel loaded: " + this.mainPanel);
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -120,21 +111,18 @@ public class StacFrame extends Tab
 		return this.graph;
 	}
 
-	public void repaintAll()
-	{
+	public void repaintAll() {
 		System.out.println("Repainting all...");
-		if (!Parameters.debugPanelMode)
-		{
+		if (!Parameters.debugPanelMode) {
 			bytecodeArea.setDescription();
 			setRightText();
 			searchResults.writeText(this.mainPanel);
 		}
 	}
 
-	public void setRightText()
-	{
+	public void setRightText() {
 		StringBuilder text = new StringBuilder();
-		for(AbstractLayoutVertex v : this.mainPanel.getHighlighted())
+		for (AbstractLayoutVertex v : this.mainPanel.getHighlighted())
 			text.append(v.getRightPanelContent() + "\n");
 
 		this.getRightArea().setText(text.toString());
@@ -206,6 +194,73 @@ public class StacFrame extends Tab
 
 		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
 		StacFrame.this.mainPanel.resetRootPosition();
+
+		/*Button left = new Button("\u2190");
+		Button right = new Button("\u2192");
+		Button up = new Button("\u2191");
+		Button down = new Button("\u2193");
+		left.setOnAction
+				(
+						new EventHandler<ActionEvent>()
+						{
+							@Override
+							public void handle(ActionEvent e) {
+								e.consume();
+
+								StacFrame.this.mainPanel.layout();
+								GUINode rootGraphics =  StacFrame.this.mainPanel.getPanelRoot().getGraphics();
+								rootGraphics.setTranslateX(rootGraphics.getTranslateX() - 10);
+							}
+						}
+				);
+		right.setOnAction
+				(
+						new EventHandler<ActionEvent>()
+						{
+							@Override
+							public void handle(ActionEvent e) {
+								e.consume();
+
+								StacFrame.this.mainPanel.layout();
+								GUINode rootGraphics =  StacFrame.this.mainPanel.getPanelRoot().getGraphics();
+								rootGraphics.setTranslateX(rootGraphics.getTranslateX() + 10);
+							}
+						}
+				);
+		up.setOnAction
+				(
+						new EventHandler<ActionEvent>()
+						{
+							@Override
+							public void handle(ActionEvent e) {
+								e.consume();
+
+								StacFrame.this.mainPanel.layout();
+								GUINode rootGraphics =  StacFrame.this.mainPanel.getPanelRoot().getGraphics();
+								rootGraphics.setTranslateY(rootGraphics.getTranslateY() - 10);
+							}
+						}
+				);
+		down.setOnAction
+				(
+						new EventHandler<ActionEvent>()
+						{
+							@Override
+							public void handle(ActionEvent e) {
+								e.consume();
+
+								StacFrame.this.mainPanel.layout();
+								GUINode rootGraphics =  StacFrame.this.mainPanel.getPanelRoot().getGraphics();
+								rootGraphics.setTranslateY(rootGraphics.getTranslateY() + 10);
+							}
+						}
+				);
+
+		int height = 10;
+		navigatePanel.add(left,0,1);
+		navigatePanel.add(right,2,1);
+		navigatePanel.add(up,1,0);
+		navigatePanel.add(down,1,2);*/
 	}
 
 	public void exportImageAction(ActionEvent event) {
@@ -237,16 +292,15 @@ public class StacFrame extends Tab
 	}
 
 	// Clean up info from previous searches
-	public void initSearch(searchType search)
-	{
+	public void initSearch(searchType search) {
 		this.mainPanel.resetHighlighted(null);
 		String query = getSearchInput(search);
 
-		if(search == searchType.ID)
+		if (search == searchType.ID)
 			searchByID(query); // TODO: Fix inconsistency with panel root
-		else if(search == searchType.INSTRUCTION)
+		else if (search == searchType.INSTRUCTION)
 			this.mainPanel.getPanelRoot().searchByInstruction(query, mainPanel);
-		else if(search == searchType.METHOD)
+		else if (search == searchType.METHOD)
 			this.mainPanel.getPanelRoot().searchByMethod(query, mainPanel);
 
 		this.repaintAll();
@@ -254,57 +308,47 @@ public class StacFrame extends Tab
 		Parameters.rightArea.setText("");*/
 	}
 
-	public String getSearchInput(searchType search)
-	{
+	public String getSearchInput(searchType search) {
 		String title = "";
 		System.out.println("Search type: " + search);
-		if(search == searchType.ID || search == searchType.ROOT_PATH)
-		{
+		if (search == searchType.ID || search == searchType.ROOT_PATH) {
 			title = "Enter node ID(s)";
-		}
-		else if(search == searchType.INSTRUCTION)
-		{
+		} else if (search == searchType.INSTRUCTION) {
 			title = "Instruction contains ...";
-		}
-		else if(search == searchType.METHOD)
-		{
+		} else if (search == searchType.METHOD) {
 			title = "Method name contains ...";
-		}
-		else if(search == searchType.OUT_OPEN || search == searchType.OUT_CLOSED || search == searchType.IN_OPEN
-				|| search == searchType.IN_CLOSED)
-		{
+		} else if (search == searchType.OUT_OPEN || search == searchType.OUT_CLOSED || search == searchType.IN_OPEN
+				|| search == searchType.IN_CLOSED) {
 			title = "Enter node ID";
 		}
 
 		String input = "";
-		if(search != searchType.ALL_LEAVES && search != searchType.ALL_SOURCES && search != searchType.TAG)
-		{
+		if (search != searchType.ALL_LEAVES && search != searchType.ALL_SOURCES && search != searchType.TAG) {
 			System.out.println("Showing dialog...");
 			TextInputDialog dialog = new TextInputDialog();
 			dialog.setHeaderText(title);
 			dialog.showAndWait();
 			input = dialog.getResult();
-			if(input == null)
+			if (input == null)
 				return "";
 			else
 				input = input.trim();
 
-			if(input.equals(""))
+			if (input.equals(""))
 				return "";
 		}
 
 		return input;
-    }
+	}
 
-	public void searchByID(String input)
-	{
+	public void searchByID(String input) {
 		LayoutRootVertex panelRoot = this.mainPanel.getPanelRoot();
-		StringTokenizer token = new StringTokenizer(input,", ");
+		StringTokenizer token = new StringTokenizer(input, ", ");
 
 		int id1, id2;
 		String tok;
 
-		while(token.hasMoreTokens()) {
+		while (token.hasMoreTokens()) {
 			tok = token.nextToken();
 			if (tok.trim().equalsIgnoreCase(""))
 				continue;
@@ -316,6 +360,50 @@ public class StacFrame extends Tab
 				id2 = Integer.parseInt(tok.substring(tok.lastIndexOf('-') + 1).trim());
 				panelRoot.searchByIDRange(id1, id2, mainPanel);
 			}
+		}
+	}
+
+	public void resetButtonPressed() {
+		Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
+		if(currentTab instanceof StacFrame) {
+			StacFrame currentFrame = (StacFrame) currentTab;
+			currentFrame.getMainPanel().resetRootPosition();
+		}
+		else {
+			System.out.println("Error! Current tab is not a StacFrame.");
+		}
+	}
+
+	public void zoomInPressed(ActionEvent event) {
+		Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
+		if(currentTab instanceof StacFrame) {
+			StacFrame currentFrame = (StacFrame) currentTab;
+			currentFrame.getMainPanel().keepButton(1, (Button) event.getSource());
+		}
+		else {
+			System.out.println("Error! Current tab is not a StacFrame.");
+		}
+	}
+
+	public void zoomOutPressed(ActionEvent event) {
+		Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
+		if(currentTab instanceof StacFrame) {
+			StacFrame currentFrame = (StacFrame) currentTab;
+			currentFrame.getMainPanel().keepButton(-1, (Button) event.getSource());
+		}
+		else {
+			System.out.println("Error! Current tab is not a StacFrame.");
+		}
+	}
+
+	public void zoomReleased(ActionEvent event) {
+		Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
+		if(currentTab instanceof StacFrame) {
+			StacFrame currentFrame = (StacFrame) currentTab;
+			currentFrame.getMainPanel().setZoomButtonReleased(true);
+		}
+		else {
+			System.out.println("Error! Current tab is not a StacFrame.");
 		}
 	}
 }
