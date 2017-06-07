@@ -36,20 +36,20 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
 public class StacFrame extends Tab {
 	@FXML
 	private VizPanel mainPanel;
-	//@FXML
-	private TextArea rightArea;
-	//@FXML
+	@FXML
+	private TextArea descriptionArea;
+	@FXML
 	private CodeArea bytecodeArea;
-	//@FXML
+	@FXML
 	private SearchResults searchResults;
 
-	//@FXML
+	@FXML
 	private CheckBox showEdges;
-	//@FXML
+	@FXML
 	private CheckBox showLabels;
-	//@FXML
+	@FXML
 	private Button methodCollapse;
-	//@FXML
+	@FXML
 	private Button chainCollapse;
 
 	private Graph graph;
@@ -67,7 +67,6 @@ public class StacFrame extends Tab {
 		chainsExpanded = true;
 		edgeVisible = true;
 		labelsVisible = false; // If you change this, also change the initialization for AbstractLayoutVertex
-
 		this.graph = graph;
 		//this.mainPanel.initFX(this.graph);
 	}
@@ -84,6 +83,7 @@ public class StacFrame extends Tab {
 			fxmlLoader.setController(this);
 			System.out.println("Loading url: " + url);
 			BorderPane borderPane = fxmlLoader.load();
+			this.setContent(borderPane);
 			System.out.println("Border pane loaded: " + borderPane);
 			System.out.println("VizPanel loaded: " + this.mainPanel);
 		} catch (Exception e) {
@@ -96,7 +96,7 @@ public class StacFrame extends Tab {
 	}
 
 	public TextArea getRightArea() {
-		return this.rightArea;
+		return this.descriptionArea;
 	}
 
 	public CodeArea getBytecodeArea() {
