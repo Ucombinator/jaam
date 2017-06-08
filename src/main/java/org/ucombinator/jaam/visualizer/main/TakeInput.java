@@ -63,6 +63,8 @@ public class TakeInput extends Thread
 
                 packet = packetInput.read();
 			}
+
+			packetInput.close();
 		}
 		catch(FileNotFoundException e)
 		{
@@ -113,8 +115,12 @@ public class TakeInput extends Thread
 					graph.addClass(className, unit.getText());
 				}
 
+				System.out.println("Reading new packet...");
                 packet = packetInput.read();
+                System.out.println("Packet read!");
 			}
+
+			packetInput.close();
 		}
 		catch(FileNotFoundException e)
 		{

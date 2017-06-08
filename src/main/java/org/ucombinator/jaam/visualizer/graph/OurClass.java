@@ -2,24 +2,25 @@ package org.ucombinator.jaam.visualizer.graph;
 
 import java.util.ArrayList;
 
-public class Class
+public class OurClass
 {
     private String className;
     private String code;
     public ArrayList<Method> methods;
 
-    public Class() {
+    public OurClass() {
         this.className = "";
         this.code = "";
         this.methods = new ArrayList<Method>();
     }
 
-    public Class(String className, String classCode)
+    public OurClass(String className, String classCode)
     {
         System.out.println("Creating new class: " + className);
         this.className = className;
         this.code = classCode;
         this.methods = new ArrayList<Method>();
+        System.out.println("Finished creating class!");
     }
 
     public String getClassName()
