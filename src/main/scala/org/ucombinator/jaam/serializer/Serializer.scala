@@ -278,7 +278,7 @@ class JaamKryo extends KryoBase {
       val expected = classSignature(r.getType)
 
       if (expected != found) {
-        throw new IOException(f"Differing Jaam class signatures\n Expected:\n$expected Found:\nfound")
+        throw new IOException(f"Differing Jaam class signatures\n Expected:\n$expected Found:\n$found")
       }
     }
 
