@@ -212,7 +212,7 @@ public class Graph
 				v.save(output);
 		}
 		catch(Exception e) {
-			System.out.println(e);
+			e.printStackTrace();
 		}
 	}*/
 }

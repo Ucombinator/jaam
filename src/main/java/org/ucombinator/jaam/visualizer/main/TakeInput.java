@@ -1,14 +1,10 @@
 package org.ucombinator.jaam.visualizer.main;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Stack;
 
 import org.ucombinator.jaam.serializer.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
-//import org.ucombinator.jaam.visualizer.graph.Class;
 import org.ucombinator.jaam.visualizer.graph.Instruction;
-
 import com.strobel.decompiler.languages.java.ast.CompilationUnit;
 
 public class TakeInput extends Thread
@@ -65,11 +61,38 @@ public class TakeInput extends Thread
                     graph.addTag(nodeId,tagStr);
                 }
 
-				else if(packet instanceof LoopLoopNode) {
+                packet = packetInput.read();
+			}
+		}
+		catch(FileNotFoundException e)
+		{
+			e.printStackTrace();
+		}
+
+		return graph;
+	}
+
+	public Graph parseLoopGraph(String file) {
+		Graph graph = new Graph();
+
+		if(file.equals("")) {
+			//readSmallDummyGraph(graph);
+			//readLargeDummyGraph(graph);
+		}
+		else try
+		{
+			PacketInput packetInput = new PacketInput(new FileInputStream(file));
+			Packet packet = packetInput.read();
+			int loop_counter = 0;
+
+			while(!(packet instanceof EOF))
+			{
+				if(packet instanceof LoopLoopNode) {
 					LoopLoopNode node = (LoopLoopNode) packet;
 					int id = node.id().id();
 					String label = node.method().getSignature() + "\ninstruction #" + node.statementIndex();
-					graph.addVertex(id, new Instruction(label, "Loop:"+node.method().getSignature()+":"+loop_counter++, id, false), true);
+					graph.addVertex(id, new Instruction(label, "Loop:"+node.method().getSignature() + ":" +
+							loop_counter++, id, false), true);
 				}
 				else if(packet instanceof LoopMethodNode) {
 					LoopMethodNode node = (LoopMethodNode) packet;
@@ -95,7 +118,7 @@ public class TakeInput extends Thread
 		}
 		catch(FileNotFoundException e)
 		{
-			System.out.println(e);
+			e.printStackTrace();
 		}
 
 		return graph;
@@ -161,62 +184,5 @@ public class TakeInput extends Thread
 		graph.addEdge(12,13);
 		graph.addEdge(13,14);
 		graph.addEdge(14,15);
-	}
-
-	/*public static void loadDecompiledCode()
-	{
-		if(graph != null)
-		{
-			File file = Parameters.openFile(true);
-			if(file.isDirectory())
-			{
-				ArrayList<File> javaFiles = getJavaFilesRec(file);
-				graph.matchClassesToCode(file.getAbsolutePath() + "/", javaFiles);
-			}
-			else if(file.getAbsolutePath().endsWith(".java"))
-			{
-				//For now, we assume that there is only one class, because otherwise the user
-				//would load a directory.
-				if(graph.classes.size() == 1)
-				{
-					Class ourClass = graph.classes.entrySet().iterator().next().getValue();
-					ourClass.parseJavaFile(file.getAbsolutePath());
-				}
-				else
-					System.out.println("Cannot load single class. Number of classes: " + graph.classes.size());
-			}
-		}
-		else
-		{
-			System.out.println("Cannot load source code until we have a graph...");
-		}
-	}*/
-
-	public static ArrayList<File> getJavaFilesRec(File file)
-	{
-		ArrayList<File> javaFiles = new ArrayList<File>();
-		Stack<File> toSearch = new Stack<File>();
-		toSearch.add(file);
-
-		while (!toSearch.isEmpty())
-		{
-			File nextFilepath = toSearch.pop();
-			if (nextFilepath.isFile() && nextFilepath.toString().endsWith(".java"))
-			{
-				//Add this .java file
-				javaFiles.add(nextFilepath);
-			}
-			else if (nextFilepath.isDirectory())
-			{
-				//Search directory for more .java files
-				File[] newFilepaths = nextFilepath.listFiles();
-
-				//Assume we actually have a tree of directories, with no extra links
-				for (File f : newFilepaths)
-					toSearch.add(f);
-			}
-		}
-
-		return javaFiles;
 	}
 }

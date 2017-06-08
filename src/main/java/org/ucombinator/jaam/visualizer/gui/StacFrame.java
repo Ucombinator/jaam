@@ -1,26 +1,19 @@
 package org.ucombinator.jaam.visualizer.gui;
 
-import javafx.animation.ParallelTransition;
-import javafx.animation.ScaleTransition;
 import javafx.embed.swing.SwingFXUtils;
-import javafx.event.Event;
-import javafx.geometry.Orientation;
-import javafx.geometry.Pos;
-import javafx.geometry.Insets;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
 import javafx.scene.image.WritableImage;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
-import javafx.util.Duration;
-import javafx.event.EventHandler;
 import javafx.event.ActionEvent;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 
+import java.net.URL;
 import java.util.StringTokenizer;
 
 import javax.imageio.ImageIO;
@@ -38,40 +31,59 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
  *
  */
 
-public class StacFrame extends BorderPane
-{
+public class StacFrame extends Tab {
+	@FXML
 	private VizPanel mainPanel;
-	private TextArea rightArea;
+	@FXML
+	private TextArea descriptionArea;
+	@FXML
 	private CodeArea bytecodeArea;
+	@FXML
 	private SearchResults searchResults;
-	private Graph graph;
 
-	private SplitPane horizontalSplitPane;
-	private FlowPane buttonsFlowPane;
-	private BorderPane searchPanel, bytecodePanel, rightPanel;
-	private CheckBox showEdge;
+	@FXML
+	private CheckBox showEdges;
+	@FXML
 	private CheckBox showLabels;
-	private Button zoomIn, zoomOut, resetButton;
+	@FXML
+	private Button methodCollapse;
+	@FXML
+	private Button chainCollapse;
 
-	private boolean edgeVisible = true;
-	private boolean labelsVisible = false; // If you change this, also change the initialization for AbstractLayoutVertex
+	private Graph graph;
+	boolean methodsExpanded, chainsExpanded;
+	private final javafx.scene.paint.Color activeColor = javafx.scene.paint.Color.CYAN;
+	private final javafx.scene.paint.Color inactiveColor = javafx.scene.paint.Color.BLACK;
+	private boolean edgeVisible, labelsVisible;
 
-	public enum searchType
-	{
+	public enum searchType {
 		ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
 	}
-	
-	public StacFrame(Graph graph)
-	{
+
+	public StacFrame(Graph graph) {
+		methodsExpanded = true;
+		chainsExpanded = true;
+		edgeVisible = true;
+		labelsVisible = false; // If you change this, also change the initialization for AbstractLayoutVertex
 		this.graph = graph;
-		if (Parameters.debugPanelMode)
-			makeSimpleLayout();
-		else
-			makeLayout();
-
+		this.loadFXML();
 		this.mainPanel.initFX(this.graph);
-		this.setVisible(true);
+	}
 
+	private void loadFXML() {
+		try {
+			URL url = getClass().getResource("/tab.fxml");
+			FXMLLoader fxmlLoader = new FXMLLoader(url);
+			fxmlLoader.setController(this);
+			System.out.println("Loading url: " + url);
+			BorderPane borderPane = fxmlLoader.load();
+			this.setContent(borderPane);
+			System.out.println("Border pane loaded: " + borderPane);
+			System.out.println("VizPanel loaded: " + this.mainPanel);
+			this.mainPanel.setStacFrame(this);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	public VizPanel getMainPanel() {
@@ -79,7 +91,7 @@ public class StacFrame extends BorderPane
 	}
 
 	public TextArea getRightArea() {
-		return this.rightArea;
+		return this.descriptionArea;
 	}
 
 	public CodeArea getBytecodeArea() {
@@ -94,544 +106,130 @@ public class StacFrame extends BorderPane
 		return this.graph;
 	}
 
-	public void repaintAll()
-	{
+	public void repaintAll() {
 		System.out.println("Repainting all...");
-		if (!Parameters.debugPanelMode)
-		{
+		if (!Parameters.debugPanelMode) {
 			bytecodeArea.setDescription();
 			setRightText();
 			searchResults.writeText(this.mainPanel);
 		}
 	}
 
-	public void setRightText()
-	{
+	public void setRightText() {
 		StringBuilder text = new StringBuilder();
-		for(AbstractLayoutVertex v : this.mainPanel.getHighlighted())
+		for (AbstractLayoutVertex v : this.mainPanel.getHighlighted())
 			text.append(v.getRightPanelContent() + "\n");
 
 		this.getRightArea().setText(text.toString());
 	}
 
-	public void buildCenter(ArrayList<ArrayList<Region>> layout, ArrayList<Double> dividerPositions)
-	{
-		horizontalSplitPane = new SplitPane();
-		horizontalSplitPane.setOrientation(Orientation.HORIZONTAL);
-		this.setCenter(horizontalSplitPane);
+	public void showEdgesAction(ActionEvent event) {
+		System.out.println("Edges checkbox set to: " + showEdges.isSelected());
+		edgeVisible = showEdges.isSelected();
+		mainPanel.getPanelRoot().setVisible(false);
+		mainPanel.getPanelRoot().setEdgeVisibility(edgeVisible);
+		LayoutEdge.redrawEdges(mainPanel.getPanelRoot(), true);
+		mainPanel.getPanelRoot().setVisible(true);
+	}
 
-		for(ArrayList<Region> column : layout) {
-			if(column.size() == 1) {
-				horizontalSplitPane.getItems().add(column.get(0));
-			}
-			else {
-				SplitPane verticalSplitPane = new SplitPane();
-				verticalSplitPane.setOrientation(Orientation.VERTICAL);
-				for(Region r : column) {
-					verticalSplitPane.getItems().add(r);
-				}
+	public void showLabelsAction(ActionEvent event) {
+		labelsVisible = showLabels.isSelected();
+		mainPanel.getPanelRoot().setVisible(false);
+		mainPanel.getPanelRoot().setLabelVisibility(labelsVisible);
+		mainPanel.getPanelRoot().setVisible(true);
+	}
 
-				horizontalSplitPane.getItems().add(verticalSplitPane);
-			}
+	public void xScalePanelMinusAction(ActionEvent event) {
+		StacFrame.this.mainPanel.decrementScaleXFactor();
+		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+		StacFrame.this.mainPanel.resetRootPosition();
+	}
+
+	public void xScalePanelPlusAction(ActionEvent event) {
+		StacFrame.this.mainPanel.incrementScaleXFactor();
+		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+		StacFrame.this.mainPanel.resetRootPosition();
+	}
+
+	public void yScalePanelMinusAction(ActionEvent event) {
+		StacFrame.this.mainPanel.decrementScaleYFactor();
+		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+		StacFrame.this.mainPanel.resetRootPosition();
+	}
+
+	public void yScalePanelPlusAction(ActionEvent event) {
+		StacFrame.this.mainPanel.incrementScaleYFactor();
+		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+		StacFrame.this.mainPanel.resetRootPosition();
+	}
+
+	public void methodCollapseAction(ActionEvent event) {
+		methodsExpanded = !methodsExpanded;
+		StacFrame.this.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
+				methodsExpanded);
+
+		if (methodCollapse.getTextFill() == activeColor) {
+			methodCollapse.setTextFill(inactiveColor);
+		} else {
+			methodCollapse.setTextFill(activeColor);
 		}
 
-		for(int i = 0; i < layout.size() - 1; i++)
-			horizontalSplitPane.setDividerPosition(i, dividerPositions.get(i));
+		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+		StacFrame.this.mainPanel.resetRootPosition();
 	}
 
-	public void makeLayout()
-	{
-		setSplitScreen();
-		this.setTop(this.buttonsFlowPane);
-		this.setPrefPanelSizes();
-		this.setVisible(true);
+	public void chainCollapseAction(ActionEvent event) {
+		chainsExpanded = !chainsExpanded;
+		StacFrame.this.mainPanel.getPanelRoot()
+				.toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN, chainsExpanded);
+		if (chainCollapse.getTextFill() == activeColor) {
+			chainCollapse.setTextFill(inactiveColor);
+		} else {
+			chainCollapse.setTextFill(activeColor);
+		}
+
+		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+		StacFrame.this.mainPanel.resetRootPosition();
 	}
 
-	public void makeSimpleLayout()
-	{
-		this.mainPanel = new VizPanel(this);
-		this.setCenter(this.mainPanel);
-		this.setVisible(true);
-	}
-
-	public void makePanes() {
-		this.mainPanel = new VizPanel(this);
-
-		buttonsFlowPane = new FlowPane();
-		buttonsFlowPane.setPadding(new Insets(5, 0, 5, 0));
-		buttonsFlowPane.setVgap(5);
-		buttonsFlowPane.setHgap(5);
-		buttonsFlowPane.setPrefWrapLength(400);
-		buttonsFlowPane.setMinHeight(30);
-
-		GridPane controlPanel = new GridPane();
-		controlPanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
-				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
-
-		showEdge = new CheckBox("Edges");
-		showEdge.setSelected(edgeVisible);
-		showEdge.setOnAction
-				(
-						new EventHandler<ActionEvent>()
-						{
-							@Override
-							public void handle(ActionEvent e) {
-								edgeVisible = showEdge.isSelected();
-								mainPanel.getPanelRoot().setVisible(false);
-								mainPanel.getPanelRoot().setEdgeVisibility(edgeVisible);
-								LayoutEdge.redrawEdges(mainPanel.getPanelRoot(), true);
-								mainPanel.getPanelRoot().setVisible(true);
-							}
-						}
-				);
-	
-		controlPanel.add(showEdge, 0, 0);
-		
-		
-		showLabels = new CheckBox("Labels");
-		showLabels.setSelected(labelsVisible);
-		showLabels.setOnAction
-				(
-						new EventHandler<ActionEvent>()
-						{
-							@Override
-							public void handle(ActionEvent e) {
-								labelsVisible = showLabels.isSelected();
-								mainPanel.getPanelRoot().setVisible(false);
-								mainPanel.getPanelRoot().setLabelVisibility(labelsVisible);
-								mainPanel.getPanelRoot().setVisible(true);
-							}
-						}
-				);
-		Separator sep = new Separator(Orientation.HORIZONTAL);
-		controlPanel.add(sep, 0, 1);
-		sep.setVisible(false);
-		controlPanel.add(showLabels, 0, 2);
-
-		buttonsFlowPane.getChildren().add(controlPanel);
-		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
-
-		GridPane xScalePanel = new GridPane();
-		xScalePanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
-				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
-
-		buttonsFlowPane.getChildren().add(xScalePanel);
-		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
-
-		Button xScalePanelMinus = new Button("-");
-		xScalePanelMinus.setOnAction
-				(
-						new EventHandler<ActionEvent>()
-
-						{
-							@Override
-							public void handle(ActionEvent event) {
-								StacFrame.this.mainPanel.decrementScaleXFactor();
-								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-								StacFrame.this.mainPanel.resetRootPosition();
-							}
-						}
-				);
-		xScalePanel.add(xScalePanelMinus, 0, 0);
-
-		Label xScaleL = new Label(" X scale ");
-		xScaleL.setAlignment(Pos.CENTER);
-		xScalePanel.add(xScaleL, 1, 0);
-
-		Button xScalePlus = new Button("+");
-		xScalePlus.setOnAction
-				(
-						new EventHandler<ActionEvent>()
-
-						{
-							@Override
-							public void handle(ActionEvent e) {
-								StacFrame.this.mainPanel.incrementScaleXFactor();
-								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-								StacFrame.this.mainPanel.resetRootPosition();
-							}
-						}
-				);
-		xScalePanel.add(xScalePlus, 2, 0);
-
-
-		GridPane yScalePanel = new GridPane();
-		yScalePanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
-				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
-		buttonsFlowPane.getChildren().add(yScalePanel);
-		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
-		
-		Button yScalePanelMinus = new Button("-");
-		yScalePanelMinus.setOnAction
-				(
-						new EventHandler<ActionEvent>()
-
-						{
-							@Override
-							public void handle(ActionEvent event) {
-								StacFrame.this.mainPanel.decrementScaleYFactor();
-								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-								StacFrame.this.mainPanel.resetRootPosition();
-							}
-						}
-				);
-		yScalePanel.add(yScalePanelMinus, 1, 0);
-
-		Label yScaleL = new Label(" Y scale ");
-		yScaleL.setAlignment(Pos.CENTER);
-		yScalePanel.add(yScaleL, 2, 0);
-
-		Button yScalePlus = new Button("+");
-		yScalePlus.setOnAction
-				(
-						new EventHandler<ActionEvent>()
-
-						{
-							@Override
-							public void handle(ActionEvent event) {
-								StacFrame.this.mainPanel.incrementScaleYFactor();
-								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-								StacFrame.this.mainPanel.resetRootPosition();
-							}
-						}
-				);
-		yScalePanel.add(yScalePlus, 3, 0);
-
-
-		GridPane collapsePanel = new GridPane();
-		collapsePanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
-				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
-		buttonsFlowPane.getChildren().add(collapsePanel);
-		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
-
-		final javafx.scene.paint.Color activeColor = javafx.scene.paint.Color.CYAN;
-		final javafx.scene.paint.Color inactiveColor = javafx.scene.paint.Color.BLACK;
-
-		final Button methodCollapse = new Button("Method");
-		methodCollapse.setTextFill(inactiveColor);
-		methodCollapse.setOnAction
-				(
-						new EventHandler<ActionEvent>()
-
-						{
-							boolean methodExpanded = true;
-
-							@Override
-							public void handle(ActionEvent e) {
-								
-								methodExpanded = !methodExpanded;
-								StacFrame.this.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
-										methodExpanded);
-
-								if (methodCollapse.getTextFill() == activeColor) {
-									methodCollapse.setTextFill(inactiveColor);
-								} else {
-									methodCollapse.setTextFill(activeColor);
-								}
-
-								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-								StacFrame.this.mainPanel.resetRootPosition();
-							}
-						}
-				);
-		collapsePanel.add(methodCollapse,0,0);
-
-		final Button chainCollapse = new Button("Chain");
-		chainCollapse.setTextFill(inactiveColor);
-		chainCollapse.setOnAction
-				(
-						new EventHandler<ActionEvent>()
-						{
-							boolean chainExpanded = true;
-
-							@Override
-							public void handle(ActionEvent e) {
-								chainExpanded = !chainExpanded;
-								StacFrame.this.mainPanel.getPanelRoot()
-										.toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN, chainExpanded);
-								if (chainCollapse.getTextFill() == activeColor) {
-									chainCollapse.setTextFill(inactiveColor);
-								} else {
-									chainCollapse.setTextFill(activeColor);
-								}
-
-								StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-								StacFrame.this.mainPanel.resetRootPosition();
-							}
-						}
-				);
-		Separator sepLabels = new Separator(Orientation.HORIZONTAL);
-		collapsePanel.add(sepLabels,1,0);
-		sepLabels.setVisible(false);
-		collapsePanel.add(chainCollapse,2,0);
-
-
-
-		FlowPane utilitiesPanel = new FlowPane();
-		utilitiesPanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
-				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
-		buttonsFlowPane.getChildren().add(utilitiesPanel);
-		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
-
-
+	public void exportImageAction(ActionEvent event) {
+		event.consume(); // TODO: Is this necessary?
 		String extension = "png";
-		final Button exportImageButton = new Button(extension.toUpperCase());
-		exportImageButton.setOnAction
-				(
-						new EventHandler<ActionEvent>()
+		FileChooser fileChooser = new FileChooser();
 
-						{
-							@Override
-							public void handle(ActionEvent e) {
-								e.consume();
+		//Set extension filter
+		FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(extension.toUpperCase() + " files (*." + extension + ")", "*." + extension);
+		fileChooser.getExtensionFilters().add(extFilter);
+		fileChooser.setInitialFileName(Main.getOuterFrame().getCurrentTab().getText() + "." + extension);
 
-								FileChooser fileChooser = new FileChooser();
+		//Show save file dialog
+		File file = fileChooser.showSaveDialog(Main.getOuterFrame().getAnchorPane().getScene().getWindow());
 
-								//Set extension filter
+		if (file != null) {
+			WritableImage image = mainPanel.snapshot(new SnapshotParameters(), null);
 
-								FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(extension.toUpperCase()+" files (*."+extension+")", "*."+extension);
-								fileChooser.getExtensionFilters().add(extFilter);
-								fileChooser.setInitialFileName(Main.getOuterFrame().getCurrentTab().getText()+"."+extension);
+			System.out.println(file.getAbsolutePath());
+			// TODO: probably use a file chooser here
+			File newFile = new File(file.getAbsolutePath());
 
-								//Show save file dialog
-								File file = fileChooser.showSaveDialog(Main.getOuterFrame().getScene().getWindow());
-
-								if(file != null){
-									WritableImage image = mainPanel.snapshot(new SnapshotParameters(), null);
-
-									System.out.println(file.getAbsolutePath());
-									// TODO: probably use a file chooser here
-									File newFile = new File(file.getAbsolutePath());
-
-									try {
-										ImageIO.write(SwingFXUtils.fromFXImage(image, null), extension, newFile);
-									} catch (IOException exception) {
-										// TODO: handle exception here
-									}
-								}
-							}
-						}
-				);
-		utilitiesPanel.getChildren().add(exportImageButton);
-		utilitiesPanel.setPrefWrapLength(exportImageButton.getWidth());
-
-		// TODO: Add size info to bottom bar
-		/*Label sizeInfo = new Label();
-		sizeInfo.setText("Total nodes: " + this.mainPanel.getPanelRoot().getTotalVertexCount()
-				+ "  Total edges: " + this.mainPanel.getPanelRoot().getTotalEdgeCount());
-		utilitiesPanel.getChildren().add(sizeInfo);*/
-
-
-		zoomIn = new Button("+");
-		zoomOut = new Button("-");
-		resetButton = new Button("=");
-
-		resetButton.setOnMousePressed(new EventHandler<Event>() {
-			@Override
-			public void handle(Event event) {
-				StacFrame.this.mainPanel.resetRootPosition();
+			try {
+				ImageIO.write(SwingFXUtils.fromFXImage(image, null), extension, newFile);
+			} catch (IOException exception) {
+				System.out.println(exception);
 			}
-		});
-
-		zoomIn.setOnMousePressed(new EventHandler<Event>() {
-			@Override
-			public void handle(Event event) {
-				keepButton(1,zoomIn);
-			}
-		});
-
-		zoomIn.setOnMouseReleased(new EventHandler<Event>() {
-			@Override
-			public void handle(Event event) {
-				zoomButtonReleased = true;
-			}
-		});
-
-
-		zoomOut.setOnMousePressed(new EventHandler<Event>() {
-			@Override
-			public void handle(Event event) {
-				keepButton(-1,zoomOut);
-			}
-		});
-
-		zoomOut.setOnMouseReleased(new EventHandler<Event>() {
-			@Override
-			public void handle(Event event) {
-				zoomButtonReleased = true;
-			}
-		});
-
-		FlowPane zoomPanel = new FlowPane();
-		zoomPanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
-				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
-		buttonsFlowPane.getChildren().add(zoomPanel);
-
-		zoomPanel.getChildren().add(zoomIn);
-		zoomPanel.getChildren().add(zoomOut);
-		zoomPanel.getChildren().add(resetButton);
-
-
-
-		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
-
-
-
-
-
-
-
-
-
-		GridPane navigatePanel = new GridPane();
-		collapsePanel.setBorder(new Border(new BorderStroke(javafx.scene.paint.Color.BLACK,
-				BorderStrokeStyle.NONE, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
-		buttonsFlowPane.getChildren().add(navigatePanel);
-		buttonsFlowPane.getChildren().add(new Separator(Orientation.VERTICAL));
-
-
-		Button left = new Button("\u2190");
-		Button right = new Button("\u2192");
-		Button up = new Button("\u2191");
-		Button down = new Button("\u2193");
-		left.setOnAction
-				(
-						new EventHandler<ActionEvent>()
-						{
-							@Override
-							public void handle(ActionEvent e) {
-								e.consume();
-
-								StacFrame.this.mainPanel.getGraphPane().layout();
-								GUINode rootGraphics =  StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-								rootGraphics.setTranslateX(rootGraphics.getTranslateX() - 10);
-							}
-						}
-				);
-		right.setOnAction
-				(
-						new EventHandler<ActionEvent>()
-						{
-							@Override
-							public void handle(ActionEvent e) {
-								e.consume();
-
-								StacFrame.this.mainPanel.getGraphPane().layout();
-								GUINode rootGraphics =  StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-								rootGraphics.setTranslateX(rootGraphics.getTranslateX() + 10);
-							}
-						}
-				);
-		up.setOnAction
-				(
-						new EventHandler<ActionEvent>()
-						{
-							@Override
-							public void handle(ActionEvent e) {
-								e.consume();
-
-								StacFrame.this.mainPanel.getGraphPane().layout();
-								GUINode rootGraphics =  StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-								rootGraphics.setTranslateY(rootGraphics.getTranslateY() - 10);
-							}
-						}
-				);
-		down.setOnAction
-				(
-						new EventHandler<ActionEvent>()
-						{
-							@Override
-							public void handle(ActionEvent e) {
-								e.consume();
-
-								StacFrame.this.mainPanel.getGraphPane().layout();
-								GUINode rootGraphics =  StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-								rootGraphics.setTranslateY(rootGraphics.getTranslateY() + 10);
-							}
-						}
-				);
-
-		int height = 10;
-		navigatePanel.add(left,0,1);
-		navigatePanel.add(right,2,1);
-		navigatePanel.add(up,1,0);
-		navigatePanel.add(down,1,2);
-
-
-
-
-		// TODO: Set sizes to fill parent. (Right now we just make the sizes all very large.)
-		bytecodePanel = new BorderPane();
-		Label leftLabel = new Label("Code");
-		ScrollPane scrollLeft = new ScrollPane();
-		this.bytecodeArea = new CodeArea();
-		this.bytecodeArea.setStyle("-fx-padding: 0 0 0 5"); // Add left margin of five pixels
-		scrollLeft.setContent(this.bytecodeArea);
-		bytecodePanel.setTop(leftLabel);
-		bytecodePanel.setCenter(scrollLeft);
-
-		rightPanel = new BorderPane();
-		Label rightLabel = new Label("Description");
-		ScrollPane rightScroll = new ScrollPane();
-		this.rightArea = new TextArea();
-		this.rightArea.setEditable(false);
-		rightScroll.setContent(this.rightArea);
-		rightPanel.setTop(rightLabel);
-		rightPanel.setCenter(rightScroll);
-
-		searchPanel = new BorderPane();
-		Label searchL = new Label("Search Results");
-		this.searchResults = new SearchResults();
-		ScrollPane scrollS = new ScrollPane();
-		scrollS.setContent(this.searchResults);
-		searchPanel.setTop(searchL);
-		searchPanel.setCenter(scrollS);
-	}
-
-	public void setSplitScreen()
-	{
-		makePanes();
-
-		// Build data structure to hold panes
-		// We need an ancestor of both panes and scroll panes; the lowest one is Region.
-		ArrayList<ArrayList<Region>> layout = new ArrayList<ArrayList<Region>>();
-		ArrayList<Double> layoutColumnWeights = new ArrayList<Double>();
-
-		ArrayList<Region> left = new ArrayList<Region>();
-		ArrayList<Region> center = new ArrayList<Region>();
-		ArrayList<Region> right = new ArrayList<Region>();
-
-		center.add(mainPanel);
-		left.add(bytecodePanel);
-		right.add(rightPanel);
-		right.add(searchPanel);
-
-		layout.add(left);
-		layout.add(center);
-		layout.add(right);
-		layoutColumnWeights.add(0.2);
-		layoutColumnWeights.add(0.7);
-
-		buildCenter(layout, layoutColumnWeights);
-	}
-
-	public void setPrefPanelSizes() {
-		this.rightArea.setPrefColumnCount(100);
-		this.rightArea.setPrefRowCount(100);
-		this.searchResults.setPrefSize(1000, 500);
+		}
 	}
 
 	// Clean up info from previous searches
-	public void initSearch(searchType search)
-	{
+	public void initSearch(searchType search) {
 		this.mainPanel.resetHighlighted(null);
 		String query = getSearchInput(search);
 
-		if(search == searchType.ID)
+		if (search == searchType.ID)
 			searchByID(query); // TODO: Fix inconsistency with panel root
-		else if(search == searchType.INSTRUCTION)
+		else if (search == searchType.INSTRUCTION)
 			this.mainPanel.getPanelRoot().searchByInstruction(query, mainPanel);
-		else if(search == searchType.METHOD)
+		else if (search == searchType.METHOD)
 			this.mainPanel.getPanelRoot().searchByMethod(query, mainPanel);
 
 		this.repaintAll();
@@ -639,57 +237,47 @@ public class StacFrame extends BorderPane
 		Parameters.rightArea.setText("");*/
 	}
 
-	public String getSearchInput(searchType search)
-	{
+	public String getSearchInput(searchType search) {
 		String title = "";
 		System.out.println("Search type: " + search);
-		if(search == searchType.ID || search == searchType.ROOT_PATH)
-		{
+		if (search == searchType.ID || search == searchType.ROOT_PATH) {
 			title = "Enter node ID(s)";
-		}
-		else if(search == searchType.INSTRUCTION)
-		{
+		} else if (search == searchType.INSTRUCTION) {
 			title = "Instruction contains ...";
-		}
-		else if(search == searchType.METHOD)
-		{
+		} else if (search == searchType.METHOD) {
 			title = "Method name contains ...";
-		}
-		else if(search == searchType.OUT_OPEN || search == searchType.OUT_CLOSED || search == searchType.IN_OPEN
-				|| search == searchType.IN_CLOSED)
-		{
+		} else if (search == searchType.OUT_OPEN || search == searchType.OUT_CLOSED || search == searchType.IN_OPEN
+				|| search == searchType.IN_CLOSED) {
 			title = "Enter node ID";
 		}
 
 		String input = "";
-		if(search != searchType.ALL_LEAVES && search != searchType.ALL_SOURCES && search != searchType.TAG)
-		{
+		if (search != searchType.ALL_LEAVES && search != searchType.ALL_SOURCES && search != searchType.TAG) {
 			System.out.println("Showing dialog...");
 			TextInputDialog dialog = new TextInputDialog();
 			dialog.setHeaderText(title);
 			dialog.showAndWait();
 			input = dialog.getResult();
-			if(input == null)
+			if (input == null)
 				return "";
 			else
 				input = input.trim();
 
-			if(input.equals(""))
+			if (input.equals(""))
 				return "";
 		}
 
 		return input;
-    }
+	}
 
-	public void searchByID(String input)
-	{
+	public void searchByID(String input) {
 		LayoutRootVertex panelRoot = this.mainPanel.getPanelRoot();
-		StringTokenizer token = new StringTokenizer(input,", ");
+		StringTokenizer token = new StringTokenizer(input, ", ");
 
 		int id1, id2;
 		String tok;
 
-		while(token.hasMoreTokens()) {
+		while (token.hasMoreTokens()) {
 			tok = token.nextToken();
 			if (tok.trim().equalsIgnoreCase(""))
 				continue;
@@ -701,6 +289,50 @@ public class StacFrame extends BorderPane
 				id2 = Integer.parseInt(tok.substring(tok.lastIndexOf('-') + 1).trim());
 				panelRoot.searchByIDRange(id1, id2, mainPanel);
 			}
+		}
+	}
+
+	public void resetButtonPressed() {
+		Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
+		if(currentTab instanceof StacFrame) {
+			StacFrame currentFrame = (StacFrame) currentTab;
+			currentFrame.getMainPanel().resetRootPosition();
+		}
+		else {
+			System.out.println("Error! Current tab is not a StacFrame.");
+		}
+	}
+
+	public void zoomInPressed(ActionEvent event) {
+		Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
+		if(currentTab instanceof StacFrame) {
+			StacFrame currentFrame = (StacFrame) currentTab;
+			currentFrame.keepButton(1, (Button) event.getSource());
+		}
+		else {
+			System.out.println("Error! Current tab is not a StacFrame.");
+		}
+	}
+
+	public void zoomOutPressed(ActionEvent event) {
+		Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
+		if(currentTab instanceof StacFrame) {
+			StacFrame currentFrame = (StacFrame) currentTab;
+			currentFrame.keepButton(-1, (Button) event.getSource());
+		}
+		else {
+			System.out.println("Error! Current tab is not a StacFrame.");
+		}
+	}
+
+	public void zoomReleased(ActionEvent event) {
+		Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
+		if(currentTab instanceof StacFrame) {
+			StacFrame currentFrame = (StacFrame) currentTab;
+			this.setZoomButtonReleased(true);
+		}
+		else {
+			System.out.println("Error! Current tab is not a StacFrame.");
 		}
 	}
 
@@ -717,57 +349,11 @@ public class StacFrame extends BorderPane
 		}
 	}
 
-	public void setZoomEndable(boolean zoomEnabled){
-		this.zoomEnabled = zoomEnabled;
+	public void setZoomEnabled(boolean isEnabled) {
+		this.zoomEnabled = isEnabled;
 	}
 
-	public void addKeyEvents(){
-		System.out.print("addKeyEvents");
-		getScene().setOnKeyPressed(new EventHandler<KeyEvent>() {
-			@Override
-			public void handle(KeyEvent event) {
-
-				if (event.getEventType()!= KeyEvent.KEY_PRESSED){
-					return;
-				}
-				System.out.print("KEY EVENT!!!!!!!");
-				StacFrame.this.mainPanel.getGraphPane().layout();
-				GUINode rootGraphics =  StacFrame.this.mainPanel.getPanelRoot().getGraphics();
-				switch(event.getCode().toString()) {
-					case "RIGHT":
-					{
-						rootGraphics.setTranslateX(rootGraphics.getTranslateX() + 10);
-						break;
-					}
-					case "LEFT":
-					{
-						rootGraphics.setTranslateX(rootGraphics.getTranslateX() - 10);
-						break;
-					}
-					case "DOWN":
-					{
-						rootGraphics.setTranslateY(rootGraphics.getTranslateY() - 10);
-						break;
-					}
-					case "UP":
-					{
-						rootGraphics.setTranslateY(rootGraphics.getTranslateY() + 10);
-						break;
-					}
-					case "EQUALS":
-					{
-						StacFrame.this.mainPanel.zoom(1, null);
-						break;
-					}
-					case "MINUS":
-					{
-						StacFrame.this.mainPanel.zoom(-1, null);
-						break;
-					}
-					default: break;
-				}
-
-			}
-		});
+	public void setZoomButtonReleased(boolean isReleased) {
+		this.zoomButtonReleased = isReleased;
 	}
 }

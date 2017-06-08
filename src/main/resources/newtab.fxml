@@ -5,39 +5,50 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.layout.VBox?>
-<?import org.ucombinator.jaam.visualizer.gui.CodeArea?>
-<?import org.ucombinator.jaam.visualizer.gui.SearchResults?>
-<?import org.ucombinator.jaam.visualizer.gui.VizPanel?>
+<?import javafx.scene.text.TextFlow?>
 
-<BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="594.0" prefWidth="602.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane fx:id="borderPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="594.0" prefWidth="602.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1">
    <center>
-      <SplitPane dividerPositions="0.20023557126030625, 0.5" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" BorderPane.alignment="CENTER">
+      <SplitPane fx:id="horizontalSplitPane" dividerPositions="0.20023557126030625, 0.7491166077738516" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" BorderPane.alignment="CENTER">
          <items>
-            <CodeArea fx:id="bytecodeArea" />
-            <VizPanel fx:id="mainPanel" />
+            <BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
+               <top>
+                  <Label text="Code" BorderPane.alignment="CENTER" />
+               </top>
+               <center>
+                  <TextFlow BorderPane.alignment="CENTER" />
+               </center>
+            </BorderPane>
             <SplitPane dividerPositions="0.5" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" orientation="VERTICAL">
                <items>
                   <BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
                      <center>
-                        <TextArea fx:id="descriptionArea" />
+                        <TextArea />
                      </center>
                      <top>
                         <Label text="Description" BorderPane.alignment="CENTER" />
                      </top>
                   </BorderPane>
-                  <SearchResults fx:id="searchResults" />
+                  <BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
+                     <top>
+                        <Label text="Search results" BorderPane.alignment="CENTER" />
+                     </top>
+                     <center>
+                        <TreeView BorderPane.alignment="CENTER" />
+                     </center>
+                  </BorderPane>
                </items>
             </SplitPane>
          </items>
       </SplitPane>
    </center>
-   <top>
+   <bottom>
       <FlowPane maxHeight="70.0" prefHeight="0.0" prefWidth="0.0" BorderPane.alignment="CENTER">
          <children>
             <GridPane>
@@ -98,14 +109,10 @@
                   <Button mnemonicParsing="false" onAction="#exportImageAction" text="PNG" />
                </children>
             </GridPane>
-            <VBox>
-               <children>
-                  <Button fx:id="zoomIn" mnemonicParsing="false" onAction="#zoomInPressed" onMouseReleased="#zoomReleased" text="+" />
-                  <Button fx:id="zoomOut" minWidth="10.0" mnemonicParsing="false" onAction="#zoomOutPressed" onMouseReleased="#zoomReleased" prefHeight="27.0" prefWidth="27.0" text="-" />
-                  <Button mnemonicParsing="false" onAction="#resetButtonPressed" text="=" />
-               </children>
-            </VBox>
+            <Button fx:id="zoomIn" mnemonicParsing="false" onMousePressed="#zoomInPressed" onMouseReleased="#zoomReleased" text="+" />
+            <Button minWidth="10.0" mnemonicParsing="false" onMousePressed="#zoomOutPressed" onMouseReleased="#zoomReleased" prefHeight="27.0" prefWidth="27.0" text="-" />
+            <Button fx:id="resetButton" mnemonicParsing="false" onAction="#resetButtonPressed" text="=" />
          </children>
       </FlowPane>
-   </top>
+   </bottom>
 </BorderPane>

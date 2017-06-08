@@ -27,9 +27,6 @@ public class CodeArea extends TextFlow
 	public CodeArea()
 	{
 		description = new ArrayList<Instruction>();
-
-		// TODO: Is there a  JavaFX equivalent for this?
-		//((DefaultCaret)this.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 	}
 
 	EventHandler<MouseEvent> onMouseClickedEventHandler = new javafx.event.EventHandler<MouseEvent>() {
