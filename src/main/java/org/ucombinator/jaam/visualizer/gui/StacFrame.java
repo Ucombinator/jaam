@@ -8,6 +8,7 @@ import javafx.scene.control.*;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
+import javafx.scene.input.MouseEvent;
 import javafx.event.ActionEvent;
 
 import java.io.File;
@@ -142,25 +143,25 @@ public class StacFrame extends Tab {
 	public void xScalePanelMinusAction(ActionEvent event) {
 		StacFrame.this.mainPanel.decrementScaleXFactor();
 		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-		StacFrame.this.mainPanel.resetRootPosition();
+		StacFrame.this.mainPanel.resetRootPosition(false);
 	}
 
 	public void xScalePanelPlusAction(ActionEvent event) {
 		StacFrame.this.mainPanel.incrementScaleXFactor();
 		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-		StacFrame.this.mainPanel.resetRootPosition();
+		StacFrame.this.mainPanel.resetRootPosition(false);
 	}
 
 	public void yScalePanelMinusAction(ActionEvent event) {
 		StacFrame.this.mainPanel.decrementScaleYFactor();
 		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-		StacFrame.this.mainPanel.resetRootPosition();
+		StacFrame.this.mainPanel.resetRootPosition(false);
 	}
 
 	public void yScalePanelPlusAction(ActionEvent event) {
 		StacFrame.this.mainPanel.incrementScaleYFactor();
 		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-		StacFrame.this.mainPanel.resetRootPosition();
+		StacFrame.this.mainPanel.resetRootPosition(false);
 	}
 
 	public void methodCollapseAction(ActionEvent event) {
@@ -175,7 +176,7 @@ public class StacFrame extends Tab {
 		}
 
 		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-		StacFrame.this.mainPanel.resetRootPosition();
+		StacFrame.this.mainPanel.resetRootPosition(false);
 	}
 
 	public void chainCollapseAction(ActionEvent event) {
@@ -189,7 +190,7 @@ public class StacFrame extends Tab {
 		}
 
 		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-		StacFrame.this.mainPanel.resetRootPosition();
+		StacFrame.this.mainPanel.resetRootPosition(false);
 	}
 
 	public void exportImageAction(ActionEvent event) {
@@ -296,14 +297,14 @@ public class StacFrame extends Tab {
 		Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
 		if(currentTab instanceof StacFrame) {
 			StacFrame currentFrame = (StacFrame) currentTab;
-			currentFrame.getMainPanel().resetRootPosition();
+			currentFrame.getMainPanel().resetRootPosition(true);
 		}
 		else {
 			System.out.println("Error! Current tab is not a StacFrame.");
 		}
 	}
 
-	public void zoomInPressed(ActionEvent event) {
+	public void zoomInPressed(MouseEvent event) {
 		Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
 		if(currentTab instanceof StacFrame) {
 			StacFrame currentFrame = (StacFrame) currentTab;
@@ -314,7 +315,7 @@ public class StacFrame extends Tab {
 		}
 	}
 
-	public void zoomOutPressed(ActionEvent event) {
+	public void zoomOutPressed(MouseEvent event) {
 		Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
 		if(currentTab instanceof StacFrame) {
 			StacFrame currentFrame = (StacFrame) currentTab;
@@ -325,7 +326,7 @@ public class StacFrame extends Tab {
 		}
 	}
 
-	public void zoomReleased(ActionEvent event) {
+	public void zoomReleased(MouseEvent event) {
 		Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
 		if(currentTab instanceof StacFrame) {
 			StacFrame currentFrame = (StacFrame) currentTab;

@@ -100,9 +100,9 @@
             </GridPane>
             <VBox>
                <children>
-                  <Button fx:id="zoomIn" mnemonicParsing="false" onAction="#zoomInPressed" onMouseReleased="#zoomReleased" text="+" />
-                  <Button fx:id="zoomOut" minWidth="10.0" mnemonicParsing="false" onAction="#zoomOutPressed" onMouseReleased="#zoomReleased" prefHeight="27.0" prefWidth="27.0" text="-" />
-                  <Button mnemonicParsing="false" onAction="#resetButtonPressed" text="=" />
+                  <Button fx:id="zoomIn" mnemonicParsing="false" onMousePressed="#zoomInPressed" onMouseReleased="#zoomReleased" text="+" />
+                  <Button fx:id="zoomOut" minWidth="10.0" mnemonicParsing="false" onMousePressed="#zoomOutPressed" onMouseReleased="#zoomReleased" prefHeight="27.0" prefWidth="27.0" text="-" />
+                  <Button fx:id="resetButton" mnemonicParsing="false" onAction="#resetButtonPressed" text="=" />
                </children>
             </VBox>
          </children>

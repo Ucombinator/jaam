@@ -41,8 +41,14 @@ public class VizPanel extends Pane
 		return this.panelRoot;
 	}
 	
-	public void resetRootPosition() {
+	public void resetRootPosition(boolean resetScale) {
 		GUINode rootGraphics = VizPanel.this.panelRoot.getGraphics();
+
+		if(resetScale) {
+			rootGraphics.setScaleX(1.0);
+			rootGraphics.setScaleY(1.0);
+		}
+
 		rootGraphics.setTranslateLocation(VizPanel.this.desiredRootTranslateX, VizPanel.this.desiredRootTranslateY);
 	}
 
@@ -62,6 +68,7 @@ public class VizPanel extends Pane
 		//this.requestFocus();
 	}
 
+	// Ideally this would go in the constructor, but SceneBuilder requires a default constructor
 	public void setStacFrame(StacFrame stacFrame) {
 		this.stacFrame = stacFrame;
 	}
