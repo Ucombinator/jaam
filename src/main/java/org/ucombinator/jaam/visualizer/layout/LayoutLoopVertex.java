@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
@@ -13,6 +14,9 @@ public class LayoutLoopVertex extends AbstractLayoutVertex {
 
     private int startJimpleIndex;
     private LayoutMethodVertex methodVertex;
+
+    private Color loopColor = Color.LIGHTYELLOW;
+
 
     public LayoutLoopVertex(LayoutMethodVertex methodVertex, int startIndex, boolean drawEdges) {
         super(methodVertex.getMethodName() + ", instruction #" + startIndex, VertexType.LOOP, drawEdges);
@@ -50,5 +54,10 @@ public class LayoutLoopVertex extends AbstractLayoutVertex {
         HashSet<LayoutMethodVertex> methods = new LinkedHashSet<LayoutMethodVertex>();
         methods.add(this.methodVertex);
         return methods;
+    }
+
+
+    public void setDefaultColor(){
+        this.setColor(loopColor);
     }
 }

@@ -23,6 +23,8 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     public static Color highlightColor = Color.ORANGE;
     protected Color color = Color.RED;
 
+
+
     private Color[] colors = {Color.LIGHTCORAL,
             Color.LIGHTBLUE, Color.LIGHTCYAN,
             Color.LIGHTSEAGREEN, Color.LIGHTSALMON,
@@ -179,6 +181,19 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
         if (this.vertexType == VertexType.METHOD)
                 this.setColor(colors[colorIndex++ % colors.length]);
+
+/*        if (this.vertexType == VertexType.METHOD){
+            System.out.println("**************************METHOD*********************+");
+            if(!this.getInnerGraph().getVertices().isEmpty()) {
+                AbstractLayoutVertex v = this.getInnerGraph().getVertices().values().iterator().next();
+                if (v instanceof LayoutLoopVertex) {
+                    this.setColor(loopColor);
+                } else if (v instanceof LayoutMethodVertex) {
+                    this.setColor(methodColor);
+                }
+            }
+        }
+*/
 
         this.setVisible(false);
     }
@@ -494,5 +509,8 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
             result += v.getTotalVertexCount();
         }
         return result;
+    }
+
+    public void setDefaultColor(){
     }
 }

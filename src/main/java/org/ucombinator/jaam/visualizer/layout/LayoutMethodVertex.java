@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.graph.Method;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
@@ -14,6 +15,8 @@ import java.util.LinkedHashSet;
 public class LayoutMethodVertex extends AbstractLayoutVertex {
 
     private Method method;
+
+	private Color methodColor = Color.LIGHTBLUE;
 
     public LayoutMethodVertex(Method method, boolean drawEdges) {
         super(method.getFullName(), VertexType.METHOD, drawEdges);
@@ -206,6 +209,19 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
 		//System.out.println("Loop heights found!");
 	}
 
-
+	public void setDefaultColor(){
+		this.setColor(methodColor);
+/*			System.out.println("**************************METHOD*********************+");
+			if(!this.getInnerGraph().getVertices().isEmpty()) {
+				AbstractLayoutVertex v = this.getInnerGraph().getVertices().values().iterator().next();
+				System.out.println("Name: " + v.getClass().getName());
+				if (v instanceof LayoutLoopVertex) {
+					this.setColor(loopColor);
+				} else if (v instanceof LayoutMethodVertex) {
+					this.setColor(methodColor);
+				}
+			}
+			*/
+	}
 
 }
