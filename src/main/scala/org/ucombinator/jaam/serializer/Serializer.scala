@@ -59,7 +59,7 @@ class PacketInput(private val input : InputStream) {
     this.kryo.readClassAndObject(in) match {
       case o : Packet =>
         o
-      case o => throw new IOException("Read object is not a Packet: " + o)
+      case o => throw new IOException(f"Read object is not a Packet: $o")
     }
   }
 
@@ -82,15 +82,13 @@ class PacketInput(private val input : InputStream) {
 
     if (len != expected.length) {
       throw new IOException(
-        "Reading %s yielded only %d bytes. Expected %d bytes."
-          .format(name, len, expected.length))
+        f"Reading $name yielded only $len bytes. Expected ${expected.length} bytes.")
     }
 
     if (found.toList != expected.toList) {
       val e = (for (i <- expected) yield { "%x".format(i) }).mkString("")
       val f = (for (i <- found)    yield { "%x".format(i) }).mkString("")
-      throw new IOException("Invalid %s\n Expected: 0x%s\n Found:    0x%s"
-        .format(name, e, f))
+      throw new IOException(f"Invalid $name\n Expected: 0x$e\n Found:    0x$f")
     }
   }
 }
