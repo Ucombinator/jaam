@@ -35,39 +35,6 @@ public class OuterFrame {
                 this.tabPane = (TabPane) child;
     }
 
-    public void loadGraph(boolean chooseFile, boolean isLoopGraph)
-    {
-        Graph graph;
-        TakeInput ti = new TakeInput();
-        String filename = "";
-
-    	System.out.println("Load graph: start...");
-
-    	if(chooseFile) {
-            File file = GUIUtils.openFile(this.tabPane, "Load graph file");
-            if (file == null) {
-                System.out.println("Error! Invalid file.");
-                return;
-            }
-            /*if(isLoopGraph)
-                graph = ti.parseLoopGraph(file.getAbsolutePath());
-            else*/
-            graph = ti.parseStateGraph(file.getAbsolutePath());
-            filename = file.getName();
-        }
-        else {
-            graph = ti.parseStateGraph("");
-        }
-        
-        System.out.println("--> Create visualization: start...");
-        StacFrame newFrame = new StacFrame(graph);
-        System.out.println("<-- Create visualization: Done!");
-
-        this.tabPane.getTabs().add(newFrame);
-        tabPane.getSelectionModel().select(newFrame);
-        System.out.println("Load graph: done!");
-    }
-
     public StacFrame getCurrentFrame() {
         Tab currentTab = this.getCurrentTab();
         if(currentTab instanceof StacFrame)

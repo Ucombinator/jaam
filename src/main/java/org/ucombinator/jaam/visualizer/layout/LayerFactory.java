@@ -56,7 +56,7 @@ public class LayerFactory
 				{
 					AbstractLayoutVertex absVertex = methodVertices.get(vertex.getMethodName());
 					AbstractLayoutVertex absNeigh = methodVertices.get(neighbor.getMethodName());
-					
+
 					if(absVertex != absNeigh) {	// We are not distinguishing recursive calls
 						LayoutEdge e = new LayoutEdge(absVertex, absNeigh, LayoutEdge.EDGE_TYPE.EDGE_REGULAR);
 						edges.put(tempID, e);

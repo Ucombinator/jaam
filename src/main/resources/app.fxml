@@ -13,7 +13,7 @@
         <menus>
           <Menu mnemonicParsing="false" text="File">
             <items>
-                  <MenuItem fx:id="loadGraphMenuItem" mnemonicParsing="false" onAction="#loadGraph" text="Load graph" />
+                  <MenuItem fx:id="loadStateGraphMenuItem" mnemonicParsing="false" onAction="#loadStateGraph" text="Load graph" />
                   <MenuItem fx:id="loadLoopGraphMenuItem" mnemonicParsing="false" onAction="#loadLoopGraph" text="Load loop graph" />
             </items>
           </Menu>

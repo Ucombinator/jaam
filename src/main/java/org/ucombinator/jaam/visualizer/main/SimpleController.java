@@ -30,7 +30,7 @@ public class SimpleController implements Initializable {
         System.out.println("Initializing...");
     }
 
-    public void loadGraph(ActionEvent event) {
+    public void loadStateGraph(ActionEvent event) {
         loadAnyGraph(false);
     }
 
@@ -51,6 +51,8 @@ public class SimpleController implements Initializable {
             return;
         }
 
+        String path = file.getAbsolutePath();
+        System.out.println("File path: " + path);
         if(isLoopGraph)
             graph = ti.parseLoopGraph(file.getAbsolutePath());
         else

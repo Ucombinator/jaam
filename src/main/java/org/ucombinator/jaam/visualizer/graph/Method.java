@@ -2,19 +2,17 @@ package org.ucombinator.jaam.visualizer.graph;
 
 import java.util.ArrayList;
 
-import org.ucombinator.jaam.visualizer.main.Main;
-
 public class Method
 {
 	private final String methodName;
-	private Class our_class;
+	private OurClass our_class;
 	//private final String functionName;
 	private ArrayList<Vertex> vertices;
 	private ArrayList<Instruction> instructionList;
 
 	public Method()
 	{
-		this.our_class = new Class();
+		this.our_class = new OurClass();
 		this.methodName = "Dummy_method";
 		vertices = new ArrayList<Vertex>();
 		instructionList = new ArrayList<Instruction>();
@@ -22,7 +20,7 @@ public class Method
 
 	public Method(Graph graph, String methodName)
 	{
-		this.our_class = new Class();
+		this.our_class = new OurClass();
 		this.methodName = methodName;
 		vertices = new ArrayList<Vertex>();
 		instructionList = new ArrayList<Instruction>();
@@ -42,11 +40,11 @@ public class Method
 		return this.our_class.getClassName();
 	}
 
-	public Class getOurClass() {
+	public OurClass getOurClass() {
 		return this.our_class;
 	}
 
-	public void setClass(Class c) {
+	public void setClass(OurClass c) {
 		this.our_class = c;
 	}
 	

@@ -1,7 +1,5 @@
 package org.ucombinator.jaam.visualizer.graph;
 
-import java.io.File;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -12,7 +10,7 @@ public class Graph
     private ArrayList<String> tagsList;
     private ArrayList<Boolean> highlightedTags;
 	private HashMap<String, Method> methods;
-	private ArrayList<Class> classes;
+	private ArrayList<OurClass> ourClasses;
 
 	private double maxHeight; // required for collapse method
 	private int maxIndex;
@@ -21,7 +19,7 @@ public class Graph
 	{
 		this.vertices = new ArrayList<Vertex>();
 		this.methods = new LinkedHashMap<String, Method>();
-		this.classes = new ArrayList<Class>();
+		this.ourClasses = new ArrayList<OurClass>();
 		this.maxIndex = -1;
 
         this.tagsList = new ArrayList<String>();
@@ -32,8 +30,8 @@ public class Graph
 		return this.vertices;
 	}
 
-	public ArrayList<Class> getClasses() {
-		return this.classes;
+	public ArrayList<OurClass> getOurClasses() {
+		return this.ourClasses;
 	}
 
 	public Method getMethod(String methodName) {
@@ -124,14 +122,14 @@ public class Graph
 
 	public void addClass(String className, String classCode) {
 		System.out.println("Adding class: " + className);
-		Class c = new Class(className, classCode);
-		this.classes.add(c);
+		OurClass c = new OurClass(className, classCode);
+		this.ourClasses.add(c);
 	}
 
 	public void matchMethodsToClasses() {
-		if(classes.size() > 0) {
-			System.out.println("Matching methods to classes...");
-			for(Class c : this.classes)
+		if(ourClasses.size() > 0) {
+			System.out.println("Matching methods to ourClasses...");
+			for(OurClass c : this.ourClasses)
 				System.out.println(c.getCode());
 
 			for (Method m : this.methods.values()) {
@@ -150,7 +148,7 @@ public class Graph
 				System.out.println("packageName: " + packageName);
 				System.out.println("className: " + className);
 
-				for (Class c : this.classes) {
+				for (OurClass c : this.ourClasses) {
 					if (c.getCode().contains("package " + packageName) && c.getCode().contains("class " + className)) {
 						System.out.println("Method: " + m.getFullName());
 						System.out.println("Found matching class: " + fullClassName);
