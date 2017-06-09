@@ -20,6 +20,8 @@ import org.ucombinator.jaam.tools.app.Origin
 
 import com.strobel.decompiler._
 
+import org.objectweb.asm.tree.ClassNode
+import org.objectweb.asm.ClassReader
 import scala.collection.mutable
 
 import org.ucombinator.jaam.serializer
@@ -43,8 +45,10 @@ class HashMapTypeLoader extends ITypeLoader {
 
   def add(name: String, origin: Origin, data: Array[Byte]) {
     try {
-      val typeDefinition = ClassFileReader.readClass(IMetadataResolver.EMPTY, new Buffer(data))
-      classes += typeDefinition.getInternalName -> ClassData(name, origin, data)
+      val cr = new ClassReader(data)
+      val cn = new ClassNode()
+      cr.accept(cn, 0)
+      classes += cn.name -> ClassData(name, origin, data)
     } catch { case e: Exception =>
         println("Error while loading:\n")
         e.printStackTrace()
@@ -118,6 +122,8 @@ object Main {
     for (name <- typeLoader.classes.keys) {
       if (exclude.contains(name)) {
         println(f"Excluding ($index of $total) $name")
+      } else if (typeLoader.classes(name).origin != Origin.APP) {
+        println(f"Skipping non-APP ($index of $total) $name")
       } else {
         try {
           println(f"Decompiling ($index of $total) $name")
