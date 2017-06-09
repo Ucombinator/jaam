@@ -76,9 +76,13 @@ object Main {
       val jar = Jar.jar(data)
 
       def getMains(): List[String] = {
-        Jar.entries(jar).map(_._1.getName)
-          .filter(_.endsWith("StacMain.class"))
-          .map(_.stripSuffix(".class").replace('/', '.'))
+        val main = jar.getManifest.getMainAttributes.getValue("Main-Class")
+        if (main != null) { return List(main) }
+        else {
+          return Jar.entries(jar).map(_._1.getName)
+            .filter(_.endsWith("StacMain.class"))
+            .map(_.stripSuffix(".class").replace('/', '.'))
+        }
       }
 
       val detectedOrigin = origin match {
@@ -86,13 +90,9 @@ object Main {
           if (r == Origin.APP) { mains ++= getMains()}
           r
         case None =>
-          val main = jar.getManifest.getMainAttributes.getValue("Main-Class")
-          if (main != null) { mains :+= main; println("manifest"); Origin.APP }
-          else {
-            getMains() match {
-              case List() => Origin.LIB
-              case es => mains ++= es; Origin.APP
-            }
+          getMains() match {
+            case List() => Origin.LIB
+            case es => mains ++= es; Origin.APP
           }
       }
 
