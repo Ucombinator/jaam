@@ -77,37 +77,11 @@ object Main {
               println(f"Skipping non-class file in jar file ${entry.getName}")
             } else {
               println(f"Reading class file in jar file ${entry.getName}")
-              val bytes = new Array[Byte](entry.getSize.toInt)
-              var pos = 0
-              while (pos != entry.getSize) {
-                val length = jar.read(bytes, pos, entry.getSize.toInt - pos)
-                if (length == -1) { throw new Exception(f"Reached end of stream at position $pos, which is before entry size ${entry.getSize}") }
-                pos += length
-              }
-              typeLoader.add(path + "!" + entry.getName, origin, bytes)
+              typeLoader.add(path + "!" + entry.getName, origin, org.ucombinator.jaam.util.Misc.toByteArray(jar))
             }
           }
         }
     }
-
-    //for ((entry, bytes) <- org.ucombinator.jaam.util.Jar.entries(new java.io.FileInputStream(input(0)))) {
-    //  println(f"name ${entry.getName()} size ${entry.getSize.toInt} comsize ${entry.getCompressedSize} bytes ${bytes.length}")
-    //}
-
-/*
-    var entry: java.util.jar.JarEntry = null
-    while ({entry = jar.getNextJarEntry(); entry != null}) {
-      println(f"name ${entry.getName()} size ${entry.getSize.toInt} comsize ${entry.getCompressedSize}")
-      if (entry.getSize == -1) {
-        val bytes = org.ucombinator.jaam.util.Misc.toByteArray(jar)
-        println(f"bytes: ${bytes.length}")
-      } else {
-        val bytes = new Array[Byte](entry.getSize.toInt)
-        jar.read(bytes, 0, entry.getSize.toInt)
-        typeLoader.add(bytes)
-      }
-    }
- */
 
     for (file <- input) {
       for (a0 <- org.ucombinator.jaam.serializer.Serializer.readAll(file)) {
@@ -123,24 +97,6 @@ object Main {
         }
       }
     }
-
-/*
-    for (file <- input) {
-      val stream = new FileInputStream(file)
-      val pi = new serializer.PacketInput(stream)
-
-      var packet: serializer.Packet = null
-      while ({packet = pi.read(); !packet.isInstanceOf[serializer.EOF]}) {
-      //for (packet <- pi) {
-        packet match {
-          case packet: tools.app.App =>
-            if (rt) { packet.classpath.java.map(loadData(_)) }
-            if (lib) { packet.classpath.lib.map(loadData(_)) }
-            if (app) { packet.classpath.app.map(loadData(_)) }
-        }
-      }
-    }
- */
 
     val stream = new FileOutputStream(output)
     val po = new serializer.PacketOutput(stream)
