@@ -113,10 +113,9 @@ object Main {
     appConfig.classpath ++= readList(app, Some(Origin.APP))
     appConfig.classpath ++= readList(lib, Some(Origin.LIB))
     appConfig.classpath ++= readList(jvm, Some(Origin.JVM))
-    // TODO: add rt.jar (and others?)
 
     if (defaultJvm) {
-      val JVM_JARS = "/java-1.7.0-openjdk-headless-1.7.0.85-2.6.1.2.el7_1.x86_64.zip"
+      val JVM_JARS = "java-1.7.0-openjdk-headless-1.7.0.85-2.6.1.2.el7_1.x86_64.zip"
       val res = getClass.getResourceAsStream(JVM_JARS)
       for (entry <- Zip.entries(Zip.zip(res))) {
         if (entry._1.getName.endsWith(".jar")) {
