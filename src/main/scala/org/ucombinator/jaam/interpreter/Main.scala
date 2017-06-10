@@ -44,7 +44,7 @@ import soot.jimple.toolkits.callgraph._
 import soot.jimple.toolkits.invoke.AccessManager
 import soot.tagkit._
 
-import org.ucombinator.jaam.main.Log
+import org.ucombinator.jaam.util.Log
 import org.ucombinator.jaam.serializer
 import org.ucombinator.jaam.util.Stmt
 import org.ucombinator.jaam.util.Soot

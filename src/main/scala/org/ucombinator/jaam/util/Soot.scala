@@ -10,7 +10,6 @@ import org.ucombinator.jaam.serializer
 import org.ucombinator.jaam.tools.app.{App, PathElement, Origin}
 import soot.{Unit => SootUnit, _}
 import soot.options.Options
-import org.ucombinator.jaam.main.Log
 
 // Helpers for working with Soot.
 //

@@ -6,7 +6,7 @@ import scala.collection.mutable
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.jimple.{Stmt => SootStmt, _}
 
-import org.ucombinator.jaam.main.Log
+import org.ucombinator.jaam.util.Log
 import org.ucombinator.jaam.interpreter.snowflakes._
 import org.ucombinator.jaam.util._
 

@@ -3,6 +3,7 @@ package org.ucombinator.jaam.main
 import org.rogach.scallop._
 import java.io._
 import scala.collection.JavaConverters._
+import org.ucombinator.jaam.util.Log
 
 class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamConf {
   shortSubcommandsHelp(true)

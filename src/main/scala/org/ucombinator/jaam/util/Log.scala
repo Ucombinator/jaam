@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.main
+package org.ucombinator.jaam.util
 
 import com.esotericsoftware.minlog
 
