@@ -4,13 +4,45 @@ import com.esotericsoftware.minlog
 
 // Logging that does not evaluate its message unless it is actually printed
 object Log {
-  type Level = Int
-  val LEVEL_NONE = minlog.Log.LEVEL_NONE
-  val LEVEL_ERROR = minlog.Log.LEVEL_ERROR
-  val LEVEL_WARN = minlog.Log.LEVEL_WARN
-  val LEVEL_INFO = minlog.Log.LEVEL_INFO
-  val LEVEL_DEBUG = minlog.Log.LEVEL_DEBUG
-  val LEVEL_TRACE = minlog.Log.LEVEL_TRACE
+  sealed abstract class Level {
+    val level: Int
+    val name: String
+
+    override def toString(): String = name
+  }
+
+  object LEVEL_NONE extends Level {
+    override val level = minlog.Log.LEVEL_NONE
+    override val name = "none"
+  }
+  object LEVEL_ERROR extends Level {
+    override val level = minlog.Log.LEVEL_ERROR
+    override val name = "error"
+  }
+  object LEVEL_WARN extends Level {
+    override val level = minlog.Log.LEVEL_WARN
+    override val name = "warn"
+  }
+  object LEVEL_INFO extends Level {
+    override val level = minlog.Log.LEVEL_INFO
+    override val name = "info"
+  }
+  object LEVEL_DEBUG extends Level {
+    override val level = minlog.Log.LEVEL_DEBUG
+    override val name = "debug"
+  }
+  object LEVEL_TRACE extends Level {
+    override val level = minlog.Log.LEVEL_TRACE
+    override val name = "trace"
+  }
+
+  val levels = List(
+    LEVEL_NONE,
+    LEVEL_ERROR,
+    LEVEL_WARN,
+    LEVEL_INFO,
+    LEVEL_DEBUG,
+    LEVEL_TRACE)
 
   // TODO: make these more efficient by making them macros
   def error(message : => String) : Unit = if (minlog.Log.ERROR) minlog.Log.error(null, message, null)
@@ -19,13 +51,13 @@ object Log {
   def debug(message : => String) : Unit = if (minlog.Log.DEBUG) minlog.Log.debug(null, message, null)
   def trace(message : => String) : Unit = if (minlog.Log.TRACE) minlog.Log.trace(null, message, null)
 
-  def setLogging(level : Level) = minlog.Log.set(level)
+  def setLogging(level : Level) = minlog.Log.set(level.level)
 
   var color: Boolean = true
 
-  minlog.Log.setLogger(new JaamLogger)
+  minlog.Log.setLogger(JaamLogger)
 
-  class JaamLogger extends minlog.Log.Logger {
+  private object JaamLogger extends minlog.Log.Logger {
     private var level = 0
 
     override def log(level : Int, category : String, message : String, ex : Throwable) {

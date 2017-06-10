@@ -38,7 +38,6 @@ abstract class Main(name: String /* TODO: = Main.SubcommandName(getClass())*/) e
   // TODO: descr()
   def run(): Unit
 
-  import scala.collection.immutable
   // Move to conf?
   val waitForUser = toggle(
     descrYes = "wait for user to press enter before starting (default: off)", // TODO: note: usefull for debugging and profiling
@@ -51,13 +50,7 @@ abstract class Main(name: String /* TODO: = Main.SubcommandName(getClass())*/) e
     descr = "the level of logging verbosity",
     default = Some("warn"),
     argType = "log level",
-    elems = immutable.ListMap(
-      "none" -> Log.LEVEL_NONE,
-      "error" -> Log.LEVEL_ERROR,
-      "warn" -> Log.LEVEL_WARN,
-      "info" -> Log.LEVEL_INFO,
-      "debug" -> Log.LEVEL_DEBUG,
-      "trace" -> Log.LEVEL_TRACE))
+    elems = scala.collection.immutable.ListMap(Log.levels.map(l => l.name -> l) :_*))
 }
 
 object Main {
