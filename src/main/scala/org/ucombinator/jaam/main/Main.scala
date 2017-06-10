@@ -35,15 +35,13 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamCon
 }
 
 abstract class Main(name: String /* TODO: = Main.SubcommandName(getClass())*/) extends Subcommand(name) with JaamConf {
-  // TODO: descr()
+  // TODO: describe()
   def run(): Unit
 
-  // Move to conf?
   val waitForUser = toggle(
     descrYes = "wait for user to press enter before starting (default: off)", // TODO: note: usefull for debugging and profiling
     noshort = true, prefix = "no-", default = Some(false))
 
-  // Move to JaamConf
   val color = toggle(prefix = "no-", default = Some(true))
 
   val logLevel = enum[Log.Level](
@@ -54,7 +52,6 @@ abstract class Main(name: String /* TODO: = Main.SubcommandName(getClass())*/) e
 }
 
 object Main {
-  // TODO: support '-jar" with main-class
   def conf = _conf
   private var _conf: MainConf = _
 
@@ -65,17 +62,15 @@ object Main {
     _conf.subcommand match {
       case None => println("ERROR: No subcommand specified")
       case Some(m : Main) =>
-        if (m.waitForUser()) { // TODO: move to main.Main
+        if (m.waitForUser()) {
           print("Press enter to start.")
           scala.io.StdIn.readLine()
         }
 
-        Log.setLogging(m.logLevel()) // TODO: move to main.Main
+        Log.setLogging(m.logLevel())
         Log.color = m.color()
 
-
         m.run()
-      case Some(other) => println("ERROR: Bad subcommand specified: " + other)
     }
   }
 
@@ -175,6 +170,7 @@ object Agent extends Main("agent") {
   val arguments = trailArg[List[String]](default = Some(List()))
 
   def run() {
+    // Agent launches a new process because we want to load only core JVM classes
     var java = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java"
 
     if (System.getProperty("os.name").toLowerCase().contains("win")) {
@@ -193,8 +189,6 @@ object Agent extends Main("agent") {
     System.exit(new ProcessBuilder(cmd.asJava).inheritIO().start().waitFor())
   }
 }
-
-// TODO: agent is special because we have to launch a new process
 
 object Cat extends Main("cat") {
   banner("Combine multile JAAM files into a single, cohesive file.")
