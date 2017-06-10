@@ -7,6 +7,7 @@ import soot.jimple.{Stmt => SootStmt, _}
 
 import org.ucombinator.jaam.main.Log
 import org.ucombinator.jaam.interpreter._
+import org.ucombinator.jaam.util.{Soot, Stmt}
 
 // Note: currently enabled
 object ClassSnowflakes {

@@ -5,30 +5,27 @@ package org.ucombinator.jaam.serializer
  * PacketInput and PacketOutput in this package.
  * ****************************************/
 
+import java.io.{FileInputStream, IOException, InputStream, OutputStream}
 import java.lang.Object
-import java.io.{IOException, InputStream, OutputStream, FileInputStream}
 import java.lang.reflect.Type
 import java.util.zip.{DeflaterOutputStream, InflaterInputStream}
 
+import scala.collection.{immutable, mutable}
 import scala.collection.JavaConverters._
-import soot.{SootMethod, Local}
-import soot.jimple.{Stmt => SootStmt, Ref, Constant, InvokeExpr}
-import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
-import soot.util.Chain
-import org.objectweb.asm.tree.{AbstractInsnNode, InsnList}
-import com.esotericsoftware.minlog.Log
-import com.esotericsoftware.kryo
+
 import com.esotericsoftware.kryo.{Kryo, Registration}
+import com.esotericsoftware.kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.serializers.FieldSerializer
-import org.objenesis.strategy.StdInstantiatorStrategy
-import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer
-import com.twitter.chill.{AllScalaRegistrar, KryoBase, ScalaKryoInstantiator}
 import com.strobel.decompiler.languages.java.ast.AstNode
 import com.strobel.decompiler.patterns.Role
-
-import scala.collection.mutable
-import scala.collection.immutable
+import com.twitter.chill.{AllScalaRegistrar, KryoBase}
+import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer
+import org.objectweb.asm.tree.{AbstractInsnNode, InsnList}
+import org.objenesis.strategy.StdInstantiatorStrategy
+import soot.{Local, SootMethod}
+import soot.jimple.{Constant, InvokeExpr, Ref, Stmt => SootStmt}
+import soot.util.Chain
 
 object Serializer {
   def readAll(file: String): List[Packet] = {

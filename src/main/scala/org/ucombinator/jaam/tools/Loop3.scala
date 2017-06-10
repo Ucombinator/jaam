@@ -9,7 +9,7 @@ import org.ucombinator.jaam.tools
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.options.Options
 import soot.jimple.{Stmt => SootStmt, _}
-import org.ucombinator.jaam.interpreter.Stmt
+import org.ucombinator.jaam.util.Stmt
 import org.ucombinator.jaam.util.Soot
 import org.ucombinator.jaam.tools.app.{Origin, App}
 import org.ucombinator.jaam.tools.coverage2.Coverage2
@@ -124,17 +124,17 @@ object Main {
     }
 
     // Get all classes loaded so Soot doesn't keep recomputing the Hierarchy
-    for (name <- Soot.classes.keys) {
+    for (name <- Soot.loadedClasses.keys) {
       Soot.getSootClass(name)
       println(f"class name: $name")
     }
 
-    for (name <- Soot.classes.keys) {
+    for (name <- Soot.loadedClasses.keys) {
         class_count += 1
         //val name = entry.getName.replace("/", ".").replaceAll("\\.class$", "")
-        println(f"class origin ${Soot.classes(name).origin} $class_count: $name")
+        println(f"class origin ${Soot.loadedClasses(name).origin} $class_count: $name")
 
-      if (Soot.classes(name).origin == Origin.APP) {
+      if (Soot.loadedClasses(name).origin == Origin.APP) {
         val c = Soot.getSootClass(name)
         // The .toList prevents a concurrent access exception
         for (m <- c.getMethods.asScala.toList) {
@@ -176,7 +176,7 @@ object Main {
         edge_count += 1
         var isAppOut = false
         var isAppIn = false
-        Soot.classes.get(s.sootMethod.getDeclaringClass.getName) match {
+        Soot.loadedClasses.get(s.sootMethod.getDeclaringClass.getName) match {
           case None => println(f"couldn't find src: " + s.sootMethod.getDeclaringClass.getName + "::" + s)
           case Some(r) =>
             //println(f"found src $r $s")
@@ -186,7 +186,7 @@ object Main {
             }
         }
 
-        Soot.classes.get(d.getDeclaringClass.getName) match {
+        Soot.loadedClasses.get(d.getDeclaringClass.getName) match {
           case None => println(f"couldn't find dst: " + d.getDeclaringClass.getName + "::" + d)
           case Some(r) =>
             //println(f"found dst $r $d")
@@ -217,11 +217,11 @@ object Main {
 
     val appEdges =
       for ((s, ds) <- edges;
-        Some(c) = Soot.classes.get(s.sootMethod.getDeclaringClass.getName);
+        Some(c) = Soot.loadedClasses.get(s.sootMethod.getDeclaringClass.getName);
         if c.origin == Origin.APP;
         new_ds =
           for (d <- ds;
-            Some(c2) = Soot.classes.get(d.getDeclaringClass.getName);
+            Some(c2) = Soot.loadedClasses.get(d.getDeclaringClass.getName);
             if c2.origin == Origin.APP) yield { d };
         if new_ds.size > 0) yield { s -> new_ds }
 

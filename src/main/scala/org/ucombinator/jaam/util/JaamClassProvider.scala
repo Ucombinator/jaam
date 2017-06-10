@@ -4,7 +4,7 @@ package org.ucombinator.jaam.util {
   // Use Soot.useJaamClassProvider to install this provider
   class JaamClassProvider extends ClassProvider {
     override def find(cls: String): ClassSource = {
-      Soot.classes.get(cls) match {
+      Soot.loadedClasses.get(cls) match {
         case None => null
         case Some(c) =>
           new soot.asm.JaamClassSource(c.source, new soot.JaamFoundFile(cls, c.data))

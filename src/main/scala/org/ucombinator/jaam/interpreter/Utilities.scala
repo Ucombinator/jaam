@@ -6,6 +6,7 @@ import java.io.{FileInputStream, File}
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 
 import org.ucombinator.jaam.main.Log
+import org.ucombinator.jaam.util.Soot
 
 object Utilities {
   def stringToType(s: String): Type = {

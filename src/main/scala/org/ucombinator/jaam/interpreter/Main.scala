@@ -46,7 +46,9 @@ import soot.tagkit._
 
 import org.ucombinator.jaam.main.Log
 import org.ucombinator.jaam.serializer
-import org.ucombinator.jaam.interpreter.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
+import org.ucombinator.jaam.util.Stmt
+import org.ucombinator.jaam.util.Soot
+import org.ucombinator.jaam.util.Stmt.unitToStmt // Automatically convert soot.Unit to soot.Stmt
 import org.ucombinator.jaam.interpreter.snowflakes._
 
 // TODO: some sets could just be lists until we sort them out at the end

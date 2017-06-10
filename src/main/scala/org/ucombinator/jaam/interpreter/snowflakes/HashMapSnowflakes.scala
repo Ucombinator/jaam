@@ -6,6 +6,7 @@ import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.jimple.{Stmt => SootStmt, _}
 
 import org.ucombinator.jaam.interpreter._
+import org.ucombinator.jaam.util._
 
 // Note: currently disabled
 object HashMapSnowflakes {
