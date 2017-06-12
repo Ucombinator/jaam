@@ -62,37 +62,35 @@ object Main {
   def main(input: List[String], output: String, exclude: List[String], jvm: Boolean, lib: Boolean, app: Boolean) {
     val typeLoader = new HashMapTypeLoader()
 
-    def loadData(p: tools.app.PathElement) = p match {
-      // TODO: use PathElement.classData()
-      case tools.app.PathElement(path, root, origin, data) =>
-        if (path.endsWith(".class")) {
-          println(f"Reading class file (from root $root) $path")
-          typeLoader.add(path, origin, data)
-        } else if (!path.endsWith(".jar")) {
-          println(f"Skipping non-class, non-jar file (from root $root) $path")
-        } else {
-          println(f"Reading jar file (from root $root) $path")
-          val jar = new java.util.jar.JarInputStream(
-            new java.io.ByteArrayInputStream(data))
-
-          var entry: java.util.jar.JarEntry = null
-          while ({entry = jar.getNextJarEntry(); entry != null}) {
-            if (!entry.getName.endsWith(".class")) {
-              println(f"Skipping non-class file in jar file ${entry.getName}")
-            } else {
-              println(f"Reading class file in jar file ${entry.getName}")
-              typeLoader.add(path + "!" + entry.getName, origin, org.ucombinator.jaam.util.Misc.toByteArray(jar))
-            }
-          }
-        }
-    }
-
     for (file <- input) {
       for (a0 <- org.ucombinator.jaam.serializer.Serializer.readAll(file)) {
         if (a0.isInstanceOf[org.ucombinator.jaam.tools.app.App]) {
           val a = a0.asInstanceOf[org.ucombinator.jaam.tools.app.App]
           for (pe <- a.classpath) {
-            loadData(pe)
+            pe match {
+              // TODO: use PathElement.classData()
+              case tools.app.PathElement(path, root, origin, data) =>
+                if (path.endsWith(".class")) {
+                  println(f"Reading class file (from root $root) $path")
+                  typeLoader.add(path, origin, data)
+                } else if (!path.endsWith(".jar")) {
+                  println(f"Skipping non-class, non-jar file (from root $root) $path")
+                } else {
+                  println(f"Reading jar file (from root $root) $path")
+                  val jar = new java.util.jar.JarInputStream(
+                    new java.io.ByteArrayInputStream(data))
+
+                  var entry: java.util.jar.JarEntry = null
+                  while ({entry = jar.getNextJarEntry(); entry != null}) {
+                    if (!entry.getName.endsWith(".class")) {
+                      println(f"Skipping non-class file in jar file ${entry.getName}")
+                    } else {
+                      println(f"Reading class file in jar file ${entry.getName}")
+                      typeLoader.add(path + "!" + entry.getName, origin, org.ucombinator.jaam.util.Misc.toByteArray(jar))
+                    }
+                  }
+                }
+            }
           }
         }
       }
