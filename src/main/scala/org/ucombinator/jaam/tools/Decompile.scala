@@ -92,11 +92,7 @@ object Main {
         if (a0.isInstanceOf[org.ucombinator.jaam.tools.app.App]) {
           val a = a0.asInstanceOf[org.ucombinator.jaam.tools.app.App]
           for (pe <- a.classpath) {
-            pe.origin match {
-              case Origin.APP => if (app) loadData(pe)
-              case Origin.LIB => if (lib) loadData(pe)
-              case Origin.JVM => if (jvm) loadData(pe)
-            }
+            loadData(pe)
           }
         }
       }
