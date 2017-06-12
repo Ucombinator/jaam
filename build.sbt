@@ -24,7 +24,8 @@ libraryDependencies ++= Seq(
   "de.javakaffee" % "kryo-serializers" % "0.38",
   "org.ucombinator.heros" % "heros" % "nightly.20161021",
   "org.ucombinator.soot" % "soot" % "nightly.20161021",
-  "org.bitbucket.mstrobel" % "procyon-compilertools" % "0.5.32"
+  "org.bitbucket.mstrobel" % "procyon-compilertools" % "0.5.32",
+  "org.jgrapht" % "jgrapht-core" % "1.0.1"
 )
 
 // Silence warning about multiple main classes

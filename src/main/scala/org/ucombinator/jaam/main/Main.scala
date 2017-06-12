@@ -30,6 +30,7 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamCon
   addSubcommand(Taint)
   addSubcommand(Validate)
   addSubcommand(DecompileToFile)
+  addSubcommand(Taint2)
 
   verify()
 }
@@ -498,6 +499,18 @@ object DecompileToFile extends Main("decompile-to-file") {
 
   def run() {
     org.ucombinator.jaam.tools.decompileToFile.DecompileToFile.main(
+      input = input(), output = output())
+  }
+}
+
+object Taint2 extends Main("taint2") {
+  banner("TODO")
+
+  val input = inputOpt()
+  val output = outputOpt()
+
+  def run() {
+    org.ucombinator.jaam.tools.taint2.Taint2.main(
       input = input(), output = output())
   }
 }
