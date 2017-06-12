@@ -26,12 +26,6 @@ object Soot {
     unit.asInstanceOf[SootStmt]
   }
 
-  implicit def valueToExpr(value : Value) : Expr = {
-    assert(value ne null, "value is null")
-    assert(value.isInstanceOf[SootStmt], "value not instance of Expr. Value is of class: " + value.getClass)
-    value.asInstanceOf[Expr]
-  }
-
   def useJaamClassProvider(): Unit = {
     SourceLocator.v.setClassProviders(List[ClassProvider](new JaamClassProvider).asJava)
   }

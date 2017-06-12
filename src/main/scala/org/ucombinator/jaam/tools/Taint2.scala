@@ -5,7 +5,7 @@ import org.ucombinator.jaam.serializer.Serializer
 import org.ucombinator.jaam.tools.app.{Origin, App}
 import org.ucombinator.jaam.util.Stmt
 
-import org.ucombinator.jaam.util.Soot.{unitToStmt, valueToExpr}
+import org.ucombinator.jaam.util.Soot.unitToStmt
 
 import org.jgrapht._
 import org.jgrapht.graph._
@@ -18,6 +18,8 @@ import scala.collection.immutable
 import scala.collection.JavaConverters._
 
 abstract class TaintAddress
+
+case class LocalAddr(local: Local) extends TaintAddress // TODO: Include method and maybe stmt (but probably not)
 
 object Taint2 {
   def main(input: List[String], output: String) {
@@ -109,8 +111,10 @@ object Taint2 {
       case _ => Set()
     }
 
-    def addrsOf(expr: Expr): Set[TaintAddress] = {
-      expr match {
+    def addrsOf(value: SootValue): Set[TaintAddress] = {
+      value match {
+        case value: Local => Set(LocalAddr(value))
+        // TODO: add more
         case _ => Set() // TODO: throw error instead of returning empty set
       }
     }
@@ -147,6 +151,7 @@ object Taint2 {
                     }
                   }
                   /// TODO: more cases
+                case _ => {} // TODO: error instead of noop
               }
 /*
               stmt_count += 1
@@ -172,5 +177,16 @@ object Taint2 {
       }
     }
 
+    println(f"Graph: $graph")
+
+    for (e <- graph.edgeSet.asScala) {
+      println(f"Edge: ${e}")
+    }
+    // TODO: print in GraphViz (dot) format
+    // TODO: serialize to "output"
+
+    // TODO: option to allow selecting only sub-part of graph
+
+    // TODO: work with visualizer team to get it visualized
   }
 }

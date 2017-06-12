@@ -7,7 +7,7 @@ import soot.{SootMethod, Unit => SootUnit}
 import soot.jimple.{Stmt => SootStmt, _}
 import soot.tagkit.{GenericAttribute, SourceFileTag}
 
-import org.ucombinator.jaam.util.Soot.{unitToStmt, valueToExpr}
+import org.ucombinator.jaam.util.Soot.unitToStmt
 
 object Stmt {
   val indexTag = "org.ucombinator.jaam.Stmt.indexTag"
