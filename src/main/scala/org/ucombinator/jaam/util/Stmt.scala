@@ -7,15 +7,10 @@ import soot.{SootMethod, Unit => SootUnit}
 import soot.jimple.{Stmt => SootStmt, _}
 import soot.tagkit.{GenericAttribute, SourceFileTag}
 
+import org.ucombinator.jaam.util.Soot.{unitToStmt, valueToExpr}
+
 object Stmt {
   val indexTag = "org.ucombinator.jaam.Stmt.indexTag"
-
-  import scala.language.implicitConversions
-  implicit def unitToStmt(unit : SootUnit) : SootStmt = {
-    assert(unit ne null, "unit is null")
-    assert(unit.isInstanceOf[SootStmt], "unit not instance of Stmt. Unit is of class: " + unit.getClass)
-    unit.asInstanceOf[SootStmt]
-  }
 
   def getIndex(sootStmt : SootStmt, sootMethod : SootMethod) : Int = {
     if (sootStmt.hasTag(Stmt.indexTag)) {
@@ -35,8 +30,6 @@ object Stmt {
 }
 
 case class Stmt(val sootStmt : SootStmt, val sootMethod : SootMethod) extends CachedHashCode {
-  import Stmt.unitToStmt
-
   val index = Stmt.getIndex(sootStmt, sootMethod)
   val line = sootStmt.getJavaSourceStartLineNumber
   val column = sootStmt.getJavaSourceStartColumnNumber

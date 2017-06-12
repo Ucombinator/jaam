@@ -146,7 +146,7 @@ object Main {
             for (sootStmt <- Soot.getBody(m).getUnits.asScala) {
               stmt_count += 1
               //println(f"stmt $stmt_count: $sootStmt")
-              val s = Stmt(Stmt.unitToStmt(sootStmt), m)
+              val s = Stmt(Soot.unitToStmt(sootStmt), m)
               val ts = stmtTargets(s)
               target_count += ts.size
               if (edges.contains(s)) {

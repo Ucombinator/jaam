@@ -9,6 +9,7 @@ import org.objectweb.asm.tree.ClassNode
 import org.ucombinator.jaam.serializer
 import org.ucombinator.jaam.tools.app.{App, PathElement, Origin}
 import soot.{Unit => SootUnit, _}
+import soot.jimple.{Stmt => SootStmt, Expr}
 import soot.options.Options
 
 // Helpers for working with Soot.
@@ -18,6 +19,19 @@ import soot.options.Options
 
 
 object Soot {
+  import scala.language.implicitConversions
+  implicit def unitToStmt(unit : SootUnit) : SootStmt = {
+    assert(unit ne null, "unit is null")
+    assert(unit.isInstanceOf[SootStmt], "unit not instance of Stmt. Unit is of class: " + unit.getClass)
+    unit.asInstanceOf[SootStmt]
+  }
+
+  implicit def valueToExpr(value : Value) : Expr = {
+    assert(value ne null, "value is null")
+    assert(value.isInstanceOf[SootStmt], "value not instance of Expr. Value is of class: " + value.getClass)
+    value.asInstanceOf[Expr]
+  }
+
   def useJaamClassProvider(): Unit = {
     SourceLocator.v.setClassProviders(List[ClassProvider](new JaamClassProvider).asJava)
   }
