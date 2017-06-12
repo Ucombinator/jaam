@@ -63,9 +63,10 @@ object Main {
       }).toList.flatten
     } else if (path.toString.endsWith(".class")) {
       val data = Files.readAllBytes(path)
-      if (!data.startsWith(List(0xCA, 0xFE, 0xBA, 0xBE))) {
-        throw new Exception(f"Malformed class file $path at $root")
-      }
+      println(f"${data(0)}%x ${data(1)}%x ${data(2)}%x ${data(3)}%x")
+      //if (!data.startsWith(List(0xCA, 0xFE, 0xBA, 0xBE))) {
+      //  throw new Exception(f"TTT Malformed class file $path at $root")
+      //}
       return List(PathElement(path.toString, root.toString, origin.getOrElse(Origin.APP), data))
     } else if (path.toString.endsWith(".jar")) {
       val data = Files.readAllBytes(path)
