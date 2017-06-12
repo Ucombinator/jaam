@@ -405,7 +405,7 @@ object Loop3 extends Main("loop3") {
 
   def run() {
     //Main.main(classpath.getOrElse(List()))
-    org.ucombinator.jaam.tools.loop3.Main.main(input.getOrElse(List()), output.toOption, prune(), shrink(), prettyPrint())
+    org.ucombinator.jaam.tools.loop3.Main.main(input(), output(), prune(), shrink(), prettyPrint())
   }
 }
 

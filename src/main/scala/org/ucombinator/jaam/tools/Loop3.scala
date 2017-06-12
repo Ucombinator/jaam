@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 import org.ucombinator.jaam.util.Soot
 
 object Main {
-  def main(input: List[String], jaam: Option[String], prune: Boolean, shrink: Boolean, prettyPrint: Boolean) {
+  def main(input: List[String], jaam: String, prune: Boolean, shrink: Boolean, prettyPrint: Boolean) {
     Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
     Options.v().set_keep_line_number(true)
@@ -263,7 +263,7 @@ object Main {
 
   // Copied from Loop2.main
   def computeLoopGraph(mainClass: String, mainMethod: String, /*classpath: String,*/
-      graphStream: PrintStream, coverageStream: PrintStream, jaam: Option[String], prune: Boolean, shrink: Boolean, prettyPrint: Boolean, m: SootMethod, cg: Map[SootMethod, Map[Stmt, Set[SootMethod]]]): Unit = {
+      graphStream: PrintStream, coverageStream: PrintStream, jaam: String, prune: Boolean, shrink: Boolean, prettyPrint: Boolean, m: SootMethod, cg: Map[SootMethod, Map[Stmt, Set[SootMethod]]]): Unit = {
     import org.ucombinator.jaam.tools.LoopAnalyzer
     import org.ucombinator.jaam.serializer
 
@@ -280,13 +280,9 @@ object Main {
     }
 
     // TODO: print unpruned size
-    jaam match {
-      case None =>
-      case Some(jaamFile) =>
-        val outSerializer = new serializer.PacketOutput(new FileOutputStream(jaamFile))
-        shrunk.toJaam(outSerializer)
-        outSerializer.close()
-    }
+    val outSerializer = new serializer.PacketOutput(new FileOutputStream(jaam))
+    shrunk.toJaam(outSerializer)
+    outSerializer.close()
 
     Console.withOut(graphStream) {
       println("digraph loops {")
