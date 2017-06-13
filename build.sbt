@@ -15,15 +15,12 @@ libraryDependencies ++= Seq(
   "com.twitter" %% "chill" % "0.8.0",
   "de.javakaffee" % "kryo-serializers" % "0.38",
   "org.bitbucket.mstrobel" % "procyon-compilertools" % "0.5.32",
-  "org.jgrapht" % "jgrapht-core" % "1.0.1"
+  "org.jgrapht" % "jgrapht-core" % "1.0.1",
   "org.ow2.asm" % "asm-commons" % "5.1",
-  "org.ow2.asm" % "asm-tree" % "5.1",
-  "org.rogach" %% "scallop" % "2.0.1",
   "org.rogach" %% "scallop" % "2.0.1",
   "org.scala-lang" % "scala-reflect" % "2.11.8",
   "org.slf4j" % "slf4j-nop" % "1.7.22",
-  "org.ucombinator.heros" % "heros" % "nightly.20161021",
-  "org.ucombinator.soot" % "soot" % "nightly.20161021",
+  "org.ucombinator.soot" % "soot" % "nightly.20161021"
 )
 
 // Silence warning about multiple main classes
