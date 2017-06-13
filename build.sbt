@@ -13,13 +13,11 @@ resolvers += "Ucombinator maven repository on github" at "https://ucombinator.gi
 libraryDependencies ++= Seq(
   "org.rogach" %% "scallop" % "2.0.1",
   "com.esotericsoftware" % "minlog" % "1.3.0",
-  "com.google.guava" % "guava" % "20.0",
   "org.ow2.asm" % "asm-tree" % "5.1",
   "org.ow2.asm" % "asm-commons" % "5.1",
   "org.rogach" %% "scallop" % "2.0.1",
   "org.scala-lang" % "scala-reflect" % "2.11.8",
   "org.slf4j" % "slf4j-nop" % "1.7.22",
-  "org.json4s" %% "json4s-jackson" % "3.3.0",
   "com.twitter" %% "chill" % "0.8.0",
   "de.javakaffee" % "kryo-serializers" % "0.38",
   "org.ucombinator.heros" % "heros" % "nightly.20161021",
