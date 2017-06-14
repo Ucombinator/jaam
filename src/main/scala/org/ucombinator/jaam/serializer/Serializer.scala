@@ -122,7 +122,6 @@ class PacketOutput(private val output : OutputStream) {
   private val kryo : Kryo = new JaamKryo()
 }
 
-
 private[this] object Signatures {
   // File signature using the same style as PNG
   // \x008a = 'J' + 0x40: High bit set so 'file' knows we are binary
@@ -460,5 +459,3 @@ class JaamKryo extends KryoBase {
     yield { (role.getNodeType.toString, role.toString) -> i }).toMap
   }
 }
-
-
