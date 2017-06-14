@@ -6,161 +6,161 @@ import java.util.LinkedHashMap;
 
 public class Graph
 {
-	private ArrayList<Vertex> vertices;
+    private ArrayList<Vertex> vertices;
     private ArrayList<String> tagsList;
     private ArrayList<Boolean> highlightedTags;
-	private HashMap<String, Method> methods;
-	private ArrayList<OurClass> ourClasses;
+    private HashMap<String, Method> methods;
+    private ArrayList<OurClass> ourClasses;
 
-	private double maxHeight; // required for collapse method
-	private int maxIndex;
-	
-	public Graph()
-	{
-		this.vertices = new ArrayList<Vertex>();
-		this.methods = new LinkedHashMap<String, Method>();
-		this.ourClasses = new ArrayList<OurClass>();
-		this.maxIndex = -1;
+    private double maxHeight; // required for collapse method
+    private int maxIndex;
+    
+    public Graph()
+    {
+        this.vertices = new ArrayList<Vertex>();
+        this.methods = new LinkedHashMap<String, Method>();
+        this.ourClasses = new ArrayList<OurClass>();
+        this.maxIndex = -1;
 
         this.tagsList = new ArrayList<String>();
         this.highlightedTags = new ArrayList<Boolean>();
-	}
+    }
 
-	public ArrayList<Vertex> getVertices() {
-		return this.vertices;
-	}
+    public ArrayList<Vertex> getVertices() {
+        return this.vertices;
+    }
 
-	public ArrayList<OurClass> getOurClasses() {
-		return this.ourClasses;
-	}
+    public ArrayList<OurClass> getOurClasses() {
+        return this.ourClasses;
+    }
 
-	public Method getMethod(String methodName) {
-		if(this.methods.containsKey(methodName))
-			return this.methods.get(methodName);
-		else
-			return null;
-	}
+    public Method getMethod(String methodName) {
+        if(this.methods.containsKey(methodName))
+            return this.methods.get(methodName);
+        else
+            return null;
+    }
 
-	public void setMaxHeight(double height)
-	{
-		this.maxHeight = height;
-	}
+    public void setMaxHeight(double height)
+    {
+        this.maxHeight = height;
+    }
 
-	public double getMaxHeight()
-	{
-		return maxHeight;
-	}
+    public double getMaxHeight()
+    {
+        return maxHeight;
+    }
 
-	public void addErrorState(int id)
-	{
-		Instruction instruction = new Instruction("ErrorState", "", -1, false);
-		this.addVertex(id, instruction, false);
-	}
+    public void addErrorState(int id)
+    {
+        Instruction instruction = new Instruction("ErrorState", "", -1, false);
+        this.addVertex(id, instruction, false);
+    }
 
-	public void addVertex(int vIndex, Instruction instruction, boolean drawEdges)
-	{
-		//System.out.println("Adding vertex " + vIndex + ": " + instruction.getText());
-		Vertex ver = this.containsInputVertex(vIndex);
+    public void addVertex(int vIndex, Instruction instruction, boolean drawEdges)
+    {
+        //System.out.println("Adding vertex " + vIndex + ": " + instruction.getText());
+        Vertex ver = this.containsInputVertex(vIndex);
 
-		if(ver == null)
-		{
-			ver = new Vertex(instruction, vIndex, true);
-			this.vertices.add(ver);
-		}
-		else {
-			ver.setRealInstruction(instruction);
-			//System.out.println("Setting method for dummy vertex: " + ver.getMethodName());
-		}
+        if(ver == null)
+        {
+            ver = new Vertex(instruction, vIndex, true);
+            this.vertices.add(ver);
+        }
+        else {
+            ver.setRealInstruction(instruction);
+            //System.out.println("Setting method for dummy vertex: " + ver.getMethodName());
+        }
 
-		this.matchVertexToMethod(ver, instruction.getMethodName());
-		ver.setDrawEdges(drawEdges);
+        this.matchVertexToMethod(ver, instruction.getMethodName());
+        ver.setDrawEdges(drawEdges);
 
-		if(instruction.getJimpleIndex() > this.maxIndex)
-			this.maxIndex = instruction.getJimpleIndex();
-	}
+        if(instruction.getJimpleIndex() > this.maxIndex)
+            this.maxIndex = instruction.getJimpleIndex();
+    }
 
-	public void matchVertexToMethod(Vertex v, String methodName)
-	{
-		Method currMethod;
-		if(this.methods.containsKey(methodName))
-		{
-			currMethod = this.methods.get(methodName);
-		}
-		else
-		{
-			currMethod = new Method(this, methodName);
-			this.methods.put(methodName, currMethod);
-		}
+    public void matchVertexToMethod(Vertex v, String methodName)
+    {
+        Method currMethod;
+        if(this.methods.containsKey(methodName))
+        {
+            currMethod = this.methods.get(methodName);
+        }
+        else
+        {
+            currMethod = new Method(this, methodName);
+            this.methods.put(methodName, currMethod);
+        }
 
-		currMethod.addVertex(v);
-	}
+        currMethod.addVertex(v);
+    }
 
-	public void addEdge(int src, int dest)
-	{
-		//System.out.println("Adding input edge: " + src + ", " + dest);
-		Vertex vSrc, vDest;
+    public void addEdge(int src, int dest)
+    {
+        //System.out.println("Adding input edge: " + src + ", " + dest);
+        Vertex vSrc, vDest;
 
-		vSrc = this.containsInputVertex(src);
-		if (vSrc == null)
-		{
-			//System.out.println("Creating new source vertex: " + src);
-			vSrc = new Vertex(src);
-			this.vertices.add(vSrc);
-		}
+        vSrc = this.containsInputVertex(src);
+        if (vSrc == null)
+        {
+            //System.out.println("Creating new source vertex: " + src);
+            vSrc = new Vertex(src);
+            this.vertices.add(vSrc);
+        }
 
-		vDest = this.containsInputVertex(dest);
-		if (vDest == null)
-		{
-			//System.out.println("Creating new dest vertex: " + dest);
-			vDest = new Vertex(dest);
-			this.vertices.add(vDest);
-		}
+        vDest = this.containsInputVertex(dest);
+        if (vDest == null)
+        {
+            //System.out.println("Creating new dest vertex: " + dest);
+            vDest = new Vertex(dest);
+            this.vertices.add(vDest);
+        }
 
-		vSrc.addOutgoingNeighbor(vDest);
-		vDest.addIncomingNeighbor(vSrc);
-	}
+        vSrc.addOutgoingNeighbor(vDest);
+        vDest.addIncomingNeighbor(vSrc);
+    }
 
-	public void addClass(String className, String classCode) {
-		System.out.println("Adding class: " + className);
-		OurClass c = new OurClass(className, classCode);
-		this.ourClasses.add(c);
-	}
+    public void addClass(String className, String classCode) {
+        System.out.println("Adding class: " + className);
+        OurClass c = new OurClass(className, classCode);
+        this.ourClasses.add(c);
+    }
 
-	public void matchMethodsToClasses() {
-		if(ourClasses.size() > 0) {
-			System.out.println("Matching methods to ourClasses...");
-			for(OurClass c : this.ourClasses)
-				System.out.println(c.getCode());
+    public void matchMethodsToClasses() {
+        if(ourClasses.size() > 0) {
+            System.out.println("Matching methods to ourClasses...");
+            for(OurClass c : this.ourClasses)
+                System.out.println(c.getCode());
 
-			for (Method m : this.methods.values()) {
-				System.out.println("Looking for match for method: " + m.getFullName());
-				String fullClassName = m.parseClassName();
-				int lastDotIndex = fullClassName.lastIndexOf(".");
-				int firstDollarIndex = fullClassName.indexOf("$");
+            for (Method m : this.methods.values()) {
+                System.out.println("Looking for match for method: " + m.getFullName());
+                String fullClassName = m.parseClassName();
+                int lastDotIndex = fullClassName.lastIndexOf(".");
+                int firstDollarIndex = fullClassName.indexOf("$");
 
-				String packageName = fullClassName.substring(0, lastDotIndex);
-				String className;
-				if (firstDollarIndex >= 0)
-					className = fullClassName.substring(lastDotIndex + 1, firstDollarIndex);
-				else
-					className = fullClassName.substring(lastDotIndex + 1);
+                String packageName = fullClassName.substring(0, lastDotIndex);
+                String className;
+                if (firstDollarIndex >= 0)
+                    className = fullClassName.substring(lastDotIndex + 1, firstDollarIndex);
+                else
+                    className = fullClassName.substring(lastDotIndex + 1);
 
-				System.out.println("packageName: " + packageName);
-				System.out.println("className: " + className);
+                System.out.println("packageName: " + packageName);
+                System.out.println("className: " + className);
 
-				for (OurClass c : this.ourClasses) {
-					if (c.getCode().contains("package " + packageName) && c.getCode().contains("class " + className)) {
-						System.out.println("Method: " + m.getFullName());
-						System.out.println("Found matching class: " + fullClassName);
-						c.setName(fullClassName);
+                for (OurClass c : this.ourClasses) {
+                    if (c.getCode().contains("package " + packageName) && c.getCode().contains("class " + className)) {
+                        System.out.println("Method: " + m.getFullName());
+                        System.out.println("Found matching class: " + fullClassName);
+                        c.setName(fullClassName);
 
-						c.addMethod(m);
-						m.setClass(c);
-					}
-				}
-			}
-		}
-	}
+                        c.addMethod(m);
+                        m.setClass(c);
+                    }
+                }
+            }
+        }
+    }
 
     public void addTag(int nodeId, String tag)
     {
@@ -191,26 +191,26 @@ public class Graph
         }
         return -1;
     }
-	
-	public Vertex containsInputVertex(int id)
-	{
-		for(Vertex v : this.vertices)
-		{
-			if(v.getInputId() == id)
-				return v;
-		}
+    
+    public Vertex containsInputVertex(int id)
+    {
+        for(Vertex v : this.vertices)
+        {
+            if(v.getInputId() == id)
+                return v;
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	/*public void save(String filename) {
-		try {
-			PacketOutput output = new PacketOutput(new FileOutputStream(filename));
-			for (Vertex v : this.vertices)
-				v.save(output);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-		}
-	}*/
+    /*public void save(String filename) {
+        try {
+            PacketOutput output = new PacketOutput(new FileOutputStream(filename));
+            for (Vertex v : this.vertices)
+                v.save(output);
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+        }
+    }*/
 }

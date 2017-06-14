@@ -58,9 +58,9 @@ public class LayoutRootVertex extends AbstractLayoutVertex {
     }
 
     public void computeHues()
-	{
-		this.maxLoopHeight = this.calcMaxLoopHeight();
-		System.out.println("Max loop height: " + maxLoopHeight);
-		this.setColor(maxLoopHeight + 1);
-	}
+    {
+        this.maxLoopHeight = this.calcMaxLoopHeight();
+        System.out.println("Max loop height: " + maxLoopHeight);
+        this.setColor(maxLoopHeight + 1);
+    }
 }

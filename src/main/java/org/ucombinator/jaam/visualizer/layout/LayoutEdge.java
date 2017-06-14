@@ -88,10 +88,10 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         }
         else if (this.source == this.dest)
         {
-			/*System.out.println("Error in Edge.drawGraph(): The source and destination vertices are the same.");
-			System.out.println(this.source +"---"+ this.dest);
-			System.out.println(this.sourceVertex.getLabel() +"---"+ this.destVertex.getLabel());
-			System.out.println(this.getType());
+            /*System.out.println("Error in Edge.drawGraph(): The source and destination vertices are the same.");
+            System.out.println(this.source +"---"+ this.dest);
+            System.out.println(this.sourceVertex.getLabel() +"---"+ this.destVertex.getLabel());
+            System.out.println(this.getType());
             return;*/
             this.node = node;
             drawLoop(node);

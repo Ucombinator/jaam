@@ -43,7 +43,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     private boolean isEdgeVisible;
     private boolean drawEdges;
 
-	// A location stores coordinates for a subtree.
+    // A location stores coordinates for a subtree.
     private Location location = new Location();
     private boolean updateLocation = false;
 
@@ -336,26 +336,26 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     }
 
     private void setGraphicsHighlighted(boolean visible) {
-    	Rectangle r = this.getGraphics().getHighlightingRect();
-		FadeTransition ft = new FadeTransition(Duration.millis(300), r);
-		if(visible) {
-			this.getGraphics().getHighlightingRect().setVisible(true);
-			ft.setFromValue(0f);
-			ft.setToValue(1f);
+        Rectangle r = this.getGraphics().getHighlightingRect();
+        FadeTransition ft = new FadeTransition(Duration.millis(300), r);
+        if(visible) {
+            this.getGraphics().getHighlightingRect().setVisible(true);
+            ft.setFromValue(0f);
+            ft.setToValue(1f);
         } else {
-        	ft.setFromValue(1f);
-			ft.setToValue(0f);
+            ft.setFromValue(1f);
+            ft.setToValue(0f);
         }
-//		AbstractLayoutVertex vertex = this;
-//		ft.setOnFinished(new EventHandler<ActionEvent>() {
-//			
-//			@Override
-//			public void handle(ActionEvent event) {
-//				//vertex.getGraphics().getHighlightingRect().setVisible(visible);
-//			}
-//		});
-		ft.play();
-	}
+//        AbstractLayoutVertex vertex = this;
+//        ft.setOnFinished(new EventHandler<ActionEvent>() {
+//            
+//            @Override
+//            public void handle(ActionEvent event) {
+//                //vertex.getGraphics().getHighlightingRect().setVisible(visible);
+//            }
+//        });
+        ft.play();
+    }
 
     public void setSelfGraph(HierarchicalGraph abstractGraph) {
         this.selfGraph = abstractGraph;
@@ -371,13 +371,13 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     }
 
     public boolean isLabelVisible() {
-		return isLabelVisible;
-	}
-	public void setLabelVisible(boolean isLabelVisible) {
-		this.isLabelVisible = isLabelVisible;
-	}
+        return isLabelVisible;
+    }
+    public void setLabelVisible(boolean isLabelVisible) {
+        this.isLabelVisible = isLabelVisible;
+    }
 
-	public boolean isEdgeVisible() {
+    public boolean isEdgeVisible() {
         return isEdgeVisible;
     }
 
@@ -397,8 +397,8 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     public void setLabelVisibility(boolean isLabelVisible)
     {
-    	this.setLabelVisible(isLabelVisible);
-    	this.getGraphics().setLabelVisible(isLabelVisible);
+        this.setLabelVisible(isLabelVisible);
+        this.getGraphics().setLabelVisible(isLabelVisible);
 
         for(AbstractLayoutVertex v : this.innerGraph.getVertices().values())
             v.setLabelVisibility(isLabelVisible);
@@ -410,7 +410,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
             v.resetStrokeWidth(factor);
     }
     
-	public void printCoordinates()
+    public void printCoordinates()
     {
         System.out.println("Vertex " + this.getId() + this.location.toString());
     }

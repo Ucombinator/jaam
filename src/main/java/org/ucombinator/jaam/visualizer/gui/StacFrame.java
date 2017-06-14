@@ -33,328 +33,328 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
  */
 
 public class StacFrame extends Tab {
-	@FXML
-	private VizPanel mainPanel;
-	@FXML
-	private TextArea descriptionArea;
-	@FXML
-	private CodeArea bytecodeArea;
-	@FXML
-	private SearchResults searchResults;
+    @FXML
+    private VizPanel mainPanel;
+    @FXML
+    private TextArea descriptionArea;
+    @FXML
+    private CodeArea bytecodeArea;
+    @FXML
+    private SearchResults searchResults;
 
-	@FXML
-	private CheckBox showEdges;
-	@FXML
-	private CheckBox showLabels;
-	@FXML
-	private Button methodCollapse;
-	@FXML
-	private Button chainCollapse;
+    @FXML
+    private CheckBox showEdges;
+    @FXML
+    private CheckBox showLabels;
+    @FXML
+    private Button methodCollapse;
+    @FXML
+    private Button chainCollapse;
 
-	private Graph graph;
-	boolean methodsExpanded, chainsExpanded;
-	private final javafx.scene.paint.Color activeColor = javafx.scene.paint.Color.CYAN;
-	private final javafx.scene.paint.Color inactiveColor = javafx.scene.paint.Color.BLACK;
-	private boolean edgeVisible, labelsVisible;
+    private Graph graph;
+    boolean methodsExpanded, chainsExpanded;
+    private final javafx.scene.paint.Color activeColor = javafx.scene.paint.Color.CYAN;
+    private final javafx.scene.paint.Color inactiveColor = javafx.scene.paint.Color.BLACK;
+    private boolean edgeVisible, labelsVisible;
 
-	public enum searchType {
-		ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
-	}
+    public enum searchType {
+        ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
+    }
 
-	public StacFrame(Graph graph) {
-		methodsExpanded = true;
-		chainsExpanded = true;
-		edgeVisible = true;
-		labelsVisible = false; // If you change this, also change the initialization for AbstractLayoutVertex
-		this.graph = graph;
-		this.loadFXML();
-		this.mainPanel.initFX(this.graph);
-	}
+    public StacFrame(Graph graph) {
+        methodsExpanded = true;
+        chainsExpanded = true;
+        edgeVisible = true;
+        labelsVisible = false; // If you change this, also change the initialization for AbstractLayoutVertex
+        this.graph = graph;
+        this.loadFXML();
+        this.mainPanel.initFX(this.graph);
+    }
 
-	private void loadFXML() {
-		try {
-			URL url = getClass().getResource("/tab.fxml");
-			FXMLLoader fxmlLoader = new FXMLLoader(url);
-			fxmlLoader.setController(this);
-			System.out.println("Loading url: " + url);
-			BorderPane borderPane = fxmlLoader.load();
-			this.setContent(borderPane);
-			System.out.println("Border pane loaded: " + borderPane);
-			System.out.println("VizPanel loaded: " + this.mainPanel);
-			this.mainPanel.setStacFrame(this);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+    private void loadFXML() {
+        try {
+            URL url = getClass().getResource("/tab.fxml");
+            FXMLLoader fxmlLoader = new FXMLLoader(url);
+            fxmlLoader.setController(this);
+            System.out.println("Loading url: " + url);
+            BorderPane borderPane = fxmlLoader.load();
+            this.setContent(borderPane);
+            System.out.println("Border pane loaded: " + borderPane);
+            System.out.println("VizPanel loaded: " + this.mainPanel);
+            this.mainPanel.setStacFrame(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-	public VizPanel getMainPanel() {
-		return this.mainPanel;
-	}
+    public VizPanel getMainPanel() {
+        return this.mainPanel;
+    }
 
-	public TextArea getRightArea() {
-		return this.descriptionArea;
-	}
+    public TextArea getRightArea() {
+        return this.descriptionArea;
+    }
 
-	public CodeArea getBytecodeArea() {
-		return this.bytecodeArea;
-	}
+    public CodeArea getBytecodeArea() {
+        return this.bytecodeArea;
+    }
 
-	public SearchResults getSearchResults() {
-		return this.searchResults;
-	}
+    public SearchResults getSearchResults() {
+        return this.searchResults;
+    }
 
-	public Graph getGraph() {
-		return this.graph;
-	}
+    public Graph getGraph() {
+        return this.graph;
+    }
 
-	public void repaintAll() {
-		System.out.println("Repainting all...");
-		if (!Parameters.debugPanelMode) {
-			bytecodeArea.setDescription();
-			setRightText();
-			searchResults.writeText(this.mainPanel);
-		}
-	}
+    public void repaintAll() {
+        System.out.println("Repainting all...");
+        if (!Parameters.debugPanelMode) {
+            bytecodeArea.setDescription();
+            setRightText();
+            searchResults.writeText(this.mainPanel);
+        }
+    }
 
-	public void setRightText() {
-		StringBuilder text = new StringBuilder();
-		for (AbstractLayoutVertex v : this.mainPanel.getHighlighted())
-			text.append(v.getRightPanelContent() + "\n");
+    public void setRightText() {
+        StringBuilder text = new StringBuilder();
+        for (AbstractLayoutVertex v : this.mainPanel.getHighlighted())
+            text.append(v.getRightPanelContent() + "\n");
 
-		this.getRightArea().setText(text.toString());
-	}
+        this.getRightArea().setText(text.toString());
+    }
 
-	public void showEdgesAction(ActionEvent event) {
-		System.out.println("Edges checkbox set to: " + showEdges.isSelected());
-		edgeVisible = showEdges.isSelected();
-		mainPanel.getPanelRoot().setVisible(false);
-		mainPanel.getPanelRoot().setEdgeVisibility(edgeVisible);
-		LayoutEdge.redrawEdges(mainPanel.getPanelRoot(), true);
-		mainPanel.getPanelRoot().setVisible(true);
-	}
+    public void showEdgesAction(ActionEvent event) {
+        System.out.println("Edges checkbox set to: " + showEdges.isSelected());
+        edgeVisible = showEdges.isSelected();
+        mainPanel.getPanelRoot().setVisible(false);
+        mainPanel.getPanelRoot().setEdgeVisibility(edgeVisible);
+        LayoutEdge.redrawEdges(mainPanel.getPanelRoot(), true);
+        mainPanel.getPanelRoot().setVisible(true);
+    }
 
-	public void showLabelsAction(ActionEvent event) {
-		labelsVisible = showLabels.isSelected();
-		mainPanel.getPanelRoot().setVisible(false);
-		mainPanel.getPanelRoot().setLabelVisibility(labelsVisible);
-		mainPanel.getPanelRoot().setVisible(true);
-	}
+    public void showLabelsAction(ActionEvent event) {
+        labelsVisible = showLabels.isSelected();
+        mainPanel.getPanelRoot().setVisible(false);
+        mainPanel.getPanelRoot().setLabelVisibility(labelsVisible);
+        mainPanel.getPanelRoot().setVisible(true);
+    }
 
-	public void xScalePanelMinusAction(ActionEvent event) {
-		StacFrame.this.mainPanel.decrementScaleXFactor();
-		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-		StacFrame.this.mainPanel.resetRootPosition(false);
-	}
+    public void xScalePanelMinusAction(ActionEvent event) {
+        StacFrame.this.mainPanel.decrementScaleXFactor();
+        StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+        StacFrame.this.mainPanel.resetRootPosition(false);
+    }
 
-	public void xScalePanelPlusAction(ActionEvent event) {
-		StacFrame.this.mainPanel.incrementScaleXFactor();
-		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-		StacFrame.this.mainPanel.resetRootPosition(false);
-	}
+    public void xScalePanelPlusAction(ActionEvent event) {
+        StacFrame.this.mainPanel.incrementScaleXFactor();
+        StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+        StacFrame.this.mainPanel.resetRootPosition(false);
+    }
 
-	public void yScalePanelMinusAction(ActionEvent event) {
-		StacFrame.this.mainPanel.decrementScaleYFactor();
-		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-		StacFrame.this.mainPanel.resetRootPosition(false);
-	}
+    public void yScalePanelMinusAction(ActionEvent event) {
+        StacFrame.this.mainPanel.decrementScaleYFactor();
+        StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+        StacFrame.this.mainPanel.resetRootPosition(false);
+    }
 
-	public void yScalePanelPlusAction(ActionEvent event) {
-		StacFrame.this.mainPanel.incrementScaleYFactor();
-		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-		StacFrame.this.mainPanel.resetRootPosition(false);
-	}
+    public void yScalePanelPlusAction(ActionEvent event) {
+        StacFrame.this.mainPanel.incrementScaleYFactor();
+        StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+        StacFrame.this.mainPanel.resetRootPosition(false);
+    }
 
-	public void methodCollapseAction(ActionEvent event) {
-		methodsExpanded = !methodsExpanded;
-		StacFrame.this.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
-				methodsExpanded);
+    public void methodCollapseAction(ActionEvent event) {
+        methodsExpanded = !methodsExpanded;
+        StacFrame.this.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
+                methodsExpanded);
 
-		if (methodCollapse.getTextFill() == activeColor) {
-			methodCollapse.setTextFill(inactiveColor);
-		} else {
-			methodCollapse.setTextFill(activeColor);
-		}
+        if (methodCollapse.getTextFill() == activeColor) {
+            methodCollapse.setTextFill(inactiveColor);
+        } else {
+            methodCollapse.setTextFill(activeColor);
+        }
 
-		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-		StacFrame.this.mainPanel.resetRootPosition(false);
-	}
+        StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+        StacFrame.this.mainPanel.resetRootPosition(false);
+    }
 
-	public void chainCollapseAction(ActionEvent event) {
-		chainsExpanded = !chainsExpanded;
-		StacFrame.this.mainPanel.getPanelRoot()
-				.toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN, chainsExpanded);
-		if (chainCollapse.getTextFill() == activeColor) {
-			chainCollapse.setTextFill(inactiveColor);
-		} else {
-			chainCollapse.setTextFill(activeColor);
-		}
+    public void chainCollapseAction(ActionEvent event) {
+        chainsExpanded = !chainsExpanded;
+        StacFrame.this.mainPanel.getPanelRoot()
+                .toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN, chainsExpanded);
+        if (chainCollapse.getTextFill() == activeColor) {
+            chainCollapse.setTextFill(inactiveColor);
+        } else {
+            chainCollapse.setTextFill(activeColor);
+        }
 
-		StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
-		StacFrame.this.mainPanel.resetRootPosition(false);
-	}
+        StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+        StacFrame.this.mainPanel.resetRootPosition(false);
+    }
 
-	public void exportImageAction(ActionEvent event) {
-		event.consume(); // TODO: Is this necessary?
-		String extension = "png";
-		FileChooser fileChooser = new FileChooser();
+    public void exportImageAction(ActionEvent event) {
+        event.consume(); // TODO: Is this necessary?
+        String extension = "png";
+        FileChooser fileChooser = new FileChooser();
 
-		//Set extension filter
-		FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(extension.toUpperCase() + " files (*." + extension + ")", "*." + extension);
-		fileChooser.getExtensionFilters().add(extFilter);
-		fileChooser.setInitialFileName(Main.getOuterFrame().getCurrentTab().getText() + "." + extension);
+        //Set extension filter
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(extension.toUpperCase() + " files (*." + extension + ")", "*." + extension);
+        fileChooser.getExtensionFilters().add(extFilter);
+        fileChooser.setInitialFileName(Main.getOuterFrame().getCurrentTab().getText() + "." + extension);
 
-		//Show save file dialog
-		File file = fileChooser.showSaveDialog(Main.getOuterFrame().getAnchorPane().getScene().getWindow());
+        //Show save file dialog
+        File file = fileChooser.showSaveDialog(Main.getOuterFrame().getAnchorPane().getScene().getWindow());
 
-		if (file != null) {
-			WritableImage image = mainPanel.snapshot(new SnapshotParameters(), null);
+        if (file != null) {
+            WritableImage image = mainPanel.snapshot(new SnapshotParameters(), null);
 
-			System.out.println(file.getAbsolutePath());
-			// TODO: probably use a file chooser here
-			File newFile = new File(file.getAbsolutePath());
+            System.out.println(file.getAbsolutePath());
+            // TODO: probably use a file chooser here
+            File newFile = new File(file.getAbsolutePath());
 
-			try {
-				ImageIO.write(SwingFXUtils.fromFXImage(image, null), extension, newFile);
-			} catch (IOException exception) {
-				System.out.println(exception);
-			}
-		}
-	}
+            try {
+                ImageIO.write(SwingFXUtils.fromFXImage(image, null), extension, newFile);
+            } catch (IOException exception) {
+                System.out.println(exception);
+            }
+        }
+    }
 
-	// Clean up info from previous searches
-	public void initSearch(searchType search) {
-		this.mainPanel.resetHighlighted(null);
-		String query = getSearchInput(search);
+    // Clean up info from previous searches
+    public void initSearch(searchType search) {
+        this.mainPanel.resetHighlighted(null);
+        String query = getSearchInput(search);
 
-		if (search == searchType.ID)
-			searchByID(query); // TODO: Fix inconsistency with panel root
-		else if (search == searchType.INSTRUCTION)
-			this.mainPanel.getPanelRoot().searchByInstruction(query, mainPanel);
-		else if (search == searchType.METHOD)
-			this.mainPanel.getPanelRoot().searchByMethod(query, mainPanel);
+        if (search == searchType.ID)
+            searchByID(query); // TODO: Fix inconsistency with panel root
+        else if (search == searchType.INSTRUCTION)
+            this.mainPanel.getPanelRoot().searchByInstruction(query, mainPanel);
+        else if (search == searchType.METHOD)
+            this.mainPanel.getPanelRoot().searchByMethod(query, mainPanel);
 
-		this.repaintAll();
-		/*Parameters.bytecodeArea.clear();
-		Parameters.rightArea.setText("");*/
-	}
+        this.repaintAll();
+        /*Parameters.bytecodeArea.clear();
+        Parameters.rightArea.setText("");*/
+    }
 
-	public String getSearchInput(searchType search) {
-		String title = "";
-		System.out.println("Search type: " + search);
-		if (search == searchType.ID || search == searchType.ROOT_PATH) {
-			title = "Enter node ID(s)";
-		} else if (search == searchType.INSTRUCTION) {
-			title = "Instruction contains ...";
-		} else if (search == searchType.METHOD) {
-			title = "Method name contains ...";
-		} else if (search == searchType.OUT_OPEN || search == searchType.OUT_CLOSED || search == searchType.IN_OPEN
-				|| search == searchType.IN_CLOSED) {
-			title = "Enter node ID";
-		}
+    public String getSearchInput(searchType search) {
+        String title = "";
+        System.out.println("Search type: " + search);
+        if (search == searchType.ID || search == searchType.ROOT_PATH) {
+            title = "Enter node ID(s)";
+        } else if (search == searchType.INSTRUCTION) {
+            title = "Instruction contains ...";
+        } else if (search == searchType.METHOD) {
+            title = "Method name contains ...";
+        } else if (search == searchType.OUT_OPEN || search == searchType.OUT_CLOSED || search == searchType.IN_OPEN
+                || search == searchType.IN_CLOSED) {
+            title = "Enter node ID";
+        }
 
-		String input = "";
-		if (search != searchType.ALL_LEAVES && search != searchType.ALL_SOURCES && search != searchType.TAG) {
-			System.out.println("Showing dialog...");
-			TextInputDialog dialog = new TextInputDialog();
-			dialog.setHeaderText(title);
-			dialog.showAndWait();
-			input = dialog.getResult();
-			if (input == null)
-				return "";
-			else
-				input = input.trim();
+        String input = "";
+        if (search != searchType.ALL_LEAVES && search != searchType.ALL_SOURCES && search != searchType.TAG) {
+            System.out.println("Showing dialog...");
+            TextInputDialog dialog = new TextInputDialog();
+            dialog.setHeaderText(title);
+            dialog.showAndWait();
+            input = dialog.getResult();
+            if (input == null)
+                return "";
+            else
+                input = input.trim();
 
-			if (input.equals(""))
-				return "";
-		}
+            if (input.equals(""))
+                return "";
+        }
 
-		return input;
-	}
+        return input;
+    }
 
-	public void searchByID(String input) {
-		LayoutRootVertex panelRoot = this.mainPanel.getPanelRoot();
-		StringTokenizer token = new StringTokenizer(input, ", ");
+    public void searchByID(String input) {
+        LayoutRootVertex panelRoot = this.mainPanel.getPanelRoot();
+        StringTokenizer token = new StringTokenizer(input, ", ");
 
-		int id1, id2;
-		String tok;
+        int id1, id2;
+        String tok;
 
-		while (token.hasMoreTokens()) {
-			tok = token.nextToken();
-			if (tok.trim().equalsIgnoreCase(""))
-				continue;
-			if (tok.indexOf('-') == -1) {
-				id1 = Integer.parseInt(tok.trim());
-				panelRoot.searchByID(id1, mainPanel);
-			} else {
-				id1 = Integer.parseInt(tok.substring(0, tok.indexOf('-')).trim());
-				id2 = Integer.parseInt(tok.substring(tok.lastIndexOf('-') + 1).trim());
-				panelRoot.searchByIDRange(id1, id2, mainPanel);
-			}
-		}
-	}
+        while (token.hasMoreTokens()) {
+            tok = token.nextToken();
+            if (tok.trim().equalsIgnoreCase(""))
+                continue;
+            if (tok.indexOf('-') == -1) {
+                id1 = Integer.parseInt(tok.trim());
+                panelRoot.searchByID(id1, mainPanel);
+            } else {
+                id1 = Integer.parseInt(tok.substring(0, tok.indexOf('-')).trim());
+                id2 = Integer.parseInt(tok.substring(tok.lastIndexOf('-') + 1).trim());
+                panelRoot.searchByIDRange(id1, id2, mainPanel);
+            }
+        }
+    }
 
-	public void resetButtonPressed() {
-		Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
-		if(currentTab instanceof StacFrame) {
-			StacFrame currentFrame = (StacFrame) currentTab;
-			currentFrame.getMainPanel().resetRootPosition(true);
-		}
-		else {
-			System.out.println("Error! Current tab is not a StacFrame.");
-		}
-	}
+    public void resetButtonPressed() {
+        Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
+        if(currentTab instanceof StacFrame) {
+            StacFrame currentFrame = (StacFrame) currentTab;
+            currentFrame.getMainPanel().resetRootPosition(true);
+        }
+        else {
+            System.out.println("Error! Current tab is not a StacFrame.");
+        }
+    }
 
-	public void zoomInPressed(MouseEvent event) {
-		Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
-		if(currentTab instanceof StacFrame) {
-			StacFrame currentFrame = (StacFrame) currentTab;
-			currentFrame.keepButton(1, (Button) event.getSource());
-		}
-		else {
-			System.out.println("Error! Current tab is not a StacFrame.");
-		}
-	}
+    public void zoomInPressed(MouseEvent event) {
+        Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
+        if(currentTab instanceof StacFrame) {
+            StacFrame currentFrame = (StacFrame) currentTab;
+            currentFrame.keepButton(1, (Button) event.getSource());
+        }
+        else {
+            System.out.println("Error! Current tab is not a StacFrame.");
+        }
+    }
 
-	public void zoomOutPressed(MouseEvent event) {
-		Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
-		if(currentTab instanceof StacFrame) {
-			StacFrame currentFrame = (StacFrame) currentTab;
-			currentFrame.keepButton(-1, (Button) event.getSource());
-		}
-		else {
-			System.out.println("Error! Current tab is not a StacFrame.");
-		}
-	}
+    public void zoomOutPressed(MouseEvent event) {
+        Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
+        if(currentTab instanceof StacFrame) {
+            StacFrame currentFrame = (StacFrame) currentTab;
+            currentFrame.keepButton(-1, (Button) event.getSource());
+        }
+        else {
+            System.out.println("Error! Current tab is not a StacFrame.");
+        }
+    }
 
-	public void zoomReleased(MouseEvent event) {
-		Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
-		if(currentTab instanceof StacFrame) {
-			StacFrame currentFrame = (StacFrame) currentTab;
-			this.setZoomButtonReleased(true);
-		}
-		else {
-			System.out.println("Error! Current tab is not a StacFrame.");
-		}
-	}
+    public void zoomReleased(MouseEvent event) {
+        Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
+        if(currentTab instanceof StacFrame) {
+            StacFrame currentFrame = (StacFrame) currentTab;
+            this.setZoomButtonReleased(true);
+        }
+        else {
+            System.out.println("Error! Current tab is not a StacFrame.");
+        }
+    }
 
-	private boolean zoomEnabled = true;
-	private boolean zoomButtonReleased = false;
+    private boolean zoomEnabled = true;
+    private boolean zoomButtonReleased = false;
 
-	public void keepButton(int zoom, Button button) {
-		if(zoomEnabled && !zoomButtonReleased) {
-			zoomEnabled = false;
-			this.mainPanel.zoom(zoom, button);
-		}
-		if(zoomButtonReleased) {
-			zoomButtonReleased = false;
-		}
-	}
+    public void keepButton(int zoom, Button button) {
+        if(zoomEnabled && !zoomButtonReleased) {
+            zoomEnabled = false;
+            this.mainPanel.zoom(zoom, button);
+        }
+        if(zoomButtonReleased) {
+            zoomButtonReleased = false;
+        }
+    }
 
-	public void setZoomEnabled(boolean isEnabled) {
-		this.zoomEnabled = isEnabled;
-	}
+    public void setZoomEnabled(boolean isEnabled) {
+        this.zoomEnabled = isEnabled;
+    }
 
-	public void setZoomButtonReleased(boolean isReleased) {
-		this.zoomButtonReleased = isReleased;
-	}
+    public void setZoomButtonReleased(boolean isReleased) {
+        this.zoomButtonReleased = isReleased;
+    }
 }

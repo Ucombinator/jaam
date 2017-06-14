@@ -11,8 +11,8 @@ public class SearchResults extends BorderPane
     private TreeItem root;
     public static int nodeHeight = 40;
     
-	public SearchResults()
-	{
+    public SearchResults()
+    {
         this.root = new TreeItem("Search Results");
         this.searchTree = new TreeView(root);
         this.searchTree.setShowRoot(true);
@@ -20,13 +20,13 @@ public class SearchResults extends BorderPane
         this.setCenter(searchTree);
 
         /*this.searchTree.addMouseListener
-		(
-			new MouseListener()
-			{
-				public void mouseClicked(MouseEvent e)
-				{
-				    //System.out.println("Location: " + e.getX() + ", " + e.getY());
-				    //System.out.println("Search tree: " + searchTree.toString());
+        (
+            new MouseListener()
+            {
+                public void mouseClicked(MouseEvent e)
+                {
+                    //System.out.println("Location: " + e.getX() + ", " + e.getY());
+                    //System.out.println("Search tree: " + searchTree.toString());
                     TreePath path = searchTree.getPathForLocation(e.getX(), e.getY());
                     //System.out.println("TreePath = " + path);
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode)(path.getLastPathComponent());
@@ -35,8 +35,8 @@ public class SearchResults extends BorderPane
                     if(!ver.isVisible)
                         return;
 
-					if(e.isShiftDown())
-					{
+                    if(e.isShiftDown())
+                    {
                         if(ver.isSelected())
                         {
                             ver.clearAllSelect();
@@ -46,32 +46,32 @@ public class SearchResults extends BorderPane
                             Parameters.vertexHighlight = true;
                             ver.addHighlight(true, false, true, true);
                         }
-					}
-					else
-					{
+                    }
+                    else
+                    {
                         Main.graph.clearSelects();
                         Parameters.vertexHighlight = true;
                         ver.addHighlight(true, false, true, true);
-					}
-					
-					Main.graph.redoCycleHighlights();
-					Parameters.repaintAll();
-				}
-				
-				public void mousePressed(MouseEvent e){}
-				
-				public void mouseReleased(MouseEvent e){}
-				
-				public void mouseEntered(MouseEvent e){}
-				
-				public void mouseExited(MouseEvent e){}
-			}
-		);*/
- 	}
+                    }
+                    
+                    Main.graph.redoCycleHighlights();
+                    Parameters.repaintAll();
+                }
+                
+                public void mousePressed(MouseEvent e){}
+                
+                public void mouseReleased(MouseEvent e){}
+                
+                public void mouseEntered(MouseEvent e){}
+                
+                public void mouseExited(MouseEvent e){}
+            }
+        );*/
+     }
 
-	//Set the text for the area
-	public void writeText(VizPanel mainPanel)
-	{
+    //Set the text for the area
+    public void writeText(VizPanel mainPanel)
+    {
         this.root.getChildren().clear();
         if(mainPanel.getHighlighted().size() > 0) {
             // We don't want to include the panel root, so we start our check with its children
@@ -82,7 +82,7 @@ public class SearchResults extends BorderPane
             //DefaultTreeModel model = (DefaultTreeModel)this.searchTree.getModel();
             //model.reload(this.root);
         }
-	}
+    }
     
     /*public void fixCaretPosition()
     {

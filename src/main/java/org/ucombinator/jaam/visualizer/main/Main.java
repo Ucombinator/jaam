@@ -17,34 +17,34 @@ import java.net.URL;
 
 public class Main extends Application
 {
-	private static OuterFrame outerFrame;
-	private static boolean useFXML = false;
-	private static SimpleController controller;
+    private static OuterFrame outerFrame;
+    private static boolean useFXML = false;
+    private static SimpleController controller;
 
-	public void start(Stage stage) {
-		URL url = getClass().getResource("/app.fxml");
-		System.out.println("Loading url: " + url);
-		try {
-			FXMLLoader fxmlLoader = new FXMLLoader(url);
-			controller = new SimpleController();
-			fxmlLoader.setController(controller);
+    public void start(Stage stage) {
+        URL url = getClass().getResource("/app.fxml");
+        System.out.println("Loading url: " + url);
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(url);
+            controller = new SimpleController();
+            fxmlLoader.setController(controller);
 
-			AnchorPane anchorPane = fxmlLoader.load();
-			outerFrame = new OuterFrame(anchorPane);
+            AnchorPane anchorPane = fxmlLoader.load();
+            outerFrame = new OuterFrame(anchorPane);
 
-			Scene scene = new Scene(anchorPane);
-			stage.setScene(scene);
-			stage.show();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+            Scene scene = new Scene(anchorPane);
+            stage.setScene(scene);
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-	public static OuterFrame getOuterFrame() {
-		return outerFrame;
-	}
+    public static OuterFrame getOuterFrame() {
+        return outerFrame;
+    }
 
-	public static TabPane getTabPane() {
-		return controller.getTabPane();
-	}
+    public static TabPane getTabPane() {
+        return controller.getTabPane();
+    }
 }

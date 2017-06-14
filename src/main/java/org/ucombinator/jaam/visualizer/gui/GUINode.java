@@ -24,13 +24,13 @@ public class GUINode extends Pane
 
     protected static final double TEXT_VERTICAL_PADDING = 15;
     protected static final double TEXT_HORIZONTAL_PADDING = 15;
-	private double dragStartX, dragStartY;
+    private double dragStartX, dragStartY;
     private Rectangle rect, highlightingRect;
     private Text rectLabel;
     private AbstractLayoutVertex vertex;
-	private GUINode parent;
+    private GUINode parent;
 
-	private ArrayList<LayoutEdge> edges = new ArrayList<LayoutEdge>();
+    private ArrayList<LayoutEdge> edges = new ArrayList<LayoutEdge>();
 
     boolean isDragging;
     private double totalScaleX;
@@ -73,12 +73,12 @@ public class GUINode extends Pane
     }
     
     public AbstractLayoutVertex getVertex() {
-		return vertex;
-	}
+        return vertex;
+    }
 
-	public void setVertex(AbstractLayoutVertex vertex) {
-		this.vertex = vertex;
-	}
+    public void setVertex(AbstractLayoutVertex vertex) {
+        this.vertex = vertex;
+    }
 
     public String toString()
     {
@@ -159,7 +159,7 @@ public class GUINode extends Pane
     // Halve the distance from the current opacity to 1.
     public void increaseOpacity()
     {
-        this.rect.setOpacity((1 + this.rect.getOpacity()) / 2.0);	
+        this.rect.setOpacity((1 + this.rect.getOpacity()) / 2.0);    
     }
 
     // Halve the current opacity.
@@ -430,22 +430,22 @@ public class GUINode extends Pane
         public void handle(Event event)
         {
             event.consume();
-        	if (vertex.getSelfGraph() != null)
-        	{
-	        	for(LayoutEdge e : vertex.getSelfGraph().getEdges().values())
+            if (vertex.getSelfGraph() != null)
+            {
+                for(LayoutEdge e : vertex.getSelfGraph().getEdges().values())
                 {
-	        		if(e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
-	        		{
-	        		    Shape edgePath = e.getEdgePath();
-	        		    edgePath.setStroke(Color.ORANGERED);
-	        		    edgePath.setStrokeWidth(edgePath.getStrokeWidth() * 4.0);
-	        		}
-	        	}
-        	}
+                    if(e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
+                    {
+                        Shape edgePath = e.getEdgePath();
+                        edgePath.setStroke(Color.ORANGERED);
+                        edgePath.setStrokeWidth(edgePath.getStrokeWidth() * 4.0);
+                    }
+                }
+            }
         }
     };
 
-	EventHandler onMouseExitedEventHandler = new javafx.event.EventHandler()
+    EventHandler onMouseExitedEventHandler = new javafx.event.EventHandler()
     {
         @Override
         public void handle(Event event)
@@ -453,63 +453,63 @@ public class GUINode extends Pane
             event.consume();
             //getChildren().remove(rectLabel);
             
-        	if(vertex.getSelfGraph() != null)
-        	{
-	        	for(LayoutEdge e : vertex.getSelfGraph().getEdges().values())
+            if(vertex.getSelfGraph() != null)
+            {
+                for(LayoutEdge e : vertex.getSelfGraph().getEdges().values())
                 {
-	        		if (e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
-	        		{
+                    if (e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
+                    {
                         Shape edgePath = e.getEdgePath();
                         edgePath.setStroke(Color.BLACK);
                         edgePath.setStrokeWidth(edgePath.getStrokeWidth() / 4.0);
-	        		}
-	        	}
-        	}
+                    }
+                }
+            }
         }
     };
 
-	public GUINode getParentNode() {
-	    return this.parent;
+    public GUINode getParentNode() {
+        return this.parent;
     }
 
     public double getTotalParentScaleX() {
-	    if (this.parent != null)
-	        return this.parent.totalScaleX;
-	    else return 1;
+        if (this.parent != null)
+            return this.parent.totalScaleX;
+        else return 1;
     }
 
     public double getTotalParentScaleY() {
-	    if (this.parent != null)
-	        return this.parent.totalScaleY;
-	    else return 1;
+        if (this.parent != null)
+            return this.parent.totalScaleY;
+        else return 1;
     }
 
-	public void setTotalScaleX(double scale) {
-	    this.totalScaleX = scale;
+    public void setTotalScaleX(double scale) {
+        this.totalScaleX = scale;
     }
 
-	public double getTotalScaleX() {
-	    return this.totalScaleX;
+    public double getTotalScaleX() {
+        return this.totalScaleX;
     }
 
     public void setTotalScaleY(double scale) {
-	    this.totalScaleY = scale;
+        this.totalScaleY = scale;
     }
 
     public double getTotalScaleY() {
-	    return this.totalScaleY;
+        return this.totalScaleY;
     }
 
-	public void setLabelVisible(boolean isLabelVisible) {
-		vertex.setLabelVisible(isLabelVisible);
-		this.rectLabel.setVisible(isLabelVisible);
-	}
+    public void setLabelVisible(boolean isLabelVisible) {
+        vertex.setLabelVisible(isLabelVisible);
+        this.rectLabel.setVisible(isLabelVisible);
+    }
 
-	public Rectangle getHighlightingRect() {
-		return this.highlightingRect;
-	}
-	
+    public Rectangle getHighlightingRect() {
+        return this.highlightingRect;
+    }
+    
     public Rectangle getRect(){
-    	return this.rect;
+        return this.rect;
     }
 }
