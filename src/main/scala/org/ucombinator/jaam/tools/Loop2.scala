@@ -215,6 +215,7 @@ object LoopAnalyzer {
         keepers.contains(n) || n.isInstanceOf[LoopNode]
       }
       def analyze(n: Node, path: List[Node]): Set[Node] = {
+        //println(f"analyzer $n $path")
         n match {
           // if there is a loop,
           case m: MethodNode if path.contains(n) =>
