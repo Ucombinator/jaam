@@ -242,14 +242,14 @@ object Main {
     def encode(s: String): String = s.replace("\"", "\\\"")
     def quote(s: String): String = "\"" + encode(s) + "\""
 
-    println("digraph loops {")
-    println("ranksep=\"10\";");
-    for ((s, ds) <- appEdges) {
-      for (d <- ds) {
-        println(f"  ${quote(s.sootMethod.toString)} -> ${quote(d.toString)};")
-      }
-    }
-    println("}")
+//    println("digraph loops {")
+//    println("ranksep=\"10\";");
+//    for ((s, ds) <- appEdges) {
+//      for (d <- ds) {
+//        println(f"  ${quote(s.sootMethod.toString)} -> ${quote(d.toString)};")
+//      }
+//    }
+//    println("}")
 
     val m = Soot.getSootClass(mainClass).getMethodByName(mainMethod) //Coverage2.freshenMethod(Soot.getSootClass(mainClass).getMethodByName(mainMethod))
     val s = Stmt((Soot.getBody(m).getUnits.asScala).toList(0).asInstanceOf[SootStmt], m)
@@ -274,7 +274,7 @@ object Main {
       graph
     }
     val shrunk = if (shrink) {
-      pruned.shrink
+      pruned // Was: pruned.shrink // TODO: shrink currently goes in an infinite loop 
     } else {
       pruned
     }
