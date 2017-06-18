@@ -16,6 +16,7 @@ libraryDependencies ++= Seq(
   "de.javakaffee" % "kryo-serializers" % "0.38",
   "org.bitbucket.mstrobel" % "procyon-compilertools" % "0.5.32",
   "org.jgrapht" % "jgrapht-core" % "1.0.1",
+  "org.jgrapht" % "jgrapht-ext" % "1.0.1",
   "org.ow2.asm" % "asm-commons" % "5.1",
   "org.rogach" %% "scallop" % "2.0.1",
   "org.scala-lang" % "scala-reflect" % "2.11.8",
