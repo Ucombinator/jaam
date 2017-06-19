@@ -39,7 +39,7 @@ object Serializer {
       packets +:= packet
     }
 
-    return packets.reverse
+    packets.reverse
   }
 }
 
@@ -61,7 +61,7 @@ class PacketInput(private val input : InputStream) {
   }
 
   // Closes this 'PacketInput'
-  def close() = in.close()
+  def close(): Unit = in.close()
 
   ////////////////////////////////////////
   // Implementation internals
@@ -103,7 +103,7 @@ class PacketOutput(private val output : OutputStream) {
   }
 
   // Flushes output
-  def flush() = out.flush()
+  def flush(): Unit = out.flush()
 
   // Closes this 'PacketOutput'
   def close() : Unit = {
@@ -157,10 +157,10 @@ class AbstractState(override val id : Id[Node]) extends Node(id) {}
 // AnalysisNodes from the analyzer
 case class AnalysisNode(var node : Node = null,
                         override val id : Id[Node],
-                        val abstNodes : mutable.MutableList[Int],
-                        val inEdges : mutable.MutableList[Int],
-                        val outEdges : mutable.MutableList[Int],
-                        val tag : Tag) extends Node(id) {}
+                        abstNodes : mutable.MutableList[Int],
+                        inEdges : mutable.MutableList[Int],
+                        outEdges : mutable.MutableList[Int],
+                        tag : Tag) extends Node(id) {}
 
 case class ErrorState(override val id : Id[Node]) extends AbstractState(id) {}
 case class State(override val id : Id[Node], stmt : Stmt, framePointer : String, kontStack : String) extends AbstractState(id) {}
@@ -173,7 +173,7 @@ case class MissingReferencedState(override val id : Id[Node]) extends Node(id) {
 //tags for the analyzer
 case class NodeTag(id : Id[Tag], node : Id[Node], tag : Tag) extends Packet {}
 abstract class Tag {}
-case class AllocationTag(val sootType : soot.Type) extends Tag {}
+case class AllocationTag(sootType : soot.Type) extends Tag {}
 case class ChainTag() extends Tag {}
 
 abstract class LoopNode extends Packet {}
@@ -200,12 +200,12 @@ abstract sealed class TaintValue
 abstract sealed class TaintAddress extends TaintValue {
   val m: SootMethod
 }
-case class LocalTaintAddress(override val m: SootMethod, val local: Local)
+case class LocalTaintAddress(override val m: SootMethod, local: Local)
   extends TaintAddress
-case class RefTaintAddress(override val m: SootMethod, val ref: Ref)
+case class RefTaintAddress(override val m: SootMethod, ref: Ref)
   extends TaintAddress
 case class ThisRefTaintAddress(override val m: SootMethod) extends TaintAddress
-case class ParameterTaintAddress(override val m: SootMethod, val index: Int)
+case class ParameterTaintAddress(override val m: SootMethod, index: Int)
   extends TaintAddress
 case class ConstantTaintAddress(override val m: SootMethod, c: Constant)
   extends TaintAddress
@@ -239,7 +239,7 @@ class JaamKryo extends KryoBase {
     typ match {
       case null => ""
       case typ : Class[_] =>
-        "  "+typ.getCanonicalName() + "\n" +
+        "  "+typ.getCanonicalName + "\n" +
          (for (i <- typ.getDeclaredFields().toList.sortBy(_.toString)) yield {
           "   "+i+"\n"
          }).mkString("") +
@@ -320,7 +320,7 @@ class JaamKryo extends KryoBase {
   // Run the following to determine what classes need to be here:
   //   for i in ../rt.jar/sun/nio/cs/*.class; do javap $i; done|grep ' extends '|grep -v '^public'
   for (name <- Seq("UTF-8", "UTF-16", "UTF-16BE", "UTF-16LE", "x-UTF-16LE-BOM", "ISO_8859_1" /*, "US_ASCII"*/)) {
-    this.addDefaultSerializer(java.nio.charset.Charset.forName(name).getClass(), CharsetSerializer)
+    this.addDefaultSerializer(java.nio.charset.Charset.forName(name).getClass, CharsetSerializer)
   }
 
   object CharsetSerializer extends kryo.Serializer[java.nio.charset.Charset] {
@@ -336,19 +336,21 @@ class JaamKryo extends KryoBase {
   // following AbstractInsnNode.next.  This works on concert with
   // AbstractInsnNodeSerializer.
   object InsnListSerializer extends kryo.Serializer[InsnList] {
-    override def write(kryo : Kryo, output : Output, collection : InsnList) {
+    override def write(kryo : Kryo, output : Output, collection : InsnList): Unit = {
       output.writeVarInt(collection.size(), true)
       for (element <- collection.iterator.asScala)
-        kryo.writeClassAndObject(output, element);
+        kryo.writeClassAndObject(output, element)
     }
 
     override def read(kryo : Kryo, input : Input, typ : Class[InsnList]) : InsnList = {
       val collection = new InsnList()
       kryo.reference(collection)
-      val length = input.readVarInt(true)
-      for (i <- Seq.range(0, length))
-        collection.add(kryo.readClassAndObject(input).asInstanceOf[AbstractInsnNode])
-      return collection
+
+      (0 until input.readVarInt(true)) foreach {
+        _ => collection.add(kryo.readClassAndObject(input).asInstanceOf[AbstractInsnNode])
+      }
+
+      collection
     }
   }
 
@@ -449,13 +451,14 @@ class JaamKryo extends KryoBase {
       "com.strobel.decompiler.languages.java.ast.WhileStatement",
       "com.strobel.decompiler.languages.java.ast.WildcardType"
     )
-    classes.foreach(Class.forName(_))
+    classes.foreach(Class.forName)
 
     // Build a mapping from nodeType and name to a Role index
-    (for (
-      i <- 0 until (1 << Role.ROLE_INDEX_BITS);
-      role = Role.get(i);
-      if role != null)
-    yield { (role.getNodeType.toString, role.toString) -> i }).toMap
+    (for (i <- 0 until (1 << Role.ROLE_INDEX_BITS)) yield
+      Role.get(i) match {
+        case null => None
+        case r => Some((r.getNodeType.toString, r.toString) -> i)
+      })
+      .flatten.toMap
   }
 }

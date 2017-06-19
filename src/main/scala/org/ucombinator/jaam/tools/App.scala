@@ -17,25 +17,21 @@ object Origin { // TODO: Move into App object?
 }
 
 case class PathElement(path: String, root: String, origin: Origin, data: Array[Byte]) {
-  def classData(): List[Array[Byte]] = {
+  def classData(): List[Array[Byte]] =
     if (path.endsWith(".class")) List(data)
     else if (path.endsWith(".jar")) {
-      for ((e, d) <- org.ucombinator.jaam.util.Jar.entries(new java.io.ByteArrayInputStream(data));
-        if e.getName.endsWith(".class")) yield {
-        d
-      }
-    } else {
-      List()
-    }
-  }
+      for ((e, d) <- org.ucombinator.jaam.util.Jar.entries(new java.io.ByteArrayInputStream(data))
+           if e.getName.endsWith(".class"))
+        yield d
+    } else List()
 }
 
 case class App() extends serializer.Packet {
-  var name = None: Option[String]
-  var classpath = Array[PathElement]()
+  var name: Option[String] = None
+  var classpath: Array[PathElement] = Array()
   object main {
-    var className = None: Option[String]
-    var methodName = None: Option[String]
+    var className: Option[String] = None
+    var methodName: Option[String] = None
   }
 //  object java {
 //    var opts = null: String
@@ -76,22 +72,22 @@ object Main {
 
       val jar = Jar.jar(data)
 
-      def getMains(): List[String] = {
+      def getMains: List[String] = {
         val main = jar.getManifest.getMainAttributes.getValue("Main-Class")
-        if (main != null) { return List(main) }
-        else {
-          return Jar.entries(jar).map(_._1.getName)
+
+        if (main != null) List(main)
+        else
+          Jar.entries(jar).map(_._1.getName)
             .filter(_.endsWith("StacMain.class"))
             .map(_.stripSuffix(".class").replace('/', '.'))
-        }
       }
 
       val detectedOrigin = origin match {
         case Some(r) =>
-          if (r == Origin.APP) { mains ++= getMains()}
+          if (r == Origin.APP) { mains ++= getMains}
           r
         case None =>
-          getMains() match {
+          getMains match {
             case List() => Origin.LIB
             case es => mains ++= es; Origin.APP
           }
@@ -105,9 +101,17 @@ object Main {
     }
   }
 
-  def main(input: List[String], app: List[String], lib: List[String], jvm: List[String], defaultJvm: Boolean, detectMain: Boolean, mainClass: Option[String], mainMethod: Option[String], jaam: String) {
+  def main(input: List[String],
+           app: List[String],
+           lib: List[String],
+           jvm: List[String],
+           defaultJvm: Boolean,
+           detectMain: Boolean,
+           mainClass: Option[String],
+           mainMethod: Option[String],
+           jaam: String) {
     def readList(list: List[String], origin: Option[Origin]) =
-      list.map({ x => read(Paths.get(x), Paths.get(x), origin)}).flatten.toArray
+      list.flatMap(x => read(Paths.get(x), Paths.get(x), origin)).toArray
 
     val appConfig = App()
     appConfig.classpath ++= readList(input, None)
