@@ -206,8 +206,8 @@ object Taint2 {
       updated(c) += m
     }
 
+    // Generate GraphViz (dot) format file
     def printToDOT(filename: String): Unit = {
-      // val dotExporter = new DOTExporter[TaintAddress, DefaultEdge]()
       val dotExporter = new DOTExporter[TaintAddress, DefaultEdge](
         new StringComponentNameProvider[TaintAddress], null,
         new StringComponentNameProvider[DefaultEdge]
@@ -237,7 +237,6 @@ object Taint2 {
       println(f"Edge: $e")
     }
 
-    // TODO: print in GraphViz (dot) format   ----- DONE
     // TODO: serialize to "output"            ----- ???
     // TODO: option to allow selecting only sub-part of graph          ----- ???
     // TODO: work with visualizer team to get it visualized            ----- TODO
