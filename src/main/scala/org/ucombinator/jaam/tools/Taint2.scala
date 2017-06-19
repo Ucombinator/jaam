@@ -3,19 +3,69 @@ package org.ucombinator.jaam.tools.taint2
 import java.io.{BufferedWriter, FileWriter}
 
 import org.ucombinator.jaam.util.Soot
-import org.ucombinator.jaam.serializer._
+// import org.ucombinator.jaam.serializer._
+import org.ucombinator.jaam.serializer.Serializer
 import org.ucombinator.jaam.tools.app.{App, Origin}
 import org.ucombinator.jaam.util.Stmt
 import org.ucombinator.jaam.util.Soot.unitToStmt
 import org.jgrapht._
 import org.jgrapht.graph._
-import org.jgrapht.ext.DOTExporter
+import org.jgrapht.ext.{DOTExporter, StringComponentNameProvider}
 import soot.options.Options
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.jimple.{Stmt => SootStmt, _}
 
 import scala.collection.immutable
 import scala.collection.JavaConverters._
+
+
+// TODO: Use the original version of these abstract sealed classes and case classes from org.ucombinator.jaam.serializer
+// HOWTO:
+// Extend the SOOT class `StringComponentNameProvider` to avoid always overriding `toString` method in every case  class
+abstract sealed class TaintValue
+abstract sealed class TaintAddress extends TaintValue {
+  val m: SootMethod
+}
+
+case class LocalTaintAddress(override val m: SootMethod, local: Local)
+  extends TaintAddress {
+  override def toString: String =
+    "\"" + this.getClass.getSimpleName + "(" + m.toString + ", " + local.getName + ")"+ "\""
+}
+
+case class RefTaintAddress(override val m: SootMethod, ref: Ref)
+  extends TaintAddress {
+  override def toString: String =
+    "\"" + this.getClass.getSimpleName + "(" + m.getName + ", " + ref + ")"+ "\""
+}
+
+case class ThisRefTaintAddress(override val m: SootMethod)
+  extends TaintAddress {
+  override def toString: String =
+    "\"" + this.getClass.getSimpleName + "(" + m.getName + ")"+ "\""
+}
+
+case class ParameterTaintAddress(override val m: SootMethod, index: Int)
+  extends TaintAddress {
+  override def toString: String =
+    "\"" + this.getClass.getSimpleName + "(" + m.getName + ", " + index + ")"+ "\""
+}
+
+case class ConstantTaintAddress(override val m: SootMethod, c: Constant)
+  extends TaintAddress {
+  override def toString: String =
+    "\"" + this.getClass.getSimpleName + "(" + m.getName + ", " + c + ")"+ "\""
+}
+
+// case class ConstantTaintAddress(override val m: SootMethod)
+// extends TaintAddress
+case class InvokeTaintAddress(override val m: SootMethod, ie: InvokeExpr)
+  extends TaintAddress {
+  override def toString: String =
+    "\"" + this.getClass.getSimpleName + "(" + m.getName + ", " + ie.getMethod.getName + "\""
+}
+// ------
+
 
 
 object Taint2 {
@@ -46,9 +96,7 @@ object Taint2 {
 
     val graph = new DefaultDirectedGraph[TaintAddress, DefaultEdge](classOf[DefaultEdge])
 
-    var class_count = 0
     var method_count = 0
-
     var stmt_count = 0
     var target_count = 0
     var edges = immutable.Map[Stmt, Set[SootMethod]]()
@@ -116,10 +164,18 @@ object Taint2 {
       }
     }
 
+    val appClasses = (
+      for(name <- Soot.loadedClasses.keys
+          if Soot.loadedClasses(name).origin == Origin.APP)
+        yield Soot.getSootClass(name))
+      .toSet
+
+    val class_count = appClasses.size // For test in development
+
     val updated = collection.mutable.Map[SootClass, Set[SootMethod]]().withDefaultValue(Set())
 
     def updateGraph(c: SootClass, m: SootMethod): Unit = {
-      if (updated.contains(c) && updated(c).contains(m)) { () }
+      if (updated.contains(c) && updated(c).contains(m) || !appClasses.contains(c)) { () }
       else {
         if (m.isNative) { println("skipping body because native") }
         else if (m.isAbstract) { println("skipping body because abstract") }
@@ -135,7 +191,7 @@ object Taint2 {
                 for (sootMethod <- stmtTargets(Stmt(sootUnit, m))) {
                   updateGraph(sootMethod.getDeclaringClass, sootMethod)
                 }
-              case sootStmt : InvokeStmt => ()
+              case sootStmt : InvokeStmt =>
                 for (sootMethod <- invokeExprTargets(sootStmt.getInvokeExpr)) {
                   updateGraph(sootMethod.getDeclaringClass, sootMethod)
                 }
@@ -146,42 +202,41 @@ object Taint2 {
             }
           }
         }
-        updated(c) += m
       }
+      updated(c) += m
     }
 
+    // Generate GraphViz (dot) format file
     def printToDOT(filename: String): Unit = {
-      val dotExporter = new DOTExporter[TaintAddress, DefaultEdge]()
+      val dotExporter = new DOTExporter[TaintAddress, DefaultEdge](
+        new StringComponentNameProvider[TaintAddress], null,
+        new StringComponentNameProvider[DefaultEdge]
+      )
       val out = new BufferedWriter(new FileWriter(filename))
       dotExporter.exportGraph(graph, out)
     }
 
-    for (name <- Soot.loadedClasses.keys) {
-      class_count += 1
-      println(f"class origin ${Soot.loadedClasses(name).origin} $class_count: $name")
-
-      if (Soot.loadedClasses(name).origin == Origin.APP) {
-        val c = Soot.getSootClass(name)
-        println(f"class name: $name")
-        // The .toList prevents a concurrent access exception
-        for (m <- c.getMethods.asScala.toList) {
-          method_count += 1
-          updateGraph(c, m)
-        }
-        println(f"end class $c")
-      }
+    // FOR TEST
+    Soot.loadedClasses.keys foreach {
+      nm => println(f"class origin ${Soot.loadedClasses(nm).origin} $class_count: $nm")
     }
 
-    println(f"Graph: $graph")
+    println("\n\n\nStart Generating GRAPH!")
+    // TODO: `.toList` prevents a concurrent access exception. Any better solution???
+    for (c <- appClasses; m <- c.getMethods.asScala.toList) {
+      println(f"class name: ${c.getName}   --->   ${m.getName}")
+      method_count += 1
+      updateGraph(c, m)
+    }
 
-    printToDOT("Test.gv")
+    println(f"Graph: $graph")  // For TEST
+    printToDOT(output.split("\\.").head + ".gv")
 
-
-    // For Test
+    // For TEST
     for (e <- graph.edgeSet.asScala) {
-      println(f"Edge: ${e}")
+      println(f"Edge: $e")
     }
-    // TODO: print in GraphViz (dot) format   ----- DONE
+
     // TODO: serialize to "output"            ----- ???
     // TODO: option to allow selecting only sub-part of graph          ----- ???
     // TODO: work with visualizer team to get it visualized            ----- TODO
