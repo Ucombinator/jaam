@@ -78,6 +78,7 @@ public class LayerFactory
                 id_to_abs_vertex.put(oldV.getStrID(), newV);
                 idMapping.put(oldV.getStrID(), newV.getStrID());
                 methodVertex.getInnerGraph().addVertex(newV);
+                methodVertex.setDefaultColor();
             }
             
             // Add the edges of the inner graph.

@@ -93,14 +93,15 @@ public class TakeInput extends Thread
                     LoopLoopNode node = (LoopLoopNode) packet;
                     int id = node.id().id();
                     String label = node.method().getSignature() + "\ninstruction #" + node.statementIndex();
-                    graph.addVertex(id, new Instruction(label, "Loop:"+node.method().getSignature() + ":" +
+                    graph.addVertex(id, new Instruction("Loop:"+label, node.method().getSignature() + ":" +
                             loop_counter++, id, false), true);
                 }
                 else if(packet instanceof LoopMethodNode) {
                     LoopMethodNode node = (LoopMethodNode) packet;
                     int id = node.id().id();
                     String label = node.method().getSignature();
-                    graph.addVertex(id, new Instruction(label, label, id, false), true);
+                    graph.addVertex(id, new Instruction("Method:"+label, label, id, false), true);
+                    System.out.println("SIGN: " + node.method().getSignature());
                 }
                 else if(packet instanceof LoopEdge) {
                     LoopEdge edge = (LoopEdge) packet;

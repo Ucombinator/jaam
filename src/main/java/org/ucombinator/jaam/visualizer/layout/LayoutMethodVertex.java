@@ -16,7 +16,8 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
 
     private Method method;
 
-    private Color methodColor = Color.LIGHTBLUE;
+    private Color methodColor = Color.DEEPSKYBLUE;
+    private Color loopColor   = Color.ORANGE;
 
     public LayoutMethodVertex(Method method, boolean drawEdges) {
         super(method.getFullName(), VertexType.METHOD, drawEdges);
@@ -210,7 +211,20 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
     }
 
     public void setDefaultColor(){
-        this.setColor(methodColor);
+
+        if(this.getInnerGraph().getRoot().getLabel().startsWith("Method"))
+        {
+            this.setColor(methodColor);
+        }
+        else if(this.getInnerGraph().getRoot().getLabel().startsWith("Loop"))
+        {
+            this.setColor(loopColor);
+        }
+        else
+        {
+            this.setColor(Color.DARKRED);
+        }
+        System.out.println("Get Color " + this.getInnerGraph().getRoot().getLabel());
 /*            System.out.println("**************************METHOD*********************+");
             if(!this.getInnerGraph().getVertices().isEmpty()) {
                 AbstractLayoutVertex v = this.getInnerGraph().getVertices().values().iterator().next();
@@ -223,5 +237,4 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
             }
             */
     }
-
 }
