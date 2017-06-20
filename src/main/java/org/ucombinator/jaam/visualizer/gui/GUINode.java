@@ -436,9 +436,7 @@ public class GUINode extends Pane
                 {
                     if(e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
                     {
-                        Shape edgePath = e.getEdgePath();
-                        edgePath.setStroke(Color.ORANGERED);
-                        edgePath.setStrokeWidth(edgePath.getStrokeWidth() * 4.0);
+                        e.highlightEdgePath();
                     }
                 }
             }
@@ -459,9 +457,7 @@ public class GUINode extends Pane
                 {
                     if (e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
                     {
-                        Shape edgePath = e.getEdgePath();
-                        edgePath.setStroke(Color.BLACK);
-                        edgePath.setStrokeWidth(edgePath.getStrokeWidth() / 4.0);
+                        e.resetEdgePath();
                     }
                 }
             }

@@ -29,6 +29,11 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     private static double arrowheadAngleDiff = 0.15 * Math.PI;
     private static double arrowLengthRatio = 0.5;
 
+    private Color downwardColor = Color.BLACK;
+    private Color upwardColor = Color.VIOLET;
+    private Color color = Color.RED;
+    boolean colorIsSet = false;
+
     private LayoutEdge(int source, int dest)
     {
         this.strId = LayoutEdge.createID(source, dest);
@@ -44,6 +49,10 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.destVertex = destVertex;
         this.sourceVertex.addOutgoingNeighbor(this.destVertex);
         this.destVertex.addIncomingNeighbor(this.sourceVertex);
+
+        System.out.println("SEE: --" + destVertex.getY() + "-- --" + sourceVertex.getY());
+
+
 
         graphics = new Group();
         arrowhead = new Polygon();
@@ -115,7 +124,18 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         {
             line.getStrokeDashArray().addAll(5d, 4d);
         }
+
         line.setStrokeWidth(destVertex.getGraphics().getRect().getStrokeWidth());
+        if(!colorIsSet) {
+            colorIsSet = true;
+            if (destVertex.getY() >= sourceVertex.getY()) {
+                color = downwardColor;
+            } else {
+                color = upwardColor;
+            }
+        }
+        line.setStroke(color);
+
 
         // Compute arrowhead
         double angle = Math.PI + Math.atan2(line.getEndY() - line.getStartY(), line.getEndX() - line.getStartX());
@@ -136,7 +156,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
                 x1, y1,
                 x2, y2,
                 x3, y3 });
-        arrowhead.setFill(Color.BLACK);
+        arrowhead.setFill(color);
 
         this.edgePath = line;
         this.graphics.getChildren().removeAll(this.graphics.getChildren());
@@ -146,6 +166,18 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         node.getChildren().add(graphics);
         graphics.setVisible(node.getVertex().isExpanded() && this.sourceVertex.isEdgeVisible()
                 && this.destVertex.isEdgeVisible() && this.isVisible());
+    }
+
+    public void highlightEdgePath()
+    {
+        edgePath.setStroke(Color.ORANGERED);
+        edgePath.setStrokeWidth(edgePath.getStrokeWidth() * 4.0);
+    }
+
+    public void resetEdgePath()
+    {
+        edgePath.setStroke(color);
+        edgePath.setStrokeWidth(edgePath.getStrokeWidth() / 4.0);
     }
 
     public void drawLoop(GUINode node) {
