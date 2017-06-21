@@ -18,6 +18,8 @@ import soot.jimple.{Stmt => SootStmt, _}
 import scala.collection.immutable
 import scala.collection.JavaConverters._
 
+// Now works for airplan_1.
+// TODO: Fully test with the other apps required."
 
 // TODO: Use the original version of these abstract sealed classes and case classes from org.ucombinator.jaam.serializer
 // HOWTO:
@@ -86,10 +88,10 @@ object Taint2 {
 
     for (a <- inputPackets) { Soot.addClasses(a.asInstanceOf[App]) }
 
-//    val mainClasses = for (a <- inputPackets) yield { a.asInstanceOf[App].main.className }
-//    val mainMethods = for (a <- inputPackets) yield { a.asInstanceOf[App].main.methodName }
-//    val mainClass = mainClasses.head.get // TODO: fix
-//    val mainMethod = mainMethods.head.get // TODO: fix
+    val mainClasses = for (a <- inputPackets) yield { a.asInstanceOf[App].main.className }
+    val mainMethods = for (a <- inputPackets) yield { a.asInstanceOf[App].main.methodName }
+    val mainClass = mainClasses.head.get // TODO: fix
+    val mainMethod = mainMethods.head.get // TODO: fix
 
     Scene.v.loadBasicClasses()   // ???
     PackManager.v.runPacks()    // ???
@@ -101,20 +103,31 @@ object Taint2 {
     var target_count = 0
     var edges = immutable.Map[Stmt, Set[SootMethod]]()
 
+    val appClasses = (
+      for(name <- Soot.loadedClasses.keys
+          if Soot.loadedClasses(name).origin == Origin.APP)
+        yield Soot.getSootClass(name))
+      .toSet
+
+    val interfaces = for (c <- appClasses if c.isInterface) yield c
+//    val abstractClasses = for (c <- appClasses if c.isAbstract) yield c
+
     def invokeExprTargets(expr: InvokeExpr): Set[SootMethod] = {
       val m = expr.getMethod
       val c = m.getDeclaringClass
       val cs: Set[SootClass] = expr match {
         case expr : DynamicInvokeExpr =>
           throw new Exception(s"Unexpected DynamicInvokeExpr: $expr")
-        case _ : StaticInvokeExpr => Set(c)  // --
+        case _ : StaticInvokeExpr =>
+          Set(c)  // --
         // SpecialInvokeExpr is also a subclasses of InstanceInvokeExpr but we need to treat it special
         case _: SpecialInvokeExpr => Set(c)  // --
         case _: InterfaceInvokeExpr => // A subclasses of InstanceInvokeExpr
           // TODO: Main performance cost, but can't cache because new new hierarchy when scene changes (due to getSootClass?)
           Scene.v.getActiveHierarchy.getImplementersOf(c).asScala.toSet
         case _: VirtualInvokeExpr => // A subclasses of InstanceInvokeExpr
-          Scene.v.getActiveHierarchy.getSubclassesOfIncluding(c).asScala.toSet
+          if (c.isInterface) Scene.v.getActiveHierarchy.getImplementersOf(c).asScala.toSet
+          else Scene.v.getActiveHierarchy.getSubclassesOfIncluding(c).asScala.toSet
       }
 
       (for (c2 <- cs if !c2.isInterface) yield
@@ -164,46 +177,67 @@ object Taint2 {
       }
     }
 
-    val appClasses = (
-      for(name <- Soot.loadedClasses.keys
-          if Soot.loadedClasses(name).origin == Origin.APP)
-        yield Soot.getSootClass(name))
-      .toSet
 
     val class_count = appClasses.size // For test in development
 
     val updated = collection.mutable.Map[SootClass, Set[SootMethod]]().withDefaultValue(Set())
 
+    val stmtVisitingRecord =
+      for (c <- appClasses;
+           m <- c.getMethods.asScala.toList if !m.isAbstract && !m.isNative;
+           (u, i) <- Soot.getBody(m).getUnits.asScala.zipWithIndex)
+        yield ((c, m, u, i), false)
+
+    val stmtVisitingRecordMap = collection.mutable.Map(stmtVisitingRecord.toSeq: _*)
+
     def updateGraph(c: SootClass, m: SootMethod): Unit = {
-      if (updated.contains(c) && updated(c).contains(m) || !appClasses.contains(c)) { () }
+      if (!appClasses.contains(c)) { () }
+      else if (updated.contains(c) && updated(c).contains(m)) { () }
       else {
         if (m.isNative) { println("skipping body because native") }
         else if (m.isAbstract) { println("skipping body because abstract") }
         else {
-          for (sootUnit <- Soot.getBody(m).getUnits.asScala) {
-            sootUnit match {
-              case sootStmt: DefinitionStmt =>
-                for (src <- addrsOf(sootStmt.getRightOp, m);
-                     dst <- addrsOf(sootStmt.getLeftOp, m)) {
-                  Graphs.addEdgeWithVertices(graph, src, dst)
-                }
+          println(f"class: ${c.getName} ---- method: ${m.getName}")
+          for ((sootUnit, i) <- Soot.getBody(m).getUnits.asScala.zipWithIndex) {
+//        for (sootUnit <- Soot.getBody(m).getUnits.asScala) {
+            if (!stmtVisitingRecordMap((c, m, sootUnit, i))) {
+              stmtVisitingRecordMap((c, m, sootUnit, i)) = true
+              sootUnit match {
+                case sootStmt: DefinitionStmt =>
+                  for (src <- addrsOf(sootStmt.getRightOp, m);
+                       dst <- addrsOf(sootStmt.getLeftOp, m)) {
+                    Graphs.addEdgeWithVertices(graph, src, dst)
+                  }
 
-                for (sootMethod <- stmtTargets(Stmt(sootUnit, m))) {
-                  updateGraph(sootMethod.getDeclaringClass, sootMethod)
-                }
-              case sootStmt : InvokeStmt =>
-                for (sootMethod <- invokeExprTargets(sootStmt.getInvokeExpr)) {
-                  updateGraph(sootMethod.getDeclaringClass, sootMethod)
-                }
-              case _ : ReturnVoidStmt => ()
-              case _ : NopStmt => ()
-              case _ : GotoStmt => ()
-              case _ => ()
+                  for (sootMethod <- stmtTargets(Stmt(sootUnit, m))) {
+                    val sootClass = sootMethod.getDeclaringClass
+                    if (sootMethod.getName != m.getName
+                      || !updated.contains(sootClass)
+                      || (updated.contains(sootClass) && !updated(sootClass).contains(sootMethod)))  {
+                      updateGraph(sootMethod.getDeclaringClass, sootMethod)
+                      updated(c) += m
+                    }
+                  }
+
+                case sootStmt : InvokeStmt =>
+                  for (sootMethod <- invokeExprTargets(sootStmt.getInvokeExpr)) {
+                    val sootClass = sootMethod.getDeclaringClass
+                    if (sootMethod.getName != m.getName
+                      || !updated.contains(sootClass)
+                      || (updated.contains(sootClass) && !updated(sootClass).contains(sootMethod))) {
+                      updateGraph(sootMethod.getDeclaringClass, sootMethod)
+                      updated(c) += m
+                    }
+                  }
+                case _ : ReturnVoidStmt => ()
+                case _ : NopStmt => ()
+                case _ : GotoStmt => ()
+                case _ => ()
+              }
             }
           }
         }
       }
-      updated(c) += m
     }
 
     // Generate GraphViz (dot) format file
@@ -214,11 +248,6 @@ object Taint2 {
       )
       val out = new BufferedWriter(new FileWriter(filename))
       dotExporter.exportGraph(graph, out)
-    }
-
-    // FOR TEST
-    Soot.loadedClasses.keys foreach {
-      nm => println(f"class origin ${Soot.loadedClasses(nm).origin} $class_count: $nm")
     }
 
     println("\n\n\nStart Generating GRAPH!")
