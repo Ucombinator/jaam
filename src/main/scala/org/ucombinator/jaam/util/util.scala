@@ -5,7 +5,7 @@ import java.util.jar._
 import java.util.zip._
 
 trait CachedHashCode extends Product {
-  override lazy val hashCode = scala.runtime.ScalaRunTime._hashCode(this)
+  override lazy val hashCode: Int = scala.runtime.ScalaRunTime._hashCode(this)
 }
 
 object Misc {
@@ -13,15 +13,15 @@ object Misc {
     val output = new ByteArrayOutputStream()
 
     var size = 0
-    var buffer = new Array[Byte](128*1024)
+    val buffer = new Array[Byte](128*1024)
 
     while ({size = input.read(buffer, 0, buffer.length); size != -1}) {
-      output.write(buffer, 0, size);
+      output.write(buffer, 0, size)
     }
 
     output.flush()
 
-    return output.toByteArray()
+    return output.toByteArray
   }
 }
 
@@ -63,13 +63,22 @@ object Zip {
 
   def entries(input: ZipInputStream): List[(ZipEntry, Array[Byte])] = {
     var entries = List[(ZipEntry, Array[Byte])]()
-
     var entry: ZipEntry = null
     while ({entry = input.getNextEntry(); entry != null}) {
       // `entry.getSize` may be -1 to signal unknown so we use `toByteArray`
       entries ++= List((entry, Misc.toByteArray(input)))
     }
-
     return entries
   }
+
+  // TODO: It seems this is a better implementation of `entries`,
+  // TODO: (continue) but it will trigger errors of taint2 (not app, but the generated app.jaam is different, which is
+  // TODO: (continue) the direct source of triggering errors of taint2)
+
+  // TODO: The problem comes from the `yield` part ???
+
+  //  def entries(input: ZipInputStream): List[(ZipEntry, Array[Byte])] = {
+  //    for (entry <- Stream.continually(input.getNextEntry).takeWhile(_ != null).toList)
+  //      yield (entry, Misc.toByteArray(input))
+  //  }
 }

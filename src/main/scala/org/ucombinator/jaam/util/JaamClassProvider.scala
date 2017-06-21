@@ -3,13 +3,12 @@ package org.ucombinator.jaam.util {
 
   // Use Soot.useJaamClassProvider to install this provider
   class JaamClassProvider extends ClassProvider {
-    override def find(cls: String): ClassSource = {
+    override def find(cls: String): ClassSource =
       Soot.loadedClasses.get(cls) match {
         case None => null
         case Some(c) =>
           new soot.asm.JaamClassSource(c.source, new soot.JaamFoundFile(cls, c.data))
       }
-    }
   }
 }
 
@@ -19,7 +18,9 @@ package org.ucombinator.jaam.util {
 package soot {
   import java.io.{ByteArrayInputStream, File, InputStream}
 
-  class JaamFoundFile(path: String, data: Array[Byte]) extends SourceLocator.FoundFile(new File(f"JaamFoundFile:$path")) {
+  class JaamFoundFile(path: String, data: Array[Byte])
+    extends SourceLocator.FoundFile(new File(f"JaamFoundFile:$path"))
+  {
     override def inputStream(): InputStream = new ByteArrayInputStream(data)
   }
 }
@@ -27,5 +28,6 @@ package soot {
 package soot.asm {
   import soot.SourceLocator
 
-  class JaamClassSource(cls: String, foundFile: SourceLocator.FoundFile) extends AsmClassSource(cls, foundFile)
+  class JaamClassSource(cls: String, foundFile: SourceLocator.FoundFile)
+    extends AsmClassSource(cls, foundFile)
 }

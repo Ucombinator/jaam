@@ -45,7 +45,7 @@ object Soot {
     }
   }
 
-  def addClasses(app: App): Unit = { app.classpath.map(load) }
+  def addClasses(app: App): Unit = { app.classpath.foreach(load) }
 
   // TODO: optional flags to load only some parts?
   def addJaamClasses(file: String): Unit = {
@@ -59,13 +59,13 @@ object Soot {
     }
   }
 
-  def getSootClass(s : String) = Scene.v().loadClass(s, SootClass.SIGNATURES)
+  def getSootClass(s : String): SootClass = Scene.v().loadClass(s, SootClass.SIGNATURES)
 
-  def getBody(m : SootMethod) = {
+  def getBody(m : SootMethod): Body = {
     if (m.isNative) { throw new Exception("Attempt to Soot.getBody on native method: " + m) }
     if (m.isAbstract) { throw new Exception("Attempt to Soot.getBody on abstract method: " + m) }
     // TODO: do we need to test for phantom here?
-    if (!m.hasActiveBody()) {
+    if (!m.hasActiveBody) {
       SootResolver.v().resolveClass(m.getDeclaringClass.getName, SootClass.BODIES)
       m.retrieveActiveBody()
     }
@@ -104,7 +104,7 @@ object Soot {
     PackManager.v().runPacks()
   }
 
-  def isClass(s: String) = SourceLocator.v().getClassSource(s) != null
+  def isClass(s: String): Boolean = SourceLocator.v().getClassSource(s) != null
 
   def getSootType(t : String): Type = t match {
     case "int" => soot.IntType.v()
@@ -140,33 +140,25 @@ object Soot {
 
   // is a of type b?
   def isSubType(a : Type, b : Type) : Boolean = {
-    if (a equals b) {
-      return true
-    } else {
-      if (isPrimitive(a) || isPrimitive(b)) {
-        return false
-      } else {
-        (a, b) match {
-          case (at : ArrayType, bt : ArrayType) => {
-            (at.numDimensions == bt.numDimensions) &&
-              isSubType(at.baseType, bt.baseType)
+    if (a equals b) true
+    else if (isPrimitive(a) || isPrimitive(b)) false
+    else
+      (a, b) match {
+        case (at : ArrayType, bt : ArrayType) =>
+          (at.numDimensions == bt.numDimensions) &&
+            isSubType(at.baseType, bt.baseType)
+        case (ot : Type, _ : ArrayType) =>
+          ot.equals(classes.Object.getType) ||
+            ot.equals(classes.Clonable.getType) ||
+            ot.equals(classes.Serializable.getType)
+        case (_ : ArrayType, ot : Type) =>
+          Log.warn(f"Checking if a non-array type $ot is an array")
+          false // maybe
+        case _ =>
+          a.merge(b, Scene.v) match {
+            case null => false
+            case lub => !lub.equals(a)
           }
-          case (ot : Type, at : ArrayType) => {
-            ot.equals(classes.Object.getType) ||
-              ot.equals(classes.Clonable.getType) ||
-              ot.equals(classes.Serializable.getType)
-          }
-          case (at : ArrayType, ot : Type) => {
-            Log.warn("Checking if a non-array type "+ot+" is an array")
-            false // maybe
-          }
-          case _ => {
-            val lub: Type = a.merge(b, Scene.v)
-            val result = (lub != null) && !lub.equals(a)
-            return result
-          }
-        }
       }
-    }
   }
 }

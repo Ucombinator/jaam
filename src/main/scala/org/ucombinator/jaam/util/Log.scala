@@ -8,7 +8,7 @@ object Log {
     val level: Int
     val name: String
 
-    override def toString(): String = name
+    override def toString: String = name
   }
 
   object LEVEL_NONE extends Level {
@@ -45,13 +45,13 @@ object Log {
     LEVEL_TRACE)
 
   // TODO: make these more efficient by making them macros
-  def error(message : => String) : Unit = if (minlog.Log.ERROR) minlog.Log.error(null, message, null)
-  def warn(message : => String) : Unit = if (minlog.Log.WARN) minlog.Log.warn(null, message, null)
-  def info(message : => String) : Unit = if (minlog.Log.INFO) minlog.Log.info(null, message, null)
-  def debug(message : => String) : Unit = if (minlog.Log.DEBUG) minlog.Log.debug(null, message, null)
-  def trace(message : => String) : Unit = if (minlog.Log.TRACE) minlog.Log.trace(null, message, null)
+  def error(message: => String): Unit = if (minlog.Log.ERROR) minlog.Log.error(null, message, null)
+  def warn(message: => String): Unit = if (minlog.Log.WARN) minlog.Log.warn(null, message, null)
+  def info(message: => String): Unit = if (minlog.Log.INFO) minlog.Log.info(null, message, null)
+  def debug(message: => String): Unit = if (minlog.Log.DEBUG) minlog.Log.debug(null, message, null)
+  def trace(message: => String): Unit = if (minlog.Log.TRACE) minlog.Log.trace(null, message, null)
 
-  def setLogging(level : Level) = minlog.Log.set(level.level)
+  def setLogging(level: Level): Unit = minlog.Log.set(level.level)
 
   var color: Boolean = true
 
@@ -65,8 +65,11 @@ object Log {
       super.log(level, category, message, ex)
     }
 
-    override def print(s : String) = {
-      def ifColor(s: String) = if (color) { s } else { "" }
+    override def print(s : String): Unit = {
+      def ifColor(s: String): String =
+        if (color) s
+        else ""
+
       this.level match {
         case minlog.Log.LEVEL_ERROR =>
           super.print(ifColor(Console.RED)  + s + ifColor(Console.RESET))
