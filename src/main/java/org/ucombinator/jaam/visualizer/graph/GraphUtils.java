@@ -47,7 +47,7 @@ public class GraphUtils {
             }
         }
 
-        if(vSCC.lowlink < vSCC.index)
+        if(vSCC.lowlink == vSCC.index)
         {
             ArrayList<Integer> newComponent = new ArrayList<Integer>();
             while(true)
