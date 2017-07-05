@@ -54,7 +54,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     private int dfsPathPos;
 
     public enum VertexType {
-        INSTRUCTION, LOOP, METHOD, CHAIN, ROOT, SHRINK
+        INSTRUCTION, LOOP, METHOD, CHAIN, ROOT, SHRINK, SCC
     }
     private VertexType vertexType;
 
