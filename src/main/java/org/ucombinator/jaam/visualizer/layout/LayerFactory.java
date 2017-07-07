@@ -27,6 +27,16 @@ public class LayerFactory
     	LayoutRootVertex root = new LayoutRootVertex();
     	
         ArrayList< ArrayList<Integer>> sccs =  (new GraphUtils()).StronglyConnectedComponents(graph);
+
+        for(ArrayList<Integer> JUAN : sccs) {
+            if(JUAN.size() == 1)
+                continue;
+            System.out.print("JUAN SCC:");
+            for (Integer i : JUAN)
+                System.out.print(i + " ");
+            System.out.println();
+        }
+
         
         HashMap<String, Vertex> id_to_abs_vertex = new LinkedHashMap<String, Vertex>();
         for(Vertex v: graph.getVertices()){
@@ -36,11 +46,13 @@ public class LayerFactory
         
         
         HashMap<String, LayoutMethodVertex> vertex_to_scc = new LinkedHashMap<String, LayoutMethodVertex>();
+        HashMap<Integer, Vertex> methodVertex_to_vertex = new HashMap<>();
+        HashMap<Integer, LayoutMethodVertex > vertex_to_methodVertex = new HashMap<>();
         HierarchicalGraph rootGraph = new HierarchicalGraph();
         int i = 0;
         for (ArrayList<Integer> scc: sccs){
         	System.out.println("Scc: "+i);
-        	Method m = new Method(null, ""+i++);
+        	//Method m = new Method(null, ""+i++);
         	LayoutMethodVertex sccVertex = new LayoutMethodVertex("scc"+i++, true);
         	
         		System.out.println("Creating scc: " + i);
@@ -59,17 +71,16 @@ public class LayerFactory
             		System.out.println("Method name: " + methodName);
             		LayoutMethodVertex mVertex = new LayoutMethodVertex(methodName, true);
             		//LayoutInstructionVertex v = new LayoutInstructionVertex(id_to_abs_vertex.get(id).getInstruction(), sccVertex, true);
-            		
+
+                    methodVertex_to_vertex.put(mVertex.getId(), id_to_abs_vertex.get(""+id));
+                    vertex_to_methodVertex.put(id             , mVertex);
+
             		gSCC.addVertex(mVertex);
             	}
         		sccVertex.setInnerGraph(gSCC);
-        		
-        			
-        		
         }
-        
-        	
-        
+
+        // Add edges between SCC Vertices
         HashMap<String, LayoutEdge> edges = new LinkedHashMap<String, LayoutEdge>();
         for(Vertex vertex: graph.getVertices()){
             // Not sure why we need an Object instead of a Vertex here
@@ -79,8 +90,6 @@ public class LayerFactory
                 String tempID = vertex.getId() + "--" + neighbor.getId();
                 if(!edges.containsKey(tempID))
                 {
-                	
-                	
                     AbstractLayoutVertex from = vertex_to_scc.get(""+vertex.getId());
                     AbstractLayoutVertex to = vertex_to_scc.get(""+neighbor.getId());
 
@@ -96,7 +105,56 @@ public class LayerFactory
                     }
                 }
             }
-        } 
+        }
+
+        // Create inner graph for each method vertex.
+        for(AbstractLayoutVertex sccVertex: rootGraph.getVertices().values()) {
+
+            System.out.println("JUAN: sccVertex");
+            HashMap<String, AbstractLayoutVertex> innerVertices = sccVertex.getInnerGraph().getVertices();
+            if(innerVertices.size() <= 1)
+                continue;
+            System.out.println("JUAN size " + innerVertices.size());
+            for(AbstractLayoutVertex mv: innerVertices.values())
+            {
+                System.out.println("\tJUAN: Inner Vertex " + mv.getId());
+                if(!methodVertex_to_vertex.containsKey(mv.getId()))
+                {
+                    System.out.println("JUAN Found a NULL Boy " + mv.getId());
+                    continue;
+                }
+                Vertex v = methodVertex_to_vertex.get(mv.getId());
+                for(Object  graphNeighbor: v.getOutgoingNeighbors())
+                {
+                   Vertex gn = (Vertex)graphNeighbor;
+                   LayoutMethodVertex mn = vertex_to_methodVertex.get(gn.getId());
+
+                   if(innerVertices.containsKey(mn.getStrID()))
+                   {
+                       System.out.println("\t\t\tJUAN: ADDING EDGE");
+                       sccVertex.getInnerGraph().addEdge(new LayoutEdge(mv, mn, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                   }
+
+                }
+            }
+            /*
+            // Add the edges of the inner graph.
+            for(Vertex v: methodBuckets.get(methodVertex.getMethodName())){
+                for(Object neighborObj: v.getOutgoingNeighbors()){
+                    Vertex neighbor = (Vertex) neighborObj;
+                    if(v.getMethodName().equals(neighbor.getMethodName())){
+                        methodVertex.getInnerGraph().addEdge(
+                                new LayoutEdge(
+                                        methodVertex.getInnerGraph().getVertices().get(idMapping.get(v.getStrID())),
+                                        methodVertex.getInnerGraph().getVertices().get(idMapping.get(neighbor.getStrID())),
+                                        LayoutEdge.EDGE_TYPE.EDGE_REGULAR
+                                )
+                        );
+                    }
+                }
+            }
+            */
+        }
         
         root.setInnerGraph(rootGraph);
        
