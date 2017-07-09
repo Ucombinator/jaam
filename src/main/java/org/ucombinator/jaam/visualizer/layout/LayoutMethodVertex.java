@@ -23,6 +23,11 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
         super(method.getFullName(), VertexType.METHOD, drawEdges);
         this.method = method;
     }
+    
+    public LayoutMethodVertex(String method, boolean drawEdges) {
+        super(method, VertexType.METHOD, drawEdges);
+        this.method = null;
+    }
 
     public String getMethodName() {
         return this.method.getFullName();
