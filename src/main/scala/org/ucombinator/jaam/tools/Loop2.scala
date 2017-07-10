@@ -14,6 +14,12 @@ import java.util.jar.JarEntry
 import java.util.jar.JarInputStream
 
 import scala.collection.JavaConversions._
+import scala.collection.immutable
+import scala.collection.mutable
+
+import org.jgrapht._
+import org.jgrapht.ext.DOTExporter
+import org.jgrapht.graph._
 
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.jimple.{Stmt => SootStmt, IfStmt}
@@ -26,6 +32,7 @@ import soot.toolkits.graph.LoopNestTree
 import org.ucombinator.jaam.serializer
 import org.ucombinator.jaam.serializer.TaintAddress
 import org.ucombinator.jaam.util.CachedHashCode
+import org.ucombinator.jaam.util.Stmt
 
 object LoopAnalyzer {
   private var loops = Map.empty[SootMethod, Set[SootLoop]]
@@ -50,7 +57,7 @@ object LoopAnalyzer {
     }
   }
 
-  case class LoopTree(val loop: SootLoop, val children: Set[LoopTree]) {
+  case class LoopTree(val loop: SootLoop, val method: SootMethod, val children: Set[LoopTree]) {
     def contains(stmt: SootStmt): Boolean = {
       loop.getLoopStatements.contains(stmt)
     }
@@ -72,11 +79,11 @@ object LoopAnalyzer {
         assert(grandchildren.isEmpty, "malformed tree")
         val parent = parents.head
         val newParent = parent.insert(child)
-        LoopTree(loop, (children - parent) + newParent)
+        LoopTree(loop, method, (children - parent) + newParent)
       } else {
         // child becomes a direct descendant containing 0 or more children
-        val node = LoopTree(child.loop, child.children ++ grandchildren)
-        LoopTree(loop, (children -- grandchildren) + node)
+        val node = LoopTree(child.loop, method, child.children ++ grandchildren)
+        LoopTree(loop, method, (children -- grandchildren) + node)
       }
     }
     // assumes that its loop contains the stmt in question
@@ -95,10 +102,12 @@ object LoopAnalyzer {
       }
     }
     def prettyPrint(indent: Int = 0): Unit = {
+      println(f"Method: $method")
       println("Head:")
       println(loop.getHead)
       for (stmt <- loop.getLoopStatements) {
-        println("Stmt:")
+        val next = Stmt(stmt, method).nextSemantic.map(_.sootStmt).map({x => Stmt.getIndex(x, method)})
+        println(f"Stmt: ${Stmt.getIndex(stmt, method)} $next")
         println(stmt)
       }
       println()
@@ -106,13 +115,92 @@ object LoopAnalyzer {
       for (child <- children) {
         child.prettyPrint(indent+1)
         println()
-        child.prettyPrint(indent+1)
       }
       println("End Children:")
+
+      val graph = new DefaultDirectedGraph[SootStmt, DefaultEdge](classOf[DefaultEdge])
+
+      // TODO: all nextSemantic that are not in the loop are exit jumps
+      // Include them in graph along with a synthetic final statement
+      for (node <- loop.getLoopStatements) {
+        graph.addVertex(node)
+      }
+
+      for (node <- loop.getLoopStatements) {
+        for (target <- Stmt(node, method).nextSemantic) {
+          if (graph.containsVertex(target.sootStmt)) {
+            graph.addEdge(node, target.sootStmt)
+          }
+        }
+      }
+
+      println("START_GRAPH")
+      println(graph)
+      println("END_GRAPH")
+
+      val imm = dominatorTree(loop.getHead, graph)
+
+      //new DOTExporter().exportGraph(imm, System.out)
+      println("START_IMM")
+      for (i <- imm.keys) {
+        println(f"${Stmt.getIndex(i, method)}:$i -> ${Stmt.getIndex(imm(i), method)}:${imm(i)}")
+      }
+      println("END_IMM")
+    }
+
+    def dominatorTree[V,E](root: V, graph: DirectedGraph[V,E]): immutable.Map[V, V] = {
+      val dom = new mutable.HashMap[V, mutable.Set[V]] with mutable.MultiMap[V, V]
+
+      dom.addBinding(root, root)
+      for (i <- graph.vertexSet if i != root) {
+        dom(i) = graph.vertexSet
+      }
+
+      println("START_DOM")
+      for (i <- dom.keys) {
+        println(f"key: $i")
+        println("val:"+dom(i))
+      }
+      println("END_DOM")
+
+      var done = false
+      while (!done) {
+        done = true
+        for (i <- graph.vertexSet if i != root) {
+          var newDom = dom(i).clone()
+          for (j <- Graphs.predecessorListOf(graph, i)) {
+            newDom = (newDom & dom(j)) + i
+          }
+          if (newDom != dom(i)) {
+            dom(i) = newDom
+            done = false
+          }
+        }
+      }
+
+      println("START_DOM2")
+      for (i <- dom.keys) {
+        println(f"key: $i")
+        println("val:"+dom(i))
+      }
+      println("END_DOM2")
+
+      var imm = immutable.Map[V, V]()
+
+      for (i <- graph.vertexSet if i != root) {
+        for (j <- dom(i)) {
+          println(f"imm: ${dom(i).size} ${dom(j).size} $i $j")
+          if (dom(j).size == dom(i).size - 1) {
+            imm += (i -> j)
+          }
+        }
+      }
+
+      return imm
     }
   }
   object LoopTree {
-    def apply(loop: SootLoop): LoopTree = new LoopTree(loop, Set.empty)
+    def apply(loop: SootLoop, method: SootMethod): LoopTree = new LoopTree(loop, method, Set.empty)
   }
 
   def encode(s: String): String = s.replace("\"", "\\\"")
@@ -403,11 +491,11 @@ object LoopAnalyzer {
         val loops = getLoops(m)
         var forest = Set.empty[LoopTree]
         if (loops.nonEmpty) {
-          forest = Set(LoopTree(loops.head))
+          forest = Set(LoopTree(loops.head, m))
           for {
             loop <- loops.tail
           } {
-            val leaf = LoopTree(loop)
+            val leaf = LoopTree(loop, m)
             val parents = forest.filter { (tree: LoopTree) =>
               tree.isParent(leaf)
             }
@@ -416,7 +504,7 @@ object LoopAnalyzer {
                 leaf.isParent(tree)
               }
               // This is correct even if children is empty
-              val tree = LoopTree(loop, children)
+              val tree = LoopTree(loop, m, children)
               forest = (forest -- children) + tree
             } else {
               assert(parents.size <= 1, "multiple parents")
