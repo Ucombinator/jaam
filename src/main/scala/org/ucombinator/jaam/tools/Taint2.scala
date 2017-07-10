@@ -29,42 +29,42 @@ abstract sealed class TaintAddress extends TaintValue {
   val m: SootMethod
 }
 
-case class LocalTaintAddress(override val m: SootMethod, local: Local)
+case class LocalTaintAddress(override val m: SootMethod, local: Local, su: SootUnit, instrIdx: Int)
   extends TaintAddress {
   override def toString: String =
-    "\"" + this.getClass.getSimpleName + "(" + m.toString + ", " + local.getName + ")"+ "\""
+    "\"" + this.getClass.getSimpleName + "(" + m.toString + ", " + local.getName + ", " + su + ", " + instrIdx + ")"+ "\""
 }
 
-case class RefTaintAddress(override val m: SootMethod, ref: Ref)
+case class RefTaintAddress(override val m: SootMethod, ref: Ref, su: SootUnit, instrIdx: Int)
   extends TaintAddress {
   override def toString: String =
-    "\"" + this.getClass.getSimpleName + "(" + m.getName + ", " + ref + ")"+ "\""
+    "\"" + this.getClass.getSimpleName + "(" + m.getName + ", " + ref + ", " + su + ", " + instrIdx + ")"+ "\""
 }
 
-case class ThisRefTaintAddress(override val m: SootMethod)
+case class ThisRefTaintAddress(override val m: SootMethod, su: SootUnit, instrIdx: Int)
   extends TaintAddress {
   override def toString: String =
-    "\"" + this.getClass.getSimpleName + "(" + m.getName + ")"+ "\""
+    "\"" + this.getClass.getSimpleName + "(" + m.getName + ", " + su + ", " + instrIdx + ")"+ "\""
 }
 
-case class ParameterTaintAddress(override val m: SootMethod, index: Int)
+case class ParameterTaintAddress(override val m: SootMethod, index: Int, su: SootUnit, instrIdx: Int)
   extends TaintAddress {
   override def toString: String =
-    "\"" + this.getClass.getSimpleName + "(" + m.getName + ", " + index + ")"+ "\""
+    "\"" + this.getClass.getSimpleName + "(" + m.getName + ", " + index + ", " + su + ", " + instrIdx + ")"+ "\""
 }
 
-case class ConstantTaintAddress(override val m: SootMethod, c: Constant)
+case class ConstantTaintAddress(override val m: SootMethod, c: Constant, su: SootUnit, instrIdx: Int)
   extends TaintAddress {
   override def toString: String =
-    "\"" + this.getClass.getSimpleName + "(" + m.getName + ", " + c + ")"+ "\""
+    "\"" + this.getClass.getSimpleName + "(" + m.getName + ", " + c + ", " + su + ", " + instrIdx + ")" + "\""
 }
 
 // case class ConstantTaintAddress(override val m: SootMethod)
 // extends TaintAddress
-case class InvokeTaintAddress(override val m: SootMethod, ie: InvokeExpr)
+case class InvokeTaintAddress(override val m: SootMethod, ie: InvokeExpr, su: SootUnit, instrIdx: Int)
   extends TaintAddress {
   override def toString: String =
-    "\"" + this.getClass.getSimpleName + "(" + m.getName + ", " + ie.getMethod.getName + "\""
+    "\"" + this.getClass.getSimpleName + "(" + m.getName + ", " + ie.getMethod.getName + ", " + su + ", " + instrIdx + ")" + "\""
 }
 // ------
 
@@ -106,8 +106,8 @@ object Taint2 {
     val appClasses = (
       for(name <- Soot.loadedClasses.keys
           if Soot.loadedClasses(name).origin == Origin.APP)
-        yield Soot.getSootClass(name))
-      .toSet
+        yield Soot.getSootClass(name)
+      ).toSet
 
     val interfaces = for (c <- appClasses if c.isInterface) yield c
 //    val abstractClasses = for (c <- appClasses if c.isAbstract) yield c
@@ -149,30 +149,30 @@ object Taint2 {
 
 
     // TODO (petey/michael): is InvokeExpr the only expr with side effects?
-    def addrsOf(expr: SootValue, m: SootMethod): Set[TaintAddress] = {
+    def addrsOf(expr: SootValue, m: SootMethod, su: SootUnit, idx: Int): Set[TaintAddress] = {
       expr match {
-        case l : Local => Set(LocalTaintAddress(m, l))
+        case l : Local => Set(LocalTaintAddress(m, l, su, idx))
         // TODO this could throw an exception
-        case pr: ParameterRef => Set(ParameterTaintAddress(m, pr.getIndex))
-        case _: ThisRef => Set(ThisRefTaintAddress(m))
-        case r : Ref => Set(RefTaintAddress(m, r))
-        case c : Constant => Set(ConstantTaintAddress(m, c))
-        case unop : UnopExpr => addrsOf(unop.getOp, m)
+        case pr: ParameterRef => Set(ParameterTaintAddress(m, pr.getIndex, su, idx))
+        case _: ThisRef => Set(ThisRefTaintAddress(m, su, idx))
+        case r : Ref => Set(RefTaintAddress(m, r, su, idx))
+        case c : Constant => Set(ConstantTaintAddress(m, c, su, idx))
+        case unop : UnopExpr => addrsOf(unop.getOp, m, su, idx)
         case binop : BinopExpr =>
           // TODO in the case of division, this could throw an exception
-          addrsOf(binop.getOp1, m) ++
-            addrsOf(binop.getOp2, m)
-        case io : InstanceOfExpr => addrsOf(io.getOp, m)
+          addrsOf(binop.getOp1, m, su, idx) ++
+            addrsOf(binop.getOp2, m, su, idx)
+        case io : InstanceOfExpr => addrsOf(io.getOp, m, su, idx)
         // TODO this could throw an exception
-        case cast : CastExpr => addrsOf(cast.getOp, m)
-        case invoke : InvokeExpr => Set(InvokeTaintAddress(m, invoke))
+        case cast : CastExpr => addrsOf(cast.getOp, m, su, idx)
+        case invoke : InvokeExpr => Set(InvokeTaintAddress(m, invoke, su, idx))
         case na : NewArrayExpr =>
-          addrsOf(na.getSize, m)
+          addrsOf(na.getSize, m, su, idx)
         case _ : NewExpr => Set.empty
         case nma : NewMultiArrayExpr =>
-          nma.getSizes.asScala.toSet flatMap { (exp: SootValue) => addrsOf(exp, m) }
+          nma.getSizes.asScala.toSet flatMap { (exp: SootValue) => addrsOf(exp, m, su, idx) }
         case _ =>
-          println(expr)
+          println("--- " + expr)
           Set.empty
       }
     }
@@ -180,7 +180,7 @@ object Taint2 {
 
     val class_count = appClasses.size // For test in development
 
-    val updated = collection.mutable.Map[SootClass, Set[SootMethod]]().withDefaultValue(Set())
+    val updated = collection.mutable.Map[SootClass, Set[SootMethod]]().withDefaultValue(Set.empty)
 
     val stmtVisitingRecord =
       for (c <- appClasses;
@@ -199,13 +199,14 @@ object Taint2 {
         else {
           println(f"class: ${c.getName} ---- method: ${m.getName}")
           for ((sootUnit, i) <- Soot.getBody(m).getUnits.asScala.zipWithIndex) {
+            println(i + ": " + sootUnit)
 //        for (sootUnit <- Soot.getBody(m).getUnits.asScala) {
             if (!stmtVisitingRecordMap((c, m, sootUnit, i))) {
               stmtVisitingRecordMap((c, m, sootUnit, i)) = true
               sootUnit match {
                 case sootStmt: DefinitionStmt =>
-                  for (src <- addrsOf(sootStmt.getRightOp, m);
-                       dst <- addrsOf(sootStmt.getLeftOp, m)) {
+                  for (src <- addrsOf(sootStmt.getRightOp, m, sootUnit, i);
+                       dst <- addrsOf(sootStmt.getLeftOp, m, sootUnit, i)) {
                     Graphs.addEdgeWithVertices(graph, src, dst)
                   }
 
@@ -214,7 +215,7 @@ object Taint2 {
                     if (sootMethod.getName != m.getName
                       || !updated.contains(sootClass)
                       || (updated.contains(sootClass) && !updated(sootClass).contains(sootMethod)))  {
-                      updateGraph(sootMethod.getDeclaringClass, sootMethod)
+                      updateGraph(sootClass, sootMethod)
                       updated(c) += m
                     }
                   }
@@ -225,7 +226,7 @@ object Taint2 {
                     if (sootMethod.getName != m.getName
                       || !updated.contains(sootClass)
                       || (updated.contains(sootClass) && !updated(sootClass).contains(sootMethod))) {
-                      updateGraph(sootMethod.getDeclaringClass, sootMethod)
+                      updateGraph(sootClass, sootMethod)
                       updated(c) += m
                     }
                   }
@@ -246,6 +247,8 @@ object Taint2 {
         new StringComponentNameProvider[TaintAddress], null,
         new StringComponentNameProvider[DefaultEdge]
       )
+
+//      val dotExporter = new DOTExporter[TaintAddress, DefaultEdge]()
       val out = new BufferedWriter(new FileWriter(filename))
       dotExporter.exportGraph(graph, out)
     }
@@ -255,6 +258,7 @@ object Taint2 {
     for (c <- appClasses; m <- c.getMethods.asScala.toList) {
       println(f"class name: ${c.getName}   --->   ${m.getName}")
       method_count += 1
+
       updateGraph(c, m)
     }
 
@@ -263,7 +267,10 @@ object Taint2 {
 
     // For TEST
     for (e <- graph.edgeSet.asScala) {
-      println(f"Edge: $e")
+      val nodes = e.toString.split("\" : \"")
+      println(f"Edge-from : ${nodes(0).stripPrefix("(\"")}")
+      println(f"Edge-to : ${nodes(1).stripSuffix("\")")}\n")
+//      println(f"Edge: $e\n")
     }
 
     // TODO: serialize to "output"            ----- ???
