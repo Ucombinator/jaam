@@ -16,8 +16,8 @@ public class LayerFactory
     private static final int CHAIN_LENGTH = 3 ; // This value should ALWAYS be LARGER THAN OR EQUAL 3 (otherwise it will break)
 
     public static LayoutRootVertex getLayeredGraph(Graph graph){
-        return get2layer(graph);
-        //return getStronglyConnectedComponentsGraph(graph);
+        //return get2layer(graph);
+        return getStronglyConnectedComponentsGraph(graph);
         //return cullGraph(graph);
     }
 

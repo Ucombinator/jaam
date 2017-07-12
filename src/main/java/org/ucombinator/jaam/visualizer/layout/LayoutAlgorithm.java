@@ -19,8 +19,8 @@ public class LayoutAlgorithm
         bboxWidthTable = new LinkedHashMap<String, Double>();
         bboxHeightTable = new LinkedHashMap<String, Double>();
         initializeSizes(parentVertex);
-        //bfsLayout(parentVertex);
-        defaultLayout(parentVertex);
+        bfsLayout(parentVertex);
+        //defaultLayout(parentVertex);
         parentVertex.setY(parentVertex.getY()+ROOT_V_OFFSET);
     }
 
@@ -191,7 +191,7 @@ public class LayoutAlgorithm
      * */
     private static HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> bfsChildren(AbstractLayoutVertex root)
     {
-        System.out.println("TERE: I think this should be called ONCE!");
+//        System.out.println("TERE: I think this should be called ONCE!");
         HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap = new HashMap<>();
 
         HashMap<AbstractLayoutVertex, Integer> vertexCounters = new HashMap<>();
@@ -208,11 +208,18 @@ public class LayoutAlgorithm
 
            childrenMap.put(v, new ArrayList<>());
 
-           System.out.println("TERE \tVisiting " + v + " --> " + v.getStrID() + " is " + v.getVertexStatus());
+//           System.out.print("TERE \tVisiting " + v + " --> " + v.getStrID() + " is " + v.getVertexStatus() + " Method: ");
+           /*
+           for(LayoutMethodVertex m : v.getMethodVertices())
+           {
+               System.out.print(m.getMethodName() + " ");
+           }
+           */
+           System.out.println();
 
            for(AbstractLayoutVertex child : v.getOutgoingNeighbors())
            {
-               System.out.println("TERE \tSEEING CHILD " + child + " --> " + child.getStrID() + " is " + child.getVertexStatus());
+//               System.out.println("\tTERE SEEING CHILD " + child + " --> " + child.getStrID() + " is " + child.getVertexStatus());
 
                if(child == v)
                    continue;
@@ -222,7 +229,7 @@ public class LayoutAlgorithm
                    child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
                    int numberOfIncomingEdges = child.getIncomingNeighbors().size();
 
-                   System.out.print("TERE: Child " + child + " has " + numberOfIncomingEdges);
+//                   System.out.print("\t\tTERE: Child " + child + " has " + numberOfIncomingEdges);
 
                    numberOfIncomingEdges = numberOfIncomingEdges - 1; // v's incoming edge
                    if(child.getIncomingNeighbors().contains(child))   // Self loop
@@ -231,7 +238,6 @@ public class LayoutAlgorithm
                    System.out.println("after fixing it has " + numberOfIncomingEdges);
                    if(numberOfIncomingEdges > 0)
                    {
-                       child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
                        vertexCounters.put(child, numberOfIncomingEdges); // Discounting the current
                    }
                    else if(numberOfIncomingEdges == 0)
@@ -251,14 +257,21 @@ public class LayoutAlgorithm
 
                    if(numberOfIncomingEdges == null)
                    {
-                       System.out.println("TERE: Found a NULL " + child + " -> " + child.getStrID() + " Status" + child.getVertexStatus() + " Incoming Neigh " + child.getIncomingNeighbors());
+//                       System.out.println("TERE: Found a NULL " + child + " -> " + child.getStrID() + " Status" + child.getVertexStatus() + " Incoming Neigh " + child.getIncomingNeighbors());
                        System.out.println("Map\n\t " + vertexCounters);
                    }
 
+//                   System.out.print("\t\tTERE: GRAY Child " + child + " has " + numberOfIncomingEdges);
+
                    numberOfIncomingEdges -= 1;
+
+                   vertexCounters.put(child, numberOfIncomingEdges);
+
+                   //System.out.println("TERE After Fixing " + numberOfIncomingEdges);
 
                    if(numberOfIncomingEdges == 0)
                    {
+//                       System.out.print("\t\t\tTERE: Adding Child to queue " + child + " has " + numberOfIncomingEdges);
                        childrenMap.get(v).add(child);
                        vertexQueue.add(child);
                        vertexCounters.remove(child);
@@ -274,11 +287,23 @@ public class LayoutAlgorithm
                }
            }
 
-           System.out.println("TERE Finished " + v + " --> " + v.getStrID());
-           System.out.println("\t\tTERE queue " + vertexQueue);
-            System.out.println("\t\tTERE counters " + vertexCounters);
+//           System.out.println("TERE Finished " + v + " --> " + v.getStrID());
+//           System.out.println("\t\tTERE queue " + vertexQueue);
+//            System.out.println("\t\tTERE counters " + vertexCounters);
 
            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
+        }
+
+        if(vertexCounters.size() > 0) {
+            System.out.println("BFS uncounted vertices, what happened to the incoming?!!! " + vertexCounters);
+            for (Map.Entry<AbstractLayoutVertex, Integer> entry : vertexCounters.entrySet()) {
+
+                System.out.println("\t\t" + entry + " --> " + entry.getKey().getStrID() + " " + entry.getKey().getVertexStatus() + " " +  entry.getKey().getMethodVertices());
+                for(AbstractLayoutVertex n : entry.getKey().getIncomingNeighbors())
+                {
+                    System.out.println("\t\t\t" + n + " --> " + n.getStrID() + " " + n.getVertexStatus());
+                }
+            }
         }
 
         return childrenMap;
@@ -290,11 +315,13 @@ public class LayoutAlgorithm
     private static void bfsLayout(AbstractLayoutVertex parentVertex){
 
         HierarchicalGraph graph = parentVertex.getInnerGraph();
+
+        /*
         // Initialize all the nodes to be WHITE
         for(AbstractLayoutVertex v: graph.getVertices().values()){
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
-
+        */
         for(AbstractLayoutVertex v: graph.getVertices().values()){
             HierarchicalGraph inner_graph = v.getInnerGraph();
             if (inner_graph.getVertices().size() != 0)
