@@ -16,11 +16,91 @@ public class LayerFactory
     private static final int CHAIN_LENGTH = 3 ; // This value should ALWAYS be LARGER THAN OR EQUAL 3 (otherwise it will break)
 
     public static LayoutRootVertex getLayeredGraph(Graph graph){
-        //return get2layer(graph);
-        return getStronglyConnectedComponentsGraph(graph);
-    	
+        return get2layer(graph);
+        //return getStronglyConnectedComponentsGraph(graph);
+        //return cullGraph(graph);
     }
-    
+
+    public static LayoutRootVertex cullGraph(Graph graph)
+    {
+        System.out.println("JUAN Culling graph of " + graph.getVertices().size());
+
+        ArrayList< ArrayList<Integer>> sccs =  (new GraphUtils()).StronglyConnectedComponents(graph);
+        System.out.print(sccs);
+
+        sccs.sort( (a, b) -> b.size() - a.size() );
+
+        System.out.println("JUAN TEST " + sccs.get(0));
+        ArrayList<Integer> scc = sccs.get(0);
+
+        ArrayList<Vertex> vertices = graph.getVertices();
+        //Remove edges
+        for(Vertex v : vertices)
+        {
+            if(scc.contains(v.getId()))
+            {
+                HashSet outgoingNeighbors = v.getOutgoingNeighbors();
+                Iterator iterator = outgoingNeighbors.iterator();
+
+                for(Iterator it = outgoingNeighbors.iterator(); it.hasNext();)
+                {
+                    Object no = it.next();
+                    Vertex n  = (Vertex)no;
+                    System.out.print("JUAN Checking " + v.getId() + " -> " + n.getId());
+                    if( !scc.contains(n.getId()))
+                    {
+                        System.out.print(" Removed");
+                        it.remove();
+                    }
+                    System.out.print("\n");
+                }
+
+
+                //outgoingNeighbors.removeIf((Object n) -> !scc.contains(((AbstractVertex) v).getId()));
+            }
+            else
+            {
+                HashSet outgoingNeighbors = v.getOutgoingNeighbors();
+                Iterator iterator = outgoingNeighbors.iterator();
+
+                for(Iterator it = outgoingNeighbors.iterator(); it.hasNext();)
+                {
+                    Object no = it.next();
+                    Vertex n  = (Vertex)no;
+                    System.out.print("\t\t\tJUAN Checking " + v.getId() + " -> " + n.getId());
+                    System.out.print("\n");
+                }
+
+            }
+        }
+
+        vertices.removeIf((Vertex v) -> !scc.contains(v.getId()));
+
+        for(Vertex v : vertices)
+        {
+            if(scc.contains(v.getId()))
+            {
+                HashSet outgoingNeighbors = v.getOutgoingNeighbors();
+                for(Object on : outgoingNeighbors)
+                {
+                    Vertex n = (Vertex)on;
+                    if(!scc.contains(n.getId()))
+                    {
+                        System.out.println("JUAN ERROR: Improper edge!! " + v.getId() + " -> " + n.getId() );
+                    }
+                }
+            }
+            else
+            {
+                System.out.println("JUAN ERROR! How did you get out? " + v.getId());
+            }
+        }
+
+
+        System.out.println("JUAN GRAPH CULLED " + graph.getVertices().size());
+
+        return get2layer(graph);
+    }
     
     private static LayoutRootVertex getStronglyConnectedComponentsGraph(Graph graph)
     {
@@ -28,16 +108,20 @@ public class LayerFactory
     	
         ArrayList< ArrayList<Integer>> sccs =  (new GraphUtils()).StronglyConnectedComponents(graph);
 
-        for(ArrayList<Integer> JUAN : sccs) {
-            if(JUAN.size() == 1)
+        int totalSizeInsideSCC = 0;
+
+        for(ArrayList<Integer> scc : sccs) {
+            totalSizeInsideSCC += scc.size();
+            if(scc.size() == 1)
                 continue;
             System.out.print("JUAN SCC:");
-            for (Integer i : JUAN)
+            for (Integer i : scc)
                 System.out.print(i + " ");
             System.out.println();
         }
 
-        
+        System.out.println("JUAN ReAL TOTAL" + graph.getVertices().size() + " OUR TOTAL " + totalSizeInsideSCC);
+
         HashMap<String, Vertex> id_to_abs_vertex = new LinkedHashMap<String, Vertex>();
         for(Vertex v: graph.getVertices()){
         	System.out.println("Vertex: +'"+v.getId()+"'");
@@ -56,13 +140,13 @@ public class LayerFactory
         	LayoutMethodVertex sccVertex = new LayoutMethodVertex("scc"+i++, true);
         	
         		System.out.println("Creating scc: " + i);
+                System.out.println("Next scc: " + scc);
         		rootGraph.addVertex(sccVertex);
         		
         		HierarchicalGraph gSCC = new HierarchicalGraph();
         		for (Integer id: scc){
         			
-            		System.out.println("Next scc: " + scc);
-            		
+
             		//Method mSCC = graph.getMethod(id_to_abs_vertex.get(id).getMethodName());
             		String idValue = ""+id.intValue();
             		vertex_to_scc.put(idValue, sccVertex);
@@ -129,7 +213,7 @@ public class LayerFactory
                    Vertex gn = (Vertex)graphNeighbor;
                    LayoutMethodVertex mn = vertex_to_methodVertex.get(gn.getId());
 
-                   if(innerVertices.containsKey(mn.getStrID()))
+                   //if(innerVertices.containsKey(mn.getStrID()))
                    {
                        System.out.println("\t\t\tJUAN: ADDING EDGE");
                        sccVertex.getInnerGraph().addEdge(new LayoutEdge(mv, mn, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
@@ -155,7 +239,9 @@ public class LayerFactory
             }
             */
         }
-        
+
+        graph.matchMethodsToClasses();
+
         root.setInnerGraph(rootGraph);
        
         return root;
@@ -164,6 +250,8 @@ public class LayerFactory
     
     private static LayoutRootVertex get2layer(Graph graph)
     {
+        System.out.println("JUAN Graph coming has " + graph.getVertices().size());
+
         HashMap<String, Vertex> id_to_vertex =  new LinkedHashMap<String, Vertex>();
         HashMap<String, AbstractVertex> id_to_abs_vertex = new LinkedHashMap<String, AbstractVertex>();
         HierarchicalGraph methodGraph = new HierarchicalGraph();
@@ -256,6 +344,8 @@ public class LayerFactory
 
             start.getSelfGraph().addEdge(new LayoutEdge(start, end, LayoutEdge.EDGE_TYPE.EDGE_DUMMY));
         }
+
+        System.out.println("JUAN Graph coming out has " + graph.getVertices().size() + " drawn graph has " + root.getMethodVertices().size());
 
         graph.matchMethodsToClasses();
 

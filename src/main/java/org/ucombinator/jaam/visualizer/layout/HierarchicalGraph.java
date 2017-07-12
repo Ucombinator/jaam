@@ -51,6 +51,7 @@ public class HierarchicalGraph
     public void addEdge(LayoutEdge edge)
     {
         edge.getSourceVertex().addOutgoingNeighbor(edge.getDestVertex());
+        edge.getDestVertex().addIncomingNeighbor(edge.getSourceVertex());
         this.edges.put(edge.getID(), edge);
     }
     
