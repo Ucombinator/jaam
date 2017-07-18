@@ -366,16 +366,8 @@ public class LayoutAlgorithm
 
         if(root != null) {
             assignXandYtoInnerNodesAndGiveParentBBox(root, MARGIN_PADDING, MARGIN_PADDING, childrenMap);
-            if(root.getInnerGraph().getVertices().size() > 1)
-            {
-                parentVertex.setWidth(bboxWidthTable.get(root.getStrID()) + 1000 * MARGIN_PADDING);
-                parentVertex.setHeight(bboxHeightTable.get(root.getStrID()) + 2 * MARGIN_PADDING);
-            }
-            else
-            {
-                parentVertex.setWidth(bboxWidthTable.get(root.getStrID()) + 2 * MARGIN_PADDING);
-                parentVertex.setHeight(bboxHeightTable.get(root.getStrID()) + 2 * MARGIN_PADDING);
-            }
+            parentVertex.setWidth(bboxWidthTable.get(root.getStrID()) + 2 * MARGIN_PADDING);
+            parentVertex.setHeight(bboxHeightTable.get(root.getStrID()) + 2 * MARGIN_PADDING);
         } else {
             parentVertex.setWidth(AbstractLayoutVertex.DEFAULT_WIDTH);
             parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
