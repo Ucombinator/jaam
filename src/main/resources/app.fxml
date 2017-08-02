@@ -6,14 +6,13 @@
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane prefHeight="515.0" prefWidth="580.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <TabPane fx:id="tabPane" prefHeight="455.0" prefWidth="630.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="30.0" />
       <MenuBar prefHeight="29.0" prefWidth="586.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <menus>
           <Menu mnemonicParsing="false" text="File">
             <items>
-                  <MenuItem fx:id="loadStateGraphMenuItem" mnemonicParsing="false" onAction="#loadStateGraph" text="Load graph" />
                   <MenuItem fx:id="loadLoopGraphMenuItem" mnemonicParsing="false" onAction="#loadLoopGraph" text="Load loop graph" />
             </items>
           </Menu>

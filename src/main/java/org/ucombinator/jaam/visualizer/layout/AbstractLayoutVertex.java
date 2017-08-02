@@ -197,6 +197,28 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
         this.setVisible(false);
     }
+    
+    
+    public AbstractLayoutVertex(int id, String label){
+    	super(id, label);
+    	this.graphics = null;
+        this.isExpanded = true;
+        this.isLabelVisible = false; // If you change this, also change the initialization for StacFrame
+        this.isEdgeVisible = true;
+        this.drawEdges = true;
+
+        this.innerGraph = new HierarchicalGraph();
+        
+
+        this.loopChildren = new ArrayList<AbstractLayoutVertex>();
+        this.loopHeight = -1;
+        this.dfsPathPos = -1;
+
+        
+        this.setColor(colors[colorIndex++ % colors.length]);
+
+        this.setVisible(false);
+    }
 
     public void setColor(Color c) {
         this.color = c;

@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
-public abstract class AbstractVertex<T extends AbstractVertex>
+//TODO make it abstract
+public class AbstractVertex<T extends AbstractVertex>
 {
     private static int idCounter = 0; // Used to assign unique id numbers to each vertex
     private String label;
@@ -36,6 +37,11 @@ public abstract class AbstractVertex<T extends AbstractVertex>
         this.tags = tags;
     }
     
+    public AbstractVertex(int id, String label) {
+    	this(label);
+        this.id = id;
+    }
+    
     public String getLabel() {
         return this.label;
     }
@@ -44,10 +50,9 @@ public abstract class AbstractVertex<T extends AbstractVertex>
         return this.id;
     }
 
-    // TODO: Remove this function?
     public String getStrID()
     {
-        String strId ="vertex:"+this.id; // the id might been set after the vertex constructor is called
+        String strId ="vertex:"+this.id; 
         return strId;
     }
 
@@ -59,27 +64,6 @@ public abstract class AbstractVertex<T extends AbstractVertex>
         this.tags.add(tag);
     }
 
-    /* TODO: Why did we use integers for our tags instead of strings?
-    public void addTag(int t)
-    {
-        for(Integer i : this.tags)
-        {
-            if(i.intValue()==t)
-                return;
-        }
-        this.tags.add(new Integer(t));
-    }
-
-    public boolean hasTag(int t)
-    {
-        for(Integer i : this.tags)
-        {
-            if(i.intValue()==t)
-                return true;
-        }
-        return false;
-    }
-    */
 
     public VertexStatus getVertexStatus() {
         return this.vertexStatus;

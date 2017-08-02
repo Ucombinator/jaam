@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.main;
 
 import java.io.*;
+import java.util.ArrayList;
 
 import org.ucombinator.jaam.serializer.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -9,70 +10,6 @@ import com.strobel.decompiler.languages.java.ast.CompilationUnit;
 
 public class TakeInput extends Thread
 {
-    public Graph parseStateGraph(String file)
-    {
-        Graph graph = new Graph();
-        if(file.equals("")) {
-            //readSmallDummyGraph(graph);
-            readLargeDummyGraph(graph);
-        }
-        else try
-        {
-            PacketInput packetInput = new PacketInput(new FileInputStream(file));
-            Packet packet = packetInput.read();
-            int loop_counter = 0;
-
-            while(!(packet instanceof EOF))
-            {
-                //Name collision with our own Edge class
-                if(packet instanceof org.ucombinator.jaam.serializer.Edge)
-                {
-                    org.ucombinator.jaam.serializer.Edge edgePacket = (org.ucombinator.jaam.serializer.Edge) packet;
-                    int edgeId = edgePacket.id().id();
-                    int srcId = edgePacket.src().id();
-                    int destId = edgePacket.dst().id();
-                    graph.addEdge(srcId, destId);
-                }
-                else if(packet instanceof ErrorState)
-                {
-                    // TODO: Add description for ErrorState on initialization
-                    int id = ((ErrorState) packet).id().id();
-                    graph.addErrorState(id);
-                }
-                //Name collision with java.lang.Thread.State
-                else if(packet instanceof org.ucombinator.jaam.serializer.State)
-                {
-                    org.ucombinator.jaam.serializer.State statePacket = (org.ucombinator.jaam.serializer.State) packet;
-                    int id = statePacket.id().id();
-                    String methodName = statePacket.stmt().method().toString();
-                    String instruction = statePacket.stmt().stmt().toString();
-                    int jimpleIndex = statePacket.stmt().index();
-                    Instruction inst = new Instruction(instruction, methodName, jimpleIndex, true);
-                    graph.addVertex(id, inst, true);
-                }
-                
-                else if(packet instanceof org.ucombinator.jaam.serializer.NodeTag)
-                {
-                    org.ucombinator.jaam.serializer.NodeTag tag = (org.ucombinator.jaam.serializer.NodeTag) packet;
-                    
-                    int tagId = tag.id().id();
-                    int nodeId = tag.node().id();
-                    String tagStr = ((org.ucombinator.jaam.serializer.Tag)tag.tag()).toString();
-                    graph.addTag(nodeId,tagStr);
-                }
-
-                packet = packetInput.read();
-            }
-
-            packetInput.close();
-        }
-        catch(FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
-
-        return graph;
-    }
 
     public Graph parseLoopGraph(String file) {
         Graph graph = new Graph();
@@ -86,35 +23,36 @@ public class TakeInput extends Thread
             PacketInput packetInput = new PacketInput(new FileInputStream(file));
             Packet packet = packetInput.read();
             int loop_counter = 0;
-
+            ArrayList<int[]> edges =  new ArrayList<int[]>();   
+            
             while(!(packet instanceof EOF))
             {
                 if(packet instanceof LoopLoopNode) {
                     LoopLoopNode node = (LoopLoopNode) packet;
-                    int id = node.id().id();
-                    String label = node.method().getSignature() + "\ninstruction #" + node.statementIndex();
-                    graph.addVertex(id, new Instruction("Loop:"+label, node.method().getSignature() + ":" +
-                            loop_counter++, id, false), true);
+                    graph.addVertex(new LayoutLoopNode(node.id().id(),
+                    								   node.method().getSignature(),
+                    								   node.statementIndex()
+                    				));
                 }
                 else if(packet instanceof LoopMethodNode) {
                     LoopMethodNode node = (LoopMethodNode) packet;
-                    int id = node.id().id();
-                    String label = node.method().getSignature();
-                    graph.addVertex(id, new Instruction("Method:"+label, label, id, false), true);
-                    System.out.println("SIGN: " + node.method().getSignature());
+                    graph.addVertex(new LayoutMethodNode(node.id().id(),
+                    									node.method().getSignature()
+                    									));
                 }
                 else if(packet instanceof LoopEdge) {
                     LoopEdge edge = (LoopEdge) packet;
                     int src = edge.src().id();
                     int dest = edge.dst().id();
-                    graph.addEdge(src, dest);
+                    //We store the pairs here
+                    edges.add(new int[] {src,dest});
                 }
-                else if (packet instanceof org.ucombinator.jaam.tools.decompile.DecompiledClass)
-                {
-                    CompilationUnit unit = ((org.ucombinator.jaam.tools.decompile.DecompiledClass) packet).compilationUnit();
-                    String className = getClassName(unit);
-                    graph.addClass(className, unit.getText());
-                }
+//                else if (packet instanceof org.ucombinator.jaam.tools.decompile.DecompiledClass)
+//                {
+//                    CompilationUnit unit = ((org.ucombinator.jaam.tools.decompile.DecompiledClass) packet).compilationUnit();
+//                    String className = getClassName(unit);
+//                    graph.addClass(className, unit.getText());
+//                }
 
                 System.out.println("Reading new packet...");
                 packet = packetInput.read();
@@ -122,11 +60,20 @@ public class TakeInput extends Thread
             }
 
             packetInput.close();
+            
+            
+            // We actually create the edges here
+            for (int i=0; i<edges.size(); i++)
+            {
+            	graph.addEdge(edges.get(i)[0],edges.get(i)[1]);
+            }
         }
         catch(FileNotFoundException e)
         {
             e.printStackTrace();
         }
+        
+        
 
         return graph;
     }
