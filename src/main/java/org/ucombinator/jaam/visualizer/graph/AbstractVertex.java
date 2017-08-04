@@ -28,7 +28,7 @@ public class AbstractVertex<T extends AbstractVertex>
         this(label, new ArrayList<String>());
     }
 
-    public AbstractVertex(String label, ArrayList<String> tags) {
+    private AbstractVertex(String label, ArrayList<String> tags) {
         this.label = label;
         this.outgoingNeighbors = new LinkedHashSet<T>();
         this.incomingNeighbors = new LinkedHashSet<T>();
@@ -60,9 +60,9 @@ public class AbstractVertex<T extends AbstractVertex>
         return this.tags;
     }
 
-    public void addTag(String tag) {
-        this.tags.add(tag);
-    }
+//    public void addTag(String tag) {
+//        this.tags.add(tag);
+//    }
 
 
     public VertexStatus getVertexStatus() {
@@ -108,7 +108,7 @@ public class AbstractVertex<T extends AbstractVertex>
         this.incomingNeighbors.remove(destVertex);
     }
 
-    public void clean() {
-        this.vertexStatus = AbstractVertex.VertexStatus.WHITE;
-    }
+//    public void clean() {
+//        this.vertexStatus = AbstractVertex.VertexStatus.WHITE;
+//    }
 }

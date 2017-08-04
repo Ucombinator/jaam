@@ -94,9 +94,9 @@ public class GraphUtils {
         Stack<Integer> stack = new Stack<Integer>();
         HashMap<Integer, SCCVertex> visitedVertices = new HashMap<Integer, SCCVertex>();
 
-        ArrayList<Vertex> vertices = g.getVertices();
+        ArrayList<AbstractVertex<AbstractVertex>> vertices = g.getVertices();
 
-        for(Vertex v : vertices)
+        for(AbstractVertex<AbstractVertex> v : vertices)
         {
             if(stack.size() > 0)
             {

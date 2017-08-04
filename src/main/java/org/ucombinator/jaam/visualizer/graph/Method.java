@@ -7,14 +7,14 @@ public class Method
     private final String methodName;
     private OurClass our_class;
     //private final String functionName;
-    private ArrayList<Vertex> vertices;
+    private ArrayList<AbstractVertex<AbstractVertex>> vertices;
     private ArrayList<Instruction> instructionList;
 
     public Method()
     {
         this.our_class = new OurClass();
         this.methodName = "Dummy_method";
-        vertices = new ArrayList<Vertex>();
+        vertices = new ArrayList<AbstractVertex<AbstractVertex>>();
         instructionList = new ArrayList<Instruction>();
     }
 
@@ -22,7 +22,7 @@ public class Method
     {
         this.our_class = new OurClass();
         this.methodName = methodName;
-        vertices = new ArrayList<Vertex>();
+        vertices = new ArrayList<AbstractVertex<AbstractVertex>>();
         instructionList = new ArrayList<Instruction>();
     }
 
@@ -48,7 +48,7 @@ public class Method
         this.our_class = c;
     }
     
-    public void addVertex(Vertex v)
+    public void addVertex(AbstractVertex<AbstractVertex> v)
     {
         this.vertices.add(v);
     }

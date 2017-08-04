@@ -14,11 +14,16 @@ import java.util.LinkedHashSet;
  */
 public class LayoutMethodVertex extends AbstractLayoutVertex {
 
-    private Method method;
+    private Method method = null;
 
     private Color methodColor = Color.DEEPSKYBLUE;
     private Color loopColor   = Color.ORANGE;
 
+    
+    public LayoutMethodVertex(int id, String label){
+    	super(id, label);
+    }
+    
     public LayoutMethodVertex(Method method, boolean drawEdges) {
         super(method.getFullName(), VertexType.METHOD, drawEdges);
         this.method = method;
