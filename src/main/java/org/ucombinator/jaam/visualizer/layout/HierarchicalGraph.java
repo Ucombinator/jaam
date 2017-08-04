@@ -7,17 +7,12 @@ public class HierarchicalGraph
     private HashMap<String, AbstractLayoutVertex> vertices;
     private HashMap<String, LayoutEdge> edges;
 
-    
-    public HierarchicalGraph(HashMap<String, AbstractLayoutVertex> vertices, HashMap<String, LayoutEdge> edges)
-    {
-        super();
-        this.vertices = vertices;
-        this.edges = edges;
-    }
 
     public HierarchicalGraph()
     {
-        this(new LinkedHashMap<String, AbstractLayoutVertex>(), new LinkedHashMap<String, LayoutEdge>());
+    	super();
+    	this.vertices = vertices;
+        this.edges = edges;
     }
 
     public HashMap<String, AbstractLayoutVertex> getVertices() {
@@ -127,18 +122,18 @@ public class HierarchicalGraph
         return this.edges.containsKey(LayoutEdge.createID(first.getId(), second.getId()));
     }
 
-    public static ArrayList<LayoutEdge> computeDummyEdges(LayoutRootVertex root)
-    {
-        System.out.println("Creating dummy edges: start...");
-        ArrayList<LayoutEdge> dummies = new ArrayList<LayoutEdge>();
-
-        root.cleanAll();
-        for(AbstractLayoutVertex v : root.getInnerGraph().getVertices().values())
-            visit(v, new LinkedHashMap<String, AbstractLayoutVertex>(), dummies);
-        
-        System.out.println("Creating dummy edges: done!");
-        return dummies;
-    }
+//    public static ArrayList<LayoutEdge> computeDummyEdges(LayoutRootVertex root)
+//    {
+//        System.out.println("Creating dummy edges: start...");
+//        ArrayList<LayoutEdge> dummies = new ArrayList<LayoutEdge>();
+//
+//        root.cleanAll();
+//        for(AbstractLayoutVertex v : root.getInnerGraph().getVertices().values())
+//            visit(v, new LinkedHashMap<String, AbstractLayoutVertex>(), dummies);
+//        
+//        System.out.println("Creating dummy edges: done!");
+//        return dummies;
+//    }
 
     private static void visit(AbstractLayoutVertex root, HashMap<String, AbstractLayoutVertex> hash, ArrayList<LayoutEdge> dummies)
     {

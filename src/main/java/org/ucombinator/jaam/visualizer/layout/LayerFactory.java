@@ -11,8 +11,7 @@ public class LayerFactory
 {
     private static final boolean create_chains = true;
     private static final boolean chains_expanded = true;
-    private static final boolean methods_expanded = true;
-    private static final int CHAIN_LENGTH = 3 ; // This value should ALWAYS be LARGER THAN OR EQUAL 3 (otherwise it will break)
+    //private static final int CHAIN_LENGTH = 3 ; // This value should ALWAYS be LARGER THAN OR EQUAL 3 (otherwise it will break)
 
     public static LayoutRootVertex getLayeredGraph(Graph graph){
         //return get2layer(graph);
@@ -470,8 +469,4 @@ public class LayerFactory
         }
     }
 
-    private static void createLoopVertices(AbstractLayoutVertex root) {
-        // TODO: Run loop tool to get all loops
-        // Create vertices for each one, and break method graph.
-    }
 }

@@ -17,14 +17,14 @@ public class GUIUtils {
         return fileChooser.showOpenDialog(p.getScene().getWindow());
     }
 
-    public static String folderFromPath (String path)
-    {
-        int lastSlash = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
-        if(lastSlash == -1)
-            return "/";
-
-        String folder = path.substring(0,lastSlash);
-
-        return folder;
-    }
+//    public static String folderFromPath (String path)
+//    {
+//        int lastSlash = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
+//        if(lastSlash == -1)
+//            return "/";
+//
+//        String folder = path.substring(0,lastSlash);
+//
+//        return folder;
+//    }
 }
