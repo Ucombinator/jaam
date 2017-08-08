@@ -25,6 +25,7 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamCon
   addSubcommand(Loop)
   addSubcommand(Loop2)
   addSubcommand(Loop3)
+  addSubcommand(Loop4)
   addSubcommand(MissingReturns)
   addSubcommand(Print)
   addSubcommand(Taint)
@@ -408,6 +409,26 @@ object Loop3 extends Main("loop3") {
   def run() {
     //Main.main(classpath.getOrElse(List()))
     org.ucombinator.jaam.tools.loop3.Main.main(input(), output(), prune(), shrink(), prettyPrint())
+  }
+}
+
+
+object Loop4 extends Main("loop4") {
+  //val classpath = opt[List[String]](descr = "TODO")
+  val input = inputOpt()
+  val output = outputOpt()
+
+  val prune = toggle(
+      descrYes = "Remove methods without outgoing edges from graph",
+      descrNo = "Do not remove methods without outgoing edges from graph",
+      default = Some(true))
+  val shrink = toggle(descrYes = "Skip methods without loops",
+      descrNo = "Include methods without loops", default = Some(true))
+  val prettyPrint = toggle(descrYes = "Pretty print found loops", default = Some(false))
+
+  def run() {
+    //Main.main(classpath.getOrElse(List()))
+    org.ucombinator.jaam.tools.loop4.Main.main(input(), output(), prune(), shrink(), prettyPrint())
   }
 }
 

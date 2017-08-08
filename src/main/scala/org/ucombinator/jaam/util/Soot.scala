@@ -4,6 +4,8 @@ import java.io._
 
 import scala.collection.JavaConverters._
 
+import org.jgrapht._
+import org.jgrapht.graph._
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.tree.ClassNode
 import org.ucombinator.jaam.serializer
@@ -70,6 +72,23 @@ object Soot {
       m.retrieveActiveBody()
     }
     m.getActiveBody
+  }
+
+  def getBodyGraph(m: SootMethod): (Stmt, DirectedGraph[Stmt, DefaultEdge]) = {
+    val graph = new DirectedPseudograph[Stmt, DefaultEdge](classOf[DefaultEdge])
+    var start: Stmt = null
+
+    for (s <- getBody(m).getUnits.asScala) {
+      val stmt = Stmt(s, m)
+      graph.addVertex(stmt)
+      if (stmt.index == 0) { start = stmt }
+    }
+
+    for (s <- graph.vertexSet.asScala) {
+      Graphs.addOutgoingEdges(graph, s, s.nextSemantic.asJava)
+    }
+
+    return (start, graph)
   }
 
   def initialize(rtJar: String, classpath: String, customizations: => Unit = {}) {
