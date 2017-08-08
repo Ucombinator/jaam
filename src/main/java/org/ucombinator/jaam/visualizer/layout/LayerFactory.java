@@ -106,60 +106,45 @@ public class LayerFactory
     	
         ArrayList< ArrayList<Integer>> sccs =  (new GraphUtils()).StronglyConnectedComponents(graph);
 
-        int totalSizeInsideSCC = 0;
-
-        for(ArrayList<Integer> scc : sccs) {
-            totalSizeInsideSCC += scc.size();
-            if(scc.size() == 1)
-                continue;
-            System.out.print("JUAN SCC:");
-            for (Integer i : scc)
-                System.out.print(i + " ");
-            System.out.println();
-        }
-
-        System.out.println("JUAN ReAL TOTAL" + graph.getVertices().size() + " OUR TOTAL " + totalSizeInsideSCC);
-
         HashMap<String, AbstractVertex<AbstractVertex>> id_to_abs_vertex = new LinkedHashMap<String, AbstractVertex<AbstractVertex>>();
         for(AbstractVertex<AbstractVertex> v: graph.getVertices()){
         	System.out.println("Vertex: +'"+v.getId()+"'");
         	id_to_abs_vertex.put(""+v.getId(), v);
         }
-        
-        
+
         HashMap<String, LayoutMethodVertex> vertex_to_scc = new LinkedHashMap<String, LayoutMethodVertex>();
         HashMap<Integer, AbstractVertex<AbstractVertex>> methodVertex_to_vertex = new HashMap<>();
         HashMap<Integer, LayoutMethodVertex > vertex_to_methodVertex = new HashMap<>();
         HierarchicalGraph rootGraph = new HierarchicalGraph();
-        int i = 0;
+        // TODO This should be cleaner
+        int i = graph.getVertices().size()+1;
         for (ArrayList<Integer> scc: sccs){
         	System.out.println("Scc: "+i);
         	//Method m = new Method(null, ""+i++);
-        	LayoutMethodVertex sccVertex = new LayoutMethodVertex("scc"+i++, true);
-        	
-        		System.out.println("Creating scc: " + i);
-                System.out.println("Next scc: " + scc);
-        		rootGraph.addVertex(sccVertex);
-        		
-        		HierarchicalGraph gSCC = new HierarchicalGraph();
-        		for (Integer id: scc){
-        			
+        	LayoutMethodVertex sccVertex = new LayoutMethodVertex(i,"scc"+i);
+        	++i;
 
-            		//Method mSCC = graph.getMethod(id_to_abs_vertex.get(id).getMethodName());
-            		String idValue = ""+id.intValue();
-            		vertex_to_scc.put(idValue, sccVertex);
-            		//child_to_scc.put(""+id, sccVertex);
-            		//String methodName = id_to_abs_vertex.get(idValue).getMethodName();
-            		//System.out.println("Method name: " + methodName);
-            		LayoutMethodVertex mVertex = new LayoutMethodVertex(id, graph.containsInputVertex(id).getLabel());
-            		//LayoutInstructionVertex v = new LayoutInstructionVertex(id_to_abs_vertex.get(id).getInstruction(), sccVertex, true);
+        	System.out.println(sccVertex.getStrID());
+            rootGraph.addVertex(sccVertex);
 
-                    methodVertex_to_vertex.put(mVertex.getId(), id_to_abs_vertex.get(""+id));
-                    vertex_to_methodVertex.put(id             , mVertex);
+            HierarchicalGraph gSCC = new HierarchicalGraph();
+            for (Integer id: scc){
 
-            		gSCC.addVertex(mVertex);
-            	}
-        		sccVertex.setInnerGraph(gSCC);
+                //Method mSCC = graph.getMethod(id_to_abs_vertex.get(id).getMethodName());
+                String idValue = ""+id.intValue();
+                vertex_to_scc.put(idValue, sccVertex);
+                //child_to_scc.put(""+id, sccVertex);
+                //String methodName = id_to_abs_vertex.get(idValue).getMethodName();
+                //System.out.println("Method name: " + methodName);
+                LayoutMethodVertex mVertex = new LayoutMethodVertex(id, graph.containsInputVertex(id).getLabel());
+                //LayoutInstructionVertex v = new LayoutInstructionVertex(id_to_abs_vertex.get(id).getInstruction(), sccVertex, true);
+
+                methodVertex_to_vertex.put(mVertex.getId(), id_to_abs_vertex.get(""+id));
+                vertex_to_methodVertex.put(id             , mVertex);
+
+                gSCC.addVertex(mVertex);
+            }
+            sccVertex.setInnerGraph(gSCC);
         }
 
         // Add edges between SCC Vertices
@@ -167,7 +152,6 @@ public class LayerFactory
         for(AbstractVertex<AbstractVertex> vertex: graph.getVertices()){
             // Not sure why we need an Object instead of a Vertex here
             for(Object neighborObj: vertex.getOutgoingNeighbors()) {
-            	System.out.println("Edge!!!!");
                 AbstractVertex<AbstractVertex> neighbor = (AbstractVertex<AbstractVertex>) neighborObj;
                 String tempID = vertex.getId() + "--" + neighbor.getId();
                 if(!edges.containsKey(tempID))

@@ -11,8 +11,8 @@ public class HierarchicalGraph
     public HierarchicalGraph()
     {
     	super();
-    	this.vertices = vertices;
-        this.edges = edges;
+    	this.vertices = new HashMap<>();
+        this.edges = new HashMap<>();
     }
 
     public HashMap<String, AbstractLayoutVertex> getVertices() {
@@ -135,39 +135,39 @@ public class HierarchicalGraph
 //        return dummies;
 //    }
 
-    private static void visit(AbstractLayoutVertex root, HashMap<String, AbstractLayoutVertex> hash, ArrayList<LayoutEdge> dummies)
-    {
-        Iterator<AbstractLayoutVertex> it = root.getOutgoingNeighbors().iterator();
-        root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
-        String rootMethod;
-
-        if (root instanceof LayoutInstructionVertex)
-            rootMethod = ((LayoutInstructionVertex) root).getInstruction().getMethodName();
-        else // if (root instanceof LayoutMethodVertex)
-            rootMethod = ((LayoutMethodVertex) root).getMethodName();
-
-        while(it.hasNext())
-        {
-            AbstractLayoutVertex absVertex = it.next();
-            String nextVertexMethod;
-
-            if (absVertex instanceof LayoutInstructionVertex)
-                nextVertexMethod = ((LayoutInstructionVertex) absVertex).getInstruction().getMethodName();
-            else
-                nextVertexMethod = ((LayoutMethodVertex) absVertex).getMethodName();
-
-            if(absVertex.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
-                if(!nextVertexMethod.equals(rootMethod))
-                {
-                    if(hash.containsKey(nextVertexMethod)) {
-                        System.out.println("Adding dummy edge: " + hash.get(nextVertexMethod).getId() + "-->" + absVertex.getId());
-                        dummies.add(new LayoutEdge(hash.get(nextVertexMethod), absVertex, LayoutEdge.EDGE_TYPE.EDGE_DUMMY));
-                    }
-                }
-
-                hash.put(nextVertexMethod, absVertex);
-                visit(absVertex, hash, dummies);
-            }
-        }
-    }
+//    private static void visit(AbstractLayoutVertex root, HashMap<String, AbstractLayoutVertex> hash, ArrayList<LayoutEdge> dummies)
+//    {
+//        Iterator<AbstractLayoutVertex> it = root.getOutgoingNeighbors().iterator();
+//        root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
+//        String rootMethod;
+//
+//        if (root instanceof LayoutInstructionVertex)
+//            rootMethod = ((LayoutInstructionVertex) root).getInstruction().getMethodName();
+//        else // if (root instanceof LayoutMethodVertex)
+//            rootMethod = ((LayoutMethodVertex) root).getMethodName();
+//
+//        while(it.hasNext())
+//        {
+//            AbstractLayoutVertex absVertex = it.next();
+//            String nextVertexMethod;
+//
+//            if (absVertex instanceof LayoutInstructionVertex)
+//                nextVertexMethod = ((LayoutInstructionVertex) absVertex).getInstruction().getMethodName();
+//            else
+//                nextVertexMethod = ((LayoutMethodVertex) absVertex).getMethodName();
+//
+//            if(absVertex.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
+//                if(!nextVertexMethod.equals(rootMethod))
+//                {
+//                    if(hash.containsKey(nextVertexMethod)) {
+//                        System.out.println("Adding dummy edge: " + hash.get(nextVertexMethod).getId() + "-->" + absVertex.getId());
+//                        dummies.add(new LayoutEdge(hash.get(nextVertexMethod), absVertex, LayoutEdge.EDGE_TYPE.EDGE_DUMMY));
+//                    }
+//                }
+//
+    //            hash.put(nextVertexMethod, absVertex);
+    //            visit(absVertex, hash, dummies);
+    //        }
+    //    }
+    //}
 }
