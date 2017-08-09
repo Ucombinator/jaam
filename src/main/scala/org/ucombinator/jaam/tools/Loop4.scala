@@ -258,6 +258,7 @@ object Main {
     myLoops(m)
   }
 
+  // TEST CMD: (cd ../..; sbt assembly) && jaam loop4 --input DoWhileLoop.app.jaam --output /dev/null
   def myLoops(m: SootMethod): Unit = {
 // TODO: replace set with ordered set?
     val (start, graph) = Soot.getBodyGraph(m)
@@ -284,12 +285,7 @@ object Main {
     println()
 
     // Maps header nodes to sets of backjump nodes
-    val headers = new mutable.HashMap[Stmt, mutable.Set[Stmt]] with mutable.MultiMap[Stmt, Stmt]
-    for (v <- graph.vertexSet.asScala) {
-      for (s <- Graphs.successorListOf(graph, v).asScala if dom(v).contains(s)) {
-        headers.addBinding(s, v)
-      }
-    }
+    val headers = JGraphT.loopHeads(graph, start)
 
     println(f"headers:\n")
     for ((k, vs) <- headers) {
@@ -300,19 +296,7 @@ object Main {
     }
     println()
 
-    // Mapps header nodes to sets of nodes that are part of the loop
-    val loops = new mutable.HashMap[Stmt, mutable.Set[Stmt]] with mutable.MultiMap[Stmt, Stmt]
-    for ((k, vs) <- headers) {
-      var work = vs.toList
-      while (!work.isEmpty) {
-        val v = work.head
-        work = work.tail
-        if (!loops.entryExists(k, _ == v)) {
-          loops.addBinding(k, v)
-          work = Graphs.predecessorListOf(graph, v).asScala.toList ++ work
-        }
-      }
-    }
+    val loops = JGraphT.loopNodes(graph, start)
 
     println(f"loops:\n")
     for ((k, vs) <- loops) {
