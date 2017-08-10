@@ -5,8 +5,8 @@ import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.graph.Graph;
-import org.ucombinator.jaam.visualizer.gui.GUIUtils;
 import org.ucombinator.jaam.visualizer.gui.StacFrame;
 
 import java.io.File;
@@ -31,7 +31,10 @@ public class SimpleController implements Initializable {
 
         System.out.println("Load graph: start...");
 
-        File file = GUIUtils.openFile(tabPane, "Load graph file");
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Load graph file");
+        File file = fileChooser.showOpenDialog(getTabPane().getScene().getWindow());
+
         if (file == null) {
             System.out.println("Error! Invalid file.");
             return;
