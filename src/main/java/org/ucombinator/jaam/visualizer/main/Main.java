@@ -12,7 +12,6 @@ import javafx.scene.shape.*;
 import javafx.stage.Stage;
 import org.ucombinator.jaam.visualizer.gui.OuterFrame;
 
-import java.awt.Toolkit;
 import java.net.URL;
 
 public class Main extends Application

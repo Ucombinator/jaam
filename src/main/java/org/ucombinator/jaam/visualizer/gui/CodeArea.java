@@ -1,6 +1,5 @@
 package org.ucombinator.jaam.visualizer.gui;
 
-
 import javafx.scene.input.MouseEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Node;

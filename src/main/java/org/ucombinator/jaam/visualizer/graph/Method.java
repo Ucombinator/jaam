@@ -14,16 +14,16 @@ public class Method
     {
         this.our_class = new OurClass();
         this.methodName = "Dummy_method";
-        vertices = new ArrayList<AbstractVertex<AbstractVertex>>();
-        instructionList = new ArrayList<Instruction>();
+        vertices = new ArrayList<>();
+        instructionList = new ArrayList<>();
     }
 
     public Method(Graph graph, String methodName)
     {
         this.our_class = new OurClass();
         this.methodName = methodName;
-        vertices = new ArrayList<AbstractVertex<AbstractVertex>>();
-        instructionList = new ArrayList<Instruction>();
+        vertices = new ArrayList<>();
+        instructionList = new ArrayList<>();
     }
 
     public String parseClassName() {

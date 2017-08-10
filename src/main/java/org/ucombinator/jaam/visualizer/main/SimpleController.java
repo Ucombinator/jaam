@@ -18,9 +18,6 @@ import java.io.File;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-/**
- * Created by timothyjohnson on 5/5/17.
- */
 public class SimpleController implements Initializable {
     @FXML // Values injected by FXMLLoader
     private TabPane tabPane;

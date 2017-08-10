@@ -1,14 +1,10 @@
 package org.ucombinator.jaam.visualizer.graph;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Stack;
 
-/**
- * Created by jjbesavi on 6/28/17.
- */
 public class GraphUtils {
 
     private class SCCVertex
@@ -32,7 +28,7 @@ public class GraphUtils {
     }
 
     private void visit(AbstractVertex v, HashMap<Integer, SCCVertex> visitedVertices, Stack<Integer> stack,
-                       ArrayList< ArrayList<Integer> > components )
+                       ArrayList<ArrayList<Integer>> components )
     {
 
         SCCVertex vSCC = new SCCVertex(v.getId(), visitedVertices.size());
