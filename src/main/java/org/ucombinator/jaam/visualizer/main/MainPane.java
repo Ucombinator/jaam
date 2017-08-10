@@ -10,6 +10,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.StacFrame;
+import org.ucombinator.jaam.visualizer.gui.StacTab;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,6 +18,12 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 public class MainPane implements Initializable {
+    @FXML private AnchorPane root;
+    public AnchorPane getRoot() { return this.root; }
+
+    @FXML private TabPane tabPane;
+    public TabPane getTabPane() { return this.tabPane; }
+
     public MainPane() {
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/MainPane.fxml"));
         fxmlLoader.setController(this);
@@ -29,18 +36,7 @@ public class MainPane implements Initializable {
         }
     }
 
-    @FXML
-    private AnchorPane root;
-    public AnchorPane getRoot() { return this.root; }
-
-    @FXML // Values injected by FXMLLoader
-    private TabPane tabPane;
-    public TabPane getTabPane() { return this.tabPane; }
-
-    @Override
-    public void initialize(URL fxmlFileLocation, ResourceBundle resources) {
-        System.out.println("Initializing...");
-    }
+    @Override  public void initialize(URL fxmlFileLocation, ResourceBundle resources) {}
 
     public void loadLoopGraph(ActionEvent event) {
         Graph graph;
@@ -64,7 +60,7 @@ public class MainPane implements Initializable {
         filename = file.getName();
 
         System.out.println("--> Create visualization: start...");
-        StacFrame newTab = new StacFrame(graph);
+        StacTab newTab = new StacTab(graph);
         System.out.println("<-- Create visualization: Done!");
 
         if (filename.equals(""))
@@ -76,35 +72,14 @@ public class MainPane implements Initializable {
     }
 
     public void searchByID(ActionEvent event) {
-        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-        if(currentTab instanceof StacFrame) {
-            StacFrame currentFrame = (StacFrame) currentTab;
-            currentFrame.initSearch(StacFrame.searchType.ID);
-        }
-        else {
-            System.out.println("Error! Current tab is not a StacFrame.");
-        }
+        Main.getSelectedStacTabController().initSearch(StacFrame.searchType.ID);
     }
 
     public void searchByStatement(ActionEvent event) {
-        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-        if(currentTab instanceof StacFrame) {
-            StacFrame currentFrame = (StacFrame) currentTab;
-            currentFrame.initSearch(StacFrame.searchType.INSTRUCTION);
-        }
-        else {
-            System.out.println("Error! Current tab is not a StacFrame.");
-        }
+        Main.getSelectedStacTabController().initSearch(StacFrame.searchType.INSTRUCTION);
     }
 
     public void searchByMethod(ActionEvent event) {
-        Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-        if(currentTab instanceof StacFrame) {
-            StacFrame currentFrame = (StacFrame) currentTab;
-            currentFrame.initSearch(StacFrame.searchType.METHOD);
-        }
-        else {
-            System.out.println("Error! Current tab is not a StacFrame.");
-        }
+        Main.getSelectedStacTabController().initSearch(StacFrame.searchType.METHOD);
     }
 }

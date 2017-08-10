@@ -54,7 +54,7 @@ public class CodeArea extends TextFlow
                             lineInstr.getMethodName(), lineInstr.getJimpleIndex(), true, true);
                 }
             }
-            Main.getSelectedStacFrame().repaintAll();
+            Main.getSelectedStacTabController().repaintAll();
         }
     };
 

@@ -214,7 +214,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
         event.consume();
         AbstractLayoutVertex v = ((GUINode)(event.getSource())).getVertex();
 
-        StacFrame currentFrame = Main.getSelectedStacFrame();
+        StacFrame currentFrame = Main.getSelectedStacTabController();
         currentFrame.getMainPanel().resetHighlighted(v);
         currentFrame.getBytecodeArea().setDescription();
         currentFrame.setRightText();

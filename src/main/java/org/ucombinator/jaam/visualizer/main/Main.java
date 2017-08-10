@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import org.ucombinator.jaam.visualizer.gui.StacFrame;
+import org.ucombinator.jaam.visualizer.gui.StacTab;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 public class Main extends Application
@@ -11,12 +12,16 @@ public class Main extends Application
     private static MainPane mainPane;
     public static MainPane getMainPane() { return mainPane; }
 
-    public static StacFrame getSelectedStacFrame() {
-        return (StacFrame) getMainPane().getTabPane().getSelectionModel().getSelectedItem();
+    public static StacTab getSelectedStacTab() {
+        return (StacTab) getMainPane().getTabPane().getSelectionModel().getSelectedItem();
+    }
+
+    public static StacFrame getSelectedStacTabController() {
+        return getSelectedStacTab().controller;
     }
 
     public static VizPanel getSelectedMainPanel() {
-        return getSelectedStacFrame().getMainPanel();
+        return getSelectedStacTabController().getMainPanel();
     }
 
     @Override

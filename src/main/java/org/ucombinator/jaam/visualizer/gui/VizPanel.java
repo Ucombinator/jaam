@@ -80,7 +80,7 @@ public class VizPanel extends Pane
     public void initFX(Graph graph)
     {
         this.panelRoot = LayerFactory.getLayeredGraph(graph);
-         LayoutAlgorithm.layout(this.panelRoot);
+        LayoutAlgorithm.layout(this.panelRoot);
         resetPanelSize();
         drawGraph();
         this.desiredRootTranslateX = this.panelRoot.getGraphics().getTranslateX();

@@ -26,13 +26,7 @@ import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 
-/**
- * JFrame showing a map
- * @author Jawaherul
- *
- */
-
-public class StacFrame extends Tab {
+public class StacFrame {
     @FXML
     private VizPanel mainPanel;
     @FXML
@@ -47,40 +41,33 @@ public class StacFrame extends Tab {
     @FXML
     private CheckBox showLabels;
     @FXML
-    private Button methodCollapse;
+    private CheckBox methodsExpanded;
     @FXML
-    private Button chainCollapse;
+    private CheckBox chainsExpanded;
 
-    private Graph graph;
-    boolean methodsExpanded, chainsExpanded;
+    @FXML private BorderPane root;
+    public BorderPane getRoot() { return root; }
+
     private final javafx.scene.paint.Color activeColor = javafx.scene.paint.Color.CYAN;
     private final javafx.scene.paint.Color inactiveColor = javafx.scene.paint.Color.BLACK;
-    private boolean edgeVisible, labelsVisible;
 
     public enum searchType {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
     }
 
     public StacFrame(Graph graph) {
-        methodsExpanded = true;
-        chainsExpanded = true;
-        edgeVisible = true;
-        labelsVisible = false; // If you change this, also change the initialization for AbstractLayoutVertex
-        this.graph = graph;
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/tab.fxml"));
+        fxmlLoader.setController(this);
+
         try {
-            URL url = getClass().getResource("/tab.fxml");
-            FXMLLoader fxmlLoader = new FXMLLoader(url);
-            fxmlLoader.setController(this);
-            System.out.println("Loading url: " + url);
             BorderPane borderPane = fxmlLoader.load();
-            this.setContent(borderPane);
-            System.out.println("Border pane loaded: " + borderPane);
-            System.out.println("VizPanel loaded: " + this.mainPanel);
-            this.mainPanel.setStacFrame(this);
         } catch (Exception e) {
             e.printStackTrace();
+            System.exit(1); // Using instead of Platform.exit because we want a non-zero exit code
         }
-        this.mainPanel.initFX(this.graph);
+
+        this.mainPanel.setStacFrame(this);
+        this.mainPanel.initFX(graph);
     }
 
     public VizPanel getMainPanel() {
@@ -97,10 +84,6 @@ public class StacFrame extends Tab {
 
     public SearchResults getSearchResults() {
         return this.searchResults;
-    }
-
-    public Graph getGraph() {
-        return this.graph;
     }
 
     public void repaintAll() {
@@ -122,70 +105,66 @@ public class StacFrame extends Tab {
 
     public void showEdgesAction(ActionEvent event) {
         System.out.println("Edges checkbox set to: " + showEdges.isSelected());
-        edgeVisible = showEdges.isSelected();
         mainPanel.getPanelRoot().setVisible(false);
-        mainPanel.getPanelRoot().setEdgeVisibility(edgeVisible);
+        mainPanel.getPanelRoot().setEdgeVisibility(showEdges.isSelected());
         LayoutEdge.redrawEdges(mainPanel.getPanelRoot(), true);
         mainPanel.getPanelRoot().setVisible(true);
     }
 
     public void showLabelsAction(ActionEvent event) {
-        labelsVisible = showLabels.isSelected();
         mainPanel.getPanelRoot().setVisible(false);
-        mainPanel.getPanelRoot().setLabelVisibility(labelsVisible);
+        mainPanel.getPanelRoot().setLabelVisibility(showLabels.isSelected());
         mainPanel.getPanelRoot().setVisible(true);
     }
 
     public void xScalePanelMinusAction(ActionEvent event) {
         StacFrame.this.mainPanel.decrementScaleXFactor();
-        StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+        StacFrame.this.mainPanel.resetAndRedraw(showEdges.isSelected());
         StacFrame.this.mainPanel.resetRootPosition(false);
     }
 
     public void xScalePanelPlusAction(ActionEvent event) {
         StacFrame.this.mainPanel.incrementScaleXFactor();
-        StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+        StacFrame.this.mainPanel.resetAndRedraw(showEdges.isSelected());
         StacFrame.this.mainPanel.resetRootPosition(false);
     }
 
     public void yScalePanelMinusAction(ActionEvent event) {
         StacFrame.this.mainPanel.decrementScaleYFactor();
-        StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+        StacFrame.this.mainPanel.resetAndRedraw(showEdges.isSelected());
         StacFrame.this.mainPanel.resetRootPosition(false);
     }
 
     public void yScalePanelPlusAction(ActionEvent event) {
         StacFrame.this.mainPanel.incrementScaleYFactor();
-        StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+        StacFrame.this.mainPanel.resetAndRedraw(showEdges.isSelected());
         StacFrame.this.mainPanel.resetRootPosition(false);
     }
 
     public void methodCollapseAction(ActionEvent event) {
-        methodsExpanded = !methodsExpanded;
         StacFrame.this.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
-                methodsExpanded);
+                methodsExpanded.isSelected());
 
-        if (methodCollapse.getTextFill() == activeColor) {
-            methodCollapse.setTextFill(inactiveColor);
+        if (methodsExpanded.getTextFill() == activeColor) {
+            methodsExpanded.setTextFill(inactiveColor);
         } else {
-            methodCollapse.setTextFill(activeColor);
+            methodsExpanded.setTextFill(activeColor);
         }
 
-        StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+        StacFrame.this.mainPanel.resetAndRedraw(showEdges.isSelected());
         StacFrame.this.mainPanel.resetRootPosition(false);
     }
 
     public void chainCollapseAction(ActionEvent event) {
-        chainsExpanded = !chainsExpanded;
         StacFrame.this.mainPanel.getPanelRoot()
-                .toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN, chainsExpanded);
-        if (chainCollapse.getTextFill() == activeColor) {
-            chainCollapse.setTextFill(inactiveColor);
+                .toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN, chainsExpanded.isSelected());
+        if (chainsExpanded.getTextFill() == activeColor) {
+            chainsExpanded.setTextFill(inactiveColor);
         } else {
-            chainCollapse.setTextFill(activeColor);
+            chainsExpanded.setTextFill(activeColor);
         }
 
-        StacFrame.this.mainPanel.resetAndRedraw(edgeVisible);
+        StacFrame.this.mainPanel.resetAndRedraw(showEdges.isSelected());
         StacFrame.this.mainPanel.resetRootPosition(false);
     }
 
@@ -197,7 +176,7 @@ public class StacFrame extends Tab {
         //Set extension filter
         FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(extension.toUpperCase() + " files (*." + extension + ")", "*." + extension);
         fileChooser.getExtensionFilters().add(extFilter);
-        fileChooser.setInitialFileName(Main.getSelectedStacFrame().getText() + "." + extension);
+        fileChooser.setInitialFileName(Main.getSelectedStacTab().getText() + "." + extension);
 
         //Show save file dialog
         File file = fileChooser.showSaveDialog(Main.getMainPane().getRoot().getScene().getWindow());
@@ -290,15 +269,15 @@ public class StacFrame extends Tab {
     }
 
     public void resetButtonPressed() {
-        Main.getSelectedStacFrame().getMainPanel().resetRootPosition(true);
+        Main.getSelectedMainPanel().resetRootPosition(true);
     }
 
     public void zoomInPressed(MouseEvent event) {
-        Main.getSelectedStacFrame().keepButton(1, (Button) event.getSource());
+        Main.getSelectedStacTabController().keepButton(1, (Button) event.getSource());
     }
 
     public void zoomOutPressed(MouseEvent event) {
-        Main.getSelectedStacFrame().keepButton(-1, (Button) event.getSource());
+        Main.getSelectedStacTabController().keepButton(-1, (Button) event.getSource());
     }
 
     public void zoomReleased(MouseEvent event) {
