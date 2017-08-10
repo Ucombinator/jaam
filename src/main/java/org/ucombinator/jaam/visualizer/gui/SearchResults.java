@@ -7,14 +7,14 @@ import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 
 public class SearchResults extends BorderPane
 {
-    public TreeView searchTree;
-    private TreeItem root;
+    public TreeView<String> searchTree;
+    private TreeItem<String> root;
     public static int nodeHeight = 40;
     
     public SearchResults()
     {
-        this.root = new TreeItem("Search Results");
-        this.searchTree = new TreeView(root);
+        this.root = new TreeItem<>("Search Results");
+        this.searchTree = new TreeView<>(root);
         this.searchTree.setShowRoot(true);
         this.root.setExpanded(true);
         this.setCenter(searchTree);

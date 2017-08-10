@@ -18,11 +18,11 @@ import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.input.MouseEvent>
 {
-    public static int transitionTime = 300; // Milliseconds per transition
+    public static final int transitionTime = 300; // Milliseconds per transition
 
     @Override
     public void handle(MouseEvent event) {
-        EventType<MouseEvent> type = (EventType<MouseEvent>) event.getEventType();
+        EventType<? extends MouseEvent> type = event.getEventType();
         if(type.equals(MouseEvent.MOUSE_CLICKED))
         {
             if(event.getButton().equals(MouseButton.PRIMARY))

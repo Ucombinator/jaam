@@ -424,10 +424,10 @@ public class GUINode extends Pane
         }
     };
 
-    EventHandler onMouseEnteredEventHandler = new javafx.event.EventHandler()
+    EventHandler<MouseEvent> onMouseEnteredEventHandler = new javafx.event.EventHandler<MouseEvent>()
     {
         @Override
-        public void handle(Event event)
+        public void handle(MouseEvent event)
         {
             event.consume();
             if (vertex.getSelfGraph() != null)
@@ -443,10 +443,10 @@ public class GUINode extends Pane
         }
     };
 
-    EventHandler onMouseExitedEventHandler = new javafx.event.EventHandler()
+    EventHandler<MouseEvent> onMouseExitedEventHandler = new javafx.event.EventHandler<MouseEvent>()
     {
         @Override
-        public void handle(Event event)
+        public void handle(MouseEvent event)
         {
             event.consume();
             //getChildren().remove(rectLabel);

@@ -148,11 +148,10 @@ public class LayerFactory
         }
 
         // Add edges between SCC Vertices
-        HashMap<String, LayoutEdge> edges = new LinkedHashMap<String, LayoutEdge>();
-        for(AbstractVertex<AbstractVertex> vertex: graph.getVertices()){
+        HashMap<String, LayoutEdge> edges = new LinkedHashMap<>();
+        for(AbstractVertex<AbstractVertex> vertex : graph.getVertices()){
             // Not sure why we need an Object instead of a Vertex here
-            for(Object neighborObj: vertex.getOutgoingNeighbors()) {
-                AbstractVertex<AbstractVertex> neighbor = (AbstractVertex<AbstractVertex>) neighborObj;
+            for(AbstractVertex<AbstractVertex> neighbor : vertex.getOutgoingNeighbors()) {
                 String tempID = vertex.getId() + "--" + neighbor.getId();
                 if(!edges.containsKey(tempID))
                 {
@@ -190,10 +189,9 @@ public class LayerFactory
                     continue;
                 }
                 AbstractVertex<AbstractVertex> v = methodVertex_to_vertex.get(mv.getId());
-                for(Object  graphNeighbor: v.getOutgoingNeighbors())
+                for(AbstractVertex<AbstractVertex> graphNeighbor: v.getOutgoingNeighbors())
                 {
-                   AbstractVertex<AbstractVertex> gn = (AbstractVertex<AbstractVertex>)graphNeighbor;
-                   LayoutMethodVertex mn = vertex_to_methodVertex.get(gn.getId());
+                   LayoutMethodVertex mn = vertex_to_methodVertex.get(graphNeighbor.getId());
 
                    //if(innerVertices.containsKey(mn.getStrID()))
                    {
