@@ -14,7 +14,6 @@ import javafx.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 
-import java.net.URL;
 import java.util.StringTokenizer;
 
 import javax.imageio.ImageIO;
@@ -47,7 +46,7 @@ public class StacFrame {
     @FXML private CheckBox methodsExpanded;
     @FXML private CheckBox chainsExpanded;
 
-    public enum searchType {
+    public enum SearchType {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
     }
 
@@ -163,15 +162,15 @@ public class StacFrame {
     }
 
     // Clean up info from previous searches
-    public void initSearch(searchType search) {
+    public void initSearch(SearchType search) {
         this.mainPanel.resetHighlighted(null);
         String query = getSearchInput(search);
 
-        if (search == searchType.ID)
+        if (search == SearchType.ID)
             searchByID(query); // TODO: Fix inconsistency with panel root
-        else if (search == searchType.INSTRUCTION)
+        else if (search == SearchType.INSTRUCTION)
             this.mainPanel.getPanelRoot().searchByInstruction(query, mainPanel);
-        else if (search == searchType.METHOD)
+        else if (search == SearchType.METHOD)
             this.mainPanel.getPanelRoot().searchByMethod(query, mainPanel);
 
         this.repaintAll();
@@ -179,22 +178,22 @@ public class StacFrame {
         Parameters.rightArea.setText("");*/
     }
 
-    public String getSearchInput(searchType search) {
+    public String getSearchInput(SearchType search) {
         String title = "";
         System.out.println("Search type: " + search);
-        if (search == searchType.ID || search == searchType.ROOT_PATH) {
+        if (search == SearchType.ID || search == SearchType.ROOT_PATH) {
             title = "Enter node ID(s)";
-        } else if (search == searchType.INSTRUCTION) {
+        } else if (search == SearchType.INSTRUCTION) {
             title = "Instruction contains ...";
-        } else if (search == searchType.METHOD) {
+        } else if (search == SearchType.METHOD) {
             title = "Method name contains ...";
-        } else if (search == searchType.OUT_OPEN || search == searchType.OUT_CLOSED || search == searchType.IN_OPEN
-                || search == searchType.IN_CLOSED) {
+        } else if (search == SearchType.OUT_OPEN || search == SearchType.OUT_CLOSED || search == SearchType.IN_OPEN
+                || search == SearchType.IN_CLOSED) {
             title = "Enter node ID";
         }
 
         String input = "";
-        if (search != searchType.ALL_LEAVES && search != searchType.ALL_SOURCES && search != searchType.TAG) {
+        if (search != SearchType.ALL_LEAVES && search != SearchType.ALL_SOURCES && search != SearchType.TAG) {
             System.out.println("Showing dialog...");
             TextInputDialog dialog = new TextInputDialog();
             dialog.setHeaderText(title);

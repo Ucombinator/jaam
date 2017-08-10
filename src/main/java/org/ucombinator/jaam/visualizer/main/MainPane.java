@@ -72,14 +72,14 @@ public class MainPane implements Initializable {
     }
 
     public void searchByID(ActionEvent event) {
-        Main.getSelectedStacTabController().initSearch(StacFrame.searchType.ID);
+        Main.getSelectedStacTabController().initSearch(StacFrame.SearchType.ID);
     }
 
     public void searchByStatement(ActionEvent event) {
-        Main.getSelectedStacTabController().initSearch(StacFrame.searchType.INSTRUCTION);
+        Main.getSelectedStacTabController().initSearch(StacFrame.SearchType.INSTRUCTION);
     }
 
     public void searchByMethod(ActionEvent event) {
-        Main.getSelectedStacTabController().initSearch(StacFrame.searchType.METHOD);
+        Main.getSelectedStacTabController().initSearch(StacFrame.SearchType.METHOD);
     }
 }
