@@ -201,7 +201,7 @@ public class StacFrame extends Tab {
         //Set extension filter
         FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(extension.toUpperCase() + " files (*." + extension + ")", "*." + extension);
         fileChooser.getExtensionFilters().add(extFilter);
-        fileChooser.setInitialFileName(Main.getTabPane().getSelectionModel().getSelectedItem().getText() + "." + extension);
+        fileChooser.setInitialFileName(Main.getSelectedStacFrame().getText() + "." + extension);
 
         //Show save file dialog
         File file = fileChooser.showSaveDialog(Main.getAnchorPane().getScene().getWindow());
@@ -294,7 +294,7 @@ public class StacFrame extends Tab {
     }
 
     public void resetButtonPressed() {
-        Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
+        Tab currentTab = Main.getSelectedStacFrame();
         if(currentTab instanceof StacFrame) {
             StacFrame currentFrame = (StacFrame) currentTab;
             currentFrame.getMainPanel().resetRootPosition(true);
@@ -305,7 +305,7 @@ public class StacFrame extends Tab {
     }
 
     public void zoomInPressed(MouseEvent event) {
-        Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
+        Tab currentTab = Main.getSelectedStacFrame();
         if(currentTab instanceof StacFrame) {
             StacFrame currentFrame = (StacFrame) currentTab;
             currentFrame.keepButton(1, (Button) event.getSource());
@@ -316,7 +316,7 @@ public class StacFrame extends Tab {
     }
 
     public void zoomOutPressed(MouseEvent event) {
-        Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
+        Tab currentTab = Main.getSelectedStacFrame();
         if(currentTab instanceof StacFrame) {
             StacFrame currentFrame = (StacFrame) currentTab;
             currentFrame.keepButton(-1, (Button) event.getSource());
@@ -327,7 +327,7 @@ public class StacFrame extends Tab {
     }
 
     public void zoomReleased(MouseEvent event) {
-        Tab currentTab = Main.getTabPane().getSelectionModel().getSelectedItem();
+        Tab currentTab = Main.getSelectedStacFrame();
         if(currentTab instanceof StacFrame) {
             StacFrame currentFrame = (StacFrame) currentTab;
             this.setZoomButtonReleased(true);

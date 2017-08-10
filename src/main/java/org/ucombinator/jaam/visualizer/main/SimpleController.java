@@ -17,6 +17,8 @@ public class SimpleController implements Initializable {
     @FXML // Values injected by FXMLLoader
     private TabPane tabPane;
 
+    public TabPane getTabPane() { return this.tabPane; }
+
     @Override
     public void initialize(URL fxmlFileLocation, ResourceBundle resources) {
         System.out.println("Initializing...");
@@ -83,9 +85,5 @@ public class SimpleController implements Initializable {
         else {
             System.out.println("Error! Current tab is not a StacFrame.");
         }
-    }
-
-    public TabPane getTabPane() {
-        return this.tabPane;
     }
 }
