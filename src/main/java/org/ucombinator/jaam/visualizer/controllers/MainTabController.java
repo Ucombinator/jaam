@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.visualizer.gui;
+package org.ucombinator.jaam.visualizer.controllers;
 
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
@@ -18,6 +18,9 @@ import java.util.StringTokenizer;
 
 import javax.imageio.ImageIO;
 
+import org.ucombinator.jaam.visualizer.gui.CodeArea;
+import org.ucombinator.jaam.visualizer.gui.SearchResults;
+import org.ucombinator.jaam.visualizer.gui.VizPanel;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.layout.LayoutRootVertex;
@@ -25,7 +28,7 @@ import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.main.Parameters;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 
-public class StacFrame {
+public class MainTabController {
     @FXML private BorderPane root;
     public BorderPane getRoot() { return root; }
 
@@ -50,7 +53,7 @@ public class StacFrame {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
     }
 
-    public StacFrame(Graph graph) {
+    public MainTabController(Graph graph) {
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/tab.fxml"));
         fxmlLoader.setController(this);
 
@@ -61,7 +64,7 @@ public class StacFrame {
             System.exit(1); // Using instead of Platform.exit because we want a non-zero exit code
         }
 
-        this.mainPanel.setStacFrame(this);
+        this.mainPanel.setMainTabController(this);
         this.mainPanel.initFX(graph);
     }
 

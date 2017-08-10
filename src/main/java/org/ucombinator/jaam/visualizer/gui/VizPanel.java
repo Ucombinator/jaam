@@ -5,7 +5,6 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.Button;
 import javafx.scene.Group;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 
@@ -14,6 +13,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 
 import javafx.util.Duration;
+import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 
@@ -23,7 +23,7 @@ public class VizPanel extends Pane
     private HashSet<AbstractLayoutVertex> highlighted;
     private LayoutRootVertex panelRoot;
 
-    private StacFrame stacFrame;
+    private MainTabController mainTabController;
 
     // The dimensions of the background for our graph
     private final double initRootWidth = 500.0, initRootHeight = 500.0;
@@ -69,8 +69,8 @@ public class VizPanel extends Pane
     }
 
     // Ideally this would go in the constructor, but SceneBuilder requires a default constructor
-    public void setStacFrame(StacFrame stacFrame) {
-        this.stacFrame = stacFrame;
+    public void setMainTabController(MainTabController mainTabController) {
+        this.mainTabController = mainTabController;
     }
 
     public HashSet<AbstractLayoutVertex> getHighlighted() {
@@ -204,8 +204,8 @@ public class VizPanel extends Pane
             @Override
             public void handle(ActionEvent event) {
                 if(button != null) {
-                    VizPanel.this.stacFrame.setZoomEnabled(true);
-                    VizPanel.this.stacFrame.keepButton(zoomDistance, button);
+                    VizPanel.this.mainTabController.setZoomEnabled(true);
+                    VizPanel.this.mainTabController.keepButton(zoomDistance, button);
                 }
 
                 VizPanel.this.panelRoot.setVisible(false);

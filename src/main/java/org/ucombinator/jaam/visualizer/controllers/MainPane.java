@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.visualizer.main;
+package org.ucombinator.jaam.visualizer.controllers;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
@@ -8,8 +8,9 @@ import javafx.scene.control.TabPane;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.graph.Graph;
-import org.ucombinator.jaam.visualizer.gui.StacFrame;
-import org.ucombinator.jaam.visualizer.gui.StacTab;
+import org.ucombinator.jaam.visualizer.gui.MainTab;
+import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.main.TakeInput;
 
 import java.io.File;
 import java.io.IOException;
@@ -59,7 +60,7 @@ public class MainPane implements Initializable {
         filename = file.getName();
 
         System.out.println("--> Create visualization: start...");
-        StacTab newTab = new StacTab(graph);
+        MainTab newTab = new MainTab(graph);
         System.out.println("<-- Create visualization: Done!");
 
         if (filename.equals(""))
@@ -71,14 +72,14 @@ public class MainPane implements Initializable {
     }
 
     public void searchByID(ActionEvent event) {
-        Main.getSelectedStacTabController().initSearch(StacFrame.SearchType.ID);
+        Main.getSelectedStacTabController().initSearch(MainTabController.SearchType.ID);
     }
 
     public void searchByStatement(ActionEvent event) {
-        Main.getSelectedStacTabController().initSearch(StacFrame.SearchType.INSTRUCTION);
+        Main.getSelectedStacTabController().initSearch(MainTabController.SearchType.INSTRUCTION);
     }
 
     public void searchByMethod(ActionEvent event) {
-        Main.getSelectedStacTabController().initSearch(StacFrame.SearchType.METHOD);
+        Main.getSelectedStacTabController().initSearch(MainTabController.SearchType.METHOD);
     }
 }

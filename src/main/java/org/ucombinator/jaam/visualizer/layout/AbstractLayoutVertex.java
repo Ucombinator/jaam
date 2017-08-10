@@ -170,7 +170,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         super(label);
         this.graphics = null;
         this.isExpanded = true;
-        this.isLabelVisible = false; // If you change this, also change the initialization for StacFrame
+        this.isLabelVisible = false; // If you change this, also change the initialization for MainTabController
         this.isEdgeVisible = true;
         this.drawEdges = drawEdges;
 
@@ -205,7 +205,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     	super(id, label);
     	this.graphics = null;
         this.isExpanded = true;
-        this.isLabelVisible = false; // If you change this, also change the initialization for StacFrame
+        this.isLabelVisible = false; // If you change this, also change the initialization for MainTabController
         this.isEdgeVisible = true;
         this.drawEdges = true;
 

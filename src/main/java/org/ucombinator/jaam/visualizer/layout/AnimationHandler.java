@@ -12,7 +12,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
 
 import org.ucombinator.jaam.visualizer.gui.GUINode;
-import org.ucombinator.jaam.visualizer.gui.StacFrame;
+import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
@@ -214,7 +214,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
         event.consume();
         AbstractLayoutVertex v = ((GUINode)(event.getSource())).getVertex();
 
-        StacFrame currentFrame = Main.getSelectedStacTabController();
+        MainTabController currentFrame = Main.getSelectedStacTabController();
         currentFrame.getMainPanel().resetHighlighted(v);
         currentFrame.getBytecodeArea().setDescription();
         currentFrame.setRightText();
