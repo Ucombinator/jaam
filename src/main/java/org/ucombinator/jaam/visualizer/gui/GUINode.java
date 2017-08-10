@@ -345,8 +345,8 @@ public class GUINode extends Pane
             event.consume();
             GUINode node = (GUINode) event.getSource();
 
-            double scaleFactorX = Main.getSelectedMainPanel().getPanelRoot().getGraphics().getScaleX();
-            double scaleFactorY = Main.getSelectedMainPanel().getPanelRoot().getGraphics().getScaleY();
+            double scaleFactorX = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleX();
+            double scaleFactorY = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleY();
 
             if(node.getVertex() instanceof LayoutRootVertex) {
                 dragStartX = event.getScreenX() - node.getTranslateX();
@@ -368,8 +368,8 @@ public class GUINode extends Pane
             GUINode node = (GUINode) event.getSource();
 
             node.isDragging = true;
-            double scaleFactorX = Main.getSelectedMainPanel().getPanelRoot().getGraphics().getScaleX();
-            double scaleFactorY = Main.getSelectedMainPanel().getPanelRoot().getGraphics().getScaleY();
+            double scaleFactorX = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleX();
+            double scaleFactorY = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleY();
 
             double offsetX, offsetY;
             if(GUINode.this.getParentNode() != null) {
@@ -402,7 +402,7 @@ public class GUINode extends Pane
             node.setTranslateLocation(offsetX, offsetY);
 
             AbstractLayoutVertex v = GUINode.this.vertex;
-            VizPanel mainPanel = Main.getSelectedMainPanel();
+            VizPanel mainPanel = Main.getSelectedVizPanel();
             v.setX(mainPanel.invScaleX(offsetX));
             v.setY(mainPanel.invScaleY(offsetY));
             LayoutEdge.redrawEdges(v, false);

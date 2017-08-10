@@ -74,7 +74,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
         }*/
 
         v.setExpanded(false);
-        VizPanel panel = Main.getSelectedMainPanel();
+        VizPanel panel = Main.getSelectedVizPanel();
         final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
         panel.resetContent();
         LayoutAlgorithm.layout(panelRoot);
@@ -118,7 +118,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
         }*/
 
         v.setExpanded(true);
-        VizPanel panel = Main.getSelectedMainPanel();
+        VizPanel panel = Main.getSelectedVizPanel();
         final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
         panel.resetContent();
         LayoutAlgorithm.layout(panelRoot);
@@ -214,7 +214,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
         event.consume();
         AbstractLayoutVertex v = ((GUINode)(event.getSource())).getVertex();
 
-        MainTabController currentFrame = Main.getSelectedStacTabController();
+        MainTabController currentFrame = Main.getSelectedMainTabController();
         currentFrame.getMainPanel().resetHighlighted(v);
         currentFrame.getBytecodeArea().setDescription();
         currentFrame.setRightText();

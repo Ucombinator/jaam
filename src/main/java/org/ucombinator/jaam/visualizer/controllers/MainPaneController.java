@@ -2,7 +2,6 @@ package org.ucombinator.jaam.visualizer.controllers;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.AnchorPane;
@@ -14,17 +13,15 @@ import org.ucombinator.jaam.visualizer.main.TakeInput;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.util.ResourceBundle;
 
-public class MainPane implements Initializable {
+public class MainPaneController {
     @FXML private AnchorPane root;
     public AnchorPane getRoot() { return this.root; }
 
     @FXML private TabPane tabPane;
     public TabPane getTabPane() { return this.tabPane; }
 
-    public MainPane() {
+    public MainPaneController() {
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/MainPane.fxml"));
         fxmlLoader.setController(this);
 
@@ -35,8 +32,6 @@ public class MainPane implements Initializable {
             System.exit(1); // Using instead of Platform.exit because we want a non-zero exit code
         }
     }
-
-    @Override public void initialize(URL fxmlFileLocation, ResourceBundle resources) {}
 
     public void loadLoopGraph(ActionEvent event) {
         Graph graph;
@@ -72,14 +67,14 @@ public class MainPane implements Initializable {
     }
 
     public void searchByID(ActionEvent event) {
-        Main.getSelectedStacTabController().initSearch(MainTabController.SearchType.ID);
+        Main.getSelectedMainTabController().initSearch(MainTabController.SearchType.ID);
     }
 
     public void searchByStatement(ActionEvent event) {
-        Main.getSelectedStacTabController().initSearch(MainTabController.SearchType.INSTRUCTION);
+        Main.getSelectedMainTabController().initSearch(MainTabController.SearchType.INSTRUCTION);
     }
 
     public void searchByMethod(ActionEvent event) {
-        Main.getSelectedStacTabController().initSearch(MainTabController.SearchType.METHOD);
+        Main.getSelectedMainTabController().initSearch(MainTabController.SearchType.METHOD);
     }
 }

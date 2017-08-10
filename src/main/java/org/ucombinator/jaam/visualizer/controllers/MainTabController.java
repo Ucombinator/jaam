@@ -144,7 +144,7 @@ public class MainTabController {
         //Set extension filter
         FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(extension.toUpperCase() + " files (*." + extension + ")", "*." + extension);
         fileChooser.getExtensionFilters().add(extFilter);
-        fileChooser.setInitialFileName(Main.getSelectedStacTab().getText() + "." + extension);
+        fileChooser.setInitialFileName(Main.getSelectedMainTab().getText() + "." + extension);
 
         //Show save file dialog
         File file = fileChooser.showSaveDialog(Main.getMainPane().getRoot().getScene().getWindow());
@@ -237,15 +237,15 @@ public class MainTabController {
     }
 
     public void resetButtonPressed() {
-        Main.getSelectedMainPanel().resetRootPosition(true);
+        Main.getSelectedVizPanel().resetRootPosition(true);
     }
 
     public void zoomInPressed(MouseEvent event) {
-        Main.getSelectedStacTabController().keepButton(1, (Button) event.getSource());
+        Main.getSelectedMainTabController().keepButton(1, (Button) event.getSource());
     }
 
     public void zoomOutPressed(MouseEvent event) {
-        Main.getSelectedStacTabController().keepButton(-1, (Button) event.getSource());
+        Main.getSelectedMainTabController().keepButton(-1, (Button) event.getSource());
     }
 
     public void zoomReleased(MouseEvent event) {
