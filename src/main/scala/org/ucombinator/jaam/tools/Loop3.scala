@@ -45,7 +45,7 @@ object Main {
 
     Soot.useJaamClassProvider()
 
-    val inputPackets = input flatMap Serializer.readAll
+    val inputPackets = input.flatMap(Serializer.readAll(_).asScala)
 
     for (a <- inputPackets) { Soot.addClasses(a.asInstanceOf[App]) }
 

@@ -66,7 +66,7 @@ object Main {
     val typeLoader = new HashMapTypeLoader()
 
     for (file <- input) {
-      for (a0 <- org.ucombinator.jaam.serializer.Serializer.readAll(file)) {
+      for (a0 <- org.ucombinator.jaam.serializer.Serializer.readAll(file).asScala) {
         if (a0.isInstanceOf[org.ucombinator.jaam.tools.app.App]) {
           val a = a0.asInstanceOf[org.ucombinator.jaam.tools.app.App]
           for (pe <- a.classpath) {

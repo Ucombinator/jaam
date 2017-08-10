@@ -28,7 +28,7 @@ import soot.jimple.{Constant, InvokeExpr, Ref, Stmt => SootStmt}
 import soot.util.Chain
 
 object Serializer {
-  def readAll(file: String): List[Packet] = {
+  def readAll(file: String): java.util.List[Packet] = {
     val stream = new FileInputStream(file)
     val pi = new PacketInput(stream)
 
@@ -39,7 +39,7 @@ object Serializer {
       packets +:= packet
     }
 
-    packets.reverse
+    packets.reverse.asJava
   }
 }
 

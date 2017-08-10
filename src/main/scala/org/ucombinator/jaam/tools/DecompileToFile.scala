@@ -9,7 +9,7 @@ object DecompileToFile {
     val outputDir = new File(output)
     for (file <- input) {
       for (org.ucombinator.jaam.tools.decompile.DecompiledClass(_, _, cu)
-           <- org.ucombinator.jaam.serializer.Serializer.readAll(file)) {
+           <- org.ucombinator.jaam.serializer.Serializer.readAll(file).asScala) {
         val dir = new File(outputDir, cu.getPackage.getName.replace('.', '/'))
         dir.mkdirs()
 
