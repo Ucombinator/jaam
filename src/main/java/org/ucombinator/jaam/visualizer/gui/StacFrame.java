@@ -67,11 +67,6 @@ public class StacFrame extends Tab {
         edgeVisible = true;
         labelsVisible = false; // If you change this, also change the initialization for AbstractLayoutVertex
         this.graph = graph;
-        this.loadFXML();
-        this.mainPanel.initFX(this.graph);
-    }
-
-    private void loadFXML() {
         try {
             URL url = getClass().getResource("/tab.fxml");
             FXMLLoader fxmlLoader = new FXMLLoader(url);
@@ -85,6 +80,7 @@ public class StacFrame extends Tab {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        this.mainPanel.initFX(this.graph);
     }
 
     public VizPanel getMainPanel() {
@@ -294,47 +290,19 @@ public class StacFrame extends Tab {
     }
 
     public void resetButtonPressed() {
-        Tab currentTab = Main.getSelectedStacFrame();
-        if(currentTab instanceof StacFrame) {
-            StacFrame currentFrame = (StacFrame) currentTab;
-            currentFrame.getMainPanel().resetRootPosition(true);
-        }
-        else {
-            System.out.println("Error! Current tab is not a StacFrame.");
-        }
+        Main.getSelectedStacFrame().getMainPanel().resetRootPosition(true);
     }
 
     public void zoomInPressed(MouseEvent event) {
-        Tab currentTab = Main.getSelectedStacFrame();
-        if(currentTab instanceof StacFrame) {
-            StacFrame currentFrame = (StacFrame) currentTab;
-            currentFrame.keepButton(1, (Button) event.getSource());
-        }
-        else {
-            System.out.println("Error! Current tab is not a StacFrame.");
-        }
+        Main.getSelectedStacFrame().keepButton(1, (Button) event.getSource());
     }
 
     public void zoomOutPressed(MouseEvent event) {
-        Tab currentTab = Main.getSelectedStacFrame();
-        if(currentTab instanceof StacFrame) {
-            StacFrame currentFrame = (StacFrame) currentTab;
-            currentFrame.keepButton(-1, (Button) event.getSource());
-        }
-        else {
-            System.out.println("Error! Current tab is not a StacFrame.");
-        }
+        Main.getSelectedStacFrame().keepButton(-1, (Button) event.getSource());
     }
 
     public void zoomReleased(MouseEvent event) {
-        Tab currentTab = Main.getSelectedStacFrame();
-        if(currentTab instanceof StacFrame) {
-            StacFrame currentFrame = (StacFrame) currentTab;
-            this.setZoomButtonReleased(true);
-        }
-        else {
-            System.out.println("Error! Current tab is not a StacFrame.");
-        }
+        this.setZoomButtonReleased(true);
     }
 
     private boolean zoomEnabled = true;
