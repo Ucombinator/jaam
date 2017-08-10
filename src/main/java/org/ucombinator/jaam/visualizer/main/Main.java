@@ -14,7 +14,7 @@ public class Main extends Application
     public static SimpleController getController() { return controller; }
 
     public static StacFrame getSelectedStacFrame() {
-        return (StacFrame)controller.getTabPane().getSelectionModel().getSelectedItem();
+        return (StacFrame)getController().getTabPane().getSelectionModel().getSelectedItem();
     }
 
     public static VizPanel getSelectedMainPanel() {
@@ -23,16 +23,15 @@ public class Main extends Application
 
     @Override
     public void start(Stage stage) {
-        controller = new SimpleController();
-
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/app.fxml"));
-        fxmlLoader.setController(controller);
 
         try {
             fxmlLoader.load();
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        controller = fxmlLoader.getController();
 
         Scene scene = new Scene(getController().getRoot());
         stage.setScene(scene);
