@@ -25,7 +25,6 @@ import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.layout.LayoutRootVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
-import org.ucombinator.jaam.visualizer.main.Parameters;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 
 public class MainTabController {
@@ -68,9 +67,10 @@ public class MainTabController {
         this.mainPanel.initFX(graph);
     }
 
+    private static final boolean debugPanelMode = false;
     public void repaintAll() {
         System.out.println("Repainting all...");
-        if (!Parameters.debugPanelMode) {
+        if (!debugPanelMode) {
             bytecodeArea.setDescription();
             setRightText();
             searchResults.writeText(this.mainPanel);

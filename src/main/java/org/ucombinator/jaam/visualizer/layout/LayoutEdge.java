@@ -4,10 +4,7 @@ import javafx.geometry.Bounds;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
-import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
-import org.ucombinator.jaam.visualizer.gui.VizPanel;
-import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.layout.LayoutEdge>
 {

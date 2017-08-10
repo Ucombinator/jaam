@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.gui;
 import javafx.scene.input.MouseEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.scene.paint.Color;
@@ -16,10 +17,12 @@ import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
 import org.ucombinator.jaam.visualizer.graph.Instruction;
 import org.ucombinator.jaam.visualizer.main.Main;
-import org.ucombinator.jaam.visualizer.main.Parameters;
 
 public class CodeArea extends TextFlow
 {
+    private static final Color fxColorSelection = Color.ALICEBLUE;
+    private static final Font jfxFont = new Font("Serif", 14);
+
     ArrayList<Instruction> description;
     private int currentCaret = 0;
     
@@ -67,7 +70,7 @@ public class CodeArea extends TextFlow
     public void resetFont() {
         for(Node textNode : this.getChildren()) {
             Text line = (Text) textNode;
-            line.setFont(Parameters.jfxFont);
+            line.setFont(jfxFont);
         }
     }
 
@@ -98,7 +101,7 @@ public class CodeArea extends TextFlow
             }
 
             this.writeText();
-            this.setHighlights(Parameters.fxColorSelection);
+            this.setHighlights(fxColorSelection);
         }
     }
     
