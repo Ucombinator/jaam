@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.main;
 
 import javafx.event.ActionEvent;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
 import javafx.scene.control.Tab;
@@ -11,10 +12,23 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.StacFrame;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
 public class SimpleController implements Initializable {
+    public SimpleController() {
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/app.fxml"));
+        fxmlLoader.setController(this);
+
+        try {
+            fxmlLoader.load();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1); // Using instead of Platform.exit because we want a non-zero exit code
+        }
+    }
+
     @FXML
     private AnchorPane root;
     public AnchorPane getRoot() { return this.root; }
