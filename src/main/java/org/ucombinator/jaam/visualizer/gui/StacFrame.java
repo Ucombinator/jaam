@@ -201,10 +201,10 @@ public class StacFrame extends Tab {
         //Set extension filter
         FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(extension.toUpperCase() + " files (*." + extension + ")", "*." + extension);
         fileChooser.getExtensionFilters().add(extFilter);
-        fileChooser.setInitialFileName(Main.getOuterFrame().getCurrentTab().getText() + "." + extension);
+        fileChooser.setInitialFileName(Main.getTabPane().getSelectionModel().getSelectedItem().getText() + "." + extension);
 
         //Show save file dialog
-        File file = fileChooser.showSaveDialog(Main.getOuterFrame().getAnchorPane().getScene().getWindow());
+        File file = fileChooser.showSaveDialog(Main.getAnchorPane().getScene().getWindow());
 
         if (file != null) {
             WritableImage image = mainPanel.snapshot(new SnapshotParameters(), null);

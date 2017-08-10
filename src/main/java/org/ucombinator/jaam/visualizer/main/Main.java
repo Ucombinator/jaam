@@ -1,25 +1,22 @@
 package org.ucombinator.jaam.visualizer.main;
 
 import javafx.application.Application;
-import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
-import javafx.scene.shape.*;
 import javafx.stage.Stage;
-import org.ucombinator.jaam.visualizer.gui.OuterFrame;
+import org.ucombinator.jaam.visualizer.gui.StacFrame;
+import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 import java.net.URL;
 
 public class Main extends Application
 {
-    private static OuterFrame outerFrame;
-    private static boolean useFXML = false;
     private static SimpleController controller;
+    private static AnchorPane anchorPane;
 
+    @Override
     public void start(Stage stage) {
         URL url = getClass().getResource("/app.fxml");
         System.out.println("Loading url: " + url);
@@ -29,7 +26,7 @@ public class Main extends Application
             fxmlLoader.setController(controller);
 
             AnchorPane anchorPane = fxmlLoader.load();
-            outerFrame = new OuterFrame(anchorPane);
+            Main.anchorPane = anchorPane;
 
             Scene scene = new Scene(anchorPane);
             stage.setScene(scene);
@@ -39,8 +36,16 @@ public class Main extends Application
         }
     }
 
-    public static OuterFrame getOuterFrame() {
-        return outerFrame;
+    public static StacFrame getSelectedStacFrame() {
+        return (StacFrame)getTabPane().getSelectionModel().getSelectedItem();
+    }
+
+    public static VizPanel getSelectedMainPanel() {
+        return getSelectedStacFrame().getMainPanel();
+    }
+
+    public static AnchorPane getAnchorPane() {
+        return anchorPane;
     }
 
     public static TabPane getTabPane() {

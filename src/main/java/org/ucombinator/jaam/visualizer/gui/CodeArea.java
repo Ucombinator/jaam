@@ -36,7 +36,7 @@ public class CodeArea extends TextFlow
             int row = CodeArea.this.getChildren().indexOf(lineText);
             Instruction lineInstr = CodeArea.this.description.get(row);
 
-            VizPanel mainPanel = ((StacFrame) Main.getOuterFrame().getCurrentFrame()).getMainPanel();
+            VizPanel mainPanel = Main.getSelectedMainPanel();
 
             if (event.isShiftDown()) {
                 if (lineInstr.isRealInstruction()) {
@@ -54,7 +54,7 @@ public class CodeArea extends TextFlow
                             lineInstr.getMethodName(), lineInstr.getJimpleIndex(), true, true);
                 }
             }
-            Main.getOuterFrame().getCurrentFrame().repaintAll();
+            Main.getSelectedStacFrame().repaintAll();
         }
     };
 
@@ -74,7 +74,7 @@ public class CodeArea extends TextFlow
     // Rewrite the text area based on which vertices are highlighted
     public void setDescription()
     {
-        VizPanel mainPanel = ((StacFrame) Main.getOuterFrame().getCurrentFrame()).getMainPanel();
+        VizPanel mainPanel = Main.getSelectedMainPanel();
         HashSet<AbstractLayoutVertex> highlighted = mainPanel.getHighlighted();
         if(highlighted.size() > 0)
         {

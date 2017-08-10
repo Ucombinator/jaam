@@ -1,18 +1,13 @@
 package org.ucombinator.jaam.visualizer.main;
 
 import javafx.event.ActionEvent;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.layout.Pane;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.GUIUtils;
-import org.ucombinator.jaam.visualizer.gui.OuterFrame;
 import org.ucombinator.jaam.visualizer.gui.StacFrame;
-import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 import java.io.File;
 import java.net.URL;
@@ -26,7 +21,6 @@ public class SimpleController implements Initializable {
     public void initialize(URL fxmlFileLocation, ResourceBundle resources) {
         System.out.println("Initializing...");
     }
-
 
     public void loadLoopGraph(ActionEvent event) {
         Graph graph;
