@@ -16,9 +16,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-public class SimpleController implements Initializable {
-    public SimpleController() {
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/app.fxml"));
+public class MainPane implements Initializable {
+    public MainPane() {
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/MainPane.fxml"));
         fxmlLoader.setController(this);
 
         try {
