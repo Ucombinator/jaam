@@ -47,9 +47,6 @@ public class StacFrame {
     @FXML private CheckBox methodsExpanded;
     @FXML private CheckBox chainsExpanded;
 
-    private final javafx.scene.paint.Color activeColor = javafx.scene.paint.Color.CYAN;
-    private final javafx.scene.paint.Color inactiveColor = javafx.scene.paint.Color.BLACK;
-
     public enum searchType {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
     }
@@ -126,13 +123,6 @@ public class StacFrame {
     public void methodCollapseAction(ActionEvent event) {
         StacFrame.this.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
                 methodsExpanded.isSelected());
-
-        if (methodsExpanded.getTextFill() == activeColor) {
-            methodsExpanded.setTextFill(inactiveColor);
-        } else {
-            methodsExpanded.setTextFill(activeColor);
-        }
-
         StacFrame.this.mainPanel.resetAndRedraw(showEdges.isSelected());
         StacFrame.this.mainPanel.resetRootPosition(false);
     }
@@ -140,12 +130,6 @@ public class StacFrame {
     public void chainCollapseAction(ActionEvent event) {
         StacFrame.this.mainPanel.getPanelRoot()
                 .toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN, chainsExpanded.isSelected());
-        if (chainsExpanded.getTextFill() == activeColor) {
-            chainsExpanded.setTextFill(inactiveColor);
-        } else {
-            chainsExpanded.setTextFill(activeColor);
-        }
-
         StacFrame.this.mainPanel.resetAndRedraw(showEdges.isSelected());
         StacFrame.this.mainPanel.resetRootPosition(false);
     }
