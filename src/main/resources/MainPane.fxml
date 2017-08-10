@@ -18,6 +18,11 @@
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="O" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator></MenuItem>
+                  <MenuItem onAction="#quit" text="_Quit">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="Q" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
             </items>
           </Menu>
           <Menu text="_Search">

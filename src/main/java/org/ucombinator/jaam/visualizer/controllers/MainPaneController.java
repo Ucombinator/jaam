@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.FXML;
@@ -64,6 +65,10 @@ public class MainPaneController {
             newTab.setText(filename);
         tabPane.getTabs().add(newTab);
         tabPane.getSelectionModel().select(newTab);
+    }
+
+    public void quit(ActionEvent event) {
+        Platform.exit();
     }
 
     public void searchByID(ActionEvent event) {
