@@ -53,7 +53,7 @@ public class MainTabController {
     }
 
     public MainTabController(Graph graph) {
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/tab.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/MainTabContent.fxml"));
         fxmlLoader.setController(this);
 
         try {
