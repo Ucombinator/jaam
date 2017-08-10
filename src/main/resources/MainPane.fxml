@@ -4,6 +4,7 @@
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.TabPane?>
+<?import javafx.scene.input.KeyCodeCombination?>
 <?import javafx.scene.layout.AnchorPane?>
 
 <AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1">
@@ -11,16 +12,19 @@
       <TabPane fx:id="tabPane" prefHeight="455.0" prefWidth="630.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="30.0" />
       <MenuBar prefHeight="29.0" prefWidth="586.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <menus>
-          <Menu mnemonicParsing="false" text="File">
+          <Menu text="_File">
             <items>
-                  <MenuItem fx:id="loadLoopGraphMenuItem" mnemonicParsing="false" onAction="#loadLoopGraph" text="Load loop graph" />
+                  <MenuItem fx:id="loadLoopGraphMenuItem" onAction="#loadLoopGraph" text="_Open Loop Graph...">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="O" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator></MenuItem>
             </items>
           </Menu>
-          <Menu mnemonicParsing="false" text="Search">
+          <Menu text="_Search">
             <items>
-              <MenuItem fx:id="searchByIdMenuItem" mnemonicParsing="false" onAction="#searchByID" text="by ID" />
-                  <MenuItem fx:id="searchByStatementMenuItem" mnemonicParsing="false" onAction="#searchByStatement" text="by Statement" />
-                  <MenuItem fx:id="searchByMethodMenuItem" mnemonicParsing="false" onAction="#searchByMethod" text="by Method" />
+              <MenuItem fx:id="searchByIdMenuItem" onAction="#searchByID" text="By _ID..." />
+                  <MenuItem fx:id="searchByStatementMenuItem" onAction="#searchByStatement" text="By _Statement..." />
+                  <MenuItem fx:id="searchByMethodMenuItem" onAction="#searchByMethod" text="By _Method..." />
             </items>
           </Menu>
         </menus>
