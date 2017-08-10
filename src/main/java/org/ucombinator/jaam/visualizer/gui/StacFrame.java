@@ -27,26 +27,25 @@ import org.ucombinator.jaam.visualizer.main.Parameters;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 
 public class StacFrame {
-    @FXML
-    private VizPanel mainPanel;
-    @FXML
-    private TextArea descriptionArea;
-    @FXML
-    private CodeArea bytecodeArea;
-    @FXML
-    private SearchResults searchResults;
-
-    @FXML
-    private CheckBox showEdges;
-    @FXML
-    private CheckBox showLabels;
-    @FXML
-    private CheckBox methodsExpanded;
-    @FXML
-    private CheckBox chainsExpanded;
-
     @FXML private BorderPane root;
     public BorderPane getRoot() { return root; }
+
+    @FXML private VizPanel mainPanel;
+    public VizPanel getMainPanel() { return this.mainPanel; }
+
+    @FXML private TextArea descriptionArea;
+    public TextArea getRightArea() { return this.descriptionArea; }
+
+    @FXML private CodeArea bytecodeArea;
+    public CodeArea getBytecodeArea() { return this.bytecodeArea; }
+
+    @FXML private SearchResults searchResults;
+    public SearchResults getSearchResults() { return this.searchResults; }
+
+    @FXML private CheckBox showEdges;
+    @FXML private CheckBox showLabels;
+    @FXML private CheckBox methodsExpanded;
+    @FXML private CheckBox chainsExpanded;
 
     private final javafx.scene.paint.Color activeColor = javafx.scene.paint.Color.CYAN;
     private final javafx.scene.paint.Color inactiveColor = javafx.scene.paint.Color.BLACK;
@@ -60,7 +59,7 @@ public class StacFrame {
         fxmlLoader.setController(this);
 
         try {
-            BorderPane borderPane = fxmlLoader.load();
+            fxmlLoader.load();
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1); // Using instead of Platform.exit because we want a non-zero exit code
@@ -68,22 +67,6 @@ public class StacFrame {
 
         this.mainPanel.setStacFrame(this);
         this.mainPanel.initFX(graph);
-    }
-
-    public VizPanel getMainPanel() {
-        return this.mainPanel;
-    }
-
-    public TextArea getRightArea() {
-        return this.descriptionArea;
-    }
-
-    public CodeArea getBytecodeArea() {
-        return this.bytecodeArea;
-    }
-
-    public SearchResults getSearchResults() {
-        return this.searchResults;
     }
 
     public void repaintAll() {
@@ -104,7 +87,6 @@ public class StacFrame {
     }
 
     public void showEdgesAction(ActionEvent event) {
-        System.out.println("Edges checkbox set to: " + showEdges.isSelected());
         mainPanel.getPanelRoot().setVisible(false);
         mainPanel.getPanelRoot().setEdgeVisibility(showEdges.isSelected());
         LayoutEdge.redrawEdges(mainPanel.getPanelRoot(), true);
