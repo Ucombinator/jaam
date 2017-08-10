@@ -5,6 +5,7 @@ import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.StacFrame;
@@ -14,9 +15,12 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 public class SimpleController implements Initializable {
+    @FXML
+    private AnchorPane root;
+    public AnchorPane getRoot() { return this.root; }
+
     @FXML // Values injected by FXMLLoader
     private TabPane tabPane;
-
     public TabPane getTabPane() { return this.tabPane; }
 
     @Override
