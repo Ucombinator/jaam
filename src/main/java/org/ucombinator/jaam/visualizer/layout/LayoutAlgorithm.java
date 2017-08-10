@@ -7,9 +7,9 @@ import java.util.*;
 public class LayoutAlgorithm
 {
     // This works on a graph whose vertices have been assigned a bounding box
-    final static private double MARGIN_PADDING = 1;//.25;
-    final static private double NODES_PADDING = 1;//.5;
-    final static private double ROOT_V_OFFSET = 10;//2;
+    private final static double MARGIN_PADDING = 1;//.25;
+    private final static double NODES_PADDING = 1;//.5;
+    private final static double ROOT_V_OFFSET = 10;//2;
     private static HashMap<String, Double> bboxWidthTable;
     private static HashMap<String, Double> bboxHeightTable;
     

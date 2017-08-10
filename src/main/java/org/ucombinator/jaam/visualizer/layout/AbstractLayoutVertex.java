@@ -20,16 +20,18 @@ import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayoutVertex> implements Comparable<AbstractLayoutVertex>
 {
-    public static Color highlightColor = Color.ORANGE;
+    public static final Color highlightColor = Color.ORANGE;
     protected Color color = Color.RED;
 
-
-
-    private Color[] colors = {Color.LIGHTCORAL,
-            Color.LIGHTBLUE, Color.LIGHTCYAN,
-            Color.LIGHTSEAGREEN, Color.LIGHTSALMON,
-            Color.LIGHTSKYBLUE, Color.LIGHTGOLDENRODYELLOW,
-            Color.LIGHTGREY};
+    private Color[] colors = {
+        Color.LIGHTCORAL,
+        Color.LIGHTBLUE,
+        Color.LIGHTCYAN,
+        Color.LIGHTSEAGREEN,
+        Color.LIGHTSALMON,
+        Color.LIGHTSKYBLUE,
+        Color.LIGHTGOLDENRODYELLOW,
+        Color.LIGHTGREY};
 
     public static final double DEFAULT_WIDTH = 1.0;
     public static final double DEFAULT_HEIGHT = 1.0;

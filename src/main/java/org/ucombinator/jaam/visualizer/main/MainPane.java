@@ -4,7 +4,6 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.fxml.FXML;
-import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
@@ -36,7 +35,7 @@ public class MainPane implements Initializable {
         }
     }
 
-    @Override  public void initialize(URL fxmlFileLocation, ResourceBundle resources) {}
+    @Override public void initialize(URL fxmlFileLocation, ResourceBundle resources) {}
 
     public void loadLoopGraph(ActionEvent event) {
         Graph graph;

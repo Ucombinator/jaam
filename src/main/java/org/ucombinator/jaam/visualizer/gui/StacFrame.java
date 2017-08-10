@@ -83,54 +83,54 @@ public class StacFrame {
     }
 
     public void showEdgesAction(ActionEvent event) {
-        mainPanel.getPanelRoot().setVisible(false);
-        mainPanel.getPanelRoot().setEdgeVisibility(showEdges.isSelected());
+        this.getMainPanel().getPanelRoot().setVisible(false);
+        this.getMainPanel().getPanelRoot().setEdgeVisibility(showEdges.isSelected());
         LayoutEdge.redrawEdges(mainPanel.getPanelRoot(), true);
-        mainPanel.getPanelRoot().setVisible(true);
+        this.getMainPanel().getPanelRoot().setVisible(true);
     }
 
     public void showLabelsAction(ActionEvent event) {
-        mainPanel.getPanelRoot().setVisible(false);
-        mainPanel.getPanelRoot().setLabelVisibility(showLabels.isSelected());
-        mainPanel.getPanelRoot().setVisible(true);
+        this.getMainPanel().getPanelRoot().setVisible(false);
+        this.getMainPanel().getPanelRoot().setLabelVisibility(showLabels.isSelected());
+        this.getMainPanel().getPanelRoot().setVisible(true);
     }
 
     public void xScalePanelMinusAction(ActionEvent event) {
-        StacFrame.this.mainPanel.decrementScaleXFactor();
-        StacFrame.this.mainPanel.resetAndRedraw(showEdges.isSelected());
-        StacFrame.this.mainPanel.resetRootPosition(false);
+        this.getMainPanel().decrementScaleXFactor();
+        this.getMainPanel().resetAndRedraw(showEdges.isSelected());
+        this.getMainPanel().resetRootPosition(false);
     }
 
     public void xScalePanelPlusAction(ActionEvent event) {
-        StacFrame.this.mainPanel.incrementScaleXFactor();
-        StacFrame.this.mainPanel.resetAndRedraw(showEdges.isSelected());
-        StacFrame.this.mainPanel.resetRootPosition(false);
+        this.getMainPanel().incrementScaleXFactor();
+        this.getMainPanel().resetAndRedraw(showEdges.isSelected());
+        this.getMainPanel().resetRootPosition(false);
     }
 
     public void yScalePanelMinusAction(ActionEvent event) {
-        StacFrame.this.mainPanel.decrementScaleYFactor();
-        StacFrame.this.mainPanel.resetAndRedraw(showEdges.isSelected());
-        StacFrame.this.mainPanel.resetRootPosition(false);
+        this.getMainPanel().decrementScaleYFactor();
+        this.getMainPanel().resetAndRedraw(showEdges.isSelected());
+        this.getMainPanel().resetRootPosition(false);
     }
 
     public void yScalePanelPlusAction(ActionEvent event) {
-        StacFrame.this.mainPanel.incrementScaleYFactor();
-        StacFrame.this.mainPanel.resetAndRedraw(showEdges.isSelected());
-        StacFrame.this.mainPanel.resetRootPosition(false);
+        this.getMainPanel().incrementScaleYFactor();
+        this.getMainPanel().resetAndRedraw(showEdges.isSelected());
+        this.getMainPanel().resetRootPosition(false);
     }
 
     public void methodCollapseAction(ActionEvent event) {
-        StacFrame.this.mainPanel.getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
+        this.getMainPanel().getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
                 methodsExpanded.isSelected());
-        StacFrame.this.mainPanel.resetAndRedraw(showEdges.isSelected());
-        StacFrame.this.mainPanel.resetRootPosition(false);
+        this.getMainPanel().resetAndRedraw(showEdges.isSelected());
+        this.getMainPanel().resetRootPosition(false);
     }
 
     public void chainCollapseAction(ActionEvent event) {
-        StacFrame.this.mainPanel.getPanelRoot()
+        this.getMainPanel().getPanelRoot()
                 .toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN, chainsExpanded.isSelected());
-        StacFrame.this.mainPanel.resetAndRedraw(showEdges.isSelected());
-        StacFrame.this.mainPanel.resetRootPosition(false);
+        this.getMainPanel().resetAndRedraw(showEdges.isSelected());
+        this.getMainPanel().resetRootPosition(false);
     }
 
     public void exportImageAction(ActionEvent event) {
