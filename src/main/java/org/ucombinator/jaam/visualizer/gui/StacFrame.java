@@ -204,7 +204,7 @@ public class StacFrame extends Tab {
         fileChooser.setInitialFileName(Main.getSelectedStacFrame().getText() + "." + extension);
 
         //Show save file dialog
-        File file = fileChooser.showSaveDialog(Main.getAnchorPane().getScene().getWindow());
+        File file = fileChooser.showSaveDialog(Main.getController().getRoot().getScene().getWindow());
 
         if (file != null) {
             WritableImage image = mainPanel.snapshot(new SnapshotParameters(), null);
