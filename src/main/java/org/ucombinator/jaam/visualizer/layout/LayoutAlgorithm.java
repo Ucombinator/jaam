@@ -27,7 +27,7 @@ public class LayoutAlgorithm
     private static void initializeSizes(AbstractLayoutVertex parentVertex) {
         parentVertex.setWidth(AbstractLayoutVertex.DEFAULT_WIDTH);
         parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
-        for(AbstractLayoutVertex v:parentVertex.getInnerGraph().getVertices().values()){
+        for(AbstractLayoutVertex v:parentVertex.getInnerGraph().getVertices()){
             initializeSizes(v);
         }
     }
@@ -39,7 +39,7 @@ public class LayoutAlgorithm
 
         HierarchicalGraph graph = parentVertex.getInnerGraph();
 
-        for(AbstractLayoutVertex v: graph.getVertices().values()){
+        for(AbstractLayoutVertex v: graph.getVertices()){
             HierarchicalGraph inner_graph = v.getInnerGraph();
             if (inner_graph.getVertices().size() != 0)
             {
@@ -55,7 +55,7 @@ public class LayoutAlgorithm
         /*********************** ACTUAL LAYOUT FOR THE CURRENT LEVEL/GRAPH *************************/
         /*******************************************************************************************/
         // Initialize all the nodes to be WHITE
-        for(AbstractLayoutVertex v: graph.getVertices().values()){
+        for(AbstractLayoutVertex v: graph.getVertices()){
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
 
@@ -65,7 +65,7 @@ public class LayoutAlgorithm
             storeBBoxWidthAndHeight(root);
         }
 
-        for(AbstractLayoutVertex v: graph.getVertices().values()){
+        for(AbstractLayoutVertex v: graph.getVertices()){
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
 
@@ -322,7 +322,7 @@ public class LayoutAlgorithm
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
         */
-        for(AbstractLayoutVertex v: graph.getVertices().values()){
+        for(AbstractLayoutVertex v: graph.getVertices()){
             HierarchicalGraph inner_graph = v.getInnerGraph();
             if (inner_graph.getVertices().size() != 0)
             {
@@ -338,7 +338,7 @@ public class LayoutAlgorithm
         /*********************** ACTUAL LAYOUT FOR THE CURRENT LEVEL/GRAPH *************************/
         /*******************************************************************************************/
         // Initialize all the nodes to be WHITE
-        for(AbstractLayoutVertex v: graph.getVertices().values()){
+        for(AbstractLayoutVertex v: graph.getVertices()){
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
         
@@ -348,7 +348,7 @@ public class LayoutAlgorithm
         HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap = bfsChildren(root);
 
         // Reset all the nodes to be WHITE
-        for(AbstractLayoutVertex v: graph.getVertices().values()){
+        for(AbstractLayoutVertex v: graph.getVertices()){
             if(v.getVertexStatus() != AbstractLayoutVertex.VertexStatus.BLACK)
             {
                 System.out.println("BFS ERROR Didn't process " + v.getStrID() + " in BFS Children Pass " + v.getVertexStatus());
@@ -360,7 +360,7 @@ public class LayoutAlgorithm
             storeBBoxWidthAndHeight(root, childrenMap);
         }
 
-        for(AbstractLayoutVertex v: graph.getVertices().values()){
+        for(AbstractLayoutVertex v: graph.getVertices()){
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
 

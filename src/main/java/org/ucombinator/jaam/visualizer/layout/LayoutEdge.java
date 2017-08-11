@@ -230,7 +230,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     {
         if(v.getSelfGraph() != null)
         {
-            for (LayoutEdge e : v.getSelfGraph().getEdges().values())
+            for (LayoutEdge e : v.getSelfGraph().getEdges())
             {
                 if (v.getId() == e.source || v.getId() == e.dest)
                 {
@@ -254,7 +254,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
 
         if(recurse)
         {
-            for (AbstractLayoutVertex w : v.getInnerGraph().getVertices().values())
+            for (AbstractLayoutVertex w : v.getInnerGraph().getVertices())
                 redrawEdges(w, recurse);
         }
     }

@@ -56,7 +56,7 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
         this.setHighlighted(found);
         mainPanel.getHighlighted().add(this);
 
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices()) {
             v.searchByMethod(query, mainPanel);
         }
 
@@ -73,7 +73,7 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
     public void identifyLoops()
     {
         //Each vertex is already initialized
-        Collection<AbstractLayoutVertex> vertices = this.getInnerGraph().getVertices().values();
+        Collection<AbstractLayoutVertex> vertices = this.getInnerGraph().getVertices();
         for(AbstractLayoutVertex v : vertices) {
             v.setVertexStatus(VertexStatus.WHITE);
             v.setDFSPosition(-1);
@@ -179,7 +179,7 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
         // We begin our search from the vertices that do not have a loop header.
         ArrayList<AbstractLayoutVertex> toSearch = new ArrayList<AbstractLayoutVertex>();
         ArrayList<AbstractLayoutVertex> newSearch = new ArrayList<AbstractLayoutVertex>();
-        for(AbstractLayoutVertex v: this.getInnerGraph().getVertices().values())
+        for(AbstractLayoutVertex v: this.getInnerGraph().getVertices())
         {
             AbstractLayoutVertex header = v.getLoopHeader();
             if(header == null)

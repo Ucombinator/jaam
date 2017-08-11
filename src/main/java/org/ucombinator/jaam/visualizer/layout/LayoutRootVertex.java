@@ -34,7 +34,7 @@ public class LayoutRootVertex extends AbstractLayoutVertex {
 
     public boolean searchByMethod(String query, VizPanel mainPanel) {
         boolean found = false;
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices()) {
             found = found || v.searchByMethod(query, mainPanel);
         }
 
@@ -47,7 +47,7 @@ public class LayoutRootVertex extends AbstractLayoutVertex {
     public HashSet<LayoutMethodVertex> getMethodVertices()
     {
         HashSet<LayoutMethodVertex> methodVertices = new LinkedHashSet<LayoutMethodVertex>();
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices()) {
             if(v instanceof LayoutMethodVertex)
                 methodVertices.add((LayoutMethodVertex) v);
             else

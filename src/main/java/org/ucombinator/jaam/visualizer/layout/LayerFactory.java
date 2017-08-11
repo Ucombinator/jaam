@@ -173,14 +173,14 @@ public class LayerFactory
         }
 
         // Create inner graph for each method vertex.
-        for(AbstractLayoutVertex sccVertex: rootGraph.getVertices().values()) {
+        for(AbstractLayoutVertex sccVertex: rootGraph.getVertices()) {
 
             System.out.println("JUAN: sccVertex");
-            HashMap<String, AbstractLayoutVertex> innerVertices = sccVertex.getInnerGraph().getVertices();
+            HashSet<AbstractLayoutVertex> innerVertices = sccVertex.getInnerGraph().getVertices();
             if(innerVertices.size() <= 1)
                 continue;
             System.out.println("JUAN size " + innerVertices.size());
-            for(AbstractLayoutVertex mv: innerVertices.values())
+            for(AbstractLayoutVertex mv: innerVertices)
             {
                 System.out.println("\tJUAN: Inner Vertex " + mv.getId());
                 if(!methodVertex_to_vertex.containsKey(mv.getId()))
@@ -340,7 +340,7 @@ public class LayerFactory
 
     
     static void createChainVertices(AbstractLayoutVertex parent, int k){
-        Iterator<AbstractLayoutVertex> it = parent.getInnerGraph().getVertices().values().iterator();
+        Iterator<AbstractLayoutVertex> it = parent.getInnerGraph().getVertices().iterator();
         while(it.hasNext()) {
             AbstractLayoutVertex absVertex = it.next();
             absVertex.setVertexStatus(AbstractVertex.VertexStatus.WHITE);

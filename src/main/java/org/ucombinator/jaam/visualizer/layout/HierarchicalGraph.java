@@ -4,42 +4,50 @@ import java.util.*;
 
 public class HierarchicalGraph
 {
-    private HashMap<String, AbstractLayoutVertex> vertices;
-    private HashMap<String, LayoutEdge> edges;
-
+    private HashSet<AbstractLayoutVertex> vertices;
+    private HashMap<AbstractLayoutVertex, HashMap<AbstractLayoutVertex, LayoutEdge>> edges;
 
     public HierarchicalGraph()
     {
     	super();
-    	this.vertices = new HashMap<>();
+    	this.vertices = new HashSet<>();
         this.edges = new HashMap<>();
     }
 
-    public HashMap<String, AbstractLayoutVertex> getVertices() {
+    public HashSet<AbstractLayoutVertex> getVertices() {
         return vertices;
     }
 
-    public void setVertices(HashMap<String, AbstractLayoutVertex> vertices) {
+    public void setVertices(HashSet<AbstractLayoutVertex> vertices) {
         this.vertices = vertices;
     }
 
-    public HashMap<String, LayoutEdge> getEdges() {
-        return this.edges;
+    public HashSet<LayoutEdge> getEdges() {
+        HashSet<LayoutEdge> edgeSet = new HashSet<>();
+        for (HashMap<AbstractLayoutVertex, LayoutEdge> outEdgeSet : edges.values()) {
+            edgeSet.addAll(outEdgeSet.values());
+        }
+        return edgeSet;
     }
 
-    public void setEdges(HashMap<String, LayoutEdge> edges) {
-        this.edges = edges;
+    public void setEdges(HashSet<LayoutEdge> edges) {
+        this.edges = new HashMap<>();
+        for (LayoutEdge edge : edges) {
+            // TODO: use addEdge for this (but may not want addOutgoingNeighbor from addEdge)
+            this.edges.putIfAbsent(edge.getSourceVertex(), new HashMap<>());
+            this.edges.get(edge.getSourceVertex()).put(edge.getDestVertex(), edge);
+        }
     }
 
     public void addVertex(AbstractLayoutVertex vertex)
     {
-        this.vertices.put(vertex.getStrID(), vertex);
+        this.vertices.add(vertex);
         vertex.setSelfGraph(this);
     }
 
     public void deleteVertex(AbstractLayoutVertex vertex)
     {
-        this.vertices.remove(vertex.getStrID());
+        this.vertices.remove(vertex);
         vertex.setSelfGraph(null);
     }
     
@@ -47,13 +55,14 @@ public class HierarchicalGraph
     {
         edge.getSourceVertex().addOutgoingNeighbor(edge.getDestVertex());
         edge.getDestVertex().addIncomingNeighbor(edge.getSourceVertex());
-        this.edges.put(edge.getID(), edge);
+        this.edges.putIfAbsent(edge.getSourceVertex(), new HashMap<>());
+        this.edges.get(edge.getSourceVertex()).put(edge.getDestVertex(), edge);
     }
     
     public void deleteEdge(LayoutEdge edge)
     {
         edge.getSourceVertex().removeOutgoingAbstractNeighbor(edge.getDestVertex());
-        this.edges.remove(edge.getID());
+        this.edges.get(edge.getSourceVertex()).remove(edge.getDestVertex());
     }
     
     public String toString()
@@ -62,7 +71,7 @@ public class HierarchicalGraph
         if(this.vertices.size() == 0)
             return "";
         
-        Iterator<AbstractLayoutVertex> abstractVertexIter = this.vertices.values().iterator();
+        Iterator<AbstractLayoutVertex> abstractVertexIter = this.vertices.iterator();
         output.append("Vertices: ");
         while(abstractVertexIter.hasNext())
         {
@@ -75,7 +84,7 @@ public class HierarchicalGraph
         }
         output.append("\n");
         
-        Iterator<LayoutEdge> edgeIter = this.getEdges().values().iterator();
+        Iterator<LayoutEdge> edgeIter = this.getEdges().iterator();
         output.append("Edges: ");
         while(edgeIter.hasNext()){
             LayoutEdge e = edgeIter.next();
@@ -86,7 +95,7 @@ public class HierarchicalGraph
     }
     
     public void printCoordinates(){
-        Iterator<AbstractLayoutVertex> it = this.getVertices().values().iterator();
+        Iterator<AbstractLayoutVertex> it = this.getVertices().iterator();
         while(it.hasNext())
         {
             AbstractLayoutVertex v = it.next();
@@ -95,12 +104,12 @@ public class HierarchicalGraph
     }
     
     public AbstractLayoutVertex getRoot() {
-        if(this.vertices.values().size() == 0){
+        if(this.vertices.size() == 0){
             //System.out.println("getRoot on empty graph");
             return null;
         }
 
-        ArrayList<AbstractLayoutVertex> arrayList = new ArrayList<AbstractLayoutVertex>(this.vertices.values());
+        ArrayList<AbstractLayoutVertex> arrayList = new ArrayList<AbstractLayoutVertex>(this.vertices);
         Collections.sort(arrayList);
         //System.out.println("Root ID: " + arrayList.get(0).getId());
 

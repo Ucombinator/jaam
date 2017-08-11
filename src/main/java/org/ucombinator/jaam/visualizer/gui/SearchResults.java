@@ -75,7 +75,7 @@ public class SearchResults extends BorderPane
         this.root.getChildren().clear();
         if(mainPanel.getHighlighted().size() > 0) {
             // We don't want to include the panel root, so we start our check with its children
-            for(AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices().values())
+            for(AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices())
                 v.addTreeNodes(this.root, mainPanel);
 
             // TODO: Auto-expand nodes?

@@ -432,7 +432,7 @@ public class GUINode extends Pane
             event.consume();
             if (vertex.getSelfGraph() != null)
             {
-                for(LayoutEdge e : vertex.getSelfGraph().getEdges().values())
+                for(LayoutEdge e : vertex.getSelfGraph().getEdges())
                 {
                     if(e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
                     {
@@ -453,7 +453,7 @@ public class GUINode extends Pane
             
             if(vertex.getSelfGraph() != null)
             {
-                for(LayoutEdge e : vertex.getSelfGraph().getEdges().values())
+                for(LayoutEdge e : vertex.getSelfGraph().getEdges())
                 {
                     if (e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
                     {

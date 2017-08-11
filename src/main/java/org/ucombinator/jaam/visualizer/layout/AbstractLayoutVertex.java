@@ -141,7 +141,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
             this.color = Color.hsb(hue, 0.9, 0.9);
         }
         else {
-            for (AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
+            for (AbstractLayoutVertex v : this.getInnerGraph().getVertices())
                 v.setColor(maxLoopHeight);
         }
     }
@@ -233,7 +233,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     // Override in base case, LayoutInstructionVertex
     public int getMinInstructionLine() {
         int minIndex = Integer.MAX_VALUE;
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices()) {
             minIndex = Math.min(minIndex, v.getMinInstructionLine());
         }
 
@@ -242,7 +242,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     public int calcMaxLoopHeight() {
         int maxLoopHeight = 0;
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices())
             maxLoopHeight = Math.max(maxLoopHeight, v.getLoopHeight());
 
         this.setLoopHeight(maxLoopHeight);
@@ -286,7 +286,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     public boolean addTreeNodes(TreeItem parentNode, VizPanel mainPanel) {
         boolean addedNodes = false;
         TreeItem newNode = new TreeItem(this);
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices())
             addedNodes |= v.addTreeNodes(newNode, mainPanel);
 
         if(mainPanel.getHighlighted().contains(this) || addedNodes) {
@@ -305,11 +305,11 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     }
 
     public void resetGraphics() {
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values()) {
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices()) {
             v.resetGraphics();
         }
 
-        for(LayoutEdge e : this.getInnerGraph().getEdges().values()) {
+        for(LayoutEdge e : this.getInnerGraph().getEdges()) {
             e.resetGraphics();
         }
 
@@ -329,7 +329,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
             System.out.println("Search successful: " + this.getId());
         }
 
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices())
             v.searchByIDRange(id1, id2, mainPanel);
     }
 
@@ -343,7 +343,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
             }
         }
 
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices())
             v.searchByInstruction(query, mainPanel);
     }
 
@@ -412,10 +412,10 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
     public void setEdgeVisibility(boolean isEdgeVisible)
     {
         this.setEdgeVisible(isEdgeVisible);
-        for(LayoutEdge e : this.innerGraph.getEdges().values())
+        for(LayoutEdge e : this.innerGraph.getEdges())
             e.setVisible(isEdgeVisible);
 
-        for(AbstractLayoutVertex v : this.innerGraph.getVertices().values())
+        for(AbstractLayoutVertex v : this.innerGraph.getVertices())
             v.setEdgeVisibility(isEdgeVisible);
     }
 
@@ -424,13 +424,13 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
         this.setLabelVisible(isLabelVisible);
         this.getGraphics().setLabelVisible(isLabelVisible);
 
-        for(AbstractLayoutVertex v : this.innerGraph.getVertices().values())
+        for(AbstractLayoutVertex v : this.innerGraph.getVertices())
             v.setLabelVisibility(isLabelVisible);
     }
 
     public void resetStrokeWidth(double factor) {
         this.getGraphics().setStrokeWidth(factor);
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices().values())
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices())
             v.resetStrokeWidth(factor);
     }
     
@@ -448,14 +448,14 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
             this.setExpanded(isExpanded);
         }
 
-        Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVertices().values().iterator();
+        Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVertices().iterator();
         while(it.hasNext()){
             it.next().toggleNodesOfType(type, isExpanded);
         }
     }
 
     public void toggleEdges(boolean isEdgeVisible) {
-        Iterator<LayoutEdge> itEdges = this.getInnerGraph().getEdges().values().iterator();
+        Iterator<LayoutEdge> itEdges = this.getInnerGraph().getEdges().iterator();
         while(itEdges.hasNext()) {
             LayoutEdge e = itEdges.next();
             if(e.getGraphics() != null) {
@@ -463,7 +463,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
             }
         }
 
-        Iterator<AbstractLayoutVertex> itNodes = this.getInnerGraph().getVertices().values().iterator();
+        Iterator<AbstractLayoutVertex> itNodes = this.getInnerGraph().getVertices().iterator();
         while(itNodes.hasNext()){
             itNodes.next().toggleEdges(isEdgeVisible);
         }
@@ -475,7 +475,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     private HashSet<Instruction> getInstructions(HashSet<Instruction> instructions) {
         if(this.getType().equals(VertexType.ROOT) || this.getType().equals(VertexType.METHOD) || this.getType().equals(VertexType.CHAIN)) {
-            Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVertices().values().iterator();
+            Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVertices().iterator();
             while(it.hasNext()){
                 it.next().getInstructions(instructions);
             }
@@ -494,7 +494,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     private HashSet<AbstractLayoutVertex> getVerticesWithInstructionID(int id, String method_name, HashSet<AbstractLayoutVertex> set){
         if(this.getType().equals(VertexType.ROOT) || this.getType().equals(VertexType.METHOD) || this.getType().equals(VertexType.CHAIN)){
-            Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVertices().values().iterator();
+            Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVertices().iterator();
             while(it.hasNext()){
                 it.next().getVerticesWithInstructionID(id, method_name, set);
             }
@@ -512,7 +512,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     public void cleanAll(){
         this.setVertexStatus(VertexStatus.WHITE);
-        Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVertices().values().iterator();
+        Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVertices().iterator();
         while(it.hasNext()) {
             AbstractLayoutVertex v = it.next();
             v.cleanAll();
@@ -521,7 +521,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     public int getTotalEdgeCount(){
         int result = this.getInnerGraph().getEdges().size();
-        for(AbstractLayoutVertex v: this.getInnerGraph().getVertices().values()){
+        for(AbstractLayoutVertex v: this.getInnerGraph().getVertices()){
             result += v.getTotalEdgeCount();
         }
         return result;
@@ -529,7 +529,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayout
 
     public int getTotalVertexCount(){
         int result = this.getInnerGraph().getVertices().size();
-        for(AbstractLayoutVertex v: this.getInnerGraph().getVertices().values()) {
+        for(AbstractLayoutVertex v: this.getInnerGraph().getVertices()) {
             result += v.getTotalVertexCount();
         }
         return result;

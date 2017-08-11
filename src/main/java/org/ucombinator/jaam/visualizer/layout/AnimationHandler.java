@@ -200,7 +200,7 @@ public class AnimationHandler implements javafx.event.EventHandler<javafx.scene.
             }
         }
 
-        Iterator<AbstractLayoutVertex> it = v.getInnerGraph().getVertices().values().iterator();
+        Iterator<AbstractLayoutVertex> it = v.getInnerGraph().getVertices().iterator();
         while(it.hasNext()){
             AbstractLayoutVertex next = it.next();
             if(v.isExpanded()) {

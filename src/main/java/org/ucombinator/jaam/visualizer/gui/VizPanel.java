@@ -242,7 +242,7 @@ public class VizPanel extends Pane
         if (v.getInnerGraph().getVertices().size() == 0)
             return;
 
-        Iterator<AbstractLayoutVertex> it = v.getInnerGraph().getVertices().values().iterator();
+        Iterator<AbstractLayoutVertex> it = v.getInnerGraph().getVertices().iterator();
         while (it.hasNext())
         {
             AbstractLayoutVertex child = it.next();
@@ -255,12 +255,12 @@ public class VizPanel extends Pane
     {
         GUINode node = v.getGraphics();
         if(v.isExpanded()) {
-            for (LayoutEdge e : v.getInnerGraph().getEdges().values()) {
+            for (LayoutEdge e : v.getInnerGraph().getEdges()) {
                 e.draw(node);
                 e.setVisible(v.isEdgeVisible());
             }
 
-            for (AbstractLayoutVertex child : v.getInnerGraph().getVertices().values())
+            for (AbstractLayoutVertex child : v.getInnerGraph().getVertices())
                 drawEdges(child);
         }
     }
