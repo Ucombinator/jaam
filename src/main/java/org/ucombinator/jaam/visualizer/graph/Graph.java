@@ -112,9 +112,6 @@ public class Graph
         vSrc = this.containsInputVertex(src);
         vDest = this.containsInputVertex(dest);
         
-        vSrc.addOutgoingNeighbor(vDest);
-        vDest.addIncomingNeighbor(vSrc);
-
         this.outEdges.putIfAbsent(vSrc, new HashSet<>());
         this.outEdges.get(vSrc).add(vDest);
 

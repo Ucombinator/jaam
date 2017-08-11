@@ -34,8 +34,6 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.type = edgeType;
         this.source = source;
         this.dest = dest;
-        this.source.addOutgoingNeighbor(this.dest);
-        this.dest.addIncomingNeighbor(this.source);
 
         System.out.println("SEE: --" + dest.getY() + "-- --" + source.getY());
 
