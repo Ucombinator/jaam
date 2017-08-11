@@ -17,7 +17,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     public enum EDGE_TYPE {EDGE_REGULAR, EDGE_DUMMY};
     private EDGE_TYPE type;
 
-    private final AbstractLayoutVertex sourceVertex, destVertex;
+    private final AbstractLayoutVertex source, dest;
     private GUINode node;
 
     private static final double defaultStrokeWidth = 1;
@@ -29,15 +29,15 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     private Color color = Color.RED;
     private boolean colorIsSet = false;
 
-    public LayoutEdge(AbstractLayoutVertex sourceVertex, AbstractLayoutVertex destVertex, EDGE_TYPE edgeType)
+    public LayoutEdge(AbstractLayoutVertex source, AbstractLayoutVertex dest, EDGE_TYPE edgeType)
     {
         this.type = edgeType;
-        this.sourceVertex = sourceVertex;
-        this.destVertex = destVertex;
-        this.sourceVertex.addOutgoingNeighbor(this.destVertex);
-        this.destVertex.addIncomingNeighbor(this.sourceVertex);
+        this.source = source;
+        this.dest = dest;
+        this.source.addOutgoingNeighbor(this.dest);
+        this.dest.addIncomingNeighbor(this.source);
 
-        System.out.println("SEE: --" + destVertex.getY() + "-- --" + sourceVertex.getY());
+        System.out.println("SEE: --" + dest.getY() + "-- --" + source.getY());
 
         graphics = new Group();
         arrowhead = new Polygon();
@@ -49,14 +49,14 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     }
 
     public int compareTo(LayoutEdge that) {
-        if (this.sourceVertex.getId() < that.sourceVertex.getId()) {
+        if (this.source.getId() < that.source.getId()) {
             return -1;
-        } else if (this.sourceVertex.getId() > that.sourceVertex.getId()) {
+        } else if (this.source.getId() > that.source.getId()) {
             return 1;
         } else {
-            if (this.destVertex.getId() < that.destVertex.getId()) {
+            if (this.dest.getId() < that.dest.getId()) {
                 return -1;
-            } else if (this.destVertex.getId() > that.destVertex.getId()) {
+            } else if (this.dest.getId() > that.dest.getId()) {
                 return 1;
             } else {
                 return 0;
@@ -64,60 +64,60 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         }
     }
 
-    public AbstractLayoutVertex getSourceVertex() {
-        return sourceVertex;
+    public AbstractLayoutVertex getSource() {
+        return source;
     }
 
-    public AbstractLayoutVertex getDestVertex() {
-        return destVertex;
+    public AbstractLayoutVertex getDest() {
+        return dest;
     }
 
     public void draw(GUINode node)
     {
-        if(!sourceVertex.getDrawEdges() || !destVertex.getDrawEdges()) {
-            System.out.println("Draw source: " + sourceVertex.getDrawEdges() + "\nDraw dest: " + destVertex.getDrawEdges());
+        if(!source.getDrawEdges() || !dest.getDrawEdges()) {
+            System.out.println("Draw source: " + source.getDrawEdges() + "\nDraw dest: " + dest.getDrawEdges());
             return;
         }
-        else if((sourceVertex.getGraphics() == null) || (destVertex.getGraphics() == null))
+        else if((source.getGraphics() == null) || (dest.getGraphics() == null))
             return;
         else if(node == null) {
             System.out.println("Error! The node for this edge does not exist.");
             return;
         }
-        else if (this.sourceVertex == this.destVertex)
+        else if (this.source == this.dest)
         {
             /*System.out.println("Error in Edge.drawGraph(): The source and destination vertices are the same.");
             System.out.println(this.source +"---"+ this.dest);
-            System.out.println(this.sourceVertex.getLabel() +"---"+ this.destVertex.getLabel());
+            System.out.println(this.source.getLabel() +"---"+ this.dest.getLabel());
             System.out.println(this.getType());
             return;*/
             this.node = node;
             drawLoop(node);
             return;
         }
-        else if (sourceVertex.getX() == destVertex.getX() && sourceVertex.getY() == destVertex.getY())
+        else if (source.getX() == dest.getX() && source.getY() == dest.getY())
         {
             System.out.println("Error in Edge.drawGraph(): The two vertices are at the same location.");
-            System.out.println(this.sourceVertex.getId() + " --- " + this.destVertex.getId());
-            System.out.println(this.sourceVertex.getLabel() + " --- " + this.destVertex.getLabel());
+            System.out.println(this.source.getId() + " --- " + this.dest.getId());
+            System.out.println(this.source.getLabel() + " --- " + this.dest.getLabel());
             System.out.println(this.getType());
             return;
         }
 
         //System.out.println("Passed checks for drawing edge: " + this.getID());
         this.node = node;
-        GUINode sourceNode = sourceVertex.getGraphics();
-        GUINode destNode = destVertex.getGraphics();
+        GUINode sourceNode = source.getGraphics();
+        GUINode destNode = dest.getGraphics();
         Line line = GUINode.getLine(sourceNode, destNode);
         if (this.getType() == EDGE_TYPE.EDGE_DUMMY)
         {
             line.getStrokeDashArray().addAll(5d, 4d);
         }
 
-        line.setStrokeWidth(destVertex.getGraphics().getRect().getStrokeWidth());
+        line.setStrokeWidth(dest.getGraphics().getRect().getStrokeWidth());
         if(!colorIsSet) {
             colorIsSet = true;
-            if (destVertex.getY() >= sourceVertex.getY()) {
+            if (dest.getY() >= source.getY()) {
                 color = downwardColor;
             } else {
                 color = upwardColor;
@@ -129,7 +129,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         // Compute arrowhead
         double angle = Math.PI + Math.atan2(line.getEndY() - line.getStartY(), line.getEndX() - line.getStartX());
         // TODO: Adjust arrowLength by scale
-        double arrowLength = Math.min(10, arrowLengthRatio * destVertex.getGraphics().getRect().getWidth());
+        double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getRect().getWidth());
 
         double destEnterX = line.getEndX();
         double destEnterY = line.getEndY();
@@ -153,8 +153,8 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.graphics.getChildren().add(arrowhead);
 
         node.getChildren().add(graphics);
-        graphics.setVisible(node.getVertex().isExpanded() && this.sourceVertex.isEdgeVisible()
-                && this.destVertex.isEdgeVisible() && this.isVisible());
+        graphics.setVisible(node.getVertex().isExpanded() && this.source.isEdgeVisible()
+                && this.dest.isEdgeVisible() && this.isVisible());
     }
 
     public void highlightEdgePath()
@@ -170,10 +170,10 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     }
 
     public void drawLoop(GUINode node) {
-        System.out.println("Drawing loop for vertex: " + this.sourceVertex.getId());
-        System.out.println("Rect bounds in node: " + sourceVertex.getGraphics().getRect().getBoundsInParent());
+        System.out.println("Drawing loop for vertex: " + this.source.getId());
+        System.out.println("Rect bounds in node: " + source.getGraphics().getRect().getBoundsInParent());
         Path path = new Path();
-        Bounds bounds = sourceVertex.getGraphics().getRectBoundsInParent();
+        Bounds bounds = source.getGraphics().getRectBoundsInParent();
         System.out.println("Rect bounds in parent: " + bounds);
         double padding = 10; // TODO: Adjust based on scale
 
@@ -201,9 +201,9 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.graphics.getChildren().removeAll(this.graphics.getChildren());
         this.graphics.getChildren().add(edgePath);
 
-        //System.out.println("Adding edge for vertices: " + this.sourceVertex.getId() + ", " + this.destVertex.getId());
+        //System.out.println("Adding edge for vertices: " + this.source.getId() + ", " + this.dest.getId());
         node.getChildren().add(graphics);
-        graphics.setVisible(node.getVertex().isExpanded() && this.sourceVertex.isEdgeVisible() && this.isVisible());
+        graphics.setVisible(node.getVertex().isExpanded() && this.source.isEdgeVisible() && this.isVisible());
     }
 
     public Rectangle getMarker(double x, double y)
@@ -224,7 +224,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         {
             for (LayoutEdge e : v.getSelfGraph().getEdges())
             {
-                if (v.getId() == e.sourceVertex.getId() || v.getId() == e.destVertex.getId())
+                if (v.getId() == e.source.getId() || v.getId() == e.dest.getId())
                 {
                     // Clear current graphics...
                     if (markCenters) {

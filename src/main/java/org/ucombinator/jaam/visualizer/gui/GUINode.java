@@ -9,7 +9,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
 import javafx.scene.text.Text;
-import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
@@ -434,7 +433,7 @@ public class GUINode extends Pane
             {
                 for(LayoutEdge e : vertex.getSelfGraph().getEdges())
                 {
-                    if(e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
+                    if(e.getSource() == vertex || e.getDest() == vertex)
                     {
                         e.highlightEdgePath();
                     }
@@ -455,7 +454,7 @@ public class GUINode extends Pane
             {
                 for(LayoutEdge e : vertex.getSelfGraph().getEdges())
                 {
-                    if (e.getSourceVertex() == vertex || e.getDestVertex() == vertex)
+                    if (e.getSource() == vertex || e.getDest() == vertex)
                     {
                         e.resetEdgePath();
                     }

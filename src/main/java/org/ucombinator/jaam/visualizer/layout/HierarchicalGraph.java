@@ -34,8 +34,8 @@ public class HierarchicalGraph
         this.edges = new HashMap<>();
         for (LayoutEdge edge : edges) {
             // TODO: use addEdge for this (but may not want addOutgoingNeighbor from addEdge)
-            this.edges.putIfAbsent(edge.getSourceVertex(), new HashMap<>());
-            this.edges.get(edge.getSourceVertex()).put(edge.getDestVertex(), edge);
+            this.edges.putIfAbsent(edge.getSource(), new HashMap<>());
+            this.edges.get(edge.getSource()).put(edge.getDest(), edge);
         }
     }
 
@@ -53,16 +53,16 @@ public class HierarchicalGraph
     
     public void addEdge(LayoutEdge edge)
     {
-        edge.getSourceVertex().addOutgoingNeighbor(edge.getDestVertex());
-        edge.getDestVertex().addIncomingNeighbor(edge.getSourceVertex());
-        this.edges.putIfAbsent(edge.getSourceVertex(), new HashMap<>());
-        this.edges.get(edge.getSourceVertex()).put(edge.getDestVertex(), edge);
+        edge.getSource().addOutgoingNeighbor(edge.getDest());
+        edge.getDest().addIncomingNeighbor(edge.getSource());
+        this.edges.putIfAbsent(edge.getSource(), new HashMap<>());
+        this.edges.get(edge.getSource()).put(edge.getDest(), edge);
     }
     
     public void deleteEdge(LayoutEdge edge)
     {
-        edge.getSourceVertex().removeOutgoingAbstractNeighbor(edge.getDestVertex());
-        this.edges.get(edge.getSourceVertex()).remove(edge.getDestVertex());
+        edge.getSource().removeOutgoingAbstractNeighbor(edge.getDest());
+        this.edges.get(edge.getSource()).remove(edge.getDest());
     }
     
     public String toString()
@@ -88,7 +88,7 @@ public class HierarchicalGraph
         output.append("Edges: ");
         while(edgeIter.hasNext()){
             LayoutEdge e = edgeIter.next();
-            output.append("( " + e.getSourceVertex().getLabel() + "->" + e.getDestVertex().getLabel() + " ), ");
+            output.append("( " + e.getSource().getLabel() + "->" + e.getDest().getLabel() + " ), ");
         }
         output.append("\n");
         return output.toString();

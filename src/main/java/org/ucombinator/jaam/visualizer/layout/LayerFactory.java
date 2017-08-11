@@ -5,7 +5,6 @@ import java.util.*;
 import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
-import org.ucombinator.jaam.visualizer.graph.Method;
 
 public class LayerFactory
 {
@@ -162,7 +161,7 @@ public class LayerFactory
                     System.out.println("To:" +to);
                     if(from != to) {    // We are not distinguishing recursive calls
                         LayoutEdge e = new LayoutEdge(from, to, LayoutEdge.EDGE_TYPE.EDGE_REGULAR);
-                        System.out.println("Edge: " + e.getSourceVertex().getId() + " ----> " + e.getDestVertex().getId());
+                        System.out.println("Edge: " + e.getSource().getId() + " ----> " + e.getDest().getId());
                         edges.put(tempID, e);
                         rootGraph.addEdge(e);
                     }else{
@@ -319,8 +318,8 @@ public class LayerFactory
 //        while(itEdge.hasNext())
 //        {
 //            LayoutEdge e = itEdge.next();
-//            AbstractLayoutVertex start = e.getSourceVertex();
-//            AbstractLayoutVertex end = e.getDestVertex();
+//            AbstractLayoutVertex start = e.getSource();
+//            AbstractLayoutVertex end = e.getDest();
 //
 //            start.getSelfGraph().addEdge(new LayoutEdge(start, end, LayoutEdge.EDGE_TYPE.EDGE_DUMMY));
 //        }
