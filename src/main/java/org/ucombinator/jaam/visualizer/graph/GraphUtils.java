@@ -27,7 +27,7 @@ public class GraphUtils {
         public int lowlink; // minIndex of a vertex reachable from my subtree that is not already part of a SCC
     }
 
-    private static void visit(AbstractVertex v, HashMap<Integer, SCCVertex> visitedVertices, Stack<Integer> stack,
+    private static void visit(Graph g, AbstractVertex v, HashMap<Integer, SCCVertex> visitedVertices, Stack<Integer> stack,
                        ArrayList<ArrayList<Integer>> components )
     {
 
@@ -38,7 +38,7 @@ public class GraphUtils {
 
         //System.out.println("TERE Visiting " + v.getId() + " == " + vSCC);
 
-        HashSet<AbstractVertex> neighbors = v.getOutgoingNeighbors();
+        HashSet<AbstractVertex> neighbors = g.getOutNeighbors(v);
         for(AbstractVertex n : neighbors)
         {
             if(n.getId() == v.getId()) // No self loops
@@ -46,7 +46,7 @@ public class GraphUtils {
             //System.out.print("\tTERE Neighbor " + n.getId());
             if(!visitedVertices.containsKey(n.getId())) {
                 //System.out.println(" Hadn't been visited");
-                visit(n, visitedVertices, stack, components);
+                visit(g, n, visitedVertices, stack, components);
                 vSCC.lowlink = Math.min(vSCC.lowlink, visitedVertices.get(n.getId()).lowlink);
             }
             else if(stack.contains(n.getId())) // Should be fast because the stack is small
@@ -99,7 +99,7 @@ public class GraphUtils {
                 System.out.println("JUAN FOUND A NON EMPTY STACK!");
             }
             if(!visitedVertices.containsKey(v.getId())) {
-                visit(v, visitedVertices, stack, components);
+                visit(g, v, visitedVertices, stack, components);
             }
         }
 

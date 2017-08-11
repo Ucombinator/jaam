@@ -95,9 +95,8 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
         v0.setVertexStatus(VertexStatus.BLACK);
         v0.setDFSPosition(dfsPathPos);
 
-        for(AbstractLayoutVertex ver : v0.getOutgoingNeighbors())
+        for(AbstractLayoutVertex v : this.getInnerGraph().getOutNeighbors(v0))
         {
-            AbstractLayoutVertex v = ver;
             //System.out.println("New child: " + Integer.toString(v.id));
             if(v.getVertexStatus() == VertexStatus.WHITE)
             {

@@ -102,8 +102,8 @@ public class LayerFactory
     private static LayoutRootVertex getStronglyConnectedComponentsGraph(Graph graph)
     {
     	LayoutRootVertex root = new LayoutRootVertex();
-    	
-        ArrayList< ArrayList<Integer>> sccs =  (new GraphUtils()).StronglyConnectedComponents(graph);
+
+        ArrayList< ArrayList<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
 
         HashMap<String, AbstractVertex<AbstractVertex>> id_to_abs_vertex = new LinkedHashMap<String, AbstractVertex<AbstractVertex>>();
         for(AbstractVertex<AbstractVertex> v: graph.getVertices()){
@@ -150,7 +150,7 @@ public class LayerFactory
         HashMap<String, LayoutEdge> edges = new LinkedHashMap<>();
         for(AbstractVertex<AbstractVertex> vertex : graph.getVertices()){
             // Not sure why we need an Object instead of a Vertex here
-            for(AbstractVertex<AbstractVertex> neighbor : vertex.getOutgoingNeighbors()) {
+            for(AbstractVertex<AbstractVertex> neighbor : graph.getOutNeighbors(vertex)) {
                 String tempID = vertex.getId() + "--" + neighbor.getId();
                 if(!edges.containsKey(tempID))
                 {
@@ -188,7 +188,7 @@ public class LayerFactory
                     continue;
                 }
                 AbstractVertex<AbstractVertex> v = methodVertex_to_vertex.get(mv.getId());
-                for(AbstractVertex<AbstractVertex> graphNeighbor: v.getOutgoingNeighbors())
+                for(AbstractVertex<AbstractVertex> graphNeighbor: graph.getOutNeighbors(v))
                 {
                    LayoutMethodVertex mn = vertex_to_methodVertex.get(graphNeighbor.getId());
 
@@ -346,12 +346,12 @@ public class LayerFactory
             createChainVertices(absVertex, k);
         }
         
-        if(create_chains){
-            createChainVerticesFromVertex(parent.getInnerGraph().getRoot(), k);
+        if(create_chains) {
+            createChainVerticesFromVertex(parent.getInnerGraph(), parent.getInnerGraph().getRoot(), k);
         }
     }
 
-    private static void createChainVerticesFromVertex(AbstractLayoutVertex root, int k) {
+    private static void createChainVerticesFromVertex(HierarchicalGraph graph, AbstractLayoutVertex root, int k) {
         if (root == null) {
             return;
         }
@@ -362,7 +362,7 @@ public class LayerFactory
         ArrayList<AbstractLayoutVertex> chain = new ArrayList<AbstractLayoutVertex>();
         while (true) {
             currentVertex.setVertexStatus(AbstractVertex.VertexStatus.GRAY);
-            Iterator<AbstractLayoutVertex> itChildren = currentVertex.getOutgoingNeighbors().iterator();
+            Iterator<AbstractLayoutVertex> itChildren = graph.getOutNeighbors(currentVertex).iterator();
             ArrayList<AbstractLayoutVertex> grayChildren = new ArrayList<AbstractLayoutVertex>();
             while (itChildren.hasNext()) {
                 AbstractLayoutVertex child = itChildren.next();
@@ -373,10 +373,10 @@ public class LayerFactory
             }
 
 
-            ArrayList<AbstractLayoutVertex> copyOfIncoming = new ArrayList<AbstractLayoutVertex>(currentVertex.getIncomingNeighbors());
+            ArrayList<AbstractLayoutVertex> copyOfIncoming = new ArrayList<>(graph.getInNeighbors(currentVertex));
             copyOfIncoming.removeAll(grayChildren);
 
-            ArrayList<AbstractLayoutVertex> copyOfOutgoing = new ArrayList<AbstractLayoutVertex>(currentVertex.getOutgoingNeighbors());
+            ArrayList<AbstractLayoutVertex> copyOfOutgoing = new ArrayList<>(graph.getOutNeighbors(currentVertex));
             copyOfOutgoing.removeAll(copyOfIncoming);
 
             if (grayChildren.size() == 1 && copyOfIncoming.size() <= 1 && copyOfOutgoing.size() == 1) {
@@ -440,7 +440,7 @@ public class LayerFactory
                 /********************************************************************************/
                 itChildren = grayChildren.iterator();
                 while (itChildren.hasNext()) {
-                    createChainVerticesFromVertex(itChildren.next(), k);
+                    createChainVerticesFromVertex(graph, itChildren.next(), k);
                 }
                 break;
             }

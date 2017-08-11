@@ -2,11 +2,14 @@ package org.ucombinator.jaam.visualizer.graph;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 
 public class Graph
 {
     private ArrayList<AbstractVertex<AbstractVertex>> vertices;
+    private HashMap<AbstractVertex<AbstractVertex>, HashSet<AbstractVertex<AbstractVertex>>> outEdges;
+    private HashMap<AbstractVertex<AbstractVertex>, HashSet<AbstractVertex<AbstractVertex>>> inEdges;
     private ArrayList<String> tagsList;
     private ArrayList<Boolean> highlightedTags;
     private HashMap<String, Method> methods;
@@ -17,9 +20,11 @@ public class Graph
     
     public Graph()
     {
-        this.vertices = new ArrayList<AbstractVertex<AbstractVertex>>();
-        this.methods = new LinkedHashMap<String, Method>();
-        this.ourClasses = new ArrayList<OurClass>();
+        this.vertices = new ArrayList<>();
+        this.outEdges = new HashMap<>();
+        this.inEdges = new HashMap<>();
+        this.methods = new LinkedHashMap<>();
+        this.ourClasses = new ArrayList<>();
         this.maxIndex = -1;
 
         this.tagsList = new ArrayList<String>();
@@ -109,6 +114,20 @@ public class Graph
         
         vSrc.addOutgoingNeighbor(vDest);
         vDest.addIncomingNeighbor(vSrc);
+
+        this.outEdges.putIfAbsent(vSrc, new HashSet<>());
+        this.outEdges.get(vSrc).add(vDest);
+
+        this.outEdges.putIfAbsent(vDest, new HashSet<>());
+        this.outEdges.get(vDest).add(vSrc);
+    }
+
+    public HashSet<AbstractVertex<AbstractVertex>> getOutNeighbors(AbstractVertex<AbstractVertex> v) {
+        return this.outEdges.getOrDefault(v, new HashSet<>());
+    }
+
+    public HashSet<AbstractVertex<AbstractVertex>> getInNeighbors(AbstractVertex<AbstractVertex> v) {
+        return this.inEdges.getOrDefault(v, new HashSet<>());
     }
 
 //    public void addClass(String className, String classCode) {
