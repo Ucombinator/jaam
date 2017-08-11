@@ -15,7 +15,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     private static final boolean markCenters = false;
 
     public enum EDGE_TYPE {EDGE_REGULAR, EDGE_DUMMY};
-    private EDGE_TYPE type;
+    private final EDGE_TYPE type;
 
     private final AbstractLayoutVertex source, dest;
     private GUINode node;
@@ -24,8 +24,8 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     private static final double arrowheadAngleDiff = 0.15 * Math.PI;
     private static final double arrowLengthRatio = 0.5;
 
-    private Color downwardColor = Color.BLACK;
-    private Color upwardColor = Color.VIOLET;
+    private static final Color downwardColor = Color.BLACK;
+    private static final Color upwardColor = Color.VIOLET;
     private Color color = Color.RED;
     private boolean colorIsSet = false;
 
