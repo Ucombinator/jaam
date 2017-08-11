@@ -7,7 +7,7 @@ import java.util.Stack;
 
 public class GraphUtils {
 
-    private class SCCVertex
+    private static class SCCVertex
     {
         SCCVertex(Integer id, Integer myIndex)
         {
@@ -27,7 +27,7 @@ public class GraphUtils {
         public int lowlink; // minIndex of a vertex reachable from my subtree that is not already part of a SCC
     }
 
-    private void visit(AbstractVertex v, HashMap<Integer, SCCVertex> visitedVertices, Stack<Integer> stack,
+    private static void visit(AbstractVertex v, HashMap<Integer, SCCVertex> visitedVertices, Stack<Integer> stack,
                        ArrayList<ArrayList<Integer>> components )
     {
 
@@ -83,9 +83,9 @@ public class GraphUtils {
 
     }
 
-    public ArrayList< ArrayList<Integer> > StronglyConnectedComponents(final Graph g)
+    public static ArrayList<ArrayList<Integer>> StronglyConnectedComponents(final Graph g)
     {
-        ArrayList< ArrayList<Integer> > components = new ArrayList<ArrayList<Integer>>();
+        ArrayList<ArrayList<Integer>> components = new ArrayList<ArrayList<Integer>>();
 
         Stack<Integer> stack = new Stack<Integer>();
         HashMap<Integer, SCCVertex> visitedVertices = new HashMap<Integer, SCCVertex>();
