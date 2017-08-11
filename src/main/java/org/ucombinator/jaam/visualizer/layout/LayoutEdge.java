@@ -20,7 +20,6 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     private int source, dest;
     private AbstractLayoutVertex sourceVertex, destVertex;
     private GUINode node;
-    private String strId;
 
     private static double defaultStrokeWidth = 1;
     private static double arrowheadAngleDiff = 0.15 * Math.PI;
@@ -33,7 +32,6 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
 
     private LayoutEdge(int source, int dest)
     {
-        this.strId = LayoutEdge.createID(source, dest);
         this.source = source;
         this.dest = dest;
     }
@@ -58,14 +56,6 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
 
     public EDGE_TYPE getType() {
         return type;
-    }
-
-    public static String createID(int source, int dest) {
-        return "edge:" + source + "-->" + dest;
-    }
-
-    public String getID() {
-        return strId;
     }
 
     public int compareTo(org.ucombinator.jaam.visualizer.layout.LayoutEdge otherEdge) {

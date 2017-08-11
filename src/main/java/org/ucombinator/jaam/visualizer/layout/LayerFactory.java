@@ -162,7 +162,7 @@ public class LayerFactory
                     System.out.println("To:" +to);
                     if(from != to) {    // We are not distinguishing recursive calls
                         LayoutEdge e = new LayoutEdge(from, to, LayoutEdge.EDGE_TYPE.EDGE_REGULAR);
-                        System.out.println("Edge: " + e.getID());
+                        System.out.println("Edge: " + e.getSourceVertex().getId() + " ----> " + e.getDestVertex().getId());
                         edges.put(tempID, e);
                         rootGraph.addEdge(e);
                     }else{

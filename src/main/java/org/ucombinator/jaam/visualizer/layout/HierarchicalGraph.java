@@ -123,12 +123,12 @@ public class HierarchicalGraph
         return arrayList.get(0);
     }
 
-    public void deleteEdge(AbstractLayoutVertex previous, AbstractLayoutVertex next) {
-        this.edges.remove(LayoutEdge.createID(previous.getId(), next.getId()));
+    public void deleteEdge(AbstractLayoutVertex src, AbstractLayoutVertex dst) {
+        this.edges.get(src).remove(dst);
     }
 
-    public boolean hasEdge(AbstractLayoutVertex first, AbstractLayoutVertex second) {
-        return this.edges.containsKey(LayoutEdge.createID(first.getId(), second.getId()));
+    public boolean hasEdge(AbstractLayoutVertex src, AbstractLayoutVertex dst) {
+        return this.edges.containsKey(src) && this.edges.get(src).containsKey(dst);
     }
 
 //    public static ArrayList<LayoutEdge> computeDummyEdges(LayoutRootVertex root)
