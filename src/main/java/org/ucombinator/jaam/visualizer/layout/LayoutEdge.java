@@ -17,28 +17,20 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     public enum EDGE_TYPE {EDGE_REGULAR, EDGE_DUMMY};
     private EDGE_TYPE type;
 
-    private int source, dest;
-    private AbstractLayoutVertex sourceVertex, destVertex;
+    private final AbstractLayoutVertex sourceVertex, destVertex;
     private GUINode node;
 
-    private static double defaultStrokeWidth = 1;
-    private static double arrowheadAngleDiff = 0.15 * Math.PI;
-    private static double arrowLengthRatio = 0.5;
+    private static final double defaultStrokeWidth = 1;
+    private static final double arrowheadAngleDiff = 0.15 * Math.PI;
+    private static final double arrowLengthRatio = 0.5;
 
     private Color downwardColor = Color.BLACK;
     private Color upwardColor = Color.VIOLET;
     private Color color = Color.RED;
-    boolean colorIsSet = false;
-
-    private LayoutEdge(int source, int dest)
-    {
-        this.source = source;
-        this.dest = dest;
-    }
+    private boolean colorIsSet = false;
 
     public LayoutEdge(AbstractLayoutVertex sourceVertex, AbstractLayoutVertex destVertex, EDGE_TYPE edgeType)
     {
-        this(sourceVertex.getId(), destVertex.getId());
         this.type = edgeType;
         this.sourceVertex = sourceVertex;
         this.destVertex = destVertex;
@@ -46,8 +38,6 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.destVertex.addIncomingNeighbor(this.sourceVertex);
 
         System.out.println("SEE: --" + destVertex.getY() + "-- --" + sourceVertex.getY());
-
-
 
         graphics = new Group();
         arrowhead = new Polygon();
@@ -58,8 +48,20 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         return type;
     }
 
-    public int compareTo(org.ucombinator.jaam.visualizer.layout.LayoutEdge otherEdge) {
-        return ((Integer) source).compareTo(otherEdge.source);
+    public int compareTo(LayoutEdge that) {
+        if (this.sourceVertex.getId() < that.sourceVertex.getId()) {
+            return -1;
+        } else if (this.sourceVertex.getId() > that.sourceVertex.getId()) {
+            return 1;
+        } else {
+            if (this.destVertex.getId() < that.destVertex.getId()) {
+                return -1;
+            } else if (this.destVertex.getId() > that.destVertex.getId()) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
     }
 
     public AbstractLayoutVertex getSourceVertex() {
@@ -82,7 +84,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
             System.out.println("Error! The node for this edge does not exist.");
             return;
         }
-        else if (this.source == this.dest)
+        else if (this.sourceVertex == this.destVertex)
         {
             /*System.out.println("Error in Edge.drawGraph(): The source and destination vertices are the same.");
             System.out.println(this.source +"---"+ this.dest);
@@ -96,7 +98,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         else if (sourceVertex.getX() == destVertex.getX() && sourceVertex.getY() == destVertex.getY())
         {
             System.out.println("Error in Edge.drawGraph(): The two vertices are at the same location.");
-            System.out.println(this.source + " --- " + this.dest);
+            System.out.println(this.sourceVertex.getId() + " --- " + this.destVertex.getId());
             System.out.println(this.sourceVertex.getLabel() + " --- " + this.destVertex.getLabel());
             System.out.println(this.getType());
             return;
@@ -222,7 +224,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         {
             for (LayoutEdge e : v.getSelfGraph().getEdges())
             {
-                if (v.getId() == e.source || v.getId() == e.dest)
+                if (v.getId() == e.sourceVertex.getId() || v.getId() == e.destVertex.getId())
                 {
                     // Clear current graphics...
                     if (markCenters) {
