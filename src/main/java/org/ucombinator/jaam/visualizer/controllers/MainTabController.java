@@ -85,58 +85,58 @@ public class MainTabController {
         this.getRightArea().setText(text.toString());
     }
 
-    public void showEdgesAction(ActionEvent event) {
+    @FXML private void showEdgesAction(ActionEvent event) {
         this.getMainPanel().getPanelRoot().setVisible(false);
         this.getMainPanel().getPanelRoot().setEdgeVisibility(showEdges.isSelected());
         LayoutEdge.redrawEdges(mainPanel.getPanelRoot(), true);
         this.getMainPanel().getPanelRoot().setVisible(true);
     }
 
-    public void showLabelsAction(ActionEvent event) {
+    @FXML private void showLabelsAction(ActionEvent event) {
         this.getMainPanel().getPanelRoot().setVisible(false);
         this.getMainPanel().getPanelRoot().setLabelVisibility(showLabels.isSelected());
         this.getMainPanel().getPanelRoot().setVisible(true);
     }
 
-    public void xScalePanelMinusAction(ActionEvent event) {
+    @FXML private void xScalePanelMinusAction(ActionEvent event) {
         this.getMainPanel().decrementScaleXFactor();
         this.getMainPanel().resetAndRedraw(showEdges.isSelected());
         this.getMainPanel().resetRootPosition(false);
     }
 
-    public void xScalePanelPlusAction(ActionEvent event) {
+    @FXML private void xScalePanelPlusAction(ActionEvent event) {
         this.getMainPanel().incrementScaleXFactor();
         this.getMainPanel().resetAndRedraw(showEdges.isSelected());
         this.getMainPanel().resetRootPosition(false);
     }
 
-    public void yScalePanelMinusAction(ActionEvent event) {
+    @FXML private void yScalePanelMinusAction(ActionEvent event) {
         this.getMainPanel().decrementScaleYFactor();
         this.getMainPanel().resetAndRedraw(showEdges.isSelected());
         this.getMainPanel().resetRootPosition(false);
     }
 
-    public void yScalePanelPlusAction(ActionEvent event) {
+    @FXML private void yScalePanelPlusAction(ActionEvent event) {
         this.getMainPanel().incrementScaleYFactor();
         this.getMainPanel().resetAndRedraw(showEdges.isSelected());
         this.getMainPanel().resetRootPosition(false);
     }
 
-    public void methodCollapseAction(ActionEvent event) {
+    @FXML private void methodCollapseAction(ActionEvent event) {
         this.getMainPanel().getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
                 methodsExpanded.isSelected());
         this.getMainPanel().resetAndRedraw(showEdges.isSelected());
         this.getMainPanel().resetRootPosition(false);
     }
 
-    public void chainCollapseAction(ActionEvent event) {
+    @FXML private void chainCollapseAction(ActionEvent event) {
         this.getMainPanel().getPanelRoot()
                 .toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN, chainsExpanded.isSelected());
         this.getMainPanel().resetAndRedraw(showEdges.isSelected());
         this.getMainPanel().resetRootPosition(false);
     }
 
-    public void exportImageAction(ActionEvent event) {
+    @FXML private void exportImageAction(ActionEvent event) {
         event.consume(); // TODO: Is this necessary?
         String extension = "png";
         FileChooser fileChooser = new FileChooser();
@@ -236,19 +236,19 @@ public class MainTabController {
         }
     }
 
-    public void resetButtonPressed() {
+    @FXML private void resetButtonPressed() {
         Main.getSelectedVizPanel().resetRootPosition(true);
     }
 
-    public void zoomInPressed(MouseEvent event) {
+    @FXML private void zoomInPressed(MouseEvent event) {
         Main.getSelectedMainTabController().keepButton(1, (Button) event.getSource());
     }
 
-    public void zoomOutPressed(MouseEvent event) {
+    @FXML private void zoomOutPressed(MouseEvent event) {
         Main.getSelectedMainTabController().keepButton(-1, (Button) event.getSource());
     }
 
-    public void zoomReleased(MouseEvent event) {
+    @FXML private void zoomReleased(MouseEvent event) {
         this.setZoomButtonReleased(true);
     }
 

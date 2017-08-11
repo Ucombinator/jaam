@@ -34,7 +34,7 @@ public class MainPaneController {
         }
     }
 
-    public void loadLoopGraph(ActionEvent event) {
+    @FXML private void loadLoopGraph(ActionEvent event) {
         Graph graph;
         TakeInput ti = new TakeInput();
         String filename = "";
@@ -67,19 +67,19 @@ public class MainPaneController {
         tabPane.getSelectionModel().select(newTab);
     }
 
-    public void quit(ActionEvent event) {
+    @FXML private void quit(ActionEvent event) {
         Platform.exit();
     }
 
-    public void searchByID(ActionEvent event) {
+    @FXML private void searchByID(ActionEvent event) {
         Main.getSelectedMainTabController().initSearch(MainTabController.SearchType.ID);
     }
 
-    public void searchByStatement(ActionEvent event) {
+    @FXML private void searchByStatement(ActionEvent event) {
         Main.getSelectedMainTabController().initSearch(MainTabController.SearchType.INSTRUCTION);
     }
 
-    public void searchByMethod(ActionEvent event) {
+    @FXML private void searchByMethod(ActionEvent event) {
         Main.getSelectedMainTabController().initSearch(MainTabController.SearchType.METHOD);
     }
 }
