@@ -30,9 +30,9 @@ public class LayerFactory
 //        System.out.println("JUAN TEST " + sccs.get(0));
 //        ArrayList<Integer> scc = sccs.get(0);
 //
-//        ArrayList<AbstractVertex<AbstractVertex>> vertices = graph.getVertices();
+//        ArrayList<AbstractVertex> vertices = graph.getVertices();
 //        //Remove edges
-//        for(AbstractVertex<AbstractVertex> v : vertices)
+//        for(AbstractVertex v : vertices)
 //        {
 //            if(scc.contains(v.getId()))
 //            {
@@ -42,7 +42,7 @@ public class LayerFactory
 //                for(Iterator it = outgoingNeighbors.iterator(); it.hasNext();)
 //                {
 //                    Object no = it.next();
-//                    AbstractVertex<AbstractVertex> n  = (AbstractVertex<AbstractVertex>)no;
+//                    AbstractVertex n  = (AbstractVertex)no;
 //                    System.out.print("JUAN Checking " + v.getId() + " -> " + n.getId());
 //                    if( !scc.contains(n.getId()))
 //                    {
@@ -63,7 +63,7 @@ public class LayerFactory
 //                for(Iterator it = outgoingNeighbors.iterator(); it.hasNext();)
 //                {
 //                    Object no = it.next();
-//                    AbstractVertex<AbstractVertex> n  = (AbstractVertex<AbstractVertex>)no;
+//                    AbstractVertex n  = (AbstractVertex)no;
 //                    System.out.print("\t\t\tJUAN Checking " + v.getId() + " -> " + n.getId());
 //                    System.out.print("\n");
 //                }
@@ -71,16 +71,16 @@ public class LayerFactory
 //            }
 //        }
 //
-//        vertices.removeIf((AbstractVertex<AbstractVertex> v) -> !scc.contains(v.getId()));
+//        vertices.removeIf((AbstractVertex v) -> !scc.contains(v.getId()));
 //
-//        for(AbstractVertex<AbstractVertex> v : vertices)
+//        for(AbstractVertex v : vertices)
 //        {
 //            if(scc.contains(v.getId()))
 //            {
 //                HashSet outgoingNeighbors = v.getOutgoingNeighbors();
 //                for(Object on : outgoingNeighbors)
 //                {
-//                    AbstractVertex<AbstractVertex> n = (AbstractVertex<AbstractVertex>)on;
+//                    AbstractVertex n = (AbstractVertex)on;
 //                    if(!scc.contains(n.getId()))
 //                    {
 //                        System.out.println("JUAN ERROR: Improper edge!! " + v.getId() + " -> " + n.getId() );
@@ -105,14 +105,14 @@ public class LayerFactory
 
         ArrayList< ArrayList<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
 
-        HashMap<String, AbstractVertex<AbstractVertex>> id_to_abs_vertex = new LinkedHashMap<String, AbstractVertex<AbstractVertex>>();
-        for(AbstractVertex<AbstractVertex> v: graph.getVertices()){
+        HashMap<String, AbstractVertex> id_to_abs_vertex = new LinkedHashMap<String, AbstractVertex>();
+        for(AbstractVertex v: graph.getVertices()){
         	System.out.println("Vertex: +'"+v.getId()+"'");
         	id_to_abs_vertex.put(""+v.getId(), v);
         }
 
         HashMap<String, LayoutMethodVertex> vertex_to_scc = new LinkedHashMap<String, LayoutMethodVertex>();
-        HashMap<Integer, AbstractVertex<AbstractVertex>> methodVertex_to_vertex = new HashMap<>();
+        HashMap<Integer, AbstractVertex> methodVertex_to_vertex = new HashMap<>();
         HashMap<Integer, LayoutMethodVertex > vertex_to_methodVertex = new HashMap<>();
         HierarchicalGraph rootGraph = new HierarchicalGraph();
         // TODO This should be cleaner
@@ -148,9 +148,9 @@ public class LayerFactory
 
         // Add edges between SCC Vertices
         HashMap<String, LayoutEdge> edges = new LinkedHashMap<>();
-        for(AbstractVertex<AbstractVertex> vertex : graph.getVertices()){
+        for(AbstractVertex vertex : graph.getVertices()){
             // Not sure why we need an Object instead of a Vertex here
-            for(AbstractVertex<AbstractVertex> neighbor : graph.getOutNeighbors(vertex)) {
+            for(AbstractVertex neighbor : graph.getOutNeighbors(vertex)) {
                 String tempID = vertex.getId() + "--" + neighbor.getId();
                 if(!edges.containsKey(tempID))
                 {
@@ -187,8 +187,8 @@ public class LayerFactory
                     System.out.println("JUAN Found a NULL Boy " + mv.getId());
                     continue;
                 }
-                AbstractVertex<AbstractVertex> v = methodVertex_to_vertex.get(mv.getId());
-                for(AbstractVertex<AbstractVertex> graphNeighbor: graph.getOutNeighbors(v))
+                AbstractVertex v = methodVertex_to_vertex.get(mv.getId());
+                for(AbstractVertex graphNeighbor: graph.getOutNeighbors(v))
                 {
                    LayoutMethodVertex mn = vertex_to_methodVertex.get(graphNeighbor.getId());
 
@@ -231,17 +231,17 @@ public class LayerFactory
 //    {
 //        System.out.println("JUAN Graph coming has " + graph.getVertices().size());
 //
-//        HashMap<String, AbstractVertex<AbstractVertex>> id_to_vertex =  new LinkedHashMap<String, AbstractVertex<AbstractVertex>>();
+//        HashMap<String, AbstractVertex> id_to_vertex =  new LinkedHashMap<String, AbstractVertex>();
 //        HashMap<String, AbstractVertex> id_to_abs_vertex = new LinkedHashMap<String, AbstractVertex>();
 //        HierarchicalGraph methodGraph = new HierarchicalGraph();
 //        
 //        // We partition the vertex set of Main.graph into buckets corresponding to the methods.
-//        HashMap<String, HashSet<AbstractVertex<AbstractVertex>>> methodBuckets = new LinkedHashMap<String, HashSet<AbstractVertex<AbstractVertex>>>();
-//        for(AbstractVertex<AbstractVertex> vertex: graph.getVertices()) {
+//        HashMap<String, HashSet<AbstractVertex>> methodBuckets = new LinkedHashMap<String, HashSet<AbstractVertex>>();
+//        for(AbstractVertex vertex: graph.getVertices()) {
 //            //System.out.println("Reading vertex: " + vertex.getInstructionText());
 //            String method = vertex.getMethodName();
 //            if(!methodBuckets.containsKey(method)){
-//                methodBuckets.put(method, new LinkedHashSet<AbstractVertex<AbstractVertex>>());
+//                methodBuckets.put(method, new LinkedHashSet<AbstractVertex>());
 //                //System.out.println("Creating bucket for method: " + method);
 //            }
 //            methodBuckets.get(method).add(vertex);
@@ -259,10 +259,10 @@ public class LayerFactory
 //
 //        // Add edges to the methodGraph.
 //        HashMap<String, LayoutEdge> edges = new LinkedHashMap<String, LayoutEdge>();
-//        for(AbstractVertex<AbstractVertex> vertex: graph.getVertices()){
+//        for(AbstractVertex vertex: graph.getVertices()){
 //            // Not sure why we need an Object instead of a Vertex here
 //            for(Object neighborObj: vertex.getOutgoingNeighbors()) {
-//                AbstractVertex<AbstractVertex> neighbor = (AbstractVertex<AbstractVertex>) neighborObj;
+//                AbstractVertex neighbor = (AbstractVertex) neighborObj;
 //                String tempID = vertex.getMethodName() + "--" + neighbor.getMethodName();
 //                if(!edges.containsKey(tempID))
 //                {
@@ -283,7 +283,7 @@ public class LayerFactory
 //            // Add vertices of the inner graph.
 //            LayoutMethodVertex methodVertex = (LayoutMethodVertex) methodVertexAbs;
 //            HashMap<String,String> idMapping = new LinkedHashMap<>(); // first id is the graph vertex id and the second id the New vertex id
-//            for(AbstractVertex<AbstractVertex> oldV: methodBuckets.get(methodVertex.getMethodName())) {
+//            for(AbstractVertex oldV: methodBuckets.get(methodVertex.getMethodName())) {
 //                LayoutInstructionVertex newV = new LayoutInstructionVertex(oldV.getInstruction(), methodVertex, true);
 //
 //                id_to_vertex.put(oldV.getStrID(), oldV);
@@ -294,9 +294,9 @@ public class LayerFactory
 //            }
 //            
 //            // Add the edges of the inner graph.
-//            for(AbstractVertex<AbstractVertex> v: methodBuckets.get(methodVertex.getMethodName())){
+//            for(AbstractVertex v: methodBuckets.get(methodVertex.getMethodName())){
 //                for(Object neighborObj: v.getOutgoingNeighbors()){
-//                	AbstractVertex<AbstractVertex> neighbor = (AbstractVertex<AbstractVertex>) neighborObj;
+//                	AbstractVertex neighbor = (AbstractVertex) neighborObj;
 //                    if(v.getMethodName().equals(neighbor.getMethodName())){
 //                        methodVertex.getInnerGraph().addEdge(
 //                                new LayoutEdge(

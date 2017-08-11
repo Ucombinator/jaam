@@ -3,7 +3,7 @@ package org.ucombinator.jaam.visualizer.graph;
 import java.util.ArrayList;
 
 //TODO make it abstract
-public class AbstractVertex<T extends AbstractVertex>
+public class AbstractVertex
 {
     private static int idCounter = 0; // Used to assign unique id numbers to each vertex
     private String label;

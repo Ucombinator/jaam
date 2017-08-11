@@ -85,14 +85,14 @@ public class GraphUtils {
 
     public static ArrayList<ArrayList<Integer>> StronglyConnectedComponents(final Graph g)
     {
-        ArrayList<ArrayList<Integer>> components = new ArrayList<ArrayList<Integer>>();
+        ArrayList<ArrayList<Integer>> components = new ArrayList<>();
 
-        Stack<Integer> stack = new Stack<Integer>();
-        HashMap<Integer, SCCVertex> visitedVertices = new HashMap<Integer, SCCVertex>();
+        Stack<Integer> stack = new Stack<>();
+        HashMap<Integer, SCCVertex> visitedVertices = new HashMap<>();
 
-        ArrayList<AbstractVertex<AbstractVertex>> vertices = g.getVertices();
+        ArrayList<AbstractVertex> vertices = g.getVertices();
 
-        for(AbstractVertex<AbstractVertex> v : vertices)
+        for(AbstractVertex v : vertices)
         {
             if(stack.size() > 0)
             {

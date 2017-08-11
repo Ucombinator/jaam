@@ -7,9 +7,9 @@ import java.util.LinkedHashMap;
 
 public class Graph
 {
-    private ArrayList<AbstractVertex<AbstractVertex>> vertices;
-    private HashMap<AbstractVertex<AbstractVertex>, HashSet<AbstractVertex<AbstractVertex>>> outEdges;
-    private HashMap<AbstractVertex<AbstractVertex>, HashSet<AbstractVertex<AbstractVertex>>> inEdges;
+    private ArrayList<AbstractVertex> vertices;
+    private HashMap<AbstractVertex, HashSet<AbstractVertex>> outEdges;
+    private HashMap<AbstractVertex, HashSet<AbstractVertex>> inEdges;
     private ArrayList<String> tagsList;
     private ArrayList<Boolean> highlightedTags;
     private HashMap<String, Method> methods;
@@ -31,7 +31,7 @@ public class Graph
         this.highlightedTags = new ArrayList<Boolean>();
     }
 
-    public ArrayList<AbstractVertex<AbstractVertex>> getVertices() {
+    public ArrayList<AbstractVertex> getVertices() {
         return this.vertices;
     }
 
@@ -69,7 +69,7 @@ public class Graph
 //    public void addVertex(int vIndex, Instruction instruction, boolean drawEdges)
 //    {
 //        //System.out.println("Adding vertex " + vIndex + ": " + instruction.getText());
-//        AbstractVertex<AbstractVertex> ver = this.containsInputVertex(vIndex);
+//        AbstractVertex ver = this.containsInputVertex(vIndex);
 //
 //        if(ver == null)
 //        {
@@ -88,7 +88,7 @@ public class Graph
 //            this.maxIndex = instruction.getJimpleIndex();
 //    }
 
-    public void matchVertexToMethod(AbstractVertex<AbstractVertex> v, String methodName)
+    public void matchVertexToMethod(AbstractVertex v, String methodName)
     {
         Method currMethod;
         if(this.methods.containsKey(methodName))
@@ -107,7 +107,7 @@ public class Graph
     public void addEdge(int src, int dest)
     {
         //System.out.println("Adding input edge: " + src + ", " + dest);
-        AbstractVertex<AbstractVertex> vSrc, vDest;
+        AbstractVertex vSrc, vDest;
 
         vSrc = this.containsInputVertex(src);
         vDest = this.containsInputVertex(dest);
@@ -119,11 +119,11 @@ public class Graph
         this.outEdges.get(vDest).add(vSrc);
     }
 
-    public HashSet<AbstractVertex<AbstractVertex>> getOutNeighbors(AbstractVertex<AbstractVertex> v) {
+    public HashSet<AbstractVertex> getOutNeighbors(AbstractVertex v) {
         return this.outEdges.getOrDefault(v, new HashSet<>());
     }
 
-    public HashSet<AbstractVertex<AbstractVertex>> getInNeighbors(AbstractVertex<AbstractVertex> v) {
+    public HashSet<AbstractVertex> getInNeighbors(AbstractVertex v) {
         return this.inEdges.getOrDefault(v, new HashSet<>());
     }
 
@@ -171,7 +171,7 @@ public class Graph
 
 //    public void addTag(int nodeId, String tag)
 //    {
-//        AbstractVertex<AbstractVertex> ver = this.containsInputVertex(nodeId);
+//        AbstractVertex ver = this.containsInputVertex(nodeId);
 //        if(ver==null)
 //            return;
 //        
@@ -199,9 +199,9 @@ public class Graph
 //        return -1;
 //    }
     
-    public AbstractVertex<AbstractVertex> containsInputVertex(int id)
+    public AbstractVertex containsInputVertex(int id)
     {
-        for(AbstractVertex<AbstractVertex> v : this.vertices)
+        for(AbstractVertex v : this.vertices)
         {
             if(v.getId() == id)
                 return v;

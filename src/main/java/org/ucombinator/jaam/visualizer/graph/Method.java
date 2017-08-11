@@ -7,7 +7,7 @@ public class Method
     private final String methodName;
     private OurClass our_class;
     //private final String functionName;
-    private ArrayList<AbstractVertex<AbstractVertex>> vertices;
+    private ArrayList<AbstractVertex> vertices;
     private ArrayList<Instruction> instructionList;
 
     public Method()
@@ -48,7 +48,7 @@ public class Method
         this.our_class = c;
     }
     
-    public void addVertex(AbstractVertex<AbstractVertex> v)
+    public void addVertex(AbstractVertex v)
     {
         this.vertices.add(v);
     }

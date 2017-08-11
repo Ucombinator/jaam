@@ -18,7 +18,7 @@ import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.Location;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
-public abstract class AbstractLayoutVertex extends AbstractVertex<AbstractLayoutVertex> implements Comparable<AbstractLayoutVertex>
+public abstract class AbstractLayoutVertex extends AbstractVertex implements Comparable<AbstractLayoutVertex>
 {
     public static final Color highlightColor = Color.ORANGE;
     protected Color color = Color.RED;
