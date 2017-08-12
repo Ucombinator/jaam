@@ -56,7 +56,7 @@ public class LayoutInstructionVertex extends AbstractLayoutVertex {
     }
 
     public HashSet<LayoutMethodVertex> getMethodVertices() {
-        HashSet<LayoutMethodVertex> result = new LinkedHashSet<LayoutMethodVertex>();
+        HashSet<LayoutMethodVertex> result = new LinkedHashSet<>();
         result.add(this.methodVertex);
         return result;
     }

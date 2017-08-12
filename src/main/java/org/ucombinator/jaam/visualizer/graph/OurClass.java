@@ -11,7 +11,7 @@ public class OurClass
     public OurClass() {
         this.className = "";
         this.code = "";
-        this.methods = new ArrayList<Method>();
+        this.methods = new ArrayList<>();
     }
 
     public OurClass(String className, String classCode)
@@ -19,7 +19,7 @@ public class OurClass
         System.out.println("Creating new class: " + className);
         this.className = className;
         this.code = classCode;
-        this.methods = new ArrayList<Method>();
+        this.methods = new ArrayList<>();
         System.out.println("Finished creating class!");
     }
 

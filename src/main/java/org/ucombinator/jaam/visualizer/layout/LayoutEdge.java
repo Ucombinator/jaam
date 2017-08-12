@@ -139,10 +139,10 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         double y3 = destEnterY + arrowLength * Math.sin(angle - arrowheadAngleDiff);
 
         arrowhead = new Polygon();
-        arrowhead.getPoints().addAll(new Double[]{
+        arrowhead.getPoints().addAll(
                 x1, y1,
                 x2, y2,
-                x3, y3 });
+                x3, y3);
         arrowhead.setFill(color);
 
         this.edgePath = line;
