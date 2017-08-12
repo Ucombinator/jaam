@@ -7,9 +7,6 @@ import org.ucombinator.jaam.visualizer.gui.VizPanel;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
-/**
- * Created by timothyjohnson on 3/20/17.
- */
 public class LayoutRootVertex extends AbstractLayoutVertex {
 
     private float[] hues;

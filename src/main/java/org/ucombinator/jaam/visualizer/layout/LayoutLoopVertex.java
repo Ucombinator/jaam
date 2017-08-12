@@ -7,9 +7,6 @@ import org.ucombinator.jaam.visualizer.gui.VizPanel;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
-/**
- * Created by timothyjohnson on 5/4/17.
- */
 public class LayoutLoopVertex extends AbstractLayoutVertex {
 
     private int startJimpleIndex;

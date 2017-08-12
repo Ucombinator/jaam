@@ -7,9 +7,6 @@ import org.ucombinator.jaam.visualizer.gui.VizPanel;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
-/**
- * Created by timothyjohnson on 2/15/17.
- */
 public class LayoutChainVertex extends AbstractLayoutVertex {
 
     private static Color color = Color.GREEN;
