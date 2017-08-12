@@ -43,12 +43,6 @@ public class AbstractVertex
         return this.id;
     }
 
-    public String getStrID()
-    {
-        String strId ="vertex:"+this.id; 
-        return strId;
-    }
-
     public ArrayList<String> getTags() {
         return this.tags;
     }

@@ -123,7 +123,7 @@ public class LayerFactory
         	LayoutMethodVertex sccVertex = new LayoutMethodVertex(i,"scc"+i);
         	++i;
 
-        	System.out.println(sccVertex.getStrID());
+        	System.out.println("vertex:"+sccVertex.getId());
             rootGraph.addVertex(sccVertex);
 
             HierarchicalGraph gSCC = new HierarchicalGraph();

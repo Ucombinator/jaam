@@ -109,7 +109,7 @@ public class HierarchicalGraph
         while(it.hasNext())
         {
             AbstractLayoutVertex v = it.next();
-            System.out.println(v.getStrID() + ", x=" + v.getX() + ", y=" + v.getY());
+            System.out.println("vertex:" + v.getId() + ", x=" + v.getX() + ", y=" + v.getY());
         }
     }
     

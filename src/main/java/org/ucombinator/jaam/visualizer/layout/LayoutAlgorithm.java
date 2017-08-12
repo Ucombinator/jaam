@@ -8,11 +8,9 @@ public class LayoutAlgorithm
     private static final double MARGIN_PADDING = 1;//.25;
     private static final double NODES_PADDING = 1;//.5;
     private static final double ROOT_V_OFFSET = 10;//2;
-    private static HashMap<String, Double> bboxWidthTable;
-    private static HashMap<String, Double> bboxHeightTable;
-    
+    private static HashMap<Integer, Double> bboxWidthTable;
+    private static HashMap<Integer, Double> bboxHeightTable;
 
-    
     public static void layout(AbstractLayoutVertex parentVertex) {
         bboxWidthTable = new LinkedHashMap<>();
         bboxHeightTable = new LinkedHashMap<>();
@@ -71,13 +69,13 @@ public class LayoutAlgorithm
             assignXandYtoInnerNodesAndGiveParentBBox(graph, root, MARGIN_PADDING, MARGIN_PADDING);
             if(root.getInnerGraph().getVertices().size() > 1)
             {
-                parentVertex.setWidth(bboxWidthTable.get(root.getStrID()) + 1000 * MARGIN_PADDING);
-                parentVertex.setHeight(bboxHeightTable.get(root.getStrID()) + 2 * MARGIN_PADDING);
+                parentVertex.setWidth(bboxWidthTable.get(root.getId()) + 1000 * MARGIN_PADDING);
+                parentVertex.setHeight(bboxHeightTable.get(root.getId()) + 2 * MARGIN_PADDING);
             }
             else
             {
-                parentVertex.setWidth(bboxWidthTable.get(root.getStrID()) + 2 * MARGIN_PADDING);
-                parentVertex.setHeight(bboxHeightTable.get(root.getStrID()) + 2 * MARGIN_PADDING);
+                parentVertex.setWidth(bboxWidthTable.get(root.getId()) + 2 * MARGIN_PADDING);
+                parentVertex.setHeight(bboxHeightTable.get(root.getId()) + 2 * MARGIN_PADDING);
             }
         } else {
             parentVertex.setWidth(AbstractLayoutVertex.DEFAULT_WIDTH);
@@ -109,7 +107,7 @@ public class LayoutAlgorithm
 
         for(AbstractLayoutVertex curVer: grayChildren)
         {
-            currentWidth += bboxWidthTable.get(curVer.getStrID()) + NODES_PADDING;
+            currentWidth += bboxWidthTable.get(curVer.getId()) + NODES_PADDING;
         }
 
         // TODO: What is AX?
@@ -124,11 +122,11 @@ public class LayoutAlgorithm
         for(AbstractLayoutVertex curVer: grayChildren)
         {
             assignXandYtoInnerNodesAndGiveParentBBox(graph, curVer,currentWidth + left + AX,NODES_PADDING + top + root.getHeight());
-            currentWidth += bboxWidthTable.get(curVer.getStrID()) + NODES_PADDING;
-            currentHeight = Math.max(currentHeight, bboxHeightTable.get(curVer.getStrID()));
+            currentWidth += bboxWidthTable.get(curVer.getId()) + NODES_PADDING;
+            currentHeight = Math.max(currentHeight, bboxHeightTable.get(curVer.getId()));
         }
 
-        root.setX(left + ((bboxWidthTable.get(root.getStrID()) - root.getWidth()) / 2.0));  //left-most corner x
+        root.setX(left + ((bboxWidthTable.get(root.getId()) - root.getWidth()) / 2.0));  //left-most corner x
         root.setY(top);                                                    //top-most corner y
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
     }
@@ -174,8 +172,8 @@ public class LayoutAlgorithm
         
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
         
-        bboxWidthTable.put(root.getStrID(), currBboxWidth);
-        bboxHeightTable.put(root.getStrID(), currBboxHeight);
+        bboxWidthTable.put(root.getId(), currBboxWidth);
+        bboxHeightTable.put(root.getId(), currBboxHeight);
         
         double[] result = {currBboxWidth, currBboxHeight};
         return result;
@@ -206,7 +204,7 @@ public class LayoutAlgorithm
 
            childrenMap.put(v, new ArrayList<>());
 
-//           System.out.print("TERE \tVisiting " + v + " --> " + v.getStrID() + " is " + v.getVertexStatus() + " Method: ");
+//           System.out.print("TERE \tVisiting " + v + " --> " + v.getId() + " is " + v.getVertexStatus() + " Method: ");
            /*
            for(LayoutMethodVertex m : v.getMethodVertices())
            {
@@ -217,7 +215,7 @@ public class LayoutAlgorithm
 
            for(AbstractLayoutVertex child : graph.getOutNeighbors(v))
            {
-//               System.out.println("\tTERE SEEING CHILD " + child + " --> " + child.getStrID() + " is " + child.getVertexStatus());
+//               System.out.println("\tTERE SEEING CHILD " + child + " --> " + child.getId() + " is " + child.getVertexStatus());
 
                if(child == v)
                    continue;
@@ -246,7 +244,7 @@ public class LayoutAlgorithm
                    else
                    {
                        // Should be an assert..
-                       System.out.println("ERROR in BFS CHILDREN. Invalid graph, child has no incoming edges " + child + " -> " + child.getStrID() + " Status" + child.getVertexStatus() + " Incoming Neigh " + graph.getInNeighbors(child));
+                       System.out.println("ERROR in BFS CHILDREN. Invalid graph, child has no incoming edges " + child + " -> " + child.getId() + " Status" + child.getVertexStatus() + " Incoming Neigh " + graph.getInNeighbors(child));
                    }
                }
                else if(child.getVertexStatus() == AbstractLayoutVertex.VertexStatus.GRAY)
@@ -255,7 +253,7 @@ public class LayoutAlgorithm
 
                    if(numberOfIncomingEdges == null)
                    {
-//                       System.out.println("TERE: Found a NULL " + child + " -> " + child.getStrID() + " Status" + child.getVertexStatus() + " Incoming Neigh " + graph.getInNeighbors(child));
+//                       System.out.println("TERE: Found a NULL " + child + " -> " + child.getId() + " Status" + child.getVertexStatus() + " Incoming Neigh " + graph.getInNeighbors(child));
                        System.out.println("Map\n\t " + vertexCounters);
                    }
 
@@ -276,16 +274,16 @@ public class LayoutAlgorithm
                    }
                    else if(numberOfIncomingEdges < 0)
                    {
-                       System.out.println("ERROR in BFS CHILDREN. Seeing a grey child with <0 incoming edges " + child + " -> " + child.getStrID() + " Status" + child.getVertexStatus() + " Incoming Neigh " + graph.getInNeighbors(child));
+                       System.out.println("ERROR in BFS CHILDREN. Seeing a grey child with <0 incoming edges " + child + " -> " + child.getId() + " Status" + child.getVertexStatus() + " Incoming Neigh " + graph.getInNeighbors(child));
                    }
                }
                else
                {
-                   System.out.println("ERROR in BFS children. Seeing a Black Child " + child + " --> " + child.getStrID() + " " + graph.getInNeighbors(child).size());
+                   System.out.println("ERROR in BFS children. Seeing a Black Child " + child + " --> " + child.getId() + " " + graph.getInNeighbors(child).size());
                }
            }
 
-//           System.out.println("TERE Finished " + v + " --> " + v.getStrID());
+//           System.out.println("TERE Finished " + v + " --> " + v.getId());
 //           System.out.println("\t\tTERE queue " + vertexQueue);
 //            System.out.println("\t\tTERE counters " + vertexCounters);
 
@@ -296,10 +294,10 @@ public class LayoutAlgorithm
             System.out.println("BFS uncounted vertices, what happened to the incoming?!!! " + vertexCounters);
             for (Map.Entry<AbstractLayoutVertex, Integer> entry : vertexCounters.entrySet()) {
 
-                System.out.println("\t\t" + entry + " --> " + entry.getKey().getStrID() + " " + entry.getKey().getVertexStatus() + " " +  entry.getKey().getMethodVertices());
+                System.out.println("\t\t" + entry + " --> " + entry.getKey().getId() + " " + entry.getKey().getVertexStatus() + " " +  entry.getKey().getMethodVertices());
                 for(AbstractLayoutVertex n : graph.getInNeighbors(entry.getKey()))
                 {
-                    System.out.println("\t\t\t" + n + " --> " + n.getStrID() + " " + n.getVertexStatus());
+                    System.out.println("\t\t\t" + n + " --> " + n.getId() + " " + n.getVertexStatus());
                 }
             }
         }
@@ -349,7 +347,7 @@ public class LayoutAlgorithm
         for(AbstractLayoutVertex v: graph.getVertices()){
             if(v.getVertexStatus() != AbstractLayoutVertex.VertexStatus.BLACK)
             {
-                System.out.println("BFS ERROR Didn't process " + v.getStrID() + " in BFS Children Pass " + v.getVertexStatus());
+                System.out.println("BFS ERROR Didn't process " + v.getId() + " in BFS Children Pass " + v.getVertexStatus());
             }
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
@@ -364,8 +362,8 @@ public class LayoutAlgorithm
 
         if(root != null) {
             assignXandYtoInnerNodesAndGiveParentBBox(graph, root, MARGIN_PADDING, MARGIN_PADDING, childrenMap);
-            parentVertex.setWidth(bboxWidthTable.get(root.getStrID()) + 2 * MARGIN_PADDING);
-            parentVertex.setHeight(bboxHeightTable.get(root.getStrID()) + 2 * MARGIN_PADDING);
+            parentVertex.setWidth(bboxWidthTable.get(root.getId()) + 2 * MARGIN_PADDING);
+            parentVertex.setHeight(bboxHeightTable.get(root.getId()) + 2 * MARGIN_PADDING);
         } else {
             parentVertex.setWidth(AbstractLayoutVertex.DEFAULT_WIDTH);
             parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
@@ -415,8 +413,8 @@ public class LayoutAlgorithm
 
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
 
-        bboxWidthTable.put(root.getStrID(), currBboxWidth);
-        bboxHeightTable.put(root.getStrID(), currBboxHeight);
+        bboxWidthTable.put(root.getId(), currBboxWidth);
+        bboxHeightTable.put(root.getId(), currBboxHeight);
 
         double[] result = {currBboxWidth, currBboxHeight};
         return result;
@@ -448,7 +446,7 @@ public class LayoutAlgorithm
 
         for(AbstractLayoutVertex curVer: grayChildren)
         {
-            currentWidth += bboxWidthTable.get(curVer.getStrID()) + NODES_PADDING;
+            currentWidth += bboxWidthTable.get(curVer.getId()) + NODES_PADDING;
         }
 
         // TODO: What is AX?
@@ -463,11 +461,11 @@ public class LayoutAlgorithm
         for(AbstractLayoutVertex curVer: grayChildren)
         {
             assignXandYtoInnerNodesAndGiveParentBBox(graph, curVer,currentWidth + left + AX,NODES_PADDING + top + root.getHeight(), childrenMap);
-            currentWidth += bboxWidthTable.get(curVer.getStrID()) + NODES_PADDING;
-            currentHeight = Math.max(currentHeight, bboxHeightTable.get(curVer.getStrID()));
+            currentWidth += bboxWidthTable.get(curVer.getId()) + NODES_PADDING;
+            currentHeight = Math.max(currentHeight, bboxHeightTable.get(curVer.getId()));
         }
 
-        root.setX(left + ((bboxWidthTable.get(root.getStrID()) - root.getWidth()) / 2.0));  //left-most corner x
+        root.setX(left + ((bboxWidthTable.get(root.getId()) - root.getWidth()) / 2.0));  //left-most corner x
         root.setY(top);                                                    //top-most corner y
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
     }
