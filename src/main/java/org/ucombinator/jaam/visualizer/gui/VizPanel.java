@@ -1,22 +1,18 @@
 package org.ucombinator.jaam.visualizer.gui;
 
 import javafx.animation.ScaleTransition;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
-import javafx.scene.control.Button;
 import javafx.scene.Group;
+import javafx.scene.control.Button;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-
 import javafx.util.Duration;
 import org.ucombinator.jaam.visualizer.controllers.Controllers;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
-import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
+import org.ucombinator.jaam.visualizer.layout.*;
+
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 public class VizPanel extends Pane
 {
@@ -54,14 +50,14 @@ public class VizPanel extends Pane
     public VizPanel()
     {
         super();
-        highlighted = new LinkedHashSet<AbstractLayoutVertex>();
+        this.highlighted = new LinkedHashSet<>();
 
-        graphContentGroup = new Group();
-        graphContentGroup.setVisible(true);
-        highlighted = new LinkedHashSet<AbstractLayoutVertex>();
+        this.graphContentGroup = new Group();
+        this.graphContentGroup.setVisible(true);
+        this.highlighted = new LinkedHashSet<>();
 
-        graphContentGroup = new Group();
-        graphContentGroup.setVisible(true);
+        this.graphContentGroup = new Group();
+        this.graphContentGroup.setVisible(true);
         this.setVisible(true);
         this.getChildren().add(graphContentGroup);
         //this.requestFocus();
@@ -194,18 +190,15 @@ public class VizPanel extends Pane
 
         st.setToX(factorX);
         st.setToY(factorY);
-        st.setOnFinished(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                if(button != null) {
-                    Controllers.<MainTabController>get(VizPanel.this).setZoomEnabled(true);
-                    Controllers.<MainTabController>get(VizPanel.this).keepButton(zoomDistance, button);
-                }
-
-                VizPanel.this.panelRoot.setVisible(false);
-                VizPanel.this.resetStrokeWidth();
-                VizPanel.this.panelRoot.setVisible(true);
+        st.setOnFinished(event -> {
+            if(button != null) {
+                Controllers.<MainTabController>get(VizPanel.this).setZoomEnabled(true);
+                Controllers.<MainTabController>get(VizPanel.this).keepButton(zoomDistance, button);
             }
+
+            VizPanel.this.panelRoot.setVisible(false);
+            VizPanel.this.resetStrokeWidth();
+            VizPanel.this.panelRoot.setVisible(true);
         });
         st.play();
     }
@@ -233,29 +226,24 @@ public class VizPanel extends Pane
         double height = scaleY(v.getHeight());
         node.setTranslateLocation(translateX, translateY, width, height);
 
-        if (v.getInnerGraph().getVertices().size() == 0)
-            return;
-
-        Iterator<AbstractLayoutVertex> it = v.getInnerGraph().getVertices().iterator();
-        while (it.hasNext())
-        {
-            AbstractLayoutVertex child = it.next();
-            if(v.isExpanded())
+        for (AbstractLayoutVertex child : v.getInnerGraph().getVertices()) {
+            if (v.isExpanded())
                 drawNodes(node, child);
         }
     }
 
     private void drawEdges(AbstractLayoutVertex v)
     {
-        GUINode node = v.getGraphics();
         if(v.isExpanded()) {
+            GUINode node = v.getGraphics();
             for (LayoutEdge e : v.getInnerGraph().getEdges()) {
                 e.draw(node);
                 e.setVisible(v.isEdgeVisible());
             }
 
-            for (AbstractLayoutVertex child : v.getInnerGraph().getVertices())
+            for (AbstractLayoutVertex child : v.getInnerGraph().getVertices()) {
                 drawEdges(child);
+            }
         }
     }
 
