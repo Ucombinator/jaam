@@ -19,13 +19,11 @@ import org.ucombinator.jaam.visualizer.gui.SearchResults;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
-import org.ucombinator.jaam.visualizer.layout.LayoutRootVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
-import java.util.StringTokenizer;
 
 public class MainTabController {
     @FXML private BorderPane root;
@@ -80,8 +78,9 @@ public class MainTabController {
 
     public void setRightText() {
         StringBuilder text = new StringBuilder();
-        for (AbstractLayoutVertex v : this.mainPanel.getHighlighted())
+        for (AbstractLayoutVertex v : this.mainPanel.getHighlighted()) {
             text.append(v.getRightPanelContent() + "\n");
+        }
 
         this.getRightArea().setText(text.toString());
     }
@@ -220,25 +219,16 @@ public class MainTabController {
     }
 
     public void searchByID(String input) {
-        LayoutRootVertex panelRoot = this.mainPanel.getPanelRoot();
-        StringTokenizer token = new StringTokenizer(input, ", ");
-
-        int id1, id2;
-        String tok;
-
-        while (token.hasMoreTokens()) {
-            tok = token.nextToken();
-            if (tok.trim().equalsIgnoreCase("")) {
-                continue;
-            }
-
-            if (tok.indexOf('-') == -1) {
-                id1 = Integer.parseInt(tok.trim());
-                panelRoot.searchByID(id1, mainPanel);
+        for (String token : input.split(", ")) {
+            if (token.trim().equalsIgnoreCase("")) {
+                /* Do nothing */
+            } else if (token.indexOf('-') == -1) {
+                int id1 = Integer.parseInt(token.trim());
+                this.mainPanel.getPanelRoot().searchByID(id1, mainPanel);
             } else {
-                id1 = Integer.parseInt(tok.substring(0, tok.indexOf('-')).trim());
-                id2 = Integer.parseInt(tok.substring(tok.lastIndexOf('-') + 1).trim());
-                panelRoot.searchByIDRange(id1, id2, mainPanel);
+                int id1 = Integer.parseInt(token.substring(0, token.indexOf('-')).trim());
+                int id2 = Integer.parseInt(token.substring(token.lastIndexOf('-') + 1).trim());
+                this.mainPanel.getPanelRoot().searchByIDRange(id1, id2, mainPanel);
             }
         }
     }
