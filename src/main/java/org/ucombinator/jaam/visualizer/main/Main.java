@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.main;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.ucombinator.jaam.visualizer.controllers.MainPaneController;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.gui.MainTab;
@@ -27,8 +28,18 @@ public class Main extends Application {
         return getSelectedMainTabController().getMainPanel();
     }
 
+    private static void uncaughtExceptionHandler(Thread t, Throwable e) {
+        ExceptionDialog dialog = new ExceptionDialog(e);
+        dialog.setTitle("Exception");
+        dialog.setHeaderText("Exception in " + t);
+        dialog.setResizable(true);
+        dialog.showAndWait();
+    }
+
     @Override
     public void start(Stage stage) {
+        Thread.setDefaultUncaughtExceptionHandler(Main::uncaughtExceptionHandler);
+
         mainPane = new MainPaneController();
         Scene scene = new Scene(getMainPane().getRoot());
         stage.setScene(scene);
