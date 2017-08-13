@@ -8,10 +8,12 @@ import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.gui.MainTab;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
-public class Main extends Application
-{
+public class Main extends Application {
     private static MainPaneController mainPane;
-    public static MainPaneController getMainPane() { return mainPane; }
+
+    public static MainPaneController getMainPane() {
+        return mainPane;
+    }
 
     public static MainTab getSelectedMainTab() {
         return (MainTab) getMainPane().getTabPane().getSelectionModel().getSelectedItem();

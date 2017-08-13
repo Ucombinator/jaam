@@ -2,8 +2,8 @@ package org.ucombinator.jaam.visualizer.controllers;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
@@ -34,7 +34,7 @@ public class MainPaneController {
         }
     }
 
-    @FXML private void loadLoopGraph(ActionEvent event) {
+    public void loadLoopGraph(ActionEvent event) {
         Graph graph;
         TakeInput ti = new TakeInput();
         String filename = "";
@@ -59,10 +59,11 @@ public class MainPaneController {
         MainTab newTab = new MainTab(graph);
         System.out.println("<-- Create visualization: Done!");
 
-        if (filename.equals(""))
+        if (filename.equals("")) {
             newTab.setText("Sample");
-        else
+        } else {
             newTab.setText(filename);
+        }
         tabPane.getTabs().add(newTab);
         tabPane.getSelectionModel().select(newTab);
     }

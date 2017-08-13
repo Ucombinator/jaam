@@ -1,34 +1,31 @@
 package org.ucombinator.jaam.visualizer.main;
 
-import java.util.ArrayList;
-
+import com.strobel.decompiler.languages.java.ast.CompilationUnit;
 import org.ucombinator.jaam.serializer.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.LayoutLoopVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
 
-import com.strobel.decompiler.languages.java.ast.CompilationUnit;
+import java.util.ArrayList;
 
-public class TakeInput extends Thread
-{
+public class TakeInput extends Thread {
 
     public Graph parseLoopGraph(String file) {
         Graph graph = new Graph();
 
         ArrayList<LoopEdge> edges = new ArrayList<>();
-        for (Packet packet : Serializer.readAll(file))
-        {
-            if(packet instanceof LoopLoopNode) {
+        for (Packet packet : Serializer.readAll(file)) {
+            if (packet instanceof LoopLoopNode) {
                 LoopLoopNode node = (LoopLoopNode) packet;
                 graph.addVertex(new LayoutLoopVertex(node.id().id(),
-                                                   node.method().getSignature(),
-                                                   node.statementIndex()));
-            } else if(packet instanceof LoopMethodNode) {
+                        node.method().getSignature(),
+                        node.statementIndex()));
+            } else if (packet instanceof LoopMethodNode) {
                 LoopMethodNode node = (LoopMethodNode) packet;
                 graph.addVertex(new LayoutMethodVertex(node.id().id(),
-                                                    node.method().getSignature()));
-            } else if(packet instanceof LoopEdge) {
-                edges.add((LoopEdge)packet);
+                        node.method().getSignature()));
+            } else if (packet instanceof LoopEdge) {
+                edges.add((LoopEdge) packet);
             }
 //                else if (packet instanceof org.ucombinator.jaam.tools.decompile.DecompiledClass)
 //                {

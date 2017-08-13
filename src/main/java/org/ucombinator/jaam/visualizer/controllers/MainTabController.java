@@ -1,23 +1,19 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
 import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.SnapshotParameters;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.WritableImage;
-import javafx.scene.layout.*;
-import javafx.stage.FileChooser;
 import javafx.scene.input.MouseEvent;
-import javafx.event.ActionEvent;
-
-import java.io.File;
-import java.io.IOException;
-
-import java.util.StringTokenizer;
-
-import javax.imageio.ImageIO;
-
+import javafx.scene.layout.BorderPane;
+import javafx.stage.FileChooser;
+import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.CodeArea;
 import org.ucombinator.jaam.visualizer.gui.SearchResults;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
@@ -25,7 +21,11 @@ import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.layout.LayoutRootVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
-import org.ucombinator.jaam.visualizer.graph.Graph;
+
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
+import java.util.StringTokenizer;
 
 public class MainTabController {
     @FXML private BorderPane root;
@@ -68,6 +68,7 @@ public class MainTabController {
     }
 
     private static final boolean debugPanelMode = false;
+
     public void repaintAll() {
         System.out.println("Repainting all...");
         if (!debugPanelMode) {
@@ -123,15 +124,15 @@ public class MainTabController {
     }
 
     @FXML private void methodCollapseAction(ActionEvent event) {
-        this.getMainPanel().getPanelRoot().toggleNodesOfType(AbstractLayoutVertex.VertexType.METHOD,
-                methodsExpanded.isSelected());
+        this.getMainPanel().getPanelRoot().toggleNodesOfType(
+                AbstractLayoutVertex.VertexType.METHOD, methodsExpanded.isSelected());
         this.getMainPanel().resetAndRedraw(showEdges.isSelected());
         this.getMainPanel().resetRootPosition(false);
     }
 
     @FXML private void chainCollapseAction(ActionEvent event) {
-        this.getMainPanel().getPanelRoot()
-                .toggleNodesOfType(AbstractLayoutVertex.VertexType.CHAIN, chainsExpanded.isSelected());
+        this.getMainPanel().getPanelRoot().toggleNodesOfType(
+                AbstractLayoutVertex.VertexType.CHAIN, chainsExpanded.isSelected());
         this.getMainPanel().resetAndRedraw(showEdges.isSelected());
         this.getMainPanel().resetRootPosition(false);
     }
@@ -142,7 +143,8 @@ public class MainTabController {
         FileChooser fileChooser = new FileChooser();
 
         //Set extension filter
-        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(extension.toUpperCase() + " files (*." + extension + ")", "*." + extension);
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(
+                extension.toUpperCase() + " files (*." + extension + ")", "*." + extension);
         fileChooser.getExtensionFilters().add(extFilter);
         fileChooser.setInitialFileName(Main.getSelectedMainTab().getText() + "." + extension);
 
@@ -169,12 +171,13 @@ public class MainTabController {
         this.mainPanel.resetHighlighted(null);
         String query = getSearchInput(search);
 
-        if (search == SearchType.ID)
+        if (search == SearchType.ID) {
             searchByID(query); // TODO: Fix inconsistency with panel root
-        else if (search == SearchType.INSTRUCTION)
+        } else if (search == SearchType.INSTRUCTION) {
             this.mainPanel.getPanelRoot().searchByInstruction(query, mainPanel);
-        else if (search == SearchType.METHOD)
+        } else if (search == SearchType.METHOD) {
             this.mainPanel.getPanelRoot().searchByMethod(query, mainPanel);
+        }
 
         this.repaintAll();
         /*Parameters.bytecodeArea.clear();
@@ -202,13 +205,15 @@ public class MainTabController {
             dialog.setHeaderText(title);
             dialog.showAndWait();
             input = dialog.getResult();
-            if (input == null)
+            if (input == null) {
                 return "";
-            else
+            } else {
                 input = input.trim();
+            }
 
-            if (input.equals(""))
+            if (input.equals("")) {
                 return "";
+            }
         }
 
         return input;
@@ -223,8 +228,10 @@ public class MainTabController {
 
         while (token.hasMoreTokens()) {
             tok = token.nextToken();
-            if (tok.trim().equalsIgnoreCase(""))
+            if (tok.trim().equalsIgnoreCase("")) {
                 continue;
+            }
+
             if (tok.indexOf('-') == -1) {
                 id1 = Integer.parseInt(tok.trim());
                 panelRoot.searchByID(id1, mainPanel);
@@ -256,11 +263,11 @@ public class MainTabController {
     private boolean zoomButtonReleased = false;
 
     public void keepButton(int zoom, Button button) {
-        if(zoomEnabled && !zoomButtonReleased) {
+        if (zoomEnabled && !zoomButtonReleased) {
             zoomEnabled = false;
             this.mainPanel.zoom(zoom, button);
         }
-        if(zoomButtonReleased) {
+        if (zoomButtonReleased) {
             zoomButtonReleased = false;
         }
     }
