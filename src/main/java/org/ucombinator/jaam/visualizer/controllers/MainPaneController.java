@@ -3,12 +3,10 @@ package org.ucombinator.jaam.visualizer.controllers;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.graph.Graph;
-import org.ucombinator.jaam.visualizer.gui.MainTab;
 import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.main.TakeInput;
 
@@ -23,9 +21,7 @@ public class MainPaneController {
     public TabPane getTabPane() { return this.tabPane; }
 
     public MainPaneController() throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/MainPane.fxml"));
-        fxmlLoader.setController(this);
-        fxmlLoader.load();
+        Controllers.loadFXML("/MainPane.fxml", this);
     }
 
     public void loadLoopGraph(ActionEvent event) throws IOException {
@@ -50,16 +46,16 @@ public class MainPaneController {
         filename = file.getName();
 
         System.out.println("--> Create visualization: start...");
-        MainTab newTab = new MainTab(graph);
+        MainTabController tabController = new MainTabController(file.getName(), graph);
         System.out.println("<-- Create visualization: Done!");
 
         if (filename.equals("")) {
-            newTab.setText("Sample");
+            tabController.tab.setText("Sample");
         } else {
-            newTab.setText(filename);
+            tabController.tab.setText(filename);
         }
-        tabPane.getTabs().add(newTab);
-        tabPane.getSelectionModel().select(newTab);
+        tabPane.getTabs().add(tabController.tab);
+        tabPane.getSelectionModel().select(tabController.tab);
     }
 
     @FXML private void quit(ActionEvent event) {

@@ -3,11 +3,12 @@ package org.ucombinator.jaam.visualizer.main;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
+import javafx.scene.control.Tab;
 import javafx.stage.Stage;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.ucombinator.jaam.visualizer.controllers.Controllers;
 import org.ucombinator.jaam.visualizer.controllers.MainPaneController;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
-import org.ucombinator.jaam.visualizer.gui.MainTab;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 import java.io.IOException;
@@ -19,12 +20,12 @@ public class Main extends Application {
         return mainPane;
     }
 
-    public static MainTab getSelectedMainTab() {
-        return (MainTab) getMainPane().getTabPane().getSelectionModel().getSelectedItem();
+    public static Tab getSelectedMainTab() {
+        return (Tab) getMainPane().getTabPane().getSelectionModel().getSelectedItem();
     }
 
     public static MainTabController getSelectedMainTabController() {
-        return getSelectedMainTab().controller;
+        return Controllers.get(getSelectedMainTab());
     }
 
     public static VizPanel getSelectedVizPanel() {

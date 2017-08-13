@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 
 import javafx.util.Duration;
+import org.ucombinator.jaam.visualizer.controllers.Controllers;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -22,8 +23,6 @@ public class VizPanel extends Pane
     private Group graphContentGroup;
     private HashSet<AbstractLayoutVertex> highlighted;
     private LayoutRootVertex panelRoot;
-
-    private MainTabController mainTabController;
 
     // The dimensions of the background for our graph
     private final double initRootWidth = 500.0, initRootHeight = 500.0;
@@ -66,11 +65,6 @@ public class VizPanel extends Pane
         this.setVisible(true);
         this.getChildren().add(graphContentGroup);
         //this.requestFocus();
-    }
-
-    // Ideally this would go in the constructor, but SceneBuilder requires a default constructor
-    public void setMainTabController(MainTabController mainTabController) {
-        this.mainTabController = mainTabController;
     }
 
     public HashSet<AbstractLayoutVertex> getHighlighted() {
@@ -204,8 +198,8 @@ public class VizPanel extends Pane
             @Override
             public void handle(ActionEvent event) {
                 if(button != null) {
-                    VizPanel.this.mainTabController.setZoomEnabled(true);
-                    VizPanel.this.mainTabController.keepButton(zoomDistance, button);
+                    Controllers.<MainTabController>get(VizPanel.this).setZoomEnabled(true);
+                    Controllers.<MainTabController>get(VizPanel.this).keepButton(zoomDistance, button);
                 }
 
                 VizPanel.this.panelRoot.setVisible(false);

@@ -3,12 +3,8 @@ package org.ucombinator.jaam.visualizer.controllers;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.SnapshotParameters;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.*;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
@@ -26,6 +22,8 @@ import java.io.File;
 import java.io.IOException;
 
 public class MainTabController {
+    public final Tab tab;
+
     @FXML private BorderPane root;
     public BorderPane getRoot() { return root; }
 
@@ -50,13 +48,11 @@ public class MainTabController {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
     }
 
-    public MainTabController(Graph graph) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/MainTabContent.fxml"));
-        fxmlLoader.setController(this);
-        fxmlLoader.load();
-
-        this.mainPanel.setMainTabController(this);
+    public MainTabController(String title, Graph graph) throws IOException {
+        Controllers.loadFXML("/MainTabContent.fxml", this);
         this.mainPanel.initFX(graph);
+        this.tab = new Tab(title, this.getRoot());
+        Controllers.put(this.tab, this);
     }
 
     private static final boolean debugPanelMode = false;
