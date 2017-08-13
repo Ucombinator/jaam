@@ -37,7 +37,7 @@ public class Main extends Application {
             dialog.setTitle("Exception");
             dialog.setHeaderText("Exception in " + t);
             dialog.setResizable(true);
-            dialog.showAndWait();
+            Platform.runLater(dialog::showAndWait); // `showAndWait` is not allowed during animation and processing
         } else {
             System.err.println("***** Exception in " + t + "*****");
             e.printStackTrace();
