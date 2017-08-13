@@ -138,7 +138,7 @@ public class MainTabController {
         fileChooser.setInitialFileName(Main.getSelectedMainTab().getText() + "." + extension);
 
         //Show save file dialog
-        File file = fileChooser.showSaveDialog(Main.getMainPane().getRoot().getScene().getWindow());
+        File file = fileChooser.showSaveDialog(getRoot().getScene().getWindow());
 
         if (file != null) {
             WritableImage image = mainPanel.snapshot(new SnapshotParameters(), null);

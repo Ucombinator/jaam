@@ -16,12 +16,8 @@ import java.io.IOException;
 public class Main extends Application {
     private static MainPaneController mainPane;
 
-    public static MainPaneController getMainPane() {
-        return mainPane;
-    }
-
     public static Tab getSelectedMainTab() {
-        return (Tab) getMainPane().getTabPane().getSelectionModel().getSelectedItem();
+        return Main.mainPane.getTabPane().getSelectionModel().getSelectedItem();
     }
 
     public static MainTabController getSelectedMainTabController() {
@@ -50,8 +46,8 @@ public class Main extends Application {
     public void start(Stage stage) throws IOException {
         Thread.setDefaultUncaughtExceptionHandler(Main::uncaughtExceptionHandler);
 
-        mainPane = new MainPaneController();
-        Scene scene = new Scene(getMainPane().getRoot());
+        Main.mainPane = new MainPaneController();
+        Scene scene = new Scene(Main.mainPane.getRoot());
         stage.setScene(scene);
         stage.show();
     }
