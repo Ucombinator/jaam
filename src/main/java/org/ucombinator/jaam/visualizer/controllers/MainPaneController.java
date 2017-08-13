@@ -22,19 +22,13 @@ public class MainPaneController {
     @FXML private TabPane tabPane;
     public TabPane getTabPane() { return this.tabPane; }
 
-    public MainPaneController() {
+    public MainPaneController() throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/MainPane.fxml"));
         fxmlLoader.setController(this);
-
-        try {
-            fxmlLoader.load();
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1); // Using instead of Platform.exit because we want a non-zero exit code
-        }
+        fxmlLoader.load();
     }
 
-    public void loadLoopGraph(ActionEvent event) {
+    public void loadLoopGraph(ActionEvent event) throws IOException {
         Graph graph;
         TakeInput ti = new TakeInput();
         String filename = "";

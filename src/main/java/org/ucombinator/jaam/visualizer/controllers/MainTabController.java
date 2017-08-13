@@ -50,16 +50,10 @@ public class MainTabController {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
     }
 
-    public MainTabController(Graph graph) {
+    public MainTabController(Graph graph) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/MainTabContent.fxml"));
         fxmlLoader.setController(this);
-
-        try {
-            fxmlLoader.load();
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(1); // Using instead of Platform.exit because we want a non-zero exit code
-        }
+        fxmlLoader.load();
 
         this.mainPanel.setMainTabController(this);
         this.mainPanel.initFX(graph);
@@ -136,7 +130,7 @@ public class MainTabController {
         this.getMainPanel().resetRootPosition(false);
     }
 
-    @FXML private void exportImageAction(ActionEvent event) {
+    @FXML private void exportImageAction(ActionEvent event) throws IOException {
         event.consume(); // TODO: Is this necessary?
         String extension = "png";
         FileChooser fileChooser = new FileChooser();
@@ -157,11 +151,7 @@ public class MainTabController {
             // TODO: probably use a file chooser here
             File newFile = new File(file.getAbsolutePath());
 
-            try {
-                ImageIO.write(SwingFXUtils.fromFXImage(image, null), extension, newFile);
-            } catch (IOException exception) {
-                System.out.println(exception);
-            }
+            ImageIO.write(SwingFXUtils.fromFXImage(image, null), extension, newFile);
         }
     }
 

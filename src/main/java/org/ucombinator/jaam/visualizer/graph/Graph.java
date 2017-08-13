@@ -211,13 +211,9 @@ public class Graph
     }
 
     /*public void save(String filename) {
-        try {
-            PacketOutput output = new PacketOutput(new FileOutputStream(filename));
-            for (Vertex v : this.vertices)
+        PacketOutput output = new PacketOutput(new FileOutputStream(filename));
+        for (Vertex v : this.vertices) {
                 v.save(output);
-        }
-        catch(Exception e) {
-            e.printStackTrace();
         }
     }*/
 }
