@@ -82,14 +82,14 @@ public class CodeArea extends TextFlow
         if(highlighted.size() > 0)
         {
             //TODO: Add function for getting all methods
-            HashSet<LayoutMethodVertex> methodVertices = new LinkedHashSet<LayoutMethodVertex>();
+            HashSet<LayoutMethodVertex> methodVertices = new LinkedHashSet<>();
             for(AbstractLayoutVertex v : highlighted)
                 methodVertices.addAll(v.getMethodVertices());
 
-            description = new ArrayList<Instruction>();
+            description = new ArrayList<>();
             for(LayoutMethodVertex v : methodVertices) {
                 String methodName = v.getMethodName();
-                ArrayList<Instruction> currInstructions = new ArrayList<Instruction>(v.getInstructions());
+                ArrayList<Instruction> currInstructions = new ArrayList<>(v.getInstructions());
                 Collections.sort(currInstructions);
                 //System.out.println(currInstructions.size());
 

@@ -1,10 +1,9 @@
 package org.ucombinator.jaam.visualizer.gui;
 
-import java.util.ArrayList;
-
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
+import javafx.scene.input.MouseDragEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
@@ -19,19 +18,17 @@ import org.ucombinator.jaam.visualizer.main.Main;
 public class GUINode extends Pane
 {
     public enum ShapeType {RECTANGLE, CIRCLE, DIAMOND};
-    ShapeType shape;
+    private ShapeType shape;
 
-    protected static final double TEXT_VERTICAL_PADDING = 15;
-    protected static final double TEXT_HORIZONTAL_PADDING = 15;
+    private static final double TEXT_VERTICAL_PADDING = 15;
+    private static final double TEXT_HORIZONTAL_PADDING = 15;
     private double dragStartX, dragStartY;
     private Rectangle rect, highlightingRect;
     private Text rectLabel;
     private AbstractLayoutVertex vertex;
     private GUINode parent;
 
-    private ArrayList<LayoutEdge> edges = new ArrayList<LayoutEdge>();
-
-    boolean isDragging;
+    private boolean isDragging;
     private double totalScaleX;
     private double totalScaleY;
 
@@ -67,10 +64,114 @@ public class GUINode extends Pane
         this.totalScaleX = 1;
         this.totalScaleY = 1;
 
-        this.addMouseEvents();
+        this.setOnMousePressed(event1 -> {
+            event1.consume();
+            GUINode node1 = (GUINode) event1.getSource();
+
+            double scaleFactorX1 = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleX();
+            double scaleFactorY1 = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleY();
+
+            if (node1.getVertex() instanceof LayoutRootVertex) {
+                dragStartX = event1.getScreenX() - node1.getTranslateX();
+                dragStartY = event1.getScreenY() - node1.getTranslateY();
+            } else {
+                dragStartX = event1.getScreenX() / scaleFactorX1 - node1.getTranslateX();
+                dragStartY = event1.getScreenY() / scaleFactorY1 - node1.getTranslateY();
+            }
+        });
+
+        this.setOnMouseDragged(event -> {
+            event.consume();
+            GUINode node = GUINode.this; //(GUINode) event.getSource();
+
+            node.isDragging = true;
+            double scaleFactorX = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleX();
+            double scaleFactorY = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleY();
+
+            double offsetX, offsetY;
+            if(GUINode.this.getParentNode() != null) {
+                offsetX = event.getScreenX() / scaleFactorX - dragStartX;
+                offsetY = event.getScreenY() / scaleFactorY - dragStartY;
+                Bounds thisBounds = GUINode.this.rect.getBoundsInLocal();
+                double thisWidth = thisBounds.getWidth();
+                double thisHeight = thisBounds.getHeight();
+
+                Bounds parentBounds = GUINode.this.getParentNode().rect.getBoundsInLocal();
+                double maxOffsetX = parentBounds.getWidth() - thisWidth;
+                double maxOffsetY = parentBounds.getHeight() - thisHeight;
+
+                // This truncation of the offset confines our box to its parent.
+                if (offsetX < 0)
+                    offsetX = 0;
+                else if (offsetX > maxOffsetX)
+                    offsetX = maxOffsetX;
+
+                if (offsetY < 0)
+                    offsetY = 0;
+                else if (offsetY > maxOffsetY)
+                    offsetY = maxOffsetY;
+            }
+            else {
+                offsetX = event.getScreenX() - dragStartX;
+                offsetY = event.getScreenY() - dragStartY;
+            }
+
+            node.setTranslateLocation(offsetX, offsetY);
+
+            AbstractLayoutVertex v1 = GUINode.this.vertex;
+            VizPanel mainPanel = Main.getSelectedVizPanel();
+            v1.setX(mainPanel.invScaleX(offsetX));
+            v1.setY(mainPanel.invScaleY(offsetY));
+            LayoutEdge.redrawEdges(v1, false);
+        });
+
+        this.setOnMouseReleased(event -> {
+            event.consume();
+            GUINode node = (GUINode) event.getSource();
+
+            if (node.isDragging)
+            {
+                node.isDragging = false;
+            }
+        });
+
+        this.setOnMouseEntered(event -> {
+            event.consume();
+            if (vertex.getSelfGraph() != null)
+            {
+                for(LayoutEdge e : vertex.getSelfGraph().getEdges())
+                {
+                    if(e.getSource() == vertex || e.getDest() == vertex)
+                    {
+                        e.highlightEdgePath();
+                    }
+                }
+            }
+        });
+
+        this.setOnMouseExited(event -> {
+            event.consume();
+            //getChildren().remove(rectLabel);
+
+            if(vertex.getSelfGraph() != null)
+            {
+                for(LayoutEdge e : vertex.getSelfGraph().getEdges())
+                {
+                    if (e.getSource() == vertex || e.getDest() == vertex)
+                    {
+                        e.resetEdgePath();
+                    }
+                }
+            }
+        });
+
+        if(!(this.vertex instanceof LayoutRootVertex)) {
+            this.setOnMouseClicked(new AnimationHandler());
+        }
+
         this.setVisible(true);
     }
-    
+
     public AbstractLayoutVertex getVertex() {
         return vertex;
     }
@@ -144,9 +245,8 @@ public class GUINode extends Pane
         Bounds nodeBounds = this.getBoundsInParent();
         Bounds nodeBoundsLocal = this.getBoundsInLocal();
         Bounds rectBounds = this.rect.getBoundsInParent();
-        BoundingBox totalBounds = new BoundingBox(nodeBounds.getMinX() + rectBounds.getMinX() - nodeBoundsLocal.getMinX(),
+        return new BoundingBox(nodeBounds.getMinX() + rectBounds.getMinX() - nodeBoundsLocal.getMinX(),
                 nodeBounds.getMinY() + rectBounds.getMinY() - nodeBoundsLocal.getMinY(), rectBounds.getWidth(), rectBounds.getHeight());
-        return totalBounds;
     }
 
     public void printLocation() {
@@ -165,18 +265,6 @@ public class GUINode extends Pane
     public void decreaseOpacity()
     {
         this.rect.setOpacity((this.rect.getOpacity()) / 2.0);
-    }
-
-    public void addMouseEvents()
-    {
-        this.setOnMousePressed(onMousePressedEventHandler);
-        this.setOnMouseDragged(onMouseDraggedEventHandler);
-        this.setOnMouseReleased(onMouseReleasedEventHandler);
-        this.setOnMouseEntered(onMouseEnteredEventHandler);
-        this.setOnMouseExited(onMouseExitedEventHandler);
-
-        if(!(this.vertex instanceof LayoutRootVertex))
-            this.setOnMouseClicked(new AnimationHandler());
     }
 
     // The next two functions compute the shift that must be applied to keep the
@@ -335,133 +423,6 @@ public class GUINode extends Pane
             return result;
         }
     }*/
-
-    EventHandler<MouseEvent> onMousePressedEventHandler = new EventHandler<MouseEvent>()
-    {
-        @Override
-        public void handle(MouseEvent event)
-        {
-            event.consume();
-            GUINode node = (GUINode) event.getSource();
-
-            double scaleFactorX = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleX();
-            double scaleFactorY = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleY();
-
-            if(node.getVertex() instanceof LayoutRootVertex) {
-                dragStartX = event.getScreenX() - node.getTranslateX();
-                dragStartY = event.getScreenY() - node.getTranslateY();
-            }
-            else {
-                dragStartX = event.getScreenX() / scaleFactorX - node.getTranslateX();
-                dragStartY = event.getScreenY() / scaleFactorY - node.getTranslateY();
-            }
-        }
-    };
-
-    EventHandler<MouseEvent> onMouseDraggedEventHandler = new EventHandler<MouseEvent>()
-    {
-        @Override
-        public void handle(MouseEvent event)
-        {
-            event.consume();
-            GUINode node = (GUINode) event.getSource();
-
-            node.isDragging = true;
-            double scaleFactorX = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleX();
-            double scaleFactorY = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleY();
-
-            double offsetX, offsetY;
-            if(GUINode.this.getParentNode() != null) {
-                offsetX = event.getScreenX() / scaleFactorX - dragStartX;
-                offsetY = event.getScreenY() / scaleFactorY - dragStartY;
-                Bounds thisBounds = GUINode.this.rect.getBoundsInLocal();
-                double thisWidth = thisBounds.getWidth();
-                double thisHeight = thisBounds.getHeight();
-
-                Bounds parentBounds = GUINode.this.getParentNode().rect.getBoundsInLocal();
-                double maxOffsetX = parentBounds.getWidth() - thisWidth;
-                double maxOffsetY = parentBounds.getHeight() - thisHeight;
-
-                // This truncation of the offset confines our box to its parent.
-                if (offsetX < 0)
-                    offsetX = 0;
-                else if (offsetX > maxOffsetX)
-                    offsetX = maxOffsetX;
-
-                if (offsetY < 0)
-                    offsetY = 0;
-                else if (offsetY > maxOffsetY)
-                    offsetY = maxOffsetY;
-            }
-            else {
-                offsetX = event.getScreenX() - dragStartX;
-                offsetY = event.getScreenY() - dragStartY;
-            }
-
-            node.setTranslateLocation(offsetX, offsetY);
-
-            AbstractLayoutVertex v = GUINode.this.vertex;
-            VizPanel mainPanel = Main.getSelectedVizPanel();
-            v.setX(mainPanel.invScaleX(offsetX));
-            v.setY(mainPanel.invScaleY(offsetY));
-            LayoutEdge.redrawEdges(v, false);
-        }
-    };
-
-    EventHandler<MouseEvent> onMouseReleasedEventHandler = new EventHandler<MouseEvent>()
-    {
-        @Override
-        public void handle(MouseEvent event)
-        {
-            event.consume();
-            GUINode node = (GUINode) event.getSource();
-
-            if (node.isDragging)
-            {
-                node.isDragging = false;
-            }
-        }
-    };
-
-    EventHandler<MouseEvent> onMouseEnteredEventHandler = new javafx.event.EventHandler<MouseEvent>()
-    {
-        @Override
-        public void handle(MouseEvent event)
-        {
-            event.consume();
-            if (vertex.getSelfGraph() != null)
-            {
-                for(LayoutEdge e : vertex.getSelfGraph().getEdges())
-                {
-                    if(e.getSource() == vertex || e.getDest() == vertex)
-                    {
-                        e.highlightEdgePath();
-                    }
-                }
-            }
-        }
-    };
-
-    EventHandler<MouseEvent> onMouseExitedEventHandler = new javafx.event.EventHandler<MouseEvent>()
-    {
-        @Override
-        public void handle(MouseEvent event)
-        {
-            event.consume();
-            //getChildren().remove(rectLabel);
-            
-            if(vertex.getSelfGraph() != null)
-            {
-                for(LayoutEdge e : vertex.getSelfGraph().getEdges())
-                {
-                    if (e.getSource() == vertex || e.getDest() == vertex)
-                    {
-                        e.resetEdgePath();
-                    }
-                }
-            }
-        }
-    };
 
     public GUINode getParentNode() {
         return this.parent;
