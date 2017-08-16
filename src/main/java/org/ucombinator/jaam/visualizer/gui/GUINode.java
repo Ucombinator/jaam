@@ -64,19 +64,19 @@ public class GUINode extends Pane
         this.totalScaleX = 1;
         this.totalScaleY = 1;
 
-        this.setOnMousePressed(event1 -> {
-            event1.consume();
-            GUINode node1 = (GUINode) event1.getSource();
+        this.setOnMousePressed(event -> {
+            event.consume();
+            GUINode node1 = (GUINode) event.getSource();
 
             double scaleFactorX1 = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleX();
             double scaleFactorY1 = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleY();
 
             if (node1.getVertex() instanceof LayoutRootVertex) {
-                dragStartX = event1.getScreenX() - node1.getTranslateX();
-                dragStartY = event1.getScreenY() - node1.getTranslateY();
+                dragStartX = event.getScreenX() - node1.getTranslateX();
+                dragStartY = event.getScreenY() - node1.getTranslateY();
             } else {
-                dragStartX = event1.getScreenX() / scaleFactorX1 - node1.getTranslateX();
-                dragStartY = event1.getScreenY() / scaleFactorY1 - node1.getTranslateY();
+                dragStartX = event.getScreenX() / scaleFactorX1 - node1.getTranslateX();
+                dragStartY = event.getScreenY() / scaleFactorY1 - node1.getTranslateY();
             }
         });
 
