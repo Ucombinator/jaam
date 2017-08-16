@@ -22,6 +22,7 @@ libraryDependencies ++= Seq(
   "org.rogach" %% "scallop" % "2.0.1",
   "org.scala-lang" % "scala-reflect" % "2.11.8",
   "org.slf4j" % "slf4j-nop" % "1.7.22",
+  "org.ucombinator.dockfx" % "DockFX" % "0.1.12",
   "org.ucombinator.soot" % "soot" % "nightly.20161021"
 )
 
