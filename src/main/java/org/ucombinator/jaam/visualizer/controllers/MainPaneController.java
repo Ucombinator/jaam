@@ -43,23 +43,21 @@ public class MainPaneController {
     }
 
     public void loadLoopGraphFile(File file) throws IOException {
-        String path = file.getAbsolutePath();
-        System.out.println("File path: " + path);
-        Graph graph = parseLoopGraph(file.getAbsolutePath());
+        Graph graph = parseLoopGraph(file);
 
         System.out.println("--> Create visualization: start...");
-        MainTabController tabController = new MainTabController(file.getName(), graph);
+        MainTabController tabController = new MainTabController(file, graph);
         System.out.println("<-- Create visualization: Done!");
 
         tabPane.getTabs().add(tabController.tab);
         tabPane.getSelectionModel().select(tabController.tab);
     }
 
-    private static Graph parseLoopGraph(String file) {
+    private static Graph parseLoopGraph(File file) {
         Graph graph = new Graph();
 
         ArrayList<LoopEdge> edges = new ArrayList<>();
-        for (Packet packet : Serializer.readAll(file)) {
+        for (Packet packet : Serializer.readAll(file.getAbsolutePath())) {
             if (packet instanceof LoopLoopNode) {
                 LoopLoopNode node = (LoopLoopNode) packet;
                 graph.addVertex(new LayoutLoopVertex(node.id().id(),

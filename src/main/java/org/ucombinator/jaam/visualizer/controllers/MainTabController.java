@@ -47,7 +47,7 @@ public class MainTabController {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
     }
 
-    public MainTabController(String title, Graph graph) throws IOException {
+    public MainTabController(File file, Graph graph) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
 
         this.zoomSpinner.setValueFactory(new ZoomSpinnerValueFactory(1.0, 1.2));
@@ -55,7 +55,8 @@ public class MainTabController {
         TimelineProperty.bind(this.getMainPanel().scaleYProperty(), this.zoomSpinner.valueProperty(), 300);
 
         this.mainPanel.initFX(graph);
-        this.tab = new Tab(title, this.getRoot());
+        this.tab = new Tab(file.getName(), this.getRoot());
+        this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));
         Controllers.put(this.tab, this);
     }
 
