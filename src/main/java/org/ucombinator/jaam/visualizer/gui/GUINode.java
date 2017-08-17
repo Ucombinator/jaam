@@ -17,7 +17,11 @@ import javafx.scene.text.Text;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
-import org.ucombinator.jaam.visualizer.layout.*;
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
+import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
+import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
+import org.ucombinator.jaam.visualizer.layout.LayoutRootVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 
 import java.util.Iterator;
@@ -27,12 +31,14 @@ public class GUINode extends Pane
     private static final double TEXT_VERTICAL_PADDING = 15;
     private static final double TEXT_HORIZONTAL_PADDING = 15;
     private static final int transitionTime = 300; // Milliseconds per transition
-    private double dragStartX, dragStartY;
-    private Rectangle rect, highlightingRect;
-    private Text rectLabel;
-    private AbstractLayoutVertex vertex;
-    private GUINode parent;
 
+    private final Rectangle rect;
+    private final Rectangle highlightingRect;
+    private final Text rectLabel;
+    private final AbstractLayoutVertex vertex;
+    private final GUINode parent;
+
+    private double dragStartX, dragStartY;
     private double totalScaleX;
     private double totalScaleY;
     
@@ -53,7 +59,7 @@ public class GUINode extends Pane
         this.highlightingRect.setFill(javafx.scene.paint.Color.WHITE);
         this.highlightingRect.setStrokeWidth(10);
 
-        if(v instanceof LayoutRootVertex) {
+        if (v instanceof LayoutRootVertex) {
             this.getChildren().add(this.rect);
         } else {
             this.getChildren().addAll(this.highlightingRect, this.rect, this.rectLabel);
@@ -87,7 +93,7 @@ public class GUINode extends Pane
             double scaleFactorY = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleY();
 
             double offsetX, offsetY;
-            if(this.getParentNode() != null) {
+            if (this.getParentNode() != null) {
                 offsetX = event.getScreenX() / scaleFactorX - dragStartX;
                 offsetY = event.getScreenY() / scaleFactorY - dragStartY;
                 Bounds thisBounds = this.rect.getBoundsInLocal();
@@ -148,8 +154,8 @@ public class GUINode extends Pane
             }
         });
 
-        if(!(this.vertex instanceof LayoutRootVertex)) {
-            this.setOnMouseClicked(event -> {
+        this.setOnMouseClicked(event -> {
+            if(!(this.vertex instanceof LayoutRootVertex)) {
                 if(event.getButton().equals(MouseButton.PRIMARY)) {
                     switch (event.getClickCount()) {
                         case 1: handlePrimarySingleClick(event); break;
@@ -157,8 +163,8 @@ public class GUINode extends Pane
                         default: break;
                     }
                 }
-            });
-        }
+            }
+        });
 
         this.setVisible(true);
     }
@@ -333,10 +339,6 @@ public class GUINode extends Pane
 
     public AbstractLayoutVertex getVertex() {
         return vertex;
-    }
-
-    public void setVertex(AbstractLayoutVertex vertex) {
-        this.vertex = vertex;
     }
 
     public String toString()
@@ -570,15 +572,15 @@ public class GUINode extends Pane
     }
 
     public double getTotalParentScaleX() {
-        if (this.parent != null)
+        if (this.parent != null) {
             return this.parent.totalScaleX;
-        else return 1;
+        } else { return 1; }
     }
 
     public double getTotalParentScaleY() {
-        if (this.parent != null)
+        if (this.parent != null) {
             return this.parent.totalScaleY;
-        else return 1;
+        } else { return 1; }
     }
 
     public void setTotalScaleX(double scale) {
@@ -606,7 +608,7 @@ public class GUINode extends Pane
         return this.highlightingRect;
     }
     
-    public Rectangle getRect(){
+    public Rectangle getRect() {
         return this.rect;
     }
 }
