@@ -3,23 +3,26 @@ package org.ucombinator.jaam.visualizer.controllers;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Spinner;
 import javafx.scene.image.WritableImage;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.graph.Graph;
+import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.TimelineProperty;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 import org.ucombinator.jaam.visualizer.gui.ZoomSpinnerValueFactory;
-import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
+import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 
 public class VizPanelController {
     @FXML private Node root;
@@ -98,4 +101,64 @@ public class VizPanelController {
             ImageIO.write(SwingFXUtils.fromFXImage(image, null), extension, newFile);
         }
     }
+
+    public LayoutRootVertex getPanelRoot() { return this.getPanelRoot(); }
+    public HashSet<AbstractLayoutVertex> getHighlighted() { return this.getVizPanel().getHighlighted(); }
+    public void initFX(Graph graph) { this.getVizPanel().initFX(graph);}
+    public void resetContent() { this.resetContent(); }
+    public void resetPanelSize() { this.getVizPanel().resetPanelSize(); }
+    public double scaleX(double coordinate) { return this.getVizPanel().scaleX(coordinate); }
+    public double scaleY(double coordinate) { return this.getVizPanel().scaleY(coordinate); }
+    public double invScaleX(double pixelCoordinate) { return this.getVizPanel().invScaleX(pixelCoordinate); }
+    public double invScaleY(double pixelCoordinate) { return this.getVizPanel().invScaleY(pixelCoordinate); }
+    public double getWidthPerVertex() { return this.getVizPanel().getWidthPerVertex(); }
+    public void searchByJimpleIndex(String method, int index, boolean removeCurrent, boolean addChosen) { this.getVizPanel().searchByJimpleIndex(method, index, removeCurrent, addChosen); }
+    public void resetHighlighted(AbstractLayoutVertex newHighlighted) { this.getVizPanel().resetHighlighted(newHighlighted); }
+    public void drawGraph() { this.getVizPanel().drawGraph(); }
+    public void initZoom() { this.getVizPanel().initZoom(); }
+    public void resetAndRedraw(boolean edgeVisible) { this.getVizPanel().resetAndRedraw(edgeVisible); }
+    public void resetStrokeWidth() { this.getVizPanel().resetStrokeWidth(); }
+/*
+    public void zoom(int zoomDistance, Button button) {
+        double scaleFactor = Math.pow(factorMultiple, zoomDistance);
+        factorX *= scaleFactor;
+        factorY *= scaleFactor;
+
+        ScaleTransition st = new ScaleTransition(new Duration(100), panelRoot.getGraphics());
+
+        st.setToX(factorX);
+        st.setToY(factorY);
+        st.setOnFinished(event -> {
+            if(button != null) {
+                Controllers.<MainTabController>get(this).setZoomEnabled(true);
+                Controllers.<MainTabController>get(this).keepButton(zoomDistance, button);
+            }
+
+            this.panelRoot.setVisible(false);
+            this.resetStrokeWidth();
+            this.panelRoot.setVisible(true);
+        });
+        st.play();
+    }
+    */
+
+
+/*
+    public void incrementScaleXFactor() {
+        factorX *= factorMultiple;
+    }
+
+    public void decrementScaleXFactor() {
+        factorX /= factorMultiple;
+    }
+
+    public void incrementScaleYFactor() {
+        factorY *= factorMultiple;
+    }
+
+    public void decrementScaleYFactor() {
+        factorY /= factorMultiple;
+    }
+    */
+
 }
