@@ -7,6 +7,7 @@ import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
@@ -24,8 +25,13 @@ public class MainTabController {
     @FXML private BorderPane root;
     public BorderPane getRoot() { return root; }
 
-    @FXML private VizPanel mainPanel;
-    public VizPanel getMainPanel() { return this.mainPanel; }
+    @FXML private Pane centerPane; // TODO: rename
+    public Pane getCenterPane() { return this.centerPane; }
+
+    private final VizPanelController vizPanelController;
+
+    private VizPanel mainPanel; // TODO: rename to "vizPanel"
+    public VizPanel getVizPanel() { return this.mainPanel; }
 
     @FXML private TextArea descriptionArea;
     public TextArea getRightArea() { return this.descriptionArea; }
@@ -49,10 +55,9 @@ public class MainTabController {
 
     public MainTabController(File file, Graph graph) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
-
-        this.zoomSpinner.setValueFactory(new ZoomSpinnerValueFactory(1.0, 1.2));
-        TimelineProperty.bind(this.getMainPanel().scaleXProperty(), this.zoomSpinner.valueProperty(), 300);
-        TimelineProperty.bind(this.getMainPanel().scaleYProperty(), this.zoomSpinner.valueProperty(), 300);
+        this.vizPanelController = new VizPanelController(file, graph);
+        this.mainPanel = this.vizPanelController.getMainPanel();
+        this.centerPane.getChildren().add(this.vizPanelController.getRoot());
 
         this.mainPanel.initFX(graph);
         this.tab = new Tab(file.getName(), this.getRoot());
@@ -74,62 +79,6 @@ public class MainTabController {
         }
 
         this.getRightArea().setText(text.toString());
-    }
-
-    @FXML private void resetButtonPressed() {
-        Main.getSelectedVizPanel().resetRootPosition(true);
-    }
-
-    @FXML private void showEdgesAction(ActionEvent event) {
-        this.getMainPanel().getPanelRoot().setVisible(false);
-        this.getMainPanel().getPanelRoot().setEdgeVisibility(showEdges.isSelected());
-        LayoutEdge.redrawEdges(mainPanel.getPanelRoot(), true);
-        this.getMainPanel().getPanelRoot().setVisible(true);
-    }
-
-    @FXML private void showLabelsAction(ActionEvent event) {
-        this.getMainPanel().getPanelRoot().setVisible(false);
-        this.getMainPanel().getPanelRoot().setLabelVisibility(showLabels.isSelected());
-        this.getMainPanel().getPanelRoot().setVisible(true);
-    }
-
-    @FXML private void methodCollapseAction(ActionEvent event) {
-        this.getMainPanel().getPanelRoot().toggleNodesOfType(
-                AbstractLayoutVertex.VertexType.METHOD, methodsExpanded.isSelected());
-        this.getMainPanel().resetAndRedraw(showEdges.isSelected());
-        this.getMainPanel().resetRootPosition(false);
-    }
-
-    @FXML private void chainCollapseAction(ActionEvent event) {
-        this.getMainPanel().getPanelRoot().toggleNodesOfType(
-                AbstractLayoutVertex.VertexType.CHAIN, chainsExpanded.isSelected());
-        this.getMainPanel().resetAndRedraw(showEdges.isSelected());
-        this.getMainPanel().resetRootPosition(false);
-    }
-
-    @FXML private void exportImageAction(ActionEvent event) throws IOException {
-        event.consume(); // TODO: Is this necessary?
-        String extension = "png";
-        FileChooser fileChooser = new FileChooser();
-
-        //Set extension filter
-        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(
-                extension.toUpperCase() + " files (*." + extension + ")", "*." + extension);
-        fileChooser.getExtensionFilters().add(extFilter);
-        fileChooser.setInitialFileName(Main.getSelectedMainTab().getText() + "." + extension);
-
-        //Show save file dialog
-        File file = fileChooser.showSaveDialog(getRoot().getScene().getWindow());
-
-        if (file != null) {
-            WritableImage image = mainPanel.snapshot(new SnapshotParameters(), null);
-
-            System.out.println(file.getAbsolutePath());
-            // TODO: probably use a file chooser here
-            File newFile = new File(file.getAbsolutePath());
-
-            ImageIO.write(SwingFXUtils.fromFXImage(image, null), extension, newFile);
-        }
     }
 
     // Clean up info from previous searches

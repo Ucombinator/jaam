@@ -170,7 +170,7 @@ public class GUINode extends Pane
                         event.consume();
 
                         MainTabController currentFrame = Main.getSelectedMainTabController();
-                        currentFrame.getMainPanel().resetHighlighted(this.getVertex());
+                        currentFrame.getVizPanel().resetHighlighted(this.getVertex());
                         currentFrame.getBytecodeArea().setDescription();
                         currentFrame.setRightText();
                         break;

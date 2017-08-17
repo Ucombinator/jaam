@@ -26,7 +26,7 @@ public class Main extends Application {
     }
 
     public static VizPanel getSelectedVizPanel() {
-        return getSelectedMainTabController().getMainPanel();
+        return getSelectedMainTabController().getVizPanel();
     }
 
     private static void uncaughtExceptionHandler(Thread t, Throwable e) {
