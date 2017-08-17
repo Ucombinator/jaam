@@ -13,6 +13,7 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.CodeArea;
 import org.ucombinator.jaam.visualizer.gui.SearchResults;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
+import org.ucombinator.jaam.visualizer.gui.ZoomSpinnerValueFactory;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.main.Main;
@@ -44,12 +45,17 @@ public class MainTabController {
     @FXML private CheckBox methodsExpanded;
     @FXML private CheckBox chainsExpanded;
 
+    @FXML private Spinner<Double> zoomSpinner;
+
     public enum SearchType {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
     }
 
     public MainTabController(String title, Graph graph) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
+        this.zoomSpinner.setValueFactory(new ZoomSpinnerValueFactory(1.0, 1.1));
+        this.mainPanel.scaleXProperty().bind(this.zoomSpinner.valueProperty());
+        this.mainPanel.scaleYProperty().bind(this.zoomSpinner.valueProperty());
         this.mainPanel.initFX(graph);
         this.tab = new Tab(title, this.getRoot());
         Controllers.put(this.tab, this);
@@ -243,9 +249,8 @@ public class MainTabController {
             zoomEnabled = false;
             this.mainPanel.zoom(zoom, button);
         }
-        if (zoomButtonReleased) {
-            zoomButtonReleased = false;
-        }
+
+        zoomButtonReleased = false;
     }
 
     public void setZoomEnabled(boolean isEnabled) {
