@@ -346,20 +346,15 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
 
     public void setHighlighted(boolean isHighlighted)
     {
-        if(isHighlighted) {
+        if (isHighlighted) {
             this.getGraphics().setFill(highlightColor);
-            this.setGraphicsHighlighted(true);
-        }
-        else {
+        } else {
             this.getGraphics().setFill(this.color);
-            this.setGraphicsHighlighted(false);
         }
-    }
 
-    private void setGraphicsHighlighted(boolean visible) {
         Rectangle r = this.getGraphics().getHighlightingRect();
         FadeTransition ft = new FadeTransition(Duration.millis(300), r);
-        if(visible) {
+        if (isHighlighted) {
             this.getGraphics().getHighlightingRect().setVisible(true);
             ft.setFromValue(0f);
             ft.setToValue(1f);
@@ -372,7 +367,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
 //            
 //            @Override
 //            public void handle(ActionEvent event) {
-//                //vertex.getGraphics().getHighlightingRect().setVisible(visible);
+//                //vertex.getGraphics().getHighlightingRect().setVisible(isHighlighted);
 //            }
 //        });
         ft.play();

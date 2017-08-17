@@ -144,8 +144,9 @@ public class VizPanel extends Pane
 
     public void resetHighlighted(AbstractLayoutVertex newHighlighted)
     {
-        for(AbstractLayoutVertex currHighlighted : highlighted)
+        for(AbstractLayoutVertex currHighlighted : highlighted) {
             currHighlighted.setHighlighted(false);
+        }
         highlighted.clear();
 
         if(newHighlighted != null) {
@@ -192,13 +193,13 @@ public class VizPanel extends Pane
         st.setToY(factorY);
         st.setOnFinished(event -> {
             if(button != null) {
-                Controllers.<MainTabController>get(VizPanel.this).setZoomEnabled(true);
-                Controllers.<MainTabController>get(VizPanel.this).keepButton(zoomDistance, button);
+                Controllers.<MainTabController>get(this).setZoomEnabled(true);
+                Controllers.<MainTabController>get(this).keepButton(zoomDistance, button);
             }
 
-            VizPanel.this.panelRoot.setVisible(false);
-            VizPanel.this.resetStrokeWidth();
-            VizPanel.this.panelRoot.setVisible(true);
+            this.panelRoot.setVisible(false);
+            this.resetStrokeWidth();
+            this.panelRoot.setVisible(true);
         });
         st.play();
     }
@@ -215,8 +216,7 @@ public class VizPanel extends Pane
 
         if (parent == null) {
             graphContentGroup.getChildren().add(node);
-        }
-        else {
+        } else {
             parent.getChildren().add(node);
         }
 
@@ -227,8 +227,9 @@ public class VizPanel extends Pane
         node.setTranslateLocation(translateX, translateY, width, height);
 
         for (AbstractLayoutVertex child : v.getInnerGraph().getVertices()) {
-            if (v.isExpanded())
+            if (v.isExpanded()) {
                 drawNodes(node, child);
+            }
         }
     }
 

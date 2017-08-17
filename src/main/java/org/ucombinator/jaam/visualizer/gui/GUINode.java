@@ -71,129 +71,128 @@ public class GUINode extends Pane
         this.totalScaleX = 1;
         this.totalScaleY = 1;
 
-        this.setOnMousePressed(event -> {
-            event.consume();
-
-            double scaleFactorX1 = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleX();
-            double scaleFactorY1 = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleY();
-
-            if (this.getVertex() instanceof LayoutRootVertex) {
-                dragStartX = event.getScreenX() - this.getTranslateX();
-                dragStartY = event.getScreenY() - this.getTranslateY();
-            } else {
-                dragStartX = event.getScreenX() / scaleFactorX1 - this.getTranslateX();
-                dragStartY = event.getScreenY() / scaleFactorY1 - this.getTranslateY();
-            }
-        });
-
-        this.setOnMouseDragged(event -> {
-            event.consume();
-
-            double scaleFactorX = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleX();
-            double scaleFactorY = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleY();
-
-            double offsetX, offsetY;
-            if (this.getParentNode() != null) {
-                offsetX = event.getScreenX() / scaleFactorX - dragStartX;
-                offsetY = event.getScreenY() / scaleFactorY - dragStartY;
-                Bounds thisBounds = this.rect.getBoundsInLocal();
-                double thisWidth = thisBounds.getWidth();
-                double thisHeight = thisBounds.getHeight();
-
-                Bounds parentBounds = this.getParentNode().rect.getBoundsInLocal();
-                double maxOffsetX = parentBounds.getWidth() - thisWidth;
-                double maxOffsetY = parentBounds.getHeight() - thisHeight;
-
-                // This truncation of the offset confines our box to its parent.
-                if (offsetX < 0) {
-                    offsetX = 0;
-                } else if (offsetX > maxOffsetX) {
-                    offsetX = maxOffsetX;
-                }
-
-                if (offsetY < 0) {
-                    offsetY = 0;
-                } else if (offsetY > maxOffsetY) {
-                    offsetY = maxOffsetY;
-                }
-            } else {
-                offsetX = event.getScreenX() - dragStartX;
-                offsetY = event.getScreenY() - dragStartY;
-            }
-
-            this.setTranslateLocation(offsetX, offsetY);
-
-            AbstractLayoutVertex v1 = this.vertex;
-            VizPanel mainPanel = Main.getSelectedVizPanel();
-            v1.setX(mainPanel.invScaleX(offsetX));
-            v1.setY(mainPanel.invScaleY(offsetY));
-            LayoutEdge.redrawEdges(v1, false);
-        });
-
-        this.setOnMouseEntered(event -> {
-            event.consume();
-            if (vertex.getSelfGraph() != null) {
-                for(LayoutEdge e : vertex.getSelfGraph().getEdges()) {
-                    if(e.getSource() == vertex || e.getDest() == vertex) {
-                        e.highlightEdgePath();
-                    }
-                }
-            }
-        });
-
-        this.setOnMouseExited(event -> {
-            event.consume();
-            //getChildren().remove(rectLabel);
-
-            if (vertex.getSelfGraph() != null) {
-                for(LayoutEdge e : vertex.getSelfGraph().getEdges()) {
-                    if (e.getSource() == vertex || e.getDest() == vertex) {
-                        e.resetEdgePath();
-                    }
-                }
-            }
-        });
-
-        this.setOnMouseClicked(event -> {
-            if(!(this.vertex instanceof LayoutRootVertex)) {
-                if(event.getButton().equals(MouseButton.PRIMARY)) {
-                    switch (event.getClickCount()) {
-                        case 1: handlePrimarySingleClick(event); break;
-                        case 2: handlePrimaryDoubleClick(event); break;
-                        default: break;
-                    }
-                }
-            }
-        });
-
+        this.setOnMousePressed(this::handleOnMousePressed);
+        this.setOnMouseDragged(this::handleOnMouseDragged);
+        this.setOnMouseEntered(this::handleOnMouseEntered);
+        this.setOnMouseExited(this::handleOnMouseExited);
+        this.setOnMouseClicked(this::handleOnMouseClicked);
         this.setVisible(true);
     }
 
-    private void handlePrimarySingleClick(MouseEvent event)
-    {
+    private void handleOnMousePressed(MouseEvent event) {
         event.consume();
 
-        MainTabController currentFrame = Main.getSelectedMainTabController();
-        currentFrame.getMainPanel().resetHighlighted(this.getVertex());
-        currentFrame.getBytecodeArea().setDescription();
-        currentFrame.setRightText();
+        double scaleFactorX1 = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleX();
+        double scaleFactorY1 = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleY();
+
+        if (this.getVertex() instanceof LayoutRootVertex) {
+            dragStartX = event.getScreenX() - this.getTranslateX();
+            dragStartY = event.getScreenY() - this.getTranslateY();
+        } else {
+            dragStartX = event.getScreenX() / scaleFactorX1 - this.getTranslateX();
+            dragStartY = event.getScreenY() / scaleFactorY1 - this.getTranslateY();
+        }
     }
 
-    private void handlePrimaryDoubleClick(MouseEvent event)
-    {
-        // Collapsing the root vertex leaves us with a blank screen.
-        if (!(this.getVertex() instanceof LayoutRootVertex)) {
-            if (this.getVertex().isExpanded()) {
-                collapsing();
-            } else {
-                expanding();
+    private void handleOnMouseDragged(MouseEvent event) {
+        event.consume();
+
+        double scaleFactorX = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleX();
+        double scaleFactorY = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleY();
+
+        double offsetX, offsetY;
+        if (this.getParentNode() != null) {
+            offsetX = event.getScreenX() / scaleFactorX - dragStartX;
+            offsetY = event.getScreenY() / scaleFactorY - dragStartY;
+            Bounds thisBounds = this.rect.getBoundsInLocal();
+            double thisWidth = thisBounds.getWidth();
+            double thisHeight = thisBounds.getHeight();
+
+            Bounds parentBounds = this.getParentNode().rect.getBoundsInLocal();
+            double maxOffsetX = parentBounds.getWidth() - thisWidth;
+            double maxOffsetY = parentBounds.getHeight() - thisHeight;
+
+            // This truncation of the offset confines our box to its parent.
+            if (offsetX < 0) {
+                offsetX = 0;
+            } else if (offsetX > maxOffsetX) {
+                offsetX = maxOffsetX;
             }
+
+            if (offsetY < 0) {
+                offsetY = 0;
+            } else if (offsetY > maxOffsetY) {
+                offsetY = maxOffsetY;
+            }
+        } else {
+            offsetX = event.getScreenX() - dragStartX;
+            offsetY = event.getScreenY() - dragStartY;
         }
 
-        event.consume();
+        this.setTranslateLocation(offsetX, offsetY);
+
+        AbstractLayoutVertex v1 = this.vertex;
+        VizPanel mainPanel = Main.getSelectedVizPanel();
+        v1.setX(mainPanel.invScaleX(offsetX));
+        v1.setY(mainPanel.invScaleY(offsetY));
+        LayoutEdge.redrawEdges(v1, false);
     }
 
-    private void collapsing()
+    private void handleOnMouseEntered(MouseEvent event) {
+        event.consume();
+        if (vertex.getSelfGraph() != null) {
+            for(LayoutEdge e : vertex.getSelfGraph().getEdges()) {
+                if(e.getSource() == vertex || e.getDest() == vertex) {
+                    e.highlightEdgePath();
+                }
+            }
+        }
+    }
+
+    private void handleOnMouseExited(MouseEvent event) {
+        event.consume();
+        //getChildren().remove(rectLabel);
+
+        if (vertex.getSelfGraph() != null) {
+            for(LayoutEdge e : vertex.getSelfGraph().getEdges()) {
+                if (e.getSource() == vertex || e.getDest() == vertex) {
+                    e.resetEdgePath();
+                }
+            }
+        }
+    }
+
+    private void handleOnMouseClicked(MouseEvent event) {
+        if(!(this.vertex instanceof LayoutRootVertex)) {
+            if(event.getButton().equals(MouseButton.PRIMARY)) {
+                switch (event.getClickCount()) {
+                    case 1:
+                        event.consume();
+
+                        MainTabController currentFrame = Main.getSelectedMainTabController();
+                        currentFrame.getMainPanel().resetHighlighted(this.getVertex());
+                        currentFrame.getBytecodeArea().setDescription();
+                        currentFrame.setRightText();
+                        break;
+                    case 2:
+                        // Collapsing the root vertex leaves us with a blank screen.
+                        if (!(this.getVertex() instanceof LayoutRootVertex)) {
+                            if (this.getVertex().isExpanded()) {
+                                collapse();
+                            } else {
+                                expand();
+                            }
+                        }
+
+                        event.consume();
+                        break;
+                    default: break;
+                }
+            }
+        }
+    }
+
+    private void collapse()
     {
         //System.out.println("\nCollapsing node: " + v.getId() + ", " + v.getGraphics().toString());
         Iterator<Node> it = this.getVertex().getGraphics().getChildren().iterator();
@@ -237,7 +236,7 @@ public class GUINode extends Pane
         });*/
     }
 
-    private void expanding()
+    private void expand()
     {
         //System.out.println("\nExpanding node: " + v.getId() + ", " + v.getGraphics().toString());
         Iterator<Node> it = this.getVertex().getGraphics().getChildren().iterator();
