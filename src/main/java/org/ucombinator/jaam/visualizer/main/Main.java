@@ -11,6 +11,7 @@ import org.ucombinator.jaam.visualizer.controllers.MainPaneController;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
+import java.io.File;
 import java.io.IOException;
 
 public class Main extends Application {
@@ -50,5 +51,9 @@ public class Main extends Application {
         Scene scene = new Scene(Main.mainPane.getRoot());
         stage.setScene(scene);
         stage.show();
+
+        for (String arg : this.getParameters().getRaw()) {
+            Main.mainPane.loadLoopGraphFile(new File(arg));
+        }
     }
 }

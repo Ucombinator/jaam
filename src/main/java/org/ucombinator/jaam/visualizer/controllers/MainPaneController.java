@@ -28,9 +28,6 @@ public class MainPaneController {
     }
 
     public void loadLoopGraph(ActionEvent event) throws IOException {
-        Graph graph;
-        String filename = "";
-
         System.out.println("Load graph: start...");
 
         FileChooser fileChooser = new FileChooser();
@@ -42,25 +39,23 @@ public class MainPaneController {
             return;
         }
 
+        loadLoopGraphFile(file);
+    }
+
+    public void loadLoopGraphFile(File file) throws IOException {
         String path = file.getAbsolutePath();
         System.out.println("File path: " + path);
-        graph = parseLoopGraph(file.getAbsolutePath());
-        filename = file.getName();
+        Graph graph = parseLoopGraph(file.getAbsolutePath());
 
         System.out.println("--> Create visualization: start...");
         MainTabController tabController = new MainTabController(file.getName(), graph);
         System.out.println("<-- Create visualization: Done!");
 
-        if (filename.equals("")) {
-            tabController.tab.setText("Sample");
-        } else {
-            tabController.tab.setText(filename);
-        }
         tabPane.getTabs().add(tabController.tab);
         tabPane.getSelectionModel().select(tabController.tab);
     }
 
-    public static Graph parseLoopGraph(String file) {
+    private static Graph parseLoopGraph(String file) {
         Graph graph = new Graph();
 
         ArrayList<LoopEdge> edges = new ArrayList<>();

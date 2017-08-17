@@ -90,10 +90,12 @@ object Main {
  ****************/
 
 object Visualizer extends Main("visualizer") {
+  val input = inputOpt()
+
   def run() {
     import javafx.application.Application
 
-    Application.launch(classOf[org.ucombinator.jaam.visualizer.main.Main], Main.conf.args:_*)
+    Application.launch(classOf[org.ucombinator.jaam.visualizer.main.Main], input():_*)
   }
 }
 
