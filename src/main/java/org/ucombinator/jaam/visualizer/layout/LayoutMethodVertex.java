@@ -2,7 +2,6 @@ package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.graph.Method;
-import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 import java.util.ArrayList;
@@ -42,10 +41,6 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
 
     public String getShortDescription() {
         return this.getMethodName();
-    }
-
-    public GUINode.ShapeType getShape() {
-        return GUINode.ShapeType.RECTANGLE;
     }
 
     public boolean searchByMethod(String query, VizPanel mainPanel) {

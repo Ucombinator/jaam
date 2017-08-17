@@ -24,9 +24,6 @@ import java.util.Iterator;
 
 public class GUINode extends Pane
 {
-    public enum ShapeType {RECTANGLE, CIRCLE, DIAMOND};
-    private ShapeType shape;
-
     private static final double TEXT_VERTICAL_PADDING = 15;
     private static final double TEXT_HORIZONTAL_PADDING = 15;
     private static final int transitionTime = 300; // Milliseconds per transition
@@ -45,8 +42,7 @@ public class GUINode extends Pane
         this.parent = parent;
         this.vertex = v;
         this.vertex.setGraphics(this);
-        shape = v.getShape();
-        
+
         this.rect = new Rectangle();
         this.rectLabel = new Text(v.getId() + ", " + v.getLoopHeight());
         this.rectLabel.setVisible(v.isLabelVisible());
@@ -143,12 +139,9 @@ public class GUINode extends Pane
             event.consume();
             //getChildren().remove(rectLabel);
 
-            if(vertex.getSelfGraph() != null)
-            {
-                for(LayoutEdge e : vertex.getSelfGraph().getEdges())
-                {
-                    if (e.getSource() == vertex || e.getDest() == vertex)
-                    {
+            if (vertex.getSelfGraph() != null) {
+                for(LayoutEdge e : vertex.getSelfGraph().getEdges()) {
+                    if (e.getSource() == vertex || e.getDest() == vertex) {
                         e.resetEdgePath();
                     }
                 }
@@ -465,24 +458,6 @@ public class GUINode extends Pane
     }
 
     private Point2D getLineIntersection(GUINode otherNode) {
-        if(this.shape == ShapeType.RECTANGLE)
-            return this.getRectangleLineIntersection(otherNode);
-        else if(this.shape == ShapeType.DIAMOND)
-            return this.getDiamondLineIntersection(otherNode);
-        else // this.shape == ShapeType.CIRCLE
-            return this.getCircleLineIntersection(otherNode);
-    }
-
-    // TODO: Fill in these two functions
-    private Point2D getCircleLineIntersection(GUINode otherNode) {
-        return new Point2D(0, 0);
-    }
-
-    private Point2D getDiamondLineIntersection(GUINode otherNode) {
-        return new Point2D(0, 0);
-    }
-
-    private Point2D getRectangleLineIntersection(GUINode otherNode) {
         Bounds sourceBounds = this.getRectBoundsInParent();
         Bounds destBounds = otherNode.getRectBoundsInParent();
 

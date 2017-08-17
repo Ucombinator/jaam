@@ -161,9 +161,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
     // This is needed so that we can show the code for the methods that correspond to selected vertices
     public abstract HashSet<LayoutMethodVertex> getMethodVertices();
 
-    // This is used to get the preferred visual representation of a node
-    public abstract GUINode.ShapeType getShape();
-
     static int colorIndex = 0;
 
     public AbstractLayoutVertex(String label, VertexType type, boolean drawEdges) {
