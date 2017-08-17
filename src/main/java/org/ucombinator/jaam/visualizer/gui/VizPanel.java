@@ -78,7 +78,7 @@ public class VizPanel extends Pane
         this.getChildren().add(graphContentGroup);
     }
 
-    public void resetPanelSize() {
+    private void resetPanelSize() {
         this.maxVertexWidth = this.panelRoot.getWidth();
         this.maxVertexHeight = this.panelRoot.getHeight();
     }

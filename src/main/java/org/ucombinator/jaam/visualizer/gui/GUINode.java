@@ -17,6 +17,7 @@ import javafx.scene.text.Text;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
+import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
@@ -132,7 +133,7 @@ public class GUINode extends Pane
         this.setTranslateLocation(offsetX, offsetY);
 
         AbstractLayoutVertex v1 = this.vertex;
-        VizPanel mainPanel = Main.getSelectedVizPanel();
+        VizPanelController mainPanel = Main.getSelectedVizPanelController();
         v1.setX(mainPanel.invScaleX(offsetX));
         v1.setY(mainPanel.invScaleY(offsetY));
         LayoutEdge.redrawEdges(v1, false);
@@ -170,7 +171,7 @@ public class GUINode extends Pane
                         event.consume();
 
                         MainTabController currentFrame = Main.getSelectedMainTabController();
-                        currentFrame.getVizPanel().resetHighlighted(this.getVertex());
+                        currentFrame.vizPanelController.resetHighlighted(this.getVertex());
                         currentFrame.getBytecodeArea().setDescription();
                         currentFrame.setRightText();
                         break;
@@ -218,7 +219,7 @@ public class GUINode extends Pane
         }*/
 
         this.getVertex().setExpanded(false);
-        VizPanel panel = Main.getSelectedVizPanel();
+        VizPanelController panel = Main.getSelectedVizPanelController();
         final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
         panel.resetContent();
         LayoutAlgorithm.layout(panelRoot);
@@ -262,7 +263,7 @@ public class GUINode extends Pane
         }*/
 
         this.getVertex().setExpanded(true);
-        VizPanel panel = Main.getSelectedVizPanel();
+        VizPanelController panel = Main.getSelectedVizPanelController();
         final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
         panel.resetContent();
         LayoutAlgorithm.layout(panelRoot);

@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
+import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
 import org.ucombinator.jaam.visualizer.graph.Instruction;
@@ -39,7 +40,7 @@ public class CodeArea extends TextFlow
             int row = CodeArea.this.getChildren().indexOf(lineText);
             Instruction lineInstr = CodeArea.this.description.get(row);
 
-            VizPanel mainPanel = Main.getSelectedVizPanel();
+            VizPanelController mainPanel = Main.getSelectedVizPanelController();
 
             if (event.isShiftDown()) {
                 if (lineInstr.isRealInstruction()) {

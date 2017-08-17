@@ -51,30 +51,30 @@ public class VizPanelController {
     }
 
     @FXML private void showEdgesAction(ActionEvent event) {
-        this.getVizPanel().getPanelRoot().setVisible(false);
-        this.getVizPanel().getPanelRoot().setEdgeVisibility(showEdges.isSelected());
+        this.getPanelRoot().setVisible(false);
+        this.getPanelRoot().setEdgeVisibility(showEdges.isSelected());
         LayoutEdge.redrawEdges(vizPanel.getPanelRoot(), true);
-        this.getVizPanel().getPanelRoot().setVisible(true);
+        this.getPanelRoot().setVisible(true);
     }
 
     @FXML private void showLabelsAction(ActionEvent event) {
-        this.getVizPanel().getPanelRoot().setVisible(false);
-        this.getVizPanel().getPanelRoot().setLabelVisibility(showLabels.isSelected());
-        this.getVizPanel().getPanelRoot().setVisible(true);
+        this.getPanelRoot().setVisible(false);
+        this.getPanelRoot().setLabelVisibility(showLabels.isSelected());
+        this.getPanelRoot().setVisible(true);
     }
 
     @FXML private void methodCollapseAction(ActionEvent event) {
-        this.getVizPanel().getPanelRoot().toggleNodesOfType(
+        this.getPanelRoot().toggleNodesOfType(
                 AbstractLayoutVertex.VertexType.METHOD, methodsExpanded.isSelected());
-        this.getVizPanel().resetAndRedraw(showEdges.isSelected());
-        this.getVizPanel().resetRootPosition(false);
+        this.resetAndRedraw(showEdges.isSelected());
+        this.resetRootPosition(false);
     }
 
     @FXML private void chainCollapseAction(ActionEvent event) {
-        this.getVizPanel().getPanelRoot().toggleNodesOfType(
+        this.getPanelRoot().toggleNodesOfType(
                 AbstractLayoutVertex.VertexType.CHAIN, chainsExpanded.isSelected());
-        this.getVizPanel().resetAndRedraw(showEdges.isSelected());
-        this.getVizPanel().resetRootPosition(false);
+        this.resetAndRedraw(showEdges.isSelected());
+        this.resetRootPosition(false);
     }
 
     @FXML private void exportImageAction(ActionEvent event) throws IOException {
@@ -103,10 +103,11 @@ public class VizPanelController {
     }
 
     public LayoutRootVertex getPanelRoot() { return this.getPanelRoot(); }
+    public void resetRootPosition(boolean resetScale) { this.resetRootPosition(resetScale); }
     public HashSet<AbstractLayoutVertex> getHighlighted() { return this.getVizPanel().getHighlighted(); }
     public void initFX(Graph graph) { this.getVizPanel().initFX(graph);}
     public void resetContent() { this.resetContent(); }
-    public void resetPanelSize() { this.getVizPanel().resetPanelSize(); }
+    //public void resetPanelSize() { this.getVizPanel().resetPanelSize(); }
     public double scaleX(double coordinate) { return this.getVizPanel().scaleX(coordinate); }
     public double scaleY(double coordinate) { return this.getVizPanel().scaleY(coordinate); }
     public double invScaleX(double pixelCoordinate) { return this.getVizPanel().invScaleX(pixelCoordinate); }
