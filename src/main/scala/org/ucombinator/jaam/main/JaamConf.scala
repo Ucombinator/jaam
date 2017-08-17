@@ -46,8 +46,8 @@ trait JaamConf extends ScallopConf {
   //================
 
   // --input and --output are so common that we provide the following
-  def inputOpt()(implicit tt: TypeTag[List[String]]): ScallopOption[List[String]] =
-    opt[List[String]](required = true, descr = "input Jaam files")
+  def inputOpt(required: Boolean = true)(implicit tt: TypeTag[List[String]]): ScallopOption[List[String]] =
+    opt[List[String]](required = required, default = Some(List()), descr = "input Jaam files")
   def outputOpt()(implicit tt: TypeTag[String]): ScallopOption[String] =
     opt[String](required = true, descr = "the output Jaam file")
 

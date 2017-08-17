@@ -90,7 +90,7 @@ object Main {
  ****************/
 
 object Visualizer extends Main("visualizer") {
-  val input = inputOpt()
+  val input = inputOpt(required = false)
 
   def run() {
     import javafx.application.Application
