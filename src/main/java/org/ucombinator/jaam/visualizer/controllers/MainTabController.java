@@ -21,8 +21,6 @@ public class MainTabController {
     @FXML private Pane centerPane; // TODO: rename
     public Pane getCenterPane() { return this.centerPane; }
 
-    public VizPanel getVizPanel() { return this.vizPanelController.getVizPanel(); }
-
     @FXML private TextArea descriptionArea;
     public TextArea getRightArea() { return this.descriptionArea; }
 

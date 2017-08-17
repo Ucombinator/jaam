@@ -2,7 +2,6 @@ package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
-import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;

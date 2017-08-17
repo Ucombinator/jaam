@@ -10,7 +10,6 @@ import org.ucombinator.jaam.visualizer.controllers.Controllers;
 import org.ucombinator.jaam.visualizer.controllers.MainPaneController;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
-import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,10 +27,6 @@ public class Main extends Application {
 
     public static VizPanelController getSelectedVizPanelController() {
         return getSelectedMainTabController().vizPanelController;
-    }
-
-    public static VizPanel getSelectedVizPanel() {
-        return getSelectedVizPanelController().getVizPanel();
     }
 
     private static void uncaughtExceptionHandler(Thread t, Throwable e) {

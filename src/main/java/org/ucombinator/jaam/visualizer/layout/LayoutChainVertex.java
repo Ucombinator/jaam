@@ -6,7 +6,6 @@ import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Paint;
 import javafx.scene.paint.Stop;
 import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
-import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;

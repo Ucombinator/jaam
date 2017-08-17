@@ -9,12 +9,12 @@ import javafx.scene.SnapshotParameters;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Spinner;
 import javafx.scene.image.WritableImage;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.TimelineProperty;
-import org.ucombinator.jaam.visualizer.gui.VizPanel;
 import org.ucombinator.jaam.visualizer.gui.ZoomSpinnerValueFactory;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
@@ -29,8 +29,8 @@ public class VizPanelController {
     @FXML private Node root;
     public Node getRoot() { return this.root; }
 
-    @FXML private VizPanel vizPanel;
-    public VizPanel getVizPanel() { return this.vizPanel; }
+    @FXML private Pane vizPanel;
+    public Pane getVizPanel() { return this.vizPanel; }
 
     @FXML private CheckBox showEdges;
     @FXML private CheckBox showLabels;
