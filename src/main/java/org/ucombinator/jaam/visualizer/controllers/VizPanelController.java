@@ -45,17 +45,18 @@ public class VizPanelController {
     private LayoutRootVertex panelRoot;
 
     // The dimensions of the background for our graph
-    private final double initRootWidth = 500.0, initRootHeight = 500.0;
-    private double desiredRootTranslateX, desiredRootTranslateY;
+    private static final double initRootWidth = 500.0;
+    private static final double initRootHeight = 500.0;
+    private double desiredRootTranslateX;
+    private double desiredRootTranslateY;
 
     // Store the count for vertex width and height when everything is expanded
-    private double maxVertexWidth, maxVertexHeight;
+    private double maxVertexWidth;
+    private double maxVertexHeight;
 
     private double factorX = 1;
     private double factorY = 1;
     private static final double factorMultiple = 1.1;
-
-
 
     public VizPanelController(File file, Graph graph) throws IOException {
         Controllers.loadFXML("/VizPanel.fxml", this);

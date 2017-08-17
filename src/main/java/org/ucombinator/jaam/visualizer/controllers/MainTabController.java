@@ -18,8 +18,8 @@ public class MainTabController {
     @FXML private BorderPane root;
     public BorderPane getRoot() { return root; }
 
-    @FXML private Pane centerPane; // TODO: rename
-    public Pane getCenterPane() { return this.centerPane; }
+    @FXML private BorderPane centerPane; // TODO: rename
+    public BorderPane getCenterPane() { return this.centerPane; }
 
     @FXML private TextArea descriptionArea;
     public TextArea getRightArea() { return this.descriptionArea; }
@@ -44,7 +44,8 @@ public class MainTabController {
     public MainTabController(File file, Graph graph) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
         this.vizPanelController = new VizPanelController(file, graph);
-        this.centerPane.getChildren().add(this.vizPanelController.getRoot());
+        this.centerPane.setCenter(this.vizPanelController.getRoot());
+        //this.centerPane.getChildren().add(
 
         this.vizPanelController.initFX(graph);
         this.tab = new Tab(file.getName(), this.getRoot());
