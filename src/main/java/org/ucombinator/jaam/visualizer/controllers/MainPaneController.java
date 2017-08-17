@@ -15,6 +15,7 @@ import org.ucombinator.jaam.visualizer.main.Main;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainPaneController {
     @FXML private AnchorPane root;
@@ -27,22 +28,25 @@ public class MainPaneController {
         Controllers.loadFXML("/MainPane.fxml", this);
     }
 
+    private final FileChooser fileChooser = new FileChooser();
+
     public void loadLoopGraph(ActionEvent event) throws IOException {
         System.out.println("Load graph: start...");
 
-        FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Load graph file");
-        File file = fileChooser.showOpenDialog(getTabPane().getScene().getWindow());
+        List<File> files = fileChooser.showOpenMultipleDialog(getTabPane().getScene().getWindow());
 
-        if (file == null) {
-            System.out.println("Error! Invalid file.");
-            return;
+        if (files != null) {
+            for (File file : files) {
+                loadLoopGraphFile(file);
+            }
         }
-
-        loadLoopGraphFile(file);
     }
 
     public void loadLoopGraphFile(File file) throws IOException {
+        // Make "Open" dialog remember where we last loaded a file
+        fileChooser.setInitialDirectory(file.getParentFile());
+
         Graph graph = parseLoopGraph(file);
 
         System.out.println("--> Create visualization: start...");
