@@ -56,25 +56,6 @@
             </GridPane>
             <GridPane>
               <columnConstraints>
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="96.0" minWidth="10.0" prefWidth="36.0" />
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="157.0" minWidth="10.0" prefWidth="21.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="234.0" minWidth="10.0" prefWidth="29.0" />
-              </columnConstraints>
-              <rowConstraints>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-              </rowConstraints>
-               <children>
-                  <Button mnemonicParsing="false" onAction="#xScalePanelMinusAction" text="-" />
-                  <Label text="Y" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <Button mnemonicParsing="false" onAction="#xScalePanelPlusAction" text="+" GridPane.columnIndex="2" />
-                  <Button mnemonicParsing="false" onAction="#yScalePanelMinusAction" text="-" GridPane.rowIndex="1" />
-                  <Button mnemonicParsing="false" onAction="#yScalePanelPlusAction" text="+" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-                  <Label prefHeight="17.0" prefWidth="14.0" text="X" GridPane.columnIndex="1" />
-               </children>
-            </GridPane>
-            <GridPane>
-              <columnConstraints>
                   <ColumnConstraints hgrow="SOMETIMES" maxWidth="38.0" minWidth="10.0" prefWidth="17.0" />
                 <ColumnConstraints hgrow="SOMETIMES" maxWidth="65.0" minWidth="10.0" prefWidth="55.0" />
               </columnConstraints>
@@ -101,8 +82,6 @@
             </GridPane>
             <VBox>
                <children>
-                  <Button fx:id="zoomIn" mnemonicParsing="false" onMousePressed="#zoomInPressed" onMouseReleased="#zoomReleased" text="+" />
-                  <Button fx:id="zoomOut" minWidth="10.0" mnemonicParsing="false" onMousePressed="#zoomOutPressed" onMouseReleased="#zoomReleased" prefHeight="27.0" prefWidth="27.0" text="-" />
                   <Button fx:id="resetButton" mnemonicParsing="false" onAction="#resetButtonPressed" text="=" />
                </children>
             </VBox>

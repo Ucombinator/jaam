@@ -1,13 +1,8 @@
 package org.ucombinator.jaam.visualizer.gui;
 
-import javafx.animation.ScaleTransition;
 import javafx.scene.Group;
-import javafx.scene.control.Button;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import javafx.util.Duration;
-import org.ucombinator.jaam.visualizer.controllers.Controllers;
-import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.*;
 
@@ -159,7 +154,7 @@ public class VizPanel extends Pane
         panelRoot.setVisible(false);
         drawNodes(null, panelRoot);
         drawEdges(panelRoot);
-        this.resetStrokeWidth();
+        //this.resetStrokeWidth();
         panelRoot.setVisible(true);
     }
 
@@ -175,13 +170,14 @@ public class VizPanel extends Pane
         this.resetPanelSize();
         this.getPanelRoot().setEdgeVisibility(edgeVisible);
         this.drawGraph();
-        this.initZoom();
+        //this.initZoom();
     }
 
     public void resetStrokeWidth() {
         this.getPanelRoot().resetStrokeWidth(1.0 / (Math.sqrt(factorX * factorY)));
     }
 
+/*
     public void zoom(int zoomDistance, Button button) {
         double scaleFactor = Math.pow(factorMultiple, zoomDistance);
         factorX *= scaleFactor;
@@ -203,6 +199,7 @@ public class VizPanel extends Pane
         });
         st.play();
     }
+    */
 
     private void drawNodes(GUINode parent, AbstractLayoutVertex v)
     {
@@ -248,6 +245,7 @@ public class VizPanel extends Pane
         }
     }
 
+/*
     public void incrementScaleXFactor() {
         factorX *= factorMultiple;
     }
@@ -263,4 +261,5 @@ public class VizPanel extends Pane
     public void decrementScaleYFactor() {
         factorY /= factorMultiple;
     }
+    */
 }

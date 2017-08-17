@@ -6,14 +6,10 @@ import javafx.fxml.FXML;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
 import javafx.scene.image.WritableImage;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.graph.Graph;
-import org.ucombinator.jaam.visualizer.gui.CodeArea;
-import org.ucombinator.jaam.visualizer.gui.SearchResults;
-import org.ucombinator.jaam.visualizer.gui.VizPanel;
-import org.ucombinator.jaam.visualizer.gui.ZoomSpinnerValueFactory;
+import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.main.Main;
@@ -53,23 +49,21 @@ public class MainTabController {
 
     public MainTabController(String title, Graph graph) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
-        this.zoomSpinner.setValueFactory(new ZoomSpinnerValueFactory(1.0, 1.1));
-        this.mainPanel.scaleXProperty().bind(this.zoomSpinner.valueProperty());
-        this.mainPanel.scaleYProperty().bind(this.zoomSpinner.valueProperty());
+
+        this.zoomSpinner.setValueFactory(new ZoomSpinnerValueFactory(1.0, 1.2));
+        TimelineProperty.bind(this.getMainPanel().scaleXProperty(), this.zoomSpinner.valueProperty(), 300);
+        TimelineProperty.bind(this.getMainPanel().scaleYProperty(), this.zoomSpinner.valueProperty(), 300);
+
         this.mainPanel.initFX(graph);
         this.tab = new Tab(title, this.getRoot());
         Controllers.put(this.tab, this);
     }
 
-    private static final boolean debugPanelMode = false;
-
     public void repaintAll() {
         System.out.println("Repainting all...");
-        if (!debugPanelMode) {
-            bytecodeArea.setDescription();
-            setRightText();
-            searchResults.writeText(this.mainPanel);
-        }
+        bytecodeArea.setDescription();
+        setRightText();
+        searchResults.writeText(this.mainPanel);
     }
 
     public void setRightText() {
@@ -79,6 +73,10 @@ public class MainTabController {
         }
 
         this.getRightArea().setText(text.toString());
+    }
+
+    @FXML private void resetButtonPressed() {
+        Main.getSelectedVizPanel().resetRootPosition(true);
     }
 
     @FXML private void showEdgesAction(ActionEvent event) {
@@ -92,30 +90,6 @@ public class MainTabController {
         this.getMainPanel().getPanelRoot().setVisible(false);
         this.getMainPanel().getPanelRoot().setLabelVisibility(showLabels.isSelected());
         this.getMainPanel().getPanelRoot().setVisible(true);
-    }
-
-    @FXML private void xScalePanelMinusAction(ActionEvent event) {
-        this.getMainPanel().decrementScaleXFactor();
-        this.getMainPanel().resetAndRedraw(showEdges.isSelected());
-        this.getMainPanel().resetRootPosition(false);
-    }
-
-    @FXML private void xScalePanelPlusAction(ActionEvent event) {
-        this.getMainPanel().incrementScaleXFactor();
-        this.getMainPanel().resetAndRedraw(showEdges.isSelected());
-        this.getMainPanel().resetRootPosition(false);
-    }
-
-    @FXML private void yScalePanelMinusAction(ActionEvent event) {
-        this.getMainPanel().decrementScaleYFactor();
-        this.getMainPanel().resetAndRedraw(showEdges.isSelected());
-        this.getMainPanel().resetRootPosition(false);
-    }
-
-    @FXML private void yScalePanelPlusAction(ActionEvent event) {
-        this.getMainPanel().incrementScaleYFactor();
-        this.getMainPanel().resetAndRedraw(showEdges.isSelected());
-        this.getMainPanel().resetRootPosition(false);
     }
 
     @FXML private void methodCollapseAction(ActionEvent event) {
@@ -223,41 +197,5 @@ public class MainTabController {
                 this.mainPanel.getPanelRoot().searchByIDRange(id1, id2, mainPanel);
             }
         }
-    }
-
-    @FXML private void resetButtonPressed() {
-        Main.getSelectedVizPanel().resetRootPosition(true);
-    }
-
-    @FXML private void zoomInPressed(MouseEvent event) {
-        Main.getSelectedMainTabController().keepButton(1, (Button) event.getSource());
-    }
-
-    @FXML private void zoomOutPressed(MouseEvent event) {
-        Main.getSelectedMainTabController().keepButton(-1, (Button) event.getSource());
-    }
-
-    @FXML private void zoomReleased(MouseEvent event) {
-        this.setZoomButtonReleased(true);
-    }
-
-    private boolean zoomEnabled = true;
-    private boolean zoomButtonReleased = false;
-
-    public void keepButton(int zoom, Button button) {
-        if (zoomEnabled && !zoomButtonReleased) {
-            zoomEnabled = false;
-            this.mainPanel.zoom(zoom, button);
-        }
-
-        zoomButtonReleased = false;
-    }
-
-    public void setZoomEnabled(boolean isEnabled) {
-        this.zoomEnabled = isEnabled;
-    }
-
-    public void setZoomButtonReleased(boolean isReleased) {
-        this.zoomButtonReleased = isReleased;
     }
 }
