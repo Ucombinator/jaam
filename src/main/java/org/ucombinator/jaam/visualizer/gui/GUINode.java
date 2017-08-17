@@ -66,37 +66,35 @@ public class GUINode extends Pane
 
         this.setOnMousePressed(event -> {
             event.consume();
-            GUINode node1 = (GUINode) event.getSource();
 
             double scaleFactorX1 = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleX();
             double scaleFactorY1 = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleY();
 
-            if (node1.getVertex() instanceof LayoutRootVertex) {
-                dragStartX = event.getScreenX() - node1.getTranslateX();
-                dragStartY = event.getScreenY() - node1.getTranslateY();
+            if (this.getVertex() instanceof LayoutRootVertex) {
+                dragStartX = event.getScreenX() - this.getTranslateX();
+                dragStartY = event.getScreenY() - this.getTranslateY();
             } else {
-                dragStartX = event.getScreenX() / scaleFactorX1 - node1.getTranslateX();
-                dragStartY = event.getScreenY() / scaleFactorY1 - node1.getTranslateY();
+                dragStartX = event.getScreenX() / scaleFactorX1 - this.getTranslateX();
+                dragStartY = event.getScreenY() / scaleFactorY1 - this.getTranslateY();
             }
         });
 
         this.setOnMouseDragged(event -> {
             event.consume();
-            GUINode node = GUINode.this; //(GUINode) event.getSource();
 
-            node.isDragging = true;
+            this.isDragging = true;
             double scaleFactorX = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleX();
             double scaleFactorY = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleY();
 
             double offsetX, offsetY;
-            if(GUINode.this.getParentNode() != null) {
+            if(this.getParentNode() != null) {
                 offsetX = event.getScreenX() / scaleFactorX - dragStartX;
                 offsetY = event.getScreenY() / scaleFactorY - dragStartY;
-                Bounds thisBounds = GUINode.this.rect.getBoundsInLocal();
+                Bounds thisBounds = this.rect.getBoundsInLocal();
                 double thisWidth = thisBounds.getWidth();
                 double thisHeight = thisBounds.getHeight();
 
-                Bounds parentBounds = GUINode.this.getParentNode().rect.getBoundsInLocal();
+                Bounds parentBounds = this.getParentNode().rect.getBoundsInLocal();
                 double maxOffsetX = parentBounds.getWidth() - thisWidth;
                 double maxOffsetY = parentBounds.getHeight() - thisHeight;
 
@@ -116,9 +114,9 @@ public class GUINode extends Pane
                 offsetY = event.getScreenY() - dragStartY;
             }
 
-            node.setTranslateLocation(offsetX, offsetY);
+            this.setTranslateLocation(offsetX, offsetY);
 
-            AbstractLayoutVertex v1 = GUINode.this.vertex;
+            AbstractLayoutVertex v1 = this.vertex;
             VizPanel mainPanel = Main.getSelectedVizPanel();
             v1.setX(mainPanel.invScaleX(offsetX));
             v1.setY(mainPanel.invScaleY(offsetY));
@@ -127,12 +125,7 @@ public class GUINode extends Pane
 
         this.setOnMouseReleased(event -> {
             event.consume();
-            GUINode node = (GUINode) event.getSource();
-
-            if (node.isDragging)
-            {
-                node.isDragging = false;
-            }
+            this.isDragging = false;
         });
 
         this.setOnMouseEntered(event -> {
