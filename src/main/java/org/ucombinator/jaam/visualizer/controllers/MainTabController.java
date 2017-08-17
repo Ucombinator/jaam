@@ -1,26 +1,19 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
-import javafx.embed.swing.SwingFXUtils;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
-import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
-import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
-import org.ucombinator.jaam.visualizer.main.Main;
 
-import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 
 public class MainTabController {
     public final Tab tab;
+    public final VizPanelController vizPanelController;
 
     @FXML private BorderPane root;
     public BorderPane getRoot() { return root; }
@@ -28,10 +21,7 @@ public class MainTabController {
     @FXML private Pane centerPane; // TODO: rename
     public Pane getCenterPane() { return this.centerPane; }
 
-    private final VizPanelController vizPanelController;
-
-    private VizPanel mainPanel; // TODO: rename to "vizPanel"
-    public VizPanel getVizPanel() { return this.mainPanel; }
+    public VizPanel getVizPanel() { return this.vizPanelController.getVizPanel(); }
 
     @FXML private TextArea descriptionArea;
     public TextArea getRightArea() { return this.descriptionArea; }
@@ -56,10 +46,9 @@ public class MainTabController {
     public MainTabController(File file, Graph graph) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
         this.vizPanelController = new VizPanelController(file, graph);
-        this.mainPanel = this.vizPanelController.getMainPanel();
         this.centerPane.getChildren().add(this.vizPanelController.getRoot());
 
-        this.mainPanel.initFX(graph);
+        this.vizPanelController.getVizPanel().initFX(graph);
         this.tab = new Tab(file.getName(), this.getRoot());
         this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));
         Controllers.put(this.tab, this);
@@ -69,12 +58,12 @@ public class MainTabController {
         System.out.println("Repainting all...");
         bytecodeArea.setDescription();
         setRightText();
-        searchResults.writeText(this.mainPanel);
+        searchResults.writeText(this.getVizPanel());
     }
 
     public void setRightText() {
         StringBuilder text = new StringBuilder();
-        for (AbstractLayoutVertex v : this.mainPanel.getHighlighted()) {
+        for (AbstractLayoutVertex v : this.getVizPanel().getHighlighted()) {
             text.append(v.getRightPanelContent() + "\n");
         }
 
@@ -83,15 +72,15 @@ public class MainTabController {
 
     // Clean up info from previous searches
     public void initSearch(SearchType search) {
-        this.mainPanel.resetHighlighted(null);
+        this.getVizPanel().resetHighlighted(null);
         String query = getSearchInput(search);
 
         if (search == SearchType.ID) {
             searchByID(query); // TODO: Fix inconsistency with panel root
         } else if (search == SearchType.INSTRUCTION) {
-            this.mainPanel.getPanelRoot().searchByInstruction(query, mainPanel);
+            this.getVizPanel().getPanelRoot().searchByInstruction(query, getVizPanel());
         } else if (search == SearchType.METHOD) {
-            this.mainPanel.getPanelRoot().searchByMethod(query, mainPanel);
+            this.getVizPanel().getPanelRoot().searchByMethod(query, getVizPanel());
         }
 
         this.repaintAll();
@@ -140,11 +129,11 @@ public class MainTabController {
                 /* Do nothing */
             } else if (token.indexOf('-') == -1) {
                 int id1 = Integer.parseInt(token.trim());
-                this.mainPanel.getPanelRoot().searchByID(id1, mainPanel);
+                this.getVizPanel().getPanelRoot().searchByID(id1, getVizPanel());
             } else {
                 int id1 = Integer.parseInt(token.substring(0, token.indexOf('-')).trim());
                 int id2 = Integer.parseInt(token.substring(token.lastIndexOf('-') + 1).trim());
-                this.mainPanel.getPanelRoot().searchByIDRange(id1, id2, mainPanel);
+                this.getVizPanel().getPanelRoot().searchByIDRange(id1, id2, getVizPanel());
             }
         }
     }

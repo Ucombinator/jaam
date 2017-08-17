@@ -25,8 +25,8 @@ public class VizPanelController {
     @FXML private Node root;
     public Node getRoot() { return this.root; }
 
-    @FXML private VizPanel mainPanel;
-    public VizPanel getMainPanel() { return this.mainPanel; } // TODO: rename
+    @FXML private VizPanel vizPanel;
+    public VizPanel getVizPanel() { return this.vizPanel; }
 
     @FXML private CheckBox showEdges;
     @FXML private CheckBox showLabels;
@@ -39,8 +39,8 @@ public class VizPanelController {
         Controllers.loadFXML("/VizPanel.fxml", this);
 
         this.zoomSpinner.setValueFactory(new ZoomSpinnerValueFactory(1.0, 1.2));
-        TimelineProperty.bind(this.getMainPanel().scaleXProperty(), this.zoomSpinner.valueProperty(), 300);
-        TimelineProperty.bind(this.getMainPanel().scaleYProperty(), this.zoomSpinner.valueProperty(), 300);
+        TimelineProperty.bind(this.getVizPanel().scaleXProperty(), this.zoomSpinner.valueProperty(), 300);
+        TimelineProperty.bind(this.getVizPanel().scaleYProperty(), this.zoomSpinner.valueProperty(), 300);
     }
 
     @FXML private void resetButtonPressed() {
@@ -48,30 +48,30 @@ public class VizPanelController {
     }
 
     @FXML private void showEdgesAction(ActionEvent event) {
-        this.getMainPanel().getPanelRoot().setVisible(false);
-        this.getMainPanel().getPanelRoot().setEdgeVisibility(showEdges.isSelected());
-        LayoutEdge.redrawEdges(mainPanel.getPanelRoot(), true);
-        this.getMainPanel().getPanelRoot().setVisible(true);
+        this.getVizPanel().getPanelRoot().setVisible(false);
+        this.getVizPanel().getPanelRoot().setEdgeVisibility(showEdges.isSelected());
+        LayoutEdge.redrawEdges(vizPanel.getPanelRoot(), true);
+        this.getVizPanel().getPanelRoot().setVisible(true);
     }
 
     @FXML private void showLabelsAction(ActionEvent event) {
-        this.getMainPanel().getPanelRoot().setVisible(false);
-        this.getMainPanel().getPanelRoot().setLabelVisibility(showLabels.isSelected());
-        this.getMainPanel().getPanelRoot().setVisible(true);
+        this.getVizPanel().getPanelRoot().setVisible(false);
+        this.getVizPanel().getPanelRoot().setLabelVisibility(showLabels.isSelected());
+        this.getVizPanel().getPanelRoot().setVisible(true);
     }
 
     @FXML private void methodCollapseAction(ActionEvent event) {
-        this.getMainPanel().getPanelRoot().toggleNodesOfType(
+        this.getVizPanel().getPanelRoot().toggleNodesOfType(
                 AbstractLayoutVertex.VertexType.METHOD, methodsExpanded.isSelected());
-        this.getMainPanel().resetAndRedraw(showEdges.isSelected());
-        this.getMainPanel().resetRootPosition(false);
+        this.getVizPanel().resetAndRedraw(showEdges.isSelected());
+        this.getVizPanel().resetRootPosition(false);
     }
 
     @FXML private void chainCollapseAction(ActionEvent event) {
-        this.getMainPanel().getPanelRoot().toggleNodesOfType(
+        this.getVizPanel().getPanelRoot().toggleNodesOfType(
                 AbstractLayoutVertex.VertexType.CHAIN, chainsExpanded.isSelected());
-        this.getMainPanel().resetAndRedraw(showEdges.isSelected());
-        this.getMainPanel().resetRootPosition(false);
+        this.getVizPanel().resetAndRedraw(showEdges.isSelected());
+        this.getVizPanel().resetRootPosition(false);
     }
 
     @FXML private void exportImageAction(ActionEvent event) throws IOException {
@@ -89,7 +89,7 @@ public class VizPanelController {
         File file = fileChooser.showSaveDialog(getRoot().getScene().getWindow());
 
         if (file != null) {
-            WritableImage image = mainPanel.snapshot(new SnapshotParameters(), null);
+            WritableImage image = vizPanel.snapshot(new SnapshotParameters(), null);
 
             System.out.println(file.getAbsolutePath());
             // TODO: probably use a file chooser here
