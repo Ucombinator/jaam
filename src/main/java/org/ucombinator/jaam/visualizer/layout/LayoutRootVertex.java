@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
+import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 import java.util.HashSet;
@@ -24,7 +25,7 @@ public class LayoutRootVertex extends AbstractLayoutVertex {
         return "Root vertex";
     }
 
-    public boolean searchByMethod(String query, VizPanel mainPanel) {
+    public boolean searchByMethod(String query, VizPanelController mainPanel) {
         boolean found = false;
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices()) {
             found = found || v.searchByMethod(query, mainPanel);

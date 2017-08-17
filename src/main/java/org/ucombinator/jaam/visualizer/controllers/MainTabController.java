@@ -58,7 +58,7 @@ public class MainTabController {
         System.out.println("Repainting all...");
         bytecodeArea.setDescription();
         setRightText();
-        searchResults.writeText(this.vizPanelController.getVizPanel());
+        searchResults.writeText(this.vizPanelController);
     }
 
     public void setRightText() {
@@ -78,9 +78,9 @@ public class MainTabController {
         if (search == SearchType.ID) {
             searchByID(query); // TODO: Fix inconsistency with panel root
         } else if (search == SearchType.INSTRUCTION) {
-            this.vizPanelController.getPanelRoot().searchByInstruction(query, vizPanelController.getVizPanel());
+            this.vizPanelController.getPanelRoot().searchByInstruction(query, vizPanelController);
         } else if (search == SearchType.METHOD) {
-            this.vizPanelController.getPanelRoot().searchByMethod(query, vizPanelController.getVizPanel());
+            this.vizPanelController.getPanelRoot().searchByMethod(query, vizPanelController);
         }
 
         this.repaintAll();
@@ -129,11 +129,11 @@ public class MainTabController {
                 /* Do nothing */
             } else if (token.indexOf('-') == -1) {
                 int id1 = Integer.parseInt(token.trim());
-                this.vizPanelController.getPanelRoot().searchByID(id1, vizPanelController.getVizPanel());
+                this.vizPanelController.getPanelRoot().searchByID(id1, vizPanelController);
             } else {
                 int id1 = Integer.parseInt(token.substring(0, token.indexOf('-')).trim());
                 int id2 = Integer.parseInt(token.substring(token.lastIndexOf('-') + 1).trim());
-                this.vizPanelController.getPanelRoot().searchByIDRange(id1, id2, vizPanelController.getVizPanel());
+                this.vizPanelController.getPanelRoot().searchByIDRange(id1, id2, vizPanelController);
             }
         }
     }

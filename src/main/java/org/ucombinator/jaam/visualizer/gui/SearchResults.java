@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.gui;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.layout.BorderPane;
+import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 
 public class SearchResults extends BorderPane
@@ -70,7 +71,7 @@ public class SearchResults extends BorderPane
      }
 
     //Set the text for the area
-    public void writeText(VizPanel mainPanel)
+    public void writeText(VizPanelController mainPanel)
     {
         this.root.getChildren().clear();
         if(mainPanel.getHighlighted().size() > 0) {

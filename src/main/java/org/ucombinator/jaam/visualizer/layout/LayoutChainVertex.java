@@ -5,6 +5,7 @@ import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Paint;
 import javafx.scene.paint.Stop;
+import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import org.ucombinator.jaam.visualizer.gui.VizPanel;
 
 import java.util.HashSet;
@@ -27,7 +28,8 @@ public class LayoutChainVertex extends AbstractLayoutVertex {
         return "Chain vertex, size = " + this.getInnerGraph().getVertices().size();
     }
 
-    public boolean searchByMethod(String query, VizPanel mainPanel) {
+    @Override
+    public boolean searchByMethod(String query, VizPanelController mainPanel) {
         boolean found = false;
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices()) {
             found = v.searchByMethod(query, mainPanel) || found;

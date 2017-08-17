@@ -78,7 +78,7 @@ public class CodeArea extends TextFlow
     // Rewrite the text area based on which vertices are highlighted
     public void setDescription()
     {
-        VizPanel mainPanel = Main.getSelectedVizPanel();
+        VizPanelController mainPanel = Main.getSelectedVizPanelController();
         HashSet<AbstractLayoutVertex> highlighted = mainPanel.getHighlighted();
         if(highlighted.size() > 0)
         {

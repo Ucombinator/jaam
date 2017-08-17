@@ -83,8 +83,8 @@ public class GUINode extends Pane
     private void handleOnMousePressed(MouseEvent event) {
         event.consume();
 
-        double scaleFactorX1 = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleX();
-        double scaleFactorY1 = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleY();
+        double scaleFactorX1 = Main.getSelectedVizPanelController().getPanelRoot().getGraphics().getScaleX();
+        double scaleFactorY1 = Main.getSelectedVizPanelController().getPanelRoot().getGraphics().getScaleY();
 
         if (this.getVertex() instanceof LayoutRootVertex) {
             dragStartX = event.getScreenX() - this.getTranslateX();
@@ -98,8 +98,8 @@ public class GUINode extends Pane
     private void handleOnMouseDragged(MouseEvent event) {
         event.consume();
 
-        double scaleFactorX = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleX();
-        double scaleFactorY = Main.getSelectedVizPanel().getPanelRoot().getGraphics().getScaleY();
+        double scaleFactorX = Main.getSelectedVizPanelController().getPanelRoot().getGraphics().getScaleX();
+        double scaleFactorY = Main.getSelectedVizPanelController().getPanelRoot().getGraphics().getScaleY();
 
         double offsetX, offsetY;
         if (this.getParentNode() != null) {
@@ -281,7 +281,7 @@ public class GUINode extends Pane
         //});
     }
 
-    private void animateRecursive(final AbstractLayoutVertex v, ParallelTransition pt, VizPanel mainPanel)
+    private void animateRecursive(final AbstractLayoutVertex v, ParallelTransition pt, VizPanelController mainPanel)
     {
         // TODO: Move arrows as well as nodes.
         if(!(v instanceof LayoutRootVertex)) {

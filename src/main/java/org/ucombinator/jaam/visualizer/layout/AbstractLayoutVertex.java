@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 
+import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.Location;
@@ -156,7 +157,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
     public abstract String getShortDescription();
 
     // These searches may be different for different subclasses, so we implement them there.
-    public abstract boolean searchByMethod(String query, VizPanel mainPanel);
+    public abstract boolean searchByMethod(String query, VizPanelController mainPanel);
 
     // This is needed so that we can show the code for the methods that correspond to selected vertices
     public abstract HashSet<LayoutMethodVertex> getMethodVertices();
@@ -262,7 +263,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
         this.innerGraph = innerGraph;
     }
 
-    public void recomputeGraphicsSize(VizPanel mainPanel)
+    public void recomputeGraphicsSize(VizPanelController mainPanel)
     {
         double pixelWidth = mainPanel.scaleX(this.location.width);
         double pixelHeight = mainPanel.scaleY(this.location.height);
@@ -280,7 +281,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
             this.getGraphics().setVisible(isVisible);
     }
 
-    public boolean addTreeNodes(TreeItem parentNode, VizPanel mainPanel) {
+    public boolean addTreeNodes(TreeItem parentNode, VizPanelController mainPanel) {
         boolean addedNodes = false;
         TreeItem newNode = new TreeItem(this);
         for(AbstractLayoutVertex v : this.getInnerGraph().getVertices())
@@ -313,12 +314,12 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
         this.graphics = null;
     }
 
-    public void searchByID(int id, VizPanel mainPanel)
+    public void searchByID(int id, VizPanelController mainPanel)
     {
         this.searchByIDRange(id, id, mainPanel);
     }
 
-    public void searchByIDRange(int id1, int id2, VizPanel mainPanel)
+    public void searchByIDRange(int id1, int id2, VizPanelController mainPanel)
     {
         if(this.getId() >= id1 && this.getId() <= id2) {
             this.setHighlighted(true);
@@ -330,7 +331,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
             v.searchByIDRange(id1, id2, mainPanel);
     }
 
-    public void searchByInstruction(String query, VizPanel mainPanel)
+    public void searchByInstruction(String query, VizPanelController mainPanel)
     {
         if(this instanceof LayoutInstructionVertex) {
             String instStr = ((LayoutInstructionVertex) this).getInstruction().getText();
