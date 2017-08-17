@@ -1,9 +1,9 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
@@ -15,8 +15,8 @@ public class MainTabController {
     public final Tab tab;
     public final VizPanelController vizPanelController;
 
-    @FXML private BorderPane root;
-    public BorderPane getRoot() { return root; }
+    @FXML private Node root;
+    public Node getRoot() { return root; }
 
     @FXML private BorderPane centerPane; // TODO: rename
     public BorderPane getCenterPane() { return this.centerPane; }
@@ -45,8 +45,6 @@ public class MainTabController {
         Controllers.loadFXML("/MainTabContent.fxml", this);
         this.vizPanelController = new VizPanelController(file, graph);
         this.centerPane.setCenter(this.vizPanelController.getRoot());
-        //this.centerPane.getChildren().add(
-
         this.vizPanelController.initFX(graph);
         this.tab = new Tab(file.getName(), this.getRoot());
         this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));

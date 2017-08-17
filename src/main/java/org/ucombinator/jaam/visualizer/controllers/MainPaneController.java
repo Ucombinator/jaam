@@ -3,8 +3,8 @@ package org.ucombinator.jaam.visualizer.controllers;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.Parent;
 import javafx.scene.control.TabPane;
-import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import org.ucombinator.jaam.serializer.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -18,8 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainPaneController {
-    @FXML private AnchorPane root;
-    public AnchorPane getRoot() { return this.root; }
+    @FXML private Parent root;
+    public Parent getRoot() { return this.root; }
 
     @FXML private TabPane tabPane;
     public TabPane getTabPane() { return this.tabPane; }

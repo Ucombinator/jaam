@@ -36,7 +36,6 @@ public class VizPanelController {
     @FXML private CheckBox showLabels;
     @FXML private CheckBox methodsExpanded;
     @FXML private CheckBox chainsExpanded;
-
     @FXML private Spinner<Double> zoomSpinner;
 
     // TODO: should this stuff be moved to a model class?
