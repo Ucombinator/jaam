@@ -3,8 +3,6 @@ package org.ucombinator.jaam.visualizer.gui;
 import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.TranslateTransition;
-import javafx.event.EventHandler;
-import javafx.event.EventType;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -13,10 +11,10 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.*;
+import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.scene.paint.Color;
-
 import javafx.util.Duration;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.layout.*;
@@ -105,17 +103,18 @@ public class GUINode extends Pane
                 double maxOffsetY = parentBounds.getHeight() - thisHeight;
 
                 // This truncation of the offset confines our box to its parent.
-                if (offsetX < 0)
+                if (offsetX < 0) {
                     offsetX = 0;
-                else if (offsetX > maxOffsetX)
+                } else if (offsetX > maxOffsetX) {
                     offsetX = maxOffsetX;
+                }
 
-                if (offsetY < 0)
+                if (offsetY < 0) {
                     offsetY = 0;
-                else if (offsetY > maxOffsetY)
+                } else if (offsetY > maxOffsetY) {
                     offsetY = maxOffsetY;
-            }
-            else {
+                }
+            } else {
                 offsetX = event.getScreenX() - dragStartX;
                 offsetY = event.getScreenY() - dragStartY;
             }
@@ -131,12 +130,9 @@ public class GUINode extends Pane
 
         this.setOnMouseEntered(event -> {
             event.consume();
-            if (vertex.getSelfGraph() != null)
-            {
-                for(LayoutEdge e : vertex.getSelfGraph().getEdges())
-                {
-                    if(e.getSource() == vertex || e.getDest() == vertex)
-                    {
+            if (vertex.getSelfGraph() != null) {
+                for(LayoutEdge e : vertex.getSelfGraph().getEdges()) {
+                    if(e.getSource() == vertex || e.getDest() == vertex) {
                         e.highlightEdgePath();
                     }
                 }
@@ -160,46 +156,48 @@ public class GUINode extends Pane
         });
 
         if(!(this.vertex instanceof LayoutRootVertex)) {
-            this.setOnMouseClicked(new EventHandler<MouseEvent>() {
-
-                @Override
-                public void handle(MouseEvent event) {
-                    EventType<? extends MouseEvent> type = event.getEventType();
-                    if(type.equals(MouseEvent.MOUSE_CLICKED))
-                    {
-                        if(event.getButton().equals(MouseButton.PRIMARY))
-                        {
-                            switch (event.getClickCount())
-                            {
-                                case 1:
-                                    handlePrimarySingleClick(event);
-                                    break;
-                                case 2:
-                                    handlePrimaryDoubleClick(event);
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }
-                        else if(event.getButton().equals(MouseButton.SECONDARY)) {}
-                        else if(event.getButton().equals(MouseButton.MIDDLE)) {}
-                    }
-                    else
-                    {
-                        System.out.println("This line should never be printed since we add the handler by setOnMouseClicked");
+            this.setOnMouseClicked(event -> {
+                if(event.getButton().equals(MouseButton.PRIMARY)) {
+                    switch (event.getClickCount()) {
+                        case 1: handlePrimarySingleClick(event); break;
+                        case 2: handlePrimaryDoubleClick(event); break;
+                        default: break;
                     }
                 }
-
             });
         }
 
         this.setVisible(true);
     }
 
-    private void collapsing(AbstractLayoutVertex v)
+    private void handlePrimarySingleClick(MouseEvent event)
+    {
+        event.consume();
+
+        MainTabController currentFrame = Main.getSelectedMainTabController();
+        currentFrame.getMainPanel().resetHighlighted(this.getVertex());
+        currentFrame.getBytecodeArea().setDescription();
+        currentFrame.setRightText();
+    }
+
+    private void handlePrimaryDoubleClick(MouseEvent event)
+    {
+        // Collapsing the root vertex leaves us with a blank screen.
+        if (!(this.getVertex() instanceof LayoutRootVertex)) {
+            if (this.getVertex().isExpanded()) {
+                collapsing();
+            } else {
+                expanding();
+            }
+        }
+
+        event.consume();
+    }
+
+    private void collapsing()
     {
         //System.out.println("\nCollapsing node: " + v.getId() + ", " + v.getGraphics().toString());
-        Iterator<Node> it = v.getGraphics().getChildren().iterator();
+        Iterator<Node> it = this.getVertex().getGraphics().getChildren().iterator();
 
         // Fade edges out?
         /*while(it.hasNext())
@@ -221,7 +219,7 @@ public class GUINode extends Pane
             }
         }*/
 
-        v.setExpanded(false);
+        this.getVertex().setExpanded(false);
         VizPanel panel = Main.getSelectedVizPanel();
         final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
         panel.resetContent();
@@ -240,10 +238,10 @@ public class GUINode extends Pane
         });*/
     }
 
-    private void expanding(AbstractLayoutVertex v)
+    private void expanding()
     {
         //System.out.println("\nExpanding node: " + v.getId() + ", " + v.getGraphics().toString());
-        Iterator<Node> it = v.getGraphics().getChildren().iterator();
+        Iterator<Node> it = this.getVertex().getGraphics().getChildren().iterator();
 
         // Fade edges in?
         /*while(it.hasNext())
@@ -265,7 +263,7 @@ public class GUINode extends Pane
             }
         }*/
 
-        v.setExpanded(true);
+        this.getVertex().setExpanded(true);
         VizPanel panel = Main.getSelectedVizPanel();
         final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
         panel.resetContent();
@@ -282,21 +280,6 @@ public class GUINode extends Pane
                 //LayoutEdge.redrawEdges(panelRoot, true);
         //    }
         //});
-    }
-
-    private void handlePrimaryDoubleClick(MouseEvent event)
-    {
-        AbstractLayoutVertex v = GUINode.this.getVertex();
-
-        // Collapsing the root vertex leaves us with a blank screen.
-        if(!(v instanceof LayoutRootVertex)) {
-            if (v.isExpanded())
-                collapsing(v);
-            else
-                expanding(v);
-        }
-
-        event.consume();
     }
 
     private void animateRecursive(final AbstractLayoutVertex v, ParallelTransition pt, VizPanel mainPanel)
@@ -348,24 +331,11 @@ public class GUINode extends Pane
             }
         }
 
-        Iterator<AbstractLayoutVertex> it = v.getInnerGraph().getVertices().iterator();
-        while(it.hasNext()){
-            AbstractLayoutVertex next = it.next();
-            if(v.isExpanded()) {
+        for (AbstractLayoutVertex next : v.getInnerGraph().getVertices()) {
+            if (v.isExpanded()) {
                 animateRecursive(next, pt, mainPanel);
             }
         }
-    }
-
-    private void handlePrimarySingleClick(MouseEvent event)
-    {
-        event.consume();
-        AbstractLayoutVertex v = ((GUINode)(event.getSource())).getVertex();
-
-        MainTabController currentFrame = Main.getSelectedMainTabController();
-        currentFrame.getMainPanel().resetHighlighted(v);
-        currentFrame.getBytecodeArea().setDescription();
-        currentFrame.setRightText();
     }
 
     public AbstractLayoutVertex getVertex() {
