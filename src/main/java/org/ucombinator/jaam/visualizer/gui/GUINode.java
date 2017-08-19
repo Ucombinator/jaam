@@ -281,7 +281,7 @@ public class GUINode extends Pane
         //});
     }
 
-    private void animateRecursive(final AbstractLayoutVertex v, ParallelTransition pt, VizPanelController mainPanel)
+    private static void animateRecursive(final AbstractLayoutVertex v, ParallelTransition pt, VizPanelController mainPanel)
     {
         // TODO: Move arrows as well as nodes.
         if(!(v instanceof LayoutRootVertex)) {
