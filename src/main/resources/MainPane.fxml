@@ -7,10 +7,9 @@
 <?import javafx.scene.input.KeyCodeCombination?>
 <?import javafx.scene.layout.VBox?>
 
-
 <VBox fx:id="root" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-      <MenuBar>
+      <MenuBar VBox.vgrow="NEVER">
         <menus>
           <Menu text="_File">
             <items>
@@ -35,6 +34,6 @@
           </Menu>
         </menus>
       </MenuBar>
-      <TabPane fx:id="tabPane" tabClosingPolicy="ALL_TABS" />
+      <TabPane fx:id="tabPane" tabClosingPolicy="ALL_TABS" VBox.vgrow="ALWAYS" />
    </children>
 </VBox>
