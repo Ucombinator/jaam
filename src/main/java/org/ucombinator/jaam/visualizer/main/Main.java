@@ -47,6 +47,10 @@ public class Main extends Application {
     public void start(Stage stage) throws IOException {
         Thread.setDefaultUncaughtExceptionHandler(Main::uncaughtExceptionHandler);
 
+        // Prevent the window from being so small that the user cannot grab it
+        stage.setMinHeight(100);
+        stage.setMinWidth(100);
+
         Main.mainPane = new MainPaneController();
         Scene scene = new Scene(Main.mainPane.getRoot());
         stage.setScene(scene);
