@@ -30,7 +30,10 @@ public class MainPaneController {
 
     private final FileChooser fileChooser = new FileChooser();
 
-    public void loadLoopGraph(ActionEvent event) throws IOException {
+    @FXML private void zoomInAction(ActionEvent event) { Main.getSelectedVizPanelController().getZoomSpinner().increment(); }
+    @FXML private void zoomOutAction(ActionEvent event) { Main.getSelectedVizPanelController().getZoomSpinner().decrement(); }
+
+    @FXML public void loadLoopGraph(ActionEvent event) throws IOException {
         System.out.println("Load graph: start...");
 
         fileChooser.setTitle("Load graph file");

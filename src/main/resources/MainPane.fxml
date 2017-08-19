@@ -13,7 +13,7 @@
         <menus>
           <Menu text="_File">
             <items>
-                  <MenuItem fx:id="loadLoopGraphMenuItem" onAction="#loadLoopGraph" text="_Open Loop Graph...">
+                  <MenuItem onAction="#loadLoopGraph" text="_Open Loop Graph...">
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="O" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator>
@@ -32,6 +32,20 @@
                   <MenuItem fx:id="searchByMethodMenuItem" onAction="#searchByMethod" text="By _Method..." />
             </items>
           </Menu>
+            <Menu mnemonicParsing="false" text="_View">
+              <items>
+                <MenuItem onAction="#zoomInAction" text="Zoom _In">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="EQUALS" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem onAction="#zoomOutAction" text="Zoom _Out">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="MINUS" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+              </items>
+            </Menu>
         </menus>
       </MenuBar>
       <TabPane fx:id="tabPane" tabClosingPolicy="ALL_TABS" VBox.vgrow="ALWAYS" />
