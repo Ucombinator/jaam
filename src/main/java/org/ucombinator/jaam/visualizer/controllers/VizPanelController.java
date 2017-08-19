@@ -7,6 +7,7 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Spinner;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Pane;
@@ -30,13 +31,13 @@ public class VizPanelController {
     public Node getRoot() { return this.root; }
 
     @FXML private Pane vizPanel;
-    public Pane getVizPanel() { return this.vizPanel; }
-
+    @FXML private ScrollPane scrollPane;
     @FXML private CheckBox showEdges;
     @FXML private CheckBox showLabels;
     @FXML private CheckBox methodsExpanded;
     @FXML private CheckBox chainsExpanded;
     @FXML private Spinner<Double> zoomSpinner;
+    public Spinner<Double> getZoomSpinner() { return zoomSpinner; }
 
     // TODO: should this stuff be moved to a model class?
     private Group graphContentGroup;
@@ -61,8 +62,8 @@ public class VizPanelController {
         Controllers.loadFXML("/VizPanel.fxml", this);
 
         this.zoomSpinner.setValueFactory(new ZoomSpinnerValueFactory(1.0, 1.2));
-        TimelineProperty.bind(this.getVizPanel().scaleXProperty(), this.zoomSpinner.valueProperty(), 300);
-        TimelineProperty.bind(this.getVizPanel().scaleYProperty(), this.zoomSpinner.valueProperty(), 300);
+        TimelineProperty.bind(this.vizPanel.scaleXProperty(), this.zoomSpinner.valueProperty(), 300);
+        TimelineProperty.bind(this.vizPanel.scaleYProperty(), this.zoomSpinner.valueProperty(), 300);
 
         // TODO: should this stuff be moved to a model class?
         this.highlighted = new LinkedHashSet<>();
