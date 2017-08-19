@@ -136,26 +136,6 @@ public class VizPanelController {
     }
 
 /*
-    public LayoutRootVertex getPanelRoot() { return this.getPanelRoot(); }
-    public void resetRootPosition(boolean resetScale) { this.resetRootPosition(resetScale); }
-    public HashSet<AbstractLayoutVertex> getHighlighted() { return this.getVizPanel().getHighlighted(); }
-    public void initFX(Graph graph) { this.getVizPanel().initFX(graph);}
-    public void resetContent() { this.resetContent(); }
-    //public void resetPanelSize() { this.getVizPanel().resetPanelSize(); }
-    public double scaleX(double coordinate) { return this.getVizPanel().scaleX(coordinate); }
-    public double scaleY(double coordinate) { return this.getVizPanel().scaleY(coordinate); }
-    public double invScaleX(double pixelCoordinate) { return this.getVizPanel().invScaleX(pixelCoordinate); }
-    public double invScaleY(double pixelCoordinate) { return this.getVizPanel().invScaleY(pixelCoordinate); }
-    public double getWidthPerVertex() { return this.getVizPanel().getWidthPerVertex(); }
-    public void searchByJimpleIndex(String method, int index, boolean removeCurrent, boolean addChosen) { this.getVizPanel().searchByJimpleIndex(method, index, removeCurrent, addChosen); }
-    public void resetHighlighted(AbstractLayoutVertex newHighlighted) { this.getVizPanel().resetHighlighted(newHighlighted); }
-    public void drawGraph() { this.getVizPanel().drawGraph(); }
-    public void initZoom() { this.getVizPanel().initZoom(); }
-    public void resetAndRedraw(boolean edgeVisible) { this.getVizPanel().resetAndRedraw(edgeVisible); }
-    public void resetStrokeWidth() { this.getVizPanel().resetStrokeWidth(); }
-    */
-
-/*
     public void zoom(int zoomDistance, Button button) {
         double scaleFactor = Math.pow(factorMultiple, zoomDistance);
         factorX *= scaleFactor;
