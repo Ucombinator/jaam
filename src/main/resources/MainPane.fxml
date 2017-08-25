@@ -27,9 +27,9 @@
           </Menu>
           <Menu text="_Search">
             <items>
-              <MenuItem fx:id="searchByIdMenuItem" onAction="#searchByID" text="By _ID..." />
-                  <MenuItem fx:id="searchByStatementMenuItem" onAction="#searchByStatement" text="By _Statement..." />
-                  <MenuItem fx:id="searchByMethodMenuItem" onAction="#searchByMethod" text="By _Method..." />
+              <MenuItem onAction="#searchByID" text="By _ID..." />
+                  <MenuItem onAction="#searchByStatement" text="By _Statement..." />
+                  <MenuItem onAction="#searchByMethod" text="By _Method..." />
             </items>
           </Menu>
             <Menu mnemonicParsing="false" text="_View">

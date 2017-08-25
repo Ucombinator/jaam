@@ -18,10 +18,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainPaneController {
-    @FXML private Parent root;
+    @FXML private final Parent root = null; // Initialized by Controllers.loadFXML()
     public Parent getRoot() { return this.root; }
 
-    @FXML private TabPane tabPane;
+    @FXML private final TabPane tabPane = null; // Initialized by Controllers.loadFXML()
     public TabPane getTabPane() { return this.tabPane; }
 
     public MainPaneController() throws IOException {
