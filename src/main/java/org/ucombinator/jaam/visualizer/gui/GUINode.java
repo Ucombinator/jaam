@@ -172,7 +172,7 @@ public class GUINode extends Pane
 
                         MainTabController currentFrame = Main.getSelectedMainTabController();
                         currentFrame.vizPanelController.resetHighlighted(this.getVertex());
-                        currentFrame.getBytecodeArea().setDescription();
+                        currentFrame.bytecodeArea.setDescription();
                         currentFrame.setRightText();
                         break;
                     case 2:

@@ -7,7 +7,6 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Spinner;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Pane;
@@ -27,17 +26,14 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 
 public class VizPanelController {
-    @FXML private Node root;
-    public Node getRoot() { return this.root; }
+    @FXML public final Node root = null; // Initialized by Controllers.loadFXML()
+    @FXML public final Spinner<Double> zoomSpinner = null; // Initialized by Controllers.loadFXML()
 
-    @FXML private Pane vizPanel;
-    @FXML private ScrollPane scrollPane;
-    @FXML private CheckBox showEdges;
-    @FXML private CheckBox showLabels;
-    @FXML private CheckBox methodsExpanded;
-    @FXML private CheckBox chainsExpanded;
-    @FXML private Spinner<Double> zoomSpinner;
-    public Spinner<Double> getZoomSpinner() { return zoomSpinner; }
+    @FXML private final Pane vizPanel = null; // Initialized by Controllers.loadFXML()
+    @FXML private final CheckBox showEdges = null; // Initialized by Controllers.loadFXML()
+    @FXML private final CheckBox showLabels = null; // Initialized by Controllers.loadFXML()
+    @FXML private final CheckBox methodsExpanded = null; // Initialized by Controllers.loadFXML()
+    @FXML private final CheckBox chainsExpanded = null; // Initialized by Controllers.loadFXML()
 
     // TODO: should this stuff be moved to a model class?
     private Group graphContentGroup;
@@ -123,7 +119,7 @@ public class VizPanelController {
         fileChooser.setInitialFileName(Main.getSelectedMainTab().getText() + "." + extension);
 
         //Show save file dialog
-        File file = fileChooser.showSaveDialog(getRoot().getScene().getWindow());
+        File file = fileChooser.showSaveDialog(this.root.getScene().getWindow());
 
         if (file != null) {
             WritableImage image = vizPanel.snapshot(new SnapshotParameters(), null);
@@ -311,7 +307,7 @@ public class VizPanelController {
     }
 
     public void resetStrokeWidth() {
-        this.getPanelRoot().resetStrokeWidth(1.0 / (Math.sqrt(factorX * factorY)));
+        this.getPanelRoot().resetStrokeWidth(1.0 / this.zoomSpinner.getValue());
     }
 
 /*

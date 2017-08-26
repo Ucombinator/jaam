@@ -15,27 +15,13 @@ public class MainTabController {
     public final Tab tab;
     public final VizPanelController vizPanelController;
 
-    @FXML private Node root;
-    public Node getRoot() { return root; }
+    // TODO: rename some of these
+    @FXML public final CodeArea bytecodeArea = null; // Initialized by Controllers.loadFXML()
 
-    @FXML private BorderPane centerPane; // TODO: rename
-    public BorderPane getCenterPane() { return this.centerPane; }
-
-    @FXML private TextArea descriptionArea;
-    public TextArea getRightArea() { return this.descriptionArea; }
-
-    @FXML private CodeArea bytecodeArea;
-    public CodeArea getBytecodeArea() { return this.bytecodeArea; }
-
-    @FXML private SearchResults searchResults;
-    public SearchResults getSearchResults() { return this.searchResults; }
-
-    @FXML private CheckBox showEdges;
-    @FXML private CheckBox showLabels;
-    @FXML private CheckBox methodsExpanded;
-    @FXML private CheckBox chainsExpanded;
-
-    @FXML private Spinner<Double> zoomSpinner;
+    @FXML private final Node root = null; // Initialized by Controllers.loadFXML()
+    @FXML private final BorderPane centerPane = null; // Initialized by Controllers.loadFXML()
+    @FXML private final TextArea descriptionArea = null; // Initialized by Controllers.loadFXML()
+    @FXML private final SearchResults searchResults = null; // Initialized by Controllers.loadFXML()
 
     public enum SearchType {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
@@ -44,9 +30,9 @@ public class MainTabController {
     public MainTabController(File file, Graph graph) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
         this.vizPanelController = new VizPanelController(file, graph);
-        this.centerPane.setCenter(this.vizPanelController.getRoot());
+        this.centerPane.setCenter(this.vizPanelController.root);
         this.vizPanelController.initFX(graph);
-        this.tab = new Tab(file.getName(), this.getRoot());
+        this.tab = new Tab(file.getName(), this.root);
         this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));
         Controllers.put(this.tab, this);
     }
@@ -64,7 +50,7 @@ public class MainTabController {
             text.append(v.getRightPanelContent() + "\n");
         }
 
-        this.getRightArea().setText(text.toString());
+        this.descriptionArea.setText(text.toString());
     }
 
     // Clean up info from previous searches

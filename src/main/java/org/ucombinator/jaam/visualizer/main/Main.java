@@ -18,7 +18,7 @@ public class Main extends Application {
     private static MainPaneController mainPane;
 
     public static Tab getSelectedMainTab() {
-        return Main.mainPane.getTabPane().getSelectionModel().getSelectedItem();
+        return Main.mainPane.tabPane.getSelectionModel().getSelectedItem();
     }
 
     public static MainTabController getSelectedMainTabController() {
@@ -52,7 +52,7 @@ public class Main extends Application {
         stage.setMinWidth(100);
 
         Main.mainPane = new MainPaneController();
-        Scene scene = new Scene(Main.mainPane.getRoot());
+        Scene scene = new Scene(Main.mainPane.root);
         stage.setScene(scene);
         stage.show();
 

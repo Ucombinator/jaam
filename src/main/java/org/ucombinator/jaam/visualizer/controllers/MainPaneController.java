@@ -18,26 +18,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainPaneController {
-    @FXML private final Parent root = null; // Initialized by Controllers.loadFXML()
-    public Parent getRoot() { return this.root; }
-
-    @FXML private final TabPane tabPane = null; // Initialized by Controllers.loadFXML()
-    public TabPane getTabPane() { return this.tabPane; }
+    @FXML public final Parent root = null; // Initialized by Controllers.loadFXML()
+    @FXML public final TabPane tabPane = null; // Initialized by Controllers.loadFXML()
 
     public MainPaneController() throws IOException {
         Controllers.loadFXML("/MainPane.fxml", this);
     }
 
+    @FXML private void quit(ActionEvent event) { Platform.exit(); }
+
+    @FXML private void zoomInAction(ActionEvent event) { Main.getSelectedVizPanelController().zoomSpinner.increment(); }
+    @FXML private void zoomOutAction(ActionEvent event) { Main.getSelectedVizPanelController().zoomSpinner.decrement(); }
+
+    @FXML private void searchByID(ActionEvent event) {
+        Main.getSelectedMainTabController().initSearch(MainTabController.SearchType.ID);
+    }
+
+    @FXML private void searchByStatement(ActionEvent event) {
+        Main.getSelectedMainTabController().initSearch(MainTabController.SearchType.INSTRUCTION);
+    }
+
+    @FXML private void searchByMethod(ActionEvent event) {
+        Main.getSelectedMainTabController().initSearch(MainTabController.SearchType.METHOD);
+    }
+
     private final FileChooser fileChooser = new FileChooser();
-
-    @FXML private void zoomInAction(ActionEvent event) { Main.getSelectedVizPanelController().getZoomSpinner().increment(); }
-    @FXML private void zoomOutAction(ActionEvent event) { Main.getSelectedVizPanelController().getZoomSpinner().decrement(); }
-
     @FXML public void loadLoopGraph(ActionEvent event) throws IOException {
         System.out.println("Load graph: start...");
 
         fileChooser.setTitle("Load graph file");
-        List<File> files = fileChooser.showOpenMultipleDialog(getTabPane().getScene().getWindow());
+        List<File> files = fileChooser.showOpenMultipleDialog(this.tabPane.getScene().getWindow());
 
         if (files != null) {
             for (File file : files) {
@@ -95,21 +105,5 @@ public class MainPaneController {
         }
 
         return graph;
-    }
-
-    @FXML private void quit(ActionEvent event) {
-        Platform.exit();
-    }
-
-    @FXML private void searchByID(ActionEvent event) {
-        Main.getSelectedMainTabController().initSearch(MainTabController.SearchType.ID);
-    }
-
-    @FXML private void searchByStatement(ActionEvent event) {
-        Main.getSelectedMainTabController().initSearch(MainTabController.SearchType.INSTRUCTION);
-    }
-
-    @FXML private void searchByMethod(ActionEvent event) {
-        Main.getSelectedMainTabController().initSearch(MainTabController.SearchType.METHOD);
     }
 }
