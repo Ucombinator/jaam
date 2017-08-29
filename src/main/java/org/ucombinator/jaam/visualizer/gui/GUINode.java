@@ -5,7 +5,6 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseDragEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Paint;
@@ -35,11 +34,8 @@ public class GUINode extends Pane
     private final AbstractLayoutVertex vertex;
     private final GUINode parent;
 
-    private double dragStartX, dragStartY;
-    private MouseEvent dragStartEvent;
-    //private double totalScaleX;
-    //private double totalScaleY;
-    
+    private Point2D dragStart;
+
     public GUINode(GUINode parent, AbstractLayoutVertex v)
     {
         super();
@@ -66,6 +62,16 @@ public class GUINode extends Pane
         this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
         this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
 
+        this.rect.setArcWidth(5);
+        this.rect.setArcHeight(5);
+        this.highlightingRect.setArcWidth(5);
+        this.highlightingRect.setArcHeight(5);
+
+        this.setFill(v.getFill());
+        this.rect.setStroke(Color.BLACK);
+        this.setStrokeWidth(0.5);
+        this.setOpacity(1);
+
         this.setOnMousePressed(this::handleOnMousePressed);
         this.setOnMouseDragged(this::handleOnMouseDragged);
         this.setOnMouseEntered(this::handleOnMouseEntered);
@@ -76,28 +82,14 @@ public class GUINode extends Pane
 
     private void handleOnMousePressed(MouseEvent event) {
         event.consume();
-
-        this.dragStartEvent = event;
-
-/*
-        double scaleFactorX1 = Main.getSelectedVizPanelController().getPanelRoot().getGraphics().getScaleX();
-        double scaleFactorY1 = Main.getSelectedVizPanelController().getPanelRoot().getGraphics().getScaleY();
-
-        if (this.getVertex() instanceof LayoutRootVertex) {
-            dragStartX = event.getScreenX() - this.getTranslateX();
-            dragStartY = event.getScreenY() - this.getTranslateY();
-        } else {
-            dragStartX = event.getScreenX() / scaleFactorX1 - this.getTranslateX();
-            dragStartY = event.getScreenY() / scaleFactorY1 - this.getTranslateY();
-        }
-        */
+        this.dragStart = new Point2D(event.getX(), event.getY());
     }
 
     private void handleOnMouseDragged(MouseEvent event) {
         event.consume();
 
-        double newX = this.getTranslateX() + event.getX() - this.dragStartEvent.getX();
-        double newY = this.getTranslateY() + event.getY() - this.dragStartEvent.getY();
+        double newX = this.getTranslateX() + event.getX() - this.dragStart.getX();
+        double newY = this.getTranslateY() + event.getY() - this.dragStart.getY();
 
         // Clamp the offset to confine our box to its parent.
         if (this.getParentNode() != null) {
@@ -110,12 +102,10 @@ public class GUINode extends Pane
 
         this.setTranslateX(newX);
         this.setTranslateY(newY);
-        this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
-        this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
 
-        VizPanelController mainPanel = Main.getSelectedVizPanelController();
-        this.vertex.setX(mainPanel.invScaleX(newX));
-        this.vertex.setY(mainPanel.invScaleY(newY));
+        this.vertex.setX(newX);
+        this.vertex.setY(newY);
+
         LayoutEdge.redrawEdges(this.vertex, false);
     }
 
@@ -337,26 +327,9 @@ public class GUINode extends Pane
         this.rect.setFill(c);
     }
 
-    public void setStroke(Color c)
-    {
-        this.rect.setStroke(c);
-    }
-
     public void setStrokeWidth(double strokeWidth)
     {
         this.rect.setStrokeWidth(strokeWidth);
-    }
-
-    public void setArcHeight(double height)
-    {
-        this.rect.setArcHeight(height);
-        this.highlightingRect.setArcHeight(height);
-    }
-
-    public void setArcWidth(double width)
-    {
-        this.rect.setArcWidth(width);
-        this.highlightingRect.setArcWidth(width);
     }
 
     public void setTranslateLocation(double x, double y, double width, double height)

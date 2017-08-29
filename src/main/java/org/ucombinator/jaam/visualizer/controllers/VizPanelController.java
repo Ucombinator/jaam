@@ -10,7 +10,6 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.Spinner;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
@@ -168,26 +167,6 @@ public class VizPanelController {
     }
     */
 
-    public double scaleX(double coordinate)
-    {
-        return coordinate; // * initRootWidth / this.maxVertexWidth;
-    }
-
-    public double scaleY(double coordinate)
-    {
-        return coordinate; // * initRootHeight / this.maxVertexHeight;
-    }
-
-    public double invScaleX(double pixelCoordinate)
-    {
-        return pixelCoordinate; // * this.maxVertexWidth / initRootWidth;
-    }
-
-    public double invScaleY(double pixelCoordinate)
-    {
-        return pixelCoordinate; // * this.maxVertexHeight / initRootHeight;
-    }
-
     // Divides the actual width in pixels by the width in vertex units
     public double getWidthPerVertex()
     {
@@ -291,12 +270,6 @@ public class VizPanelController {
     private void drawNodes(GUINode parent, AbstractLayoutVertex v)
     {
         GUINode node = new GUINode(parent, v);
-        node.setArcWidth(scaleX(0.5));
-        node.setArcHeight(scaleY(0.5));
-        node.setFill(v.getFill());
-        node.setStroke(Color.BLACK);
-        node.setStrokeWidth(.5);
-        node.setOpacity(1);
 
         if (parent == null) {
             graphContentGroup.getChildren().add(node);
@@ -304,10 +277,10 @@ public class VizPanelController {
             parent.getChildren().add(node);
         }
 
-        double translateX = scaleX(v.getX());
-        double translateY = scaleY(v.getY());
-        double width = scaleX(v.getWidth());
-        double height = scaleY(v.getHeight());
+        double translateX = v.getX();
+        double translateY = v.getY();
+        double width = v.getWidth();
+        double height = v.getHeight();
         node.setTranslateLocation(translateX, translateY, width, height);
 
         for (AbstractLayoutVertex child : v.getInnerGraph().getVertices()) {

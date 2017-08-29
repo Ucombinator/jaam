@@ -33,8 +33,8 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
         Color.LIGHTGOLDENRODYELLOW,
         Color.LIGHTGREY};
 
-    public static final double DEFAULT_WIDTH = 1.0;
-    public static final double DEFAULT_HEIGHT = 1.0;
+    public static final double DEFAULT_WIDTH = 10.0;
+    public static final double DEFAULT_HEIGHT = 10.0;
 
     private HierarchicalGraph selfGraph = null;
     private HierarchicalGraph innerGraph = null;
@@ -260,18 +260,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
 
     public void setInnerGraph(HierarchicalGraph innerGraph) {
         this.innerGraph = innerGraph;
-    }
-
-    public void recomputeGraphicsSize(VizPanelController mainPanel)
-    {
-        double pixelWidth = mainPanel.scaleX(this.location.width);
-        double pixelHeight = mainPanel.scaleY(this.location.height);
-        
-        this.getGraphics().getRect().setWidth(pixelWidth);
-        this.getGraphics().getRect().setHeight(pixelHeight);
-        
-        this.getGraphics().getHighlightingRect().setWidth(pixelWidth);
-        this.getGraphics().getHighlightingRect().setHeight(pixelHeight);
     }
 
     public void setVisible(boolean isVisible)
