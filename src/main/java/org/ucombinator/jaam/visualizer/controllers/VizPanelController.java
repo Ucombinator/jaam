@@ -43,16 +43,12 @@ public class VizPanelController {
     // The dimensions of the background for our graph
     private static final double initRootWidth = 500.0;
     private static final double initRootHeight = 500.0;
-    private double desiredRootTranslateX;
-    private double desiredRootTranslateY;
+    //private double desiredRootTranslateX;
+    //private double desiredRootTranslateY;
 
     // Store the count for vertex width and height when everything is expanded
-    private double maxVertexWidth;
-    private double maxVertexHeight;
-
-    private double factorX = 1;
-    private double factorY = 1;
-    private static final double factorMultiple = 1.1;
+    //private double maxVertexWidth;
+    //private double maxVertexHeight;
 
     public VizPanelController(File file, Graph graph) throws IOException {
         Controllers.loadFXML("/VizPanel.fxml", this);
@@ -73,11 +69,6 @@ public class VizPanelController {
         this.vizPanel.setVisible(true);
         this.vizPanel.getChildren().add(graphContentGroup);
         //this.requestFocus();
-
-    }
-
-    @FXML private void resetButtonPressed() {
-        Main.getSelectedVizPanelController().resetRootPosition(true);
     }
 
     @FXML private void showEdgesAction(ActionEvent event) {
@@ -97,14 +88,14 @@ public class VizPanelController {
         this.getPanelRoot().toggleNodesOfType(
                 AbstractLayoutVertex.VertexType.METHOD, methodsExpanded.isSelected());
         this.resetAndRedraw(showEdges.isSelected());
-        this.resetRootPosition(false);
+        //this.resetRootPosition(false);
     }
 
     @FXML private void chainCollapseAction(ActionEvent event) {
         this.getPanelRoot().toggleNodesOfType(
                 AbstractLayoutVertex.VertexType.CHAIN, chainsExpanded.isSelected());
         this.resetAndRedraw(showEdges.isSelected());
-        this.resetRootPosition(false);
+        //this.resetRootPosition(false);
     }
 
     @FXML private void exportImageAction(ActionEvent event) throws IOException {
@@ -132,54 +123,12 @@ public class VizPanelController {
         }
     }
 
-/*
-    public void zoom(int zoomDistance, Button button) {
-        double scaleFactor = Math.pow(factorMultiple, zoomDistance);
-        factorX *= scaleFactor;
-        factorY *= scaleFactor;
-
-        ScaleTransition st = new ScaleTransition(new Duration(100), panelRoot.getGraphics());
-
-        st.setToX(factorX);
-        st.setToY(factorY);
-        st.setOnFinished(event -> {
-            if(button != null) {
-                Controllers.<MainTabController>get(this).setZoomEnabled(true);
-                Controllers.<MainTabController>get(this).keepButton(zoomDistance, button);
-            }
-
-            this.panelRoot.setVisible(false);
-            this.resetStrokeWidth();
-            this.panelRoot.setVisible(true);
-        });
-        st.play();
-    }
-    */
-
-
-/*
-    public void incrementScaleXFactor() {
-        factorX *= factorMultiple;
-    }
-
-    public void decrementScaleXFactor() {
-        factorX /= factorMultiple;
-    }
-
-    public void incrementScaleYFactor() {
-        factorY *= factorMultiple;
-    }
-
-    public void decrementScaleYFactor() {
-        factorY /= factorMultiple;
-    }
-    */
-
     public LayoutRootVertex getPanelRoot()
     {
         return this.panelRoot;
     }
 
+/*
     public void resetRootPosition(boolean resetScale) {
         GUINode rootGraphics = this.panelRoot.getGraphics();
 
@@ -190,6 +139,7 @@ public class VizPanelController {
 
         rootGraphics.setTranslateLocation(this.desiredRootTranslateX, this.desiredRootTranslateY);
     }
+    */
 
     public HashSet<AbstractLayoutVertex> getHighlighted() {
         return this.highlighted;
@@ -199,10 +149,10 @@ public class VizPanelController {
     {
         this.panelRoot = LayerFactory.getLayeredGraph(graph);
         LayoutAlgorithm.layout(this.panelRoot);
-        resetPanelSize();
+        //resetPanelSize();
         drawGraph();
-        this.desiredRootTranslateX = this.panelRoot.getGraphics().getTranslateX();
-        this.desiredRootTranslateY = this.panelRoot.getGraphics().getTranslateY();
+        //this.desiredRootTranslateX = this.panelRoot.getGraphics().getTranslateX();
+        //this.desiredRootTranslateY = this.panelRoot.getGraphics().getTranslateY();
     }
 
     public void resetContent() {
@@ -211,29 +161,31 @@ public class VizPanelController {
         this.vizPanel.getChildren().add(graphContentGroup);
     }
 
+/*
     private void resetPanelSize() {
         this.maxVertexWidth = this.panelRoot.getWidth();
         this.maxVertexHeight = this.panelRoot.getHeight();
     }
+    */
 
     public double scaleX(double coordinate)
     {
-        return coordinate * initRootWidth / this.maxVertexWidth;
+        return coordinate; // * initRootWidth / this.maxVertexWidth;
     }
 
     public double scaleY(double coordinate)
     {
-        return coordinate * initRootHeight / this.maxVertexHeight;
+        return coordinate; // * initRootHeight / this.maxVertexHeight;
     }
 
     public double invScaleX(double pixelCoordinate)
     {
-        return pixelCoordinate * this.maxVertexWidth / initRootWidth;
+        return pixelCoordinate; // * this.maxVertexWidth / initRootWidth;
     }
 
     public double invScaleY(double pixelCoordinate)
     {
-        return pixelCoordinate * this.maxVertexHeight / initRootHeight;
+        return pixelCoordinate; // * this.maxVertexHeight / initRootHeight;
     }
 
     // Divides the actual width in pixels by the width in vertex units
@@ -287,20 +239,22 @@ public class VizPanelController {
         panelRoot.setVisible(false);
         drawNodes(null, panelRoot);
         drawEdges(panelRoot);
-        //this.resetStrokeWidth();
+        this.resetStrokeWidth();
         panelRoot.setVisible(true);
     }
 
+/*
     public void initZoom() {
         this.panelRoot.getGraphics().setScaleX(factorX);
         this.panelRoot.getGraphics().setScaleY(factorY);
     }
+    */
 
     public void resetAndRedraw(boolean edgeVisible) {
         // Using initZoom applies the current zoom level to the new mode.
         this.graphContentGroup.getChildren().remove(this.panelRoot.getGraphics());
         LayoutAlgorithm.layout(this.panelRoot);
-        this.resetPanelSize();
+        //this.resetPanelSize();
         this.getPanelRoot().setEdgeVisibility(edgeVisible);
         this.drawGraph();
         //this.initZoom();

@@ -1,13 +1,11 @@
 package org.ucombinator.jaam.visualizer.gui;
 
-import javafx.animation.ParallelTransition;
-import javafx.animation.ScaleTransition;
-import javafx.animation.TranslateTransition;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseDragEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Paint;
@@ -15,13 +13,11 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.scene.paint.Color;
-import javafx.util.Duration;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
-import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutRootVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 
@@ -31,7 +27,7 @@ public class GUINode extends Pane
 {
     private static final double TEXT_VERTICAL_PADDING = 15;
     private static final double TEXT_HORIZONTAL_PADDING = 15;
-    private static final int transitionTime = 300; // Milliseconds per transition
+    //private static final int transitionTime = 300; // Milliseconds per transition
 
     private final Rectangle rect;
     private final Rectangle highlightingRect;
@@ -40,8 +36,9 @@ public class GUINode extends Pane
     private final GUINode parent;
 
     private double dragStartX, dragStartY;
-    private double totalScaleX;
-    private double totalScaleY;
+    private MouseEvent dragStartEvent;
+    //private double totalScaleX;
+    //private double totalScaleY;
     
     public GUINode(GUINode parent, AbstractLayoutVertex v)
     {
@@ -69,9 +66,6 @@ public class GUINode extends Pane
         this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
         this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
 
-        this.totalScaleX = 1;
-        this.totalScaleY = 1;
-
         this.setOnMousePressed(this::handleOnMousePressed);
         this.setOnMouseDragged(this::handleOnMouseDragged);
         this.setOnMouseEntered(this::handleOnMouseEntered);
@@ -83,6 +77,9 @@ public class GUINode extends Pane
     private void handleOnMousePressed(MouseEvent event) {
         event.consume();
 
+        this.dragStartEvent = event;
+
+/*
         double scaleFactorX1 = Main.getSelectedVizPanelController().getPanelRoot().getGraphics().getScaleX();
         double scaleFactorY1 = Main.getSelectedVizPanelController().getPanelRoot().getGraphics().getScaleY();
 
@@ -93,50 +90,33 @@ public class GUINode extends Pane
             dragStartX = event.getScreenX() / scaleFactorX1 - this.getTranslateX();
             dragStartY = event.getScreenY() / scaleFactorY1 - this.getTranslateY();
         }
+        */
     }
 
     private void handleOnMouseDragged(MouseEvent event) {
         event.consume();
 
-        double scaleFactorX = Main.getSelectedVizPanelController().getPanelRoot().getGraphics().getScaleX();
-        double scaleFactorY = Main.getSelectedVizPanelController().getPanelRoot().getGraphics().getScaleY();
+        double newX = this.getTranslateX() + event.getX() - this.dragStartEvent.getX();
+        double newY = this.getTranslateY() + event.getY() - this.dragStartEvent.getY();
 
-        double offsetX, offsetY;
+        // Clamp the offset to confine our box to its parent.
         if (this.getParentNode() != null) {
-            offsetX = event.getScreenX() / scaleFactorX - dragStartX;
-            offsetY = event.getScreenY() / scaleFactorY - dragStartY;
             Bounds thisBounds = this.rect.getBoundsInLocal();
-            double thisWidth = thisBounds.getWidth();
-            double thisHeight = thisBounds.getHeight();
-
             Bounds parentBounds = this.getParentNode().rect.getBoundsInLocal();
-            double maxOffsetX = parentBounds.getWidth() - thisWidth;
-            double maxOffsetY = parentBounds.getHeight() - thisHeight;
 
-            // This truncation of the offset confines our box to its parent.
-            if (offsetX < 0) {
-                offsetX = 0;
-            } else if (offsetX > maxOffsetX) {
-                offsetX = maxOffsetX;
-            }
-
-            if (offsetY < 0) {
-                offsetY = 0;
-            } else if (offsetY > maxOffsetY) {
-                offsetY = maxOffsetY;
-            }
-        } else {
-            offsetX = event.getScreenX() - dragStartX;
-            offsetY = event.getScreenY() - dragStartY;
+            newX = Math.min(Math.max(newX, 0), parentBounds.getWidth() - thisBounds.getWidth());
+            newY = Math.min(Math.max(newY, 0), parentBounds.getHeight() - thisBounds.getHeight());
         }
 
-        this.setTranslateLocation(offsetX, offsetY);
+        this.setTranslateX(newX);
+        this.setTranslateY(newY);
+        this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
+        this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
 
-        AbstractLayoutVertex v1 = this.vertex;
         VizPanelController mainPanel = Main.getSelectedVizPanelController();
-        v1.setX(mainPanel.invScaleX(offsetX));
-        v1.setY(mainPanel.invScaleY(offsetY));
-        LayoutEdge.redrawEdges(v1, false);
+        this.vertex.setX(mainPanel.invScaleX(newX));
+        this.vertex.setY(mainPanel.invScaleY(newY));
+        LayoutEdge.redrawEdges(this.vertex, false);
     }
 
     private void handleOnMouseEntered(MouseEvent event) {
@@ -281,6 +261,7 @@ public class GUINode extends Pane
         //});
     }
 
+/*
     private static void animateRecursive(final AbstractLayoutVertex v, ParallelTransition pt, VizPanelController mainPanel)
     {
         // TODO: Move arrows as well as nodes.
@@ -336,6 +317,7 @@ public class GUINode extends Pane
             }
         }
     }
+    */
 
     public AbstractLayoutVertex getVertex() {
         return vertex;
@@ -377,13 +359,6 @@ public class GUINode extends Pane
         this.highlightingRect.setArcWidth(width);
     }
 
-    public void setTranslateLocation(double x, double y) {
-        this.setTranslateX(x);
-        this.setTranslateY(y);
-        this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
-        this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
-    }
-
     public void setTranslateLocation(double x, double y, double width, double height)
     {
         this.setTranslateX(x);
@@ -416,6 +391,7 @@ public class GUINode extends Pane
         System.out.println("Node y = " + bounds.getMinY() + ", " + bounds.getMaxY());
     }
 
+/*
     // Halve the distance from the current opacity to 1.
     public void increaseOpacity()
     {
@@ -444,6 +420,7 @@ public class GUINode extends Pane
         double oldHeight = this.vertex.getHeight();
         return (oldHeight - currentHeight) / 2;
     }
+    */
 
     public static Line getLine(GUINode sourceNode, GUINode destNode) {
         if(sourceNode == null || destNode == null) {
@@ -571,6 +548,7 @@ public class GUINode extends Pane
         return this.parent;
     }
 
+/*
     public double getTotalParentScaleX() {
         if (this.parent != null) {
             return this.parent.totalScaleX;
@@ -598,6 +576,7 @@ public class GUINode extends Pane
     public double getTotalScaleY() {
         return this.totalScaleY;
     }
+    */
 
     public void setLabelVisible(boolean isLabelVisible) {
         vertex.setLabelVisible(isLabelVisible);
