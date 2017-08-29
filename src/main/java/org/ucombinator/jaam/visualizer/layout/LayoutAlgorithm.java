@@ -15,8 +15,8 @@ public class LayoutAlgorithm
         bboxWidthTable = new LinkedHashMap<>();
         bboxHeightTable = new LinkedHashMap<>();
         initializeSizes(parentVertex);
-        bfsLayout(parentVertex);
-        //defaultLayout(parentVertex);
+        //bfsLayout(parentVertex);
+        defaultLayout(parentVertex);
         parentVertex.setY(parentVertex.getY()+ROOT_V_OFFSET);
     }
 

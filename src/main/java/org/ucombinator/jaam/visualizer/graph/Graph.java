@@ -115,8 +115,8 @@ public class Graph
         this.outEdges.putIfAbsent(vSrc, new HashSet<>());
         this.outEdges.get(vSrc).add(vDest);
 
-        this.outEdges.putIfAbsent(vDest, new HashSet<>());
-        this.outEdges.get(vDest).add(vSrc);
+        this.inEdges.putIfAbsent(vDest, new HashSet<>());
+        this.inEdges.get(vDest).add(vSrc);
     }
 
     public HashSet<AbstractVertex> getOutNeighbors(AbstractVertex v) {

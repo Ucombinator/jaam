@@ -59,11 +59,11 @@ public class HierarchicalGraph
     
     public void addEdge(LayoutEdge edge)
     {
-        this.inEdges.putIfAbsent(edge.getSource(), new HashMap<>());
-        this.inEdges.get(edge.getSource()).put(edge.getDest(), edge);
+        this.outEdges.putIfAbsent(edge.getSource(), new HashMap<>());
+        this.outEdges.get(edge.getSource()).put(edge.getDest(), edge);
 
-        this.outEdges.putIfAbsent(edge.getDest(), new HashMap<>());
-        this.outEdges.get(edge.getDest()).put(edge.getSource(), edge);
+        this.inEdges.putIfAbsent(edge.getDest(), new HashMap<>());
+        this.inEdges.get(edge.getDest()).put(edge.getSource(), edge);
     }
 
     /*
