@@ -35,7 +35,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.source = source;
         this.dest = dest;
 
-        System.out.println("SEE: --" + dest.getY() + "-- --" + source.getY());
+        //System.out.println("SEE: --" + dest.getY() + "-- --" + source.getY());
 
         graphics = new Group();
         arrowhead = new Polygon();
