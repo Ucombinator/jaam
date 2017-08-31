@@ -12,15 +12,14 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.graph.Graph;
-import org.ucombinator.jaam.visualizer.gui.GUINode;
-import org.ucombinator.jaam.visualizer.gui.TimelineProperty;
-import org.ucombinator.jaam.visualizer.gui.ZoomSpinnerValueFactory;
+import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
@@ -38,6 +37,7 @@ public class VizPanelController {
     private Group graphContentGroup;
     private HashSet<AbstractLayoutVertex> highlighted;
     private LayoutRootVertex panelRoot;
+    private DDD ddd;
 
     // The dimensions of the background for our graph
     private static final double initRootWidth = 500.0;
@@ -217,6 +217,8 @@ public class VizPanelController {
     public void drawGraph() {
         panelRoot.setVisible(false);
         drawNodes(null, panelRoot);
+
+        this.ddd = new DDD(GUINodeStatus.retrieveAllGUINodeStatus(panelRoot));
         drawEdges(panelRoot);
         this.resetStrokeWidth();
         panelRoot.setVisible(true);
@@ -323,4 +325,7 @@ public class VizPanelController {
     }
     */
 
+    public DDD getDDD() {
+        return this.ddd;
+    }
 }

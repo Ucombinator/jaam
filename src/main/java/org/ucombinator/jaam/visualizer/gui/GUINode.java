@@ -20,6 +20,7 @@ import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.layout.LayoutRootVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 
+import java.util.HashMap;
 import java.util.Iterator;
 
 public class GUINode extends Pane
@@ -134,6 +135,13 @@ public class GUINode extends Pane
     }
 
     private void handleOnMouseClicked(MouseEvent event) {
+        event.consume();
+        HashMap<GUINode,GUINodeStatus> dbNew = GUINodeStatus.retrieveAllGUINodeStatus(Main.getSelectedVizPanelController().getPanelRoot());
+        dbNew.get(this).setOpacity(0.0);
+        Main.getSelectedVizPanelController().getDDD().bind(dbNew).run();
+
+
+        /*
         if(!(this.vertex instanceof LayoutRootVertex)) {
             if(event.getButton().equals(MouseButton.PRIMARY)) {
                 switch (event.getClickCount()) {
@@ -161,6 +169,7 @@ public class GUINode extends Pane
                 }
             }
         }
+        */
     }
 
     private void collapse()
