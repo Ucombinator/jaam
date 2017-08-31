@@ -136,9 +136,9 @@ public class GUINode extends Pane
 
     private void handleOnMouseClicked(MouseEvent event) {
         event.consume();
-        HashMap<GUINode,GUINodeStatus> dbNew = GUINodeStatus.retrieveAllGUINodeStatus(Main.getSelectedVizPanelController().getPanelRoot());
-        dbNew.get(this).setOpacity(0.0);
-        Main.getSelectedVizPanelController().getDDD().bind(dbNew).run();
+        //HashMap<GUINode,GUINodeStatus> dbNew = GUINodeStatus.retrieveAllGUINodeStatus(Main.getSelectedVizPanelController().getPanelRoot());
+        //dbNew.get(this).setOpacity(0.0);
+        //Main.getSelectedVizPanelController().getDDD().bind(dbNew).run();
 
 
         /*
