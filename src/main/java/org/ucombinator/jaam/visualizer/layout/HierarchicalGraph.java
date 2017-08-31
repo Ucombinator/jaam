@@ -125,7 +125,7 @@ public class HierarchicalGraph
 
         // Return the first vertex with no incoming edges
         for(AbstractLayoutVertex v : arrayList) {
-            if(this.getInNeighbors(v).size() == 0)
+            if(this.getInNeighbors(v).size() == 0 || (this.getInNeighbors(v).size() == 1 && this.getInNeighbors(v).contains(v)) )
                 return v;
         }
 

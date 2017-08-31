@@ -15,8 +15,8 @@ public class LayoutAlgorithm
         bboxWidthTable = new LinkedHashMap<>();
         bboxHeightTable = new LinkedHashMap<>();
         initializeSizes(parentVertex);
-        //bfsLayout(parentVertex);
-        defaultLayout(parentVertex);
+        bfsLayout(parentVertex);
+        //defaultLayout(parentVertex);
         parentVertex.setY(parentVertex.getY()+ROOT_V_OFFSET);
     }
 
@@ -210,8 +210,8 @@ public class LayoutAlgorithm
            {
                System.out.print(m.getMethodName() + " ");
            }
-           */
            System.out.println();
+           */
 
            for(AbstractLayoutVertex child : graph.getOutNeighbors(v))
            {
@@ -231,7 +231,6 @@ public class LayoutAlgorithm
                    if(graph.getInNeighbors(child).contains(child))   // Self loop
                        numberOfIncomingEdges = numberOfIncomingEdges - 1;
 
-                   System.out.println("after fixing it has " + numberOfIncomingEdges);
                    if(numberOfIncomingEdges > 0)
                    {
                        vertexCounters.put(child, numberOfIncomingEdges); // Discounting the current
@@ -319,8 +318,8 @@ public class LayoutAlgorithm
         }
         */
         for(AbstractLayoutVertex v: graph.getVertices()){
-            HierarchicalGraph inner_graph = v.getInnerGraph();
-            if (inner_graph.getVertices().size() != 0)
+            HierarchicalGraph innerGraph = v.getInnerGraph();
+            if (innerGraph.getVertices().size() != 0)
             {
                 //Layout the inner graphs of each node and assign width W and height H to each node
                 //X and Y coordinates are RELATIVE to the parent
