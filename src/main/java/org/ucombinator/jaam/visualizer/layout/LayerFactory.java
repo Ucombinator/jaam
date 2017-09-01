@@ -5,7 +5,6 @@ import java.util.*;
 import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
-import sun.security.provider.certpath.Vertex;
 
 public class LayerFactory
 {
@@ -14,7 +13,6 @@ public class LayerFactory
     private static final int CHAIN_LENGTH = 3 ; // This value should ALWAYS be LARGER THAN OR EQUAL 3 (otherwise it will break)
 
     public static LayoutRootVertex getLayeredGraph(Graph graph){
-        //return get2layer(graph);
         return getStronglyConnectedComponentsGraph(graph);
         //return getLoopLayout(graph);
     }
@@ -33,23 +31,36 @@ public class LayerFactory
         // First pass create SCC vertex and populate with layout vertices
         for (ArrayList<Integer> scc : sccs)
         {
-            int sccId = sccGraph.getVertices().size();
-            LayoutMethodVertex sccVertex = new LayoutMethodVertex(sccId, "SCC-"+sccId);
-            sccGraph.addVertex(sccVertex);
+            if(scc.size() > 1) {
+                int sccId = sccGraph.getVertices().size();
+                LayoutMethodVertex sccVertex = new LayoutMethodVertex(sccId, "SCC-" + sccId);
+                sccGraph.addVertex(sccVertex);
 
-            HierarchicalGraph sccInner = new HierarchicalGraph();
-            sccVertex.setInnerGraph(sccInner);
+                HierarchicalGraph sccInner = new HierarchicalGraph();
+                sccVertex.setInnerGraph(sccInner);
 
-            for(Integer id: scc)
-            {
+                for (Integer id : scc) {
+                    AbstractVertex v = graph.containsInputVertex(id);
+
+                    LayoutMethodVertex innerVertex = new LayoutMethodVertex(v.getId(), v.getLabel());
+                    sccInner.addVertex(innerVertex);
+
+                    // Add to hash tables for next pass
+                    inputToInner.put(v, innerVertex);
+                    innerToSCC.put(innerVertex, sccVertex);
+                }
+            }
+            else {
+                int id = scc.get(0);
                 AbstractVertex v = graph.containsInputVertex(id);
 
-                LayoutMethodVertex innerVertex = new LayoutMethodVertex(v.getId(), v.getLabel());
-                sccInner.addVertex(innerVertex);
+                LayoutMethodVertex newVertex = new LayoutMethodVertex(v.getId(), v.getLabel());
+                sccGraph.addVertex(newVertex);
 
                 // Add to hash tables for next pass
-                inputToInner.put(v, innerVertex);
-                innerToSCC.put(innerVertex, sccVertex);
+                inputToInner.put(v, newVertex);
+                innerToSCC.put(newVertex, newVertex);
+
             }
         }
 
@@ -57,23 +68,33 @@ public class LayerFactory
         for(AbstractVertex inputV: graph.getVertices())
         {
             AbstractLayoutVertex v = inputToInner.get(inputV);
-            for(AbstractVertex inputN: graph.getOutNeighbors(inputV))
+            AbstractLayoutVertex vSCC = innerToSCC.get(v);
+
+            if(vSCC.getInnerGraph() != null) // Am a SCC node
             {
-                if(inputN == inputV)
-                    continue;
-                AbstractLayoutVertex n = inputToInner.get(inputN);
-
-                AbstractLayoutVertex vSCC = innerToSCC.get(v);
-                AbstractLayoutVertex nSCC = innerToSCC.get(n);
-
-                if(vSCC == nSCC)
+                for(AbstractVertex inputN: graph.getOutNeighbors(inputV))
                 {
-                    HierarchicalGraph inner = vSCC.getInnerGraph();
+                    AbstractLayoutVertex n = inputToInner.get(inputN);
+                    AbstractLayoutVertex nSCC = innerToSCC.get(n);
 
-                    inner.addEdge(new LayoutEdge(v,n, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                    if(vSCC == nSCC)
+                    {
+                        HierarchicalGraph inner = vSCC.getInnerGraph();
+                        inner.addEdge(new LayoutEdge(v,n, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                    }
+                    else
+                    {
+                        sccGraph.addEdge(new LayoutEdge(vSCC, nSCC, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                    }
                 }
-                else
-                {
+            }
+            else // Am some other type node not part of an SCC
+            {
+                for(AbstractVertex inputN: graph.getOutNeighbors(inputV)) {
+                    AbstractLayoutVertex n = inputToInner.get(inputN);
+
+                    AbstractLayoutVertex nSCC = innerToSCC.get(n);
+
                     sccGraph.addEdge(new LayoutEdge(vSCC, nSCC, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
                 }
             }
@@ -100,7 +121,6 @@ public class LayerFactory
             vertexToLayoutVertex.put(v, layoutV);
         }
 
-        int totalEdges = 0;
         // Now the edges
         for(AbstractVertex v: graph.getVertices())
         {
@@ -111,17 +131,9 @@ public class LayerFactory
                AbstractLayoutVertex from = vertexToLayoutVertex.get(v);
                AbstractLayoutVertex to   = vertexToLayoutVertex.get(n);
 
-               totalEdges += 1;
-               System.out.println("JUAN: New Edge: " + from.getId() + " --> " + to.getId() + " ::: " + totalEdges);
-
                loopGraph.addEdge(new LayoutEdge( from, to, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
            }
         }
-
-        System.out.println("JUAN: TOTAL ADDED EDGES: " + totalEdges);
-        System.out.println("JUAN: Loop Graph has " + loopGraph.getEdges().size() + " edges");
-        System.out.println("JUAN Root is " + loopGraph.getRoot().getLabel());
-
 
         root.setInnerGraph(loopGraph);
 
@@ -129,6 +141,8 @@ public class LayerFactory
     }
 
 
+    // As of 1 September 2017 this is commented out. This is the old layering code which considered the input as a
+    // state graph (and thus had to do more work than necessary), it was simplified to getLoopLayout()
     //private static LayoutRootVertex get2layer(Graph graph)
     //{
     //    System.out.println("JUAN Graph coming has " + graph.getVertices().size());
