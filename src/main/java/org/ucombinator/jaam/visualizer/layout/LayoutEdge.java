@@ -170,7 +170,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         Path path = new Path();
         Bounds bounds = source.getGraphics().getRectBoundsInParent();
         System.out.println("Rect bounds in parent: " + bounds);
-        double padding = 10; // TODO: Adjust based on scale
+        double padding = 2; // TODO: Adjust based on scale
 
         MoveTo moveTo = new MoveTo();
         moveTo.setX(bounds.getMinX() + bounds.getWidth() / 2.0);

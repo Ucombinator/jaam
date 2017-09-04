@@ -70,7 +70,8 @@ public class LayerFactory
             AbstractLayoutVertex v = inputToInner.get(inputV);
             AbstractLayoutVertex vSCC = innerToSCC.get(v);
 
-            if(vSCC.getInnerGraph() != null) // Am a SCC node
+            // TODO probably should have a better way
+            if(vSCC.getInnerGraph().getVertices().size() > 0) // Am a SCC node
             {
                 for(AbstractVertex inputN: graph.getOutNeighbors(inputV))
                 {
