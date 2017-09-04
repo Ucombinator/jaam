@@ -295,10 +295,9 @@ public class VizPanelController {
     private void drawEdges(AbstractLayoutVertex v)
     {
         if(v.isExpanded()) {
-            GUINode node = v.getGraphics();
             for (LayoutEdge e : v.getInnerGraph().getEdges()) {
-                e.draw(node);
                 e.setVisible(v.isEdgeVisible());
+                e.draw();
             }
 
             for (AbstractLayoutVertex child : v.getInnerGraph().getVertices()) {
