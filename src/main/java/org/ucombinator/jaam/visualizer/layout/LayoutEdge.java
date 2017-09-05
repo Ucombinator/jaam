@@ -75,8 +75,6 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
             System.out.println("Draw source: " + source.getDrawEdges() + "\nDraw dest: " + dest.getDrawEdges());
             return;
         }
-        else if((source.getGraphics() == null) || (dest.getGraphics() == null))
-            return;
         else if(getParent() == null) {
             System.out.println("Error! The parent for this edge does not exist.");
             return;
@@ -102,7 +100,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
 
         //System.out.println("Passed checks for drawing edge: " + this.getID());
         GUINode sourceNode = source.getGraphics();
-        GUINode destNode = dest.getGraphics();
+        GUINode destNode   = dest.getGraphics();
         Line line = GUINode.getLine(sourceNode, destNode);
         if (this.getType() == EDGE_TYPE.EDGE_DUMMY)
         {
@@ -119,7 +117,6 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
             }
         }
         line.setStroke(color);
-
 
         // Compute arrowhead
         double angle = Math.PI + Math.atan2(line.getEndY() - line.getStartY(), line.getEndX() - line.getStartX());
@@ -148,8 +145,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.graphics.getChildren().add(arrowhead);
 
         getParent().getChildren().add(graphics);
-        graphics.setVisible(getParent().getVertex().isExpanded() && this.source.isEdgeVisible()
-                && this.dest.isEdgeVisible() && this.isVisible());
+        graphics.setVisible(amVisible());
     }
 
     public void highlightEdgePath()
@@ -165,11 +161,8 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     }
 
     private void drawLoop() {
-        System.out.println("Drawing loop for vertex: " + this.source.getId() + " and " + getParent().getId());
-        System.out.println("Rect bounds in node: " + source.getGraphics().getRect().getBoundsInParent());
         Path path = new Path();
         Bounds bounds = source.getGraphics().getRectBoundsInParent();
-        System.out.println("Rect bounds in parent: " + bounds);
         double padding = 2; // TODO: Adjust based on scale
 
         MoveTo moveTo = new MoveTo();
@@ -196,9 +189,14 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.graphics.getChildren().removeAll(this.graphics.getChildren());
         this.graphics.getChildren().add(edgePath);
 
-        System.out.println("Adding edge for vertices: " + this.source.getId() + ", " + this.dest.getId());
         getParent().getChildren().add(graphics);
-        graphics.setVisible(getParent().getVertex().isExpanded() && this.source.isEdgeVisible() && this.isVisible());
+        graphics.setVisible(amVisible());
+    }
+
+    public boolean amVisible()
+    {
+        return getParent().getVertex().isExpanded() && this.source.isEdgeVisible()
+                && this.dest.isEdgeVisible() && this.isVisible();
     }
 
     public Rectangle getMarker(double x, double y)
