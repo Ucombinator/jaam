@@ -73,7 +73,7 @@ public class LayoutAlgorithm
         }
 
         if(root != null) {
-            assignXandYtoInnerNodesAndGiveParentBBox(graph, root, MARGIN_PADDING, MARGIN_PADDING, childrenMap);
+            assignXandYtoInnerNodesAndGiveParentBBox(root, MARGIN_PADDING, MARGIN_PADDING, childrenMap);
             if(root.getInnerGraph().getVertices().size() > 1)
             {
                 parentVertex.setWidth(bboxWidthTable.get(root.getId()) + 1000 * MARGIN_PADDING);
@@ -273,7 +273,7 @@ public class LayoutAlgorithm
         }
 
         if(root != null) {
-            assignXandYtoInnerNodesAndGiveParentBBox(graph, root, MARGIN_PADDING, MARGIN_PADDING, childrenMap);
+            assignXandYtoInnerNodesAndGiveParentBBox(root, MARGIN_PADDING, MARGIN_PADDING, childrenMap);
             parentVertex.setWidth(bboxWidthTable.get(root.getId()) + 2 * MARGIN_PADDING);
             parentVertex.setHeight(bboxHeightTable.get(root.getId()) + 2 * MARGIN_PADDING);
         } else {
@@ -339,7 +339,7 @@ public class LayoutAlgorithm
      * Output: returns the W and H to be assigned to the parent node
      * */
     private static void assignXandYtoInnerNodesAndGiveParentBBox(
-            HierarchicalGraph graph, AbstractLayoutVertex root, double left, double top,
+            AbstractLayoutVertex root, double left, double top,
             HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap)
     {
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
@@ -372,7 +372,7 @@ public class LayoutAlgorithm
         currentWidth = 0;
         for(AbstractLayoutVertex curVer: grayChildren)
         {
-            assignXandYtoInnerNodesAndGiveParentBBox(graph, curVer,currentWidth + left + AX,NODES_PADDING + top + root.getHeight(), childrenMap);
+            assignXandYtoInnerNodesAndGiveParentBBox(curVer,currentWidth + left + AX,NODES_PADDING + top + root.getHeight(), childrenMap);
             currentWidth += bboxWidthTable.get(curVer.getId()) + NODES_PADDING;
             currentHeight = Math.max(currentHeight, bboxHeightTable.get(curVer.getId()));
         }
