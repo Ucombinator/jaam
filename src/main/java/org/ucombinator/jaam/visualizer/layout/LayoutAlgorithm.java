@@ -16,7 +16,7 @@ public class LayoutAlgorithm
         bboxHeightTable = new LinkedHashMap<>();
         initializeSizes(parentVertex);
         bfsLayout(parentVertex);
-        //defaultLayout(parentVertex);
+        //dfsLayout(parentVertex);
         parentVertex.setY(parentVertex.getY()+ROOT_V_OFFSET);
     }
 
@@ -102,7 +102,7 @@ public class LayoutAlgorithm
         AbstractLayoutVertex root = graph.getRoot();
 
         if(root != null) {
-            storeBBoxWidthAndHeight(graph, root, childrenMap);
+            storeBBoxWidthAndHeight(root, childrenMap);
         }
 
         for(AbstractLayoutVertex v: graph.getVertices()){
@@ -230,13 +230,13 @@ public class LayoutAlgorithm
 
 
     /**
-     * Preconditions: Height and Width of the inner nodes of the graph is (resursively known)
+     * Preconditions: Height and Width of the inner nodes of the graph is (recursively known)
      * input: graph and left/top offset
      * Changes of Status: assigns X and Y to the inner vertices of the graph
      * Output: returns the W and H to be assign to the parent node
      * */
     private static double[] storeBBoxWidthAndHeight(
-            HierarchicalGraph graph, AbstractLayoutVertex root,
+            AbstractLayoutVertex root,
             HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex> > childrenMap)
     {
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
@@ -254,7 +254,7 @@ public class LayoutAlgorithm
         double currentHeight = 0;
         for(AbstractLayoutVertex curVer: grayChildren)
         {
-            double[] boundBox = storeBBoxWidthAndHeight(graph, curVer, childrenMap);
+            double[] boundBox = storeBBoxWidthAndHeight(curVer, childrenMap);
             currentWidth += boundBox[0] + NODES_PADDING;
             currentHeight = Math.max(currentHeight, boundBox[1]);
         }
