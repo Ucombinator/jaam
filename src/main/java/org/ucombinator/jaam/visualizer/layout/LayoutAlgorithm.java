@@ -28,14 +28,9 @@ public class LayoutAlgorithm
         }
     }
 
-    /*********************************************************************/
-    /********* LAYS OUT EACH LEVEL OF THE CLUSTERED GRAPH *****************/
-    /*********************************************************************/
-    private static void defaultLayout(AbstractLayoutVertex parentVertex){
-
-        HierarchicalGraph graph = parentVertex.getInnerGraph();
-
-        for(AbstractLayoutVertex v: graph.getVertices()){
+    private static void expandSubGraphs(AbstractLayoutVertex parentVertex)
+    {
+        for(AbstractLayoutVertex v: parentVertex.getInnerGraph().getVertices()){
             HierarchicalGraph inner_graph = v.getInnerGraph();
             if (inner_graph.getVertices().size() != 0)
             {
@@ -46,7 +41,39 @@ public class LayoutAlgorithm
                 }
             }
         }
-        
+    }
+
+    private static void defaultLayout(AbstractLayoutVertex parentVertex) {
+
+        HierarchicalGraph graph = parentVertex.getInnerGraph();
+
+        expandSubGraphs(parentVertex);
+
+        /*******************************************************************************************/
+        /*********************** ACTUAL LAYOUT FOR THE CURRENT LEVEL/GRAPH *************************/
+        /*******************************************************************************************/
+        for (AbstractLayoutVertex v : graph.getVertices()) {
+            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
+        }
+
+        HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap = new HashMap<>();
+
+        for (AbstractLayoutVertex v : graph.getVertices()) {
+            childrenMap.put(v, new ArrayList<>());
+            childrenMap.get(v).addAll(graph.getOutNeighbors(v));
+        }
+
+        doLayout(parentVertex, childrenMap);
+
+    }
+
+    private static void bfsLayout(AbstractLayoutVertex parentVertex)
+    {
+        HierarchicalGraph graph = parentVertex.getInnerGraph();
+
+        // Interior graphs use the DFS Layout
+        expandSubGraphs(parentVertex);
+
         /*******************************************************************************************/
         /*********************** ACTUAL LAYOUT FOR THE CURRENT LEVEL/GRAPH *************************/
         /*******************************************************************************************/
@@ -57,12 +84,28 @@ public class LayoutAlgorithm
 
         AbstractLayoutVertex root = graph.getRoot();
 
-        HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap = new HashMap<>();
+        // Do the BFS Pass
+        HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap = bfsChildren(graph, root);
 
+        // Reset all the nodes to be WHITE
         for(AbstractLayoutVertex v: graph.getVertices()){
-            childrenMap.put(v, new ArrayList<>());
-            childrenMap.get(v).addAll(graph.getOutNeighbors(v));
+            if(v.getVertexStatus() != AbstractLayoutVertex.VertexStatus.BLACK)
+            {
+                System.out.println("ERROR in Max Depth Drawings. Does your graph ahve a cycle?");
+                System.out.println("BFS ERROR Didn't process " + v.getId() + " in BFS Children Pass " + v.getVertexStatus());
+            }
+            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
+
+        doLayout(parentVertex, childrenMap);
+    }
+
+    private static void doLayout(AbstractLayoutVertex parentVertex,
+                                 HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap)
+    {
+        HierarchicalGraph graph = parentVertex.getInnerGraph();
+
+        AbstractLayoutVertex root = graph.getRoot();
 
         if(root != null) {
             storeBBoxWidthAndHeight(graph, root, childrenMap);
@@ -216,71 +259,6 @@ public class LayoutAlgorithm
         return childrenMap;
     }
 
-    /*********************************************************************/
-    /********* LAYS OUT EACH LEVEL OF THE CLUSTERED GRAPH *****************/
-    /*********************************************************************/
-    private static void bfsLayout(AbstractLayoutVertex parentVertex)
-    {
-
-        HierarchicalGraph graph = parentVertex.getInnerGraph();
-
-        /*
-        // Initialize all the nodes to be WHITE
-        for(AbstractLayoutVertex v: graph.getVertices().values()){
-            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
-        }
-        */
-        for(AbstractLayoutVertex v: graph.getVertices()){
-            HierarchicalGraph innerGraph = v.getInnerGraph();
-            if (innerGraph.getVertices().size() != 0)
-            {
-                //Layout the inner graphs of each node and assign width W and height H to each node
-                //X and Y coordinates are RELATIVE to the parent
-                if(v.isExpanded()){
-                    defaultLayout(v);
-                }
-            }
-        }
-
-        /*******************************************************************************************/
-        /*********************** ACTUAL LAYOUT FOR THE CURRENT LEVEL/GRAPH *************************/
-        /*******************************************************************************************/
-        // Initialize all the nodes to be WHITE
-        for(AbstractLayoutVertex v: graph.getVertices()){
-            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
-        }
-        
-        AbstractLayoutVertex root = graph.getRoot();
-        
-        // Do the BFS Pass
-        HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap = bfsChildren(graph, root);
-
-        // Reset all the nodes to be WHITE
-        for(AbstractLayoutVertex v: graph.getVertices()){
-            if(v.getVertexStatus() != AbstractLayoutVertex.VertexStatus.BLACK)
-            {
-                System.out.println("BFS ERROR Didn't process " + v.getId() + " in BFS Children Pass " + v.getVertexStatus());
-            }
-            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
-        }
-
-        if(root != null) {
-            storeBBoxWidthAndHeight(graph, root, childrenMap);
-        }
-
-        for(AbstractLayoutVertex v: graph.getVertices()){
-            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
-        }
-
-        if(root != null) {
-            assignXandYtoInnerNodesAndGiveParentBBox(root, MARGIN_PADDING, MARGIN_PADDING, childrenMap);
-            parentVertex.setWidth(bboxWidthTable.get(root.getId()) + 2 * MARGIN_PADDING);
-            parentVertex.setHeight(bboxHeightTable.get(root.getId()) + 2 * MARGIN_PADDING);
-        } else {
-            parentVertex.setWidth(AbstractLayoutVertex.DEFAULT_WIDTH);
-            parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
-        }
-    }
 
     /**
      * Preconditions: Height and Width of the inner nodes of the graph is (resursively known)
