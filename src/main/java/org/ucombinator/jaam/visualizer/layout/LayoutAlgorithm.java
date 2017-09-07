@@ -57,8 +57,15 @@ public class LayoutAlgorithm
 
         AbstractLayoutVertex root = graph.getRoot();
 
+        HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap = new HashMap<>();
+
+        for(AbstractLayoutVertex v: graph.getVertices()){
+            childrenMap.put(v, new ArrayList<>());
+            childrenMap.get(v).addAll(graph.getOutNeighbors(v));
+        }
+
         if(root != null) {
-            storeBBoxWidthAndHeight(graph, root);
+            storeBBoxWidthAndHeight(graph, root, childrenMap);
         }
 
         for(AbstractLayoutVertex v: graph.getVertices()){
@@ -66,7 +73,7 @@ public class LayoutAlgorithm
         }
 
         if(root != null) {
-            assignXandYtoInnerNodesAndGiveParentBBox(graph, root, MARGIN_PADDING, MARGIN_PADDING);
+            assignXandYtoInnerNodesAndGiveParentBBox(graph, root, MARGIN_PADDING, MARGIN_PADDING, childrenMap);
             if(root.getInnerGraph().getVertices().size() > 1)
             {
                 parentVertex.setWidth(bboxWidthTable.get(root.getId()) + 1000 * MARGIN_PADDING);
@@ -83,101 +90,6 @@ public class LayoutAlgorithm
         }
     }
     
-    /**
-     * Preconditions: Height and Width of the inner nodes of the graph is known (recursively)
-     * Input: graph and left/top offset
-     * Changes of Status: assigns X and Y to the inner vertices of the graph
-     * Output: returns the W and H to be assigned to the parent node
-     * */
-    private static void assignXandYtoInnerNodesAndGiveParentBBox(HierarchicalGraph graph, AbstractLayoutVertex root, double left, double top)
-    {
-        root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-        ArrayList<AbstractLayoutVertex> grayChildren = new ArrayList<>();
-        for(AbstractLayoutVertex child: graph.getOutNeighbors(root))
-        {
-            if (child.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE)
-            {
-                child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-                grayChildren.add(child);
-            }
-        }
-        
-        double currentWidth = 0;
-        double currentHeight = 0; 
-
-        for(AbstractLayoutVertex curVer: grayChildren)
-        {
-            currentWidth += bboxWidthTable.get(curVer.getId()) + NODES_PADDING;
-        }
-
-        // TODO: What is AX?
-        double AX;
-        if(root.getWidth() >= currentWidth - NODES_PADDING) {
-            AX = (root.getWidth() - (currentWidth - NODES_PADDING))/2;
-        } else {
-            AX = 0;
-        }
-        
-        currentWidth = 0;
-        for(AbstractLayoutVertex curVer: grayChildren)
-        {
-            assignXandYtoInnerNodesAndGiveParentBBox(graph, curVer,currentWidth + left + AX,NODES_PADDING + top + root.getHeight());
-            currentWidth += bboxWidthTable.get(curVer.getId()) + NODES_PADDING;
-            currentHeight = Math.max(currentHeight, bboxHeightTable.get(curVer.getId()));
-        }
-
-        root.setX(left + ((bboxWidthTable.get(root.getId()) - root.getWidth()) / 2.0));  //left-most corner x
-        root.setY(top);                                                    //top-most corner y
-        root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
-    }
-    
-    /**
-     * Preconditions: Height and Width of the inner nodes of the graph is (resursively known)
-     * input: graph and left/top offset
-     * Changes of Status: assigns X and Y to the inner vertices of the graph
-     * Output: returns the W and H to be assign to the parent node
-     * */
-    private static double[] storeBBoxWidthAndHeight(HierarchicalGraph graph, AbstractLayoutVertex root)
-    {
-        root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-        ArrayList<AbstractLayoutVertex> grayChildren = new ArrayList<>();
-        for(AbstractLayoutVertex child: graph.getOutNeighbors(root))
-        {
-            if (child.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE)
-            {
-                child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-                grayChildren.add(child);
-            }
-        }
-        
-        double currentWidth = 0;
-        double currentHeight = 0;
-        for(AbstractLayoutVertex curVer: grayChildren)
-        {
-            double[] boundBox = storeBBoxWidthAndHeight(graph, curVer);
-            currentWidth += boundBox[0] + NODES_PADDING;
-            currentHeight = Math.max(currentHeight, boundBox[1]);
-        }
-        
-        double currBboxWidth, currBboxHeight;
-        currBboxWidth = Math.max(root.getWidth(), currentWidth - NODES_PADDING);
-        if(grayChildren.size() == 0)
-        {
-            currBboxHeight = root.getHeight();
-        }
-        else
-        {
-            currBboxHeight = NODES_PADDING + root.getHeight() + currentHeight;
-        }
-        
-        root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
-        
-        bboxWidthTable.put(root.getId(), currBboxWidth);
-        bboxHeightTable.put(root.getId(), currBboxHeight);
-        
-        double[] result = {currBboxWidth, currBboxHeight};
-        return result;
-    }
 
     /**
      * Preconditions: Height and Width of the inner nodes of the graph is (resursively known)
@@ -307,7 +219,8 @@ public class LayoutAlgorithm
     /*********************************************************************/
     /********* LAYS OUT EACH LEVEL OF THE CLUSTERED GRAPH *****************/
     /*********************************************************************/
-    private static void bfsLayout(AbstractLayoutVertex parentVertex){
+    private static void bfsLayout(AbstractLayoutVertex parentVertex)
+    {
 
         HierarchicalGraph graph = parentVertex.getInnerGraph();
 
@@ -394,7 +307,7 @@ public class LayoutAlgorithm
         double currentHeight = 0;
         for(AbstractLayoutVertex curVer: grayChildren)
         {
-            double[] boundBox = storeBBoxWidthAndHeight(graph, curVer);
+            double[] boundBox = storeBBoxWidthAndHeight(graph, curVer, childrenMap);
             currentWidth += boundBox[0] + NODES_PADDING;
             currentHeight = Math.max(currentHeight, boundBox[1]);
         }
