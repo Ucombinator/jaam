@@ -37,21 +37,18 @@ public class LayoutAlgorithm
                 //Layout the inner graphs of each node and assign width W and height H to each node
                 //X and Y coordinates are RELATIVE to the parent
                 if(v.isExpanded()){
-                    defaultLayout(v);
+                    dfsLayout(v);
                 }
             }
         }
     }
 
-    private static void defaultLayout(AbstractLayoutVertex parentVertex) {
+    private static void dfsLayout(AbstractLayoutVertex parentVertex) {
 
         HierarchicalGraph graph = parentVertex.getInnerGraph();
 
         expandSubGraphs(parentVertex);
 
-        /*******************************************************************************************/
-        /*********************** ACTUAL LAYOUT FOR THE CURRENT LEVEL/GRAPH *************************/
-        /*******************************************************************************************/
         for (AbstractLayoutVertex v : graph.getVertices()) {
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
@@ -74,9 +71,6 @@ public class LayoutAlgorithm
         // Interior graphs use the DFS Layout
         expandSubGraphs(parentVertex);
 
-        /*******************************************************************************************/
-        /*********************** ACTUAL LAYOUT FOR THE CURRENT LEVEL/GRAPH *************************/
-        /*******************************************************************************************/
         // Initialize all the nodes to be WHITE
         for(AbstractLayoutVertex v: graph.getVertices()){
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
@@ -85,9 +79,9 @@ public class LayoutAlgorithm
         AbstractLayoutVertex root = graph.getRoot();
 
         // Do the BFS Pass
-        HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap = bfsChildren(graph, root);
+        HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap = maxDepthChildren(graph, root);
 
-        // Reset all the nodes to be WHITE
+        // Reset all the nodes to be white AND check that we visited everybody...
         for(AbstractLayoutVertex v: graph.getVertices()){
             if(v.getVertexStatus() != AbstractLayoutVertex.VertexStatus.BLACK)
             {
@@ -135,14 +129,13 @@ public class LayoutAlgorithm
     
 
     /**
-     * Preconditions: Height and Width of the inner nodes of the graph is (resursively known)
-     * input: graph and left/top offset
-     * Changes of Status: assigns X and Y to the inner vertices of the graph
-     * Output: returns the W and H to be assign to the parent node
+     * Preconditions: Graph has no Cycles
+     * Generates the children map for the layout, every node is added to the map twice, once as a key and once in the
+     * children list of some other node. The root doesn't appear in any children list
+     * Every node appears as a child as deep as possible in the tree (ties, breaked arbitrarily)
      * */
-    private static HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> bfsChildren(HierarchicalGraph graph, AbstractLayoutVertex root)
+    private static HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> maxDepthChildren(HierarchicalGraph graph, AbstractLayoutVertex root)
     {
-//        System.out.println("TERE: I think this should be called ONCE!");
         HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap = new HashMap<>();
 
         HashMap<AbstractLayoutVertex, Integer> vertexCounters = new HashMap<>();
@@ -159,19 +152,8 @@ public class LayoutAlgorithm
 
            childrenMap.put(v, new ArrayList<>());
 
-//           System.out.print("TERE \tVisiting " + v + " --> " + v.getId() + " is " + v.getVertexStatus() + " Method: ");
-           /*
-           for(LayoutMethodVertex m : v.getMethodVertices())
-           {
-               System.out.print(m.getMethodName() + " ");
-           }
-           System.out.println();
-           */
-
            for(AbstractLayoutVertex child : graph.getOutNeighbors(v))
            {
-//               System.out.println("\tTERE SEEING CHILD " + child + " --> " + child.getId() + " is " + child.getVertexStatus());
-
                if(child == v)
                    continue;
                if(!seen.contains(child))
@@ -180,15 +162,13 @@ public class LayoutAlgorithm
                    child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
                    int numberOfIncomingEdges = graph.getInNeighbors(child).size();
 
-//                   System.out.print("\t\tTERE: Child " + child + " has " + numberOfIncomingEdges);
-
-                   numberOfIncomingEdges = numberOfIncomingEdges - 1; // v's incoming edge
+                   numberOfIncomingEdges = numberOfIncomingEdges - 1; // v's incoming edge (v --> child)
                    if(graph.getInNeighbors(child).contains(child))   // Self loop
                        numberOfIncomingEdges = numberOfIncomingEdges - 1;
 
                    if(numberOfIncomingEdges > 0)
                    {
-                       vertexCounters.put(child, numberOfIncomingEdges); // Discounting the current
+                       vertexCounters.put(child, numberOfIncomingEdges);
                    }
                    else if(numberOfIncomingEdges == 0)
                    {
@@ -207,21 +187,15 @@ public class LayoutAlgorithm
 
                    if(numberOfIncomingEdges == null)
                    {
-//                       System.out.println("TERE: Found a NULL " + child + " -> " + child.getId() + " Status" + child.getVertexStatus() + " Incoming Neigh " + graph.getInNeighbors(child));
-                       System.out.println("Map\n\t " + vertexCounters);
+                       System.out.println("Error Map\n\t " + vertexCounters);
                    }
 
-//                   System.out.print("\t\tTERE: GRAY Child " + child + " has " + numberOfIncomingEdges);
-
-                   numberOfIncomingEdges -= 1;
+                   numberOfIncomingEdges -= 1;  // v --> child
 
                    vertexCounters.put(child, numberOfIncomingEdges);
 
-                   //System.out.println("TERE After Fixing " + numberOfIncomingEdges);
-
                    if(numberOfIncomingEdges == 0)
                    {
-//                       System.out.print("\t\t\tTERE: Adding Child to queue " + child + " has " + numberOfIncomingEdges);
                        childrenMap.get(v).add(child);
                        vertexQueue.add(child);
                        vertexCounters.remove(child);
@@ -236,11 +210,6 @@ public class LayoutAlgorithm
                    System.out.println("ERROR in BFS children. Seeing a Black Child " + child + " --> " + child.getId() + " " + graph.getInNeighbors(child).size());
                }
            }
-
-//           System.out.println("TERE Finished " + v + " --> " + v.getId());
-//           System.out.println("\t\tTERE queue " + vertexQueue);
-//            System.out.println("\t\tTERE counters " + vertexCounters);
-
            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
         }
 
