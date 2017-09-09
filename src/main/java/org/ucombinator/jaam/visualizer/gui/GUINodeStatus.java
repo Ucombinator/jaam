@@ -1,28 +1,36 @@
 package org.ucombinator.jaam.visualizer.gui;
 
+import com.sun.javafx.geom.Edge;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.layout.GraphEntity;
+import org.ucombinator.jaam.visualizer.layout.GraphicsStatus;
+import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 
+import java.awt.*;
 import java.util.HashMap;
 import java.util.HashSet;
 
 /**
  * Created by giordano on 8/28/17.
  */
-public class GUINodeStatus {
+public class GUINodeStatus implements GraphicsStatus {
 
 
     private double x, y;
     private double totalScaleX;
     private double totalScaleY;
     private double opacity;
+    private AbstractLayoutVertex vertex;
 
-    public GUINodeStatus(GUINode g){
-        this.x = g.getLayoutX();
-        this.y = g.getLayoutY();
+    public GUINodeStatus(AbstractLayoutVertex v){
+        this.vertex = v;
+        GUINode g = v.getGraphics();
+        this.x = g.localToScene(g.getBoundsInLocal()).getMinX();
+        this.y = g.localToScene(g.getBoundsInLocal()).getMinY();
         this.totalScaleX = g.getScaleX();
         this.totalScaleY = g.getScaleY();
         this.opacity = g.getOpacity();
@@ -37,7 +45,8 @@ public class GUINodeStatus {
     }
 
     public double getX() {
-        return x;
+
+        return this.x;
     }
 
     public void setX(double x) {
@@ -69,17 +78,20 @@ public class GUINodeStatus {
         this.totalScaleY = totalScaleY;
     }
 
-    public static HashMap<GUINode,GUINodeStatus> retrieveAllGUINodeStatus(AbstractLayoutVertex root){
-        HashMap<GUINode,GUINodeStatus> db = new HashMap<GUINode,GUINodeStatus>();
-        retrieveAllGUINodeStatus(root, db);
+    public static HashMap<GraphEntity,GraphicsStatus> retrieveAllGraphicsStatus(AbstractLayoutVertex root){
+        HashMap<GraphEntity,GraphicsStatus> db = new HashMap();
+        retrieveAllGraphicsStatus(root, db);
         return db;
     }
 
-    private static void retrieveAllGUINodeStatus(AbstractLayoutVertex root, HashMap<GUINode,GUINodeStatus> db){
-        db.put(root.getGraphics(), new GUINodeStatus(root.getGraphics()));
+    private static void retrieveAllGraphicsStatus(AbstractLayoutVertex root, HashMap<GraphEntity,GraphicsStatus> db){
+        db.put(root, new GUINodeStatus(root));
+        for(LayoutEdge e: root.getInnerGraph().getEdges()){
+            db.put(e, new EdgeStatus(e));
+        }
         //System.out.print(root.getId());
         for(AbstractLayoutVertex v: root.getInnerGraph().getVertices()){
-            retrieveAllGUINodeStatus(v, db);
+            retrieveAllGraphicsStatus(v, db);
         }
     }
 }

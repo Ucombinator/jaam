@@ -18,7 +18,7 @@ import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.Location;
 
-public abstract class AbstractLayoutVertex extends AbstractVertex implements Comparable<AbstractLayoutVertex>
+public abstract class AbstractLayoutVertex extends AbstractVertex implements Comparable<AbstractLayoutVertex>, GraphEntity
 {
     public static final Color highlightColor = Color.ORANGE;
     protected Color color = Color.RED;

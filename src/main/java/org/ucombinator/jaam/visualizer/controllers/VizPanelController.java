@@ -217,9 +217,8 @@ public class VizPanelController {
     public void drawGraph() {
         panelRoot.setVisible(false);
         drawNodes(null, panelRoot);
-
-        this.ddd = new DDD(GUINodeStatus.retrieveAllGUINodeStatus(panelRoot));
         drawEdges(panelRoot);
+        this.ddd = new DDD(GUINodeStatus.retrieveAllGraphicsStatus(panelRoot));
         this.resetStrokeWidth();
         panelRoot.setVisible(true);
     }

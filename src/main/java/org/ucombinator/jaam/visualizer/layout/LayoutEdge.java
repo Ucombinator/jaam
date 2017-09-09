@@ -6,7 +6,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 
-public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.layout.LayoutEdge>
+public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.layout.LayoutEdge>, GraphEntity
 {
     private Group graphics;
     private Shape edgePath; // This will be a either a line for most edges, or a path for self-edges

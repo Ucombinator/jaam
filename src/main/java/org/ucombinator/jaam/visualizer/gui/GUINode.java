@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.gui;
 
+import javafx.animation.ParallelTransition;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -14,10 +15,7 @@ import javafx.scene.text.Text;
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
-import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
-import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
-import org.ucombinator.jaam.visualizer.layout.LayoutRootVertex;
+import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 
 import java.util.HashMap;
@@ -136,11 +134,32 @@ public class GUINode extends Pane
 
     private void handleOnMouseClicked(MouseEvent event) {
         event.consume();
-        //HashMap<GUINode,GUINodeStatus> dbNew = GUINodeStatus.retrieveAllGUINodeStatus(Main.getSelectedVizPanelController().getPanelRoot());
-        //dbNew.get(this).setOpacity(0.0);
-        //Main.getSelectedVizPanelController().getDDD().bind(dbNew).run();
+
+        if(this.vertex.isExpanded()) {
+
+            HashMap<GraphEntity, GraphicsStatus> dbNew = GUINodeStatus.retrieveAllGraphicsStatus(Main.getSelectedVizPanelController().getPanelRoot());
 
 
+
+            for(AbstractLayoutVertex v: this.vertex.getInnerGraph().getVertices()){
+                //v.setVisible(false);
+                //dbNew.get(v).setOpacity(0.0);
+                GUINodeStatus gs = (GUINodeStatus)dbNew.get(v);
+                gs.setX(gs.getX());
+            }
+
+            for(LayoutEdge e: this.vertex.getInnerGraph().getEdges()){
+                e.setVisible(false);
+                dbNew.get(e).setOpacity(0.0);
+                System.out.println("Edge:" + e.getSource().getId() + "-->" +e.getDest().getId());
+            }
+
+            Main.getSelectedVizPanelController().getDDD().bind(dbNew).run();
+
+        }else{
+
+        }
+        this.vertex.setExpanded(!this.vertex.isExpanded());
         /*
         if(!(this.vertex instanceof LayoutRootVertex)) {
             if(event.getButton().equals(MouseButton.PRIMARY)) {
