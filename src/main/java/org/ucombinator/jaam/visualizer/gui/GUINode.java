@@ -134,32 +134,67 @@ public class GUINode extends Pane
 
     private void handleOnMouseClicked(MouseEvent event) {
         event.consume();
+        if(this.vertex instanceof LayoutRootVertex){
+            return;
+        }
 
         if(this.vertex.isExpanded()) {
+            AbstractLayoutVertex root = Main.getSelectedVizPanelController().getPanelRoot();
+            DDD d3 = Main.getSelectedVizPanelController().getDDD();
+            HashMap<GraphEntity, GraphicsStatus> dbNew = d3.retrieveAllGraphicsStatus(root);
 
-            HashMap<GraphEntity, GraphicsStatus> dbNew = GUINodeStatus.retrieveAllGraphicsStatus(Main.getSelectedVizPanelController().getPanelRoot());
 
+            System.out.println("Node clicked: " + this.vertex.getId());
 
 
             for(AbstractLayoutVertex v: this.vertex.getInnerGraph().getVertices()){
-                //v.setVisible(false);
-                //dbNew.get(v).setOpacity(0.0);
                 GUINodeStatus gs = (GUINodeStatus)dbNew.get(v);
-                gs.setX(gs.getX());
+                gs.setOpacity(0.0);
             }
 
             for(LayoutEdge e: this.vertex.getInnerGraph().getEdges()){
-                e.setVisible(false);
                 dbNew.get(e).setOpacity(0.0);
-                System.out.println("Edge:" + e.getSource().getId() + "-->" +e.getDest().getId());
             }
 
-            Main.getSelectedVizPanelController().getDDD().bind(dbNew).run();
+            d3.bind(dbNew).runOnFinish(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+
+                            LayoutEdge.redrawEdges(root, false);
+
+                            GUINode.this.vertex.setCollapsed();
+                            LayoutAlgorithm.layout(root);
+
+                            for(AbstractLayoutVertex v: GUINode.this.vertex.getInnerGraph().getVertices()){
+                                v.setVisible(false);
+                            }
+                            for(LayoutEdge e: GUINode.this.vertex.getInnerGraph().getEdges()){
+                                e.setVisible(false);
+                            }
+
+
+                            System.out.println("New Layout Computed");
+                            HashMap<GraphEntity,GraphicsStatus> db = d3.update(root);
+                            d3.bind(db).runOnFinish(new Runnable() {
+                                @Override
+                                public void run() {
+                                    LayoutEdge.redrawEdges(root, true);
+                                }
+                            });
+                        }
+                    }
+            );
 
         }else{
 
         }
-        this.vertex.setExpanded(!this.vertex.isExpanded());
+        if(this.vertex.isExpanded()){
+            this.vertex.setCollapsed();
+        }else{
+            this.vertex.setExpanded();
+        }
+
         /*
         if(!(this.vertex instanceof LayoutRootVertex)) {
             if(event.getButton().equals(MouseButton.PRIMARY)) {
@@ -191,93 +226,94 @@ public class GUINode extends Pane
         */
     }
 
-    private void collapse()
-    {
-        //System.out.println("\nCollapsing node: " + v.getId() + ", " + v.getGraphics().toString());
-        Iterator<Node> it = this.getVertex().getGraphics().getChildren().iterator();
 
-        // Fade edges out?
-        /*while(it.hasNext())
-        {
-            final Node n = it.next();
-            if(!n.getClass().equals(Rectangle.class))
-            {
-                FadeTransition ft = new FadeTransition(Duration.millis(transitionTime), n);
-                ft.setToValue(0.0);
-
-                ft.setOnFinished(new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        n.setVisible(false);
-                    }
-                });
-
-                ft.play();
-            }
-        }*/
-
-        this.getVertex().setExpanded(false);
-        VizPanelController panel = Main.getSelectedVizPanelController();
-        final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
-        panel.resetContent();
-        LayoutAlgorithm.layout(panelRoot);
-        panel.drawGraph();
-
-        /*ParallelTransition pt = new ParallelTransition();
-        animateRecursive(panelRoot, pt, panel);
-        pt.play();
-
-        pt.setOnFinished(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                LayoutEdge.redrawEdges(panelRoot, true);
-            }
-        });*/
-    }
-
-    private void expand()
-    {
-        //System.out.println("\nExpanding node: " + v.getId() + ", " + v.getGraphics().toString());
-        Iterator<Node> it = this.getVertex().getGraphics().getChildren().iterator();
-
-        // Fade edges in?
-        /*while(it.hasNext())
-        {
-            final Node n = it.next();
-            if(!n.getClass().equals(Rectangle.class))
-            {
-                FadeTransition ft = new FadeTransition(Duration.millis(transitionTime), n);
-                ft.setToValue(1.0);
-
-                ft.setOnFinished(new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        n.setVisible(true);
-                    }
-                });
-
-                ft.play();
-            }
-        }*/
-
-        this.getVertex().setExpanded(true);
-        VizPanelController panel = Main.getSelectedVizPanelController();
-        final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
-        panel.resetContent();
-        LayoutAlgorithm.layout(panelRoot);
-        panel.drawGraph();
-
-        //ParallelTransition pt = new ParallelTransition();
-        //animateRecursive(panelRoot, pt, panel);
-        //pt.play();
-
-        //pt.setOnFinished(new EventHandler<ActionEvent>() {
-        //    @Override
-        //    public void handle(ActionEvent event) {
-                //LayoutEdge.redrawEdges(panelRoot, true);
-        //    }
-        //});
-    }
+//    private void collapse()
+//    {
+//        //System.out.println("\nCollapsing node: " + v.getId() + ", " + v.getGraphics().toString());
+//        Iterator<Node> it = this.getVertex().getGraphics().getChildren().iterator();
+//
+//        // Fade edges out?
+//        /*while(it.hasNext())
+//        {
+//            final Node n = it.next();
+//            if(!n.getClass().equals(Rectangle.class))
+//            {
+//                FadeTransition ft = new FadeTransition(Duration.millis(transitionTime), n);
+//                ft.setToValue(0.0);
+//
+//                ft.setOnFinished(new EventHandler<ActionEvent>() {
+//                    @Override
+//                    public void handle(ActionEvent event) {
+//                        n.setVisible(false);
+//                    }
+//                });
+//
+//                ft.play();
+//            }
+//        }*/
+//
+//        this.getVertex().setCollapsed();
+//        VizPanelController panel = Main.getSelectedVizPanelController();
+//        final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
+//        panel.resetContent();
+//        LayoutAlgorithm.layout(panelRoot);
+//        panel.drawGraph();
+//
+//        /*ParallelTransition pt = new ParallelTransition();
+//        animateRecursive(panelRoot, pt, panel);
+//        pt.play();
+//
+//        pt.setOnFinished(new EventHandler<ActionEvent>() {
+//            @Override
+//            public void handle(ActionEvent event) {
+//                LayoutEdge.redrawEdges(panelRoot, true);
+//            }
+//        });*/
+//    }
+//
+//    private void expand()
+//    {
+//        //System.out.println("\nExpanding node: " + v.getId() + ", " + v.getGraphics().toString());
+//        Iterator<Node> it = this.getVertex().getGraphics().getChildren().iterator();
+//
+//        // Fade edges in?
+//        /*while(it.hasNext())
+//        {
+//            final Node n = it.next();
+//            if(!n.getClass().equals(Rectangle.class))
+//            {
+//                FadeTransition ft = new FadeTransition(Duration.millis(transitionTime), n);
+//                ft.setToValue(1.0);
+//
+//                ft.setOnFinished(new EventHandler<ActionEvent>() {
+//                    @Override
+//                    public void handle(ActionEvent event) {
+//                        n.setVisible(true);
+//                    }
+//                });
+//
+//                ft.play();
+//            }
+//        }*/
+//
+//        this.getVertex().setExpanded();
+//        VizPanelController panel = Main.getSelectedVizPanelController();
+//        final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
+//        panel.resetContent();
+//        LayoutAlgorithm.layout(panelRoot);
+//        panel.drawGraph();
+//
+//        //ParallelTransition pt = new ParallelTransition();
+//        //animateRecursive(panelRoot, pt, panel);
+//        //pt.play();
+//
+//        //pt.setOnFinished(new EventHandler<ActionEvent>() {
+//        //    @Override
+//        //    public void handle(ActionEvent event) {
+//                //LayoutEdge.redrawEdges(panelRoot, true);
+//        //    }
+//        //});
+//    }
 
 /*
     private static void animateRecursive(final AbstractLayoutVertex v, ParallelTransition pt, VizPanelController mainPanel)
@@ -392,36 +428,6 @@ public class GUINode extends Pane
         System.out.println("Node y = " + bounds.getMinY() + ", " + bounds.getMaxY());
     }
 
-/*
-    // Halve the distance from the current opacity to 1.
-    public void increaseOpacity()
-    {
-        this.rect.setOpacity((1 + this.rect.getOpacity()) / 2.0);    
-    }
-
-    // Halve the current opacity.
-    public void decreaseOpacity()
-    {
-        this.rect.setOpacity((this.rect.getOpacity()) / 2.0);
-    }
-
-    // The next two functions compute the shift that must be applied to keep the
-    // top left corner stationary when the node is scaled about its center.
-    public double getXShift()
-    {
-        double currentWidth = this.getScaleX() * this.vertex.getWidth();
-        double oldWidth = this.vertex.getWidth();
-        return (oldWidth - currentWidth) / 2;
-        //return 0;
-    }
-
-    public double getYShift()
-    {
-        double currentHeight = this.getScaleY() * this.vertex.getHeight();
-        double oldHeight = this.vertex.getHeight();
-        return (oldHeight - currentHeight) / 2;
-    }
-    */
 
     public static Line getLine(GUINode sourceNode, GUINode destNode) {
         if(sourceNode == null || destNode == null) {
@@ -489,95 +495,9 @@ public class GUINode extends Pane
         return new Point2D(sourceExitX, sourceExitY);
     }
 
-    // This doesn't work, and we don't know why.
-    /*private Point2D getLineIntersection2(GUINode otherNode) {
-        Bounds sourceBounds = this.getRectBoundsInParent();
-        Bounds destBounds = otherNode.getRectBoundsInParent();
-        System.out.println("\nSource bounds: " + sourceBounds.toString());
-        System.out.println("Dest bounds: " + destBounds.toString());
-
-        double sourceCenterX = (sourceBounds.getMinX() + sourceBounds.getMaxX()) / 2.0;
-        double sourceCenterY = (sourceBounds.getMinY() + sourceBounds.getMaxY()) / 2.0;
-        double destCenterX = (destBounds.getMinX() + destBounds.getMaxX()) / 2.0;
-        double destCenterY = (destBounds.getMinY() + destBounds.getMaxY()) / 2.0;
-        Line line = new Line(sourceCenterX, sourceCenterY, destCenterX, destCenterY);
-        line.setStrokeWidth(5);
-        System.out.println("Line: " + line.toString());
-
-        // Get all points on intersection  between node and line
-        Rectangle rect = new Rectangle(sourceBounds.getMinX(), sourceBounds.getMinY(),
-                sourceBounds.getMaxX(), sourceBounds.getMaxY());
-        Path intersection = (Path) Shape.intersect(line, rect);
-        System.out.println(intersection.toString());
-        ArrayList<Point2D> points = new ArrayList<Point2D>();
-        for(PathElement elem : intersection.getElements()) {
-            if(elem instanceof MoveTo) {
-                MoveTo moveElem = (MoveTo) elem;
-                points.add(new Point2D(moveElem.getX(), moveElem.getY()));
-            }
-            else if(elem instanceof LineTo) {
-                LineTo lineElem = (LineTo) elem;
-                points.add(new Point2D(lineElem.getX(), lineElem.getY()));
-            }
-        }
-
-        // Sort points by distance from center, and take the last one
-        Point2D center = new Point2D(sourceCenterX, sourceCenterY);
-        Collections.sort(points, new Comparator<Point2D>() {
-            @Override
-            public int compare(Point2D p1, Point2D p2) {
-                double distance1 = p1.distance(center);
-                double distance2 = p2.distance(center);
-
-                return ((Double) distance1).compareTo(distance2);
-            }
-        });
-
-        //System.out.println("Points found: " + points.size());
-        if(points.size() == 0) {
-            System.out.println("Error: No points on path for edge from vertex " + this.vertex.getId() + " to " + otherNode.vertex.getId());
-            return new Point2D(0, 0);
-        }
-        else {
-            Point2D result = points.get(points.size() - 1);
-            System.out.println("Returning point: " + result.toString());
-            return result;
-        }
-    }*/
-
     public GUINode getParentNode() {
         return this.parent;
     }
-
-/*
-    public double getTotalParentScaleX() {
-        if (this.parent != null) {
-            return this.parent.totalScaleX;
-        } else { return 1; }
-    }
-
-    public double getTotalParentScaleY() {
-        if (this.parent != null) {
-            return this.parent.totalScaleY;
-        } else { return 1; }
-    }
-
-    public void setTotalScaleX(double scale) {
-        this.totalScaleX = scale;
-    }
-
-    public double getTotalScaleX() {
-        return this.totalScaleX;
-    }
-
-    public void setTotalScaleY(double scale) {
-        this.totalScaleY = scale;
-    }
-
-    public double getTotalScaleY() {
-        return this.totalScaleY;
-    }
-    */
 
     public void setLabelVisible(boolean isLabelVisible) {
         vertex.setLabelVisible(isLabelVisible);

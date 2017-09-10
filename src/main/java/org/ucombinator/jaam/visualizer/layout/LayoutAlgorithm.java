@@ -23,6 +23,8 @@ public class LayoutAlgorithm
     private static void initializeSizes(AbstractLayoutVertex parentVertex) {
         parentVertex.setWidth(AbstractLayoutVertex.DEFAULT_WIDTH);
         parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
+        parentVertex.setX(0);
+        parentVertex.setY(0);
         for(AbstractLayoutVertex v:parentVertex.getInnerGraph().getVertices()){
             initializeSizes(v);
         }
@@ -38,6 +40,8 @@ public class LayoutAlgorithm
                 //X and Y coordinates are RELATIVE to the parent
                 if(v.isExpanded()){
                     dfsLayout(v);
+                }else{
+                    System.out.println("Collapsed node: " + v.getId());
                 }
             }
         }

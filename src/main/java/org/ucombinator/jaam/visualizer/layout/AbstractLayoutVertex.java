@@ -366,11 +366,16 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
     }
 
     public boolean isExpanded() {
-        return isExpanded;
+        return this.isExpanded;
     }
 
-    public void setExpanded(boolean expanded) {
-        this.isExpanded = expanded;
+    public void setExpanded() {
+        this.isExpanded = true;
+
+    }
+
+    public void setCollapsed() {
+        this.isExpanded = false;
 
     }
 
@@ -425,7 +430,11 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
 
     public void toggleNodesOfType(VertexType type, boolean isExpanded) {
         if(this.getType() == type){
-            this.setExpanded(isExpanded);
+            if(isExpanded) {
+                this.setExpanded();
+            }else{
+                this.setCollapsed();
+            }
         }
 
         Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVertices().iterator();

@@ -218,9 +218,10 @@ public class VizPanelController {
         panelRoot.setVisible(false);
         drawNodes(null, panelRoot);
         drawEdges(panelRoot);
-        this.ddd = new DDD(GUINodeStatus.retrieveAllGraphicsStatus(panelRoot));
         this.resetStrokeWidth();
         panelRoot.setVisible(true);
+
+        this.ddd = new DDD(DDD.retrieveAllGraphicsStatus(panelRoot));
     }
 
 /*

@@ -20,19 +20,26 @@ import java.util.HashSet;
 public class GUINodeStatus implements GraphicsStatus {
 
 
-    private double x, y;
+    private double x;
+    private double y;
+    private double width;
+    private double height;
     private double totalScaleX;
     private double totalScaleY;
     private double opacity;
-    private AbstractLayoutVertex vertex;
 
     public GUINodeStatus(AbstractLayoutVertex v){
-        this.vertex = v;
         GUINode g = v.getGraphics();
-        this.x = g.localToScene(g.getBoundsInLocal()).getMinX();
-        this.y = g.localToScene(g.getBoundsInLocal()).getMinY();
-        this.totalScaleX = g.getScaleX();
-        this.totalScaleY = g.getScaleY();
+
+        this.x = g.getLayoutX() + g.getTranslateX();
+        this.y = g.getLayoutY() + g.getTranslateY();
+
+        this.width = g.getWidth();
+        this.height = g.getHeight();
+
+        this.totalScaleX = this.width/g.getRect().getWidth();
+        this.totalScaleY = this.height/g.getRect().getHeight();
+
         this.opacity = g.getOpacity();
     }
 
@@ -61,6 +68,22 @@ public class GUINodeStatus implements GraphicsStatus {
         this.y = y;
     }
 
+    public double getWidth() {
+        return width;
+    }
+
+    public void setWidth(double width) {
+        this.width = width;
+    }
+
+    public double getHeight() {
+        return height;
+    }
+
+    public void setHeight(double height) {
+        this.height = height;
+    }
+
 
     public double getTotalScaleX() {
         return totalScaleX;
@@ -78,20 +101,6 @@ public class GUINodeStatus implements GraphicsStatus {
         this.totalScaleY = totalScaleY;
     }
 
-    public static HashMap<GraphEntity,GraphicsStatus> retrieveAllGraphicsStatus(AbstractLayoutVertex root){
-        HashMap<GraphEntity,GraphicsStatus> db = new HashMap();
-        retrieveAllGraphicsStatus(root, db);
-        return db;
-    }
 
-    private static void retrieveAllGraphicsStatus(AbstractLayoutVertex root, HashMap<GraphEntity,GraphicsStatus> db){
-        db.put(root, new GUINodeStatus(root));
-        for(LayoutEdge e: root.getInnerGraph().getEdges()){
-            db.put(e, new EdgeStatus(e));
-        }
-        //System.out.print(root.getId());
-        for(AbstractLayoutVertex v: root.getInnerGraph().getVertices()){
-            retrieveAllGraphicsStatus(v, db);
-        }
-    }
+
 }

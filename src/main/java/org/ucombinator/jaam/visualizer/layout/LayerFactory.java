@@ -309,7 +309,11 @@ public class LayerFactory
 
                     //Create the new vertex
                     LayoutChainVertex chainVertex = new LayoutChainVertex(true);
-                    chainVertex.setExpanded(chains_expanded);
+                    if(chains_expanded) {
+                        chainVertex.setExpanded();
+                    }else{
+                        chainVertex.setCollapsed();
+                    }
 
                     first.getSelfGraph().addVertex(chainVertex);
                     first.getSelfGraph().addEdge(new LayoutEdge(first, chainVertex, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
