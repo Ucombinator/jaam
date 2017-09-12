@@ -30,17 +30,12 @@ public class DDD {
         gs.setX(v.getX());
         gs.setY(v.getY());
 
-
-        gs.setTotalScaleX(gs.getTotalScaleX()*v.getWidth()/gs.getWidth());
-        gs.setTotalScaleY(gs.getTotalScaleY()*v.getHeight()/gs.getHeight());
-
-
         gs.setWidth(v.getWidth());
         gs.setHeight(v.getHeight());
 
 
-        for(AbstractLayoutVertex v_child: v.getInnerGraph().getVertices()){
-            this.updateWithDB(v_child,db);
+        for (AbstractLayoutVertex vChild: v.getInnerGraph().getVertices()) {
+            this.updateWithDB(vChild,db);
         }
 
         return db;
@@ -83,18 +78,13 @@ public class DDD {
         System.out.println("Objected to be removed: " + this.exit.size());
         System.out.println("Objected to be inserted: " + this.enter.size());
 
-        ParallelTransition pt = new ParallelTransition();
-        pt.getChildren().add(
-                runTransition(this.update, new TransitionFactory())
-        );
-        pt.getChildren().add(
-                runTransition(this.enter, new TransitionFactoryFadeIn())
-        );
-        pt.getChildren().add(
+        ParallelTransition pt = new ParallelTransition(
+                runTransition(this.update, new TransitionFactory()),
+                runTransition(this.enter, new TransitionFactoryFadeIn()),
                 runTransition(this.exit, new TransitionFactoryFadeOut())
         );
 
-        if(runnable!=null){
+        if (runnable!=null){
             pt.setOnFinished(new EventHandler<ActionEvent>() {
                 @Override
                 public void handle(ActionEvent event) {

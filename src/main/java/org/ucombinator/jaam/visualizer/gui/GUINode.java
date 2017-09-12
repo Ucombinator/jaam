@@ -3,8 +3,8 @@ package org.ucombinator.jaam.visualizer.gui;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
+import javafx.scene.Group;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
@@ -15,11 +15,10 @@ import org.ucombinator.jaam.visualizer.main.Main;
 
 import java.util.HashMap;
 
-public class GUINode extends Pane
+public class GUINode extends Group
 {
     private static final double TEXT_VERTICAL_PADDING = 15;
     private static final double TEXT_HORIZONTAL_PADDING = 15;
-    //private static final int transitionTime = 300; // Milliseconds per transition
 
     private final Rectangle rect;
     private final Rectangle highlightingRect;
@@ -45,6 +44,8 @@ public class GUINode extends Pane
         this.highlightingRect.setStroke(javafx.scene.paint.Color.BLUE);
         this.highlightingRect.setFill(javafx.scene.paint.Color.WHITE);
         this.highlightingRect.setStrokeWidth(10);
+        this.highlightingRect.widthProperty().bind(this.rect.widthProperty());
+        this.highlightingRect.heightProperty().bind(this.rect.heightProperty());
 
         if (v instanceof LayoutRootVertex) {
             this.getChildren().add(this.rect);
@@ -402,14 +403,9 @@ public class GUINode extends Pane
     {
         this.setTranslateX(x);
         this.setTranslateY(y);
-        this.setMaxWidth(width);
-        this.setMaxHeight(height);
 
         this.rect.setWidth(width);
         this.rect.setHeight(height);
-        
-        this.highlightingRect.setWidth(width);
-        this.highlightingRect.setHeight(height);
 
         this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
         this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
@@ -513,4 +509,5 @@ public class GUINode extends Pane
     public Rectangle getRect() {
         return this.rect;
     }
+
 }
