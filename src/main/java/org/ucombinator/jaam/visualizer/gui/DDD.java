@@ -1,13 +1,9 @@
 package org.ucombinator.jaam.visualizer.gui;
 
-import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
-import javafx.animation.TranslateTransition;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.Node;
-import javafx.util.Duration;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.GraphEntity;
 import org.ucombinator.jaam.visualizer.layout.GraphicsStatus;
@@ -34,6 +30,7 @@ public class DDD {
         gs.setX(v.getX());
         gs.setY(v.getY());
 
+
         gs.setTotalScaleX(gs.getTotalScaleX()*v.getWidth()/gs.getWidth());
         gs.setTotalScaleY(gs.getTotalScaleY()*v.getHeight()/gs.getHeight());
 
@@ -53,9 +50,6 @@ public class DDD {
         this.db = ddd;
     }
 
-    public DDD(){
-        this.db = new HashMap<>();
-    }
 
     public DDD bind(HashMap<GraphEntity,GraphicsStatus> newDB){
         this.enter = new HashMap<>();
@@ -80,10 +74,11 @@ public class DDD {
             update.put(key,newDB.get(key));
         }
 
+        this.db = newDB;
         return this;
     }
 
-    public void runOnFinish(Runnable runnable){
+    public void run(Runnable runnable){
         System.out.println("Objected to be updated: " + this.update.size());
         System.out.println("Objected to be removed: " + this.exit.size());
         System.out.println("Objected to be inserted: " + this.enter.size());
@@ -111,7 +106,7 @@ public class DDD {
     }
 
     public void run(){
-        this.runOnFinish(null);
+        this.run(null);
     }
 
 

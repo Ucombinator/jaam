@@ -15,7 +15,7 @@ public class TransitionFactory {
 
     private ParallelTransition createTransition(Node n, GraphicsStatus gs){
         ParallelTransition pt;
-        Duration time = Duration.millis(200);
+        Duration time = Duration.millis(1000);
 
         FadeTransition ft = new FadeTransition(time);
             ft.setToValue(gs.getOpacity());
@@ -24,8 +24,8 @@ public class TransitionFactory {
             GUINodeStatus guiStatus = (GUINodeStatus)gs;
 
             TranslateTransition tt = new TranslateTransition(time);
-            tt.setByX(guiStatus.getTotalScaleX());
-            tt.setByY(guiStatus.getTotalScaleY());
+            tt.setToX(guiStatus.getX());
+            tt.setToY(guiStatus.getY());
 
             ScaleTransition st = new ScaleTransition(time);
 

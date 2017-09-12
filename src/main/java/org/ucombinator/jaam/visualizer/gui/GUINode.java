@@ -1,11 +1,8 @@
 package org.ucombinator.jaam.visualizer.gui;
 
-import javafx.animation.ParallelTransition;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
-import javafx.scene.Node;
-import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Paint;
@@ -13,13 +10,10 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.scene.paint.Color;
-import org.ucombinator.jaam.visualizer.controllers.MainTabController;
-import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 
 import java.util.HashMap;
-import java.util.Iterator;
 
 public class GUINode extends Pane
 {
@@ -134,65 +128,9 @@ public class GUINode extends Pane
 
     private void handleOnMouseClicked(MouseEvent event) {
         event.consume();
-        if(this.vertex instanceof LayoutRootVertex){
-            return;
-        }
 
-        if(this.vertex.isExpanded()) {
-            AbstractLayoutVertex root = Main.getSelectedVizPanelController().getPanelRoot();
-            DDD d3 = Main.getSelectedVizPanelController().getDDD();
-            HashMap<GraphEntity, GraphicsStatus> dbNew = d3.retrieveAllGraphicsStatus(root);
-
-
-            System.out.println("Node clicked: " + this.vertex.getId());
-
-
-            for(AbstractLayoutVertex v: this.vertex.getInnerGraph().getVertices()){
-                GUINodeStatus gs = (GUINodeStatus)dbNew.get(v);
-                gs.setOpacity(0.0);
-            }
-
-            for(LayoutEdge e: this.vertex.getInnerGraph().getEdges()){
-                dbNew.get(e).setOpacity(0.0);
-            }
-
-            d3.bind(dbNew).runOnFinish(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-
-                            LayoutEdge.redrawEdges(root, false);
-
-                            GUINode.this.vertex.setCollapsed();
-                            LayoutAlgorithm.layout(root);
-
-                            for(AbstractLayoutVertex v: GUINode.this.vertex.getInnerGraph().getVertices()){
-                                v.setVisible(false);
-                            }
-                            for(LayoutEdge e: GUINode.this.vertex.getInnerGraph().getEdges()){
-                                e.setVisible(false);
-                            }
-
-
-                            System.out.println("New Layout Computed");
-                            HashMap<GraphEntity,GraphicsStatus> db = d3.update(root);
-                            d3.bind(db).runOnFinish(new Runnable() {
-                                @Override
-                                public void run() {
-                                    LayoutEdge.redrawEdges(root, true);
-                                }
-                            });
-                        }
-                    }
-            );
-
-        }else{
-
-        }
-        if(this.vertex.isExpanded()){
-            this.vertex.setCollapsed();
-        }else{
-            this.vertex.setExpanded();
+        if(event.getClickCount()>1){
+            handleDoubleCkick(event);
         }
 
         /*
@@ -226,6 +164,70 @@ public class GUINode extends Pane
         */
     }
 
+    private void handleDoubleCkick(MouseEvent event){
+        if(this.vertex instanceof LayoutRootVertex){
+            return;
+        }
+
+        if(this.vertex.isExpanded()) {
+
+            AbstractLayoutVertex root = Main.getSelectedVizPanelController().getPanelRoot();
+            DDD d3 = Main.getSelectedVizPanelController().getDDD();
+            HashMap<GraphEntity, GraphicsStatus> dbNew = d3.retrieveAllGraphicsStatus(root);
+
+
+            System.out.println("Node clicked: " + this.vertex.getId());
+
+            //Fist, we want the content of the clicked node to disappear
+            for(AbstractLayoutVertex v: this.vertex.getInnerGraph().getVertices()){
+                GUINodeStatus gs = (GUINodeStatus)dbNew.get(v);
+                gs.setOpacity(0.0);
+            }
+
+            for(LayoutEdge e: this.vertex.getInnerGraph().getEdges()){
+                dbNew.get(e).setOpacity(0.0);
+            }
+
+
+            d3.bind(dbNew).run(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            //Then, we want the vertices to move to their final positions and the clicked vertex to change its size
+
+                            GUINode.this.vertex.setCollapsed();
+                            LayoutAlgorithm.layout(root);
+                            System.out.println("New Layout Computed");
+
+                            //At the end of the animation we also set the content of the subgraph of the clicked node to be invisible
+                            for(AbstractLayoutVertex v: GUINode.this.vertex.getInnerGraph().getVertices()){
+                                v.setVisible(false);
+                            }
+                            for(LayoutEdge e: GUINode.this.vertex.getInnerGraph().getEdges()){
+                                e.setVisible(false);
+                            }
+
+
+                            HashMap<GraphEntity,GraphicsStatus> db = d3.update(root);
+                            d3.bind(db).run(new Runnable() {
+                                @Override
+                                public void run() {
+                                    LayoutEdge.redrawEdges(root, true);
+                                }
+                            });
+                        }
+                    }
+            );
+
+        }else{
+
+        }
+        if(this.vertex.isExpanded()){
+            this.vertex.setCollapsed();
+        }else{
+            this.vertex.setExpanded();
+        }
+    }
 
 //    private void collapse()
 //    {
