@@ -168,10 +168,10 @@ public class VizPanelController {
     */
 
     // Divides the actual width in pixels by the width in vertex units
-    public double getWidthPerVertex()
-    {
-        return panelRoot.getGraphics().getWidth() / panelRoot.getWidth();
-    }
+    //public double getWidthPerVertex()
+    //{
+    //    return panelRoot.getGraphics().getWidth() / panelRoot.getWidth();
+    //}
 
     //Called when the user clicks on a line in the left area.
     //Updates the vertex highlights to those that correspond to the instruction clicked.
