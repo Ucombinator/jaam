@@ -221,7 +221,7 @@ public class VizPanelController {
         this.resetStrokeWidth();
         panelRoot.setVisible(true);
 
-        this.ddd = new DDD(DDD.retrieveAllGraphicsStatus(panelRoot));
+        this.ddd = new DDD(panelRoot);
     }
 
 /*

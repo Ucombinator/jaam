@@ -41,8 +41,9 @@ public class DDD {
         return db;
     }
 
-    public DDD(HashMap<GraphEntity,GraphicsStatus> ddd){
-        this.db = ddd;
+
+    public DDD(AbstractLayoutVertex root){
+        this.db = retrieveAllGraphicsStatus(root);
     }
 
 
@@ -127,13 +128,13 @@ public class DDD {
     }
 
 
-    public static HashMap<GraphEntity,GraphicsStatus> retrieveAllGraphicsStatus(AbstractLayoutVertex root){
+    private HashMap<GraphEntity,GraphicsStatus> retrieveAllGraphicsStatus(AbstractLayoutVertex root){
         HashMap<GraphEntity,GraphicsStatus> db = new HashMap();
         retrieveAllGraphicsStatus(root, db);
         return db;
     }
 
-    private static void retrieveAllGraphicsStatus(AbstractLayoutVertex root, HashMap<GraphEntity,GraphicsStatus> db){
+    private void retrieveAllGraphicsStatus(AbstractLayoutVertex root, HashMap<GraphEntity,GraphicsStatus> db){
         db.put(root, new GUINodeStatus(root));
         for(LayoutEdge e: root.getInnerGraph().getEdges()){
             db.put(e, new EdgeStatus(e));

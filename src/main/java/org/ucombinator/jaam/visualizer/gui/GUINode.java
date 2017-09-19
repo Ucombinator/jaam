@@ -170,25 +170,26 @@ public class GUINode extends Group
             return;
         }
 
-        if(this.vertex.isExpanded()) {
+        AbstractLayoutVertex root = Main.getSelectedVizPanelController().getPanelRoot();
+        DDD d3 = Main.getSelectedVizPanelController().getDDD();
 
-            AbstractLayoutVertex root = Main.getSelectedVizPanelController().getPanelRoot();
-            DDD d3 = Main.getSelectedVizPanelController().getDDD();
-            HashMap<GraphEntity, GraphicsStatus> dbNew = d3.retrieveAllGraphicsStatus(root);
+        System.out.println("Double Click");
+        AbstractLayoutVertex doubleClickedVertex = this.vertex;
 
+        if(doubleClickedVertex.isExpanded()) {
+            System.out.println("Collapse");
 
-            System.out.println("Node clicked: " + this.vertex.getId());
+            HashMap<GraphEntity, GraphicsStatus> dbNew = d3.update(root);
 
             //Fist, we want the content of the clicked node to disappear
-            for(AbstractLayoutVertex v: this.vertex.getInnerGraph().getVertices()){
-                GUINodeStatus gs = (GUINodeStatus)dbNew.get(v);
-                gs.setOpacity(0.0);
+            for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVertices()){
+                dbNew.get(v).setOpacity(0.0);
             }
 
-            for(LayoutEdge e: this.vertex.getInnerGraph().getEdges()){
+            for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getEdges()){
+                System.out.println("Edge status" + dbNew.get(e));
                 dbNew.get(e).setOpacity(0.0);
             }
-
 
             d3.bind(dbNew).run(
                     new Runnable() {
@@ -196,20 +197,20 @@ public class GUINode extends Group
                         public void run() {
                             //Then, we want the vertices to move to their final positions and the clicked vertex to change its size
 
-                            GUINode.this.vertex.setCollapsed();
-                            LayoutAlgorithm.layout(root);
-                            System.out.println("New Layout Computed");
+                            doubleClickedVertex.setCollapsed();
+
 
                             //At the end of the animation we also set the content of the subgraph of the clicked node to be invisible
-                            for(AbstractLayoutVertex v: GUINode.this.vertex.getInnerGraph().getVertices()){
+                            for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVertices()){
                                 v.setVisible(false);
                             }
-                            for(LayoutEdge e: GUINode.this.vertex.getInnerGraph().getEdges()){
+                            for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getEdges()){
                                 e.setVisible(false);
                             }
 
-
+                            LayoutAlgorithm.layout(root);
                             HashMap<GraphEntity,GraphicsStatus> db = d3.update(root);
+
                             d3.bind(db).run(new Runnable() {
                                 @Override
                                 public void run() {
@@ -221,8 +222,49 @@ public class GUINode extends Group
             );
 
         }else{
+            System.out.println("Expand");
 
+            doubleClickedVertex.setExpanded();
+
+            for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVertices()){
+                v.setVisible(true);
+            }
+            for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getEdges()){
+                e.setVisible(true);
+            }
+
+            LayoutAlgorithm.layout(root);
+            HashMap<GraphEntity,GraphicsStatus> db = d3.update(root);
+
+            d3.bind(db).run(new Runnable() {
+                @Override
+                public void run() {
+                    HashMap<GraphEntity,GraphicsStatus> dbNew = d3.update(root);
+
+                    System.out.println("Inner Vertices");
+                    for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVertices()){
+                        System.out.println("Vertex Opacity: " +  dbNew.get(v).getOpacity());
+                        dbNew.get(v).setOpacity(1.0);
+                    }
+
+                    System.out.println("Inner Edges");
+                    for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getEdges()){
+                        System.out.println("Edge Opacity: " +  dbNew.get(e).getOpacity());
+                        dbNew.get(e).setOpacity(1.0);
+                    }
+
+                    d3.bind(dbNew).run(new Runnable() {
+                        @Override
+                        public void run() {
+                            LayoutEdge.redrawEdges(root, true);
+                        }
+                    });
+
+                }
+            });
         }
+
+
         if(this.vertex.isExpanded()){
             this.vertex.setCollapsed();
         }else{
