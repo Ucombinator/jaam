@@ -10,33 +10,22 @@ import java.util.LinkedHashSet;
 
 public class LayoutMethodVertex extends AbstractLayoutVertex {
 
-    private Method method = null;
-
+    String methodName;
     private Color methodColor = Color.DEEPSKYBLUE;
     private Color loopColor   = Color.ORANGE;
 
     
     public LayoutMethodVertex(int id, String label){
     	super(id, label);
-    }
-    
-    public LayoutMethodVertex(Method method, boolean drawEdges) {
-        super(method.getFullName(), VertexType.METHOD, drawEdges);
-        this.method = method;
-    }
-    
-    public LayoutMethodVertex(String method, boolean drawEdges) {
-        super(method, VertexType.METHOD, drawEdges);
-        this.method = null;
+    	this.methodName = label;
     }
 
     public String getMethodName() {
-        return this.method.getFullName();
+        return this.methodName;
     }
 
     public String getRightPanelContent() {
-        return "Method vertex: " + this.getMethodName() + "\nLoop height: " + this.getLoopHeight() + "\n\n"
-                + "Decompiled class code:\n" + this.method.getOurClass().getCode();
+        return "Method vertex: " + this.getMethodName() + "\nLoop height: " + this.getLoopHeight() + "\n";
     }
 
     public String getShortDescription() {

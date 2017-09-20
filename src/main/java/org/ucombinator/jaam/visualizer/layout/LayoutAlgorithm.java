@@ -89,7 +89,7 @@ public class LayoutAlgorithm
         for(AbstractLayoutVertex v: graph.getVertices()){
             if(v.getVertexStatus() != AbstractLayoutVertex.VertexStatus.BLACK)
             {
-                System.out.println("ERROR in Max Depth Drawings. Does your graph ahve a cycle?");
+                System.out.println("ERROR in Max Depth Drawings. Does your graph have a cycle?");
                 System.out.println("BFS ERROR Didn't process " + v.getId() + " in BFS Children Pass " + v.getVertexStatus());
             }
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
@@ -136,7 +136,7 @@ public class LayoutAlgorithm
      * Preconditions: Graph has no Cycles
      * Generates the children map for the layout, every node is added to the map twice, once as a key and once in the
      * children list of some other node. The root doesn't appear in any children list
-     * Every node appears as a child as deep as possible in the tree (ties, breaked arbitrarily)
+     * Every node appears as a child as deep as possible in the tree (ties, broken arbitrarily)
      * */
     private static HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> maxDepthChildren(HierarchicalGraph graph, AbstractLayoutVertex root)
     {

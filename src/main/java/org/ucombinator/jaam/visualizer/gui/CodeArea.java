@@ -82,7 +82,6 @@ public class CodeArea extends TextFlow
         HashSet<AbstractLayoutVertex> highlighted = mainPanel.getHighlighted();
         if(highlighted.size() > 0)
         {
-            //TODO: Add function for getting all methods
             HashSet<LayoutMethodVertex> methodVertices = new LinkedHashSet<>();
             for(AbstractLayoutVertex v : highlighted)
                 methodVertices.addAll(v.getMethodVertices());
@@ -90,14 +89,14 @@ public class CodeArea extends TextFlow
             description = new ArrayList<>();
             for(LayoutMethodVertex v : methodVertices) {
                 String methodName = v.getMethodName();
-                ArrayList<Instruction> currInstructions = new ArrayList<>(v.getInstructions());
-                Collections.sort(currInstructions);
+                //ArrayList<Instruction> currInstructions = new ArrayList<>(v.getInstructions());
+                //Collections.sort(currInstructions);
                 //System.out.println(currInstructions.size());
 
                 // Add header line with method name and blank separator line after
                 description.add(new Instruction(methodName, methodName, -1, false));
-                description.addAll(currInstructions);
-                description.add(new Instruction("", methodName, -1, false));
+                //description.addAll(currInstructions);
+                //description.add(new Instruction("", methodName, -1, false));
                 //System.out.println("Instructions printed: " + description.size());
             }
 
