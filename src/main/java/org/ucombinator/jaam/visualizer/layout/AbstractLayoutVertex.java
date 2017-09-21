@@ -16,7 +16,7 @@ import java.util.LinkedHashSet;
 import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
-import org.ucombinator.jaam.visualizer.gui.Location;
+import org.ucombinator.jaam.visualizer.gui.GUINodeStatus;
 
 public abstract class AbstractLayoutVertex extends AbstractVertex implements Comparable<AbstractLayoutVertex>, GraphEntity
 {
@@ -45,9 +45,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
     private boolean isEdgeVisible;
     private boolean drawEdges;
 
-    // A location stores coordinates for a subtree.
-    private Location location = new Location();
-    private boolean updateLocation = false;
+    private GUINodeStatus nodeStatus = new GUINodeStatus();
 
     // Used for shading vertices based on the number of nested loops they contain
     private int loopHeight;
@@ -61,30 +59,39 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
     private VertexType vertexType;
 
     public void setWidth(double width) {
-        this.location.width = width;
+        this.nodeStatus.width = width;
     }
     public void setHeight(double height) {
-        this.location.height = height;
+        this.nodeStatus.height = height;
     }
 
     public void setX(double x) {
-        this.location.x = x;
+        this.nodeStatus.x = x;
     }
     public void setY(double y) {
-        this.location.y = y;
+        this.nodeStatus.y = y;
+    }
+    public void setOpacity(double opacity) {
+        this.nodeStatus.opacity = opacity;
     }
 
     public double getX() {
-        return this.location.x;
+        return this.nodeStatus.x;
     }
     public double getY() {
-        return this.location.y;
+        return this.nodeStatus.y;
     }
     public double getWidth() {
-        return this.location.width;
+        return this.nodeStatus.width;
     }
     public double getHeight() {
-        return this.location.height;
+        return this.nodeStatus.height;
+    }
+    public double getOpacity() {
+        return this.nodeStatus.opacity;
+    }
+    public GUINodeStatus getNodeStatus() {
+        return this.nodeStatus;
     }
 
     public GUINode getGraphics()
@@ -284,8 +291,8 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
 
     public double distTo(double x, double y)
     {
-        double xDiff = x - this.location.x;
-        double yDiff = y - this.location.y;
+        double xDiff = x - this.nodeStatus.x;
+        double yDiff = y - this.nodeStatus.y;
         return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
     }
 
@@ -369,13 +376,8 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
         return this.isExpanded;
     }
 
-    public void setExpanded() {
-        this.isExpanded = true;
-
-    }
-
-    public void setCollapsed() {
-        this.isExpanded = false;
+    public void setExpanded(boolean expanded) {
+        this.isExpanded = expanded;
 
     }
 
@@ -421,7 +423,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
     
     public void printCoordinates()
     {
-        System.out.println("Vertex " + this.getId() + this.location.toString());
+        System.out.println("Vertex " + this.getId() + this.nodeStatus.toString());
     }
 
     public VertexType getType() {
@@ -430,16 +432,11 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
 
     public void toggleNodesOfType(VertexType type, boolean isExpanded) {
         if(this.getType() == type){
-            if(isExpanded) {
-                this.setExpanded();
-            }else{
-                this.setCollapsed();
-            }
+            this.setExpanded(isExpanded);
         }
 
-        Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVertices().iterator();
-        while(it.hasNext()){
-            it.next().toggleNodesOfType(type, isExpanded);
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices()) {
+            v.toggleNodesOfType(type, isExpanded);
         }
     }
 

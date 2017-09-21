@@ -8,8 +8,8 @@ import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 
 public class LayerFactory
 {
-    private static final boolean create_chains = true;
-    private static final boolean chains_expanded = true;
+    private static final boolean createChains = true;
+    private static final boolean chainsExpanded = true;
     private static final int CHAIN_LENGTH = 3 ; // This value should ALWAYS be LARGER THAN OR EQUAL 3 (otherwise it will break)
 
     public static LayoutRootVertex getLayeredGraph(Graph graph){
@@ -263,7 +263,7 @@ public class LayerFactory
             createChainVertices(absVertex, k);
         }
         
-        if(create_chains) {
+        if(createChains) {
             createChainVerticesFromVertex(parent.getInnerGraph(), parent.getInnerGraph().getRoot(), k);
         }
     }
@@ -309,11 +309,7 @@ public class LayerFactory
 
                     //Create the new vertex
                     LayoutChainVertex chainVertex = new LayoutChainVertex(true);
-                    if(chains_expanded) {
-                        chainVertex.setExpanded();
-                    }else{
-                        chainVertex.setCollapsed();
-                    }
+                    chainVertex.setExpanded(chainsExpanded);
 
                     first.getSelfGraph().addVertex(chainVertex);
                     first.getSelfGraph().addEdge(new LayoutEdge(first, chainVertex, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));

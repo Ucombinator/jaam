@@ -1,5 +1,9 @@
 package org.ucombinator.jaam.visualizer.gui;
 
+import javafx.animation.ParallelTransition;
+import javafx.animation.Transition;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -131,7 +135,7 @@ public class GUINode extends Group
         event.consume();
 
         if(event.getClickCount()>1){
-            handleDoubleCkick(event);
+            handleDoubleClick(event);
         }
 
         /*
@@ -165,111 +169,64 @@ public class GUINode extends Group
         */
     }
 
-    private void handleDoubleCkick(MouseEvent event){
+    private void handleDoubleClick(MouseEvent event){
         if(this.vertex instanceof LayoutRootVertex){
             return;
         }
 
         AbstractLayoutVertex root = Main.getSelectedVizPanelController().getPanelRoot();
-        DDD d3 = Main.getSelectedVizPanelController().getDDD();
 
         System.out.println("Double Click");
         AbstractLayoutVertex doubleClickedVertex = this.vertex;
+        boolean isExpanded = doubleClickedVertex.isExpanded();
 
-        if(doubleClickedVertex.isExpanded()) {
-            System.out.println("Collapse");
+        double newOpacity = isExpanded ? 0.0 : 1.0;
+        boolean newVisible = isExpanded ? false : true;
 
-            HashMap<GraphEntity, GraphicsStatus> dbNew = d3.update(root);
+        // First we want the content of the clicked node to appear/disappear.
+        System.out.println("Changing opacity of inner graph...");
+        for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVertices()) {
+            v.setOpacity(newOpacity);
+        }
 
-            //Fist, we want the content of the clicked node to disappear
-            for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVertices()){
-                dbNew.get(v).setOpacity(0.0);
-            }
+        for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getEdges()){
+            e.setOpacity(newOpacity);
+        }
 
-            for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getEdges()){
-                System.out.println("Edge status" + dbNew.get(e));
-                dbNew.get(e).setOpacity(0.0);
-            }
+        ParallelTransition pt = TransitionFactory.buildRecursiveTransition(root);
+        pt.setOnFinished(
+                new EventHandler<ActionEvent>() {
+                    @Override
+                    public void handle(ActionEvent event) {
+                        // Then we want the vertices to move to their final positions and the clicked vertex to change its size.
+                        doubleClickedVertex.setExpanded(!isExpanded);
 
-            d3.bind(dbNew).run(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            //Then, we want the vertices to move to their final positions and the clicked vertex to change its size
-
-                            doubleClickedVertex.setCollapsed();
-
-
-                            //At the end of the animation we also set the content of the subgraph of the clicked node to be invisible
-                            for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVertices()){
-                                v.setVisible(false);
-                            }
-                            for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getEdges()){
-                                e.setVisible(false);
-                            }
-
-                            LayoutAlgorithm.layout(root);
-                            HashMap<GraphEntity,GraphicsStatus> db = d3.update(root);
-
-                            d3.bind(db).run(new Runnable() {
-                                @Override
-                                public void run() {
-                                    LayoutEdge.redrawEdges(root, true);
-                                }
-                            });
+                        for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVertices()){
+                            v.setVisible(newVisible);
                         }
-                    }
-            );
 
-        }else{
-            System.out.println("Expand");
-
-            doubleClickedVertex.setExpanded();
-
-            for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVertices()){
-                v.setVisible(true);
-            }
-            for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getEdges()){
-                e.setVisible(true);
-            }
-
-            LayoutAlgorithm.layout(root);
-            HashMap<GraphEntity,GraphicsStatus> db = d3.update(root);
-
-            d3.bind(db).run(new Runnable() {
-                @Override
-                public void run() {
-                    HashMap<GraphEntity,GraphicsStatus> dbNew = d3.update(root);
-
-                    System.out.println("Inner Vertices");
-                    for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVertices()){
-                        System.out.println("Vertex Opacity: " +  dbNew.get(v).getOpacity());
-                        dbNew.get(v).setOpacity(1.0);
-                    }
-
-                    System.out.println("Inner Edges");
-                    for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getEdges()){
-                        System.out.println("Edge Opacity: " +  dbNew.get(e).getOpacity());
-                        dbNew.get(e).setOpacity(1.0);
-                    }
-
-                    d3.bind(dbNew).run(new Runnable() {
-                        @Override
-                        public void run() {
-                            LayoutEdge.redrawEdges(root, true);
+                        for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getEdges()){
+                            e.setVisible(newVisible);
                         }
-                    });
 
+                        LayoutAlgorithm.layout(root);
+                        ParallelTransition pt = TransitionFactory.buildRecursiveTransition(root);
+
+                        pt.setOnFinished(new EventHandler<ActionEvent>() {
+                            @Override
+                            public void handle(ActionEvent event) {
+                                // Lastly we redraw the edges that may have been moved.
+                                LayoutEdge.redrawEdges(root, true);
+                            }
+                        });
+
+                        pt.play();
+                    }
                 }
-            });
-        }
+        );
 
-
-        if(this.vertex.isExpanded()){
-            this.vertex.setCollapsed();
-        }else{
-            this.vertex.setExpanded();
-        }
+        System.out.println("Simultaneous transitions: " + pt.getChildren().size());
+        pt.play();
     }
 
 //    private void collapse()

@@ -11,8 +11,6 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     private Group graphics;
     private Shape edgePath; // This will be a either a line for most edges, or a path for self-edges
     private Polygon arrowhead;
-    private Rectangle marker1, marker2;
-    private static final boolean markCenters = false;
 
     public enum EDGE_TYPE {EDGE_REGULAR, EDGE_DUMMY};
     private final EDGE_TYPE type;
@@ -27,6 +25,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     private static final Color upwardColor = Color.VIOLET;
     private Color color = Color.RED;
     private boolean colorIsSet = false;
+    private double opacity;
 
     public LayoutEdge(AbstractLayoutVertex source, AbstractLayoutVertex dest, EDGE_TYPE edgeType)
     {
@@ -34,11 +33,17 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.source = source;
         this.dest = dest;
 
-        //System.out.println("SEE: --" + dest.getY() + "-- --" + source.getY());
-
         graphics = new Group();
         arrowhead = new Polygon();
-        //System.out.println("Created new layout edge: " + this.getID());
+        this.opacity = 1.0;
+    }
+
+    public void setOpacity(double opacity) {
+        this.opacity = opacity;
+    }
+
+    public double getOpacity() {
+        return this.opacity;
     }
 
     public EDGE_TYPE getType() {
@@ -219,12 +224,6 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
             {
                 if (v.getId() == e.source.getId() || v.getId() == e.dest.getId())
                 {
-                    // Clear current graphics...
-                    if (markCenters) {
-                        e.graphics.getChildren().remove(e.marker1);
-                        e.graphics.getChildren().remove(e.marker2);
-                    }
-
                     e.graphics.getChildren().remove(e.edgePath);
                     e.graphics.getChildren().remove(e.arrowhead);
 

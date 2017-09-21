@@ -1,43 +1,56 @@
 package org.ucombinator.jaam.visualizer.gui;
 
 import javafx.animation.*;
-import javafx.scene.Node;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
-import org.ucombinator.jaam.visualizer.layout.GraphicsStatus;
-
-
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 
 public class TransitionFactory {
 
+    private static Duration time = Duration.millis(1000);
 
+    public static ParallelTransition buildRecursiveTransition(AbstractLayoutVertex v) {
+        ParallelTransition pt = new ParallelTransition();
 
-    public ParallelTransition build(Node n, GraphicsStatus gs){
+        // Add transitions for current node and the edges it contains.
+        pt.getChildren().add(TransitionFactory.buildVertexTransition(v));
+        for(LayoutEdge e : v.getInnerGraph().getEdges()) {
+            pt.getChildren().add(TransitionFactory.buildEdgeTransition(e));
+        }
 
-
-        ParallelTransition pt;
-        Duration time = Duration.millis(1000);
-
-        FadeTransition ft = new FadeTransition(time);
-        ft.setToValue(gs.getOpacity());
-
-        if (gs instanceof GUINodeStatus) {
-            GUINodeStatus guiStatus = (GUINodeStatus)gs;
-            Rectangle rect = ((GUINode) n).getRect();
-
-            TranslateTransition tt = new TranslateTransition(time);
-            tt.setToX(guiStatus.getX());
-            tt.setToY(guiStatus.getY());
-
-            Timeline widthTimeline = new Timeline(new KeyFrame(time, new KeyValue(rect.widthProperty(), guiStatus.getWidth())));
-            Timeline heightTimeline = new Timeline(new KeyFrame(time, new KeyValue(rect.heightProperty(), guiStatus.getHeight())));
-
-            pt = new ParallelTransition(n,ft,tt,widthTimeline,heightTimeline);
-        } else {
-            pt = new ParallelTransition(n,ft);
+        // Recurse for its children in our graph hierarchy.
+        for(AbstractLayoutVertex v2 : v.getInnerGraph().getVertices()) {
+            pt.getChildren().add(TransitionFactory.buildRecursiveTransition(v2));
         }
 
         return pt;
     }
 
+    public static ParallelTransition buildVertexTransition(AbstractLayoutVertex v) {
+        System.out.println("Creating transition for vertex: " + v.toString());
+        GUINodeStatus status = v.getNodeStatus();
+        GUINode node = v.getGraphics();
+        Rectangle rect = node.getRect();
+
+        FadeTransition ft = new FadeTransition(time);
+        ft.setToValue(status.opacity);
+
+        TranslateTransition tt = new TranslateTransition(time);
+        tt.setToX(status.x);
+        tt.setToY(status.y);
+
+        Timeline widthTimeline = new Timeline(new KeyFrame(time, new KeyValue(rect.widthProperty(), status.width)));
+        Timeline heightTimeline = new Timeline(new KeyFrame(time, new KeyValue(rect.heightProperty(), status.height)));
+
+        return new ParallelTransition(node, ft, tt, widthTimeline, heightTimeline);
+    }
+
+    public static FadeTransition buildEdgeTransition(LayoutEdge e) {
+        System.out.println("Creating transition for edge: " + e.toString());
+        FadeTransition ft = new FadeTransition(time, e.getGraphics());
+        ft.setToValue(e.getOpacity());
+
+        return ft;
+    }
 }

@@ -37,7 +37,6 @@ public class VizPanelController {
     private Group graphContentGroup;
     private HashSet<AbstractLayoutVertex> highlighted;
     private LayoutRootVertex panelRoot;
-    private DDD ddd;
 
     // The dimensions of the background for our graph
     private static final double initRootWidth = 500.0;
@@ -220,8 +219,6 @@ public class VizPanelController {
         drawEdges(panelRoot);
         this.resetStrokeWidth();
         panelRoot.setVisible(true);
-
-        this.ddd = new DDD(panelRoot);
     }
 
 /*
@@ -323,8 +320,4 @@ public class VizPanelController {
         factorY /= factorMultiple;
     }
     */
-
-    public DDD getDDD() {
-        return this.ddd;
-    }
 }

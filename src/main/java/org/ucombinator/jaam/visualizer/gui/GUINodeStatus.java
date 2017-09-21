@@ -1,68 +1,50 @@
 package org.ucombinator.jaam.visualizer.gui;
 
-import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.GraphicsStatus;
+public class GUINodeStatus
+{
+    public double left, right, top, bottom;
+    public double x, y, width, height;
+    public double opacity;
 
-public class GUINodeStatus implements GraphicsStatus {
-
-
-    private double x;
-    private double y;
-    private double width;
-    private double height;
-    private double opacity;
-
-    public GUINodeStatus(AbstractLayoutVertex v){
-        GUINode g = v.getGraphics();
-
-        this.x = g.getLayoutX() + g.getTranslateX();
-        this.y = g.getLayoutY() + g.getTranslateY();
-
-        this.width = g.getRect().getWidth();
-        this.height = g.getRect().getHeight();
-
-        this.opacity = g.getOpacity();
+    // Default constructor
+    public GUINodeStatus()
+    {
+        this.setDefaultStatus();
     }
 
-    public double getOpacity() {
-        return opacity;
+    // Copy constructor
+    public GUINodeStatus(GUINodeStatus other)
+    {
+        this.left = other.left;
+        this.right = other.right;
+        this.top = other.top;
+        this.bottom = other.bottom;
+
+        this.x = other.x;
+        this.y = other.y;
+        this.width = other.width;
+        this.height = other.height;
+
+        this.opacity = other.opacity;
     }
 
-    public void setOpacity(double opacity) {
-        this.opacity = opacity;
+    public void setDefaultStatus()
+    {
+        this.width = 1;
+        this.height = 1;
+        this.left = 0;
+        this.right = 1;
+        this.top = -1;
+        this.bottom = 0;
+        this.x = 0.5;
+        this.y = -0.5;
+        this.opacity = 1;
     }
 
-    public double getX() {
-
-        return this.x;
+    public String toString()
+    {
+        return "(x, y) = (" + x + ", " + y + "), left = " + left + ", right = " + right
+                + ", width = " + width + ", top = " + top + ", bottom = " + bottom + ", height = " + height
+                + ", opacity = " + opacity;
     }
-
-    public void setX(double x) {
-        this.x = x;
-    }
-
-    public double getY() {
-        return y;
-    }
-
-    public void setY(double y) {
-        this.y = y;
-    }
-
-    public double getWidth() {
-        return width;
-    }
-
-    public void setWidth(double width) {
-        this.width = width;
-    }
-
-    public double getHeight() {
-        return height;
-    }
-
-    public void setHeight(double height) {
-        this.height = height;
-    }
-
 }
