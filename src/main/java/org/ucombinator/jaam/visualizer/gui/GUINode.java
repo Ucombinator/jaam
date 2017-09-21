@@ -195,34 +195,26 @@ public class GUINode extends Group
 
         ParallelTransition pt = TransitionFactory.buildRecursiveTransition(root);
         pt.setOnFinished(
-                new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        // Then we want the vertices to move to their final positions and the clicked vertex to change its size.
-                        doubleClickedVertex.setExpanded(!isExpanded);
+            event1 -> {
+                // Then we want the vertices to move to their final positions and the clicked vertex to change its size.
+                doubleClickedVertex.setExpanded(!isExpanded);
 
-                        for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVertices()){
-                            v.setVisible(newVisible);
-                        }
-
-                        for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getEdges()){
-                            e.setVisible(newVisible);
-                        }
-
-                        LayoutAlgorithm.layout(root);
-                        ParallelTransition pt = TransitionFactory.buildRecursiveTransition(root);
-
-                        pt.setOnFinished(new EventHandler<ActionEvent>() {
-                            @Override
-                            public void handle(ActionEvent event) {
-                                // Lastly we redraw the edges that may have been moved.
-                                LayoutEdge.redrawEdges(root, true);
-                            }
-                        });
-
-                        pt.play();
-                    }
+                for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVertices()){
+                    v.setVisible(newVisible);
                 }
+
+                for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getEdges()){
+                    e.setVisible(newVisible);
+                }
+
+                LayoutAlgorithm.layout(root);
+                ParallelTransition pt1 = TransitionFactory.buildRecursiveTransition(root);
+
+                // Lastly we redraw the edges that may have been moved.
+                pt1.setOnFinished(event2 -> LayoutEdge.redrawEdges(root, true));
+
+                pt1.play();
+            }
         );
 
         System.out.println("Simultaneous transitions: " + pt.getChildren().size());
