@@ -78,6 +78,7 @@ public class CodeArea extends TextFlow
     // Rewrite the text area based on which vertices are highlighted
     public void setDescription()
     {
+        System.out.println("Set Description\n");
         VizPanelController mainPanel = Main.getSelectedVizPanelController();
         HashSet<AbstractLayoutVertex> highlighted = mainPanel.getHighlighted();
         if(highlighted.size() > 0)
@@ -108,6 +109,7 @@ public class CodeArea extends TextFlow
     // Set the text for the area to the sum of all of the lines in the description
     private void writeText()
     {
+        System.out.println("Set writeText\n");
         this.getChildren().clear();
         for(Instruction line : description) {
             String lineStr = line.getText() + "\n";

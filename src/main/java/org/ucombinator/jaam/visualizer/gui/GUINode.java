@@ -5,12 +5,14 @@ import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.scene.paint.Color;
+import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 
@@ -129,11 +131,12 @@ public class GUINode extends Group
     private void handleOnMouseClicked(MouseEvent event) {
         event.consume();
 
+        this.fireEvent(new SelectEvent(MouseButton.PRIMARY, this));
+
         if(event.getClickCount()>1){
             handleDoubleClick(event);
         }
 
-        /*
         if(!(this.vertex instanceof LayoutRootVertex)) {
             if(event.getButton().equals(MouseButton.PRIMARY)) {
                 switch (event.getClickCount()) {
@@ -145,23 +148,10 @@ public class GUINode extends Group
                         currentFrame.bytecodeArea.setDescription();
                         currentFrame.setRightText();
                         break;
-                    case 2:
-                        // Collapsing the root vertex leaves us with a blank screen.
-                        if (!(this.getVertex() instanceof LayoutRootVertex)) {
-                            if (this.getVertex().isExpanded()) {
-                                collapse();
-                            } else {
-                                expand();
-                            }
-                        }
-
-                        event.consume();
-                        break;
                     default: break;
                 }
             }
         }
-        */
     }
 
     private void handleDoubleClick(MouseEvent event){

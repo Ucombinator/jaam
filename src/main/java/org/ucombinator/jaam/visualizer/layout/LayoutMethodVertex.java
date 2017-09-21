@@ -25,7 +25,7 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
     }
 
     public String getRightPanelContent() {
-        return "Method vertex: " + this.getMethodName() + "\nLoop height: " + this.getLoopHeight() + "\n";
+        return "Method vertex: " + this.getId();
     }
 
     public String getShortDescription() {
