@@ -1,9 +1,6 @@
 package org.ucombinator.jaam.visualizer.gui;
 
 import javafx.animation.ParallelTransition;
-import javafx.animation.Transition;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -16,8 +13,6 @@ import javafx.scene.text.Text;
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
-
-import java.util.HashMap;
 
 public class GUINode extends Group
 {
