@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.controllers;
 
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -23,7 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
-public class VizPanelController {
+public class VizPanelController implements EventHandler<SelectEvent> {
     @FXML public final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML public final Spinner<Double> zoomSpinner = null; // Initialized by Controllers.loadFXML()
 
@@ -67,6 +68,10 @@ public class VizPanelController {
         this.vizPanel.setVisible(true);
         this.vizPanel.getChildren().add(graphContentGroup);
         //this.requestFocus();
+
+        //Custom event handlers
+        graphContentGroup.addEventFilter(SelectEvent.VERTEX_SELECTED, this);
+
     }
 
     @FXML private void showEdgesAction(ActionEvent event) {
@@ -138,6 +143,20 @@ public class VizPanelController {
         rootGraphics.setTranslateLocation(this.desiredRootTranslateX, this.desiredRootTranslateY);
     }
     */
+    @Override
+    public void handle(SelectEvent event) {
+        AbstractLayoutVertex vertex = event.getVertex();
+
+        System.out.println("Now Recieved event from vertex " + vertex.toString());
+
+        MainTabController currentFrame = Main.getSelectedMainTabController();
+        currentFrame.vizPanelController.resetHighlighted(vertex);
+        currentFrame.bytecodeArea.setDescription();
+        currentFrame.setRightText();
+
+        event.consume();
+    }
+
 
     public HashSet<AbstractLayoutVertex> getHighlighted() {
         return this.highlighted;

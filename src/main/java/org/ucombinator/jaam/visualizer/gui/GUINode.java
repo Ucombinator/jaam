@@ -131,26 +131,11 @@ public class GUINode extends Group
     private void handleOnMouseClicked(MouseEvent event) {
         event.consume();
 
+        System.out.println("Fired the event!");
         this.fireEvent(new SelectEvent(MouseButton.PRIMARY, this));
 
         if(event.getClickCount()>1){
             handleDoubleClick(event);
-        }
-
-        if(!(this.vertex instanceof LayoutRootVertex)) {
-            if(event.getButton().equals(MouseButton.PRIMARY)) {
-                switch (event.getClickCount()) {
-                    case 1:
-                        event.consume();
-
-                        MainTabController currentFrame = Main.getSelectedMainTabController();
-                        currentFrame.vizPanelController.resetHighlighted(this.getVertex());
-                        currentFrame.bytecodeArea.setDescription();
-                        currentFrame.setRightText();
-                        break;
-                    default: break;
-                }
-            }
         }
     }
 

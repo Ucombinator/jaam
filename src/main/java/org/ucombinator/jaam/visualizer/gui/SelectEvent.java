@@ -27,6 +27,11 @@ public class SelectEvent extends javafx.event.Event{
         vertex = ((GUINode)target).getVertex();
     }
 
+    public AbstractLayoutVertex getVertex()
+    {
+        return vertex;
+    }
+
     @Override
     public SelectEvent copyFor(Object newSource, EventTarget newTarget) {
         return (SelectEvent) super.copyFor(newSource, newTarget);
