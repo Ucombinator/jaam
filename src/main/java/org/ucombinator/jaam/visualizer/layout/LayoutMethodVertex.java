@@ -8,14 +8,12 @@ import java.util.LinkedHashSet;
 public class LayoutMethodVertex extends AbstractLayoutVertex {
 
     String methodName;
-    private Color methodColor = Color.DEEPSKYBLUE;
-    private Color loopColor   = Color.ORANGE;
+    private Color defaultColor = Color.DEEPSKYBLUE;
 
-    
     public LayoutMethodVertex(int id, String label){
     	super(id, label);
     	this.methodName = label;
-    	this.color = methodColor;
+    	this.color = defaultColor;
     }
 
     public String getMethodName() {
@@ -50,18 +48,6 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
     }
 
     public void setDefaultColor(){
-
-        if(this.getInnerGraph().getRoot().getLabel().startsWith("Method"))
-        {
-            this.setColor(methodColor);
-        }
-        else if(this.getInnerGraph().getRoot().getLabel().startsWith("Loop"))
-        {
-            this.setColor(loopColor);
-        }
-        else
-        {
-            this.setColor(Color.DARKRED);
-        }
+        this.color = defaultColor;
     }
 }

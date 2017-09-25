@@ -12,20 +12,12 @@ public class LayoutLoopVertex extends AbstractLayoutVertex {
     private LayoutMethodVertex methodVertex;
     private int statementIndex;
     
-    private Color loopColor = Color.LIGHTYELLOW;
-
+    private Color defaultColor = Color.LIGHTYELLOW;
 
     public LayoutLoopVertex(int id, String label, int statementIndex){
     	super(id, label);
     	this.statementIndex = statementIndex;
-    	this.color = loopColor;
-    }
-
-	public LayoutLoopVertex(LayoutMethodVertex methodVertex, int startIndex, boolean drawEdges) {
-        super(methodVertex.getMethodName() + ", instruction #" + startIndex, VertexType.LOOP, drawEdges);
-        this.methodVertex = methodVertex;
-        this.startJimpleIndex = startIndex;
-        this.color = loopColor;
+    	this.color = defaultColor;
     }
 
     public String getMethodName() {
@@ -59,7 +51,7 @@ public class LayoutLoopVertex extends AbstractLayoutVertex {
 
 
     public void setDefaultColor(){
-        this.setColor(loopColor);
+        this.setColor(defaultColor);
     }
     
     public int getStatementIndex() {
