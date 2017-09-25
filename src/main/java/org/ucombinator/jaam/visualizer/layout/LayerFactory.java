@@ -263,116 +263,116 @@ public class LayerFactory
     //}
 
     
-    static void createChainVertices(AbstractLayoutVertex parent, int k){
-        Iterator<AbstractLayoutVertex> it = parent.getInnerGraph().getVertices().iterator();
-        while(it.hasNext()) {
-            AbstractLayoutVertex absVertex = it.next();
-            absVertex.setVertexStatus(AbstractVertex.VertexStatus.WHITE);
-            createChainVertices(absVertex, k);
-        }
-        
-        if(createChains) {
-            createChainVerticesFromVertex(parent.getInnerGraph(), parent.getInnerGraph().getRoot(), k);
-        }
-    }
+    //static void createChainVertices(AbstractLayoutVertex parent, int k){
+    //    Iterator<AbstractLayoutVertex> it = parent.getInnerGraph().getVertices().iterator();
+    //    while(it.hasNext()) {
+    //        AbstractLayoutVertex absVertex = it.next();
+    //        absVertex.setVertexStatus(AbstractVertex.VertexStatus.WHITE);
+    //        createChainVertices(absVertex, k);
+    //    }
+    //
+    //    if(createChains) {
+    //        createChainVerticesFromVertex(parent.getInnerGraph(), parent.getInnerGraph().getRoot(), k);
+    //    }
+    //}
 
-    private static void createChainVerticesFromVertex(HierarchicalGraph graph, AbstractLayoutVertex root, int k) {
-        if (root == null) {
-            return;
-        }
+    //private static void createChainVerticesFromVertex(HierarchicalGraph graph, AbstractLayoutVertex root, int k) {
+    //    if (root == null) {
+    //        return;
+    //    }
 
-        //System.out.println("collapseFromVertex");
-        int i = 0;
-        AbstractLayoutVertex currentVertex = root;
-        ArrayList<AbstractLayoutVertex> chain = new ArrayList<AbstractLayoutVertex>();
-        while (true) {
-            currentVertex.setVertexStatus(AbstractVertex.VertexStatus.GRAY);
-            Iterator<AbstractLayoutVertex> itChildren = graph.getOutNeighbors(currentVertex).iterator();
-            ArrayList<AbstractLayoutVertex> grayChildren = new ArrayList<AbstractLayoutVertex>();
-            while (itChildren.hasNext()) {
-                AbstractLayoutVertex child = itChildren.next();
-                if (child.getVertexStatus() == AbstractVertex.VertexStatus.WHITE) {
-                    child.setVertexStatus(AbstractVertex.VertexStatus.GRAY);
-                    grayChildren.add(child);
-                }
-            }
-
-
-            ArrayList<AbstractLayoutVertex> copyOfIncoming = new ArrayList<>(graph.getInNeighbors(currentVertex));
-            copyOfIncoming.removeAll(grayChildren);
-
-            ArrayList<AbstractLayoutVertex> copyOfOutgoing = new ArrayList<>(graph.getOutNeighbors(currentVertex));
-            copyOfOutgoing.removeAll(copyOfIncoming);
-
-            if (grayChildren.size() == 1 && copyOfIncoming.size() <= 1 && copyOfOutgoing.size() == 1) {
-                AbstractLayoutVertex child = grayChildren.get(0);
-                chain.add(currentVertex);
-                currentVertex = child;
-            } else {
-                chain.add(currentVertex);
-
-                if (i >= k) {
-                    AbstractLayoutVertex first = chain.get(0);
-                    AbstractLayoutVertex last = chain.get(chain.size() - 1);
-
-                    //Create the new vertex
-                    LayoutChainVertex chainVertex = new LayoutChainVertex(true);
-                    chainVertex.setExpanded(chainsExpanded);
-
-                    first.getSelfGraph().addVertex(chainVertex);
-                    first.getSelfGraph().addEdge(new LayoutEdge(first, chainVertex, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
-                    if (first.getSelfGraph().hasEdge(chain.get(1), first)) {
-                        chainVertex.getSelfGraph().addEdge(new LayoutEdge(chainVertex, first, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
-                    }
-                    first.getSelfGraph().addEdge(new LayoutEdge(chainVertex, last, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
-                    if (last.getSelfGraph().hasEdge(last, chain.get(chain.size() - 2))) {
-                        chainVertex.getSelfGraph().addEdge(new LayoutEdge(last, chainVertex, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
-                    }
+    //    //System.out.println("collapseFromVertex");
+    //    int i = 0;
+    //    AbstractLayoutVertex currentVertex = root;
+    //    ArrayList<AbstractLayoutVertex> chain = new ArrayList<AbstractLayoutVertex>();
+    //    while (true) {
+    //        currentVertex.setVertexStatus(AbstractVertex.VertexStatus.GRAY);
+    //        Iterator<AbstractLayoutVertex> itChildren = graph.getOutNeighbors(currentVertex).iterator();
+    //        ArrayList<AbstractLayoutVertex> grayChildren = new ArrayList<AbstractLayoutVertex>();
+    //        while (itChildren.hasNext()) {
+    //            AbstractLayoutVertex child = itChildren.next();
+    //            if (child.getVertexStatus() == AbstractVertex.VertexStatus.WHITE) {
+    //                child.setVertexStatus(AbstractVertex.VertexStatus.GRAY);
+    //                grayChildren.add(child);
+    //            }
+    //        }
 
 
-                    chain.remove(chain.size() - 1);
-                    Iterator<AbstractLayoutVertex> chainIt = chain.iterator();
-                    chainIt.next(); // to start from the second node of the chain
-                    AbstractLayoutVertex previous = chainIt.next();
-                    chainVertex.getInnerGraph().addVertex(previous);
-                    while (chainIt.hasNext()) {
-                        AbstractLayoutVertex next = chainIt.next();
-                        chainVertex.getInnerGraph().addVertex(next);
-                        chainVertex.getInnerGraph().addEdge(new LayoutEdge(previous, next, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
-                        if (first.getSelfGraph().hasEdge(next, previous)) {
-                            chainVertex.getInnerGraph().addEdge(new LayoutEdge(next, previous, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
-                        }
-                        previous = next;
-                    }
+    //        ArrayList<AbstractLayoutVertex> copyOfIncoming = new ArrayList<>(graph.getInNeighbors(currentVertex));
+    //        copyOfIncoming.removeAll(grayChildren);
+
+    //        ArrayList<AbstractLayoutVertex> copyOfOutgoing = new ArrayList<>(graph.getOutNeighbors(currentVertex));
+    //        copyOfOutgoing.removeAll(copyOfIncoming);
+
+    //        if (grayChildren.size() == 1 && copyOfIncoming.size() <= 1 && copyOfOutgoing.size() == 1) {
+    //            AbstractLayoutVertex child = grayChildren.get(0);
+    //            chain.add(currentVertex);
+    //            currentVertex = child;
+    //        } else {
+    //            chain.add(currentVertex);
+
+    //            if (i >= k) {
+    //                AbstractLayoutVertex first = chain.get(0);
+    //                AbstractLayoutVertex last = chain.get(chain.size() - 1);
+
+    //                //Create the new vertex
+    //                LayoutChainVertex chainVertex = new LayoutChainVertex(true);
+    //                chainVertex.setExpanded(chainsExpanded);
+
+    //                first.getSelfGraph().addVertex(chainVertex);
+    //                first.getSelfGraph().addEdge(new LayoutEdge(first, chainVertex, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+    //                if (first.getSelfGraph().hasEdge(chain.get(1), first)) {
+    //                    chainVertex.getSelfGraph().addEdge(new LayoutEdge(chainVertex, first, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+    //                }
+    //                first.getSelfGraph().addEdge(new LayoutEdge(chainVertex, last, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+    //                if (last.getSelfGraph().hasEdge(last, chain.get(chain.size() - 2))) {
+    //                    chainVertex.getSelfGraph().addEdge(new LayoutEdge(last, chainVertex, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+    //                }
 
 
-                    previous = first;
-                    chainIt = chain.iterator();
-                    chainIt.next();
-                    while (chainIt.hasNext()) {
-                        AbstractLayoutVertex next = chainIt.next();
-                        first.getSelfGraph().deleteEdge(previous, next);
-                        first.getSelfGraph().deleteEdge(next, previous);
-                        first.getSelfGraph().deleteVertex(next);
-                        previous = next;
-                    }
-                    last.getSelfGraph().deleteEdge(chain.get(chain.size() - 1), last);
-                    last.getSelfGraph().deleteEdge(last, chain.get(chain.size() - 1));
+    //                chain.remove(chain.size() - 1);
+    //                Iterator<AbstractLayoutVertex> chainIt = chain.iterator();
+    //                chainIt.next(); // to start from the second node of the chain
+    //                AbstractLayoutVertex previous = chainIt.next();
+    //                chainVertex.getInnerGraph().addVertex(previous);
+    //                while (chainIt.hasNext()) {
+    //                    AbstractLayoutVertex next = chainIt.next();
+    //                    chainVertex.getInnerGraph().addVertex(next);
+    //                    chainVertex.getInnerGraph().addEdge(new LayoutEdge(previous, next, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+    //                    if (first.getSelfGraph().hasEdge(next, previous)) {
+    //                        chainVertex.getInnerGraph().addEdge(new LayoutEdge(next, previous, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+    //                    }
+    //                    previous = next;
+    //                }
 
-                    chainVertex.calcMaxLoopHeight();
+
+    //                previous = first;
+    //                chainIt = chain.iterator();
+    //                chainIt.next();
+    //                while (chainIt.hasNext()) {
+    //                    AbstractLayoutVertex next = chainIt.next();
+    //                    first.getSelfGraph().deleteEdge(previous, next);
+    //                    first.getSelfGraph().deleteEdge(next, previous);
+    //                    first.getSelfGraph().deleteVertex(next);
+    //                    previous = next;
+    //                }
+    //                last.getSelfGraph().deleteEdge(chain.get(chain.size() - 1), last);
+    //                last.getSelfGraph().deleteEdge(last, chain.get(chain.size() - 1));
+
+                    //chainVertex.calcMaxLoopHeight();
                     //System.out.println("Loop height for chain: " + chainVertex.getLoopHeight());
-                }
-                /********************************************************************************/
-                itChildren = grayChildren.iterator();
-                while (itChildren.hasNext()) {
-                    createChainVerticesFromVertex(graph, itChildren.next(), k);
-                }
-                break;
-            }
+    //            }
+    //            /********************************************************************************/
+    //            itChildren = grayChildren.iterator();
+    //            while (itChildren.hasNext()) {
+    //                createChainVerticesFromVertex(graph, itChildren.next(), k);
+    //            }
+    //            break;
+    //        }
 
-            //System.out.println("i:" + i);
-            i++;
-        }
-    }
+    //        //System.out.println("i:" + i);
+    //        i++;
+    //    }
+    //}
 
 }

@@ -30,7 +30,8 @@ public class LayoutInstructionVertex extends AbstractLayoutVertex {
 
     public String getRightPanelContent() {
         return "Method: " + this.instruction.getMethodName() + "\nInstruction: " + this.instruction.getJimpleIndex()
-                + "\n" + this.instruction.getText() + "\nLoop height: " + this.getLoopHeight() + "\n";
+                + "\n" + this.instruction.getText();
+                //+ "\nLoop height: " + this.getLoopHeight() + "\n";
     }
 
     public String getShortDescription() {

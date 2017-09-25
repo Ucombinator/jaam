@@ -37,7 +37,7 @@ public class GUINode extends Group
         this.vertex.setGraphics(this);
 
         this.rect = new Rectangle();
-        this.rectLabel = new Text(v.getId() + ", " + v.getLoopHeight());
+        this.rectLabel = new Text(v.getId() + "");
         this.rectLabel.setVisible(v.isLabelVisible());
 
         this.highlightingRect = new Rectangle();

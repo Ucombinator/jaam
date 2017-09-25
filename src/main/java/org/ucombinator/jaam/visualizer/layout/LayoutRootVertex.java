@@ -8,9 +8,6 @@ import java.util.LinkedHashSet;
 
 public class LayoutRootVertex extends AbstractLayoutVertex {
 
-    private float[] hues;
-    private int maxLoopHeight;
-
     public LayoutRootVertex() {
         super("root", VertexType.ROOT, false);
         this.color = Color.WHITE;
@@ -49,10 +46,4 @@ public class LayoutRootVertex extends AbstractLayoutVertex {
         return methodVertices;
     }
 
-    public void computeHues()
-    {
-        this.maxLoopHeight = this.calcMaxLoopHeight();
-        System.out.println("Max loop height: " + maxLoopHeight);
-        this.setColor(maxLoopHeight + 1);
-    }
 }

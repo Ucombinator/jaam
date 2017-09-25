@@ -8,7 +8,6 @@ import javafx.util.Duration;
 import javafx.animation.FadeTransition;
 import javafx.scene.control.TreeItem;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -47,16 +46,46 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
 
     private GUINodeStatus nodeStatus = new GUINodeStatus();
 
-    // Used for shading vertices based on the number of nested loops they contain
-    private int loopHeight;
-    private AbstractLayoutVertex loopHeader;
-    private ArrayList<AbstractLayoutVertex> loopChildren;
-    private int dfsPathPos;
-
     public enum VertexType {
         INSTRUCTION, LOOP, METHOD, CHAIN, ROOT, SHRINK, SCC
     }
     private VertexType vertexType;
+
+
+    static int colorIndex = 0;
+
+    public AbstractLayoutVertex(String label, VertexType type, boolean drawEdges) {
+        super(label);
+        this.graphics = null;
+        this.isExpanded = true;
+        this.isLabelVisible = false; // If you change this, also change the initialization for MainTabController
+        this.isEdgeVisible = true;
+        this.drawEdges = drawEdges;
+
+        this.innerGraph = new HierarchicalGraph();
+        this.vertexType = type;
+
+        if (this.vertexType == VertexType.METHOD)
+                this.setColor(colors[colorIndex++ % colors.length]);
+
+        this.setVisible(false);
+    }
+    
+    
+    public AbstractLayoutVertex(int id, String label){
+    	super(id, label);
+    	this.graphics = null;
+        this.isExpanded = true;
+        this.isLabelVisible = false; // If you change this, also change the initialization for MainTabController
+        this.isEdgeVisible = true;
+        this.drawEdges = true;
+
+        this.innerGraph = new HierarchicalGraph();
+        
+        this.setColor(colors[colorIndex++ % colors.length]);
+
+        this.setVisible(false);
+    }
 
     public void setWidth(double width) {
         this.nodeStatus.width = width;
@@ -103,56 +132,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
         this.graphics = graphics;
     }
 
-    public void setDFSPosition(int pos) {
-        this.dfsPathPos = pos;
-    }
-
-    public int getDFSPosition() {
-        return this.dfsPathPos;
-    }
-
-    public int getLoopHeight() {
-        return this.loopHeight;
-    }
-
-    public void setLoopHeight(int loopHeight) {
-        this.loopHeight = loopHeight;
-    }
-
-    public void setLoopHeader(AbstractLayoutVertex v)
-    {
-        this.loopHeader = v;
-    }
-
-    public AbstractLayoutVertex getLoopHeader()
-    {
-        return this.loopHeader;
-    }
-
-    public void addLoopChild(AbstractLayoutVertex v)
-    {
-        if(this != v)
-            loopChildren.add(v);
-        else
-            System.out.println("Error! Cannot add self as header in loop decomposition.");
-    }
-
-    public ArrayList<AbstractLayoutVertex> getLoopChildren()
-    {
-        return loopChildren;
-    }
-
-    public void setColor(int maxLoopHeight) {
-        if(this instanceof LayoutInstructionVertex) {
-            double hue = (0.4 - 0.4 * (((double) this.loopHeight) / maxLoopHeight)) * 360;
-            this.color = Color.hsb(hue, 0.9, 0.9);
-        }
-        else {
-            for (AbstractLayoutVertex v : this.getInnerGraph().getVertices())
-                v.setColor(maxLoopHeight);
-        }
-    }
-
     public int compareTo(AbstractLayoutVertex v) {
         return ((Integer)(this.getMinInstructionLine())).compareTo(v.getMinInstructionLine());
     }
@@ -167,64 +146,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
 
     // This is needed so that we can show the code for the methods that correspond to selected vertices
     public abstract HashSet<LayoutMethodVertex> getMethodVertices();
-
-    static int colorIndex = 0;
-
-    public AbstractLayoutVertex(String label, VertexType type, boolean drawEdges) {
-        super(label);
-        this.graphics = null;
-        this.isExpanded = true;
-        this.isLabelVisible = false; // If you change this, also change the initialization for MainTabController
-        this.isEdgeVisible = true;
-        this.drawEdges = drawEdges;
-
-        this.innerGraph = new HierarchicalGraph();
-        this.vertexType = type;
-
-        this.loopChildren = new ArrayList<AbstractLayoutVertex>();
-        this.loopHeight = -1;
-        this.dfsPathPos = -1;
-
-        if (this.vertexType == VertexType.METHOD)
-                this.setColor(colors[colorIndex++ % colors.length]);
-
-/*        if (this.vertexType == VertexType.METHOD){
-            System.out.println("**************************METHOD*********************+");
-            if(!this.getInnerGraph().getVertices().isEmpty()) {
-                AbstractLayoutVertex v = this.getInnerGraph().getVertices().values().iterator().next();
-                if (v instanceof LayoutLoopVertex) {
-                    this.setColor(loopColor);
-                } else if (v instanceof LayoutMethodVertex) {
-                    this.setColor(methodColor);
-                }
-            }
-        }
-*/
-
-        this.setVisible(false);
-    }
-    
-    
-    public AbstractLayoutVertex(int id, String label){
-    	super(id, label);
-    	this.graphics = null;
-        this.isExpanded = true;
-        this.isLabelVisible = false; // If you change this, also change the initialization for MainTabController
-        this.isEdgeVisible = true;
-        this.drawEdges = true;
-
-        this.innerGraph = new HierarchicalGraph();
-        
-
-        this.loopChildren = new ArrayList<AbstractLayoutVertex>();
-        this.loopHeight = -1;
-        this.dfsPathPos = -1;
-
-        
-        this.setColor(colors[colorIndex++ % colors.length]);
-
-        this.setVisible(false);
-    }
 
     public void setColor(Color c) {
         this.color = c;
@@ -242,15 +163,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
         }
 
         return minIndex;
-    }
-
-    public int calcMaxLoopHeight() {
-        int maxLoopHeight = 0;
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices())
-            maxLoopHeight = Math.max(maxLoopHeight, v.getLoopHeight());
-
-        this.setLoopHeight(maxLoopHeight);
-        return maxLoopHeight;
     }
 
     public boolean getDrawEdges() {
@@ -519,8 +431,5 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
             result += v.getTotalVertexCount();
         }
         return result;
-    }
-
-    public void setDefaultColor(){
     }
 }
