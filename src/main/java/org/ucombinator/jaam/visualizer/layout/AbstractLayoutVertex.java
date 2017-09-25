@@ -19,71 +19,55 @@ import org.ucombinator.jaam.visualizer.gui.GUINodeStatus;
 
 public abstract class AbstractLayoutVertex extends AbstractVertex implements Comparable<AbstractLayoutVertex>, GraphEntity
 {
-    public static final Color highlightColor = Color.ORANGE;
-    protected Color color = Color.RED;
+    // Because Layout vertices are also Hierachical Graphs they have two associated graphs
+    private HierarchicalGraph selfGraph = null; // The graph to which this vertex belongs
+    private HierarchicalGraph innerGraph = new HierarchicalGraph(); // The graph contained inside
 
-    private Color[] colors = {
-        Color.LIGHTCORAL,
-        Color.LIGHTBLUE,
-        Color.LIGHTCYAN,
-        Color.LIGHTSEAGREEN,
-        Color.LIGHTSALMON,
-        Color.LIGHTSKYBLUE,
-        Color.LIGHTGOLDENRODYELLOW,
-        Color.LIGHTGREY};
-
-    public static final double DEFAULT_WIDTH = 10.0;
-    public static final double DEFAULT_HEIGHT = 10.0;
-
-    private HierarchicalGraph selfGraph = null;
-    private HierarchicalGraph innerGraph = null;
-
-    private GUINode graphics;
-    private boolean isExpanded;
-    private boolean isLabelVisible;
-    private boolean isEdgeVisible;
-    private boolean drawEdges;
-
-    private GUINodeStatus nodeStatus = new GUINodeStatus();
-
+    // Types of layout vertices
     public enum VertexType {
         INSTRUCTION, LOOP, METHOD, CHAIN, ROOT, SHRINK, SCC
     }
     private VertexType vertexType;
 
+    // Graphic related fields
+    private GUINode graphics;
+    private GUINodeStatus nodeStatus = new GUINodeStatus();
 
+    public static final double DEFAULT_WIDTH = 10.0;
+    public static final double DEFAULT_HEIGHT = 10.0;
+
+    private Color[] colors = {
+            Color.LIGHTCORAL,
+            Color.LIGHTBLUE,
+            Color.LIGHTCYAN,
+            Color.LIGHTSEAGREEN,
+            Color.LIGHTSALMON,
+            Color.LIGHTSKYBLUE,
+            Color.LIGHTGOLDENRODYELLOW,
+            Color.LIGHTGREY};
     static int colorIndex = 0;
+    public static final Color highlightColor = Color.ORANGE;
+    protected Color color = Color.RED;
 
+    private boolean isExpanded = true;
+    private boolean isLabelVisible = false;
+    private boolean isEdgeVisible = true;
+    private boolean drawEdges;
+
+    // TODO we should probably replace this with only a id version
     public AbstractLayoutVertex(String label, VertexType type, boolean drawEdges) {
         super(label);
-        this.graphics = null;
-        this.isExpanded = true;
-        this.isLabelVisible = false; // If you change this, also change the initialization for MainTabController
-        this.isEdgeVisible = true;
         this.drawEdges = drawEdges;
 
-        this.innerGraph = new HierarchicalGraph();
         this.vertexType = type;
-
-        if (this.vertexType == VertexType.METHOD)
-                this.setColor(colors[colorIndex++ % colors.length]);
-
         this.setVisible(false);
     }
-    
-    
+
     public AbstractLayoutVertex(int id, String label){
     	super(id, label);
-    	this.graphics = null;
-        this.isExpanded = true;
-        this.isLabelVisible = false; // If you change this, also change the initialization for MainTabController
-        this.isEdgeVisible = true;
         this.drawEdges = true;
 
-        this.innerGraph = new HierarchicalGraph();
-        
         this.setColor(colors[colorIndex++ % colors.length]);
-
         this.setVisible(false);
     }
 
