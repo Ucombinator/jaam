@@ -7,6 +7,8 @@ import javafx.scene.layout.BorderPane;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.layout.LayoutLoopVertex;
+import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,6 +53,21 @@ public class MainTabController {
         }
 
         this.descriptionArea.setText(text.toString());
+    }
+
+    public void setRightText(LayoutLoopVertex v)
+    {
+        this.descriptionArea.setText("I am loop vertex here me roar!");
+    }
+
+    public void setRightText(LayoutMethodVertex v)
+    {
+        this.descriptionArea.setText("I am a method vertex. See me soar!");
+    }
+
+    public void setRightText(String text)
+    {
+        this.descriptionArea.setText(text);
     }
 
     // Clean up info from previous searches

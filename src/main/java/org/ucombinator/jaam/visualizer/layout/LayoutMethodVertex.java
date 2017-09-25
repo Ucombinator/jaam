@@ -18,6 +18,7 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
     public LayoutMethodVertex(int id, String label){
     	super(id, label);
     	this.methodName = label;
+    	this.color = methodColor;
     }
 
     public String getMethodName() {

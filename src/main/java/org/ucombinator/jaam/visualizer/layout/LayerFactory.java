@@ -54,13 +54,21 @@ public class LayerFactory
                 int id = scc.get(0);
                 AbstractVertex v = graph.containsInputVertex(id);
 
-                LayoutMethodVertex newVertex = new LayoutMethodVertex(v.getId(), v.getLabel());
+                AbstractLayoutVertex newVertex;
+
+                if(v instanceof LayoutLoopVertex)
+                {
+                    newVertex = new LayoutLoopVertex(v.getId(), v.getLabel(), 0);
+                }
+                else // Defaulting to a method vertex
+                {
+                    newVertex = new LayoutMethodVertex(v.getId(), v.getLabel());
+                }
                 sccGraph.addVertex(newVertex);
 
                 // Add to hash tables for next pass
                 inputToInner.put(v, newVertex);
                 innerToSCC.put(newVertex, newVertex);
-
             }
         }
 

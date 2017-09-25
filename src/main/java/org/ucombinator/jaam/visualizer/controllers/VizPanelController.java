@@ -143,6 +143,9 @@ public class VizPanelController implements EventHandler<SelectEvent> {
         rootGraphics.setTranslateLocation(this.desiredRootTranslateX, this.desiredRootTranslateY);
     }
     */
+
+
+    // Handles select events
     @Override
     public void handle(SelectEvent event) {
         AbstractLayoutVertex vertex = event.getVertex();
@@ -150,9 +153,19 @@ public class VizPanelController implements EventHandler<SelectEvent> {
         System.out.println("Now Recieved event from vertex " + vertex.toString());
 
         MainTabController currentFrame = Main.getSelectedMainTabController();
-        currentFrame.vizPanelController.resetHighlighted(vertex);
-        currentFrame.bytecodeArea.setDescription();
-        currentFrame.setRightText();
+        resetHighlighted(vertex);
+
+        if(vertex instanceof  LayoutLoopVertex) {
+            currentFrame.setRightText((LayoutLoopVertex)vertex);
+        }
+        else if(vertex instanceof LayoutMethodVertex)
+        {
+            currentFrame.setRightText((LayoutMethodVertex)vertex);
+        }
+        else {
+            //currentFrame.bytecodeArea.setDescription();
+            currentFrame.setRightText(vertex.getLabel());
+        }
 
         event.consume();
     }
