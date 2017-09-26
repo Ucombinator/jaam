@@ -8,9 +8,11 @@ import java.util.LinkedHashSet;
 
 public class LayoutRootVertex extends AbstractLayoutVertex {
 
+    Color defaultColor = Color.WHITE;
+
     public LayoutRootVertex() {
         super("root", VertexType.ROOT, false);
-        this.color = Color.WHITE;
+        this.color = defaultColor;
     }
 
     public String getRightPanelContent() {

@@ -13,7 +13,7 @@ public class LayoutSccVertex extends AbstractLayoutVertex {
 
     public LayoutSccVertex(int id, String label)
     {
-        super(id, label);
+        super(id, label, VertexType.SCC);
         this.color = defaultColor;
     }
 

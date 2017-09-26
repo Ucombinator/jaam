@@ -11,7 +11,7 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
     private Color defaultColor = Color.DEEPSKYBLUE;
 
     public LayoutMethodVertex(int id, String label){
-    	super(id, label);
+    	super(id, label, VertexType.METHOD);
     	this.methodName = label;
     	this.color = defaultColor;
     }

@@ -15,7 +15,7 @@ public class LayoutLoopVertex extends AbstractLayoutVertex {
     private Color defaultColor = Color.LIGHTYELLOW;
 
     public LayoutLoopVertex(int id, String label, int statementIndex){
-    	super(id, label);
+    	super(id, label, VertexType.LOOP);
     	this.statementIndex = statementIndex;
     	this.color = defaultColor;
     }

@@ -63,12 +63,13 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
         this.setVisible(false);
     }
 
-    public AbstractLayoutVertex(int id, String label){
+    public AbstractLayoutVertex(int id, String label, VertexType type){
     	super(id, label);
         this.drawEdges = true;
 
-        this.setColor(colors[colorIndex++ % colors.length]);
+        this.vertexType = type;
         this.setVisible(false);
+        this.setColor(colors[colorIndex++ % colors.length]);
     }
 
     public void setWidth(double width) {

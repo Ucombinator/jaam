@@ -148,7 +148,11 @@ public class VizPanelController implements EventHandler<SelectEvent> {
     // Handles select events
     @Override
     public void handle(SelectEvent event) {
+        event.consume();
         AbstractLayoutVertex vertex = event.getVertex();
+
+        if(vertex.getType() == AbstractLayoutVertex.VertexType.ROOT)
+            return;
 
         System.out.println("Now Recieved event from vertex " + vertex.toString());
 
@@ -167,7 +171,6 @@ public class VizPanelController implements EventHandler<SelectEvent> {
             currentFrame.setRightText("Text");
         }
 
-        event.consume();
     }
 
 
