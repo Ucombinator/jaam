@@ -7,13 +7,23 @@ import java.util.LinkedHashSet;
 
 public class LayoutMethodVertex extends AbstractLayoutVertex {
 
-    String methodName;
     private Color defaultColor = Color.DEEPSKYBLUE;
 
-    public LayoutMethodVertex(int id, String label){
+    String label;
+    String className;
+    String methodName;
+
+    public LayoutMethodVertex(int id, String label, String className, String methodName){
     	super(id, label, VertexType.METHOD);
-    	this.methodName = label;
     	this.color = defaultColor;
+
+    	this.label      = label;
+    	this.className  = className;
+    	this.methodName = methodName;
+    }
+
+    public String getClassName() {
+        return className;
     }
 
     public String getMethodName() {

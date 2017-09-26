@@ -6,6 +6,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.control.TabPane;
 import javafx.stage.FileChooser;
+import javafx.util.Pair;
 import org.ucombinator.jaam.serializer.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.LayoutLoopVertex;
@@ -77,13 +78,17 @@ public class MainPaneController {
         for (Packet packet : Serializer.readAll(file.getAbsolutePath())) {
             if (packet instanceof LoopLoopNode) {
                 LoopLoopNode node = (LoopLoopNode) packet;
+                CodeIdentifier identifier = new CodeIdentifier(node.method().getSignature());
                 graph.addVertex(new LayoutLoopVertex(node.id().id(),
                         node.method().getSignature(),
-                        node.statementIndex()));
+                        node.statementIndex(), identifier.className, identifier.methodName));
+
             } else if (packet instanceof LoopMethodNode) {
                 LoopMethodNode node = (LoopMethodNode) packet;
+                CodeIdentifier identifier = new CodeIdentifier(node.method().getSignature());
                 graph.addVertex(new LayoutMethodVertex(node.id().id(),
-                        node.method().getSignature()));
+                        node.method().getSignature(),
+                        identifier.methodName, identifier.className));
             } else if (packet instanceof LoopEdge) {
                 edges.add((LoopEdge) packet);
             }
@@ -106,4 +111,23 @@ public class MainPaneController {
 
         return graph;
     }
+
+    private static class CodeIdentifier
+    {
+        String signature;
+        String className;
+        String methodName;
+
+        CodeIdentifier(String signature)
+        {
+            this.signature = signature;
+            String[] fields = signature.split(" ");
+
+            className  = fields[0].substring(1, fields[0].indexOf(":"));
+            methodName = fields[2].substring(0, fields[2].indexOf("("));
+        }
+
+        public String toString(){ return className + ":" + methodName;}
+    }
+
 }

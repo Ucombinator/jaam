@@ -42,7 +42,8 @@ public class LayerFactory
                 for (Integer id : scc) {
                     AbstractVertex v = graph.containsInputVertex(id);
 
-                    LayoutMethodVertex innerVertex = new LayoutMethodVertex(v.getId(), v.getLabel());
+                    AbstractLayoutVertex innerVertex = upgradeVertex(v);
+
                     sccInner.addVertex(innerVertex);
 
                     // Add to hash tables for next pass
@@ -54,16 +55,8 @@ public class LayerFactory
                 int id = scc.get(0);
                 AbstractVertex v = graph.containsInputVertex(id);
 
-                AbstractLayoutVertex newVertex;
+                AbstractLayoutVertex newVertex = upgradeVertex(v);
 
-                if(v instanceof LayoutLoopVertex)
-                {
-                    newVertex = new LayoutLoopVertex(v.getId(), v.getLabel(), 0);
-                }
-                else // Defaulting to a method vertex
-                {
-                    newVertex = new LayoutMethodVertex(v.getId(), v.getLabel());
-                }
                 sccGraph.addVertex(newVertex);
 
                 // Add to hash tables for next pass
@@ -124,7 +117,7 @@ public class LayerFactory
 
         for(AbstractVertex v: graph.getVertices())
         {
-            LayoutMethodVertex layoutV = new LayoutMethodVertex(v.getId(), v.getLabel());
+            AbstractLayoutVertex layoutV = upgradeVertex(v);
             loopGraph.addVertex(layoutV);
 
             vertexToLayoutVertex.put(v, layoutV);
@@ -149,6 +142,31 @@ public class LayerFactory
         return root;
     }
 
+    // Takes an input vertex (a AbstractVertex which is actually a Loop or Method Vertex) and returns a new
+    // vertex of the correct type
+    private static AbstractLayoutVertex upgradeVertex(AbstractVertex v)
+    {
+        AbstractLayoutVertex newVertex;
+
+        if(v instanceof LayoutLoopVertex)
+        {
+            LayoutLoopVertex l = (LayoutLoopVertex)v;
+            newVertex = new LayoutLoopVertex(l.getId(), l.getLabel(), l.getStatementIndex(),
+                    l.getClassName(), l.getMethodName());
+            //newVertex = new LayoutLoopVertex(v.getId(), v.getLabel(), 0);
+        }
+        else if(v instanceof  LayoutMethodVertex)
+        {
+            LayoutMethodVertex l = (LayoutMethodVertex)v;
+            newVertex = new LayoutMethodVertex(l.getId(), l.getLabel(), l.getClassName(), l.getMethodName());
+        }
+        else
+        {
+            newVertex = null;
+        }
+
+        return newVertex;
+    }
 
     // As of 1 September 2017 this is commented out. This is the old layering code which considered the input as a
     // state graph (and thus had to do more work than necessary), it was simplified to getLoopLayout()
