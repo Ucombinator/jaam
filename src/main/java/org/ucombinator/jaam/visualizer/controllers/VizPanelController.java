@@ -164,7 +164,7 @@ public class VizPanelController implements EventHandler<SelectEvent> {
         }
         else {
             //currentFrame.bytecodeArea.setDescription();
-            currentFrame.setRightText(vertex.getLabel());
+            currentFrame.setRightText("Text");
         }
 
         event.consume();

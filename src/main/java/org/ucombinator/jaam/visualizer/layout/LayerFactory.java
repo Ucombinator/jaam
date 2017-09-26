@@ -33,7 +33,7 @@ public class LayerFactory
         {
             if(scc.size() > 1) {
                 int sccId = sccGraph.getVertices().size();
-                LayoutMethodVertex sccVertex = new LayoutMethodVertex(sccId, "SCC-" + sccId);
+                LayoutSccVertex sccVertex = new LayoutSccVertex(sccId, "SCC-" + sccId);
                 sccGraph.addVertex(sccVertex);
 
                 HierarchicalGraph sccInner = new HierarchicalGraph();
