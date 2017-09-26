@@ -88,7 +88,7 @@ public class MainPaneController {
                 CodeIdentifier identifier = new CodeIdentifier(node.method().getSignature());
                 graph.addVertex(new LayoutMethodVertex(node.id().id(),
                         node.method().getSignature(),
-                        identifier.methodName, identifier.className));
+                        identifier.className, identifier.methodName));
             } else if (packet instanceof LoopEdge) {
                 edges.add((LoopEdge) packet);
             }

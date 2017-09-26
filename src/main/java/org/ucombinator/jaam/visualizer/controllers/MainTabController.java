@@ -9,6 +9,7 @@ import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutLoopVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
+import org.ucombinator.jaam.visualizer.layout.LayoutSccVertex;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,12 +58,28 @@ public class MainTabController {
 
     public void setRightText(LayoutLoopVertex v)
     {
-        this.descriptionArea.setText("I am loop vertex here me roar!");
+        this.descriptionArea.setText("Loop:\n  Class: "
+                + v.getClassName().substring(v.getClassName().lastIndexOf(".")+1) + "\n  Method: "
+                + v.getMethodName()     + "\n  Index: " +
+                + v.getStatementIndex() + "\n  Signature: " + v.getLabel());
     }
+
 
     public void setRightText(LayoutMethodVertex v)
     {
-        this.descriptionArea.setText("I am a method vertex. See me soar!");
+        this.descriptionArea.setText("Method:\n  Class: "
+                + v.getClassName().substring(v.getClassName().lastIndexOf(".")+1) + "\n  Method: "
+                + v.getMethodName() + "\n  Signature: " + v.getLabel());
+    }
+
+    public void setRightText(LayoutSccVertex v)
+    {
+        StringBuilder text = new StringBuilder("SCC contains:\n  ");
+        for(AbstractLayoutVertex i : v.getInnerGraph().getVertices())
+        {
+            text.append(i.getLabel() + "\n  ");
+        }
+        this.descriptionArea.setText(text.toString());
     }
 
     public void setRightText(String text)

@@ -166,6 +166,10 @@ public class VizPanelController implements EventHandler<SelectEvent> {
         {
             currentFrame.setRightText((LayoutMethodVertex)vertex);
         }
+        else if(vertex instanceof LayoutSccVertex)
+        {
+            currentFrame.setRightText((LayoutSccVertex)vertex);
+        }
         else {
             //currentFrame.bytecodeArea.setDescription();
             currentFrame.setRightText("Text");
