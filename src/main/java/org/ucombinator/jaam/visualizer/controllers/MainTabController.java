@@ -74,10 +74,11 @@ public class MainTabController {
 
     public void setRightText(LayoutSccVertex v)
     {
-        StringBuilder text = new StringBuilder("SCC contains:\n  ");
+        StringBuilder text = new StringBuilder("SCC contains:\n");
+        int k = 0;
         for(AbstractLayoutVertex i : v.getInnerGraph().getVertices())
         {
-            text.append(i.getLabel() + "\n  ");
+            text.append(k++ + "  " + i.getLabel() + "\n");
         }
         this.descriptionArea.setText(text.toString());
     }
