@@ -8,8 +8,10 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Spinner;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -20,7 +22,6 @@ import org.ucombinator.jaam.visualizer.main.Main;
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
@@ -28,11 +29,12 @@ public class VizPanelController implements EventHandler<SelectEvent> {
     @FXML public final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML public final Spinner<Double> zoomSpinner = null; // Initialized by Controllers.loadFXML()
 
-    @FXML private final Pane vizPanel = null; // Initialized by Controllers.loadFXML()
     @FXML private final CheckBox showEdges = null; // Initialized by Controllers.loadFXML()
     @FXML private final CheckBox showLabels = null; // Initialized by Controllers.loadFXML()
     @FXML private final CheckBox methodsExpanded = null; // Initialized by Controllers.loadFXML()
     @FXML private final CheckBox chainsExpanded = null; // Initialized by Controllers.loadFXML()
+    @FXML private final ScrollPane scrollPane = null; // Initialized by Controllers.loadFXML()
+    @FXML private final Pane vizPanel = null; // Initialized by Controllers.loadFXML()
 
     // TODO: should this stuff be moved to a model class?
     private Group graphContentGroup;
@@ -72,6 +74,7 @@ public class VizPanelController implements EventHandler<SelectEvent> {
         //Custom event handlers
         graphContentGroup.addEventFilter(SelectEvent.VERTEX_SELECTED, this);
 
+        this.scrollPane.addEventFilter(ScrollEvent.SCROLL, this::scrollAction);
     }
 
     @FXML private void showEdgesAction(ActionEvent event) {
@@ -123,6 +126,18 @@ public class VizPanelController implements EventHandler<SelectEvent> {
             File newFile = new File(file.getAbsolutePath());
 
             ImageIO.write(SwingFXUtils.fromFXImage(image, null), extension, newFile);
+        }
+    }
+
+    private void scrollAction(ScrollEvent event) {
+        if (event.isControlDown()) {
+            // Zoom in or out
+            event.consume();
+            if (event.getDeltaY() > 0) {
+                zoomSpinner.increment();
+            } else if (event.getDeltaY() < 0) {
+                zoomSpinner.decrement();
+            }
         }
     }
 
