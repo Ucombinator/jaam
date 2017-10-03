@@ -8,18 +8,18 @@ import java.util.LinkedHashSet;
 
 public class LayoutLoopVertex extends AbstractLayoutVertex implements Cloneable {
 
-    private int startJimpleIndex;
+    private static final Color defaultColor = Color.LIGHTYELLOW;
 
+    private int startJimpleIndex;
     private String className;
     private String methodName;
     private int statementIndex;
 
-    private Color defaultColor = Color.LIGHTYELLOW;
-
     public LayoutLoopVertex(int id, String label, int statementIndex, String className, String methodName){
     	super(id, label, VertexType.LOOP);
+    	this.setDefaultColor();
+
     	this.statementIndex = statementIndex;
-    	this.color = defaultColor;
         this.className  = className;
         this.methodName = methodName;
     }

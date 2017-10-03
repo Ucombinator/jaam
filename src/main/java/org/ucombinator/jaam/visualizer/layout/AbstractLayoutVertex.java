@@ -36,18 +36,8 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
     public static final double DEFAULT_WIDTH = 10.0;
     public static final double DEFAULT_HEIGHT = 10.0;
 
-    private Color[] colors = {
-            Color.LIGHTCORAL,
-            Color.LIGHTBLUE,
-            Color.LIGHTCYAN,
-            Color.LIGHTSEAGREEN,
-            Color.LIGHTSALMON,
-            Color.LIGHTSKYBLUE,
-            Color.LIGHTGOLDENRODYELLOW,
-            Color.LIGHTGREY};
-    static int colorIndex = 0;
+    protected Color color;
     public static final Color highlightColor = Color.ORANGE;
-    protected Color color = Color.RED;
 
     private boolean isExpanded = true;
     private boolean isLabelVisible = false;
@@ -69,7 +59,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
 
         this.vertexType = type;
         this.setVisible(false);
-        this.setColor(colors[colorIndex++ % colors.length]);
     }
 
     public void setWidth(double width) {
@@ -254,14 +243,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
             ft.setFromValue(1f);
             ft.setToValue(0f);
         }
-//        AbstractLayoutVertex vertex = this;
-//        ft.setOnFinished(new EventHandler<ActionEvent>() {
-//            
-//            @Override
-//            public void handle(ActionEvent event) {
-//                //vertex.getGraphics().getHighlightingRect().setVisible(isHighlighted);
-//            }
-//        });
+
         ft.play();
     }
 

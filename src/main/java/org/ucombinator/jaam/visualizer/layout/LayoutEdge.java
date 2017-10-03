@@ -8,8 +8,10 @@ import org.ucombinator.jaam.visualizer.gui.GUINode;
 
 public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.layout.LayoutEdge>, GraphEntity
 {
+    private static final Color highlightColor = Color.ORANGERED;
+
     private Group graphics;
-    private Shape edgePath; // This will be a either a line for most edges, or a path for self-edges
+    private Shape edgePath; // This will be either a line for most edges, or a path for self-edges
     private Polygon arrowhead;
 
     public enum EDGE_TYPE {EDGE_REGULAR, EDGE_DUMMY};
@@ -17,13 +19,14 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
 
     private final AbstractLayoutVertex source, dest;
 
-    private static final double defaultStrokeWidth = 1;
+    private static final double defaultStrokeWidth = 0.5;
+    private static final double highlightStrokeWidthMultiplier = 4;
     private static final double arrowheadAngleDiff = 0.15 * Math.PI;
     private static final double arrowLengthRatio = 0.5;
 
     private static final Color downwardColor = Color.BLACK;
     private static final Color upwardColor = Color.VIOLET;
-    private Color color = Color.RED;
+    private Color color;
     private boolean colorIsSet = false;
     private double opacity;
 
@@ -80,17 +83,12 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
             System.out.println("Draw source: " + source.getDrawEdges() + "\nDraw dest: " + dest.getDrawEdges());
             return;
         }
-        else if(getParent() == null) {
+        else if(this.getParent() == null) {
             System.out.println("Error! The parent for this edge does not exist.");
             return;
         }
         else if (this.source == this.dest)
         {
-            /*System.out.println("Error in Edge.drawGraph(): The source and destination vertices are the same.");
-            System.out.println(this.source +"---"+ this.dest);
-            System.out.println(this.source.getLabel() +"---"+ this.dest.getLabel());
-            System.out.println(this.getType());
-            return;*/
             drawLoop();
             return;
         }
@@ -112,16 +110,13 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
             line.getStrokeDashArray().addAll(5d, 4d);
         }
 
-        line.setStrokeWidth(dest.getGraphics().getRect().getStrokeWidth());
-        if(!colorIsSet) {
-            colorIsSet = true;
-            if (dest.getY() >= source.getY()) {
-                color = downwardColor;
-            } else {
-                color = upwardColor;
-            }
+        line.setStrokeWidth(defaultStrokeWidth);
+        if (dest.getY() >= source.getY()) {
+            this.color = downwardColor;
+        } else {
+            this.color = upwardColor;
         }
-        line.setStroke(color);
+        line.setStroke(this.color);
 
         // Compute arrowhead
         double angle = Math.PI + Math.atan2(line.getEndY() - line.getStartY(), line.getEndX() - line.getStartX());
@@ -149,20 +144,20 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.graphics.getChildren().add(edgePath);
         this.graphics.getChildren().add(arrowhead);
 
-        getParent().getChildren().add(graphics);
-        graphics.setVisible(amVisible());
+        this.getParent().getChildren().add(graphics);
+        graphics.setVisible(this.isDisplayed());
     }
 
     public void highlightEdgePath()
     {
-        edgePath.setStroke(Color.ORANGERED);
-        edgePath.setStrokeWidth(edgePath.getStrokeWidth() * 4.0);
+        edgePath.setStroke(highlightColor);
+        edgePath.setStrokeWidth(defaultStrokeWidth * highlightStrokeWidthMultiplier);
     }
 
     public void resetEdgePath()
     {
         edgePath.setStroke(color);
-        edgePath.setStrokeWidth(edgePath.getStrokeWidth() / 4.0);
+        edgePath.setStrokeWidth(defaultStrokeWidth);
     }
 
     private void drawLoop() {
@@ -195,25 +190,14 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.graphics.getChildren().add(edgePath);
 
         getParent().getChildren().add(graphics);
-        graphics.setVisible(amVisible());
+        graphics.setVisible(this.isDisplayed());
     }
 
-    public boolean amVisible()
+    // Checks that an edge is currently showing on the screen.
+    public boolean isDisplayed()
     {
-        return getParent().getVertex().isExpanded() && this.source.isEdgeVisible()
+        return this.getParent().getVertex().isExpanded() && this.source.isEdgeVisible()
                 && this.dest.isEdgeVisible() && this.isVisible();
-    }
-
-    public Rectangle getMarker(double x, double y)
-    {
-        Rectangle marker = new Rectangle();
-        marker.setTranslateX(x);
-        marker.setTranslateY(y);
-        marker.setWidth(10);
-        marker.setHeight(10);
-        marker.setFill(Color.RED);
-
-        return marker;
     }
 
     public static void redrawEdges(AbstractLayoutVertex v, boolean recurse)
@@ -224,11 +208,10 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
             {
                 if (v.getId() == e.source.getId() || v.getId() == e.dest.getId())
                 {
+                    // Remove current graphics and redraw.
                     e.graphics.getChildren().remove(e.edgePath);
                     e.graphics.getChildren().remove(e.arrowhead);
-
                     e.getParent().getChildren().remove(e.graphics);
-                    // ...And draw new ones
                     e.draw();
                 }
             }
@@ -269,12 +252,14 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.graphics.setVisible(isVisible);
     }
 
+    // Checks that an edge is set to visible. The edge may still not show on the screen if the nodes it connects
+    // are hidden.
     public boolean isVisible() {
         return this.graphics.isVisible();
     }
 
     private GUINode getParent()
     {
-        return getSource().getGraphics().getParentNode();
+        return this.getSource().getGraphics().getParentNode();
     }
 }
