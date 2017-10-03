@@ -151,8 +151,9 @@ public class VizPanelController implements EventHandler<SelectEvent> {
         event.consume();
         AbstractLayoutVertex vertex = event.getVertex();
 
-        if(vertex.getType() == AbstractLayoutVertex.VertexType.ROOT)
+        if (vertex.getType() == AbstractLayoutVertex.VertexType.ROOT) {
             return;
+        }
 
         System.out.println("Now Recieved event from vertex " + vertex.toString());
 

@@ -129,21 +129,24 @@ public class GUINode extends Group
     }
 
     private void handleOnMouseClicked(MouseEvent event) {
+        if (this.vertex instanceof LayoutRootVertex) { return; }
+
         event.consume();
 
-        System.out.println("Fired the event!");
-        this.fireEvent(new SelectEvent(MouseButton.PRIMARY, this));
-
-        if(event.getClickCount()>1){
-            handleDoubleClick(event);
+        switch (event.getClickCount()) {
+            case 1:
+                this.fireEvent(new SelectEvent(MouseButton.PRIMARY, this));
+                break;
+            case 2:
+                handleDoubleClick(event);
+                break;
+            default:
+                /* Do nothing */
+                break;
         }
     }
 
     private void handleDoubleClick(MouseEvent event){
-        if(this.vertex instanceof LayoutRootVertex){
-            return;
-        }
-
         AbstractLayoutVertex root = Main.getSelectedVizPanelController().getPanelRoot();
 
         System.out.println("Double Click");
