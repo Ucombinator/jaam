@@ -38,6 +38,8 @@ public class MainTabController {
         this.tab = new Tab(file.getName(), this.root);
         this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));
         Controllers.put(this.tab, this);
+
+        bytecodeArea.addSelectHandler(centerPane);
     }
 
     public void repaintAll() {
