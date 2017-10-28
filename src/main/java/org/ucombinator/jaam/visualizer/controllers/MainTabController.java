@@ -4,6 +4,8 @@ import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
@@ -17,9 +19,11 @@ import java.io.IOException;
 public class MainTabController {
     public final Tab tab;
     public final VizPanelController vizPanelController;
+    public final CodeViewController codeViewController;
 
     // TODO: rename some of these
-    @FXML public final CodeArea bytecodeArea = null; // Initialized by Controllers.loadFXML()
+    @FXML public final VBox leftPane = null; // Initialized by Controllers.loadFXML()
+    //@FXML public final CodeArea bytecodeArea = null; // Initialized by Controllers.loadFXML()
 
     @FXML private final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML private final BorderPane centerPane = null; // Initialized by Controllers.loadFXML()
@@ -39,12 +43,23 @@ public class MainTabController {
         this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));
         Controllers.put(this.tab, this);
 
-        bytecodeArea.addSelectHandler(centerPane);
+        this.codeViewController = new CodeViewController();
+
+        this.leftPane.getChildren().add(this.codeViewController.codeTabs);
+
+        //CodeArea codeArea = new CodeArea();
+        //codeArea.addSelectHandler(centerPane);
+
+        //Tab tab = new Tab();
+        //tab.setText("Code Area");
+        //tab.setContent(codeArea);
+        //this.codeViewer.getTabs().add(tab);
+        //bytecodeArea.addSelectHandler(centerPane);
     }
 
     public void repaintAll() {
         System.out.println("Repainting all...");
-        bytecodeArea.setDescription();
+        //bytecodeArea.setDescription();
         setRightText();
         searchResults.writeText(this.vizPanelController);
     }
