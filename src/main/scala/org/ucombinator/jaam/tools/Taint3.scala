@@ -91,18 +91,43 @@ object Taint3 {
     // TODO: output the store as a graph (use JGraphT GraphViz to start)
   }
 
+  // TODO: edges between method declarations and implementations
+  // TODO:             Scene.v.getActiveHierarchy.getSubclassesOfIncluding(c).asScala.toSet
+
+  def handleInvoke(a0: Address, sootMethod: SootMethod, rhs: InvokeExpr): Unit = {
+    // Base (if non-static)
+    rhs match {
+      case rhs: InstanceInvokeExpr => // TODO
+        val aBase = eval(sootMethod, rhs.getBase)
+        addEdge(aBase, a0, ???)
+    }
+
+    // Parameters
+    val aArgs = rhs.getArgs.asScala.map(eval(sootMethod, _))
+    val aParams =
+      for (i <- 0 until rhs.getMethod.getParameterCount)
+      yield { Address.Parameter(rhs.getMethod, i) }
+    for ((param, arg) <- aParams zip aArgs) {
+      addEdge(arg, param, ???)
+    }
+
+    // Return
+    val aReturn = Address.Return(rhs.getMethod)
+    addEdge(aReturn, a0, ???)
+  }
+
   def sootStmt(stmt: Stmt): Unit = {
     val a0 = Address.Stmt(stmt)
     stmt.sootStmt match {
       case sootStmt : InvokeStmt =>
-        // TODO: handleInvoke(sootStmt.getInvokeExpr, None)
+       handleInvoke(a0, stmt.sootMethod, sootStmt.getInvokeExpr)
 
       case sootStmt : DefinitionStmt =>
-//        val lhsAddr = addrsOf(sootStmt.getLeftOp())
-//
+        val aLhs = lhs(stmt.sootMethod, sootStmt.getLeftOp())
+        addEdge(a0, aLhs, ???)
+
         sootStmt.getRightOp() match {
-//          case rhs : InvokeExpr =>
-//            handleInvoke(rhs, Some(lhsAddr))
+          case rhs: InvokeExpr => handleInvoke(a0, stmt.sootMethod, rhs)
 //          case rhs : NewExpr =>
 //            val baseType : RefType = rhs.getBaseType()
 //            val sootClass = baseType.getSootClass()
@@ -129,10 +154,6 @@ object Taint3 {
             val a2 = lhs(stmt.sootMethod, sootStmt.getLeftOp)
             addEdge(a1, a0, ???)
             addEdge(a0, a2, ???)
-
-//            System.store.update(lhsAddr, eval(rhs))
-//            Set(this.copy(stmt = stmt.nextSyntactic))
-//        }
         }
 
       case sootStmt : IfStmt =>
