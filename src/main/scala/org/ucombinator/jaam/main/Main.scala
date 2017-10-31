@@ -32,6 +32,7 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamCon
   addSubcommand(Validate)
   addSubcommand(DecompileToFile)
   addSubcommand(Taint2)
+  addSubcommand(Taint3)
   addSubcommand(SystemProperties)
 
   verify()
@@ -535,6 +536,18 @@ object Taint2 extends Main("taint2") {
 
   def run() {
     org.ucombinator.jaam.tools.taint2.Taint2.main(
+      input = input(), output = output())
+  }
+}
+
+object Taint3 extends Main("taint3") {
+  banner("TODO")
+
+  val input = inputOpt()
+  val output = outputOpt()
+
+  def run() {
+    org.ucombinator.jaam.tools.taint3.Taint3.main(
       input = input(), output = output())
   }
 }
