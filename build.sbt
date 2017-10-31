@@ -16,6 +16,7 @@ libraryDependencies ++= Seq(
   "de.javakaffee" % "kryo-serializers" % "0.38",
   "org.bitbucket.mstrobel" % "procyon-compilertools" % "0.5.32",
   "org.controlsfx" % "controlsfx" % "8.40.13",
+  "org.fxmisc.richtext" % "richtextfx" % "0.8.0",
   "org.jgrapht" % "jgrapht-core" % "1.0.1",
   "org.jgrapht" % "jgrapht-ext" % "1.0.1",
   "org.ow2.asm" % "asm-commons" % "5.1",
