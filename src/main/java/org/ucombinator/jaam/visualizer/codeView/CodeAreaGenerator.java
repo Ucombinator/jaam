@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.codeView;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,7 +21,12 @@ import org.fxmisc.richtext.model.StyleSpansBuilder;
 
 public class CodeAreaGenerator {
 
+    HashMap<String, CompilationUnit> classes;
 
+    public CodeAreaGenerator()
+    {
+        classes = new HashMap<>();
+    }
 
     public StackPane generateCodeArea()
     {
@@ -52,7 +58,6 @@ public class CodeAreaGenerator {
     public void addClass(CompilationUnit unit)
     {
         AstNodeCollection<TypeDeclaration> types = unit.getTypes();
-
         assert types.size() == 1;
 
         TypeDeclaration typeDeclaration = types.firstOrNullObject();
@@ -60,16 +65,19 @@ public class CodeAreaGenerator {
         typeDeclaration.getText();
 
         String className = typeDeclaration.getName();
+        String fullClassName = new String(unit.getPackage().getName() + "." + className);
 
-        System.out.println("JUAN " + className);
+        //System.out.println("JUAN FullClassName " + fullClassName);
 
-        System.out.println("PACK " + unit.getPackage().getName());
+        this.classes.put(fullClassName, unit);
 
+        /*
         for(AstNode i: typeDeclaration.getChildrenByRole(Roles.TYPE_MEMBER))
         {
             EntityDeclaration entity = (EntityDeclaration)i;
             System.out.println(i.getRole() + " " + i.getClass() + " " + entity.getName() + " " + entity.getEntityType());
         }
+        */
 
         //String className = getClassName(unit);
         //graph.addClass(className, unit.getText());
