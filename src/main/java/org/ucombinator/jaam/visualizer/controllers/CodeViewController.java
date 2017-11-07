@@ -6,6 +6,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import org.ucombinator.jaam.visualizer.codeView.CodeAreaGenerator;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.CodeArea;
 import org.ucombinator.jaam.visualizer.gui.SearchResults;
@@ -22,15 +23,16 @@ public class CodeViewController {
     @FXML public final VBox root = null; // Initialized by Controllers.loadFXML()
     @FXML public final TabPane codeTabs = null; // Initialized by Controllers.loadFXML()
 
-    public CodeViewController() throws IOException {
+    CodeAreaGenerator codeAreaGenerator;
+
+    public CodeViewController(CodeAreaGenerator codeAreaGenerator) throws IOException {
         Controllers.loadFXML("/CodeView.fxml", this);
 
-        Tab testTab = new Tab("Test", new TextArea());
+        this.codeAreaGenerator = codeAreaGenerator;
+
+        Tab testTab = new Tab("Test", this.codeAreaGenerator.generateCodeArea());
 
         codeTabs.getTabs().add(testTab);
-
-
-
     }
 
 }
