@@ -4,8 +4,8 @@
 <?import javafx.scene.layout.VBox?>
 
 
-<VBox fx:id="root" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1">
+<VBox fx:id="root" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" stylesheets="CodeView.css">
    <children>
-       <TabPane fx:id="codeTabs" prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" />
+       <TabPane fx:id="codeTabs" tabClosingPolicy="UNAVAILABLE" stylesheets="CodeView.css"/>
    </children>
 </VBox>
