@@ -345,10 +345,20 @@ object Taint3 {
     return a0
   }
 
+  class EscapedStringComponentNameProvider[T](quotes: Boolean) extends StringComponentNameProvider[T] {
+    override def getName(component: T): String = {
+      val s = component.toString
+        .replaceAll("\\\\", "\\\\\\\\")
+        .replaceAll("\"", "\\\\\"")
+      if (quotes) { "\"" + s + "\""}
+      else { s }
+    }
+  }
+
   def printToGraphvizFile[V, E](output: String, graph: Graph[V, E]): Unit = {
     val dotExporter = new DOTExporter[V, E](
-      new StringComponentNameProvider[V], null,
-      new StringComponentNameProvider[E]
+      new EscapedStringComponentNameProvider[V](true), null,
+      new EscapedStringComponentNameProvider[E](false)
     )
 
     dotExporter.exportGraph(graph, new File(output))
