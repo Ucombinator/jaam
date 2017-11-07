@@ -31,6 +31,9 @@ object Address {
   case class StaticField(sootField: SootField) extends Address
   case class InstanceField(sootField: SootField) extends Address
   case class ArrayRef(typ: Type) extends Address
+  case class New(stmt: org.ucombinator.jaam.util.Stmt) extends Address
+  case class NewArray(stmt: org.ucombinator.jaam.util.Stmt) extends Address
+  case class NewMultiArray(stmt: org.ucombinator.jaam.util.Stmt) extends Address
 }
 
 
@@ -50,6 +53,21 @@ object Relationship {
   case object ArrayBaseEdge extends Relationship
   case object ArrayIndexEdge extends Relationship
   case object ArrayValueEdge extends Relationship
+  case object InvokeBaseEdge extends Relationship
+  case class ArgumentEdge(index: Int) extends Relationship
+  case object ResultEdge extends Relationship
+  case object LhsEdge extends Relationship
+  case object NewEdge extends Relationship
+  case object NewArrayEdge extends Relationship
+  case object NewArraySizeEdge extends Relationship
+  case object NewMultiArrayEdge extends Relationship
+  case class NewMultiArraySizeEdge(index: Int) extends Relationship
+  case object DefinitionEdge extends Relationship
+  case object ParameterRefEdge extends Relationship
+  case object StaticFieldRefEdge extends Relationship
+  case object ThisRefEdge extends Relationship
+  case object InstanceFieldRefEdge extends Relationship
+  case object ArrayRefEdge extends Relationship
 }
 
 object Taint3 {
@@ -74,7 +92,7 @@ object Taint3 {
           graph.addVertex(Address.Parameter(m, p))
         }
 
-        // TODO: exceptions
+        // TODO: keep track of data-flow due to exceptions
         for (u <- Soot.getBody(m).getUnits.asScala) {
           sootStmt(Stmt(u, m))
         }
@@ -100,10 +118,11 @@ object Taint3 {
 
     val inputPackets = input.flatMap(Serializer.readAll(_).asScala)
 
-    for (a <- inputPackets) { Soot.addClasses(a.asInstanceOf[App]) }
+    val apps = inputPackets.filter(_.isInstanceOf[App])
+    for (a <- apps) { Soot.addClasses(a.asInstanceOf[App]) }
 
-    val mainClasses = for (a <- inputPackets) yield { a.asInstanceOf[App].main.className }
-    val mainMethods = for (a <- inputPackets) yield { a.asInstanceOf[App].main.methodName }
+    val mainClasses = for (a <- apps) yield { a.asInstanceOf[App].main.className }
+    val mainMethods = for (a <- apps) yield { a.asInstanceOf[App].main.methodName }
     val mainClass = mainClasses.head.get // TODO: fix
     val mainMethod = mainMethods.head.get // TODO: fix
 
@@ -115,6 +134,11 @@ object Taint3 {
       yield Soot.getSootClass(name)
   }
 
+  def addEdge(a1: Address, a2: Address, r: Relationship): Unit = {
+    graph.addVertex(a1)
+    graph.addVertex(a2)
+    graph.addEdge(a1, a2, r)
+  }
 
   // TODO: edges between method declarations and implementations
   // TODO:             Scene.v.getActiveHierarchy.getSubclassesOfIncluding(c).asScala.toSet
@@ -123,7 +147,8 @@ object Taint3 {
     rhs match {
       case rhs: InstanceInvokeExpr => // TODO
         val aBase = eval(sootMethod, rhs.getBase)
-        graph.addEdge(aBase, a0, ???)
+        addEdge(aBase, a0, Relationship.InvokeBaseEdge)
+      case _ => /* Do nothing */
     }
 
     // Parameters
@@ -132,12 +157,12 @@ object Taint3 {
       yield { Address.Parameter(rhs.getMethod, i) }
 
     for ((param, arg) <- aParams zip aArgs) {
-      graph.addEdge(arg, param, ???)
+      addEdge(arg, param, Relationship.ArgumentEdge(param.index))
     }
 
     // Return
     val aReturn = Address.Return(rhs.getMethod)
-    graph.addEdge(aReturn, a0,???)
+    addEdge(aReturn, a0, Relationship.ResultEdge)
   }
 
   def sootStmt(stmt: Stmt): Unit = {
@@ -148,54 +173,51 @@ object Taint3 {
 
       case sootStmt : DefinitionStmt =>
         val aLhs = lhs(stmt.sootMethod, sootStmt.getLeftOp)
-        graph.addEdge(a0, aLhs,???)
+        addEdge(a0, aLhs, Relationship.LhsEdge)
 
         sootStmt.getRightOp match {
           case rhs: InvokeExpr => handleInvoke(a0, stmt.sootMethod, rhs)
-//          case rhs : NewExpr =>
-//            val baseType : RefType = rhs.getBaseType()
-//            val sootClass = baseType.getSootClass()
-//            this.newExpr(lhsAddr, sootClass)
-//            Set(this.copy(stmt = stmt.nextSyntactic))
-//          case rhs : NewArrayExpr =>
-//            // Value of lhsAddr will be set to a pointer to the array. (as opposed to the array itself)
-//            /*
-//            rhs.getType match {
-//              case rt: RefType if (System.isLibraryClass(Soot.getSootClass(rt.getClassName))) =>
-//                  Snowflakes.createArray(rt, List(eval(rhs.getSize)), lhsAddr)
-//              case t => createArray(t, List(eval(rhs.getSize)), lhsAddr)
-//            }
-//            */
-//            createArray(rhs.getType, List(eval(rhs.getSize)), lhsAddr)
-//            Set(this.copy(stmt = stmt.nextSyntactic))
-//          case rhs : NewMultiArrayExpr =>
-//            //TODO, if base type is Java library class, call Snowflake.createArray
-//            //see comment above about lhs addr
-//            createArray(rhs.getType, rhs.getSizes.toList map eval, lhsAddr)
-//            Set(this.copy(stmt = stmt.nextSyntactic))
+          case rhs : NewExpr =>
+            val a1 = Address.New(stmt)
+            addEdge(a1, a0, Relationship.NewEdge)
+
+          case rhs : NewArrayExpr =>
+            val a1 = Address.NewArray(stmt)
+            val a2 = eval(stmt.sootMethod, rhs.getSize)
+            addEdge(a2, a1, Relationship.NewArraySizeEdge)
+            addEdge(a1, a0, Relationship.NewArrayEdge)
+
+          case rhs : NewMultiArrayExpr =>
+            val a1 = Address.NewArray(stmt)
+            val a2 = rhs.getSizes.asScala.map(eval(stmt.sootMethod, _))
+            for (i <- 0 until a2.length) {
+              addEdge(a2(i), a1, Relationship.NewMultiArraySizeEdge(i))
+            }
+            addEdge(a1, a0, Relationship.NewMultiArrayEdge)
+
           case rhs =>
             val a1 = eval(stmt.sootMethod, rhs)
             val a2 = lhs(stmt.sootMethod, sootStmt.getLeftOp)
-            graph.addEdge(a1, a0, ???)
+            addEdge(a1, a0, Relationship.DefinitionEdge)
         }
 
       case sootStmt : IfStmt =>
         val a1 = eval(stmt.sootMethod, sootStmt.getCondition)
         // TODO: branch target
-        graph.addEdge(a1, a0, Relationship.StmtEdge)
+        addEdge(a1, a0, Relationship.StmtEdge)
 
       case sootStmt : SwitchStmt =>
         val a1 = eval(stmt.sootMethod, sootStmt.getKey)
         // TODO: branch target
-        graph.addEdge(a1, a0, Relationship.StmtEdge)
+        addEdge(a1, a0, Relationship.StmtEdge)
 
       case sootStmt : ReturnStmt =>
         val a1 = eval(stmt.sootMethod, sootStmt.getOp)
-        graph.addEdge(a1, a0, Relationship.StmtEdge)
-        graph.addEdge(a0, Address.Return(stmt.sootMethod), Relationship.ReturnEdge)
+        addEdge(a1, a0, Relationship.StmtEdge)
+        addEdge(a0, Address.Return(stmt.sootMethod), Relationship.ReturnEdge)
 
       case sootStmt : ReturnVoidStmt =>
-        graph.addEdge(a0, Address.Return(stmt.sootMethod), Relationship.ReturnEdge)
+        addEdge(a0, Address.Return(stmt.sootMethod), Relationship.ReturnEdge)
 
       // Since Soot's NopEliminator run before us, no "nop" should be
       // left in the code and this case isn't needed (and also is
@@ -215,16 +237,16 @@ object Taint3 {
       // TODO/soundness: In the event of multi-threaded code with precise interleaving, this is not sound.
       case sootStmt : EnterMonitorStmt =>
         val a1 = eval(stmt.sootMethod, sootStmt.getOp)
-        graph.addEdge(a1, Address.Stmt(stmt), Relationship.StmtEdge)
+        addEdge(a1, Address.Stmt(stmt), Relationship.StmtEdge)
       case sootStmt : ExitMonitorStmt =>
         val a1 = eval(stmt.sootMethod, sootStmt.getOp)
-        graph.addEdge(a1, Address.Stmt(stmt),Relationship.StmtEdge)
+        addEdge(a1, Address.Stmt(stmt),Relationship.StmtEdge)
 
       // TODO: needs testing
       case sootStmt : ThrowStmt =>
         val a1 = eval(stmt.sootMethod, sootStmt.getOp)
-        graph.addEdge(a1, a0, Relationship.StmtEdge)
-        graph.addEdge(a0, Address.Throws(stmt.sootMethod),Relationship.ThrowsEdge)
+        addEdge(a1, a0, Relationship.StmtEdge)
+        addEdge(a0, Address.Throws(stmt.sootMethod),Relationship.ThrowsEdge)
 
       // TODO: We're missing BreakPointStmt and RetStmt (but these might not be used)
       case _ =>
@@ -240,27 +262,27 @@ object Taint3 {
       case v: Local => // TODO: Set(LocalFrameAddr(fp, lhs))
       case v: ParameterRef =>
         val a1 = Address.Parameter(m, v.getIndex)
-        graph.addEdge(a0, a1, ???)
+        addEdge(a0, a1, Relationship.ParameterRefEdge)
       case v: StaticFieldRef =>
         val a1 = Address.StaticField(v.getField)
-        graph.addEdge(a0, a1, ???)
+        addEdge(a0, a1, Relationship.StaticFieldRefEdge)
       case v: ThisRef =>
         val a1 = Address.This(v.getType)
-        graph.addEdge(a0, a1, ???)
+        addEdge(a0, a1, Relationship.ThisRefEdge)
 
       case v: InstanceFieldRef =>
         // TODO: avoid duplication with `eval` by having an `addr` function
         val a1 = eval(m, v.getBase)
         val a2 = Address.InstanceField(v.getField)
-        graph.addEdge(a1, a0,Relationship.InstanceFieldBaseEdge)
-        graph.addEdge(a0, a2, ???)
+        addEdge(a1, a0, Relationship.InstanceFieldBaseEdge)
+        addEdge(a0, a2, Relationship.InstanceFieldRefEdge)
       case v: ArrayRef =>
         val a1 = eval(m, v.getBase)
         val a2 = eval(m, v.getIndex)
         val a3 = Address.ArrayRef(v.getType)
-        graph.addEdge(a1, a0, Relationship.ArrayBaseEdge)
-        graph.addEdge(a2, a0, Relationship.ArrayIndexEdge)
-        graph.addEdge(a0, a3, ???)
+        addEdge(a1, a0, Relationship.ArrayBaseEdge)
+        addEdge(a2, a0, Relationship.ArrayIndexEdge)
+        addEdge(a0, a3, Relationship.ArrayRefEdge)
       case v: CaughtExceptionRef => {} // TODO
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
@@ -276,47 +298,47 @@ object Taint3 {
       // Base cases
       case v : Local =>
         val a1 = Address.Local(v.getName)
-        graph.addEdge(a1, a0, Relationship.RefEdge)
+        addEdge(a1, a0, Relationship.RefEdge)
       case v : ParameterRef =>
         val a1 = Address.Parameter(m, v.getIndex)
-        graph.addEdge(a1, a0, Relationship.RefEdge)
+        addEdge(a1, a0, Relationship.RefEdge)
       case v : StaticFieldRef =>
         val a1 = Address.StaticField(v.getField)
-        graph.addEdge(a1, a0, Relationship.RefEdge)
+        addEdge(a1, a0, Relationship.RefEdge)
       case v : ThisRef =>
         val a1 = Address.This(v.getType)
-        graph.addEdge(a1, a0, Relationship.RefEdge)
+        addEdge(a1, a0, Relationship.RefEdge)
 
       // Recursive
       case v : InstanceFieldRef =>
         val a1 = eval(m, v.getBase)
         val a2 = Address.InstanceField(v.getField)
-        graph.addEdge(a1, a0, Relationship.InstanceFieldBaseEdge)
-        graph.addEdge(a2, a0, Relationship.InstanceFieldValueEdge)
+        addEdge(a1, a0, Relationship.InstanceFieldBaseEdge)
+        addEdge(a2, a0, Relationship.InstanceFieldValueEdge)
       case v : ArrayRef =>
         val a1 = eval(m, v.getBase)
         val a2 = eval(m, v.getIndex)
         val a3 = Address.ArrayRef(v.getType)
-        graph.addEdge(a1, a0, Relationship.ArrayBaseEdge)
-        graph.addEdge(a2, a0, Relationship.ArrayIndexEdge)
-        graph.addEdge(a3, a0, Relationship.ArrayValueEdge)
+        addEdge(a1, a0, Relationship.ArrayBaseEdge)
+        addEdge(a2, a0, Relationship.ArrayIndexEdge)
+        addEdge(a3, a0, Relationship.ArrayValueEdge)
       case v : CaughtExceptionRef => {}
         // TODO
       case _ : Constant => {}
       case v : UnopExpr =>
         val a1 = eval(m, v.getOp)
-        graph.addEdge(a1, a0, Relationship.UnOpEdge)
+        addEdge(a1, a0, Relationship.UnOpEdge)
       case v : BinopExpr =>
         val a1 = eval(m, v.getOp1)
         val a2 = eval(m, v.getOp2)
-        graph.addEdge(a1, a0, Relationship.BinOp1Edge)
-        graph.addEdge(a2, a0, Relationship.BinOp2Edge)
+        addEdge(a1, a0, Relationship.BinOp1Edge)
+        addEdge(a2, a0, Relationship.BinOp2Edge)
       case v : InstanceOfExpr =>
         val a1 = eval(m, v.getOp)
-        graph.addEdge(a1, a0, Relationship.InstanceOfEdge)
+        addEdge(a1, a0, Relationship.InstanceOfEdge)
       case v : CastExpr =>
         val a1 = eval(m, v.getOp)
-        graph.addEdge(a1, a0, Relationship.CastEdge)
+        addEdge(a1, a0, Relationship.CastEdge)
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
 
