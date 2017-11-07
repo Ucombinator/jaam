@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
+import org.ucombinator.jaam.serializer.LoopMethodNode;
 import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 
 import java.util.LinkedHashSet;
@@ -10,24 +11,27 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
     private static final Color defaultColor = Color.DEEPSKYBLUE;
 
     private String label;
-    private String className;
-    private String methodName;
 
-    public LayoutMethodVertex(int id, String label, String className, String methodName){
+    private LoopMethodNode compilationUnit;
+
+    public LayoutMethodVertex(int id, String label, LoopMethodNode compilationUnit){
     	super(id, label, VertexType.METHOD);
     	this.setDefaultColor();
 
     	this.label      = label;
-    	this.className  = className;
-    	this.methodName = methodName;
+    	this.compilationUnit = compilationUnit;
     }
 
     public String getClassName() {
-        return className;
+        return this.compilationUnit.method().getDeclaringClass().getName();
     }
 
     public String getMethodName() {
-        return this.methodName;
+        return this.compilationUnit.method().getName();
+    }
+
+    public LoopMethodNode getCompilationUnit() {
+        return compilationUnit;
     }
 
     public String getRightPanelContent() {

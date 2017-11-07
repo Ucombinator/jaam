@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.gui;
 import javafx.scene.input.MouseEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
@@ -24,14 +25,30 @@ public class CodeArea extends TextFlow
     private static final Color fxColorSelection = Color.ALICEBLUE;
     private static final Font jfxFont = new Font("Serif", 14);
 
-    ArrayList<Instruction> description;
     private int currentCaret = 0;
     
     public CodeArea()
     {
-        description = new ArrayList<Instruction>();
     }
 
+    public void addSelectHandler(BorderPane centerPane) {
+        centerPane.addEventHandler(SelectEvent.VERTEX_SELECTED, onVertexSelect);
+    }
+
+    EventHandler<SelectEvent> onVertexSelect = new EventHandler<SelectEvent>() {
+        @Override
+        public void handle(SelectEvent selectEvent) {
+            selectEvent.consume();
+
+
+
+            AbstractLayoutVertex vertex = selectEvent.getVertex();
+
+            System.out.println("Code Area Recieved event from vertex " + vertex.toString());
+        }
+    };
+
+    /*
     EventHandler<MouseEvent> onMouseClickedEventHandler = new javafx.event.EventHandler<MouseEvent>() {
         @Override
         public void handle(MouseEvent event) {
@@ -61,10 +78,10 @@ public class CodeArea extends TextFlow
             Main.getSelectedMainTabController().repaintAll();
         }
     };
-
+*/
     public void clear()
     {
-        this.description = new ArrayList<Instruction>();
+        //this.description = new ArrayList<Instruction>();
         this.writeText();
     }
 
@@ -79,6 +96,7 @@ public class CodeArea extends TextFlow
     public void setDescription()
     {
         System.out.println("Set Description\n");
+        /*
         VizPanelController mainPanel = Main.getSelectedVizPanelController();
         HashSet<AbstractLayoutVertex> highlighted = mainPanel.getHighlighted();
         if(highlighted.size() > 0)
@@ -104,12 +122,14 @@ public class CodeArea extends TextFlow
             this.writeText();
             this.setHighlights(fxColorSelection);
         }
+        */
     }
     
     // Set the text for the area to the sum of all of the lines in the description
     private void writeText()
     {
         System.out.println("Set writeText\n");
+        /*
         this.getChildren().clear();
         for(Instruction line : description) {
             String lineStr = line.getText() + "\n";
@@ -120,22 +140,6 @@ public class CodeArea extends TextFlow
             lineText.setOnMouseClicked(onMouseClickedEventHandler);
             this.getChildren().add(lineText);
         }
-    }
-    
-    private void setHighlights(Color lineSelectionColor)
-    {
-        for(int i = 0; i < this.description.size(); i++)
-        {
-            Instruction line = this.description.get(i);
-            Text lineText = (Text) this.getChildren().get(i);
-            /*if(line.isSelected()) {
-                lineText.setStyle("-fx-highlight-fill: orange");
-                //lineText.setFill(lineSelectionColor);
-            }
-            else {
-                lineText.setStyle("-fx-highlight-fill: white");
-                //lineText.setFill(Color.WHITE);
-            }*/
-        }
+        */
     }
 }
