@@ -47,6 +47,8 @@ public class CodeViewController {
 
                 Tab newTab = new Tab(v.getShortClassName(), codeAreaGenerator.generateCodeArea(v.getClassName()) );
                 codeTabs.getTabs().add(newTab);
+
+                codeTabs.getSelectionModel().select(newTab);
             }
 
             /*
