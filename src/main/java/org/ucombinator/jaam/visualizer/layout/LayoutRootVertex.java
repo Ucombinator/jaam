@@ -1,7 +1,7 @@
 package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
-import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
+import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -23,14 +23,14 @@ public class LayoutRootVertex extends AbstractLayoutVertex {
         return "Root vertex";
     }
 
-    public boolean searchByMethod(String query, VizPanelController mainPanel) {
+    public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = false;
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices()) {
-            found = found || v.searchByMethod(query, mainPanel);
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
+            found = found || v.searchByMethod(query, mainTab);
         }
 
         this.setHighlighted(found);
-        mainPanel.getHighlighted().add(this);
+        mainTab.getHighlighted().add(this);
 
         return found;
     }
@@ -38,7 +38,7 @@ public class LayoutRootVertex extends AbstractLayoutVertex {
     public HashSet<LayoutMethodVertex> getMethodVertices()
     {
         HashSet<LayoutMethodVertex> methodVertices = new LinkedHashSet<LayoutMethodVertex>();
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices()) {
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
             if(v instanceof LayoutMethodVertex)
                 methodVertices.add((LayoutMethodVertex) v);
             else

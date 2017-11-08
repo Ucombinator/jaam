@@ -79,11 +79,12 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
 
     public void draw()
     {
+        // System.out.println("Drawing edge: " + this.source.getId() + " --- " + this.dest.getId());
         if(!source.getDrawEdges() || !dest.getDrawEdges()) {
             System.out.println("Draw source: " + source.getDrawEdges() + "\nDraw dest: " + dest.getDrawEdges());
             return;
         }
-        else if(this.getParent() == null) {
+        else if(this.getSourceParent() == null) {
             System.out.println("Error! The parent for this edge does not exist.");
             return;
         }
@@ -144,7 +145,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.graphics.getChildren().add(edgePath);
         this.graphics.getChildren().add(arrowhead);
 
-        this.getParent().getChildren().add(graphics);
+        this.getSourceParent().getChildren().add(graphics);
         graphics.setVisible(this.isDisplayed());
     }
 
@@ -189,14 +190,14 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         this.graphics.getChildren().removeAll(this.graphics.getChildren());
         this.graphics.getChildren().add(edgePath);
 
-        getParent().getChildren().add(graphics);
-        graphics.setVisible(this.isDisplayed());
+        this.getSourceParent().getChildren().add(graphics);
+        this.graphics.setVisible(this.isDisplayed());
     }
 
     // Checks that an edge is currently showing on the screen.
     public boolean isDisplayed()
     {
-        return this.getParent().getVertex().isExpanded() && this.source.isEdgeVisible()
+        return this.getSourceParent().getVertex().isExpanded() && this.source.isEdgeVisible()
                 && this.dest.isEdgeVisible() && this.isVisible();
     }
 
@@ -204,14 +205,14 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     {
         if(v.getSelfGraph() != null)
         {
-            for (LayoutEdge e : v.getSelfGraph().getEdges())
+            for (LayoutEdge e : v.getSelfGraph().getVisibleEdges())
             {
                 if (v.getId() == e.source.getId() || v.getId() == e.dest.getId())
                 {
                     // Remove current graphics and redraw.
                     e.graphics.getChildren().remove(e.edgePath);
                     e.graphics.getChildren().remove(e.arrowhead);
-                    e.getParent().getChildren().remove(e.graphics);
+                    e.getSourceParent().getChildren().remove(e.graphics);
                     e.draw();
                 }
             }
@@ -219,7 +220,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
 
         if(recurse)
         {
-            for (AbstractLayoutVertex w : v.getInnerGraph().getVertices())
+            for (AbstractLayoutVertex w : v.getInnerGraph().getVisibleVertices())
                 redrawEdges(w, recurse);
         }
     }
@@ -258,7 +259,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         return this.graphics.isVisible();
     }
 
-    private GUINode getParent()
+    private GUINode getSourceParent()
     {
         return this.getSource().getGraphics().getParentNode();
     }

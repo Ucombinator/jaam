@@ -22,8 +22,6 @@ import org.ucombinator.jaam.visualizer.main.Main;
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 
 public class VizPanelController implements EventHandler<SelectEvent> {
     @FXML public final Node root = null; // Initialized by Controllers.loadFXML()
@@ -38,32 +36,17 @@ public class VizPanelController implements EventHandler<SelectEvent> {
 
     // TODO: should this stuff be moved to a model class?
     private Group graphContentGroup;
-    private HashSet<AbstractLayoutVertex> highlighted;
     private LayoutRootVertex panelRoot;
 
-    // The dimensions of the background for our graph
-    private static final double initRootWidth = 500.0;
-    private static final double initRootHeight = 500.0;
-    //private double desiredRootTranslateX;
-    //private double desiredRootTranslateY;
-
-    // Store the count for vertex width and height when everything is expanded
-    //private double maxVertexWidth;
-    //private double maxVertexHeight;
-
-    public VizPanelController(File file, Graph graph) throws IOException {
+    public VizPanelController() throws IOException {
         Controllers.loadFXML("/VizPanel.fxml", this);
 
         this.zoomSpinner.setValueFactory(new ZoomSpinnerValueFactory(1.0, 1.2));
         TimelineProperty.bind(this.vizPanel.scaleXProperty(), this.zoomSpinner.valueProperty(), 300);
         TimelineProperty.bind(this.vizPanel.scaleYProperty(), this.zoomSpinner.valueProperty(), 300);
 
-        // TODO: should this stuff be moved to a model class?
-        this.highlighted = new LinkedHashSet<>();
-
         this.graphContentGroup = new Group();
         this.graphContentGroup.setVisible(true);
-        this.highlighted = new LinkedHashSet<>();
 
         this.graphContentGroup = new Group();
         this.graphContentGroup.setVisible(true);
@@ -93,15 +76,13 @@ public class VizPanelController implements EventHandler<SelectEvent> {
     @FXML private void methodCollapseAction(ActionEvent event) {
         this.getPanelRoot().toggleNodesOfType(
                 AbstractLayoutVertex.VertexType.METHOD, methodsExpanded.isSelected());
-        this.resetAndRedraw(showEdges.isSelected());
-        //this.resetRootPosition(false);
+        this.resetAndRedraw();
     }
 
     @FXML private void chainCollapseAction(ActionEvent event) {
         this.getPanelRoot().toggleNodesOfType(
                 AbstractLayoutVertex.VertexType.CHAIN, chainsExpanded.isSelected());
-        this.resetAndRedraw(showEdges.isSelected());
-        //this.resetRootPosition(false);
+        this.resetAndRedraw();
     }
 
     @FXML private void exportImageAction(ActionEvent event) throws IOException {
@@ -146,20 +127,6 @@ public class VizPanelController implements EventHandler<SelectEvent> {
         return this.panelRoot;
     }
 
-/*
-    public void resetRootPosition(boolean resetScale) {
-        GUINode rootGraphics = this.panelRoot.getGraphics();
-
-        if(resetScale) {
-            rootGraphics.setScaleX(1.0);
-            rootGraphics.setScaleY(1.0);
-        }
-
-        rootGraphics.setTranslateLocation(this.desiredRootTranslateX, this.desiredRootTranslateY);
-    }
-    */
-
-
     // Handles select events
     @Override
     public void handle(SelectEvent event) {
@@ -170,10 +137,10 @@ public class VizPanelController implements EventHandler<SelectEvent> {
             return;
         }
 
-        System.out.println("Now Recieved event from vertex " + vertex.toString());
+        System.out.println("Received event from vertex " + vertex.toString());
 
         MainTabController currentFrame = Main.getSelectedMainTabController();
-        resetHighlighted(vertex);
+        currentFrame.resetHighlighted(vertex);
 
         if(vertex instanceof  LayoutLoopVertex) {
             currentFrame.setRightText((LayoutLoopVertex)vertex);
@@ -193,79 +160,11 @@ public class VizPanelController implements EventHandler<SelectEvent> {
 
     }
 
-
-    public HashSet<AbstractLayoutVertex> getHighlighted() {
-        return this.highlighted;
-    }
-
     public void initFX(Graph graph)
     {
         this.panelRoot = LayerFactory.getLayeredGraph(graph);
         LayoutAlgorithm.layout(this.panelRoot);
-        //resetPanelSize();
-        drawGraph();
-        //this.desiredRootTranslateX = this.panelRoot.getGraphics().getTranslateX();
-        //this.desiredRootTranslateY = this.panelRoot.getGraphics().getTranslateY();
-    }
-
-    public void resetContent() {
-        graphContentGroup = new Group();
-        graphContentGroup.setVisible(true);
-        this.vizPanel.getChildren().add(graphContentGroup);
-    }
-
-/*
-    private void resetPanelSize() {
-        this.maxVertexWidth = this.panelRoot.getWidth();
-        this.maxVertexHeight = this.panelRoot.getHeight();
-    }
-    */
-
-    // Divides the actual width in pixels by the width in vertex units
-    //public double getWidthPerVertex()
-    //{
-    //    return panelRoot.getGraphics().getWidth() / panelRoot.getWidth();
-    //}
-
-    //Called when the user clicks on a line in the left area.
-    //Updates the vertex highlights to those that correspond to the instruction clicked.
-    public void searchByJimpleIndex(String method, int index, boolean removeCurrent, boolean addChosen)
-    {
-        if(removeCurrent) {
-            // Unhighlight currently highlighted vertices
-            for (AbstractLayoutVertex v : this.highlighted) {
-                v.setHighlighted(false);
-            }
-            highlighted.clear();
-        }
-
-        if(addChosen) {
-            //Next we add the highlighted vertices
-            HashSet<AbstractLayoutVertex> toAddHighlights = panelRoot.getVerticesWithInstructionID(index, method);
-            for (AbstractLayoutVertex v : toAddHighlights) {
-                highlighted.add(v);
-                v.setHighlighted(true);
-            }
-        } else {
-            HashSet<AbstractLayoutVertex> toRemoveHighlights = panelRoot.getVerticesWithInstructionID(index, method);
-            for(AbstractLayoutVertex v : toRemoveHighlights) {
-                v.setHighlighted(false);
-            }
-            highlighted.removeAll(toRemoveHighlights);
-        }
-    }
-
-    public void resetHighlighted(AbstractLayoutVertex newHighlighted)
-    {
-        for(AbstractLayoutVertex currHighlighted : highlighted) {
-            currHighlighted.setHighlighted(false);
-        }
-        highlighted.clear();
-
-        if(newHighlighted != null) {
-            highlighted.add(newHighlighted);
-            newHighlighted.setHighlighted(true);
-        }
+        this.drawGraph();
     }
 
     public void drawGraph() {
@@ -276,50 +175,24 @@ public class VizPanelController implements EventHandler<SelectEvent> {
         panelRoot.setVisible(true);
     }
 
-/*
-    public void initZoom() {
-        this.panelRoot.getGraphics().setScaleX(factorX);
-        this.panelRoot.getGraphics().setScaleY(factorY);
+    public void redrawGraph() {
+        panelRoot.setVisible(false);
+        drawNodes(null, panelRoot);
+        LayoutEdge.redrawEdges(panelRoot, true);
+        this.resetStrokeWidth();
+        panelRoot.setVisible(true);
     }
-    */
 
-    public void resetAndRedraw(boolean edgeVisible) {
-        // Using initZoom applies the current zoom level to the new mode.
+    public void resetAndRedraw() {
         this.graphContentGroup.getChildren().remove(this.panelRoot.getGraphics());
         LayoutAlgorithm.layout(this.panelRoot);
-        //this.resetPanelSize();
-        this.getPanelRoot().setEdgeVisibility(edgeVisible);
-        this.drawGraph();
-        //this.initZoom();
+        this.getPanelRoot().setEdgeVisibility(showEdges.isSelected());
+        this.redrawGraph();
     }
 
     public void resetStrokeWidth() {
         this.getPanelRoot().resetStrokeWidth(1.0 / this.zoomSpinner.getValue());
     }
-
-/*
-    public void zoom(int zoomDistance, Button button) {
-        double scaleFactor = Math.pow(factorMultiple, zoomDistance);
-        factorX *= scaleFactor;
-        factorY *= scaleFactor;
-
-        ScaleTransition st = new ScaleTransition(new Duration(100), panelRoot.getGraphics());
-
-        st.setToX(factorX);
-        st.setToY(factorY);
-        st.setOnFinished(event -> {
-            if(button != null) {
-                Controllers.<MainTabController>get(this).setZoomEnabled(true);
-                Controllers.<MainTabController>get(this).keepButton(zoomDistance, button);
-            }
-
-            this.panelRoot.setVisible(false);
-            this.resetStrokeWidth();
-            this.panelRoot.setVisible(true);
-        });
-        st.play();
-    }
-    */
 
     private void drawNodes(GUINode parent, AbstractLayoutVertex v)
     {
@@ -337,7 +210,7 @@ public class VizPanelController implements EventHandler<SelectEvent> {
         double height = v.getHeight();
         node.setTranslateLocation(translateX, translateY, width, height);
 
-        for (AbstractLayoutVertex child : v.getInnerGraph().getVertices()) {
+        for (AbstractLayoutVertex child : v.getInnerGraph().getVisibleVertices()) {
             if (v.isExpanded()) {
                 drawNodes(node, child);
             }
@@ -347,32 +220,14 @@ public class VizPanelController implements EventHandler<SelectEvent> {
     private void drawEdges(AbstractLayoutVertex v)
     {
         if(v.isExpanded()) {
-            for (LayoutEdge e : v.getInnerGraph().getEdges()) {
+            for (LayoutEdge e : v.getInnerGraph().getVisibleEdges()) {
                 e.setVisible(v.isEdgeVisible());
                 e.draw();
             }
 
-            for (AbstractLayoutVertex child : v.getInnerGraph().getVertices()) {
+            for (AbstractLayoutVertex child : v.getInnerGraph().getVisibleVertices()) {
                 drawEdges(child);
             }
         }
     }
-
-/*
-    public void incrementScaleXFactor() {
-        factorX *= factorMultiple;
-    }
-
-    public void decrementScaleXFactor() {
-        factorX /= factorMultiple;
-    }
-
-    public void incrementScaleYFactor() {
-        factorY *= factorMultiple;
-    }
-
-    public void decrementScaleYFactor() {
-        factorY /= factorMultiple;
-    }
-    */
 }

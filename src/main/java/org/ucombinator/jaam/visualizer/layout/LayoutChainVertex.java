@@ -5,7 +5,7 @@ import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Paint;
 import javafx.scene.paint.Stop;
-import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
+import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -20,22 +20,22 @@ public class LayoutChainVertex extends AbstractLayoutVertex {
     }
 
     public String getRightPanelContent() {
-        return "Chain vertex, size = " + this.getInnerGraph().getVertices().size() + "\n";
+        return "Chain vertex, size = " + this.getInnerGraph().getVisibleVertices().size() + "\n";
     }
 
     public String getShortDescription() {
-        return "Chain vertex, size = " + this.getInnerGraph().getVertices().size();
+        return "Chain vertex, size = " + this.getInnerGraph().getVisibleVertices().size();
     }
 
     @Override
-    public boolean searchByMethod(String query, VizPanelController mainPanel) {
+    public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = false;
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices()) {
-            found = v.searchByMethod(query, mainPanel) || found;
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
+            found = v.searchByMethod(query, mainTab) || found;
         }
 
         this.setHighlighted(found);
-        mainPanel.getHighlighted().add(this);
+        mainTab.getHighlighted().add(this);
 
         return found;
     }
@@ -43,7 +43,7 @@ public class LayoutChainVertex extends AbstractLayoutVertex {
     public HashSet<LayoutMethodVertex> getMethodVertices()
     {
         HashSet<LayoutMethodVertex> methodVertices = new LinkedHashSet<LayoutMethodVertex>();
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices()) {
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
             if(v instanceof LayoutMethodVertex)
                 methodVertices.add((LayoutMethodVertex) v);
             else

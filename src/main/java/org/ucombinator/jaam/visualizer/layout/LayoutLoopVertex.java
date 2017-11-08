@@ -1,7 +1,7 @@
 package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
-import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
+import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -41,11 +41,11 @@ public class LayoutLoopVertex extends AbstractLayoutVertex implements Cloneable 
     }
 
     @Override
-    public boolean searchByMethod(String query, VizPanelController mainPanel) {
+    public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = this.methodName.contains(query);
         if(found) {
             this.setHighlighted(found);
-            mainPanel.getHighlighted().add(this);
+            mainTab.getHighlighted().add(this);
         }
 
         return found;

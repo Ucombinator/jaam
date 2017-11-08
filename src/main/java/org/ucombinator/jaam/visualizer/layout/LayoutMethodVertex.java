@@ -1,7 +1,7 @@
 package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
-import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
+import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 
 import java.util.LinkedHashSet;
 
@@ -39,13 +39,13 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
     }
 
     @Override
-    public boolean searchByMethod(String query, VizPanelController mainPanel) {
+    public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = query.contains(this.getMethodName());
         this.setHighlighted(found);
-        mainPanel.getHighlighted().add(this);
+        mainTab.getHighlighted().add(this);
 
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices()) {
-            v.searchByMethod(query, mainPanel);
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
+            v.searchByMethod(query, mainTab);
         }
 
         return found;

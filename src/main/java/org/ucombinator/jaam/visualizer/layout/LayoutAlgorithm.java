@@ -1,13 +1,19 @@
 package org.ucombinator.jaam.visualizer.layout;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Queue;
 
 public class LayoutAlgorithm
 {
     // This works on a graph whose vertices have been assigned a bounding box
-    private static final double MARGIN_PADDING = 10;//.25;
-    private static final double NODES_PADDING = 10;//.5;
-    private static final double ROOT_V_OFFSET = 10;//2;
+    private static final double MARGIN_PADDING = 10;
+    private static final double NODES_PADDING = 10;
+    private static final double ROOT_V_OFFSET = 10;
     private static HashMap<Integer, Double> bboxWidthTable;
     private static HashMap<Integer, Double> bboxHeightTable;
 
@@ -16,8 +22,7 @@ public class LayoutAlgorithm
         bboxHeightTable = new LinkedHashMap<>();
         initializeSizes(parentVertex);
         bfsLayout(parentVertex);
-        //dfsLayout(parentVertex);
-        parentVertex.setY(parentVertex.getY()+ROOT_V_OFFSET);
+        parentVertex.setY(parentVertex.getY() + ROOT_V_OFFSET);
     }
 
     private static void initializeSizes(AbstractLayoutVertex parentVertex) {
@@ -25,22 +30,21 @@ public class LayoutAlgorithm
         parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
         parentVertex.setX(0);
         parentVertex.setY(0);
-        for(AbstractLayoutVertex v:parentVertex.getInnerGraph().getVertices()){
+        for(AbstractLayoutVertex v : parentVertex.getInnerGraph().getVisibleVertices()) {
             initializeSizes(v);
         }
     }
 
-    private static void expandSubGraphs(AbstractLayoutVertex parentVertex)
-    {
-        for(AbstractLayoutVertex v: parentVertex.getInnerGraph().getVertices()){
-            HierarchicalGraph inner_graph = v.getInnerGraph();
-            if (inner_graph.getVertices().size() != 0)
+    private static void expandSubGraphs(AbstractLayoutVertex parentVertex) {
+        for(AbstractLayoutVertex v: parentVertex.getInnerGraph().getVisibleVertices()) {
+            HierarchicalGraph innerGraph = v.getInnerGraph();
+            if (innerGraph.getVisibleVertices().size() != 0)
             {
-                //Layout the inner graphs of each node and assign width W and height H to each node
-                //X and Y coordinates are RELATIVE to the parent
-                if(v.isExpanded()){
+                // Layout the inner graphs of each node and assign width W and height H to each node
+                // X and Y coordinates are RELATIVE to the parent
+                if (v.isExpanded()) {
                     dfsLayout(v);
-                }else{
+                } else {
                     System.out.println("Collapsed node: " + v.getId());
                 }
             }
@@ -48,35 +52,33 @@ public class LayoutAlgorithm
     }
 
     private static void dfsLayout(AbstractLayoutVertex parentVertex) {
-
+        System.out.println("DFS layout: " + parentVertex.getId());
         HierarchicalGraph graph = parentVertex.getInnerGraph();
 
         expandSubGraphs(parentVertex);
 
-        for (AbstractLayoutVertex v : graph.getVertices()) {
+        for (AbstractLayoutVertex v : graph.getVisibleVertices()) {
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
 
         HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap = new HashMap<>();
 
-        for (AbstractLayoutVertex v : graph.getVertices()) {
+        for (AbstractLayoutVertex v : graph.getVisibleVertices()) {
             childrenMap.put(v, new ArrayList<>());
-            childrenMap.get(v).addAll(graph.getOutNeighbors(v));
+            childrenMap.get(v).addAll(graph.getVisibleOutNeighbors(v));
         }
 
         doLayout(parentVertex, childrenMap);
-
     }
 
-    private static void bfsLayout(AbstractLayoutVertex parentVertex)
-    {
+    private static void bfsLayout(AbstractLayoutVertex parentVertex) {
         HierarchicalGraph graph = parentVertex.getInnerGraph();
 
         // Interior graphs use the DFS Layout
         expandSubGraphs(parentVertex);
 
         // Initialize all the nodes to be WHITE
-        for(AbstractLayoutVertex v: graph.getVertices()){
+        for(AbstractLayoutVertex v: graph.getVisibleVertices()) {
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
 
@@ -86,7 +88,7 @@ public class LayoutAlgorithm
         HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap = maxDepthChildren(graph, root);
 
         // Reset all the nodes to be white AND check that we visited everybody...
-        for(AbstractLayoutVertex v: graph.getVertices()){
+        for(AbstractLayoutVertex v: graph.getVisibleVertices()) {
             if(v.getVertexStatus() != AbstractLayoutVertex.VertexStatus.BLACK)
             {
                 System.out.println("ERROR in Max Depth Drawings. Does your graph have a cycle?");
@@ -99,8 +101,7 @@ public class LayoutAlgorithm
     }
 
     private static void doLayout(AbstractLayoutVertex parentVertex,
-                                 HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap)
-    {
+                                 HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap) {
         HierarchicalGraph graph = parentVertex.getInnerGraph();
 
         AbstractLayoutVertex root = graph.getRoot();
@@ -109,13 +110,13 @@ public class LayoutAlgorithm
             storeBBoxWidthAndHeight(root, childrenMap);
         }
 
-        for(AbstractLayoutVertex v: graph.getVertices()){
+        for(AbstractLayoutVertex v: graph.getVisibleVertices()){
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
 
         if(root != null) {
             assignXandYtoInnerNodesAndGiveParentBBox(root, MARGIN_PADDING, MARGIN_PADDING, childrenMap);
-            if(root.getInnerGraph().getVertices().size() > 1)
+            if(root.getInnerGraph().getVisibleVertices().size() > 1)
             {
                 parentVertex.setWidth(bboxWidthTable.get(root.getId()) + 1000 * MARGIN_PADDING);
                 parentVertex.setHeight(bboxHeightTable.get(root.getId()) + 2 * MARGIN_PADDING);
@@ -134,17 +135,16 @@ public class LayoutAlgorithm
 
     /**
      * Preconditions: Graph has no Cycles
-     * Generates the children map for the layout, every node is added to the map twice, once as a key and once in the
-     * children list of some other node. The root doesn't appear in any children list
+     * We generate the children map for the layout, where every node is added to the map twice, once as a key
+     * and once in the children list of some other node. The root doesn't appear in any children list, and
+     * cannot be hidden.
      * Every node appears as a child as deep as possible in the tree (ties, broken arbitrarily)
-     * */
-    private static HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> maxDepthChildren(HierarchicalGraph graph, AbstractLayoutVertex root)
-    {
+     */
+    private static HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> maxDepthChildren(
+            HierarchicalGraph graph, AbstractLayoutVertex root) {
         HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap = new HashMap<>();
-
         HashMap<AbstractLayoutVertex, Integer> vertexCounters = new HashMap<>();
         Queue<AbstractLayoutVertex> vertexQueue = new ArrayDeque<>();
-
         HashSet<AbstractLayoutVertex> seen = new HashSet<>();
 
         vertexQueue.add(root);
@@ -153,65 +153,59 @@ public class LayoutAlgorithm
         while(!vertexQueue.isEmpty())
         {
            AbstractLayoutVertex v = vertexQueue.remove();
-
            childrenMap.put(v, new ArrayList<>());
+           System.out.println("Finding children of vertex: " + v.getId());
 
-           for(AbstractLayoutVertex child : graph.getOutNeighbors(v))
+           for(AbstractLayoutVertex child : graph.getVisibleOutNeighbors(v))
            {
-               if(child == v)
-                   continue;
-               if(!seen.contains(child))
-               {
+               if(child.equals(v)) {
+                   continue; // Skip recursive edge
+               }
+
+               System.out.println("Out neighbor: " + child.getId());
+               System.out.print("Visible in neighbors for child: ");
+               for(AbstractLayoutVertex inNeighbor : graph.getVisibleInNeighbors(child)) {
+                   System.out.print(inNeighbor.getId() + " ");
+               }
+               System.out.println();
+               if (!seen.contains(child)) {
                    seen.add(child);
                    child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-                   int numberOfIncomingEdges = graph.getInNeighbors(child).size();
+                   int numberOfIncomingEdges = graph.getVisibleInNeighbors(child).size() - 1; // v's incoming edge (v --> child)
+                   if (graph.getVisibleInNeighbors(child).contains(child)) {
+                       numberOfIncomingEdges -= 1; // Ignore recursive call in edge count
+                   }
 
-                   numberOfIncomingEdges = numberOfIncomingEdges - 1; // v's incoming edge (v --> child)
-                   if(graph.getInNeighbors(child).contains(child))   // Self loop
-                       numberOfIncomingEdges = numberOfIncomingEdges - 1;
-
-                   if(numberOfIncomingEdges > 0)
-                   {
+                   if (numberOfIncomingEdges > 0) {
                        vertexCounters.put(child, numberOfIncomingEdges);
-                   }
-                   else if(numberOfIncomingEdges == 0)
-                   {
-                        childrenMap.get(v).add(child);
-                        vertexQueue.add(child);
-                   }
-                   else
-                   {
-                       // Should be an assert..
-                       System.out.println("ERROR in BFS CHILDREN. Invalid graph, child has no incoming edges " + child + " -> " + child.getId() + " Status" + child.getVertexStatus() + " Incoming Neigh " + graph.getInNeighbors(child));
-                   }
-               }
-               else if(child.getVertexStatus() == AbstractLayoutVertex.VertexStatus.GRAY)
-               {
-                   Integer numberOfIncomingEdges = vertexCounters.get(child);
-
-                   if(numberOfIncomingEdges == null)
-                   {
-                       System.out.println("Error Map\n\t " + vertexCounters);
-                   }
-
-                   numberOfIncomingEdges -= 1;  // v --> child
-
-                   vertexCounters.put(child, numberOfIncomingEdges);
-
-                   if(numberOfIncomingEdges == 0)
-                   {
+                   } else if (numberOfIncomingEdges == 0) {
                        childrenMap.get(v).add(child);
                        vertexQueue.add(child);
-                       vertexCounters.remove(child);
                    }
-                   else if(numberOfIncomingEdges < 0)
-                   {
-                       System.out.println("ERROR in BFS CHILDREN. Seeing a grey child with <0 incoming edges " + child + " -> " + child.getId() + " Status" + child.getVertexStatus() + " Incoming Neigh " + graph.getInNeighbors(child));
+                   else {
+                       System.out.println("Error: Negative number of incoming edges!");
+                       System.out.print("Visible in neighbors: ");
+                       for(AbstractLayoutVertex inNeighbor : graph.getVisibleInNeighbors(child)) {
+                           System.out.print(inNeighbor.getId() + " ");
+                       }
+                       System.out.println();
                    }
-               }
-               else
-               {
-                   System.out.println("ERROR in BFS children. Seeing a Black Child " + child + " --> " + child.getId() + " " + graph.getInNeighbors(child).size());
+               } else if (child.getVertexStatus() == AbstractLayoutVertex.VertexStatus.GRAY) {
+                   Integer numberOfIncomingEdges = vertexCounters.get(child);
+
+                   if (numberOfIncomingEdges == null) {
+                       System.out.println("Error Map\n\t " + vertexCounters);
+                   }
+                   else {
+                       numberOfIncomingEdges -= 1;  // v --> child
+                       vertexCounters.put(child, numberOfIncomingEdges);
+
+                       if (numberOfIncomingEdges == 0) {
+                           childrenMap.get(v).add(child);
+                           vertexQueue.add(child);
+                           vertexCounters.remove(child);
+                       }
+                   }
                }
            }
            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
@@ -221,8 +215,9 @@ public class LayoutAlgorithm
             System.out.println("BFS uncounted vertices, what happened to the incoming?!!! " + vertexCounters);
             for (Map.Entry<AbstractLayoutVertex, Integer> entry : vertexCounters.entrySet()) {
 
-                System.out.println("\t\t" + entry + " --> " + entry.getKey().getId() + " " + entry.getKey().getVertexStatus() + " " +  entry.getKey().getMethodVertices());
-                for(AbstractLayoutVertex n : graph.getInNeighbors(entry.getKey()))
+                System.out.println("\t\t" + entry + " --> " + entry.getKey().getId() + " "
+                        + entry.getKey().getVertexStatus() + " " +  entry.getKey().getMethodVertices());
+                for(AbstractLayoutVertex n : graph.getVisibleInNeighbors(entry.getKey()))
                 {
                     System.out.println("\t\t\t" + n + " --> " + n.getId() + " " + n.getVertexStatus());
                 }
@@ -232,7 +227,6 @@ public class LayoutAlgorithm
         return childrenMap;
     }
 
-
     /**
      * Preconditions: Height and Width of the inner nodes of the graph is (recursively known)
      * input: graph and left/top offset
@@ -241,7 +235,7 @@ public class LayoutAlgorithm
      * */
     private static double[] storeBBoxWidthAndHeight(
             AbstractLayoutVertex root,
-            HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex> > childrenMap)
+            HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap)
     {
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
         ArrayList<AbstractLayoutVertex> grayChildren = new ArrayList<AbstractLayoutVertex>();
@@ -323,7 +317,8 @@ public class LayoutAlgorithm
         currentWidth = 0;
         for(AbstractLayoutVertex curVer: grayChildren)
         {
-            assignXandYtoInnerNodesAndGiveParentBBox(curVer,currentWidth + left + AX,NODES_PADDING + top + root.getHeight(), childrenMap);
+            assignXandYtoInnerNodesAndGiveParentBBox(curVer,currentWidth + left + AX,
+                    NODES_PADDING + top + root.getHeight(), childrenMap);
             currentWidth += bboxWidthTable.get(curVer.getId()) + NODES_PADDING;
             currentHeight = Math.max(currentHeight, bboxHeightTable.get(curVer.getId()));
         }

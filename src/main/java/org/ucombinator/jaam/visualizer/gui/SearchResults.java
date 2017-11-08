@@ -3,7 +3,7 @@ package org.ucombinator.jaam.visualizer.gui;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.layout.BorderPane;
-import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
+import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 
 public class SearchResults extends BorderPane
@@ -71,13 +71,13 @@ public class SearchResults extends BorderPane
      }
 
     //Set the text for the area
-    public void writeText(VizPanelController mainPanel)
+    public void writeText(MainTabController mainTab)
     {
         this.root.getChildren().clear();
-        if(mainPanel.getHighlighted().size() > 0) {
+        if(mainTab.getHighlighted().size() > 0) {
             // We don't want to include the panel root, so we start our check with its children
-            for(AbstractLayoutVertex v : mainPanel.getPanelRoot().getInnerGraph().getVertices())
-                v.addTreeNodes(this.root, mainPanel);
+            for(AbstractLayoutVertex v : mainTab.vizPanelController.getPanelRoot().getInnerGraph().getVisibleVertices())
+                v.addTreeNodes(this.root, mainTab);
 
             // TODO: Auto-expand nodes?
             //DefaultTreeModel model = (DefaultTreeModel)this.searchTree.getModel();

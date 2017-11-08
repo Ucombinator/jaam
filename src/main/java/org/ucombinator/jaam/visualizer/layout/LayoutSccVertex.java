@@ -1,9 +1,8 @@
 package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
-import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
+import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 
-import java.awt.*;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
@@ -17,7 +16,7 @@ public class LayoutSccVertex extends AbstractLayoutVertex {
         this.color = defaultColor;
     }
 
-    public boolean searchByMethod(String query, VizPanelController mainPanel) {
+    public boolean searchByMethod(String query, MainTabController mainTab) {
         return false;
     }
 

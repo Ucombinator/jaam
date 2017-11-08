@@ -1,6 +1,10 @@
 package org.ucombinator.jaam.visualizer.layout;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 public class HierarchicalGraph
 {
@@ -8,53 +12,54 @@ public class HierarchicalGraph
     private HashMap<AbstractLayoutVertex, HashMap<AbstractLayoutVertex, LayoutEdge>> outEdges;
     private HashMap<AbstractLayoutVertex, HashMap<AbstractLayoutVertex, LayoutEdge>> inEdges;
 
+    private HashSet<AbstractLayoutVertex> visibleVertices;
+    private HashMap<AbstractLayoutVertex, HashMap<AbstractLayoutVertex, LayoutEdge>> visibleOutEdges;
+    private HashMap<AbstractLayoutVertex, HashMap<AbstractLayoutVertex, LayoutEdge>> visibleInEdges;
+
     public HierarchicalGraph()
     {
     	super();
     	this.vertices = new HashSet<>();
         this.outEdges = new HashMap<>();
         this.inEdges = new HashMap<>();
+
+        this.visibleVertices = new HashSet<>();
+        this.visibleOutEdges = new HashMap<>();
+        this.visibleInEdges = new HashMap<>();
     }
 
-    public HashSet<AbstractLayoutVertex> getVertices() {
-        return vertices;
+    public HashSet<AbstractLayoutVertex> getVisibleVertices() {
+        return this.visibleVertices;
     }
 
     public void setVertices(HashSet<AbstractLayoutVertex> vertices) {
         this.vertices = vertices;
+        for(AbstractLayoutVertex vertex : this.vertices) {
+            this.visibleVertices.add(vertex);
+        }
     }
 
-    public HashSet<LayoutEdge> getEdges() {
+    private HashSet<LayoutEdge> getEdges() {
         HashSet<LayoutEdge> edgeSet = new HashSet<>();
-        for (HashMap<AbstractLayoutVertex, LayoutEdge> outEdgeSet : inEdges.values()) {
-            edgeSet.addAll(outEdgeSet.values());
+        for (HashMap<AbstractLayoutVertex, LayoutEdge> inEdgeSet : inEdges.values()) {
+            edgeSet.addAll(inEdgeSet.values());
         }
         return edgeSet;
     }
 
-    public void setEdges(HashSet<LayoutEdge> edges) {
-        this.outEdges = new HashMap<>();
-        this.inEdges = new HashMap<>();
-        for (LayoutEdge edge : edges) {
-            // TODO: use addEdge for this (but may not want addOutgoingNeighbor from addEdge)
-            this.outEdges.putIfAbsent(edge.getSource(), new HashMap<>());
-            this.outEdges.get(edge.getSource()).put(edge.getDest(), edge);
-
-            this.inEdges.putIfAbsent(edge.getDest(), new HashMap<>());
-            this.inEdges.get(edge.getDest()).put(edge.getSource(), edge);
+    public HashSet<LayoutEdge> getVisibleEdges() {
+        HashSet<LayoutEdge> edgeSet = new HashSet<>();
+        for(HashMap<AbstractLayoutVertex, LayoutEdge> inEdgeSet : visibleInEdges.values()) {
+            edgeSet.addAll(inEdgeSet.values());
         }
+        return edgeSet;
     }
 
     public void addVertex(AbstractLayoutVertex vertex)
     {
         this.vertices.add(vertex);
+        this.visibleVertices.add(vertex);
         vertex.setSelfGraph(this);
-    }
-
-    public void deleteVertex(AbstractLayoutVertex vertex)
-    {
-        this.vertices.remove(vertex);
-        vertex.setSelfGraph(null);
     }
     
     public void addEdge(LayoutEdge edge)
@@ -64,28 +69,35 @@ public class HierarchicalGraph
 
         this.inEdges.putIfAbsent(edge.getDest(), new HashMap<>());
         this.inEdges.get(edge.getDest()).put(edge.getSource(), edge);
+
+        this.visibleOutEdges.putIfAbsent(edge.getSource(), new HashMap<>());
+        this.visibleOutEdges.get(edge.getSource()).put(edge.getDest(), edge);
+
+        this.visibleInEdges.putIfAbsent(edge.getDest(), new HashMap<>());
+        this.visibleInEdges.get(edge.getDest()).put(edge.getSource(), edge);
     }
 
-    /*
-    public void deleteEdge(LayoutEdge edge)
-    {
-        // TODO: outEdge
-        edge.getSource().removeOutgoingAbstractNeighbor(edge.getDest());
-        this.edges.get(edge.getSource()).remove(edge.getDest());
+    public void addVisibleEdge(LayoutEdge edge) {
+        System.out.println("Adding visible edge: " + edge.getSource().getId() + " --> " + edge.getDest().getId());
+        this.visibleOutEdges.get(edge.getSource()).putIfAbsent(edge.getDest(), edge);
+        this.visibleInEdges.get(edge.getDest()).putIfAbsent(edge.getSource(), edge);
+
+        System.out.print("In neighbors for destination:");
+        for(AbstractLayoutVertex inNeighbor : this.getVisibleInNeighbors(edge.getDest())) {
+            System.out.print(inNeighbor.getId() + " ");
+        }
+        System.out.println();
     }
-    */
     
     public String toString()
     {
         StringBuilder output = new StringBuilder();
         if(this.vertices.size() == 0)
             return "";
-        
-        Iterator<AbstractLayoutVertex> abstractVertexIter = this.vertices.iterator();
+
         output.append("Vertices: ");
-        while(abstractVertexIter.hasNext())
+        for(AbstractLayoutVertex v : this.vertices)
         {
-            AbstractLayoutVertex v = abstractVertexIter.next();
             output.append(v.getLabel() + ", ");
             output.append("\n");
             output.append("Inner graph: \n");
@@ -93,24 +105,13 @@ public class HierarchicalGraph
             output.append("\n");
         }
         output.append("\n");
-        
-        Iterator<LayoutEdge> edgeIter = this.getEdges().iterator();
+
         output.append("Edges: ");
-        while(edgeIter.hasNext()){
-            LayoutEdge e = edgeIter.next();
+        for(LayoutEdge e : this.getEdges()) {
             output.append("( " + e.getSource().getLabel() + "->" + e.getDest().getLabel() + " ), ");
         }
         output.append("\n");
         return output.toString();
-    }
-    
-    public void printCoordinates(){
-        Iterator<AbstractLayoutVertex> it = this.getVertices().iterator();
-        while(it.hasNext())
-        {
-            AbstractLayoutVertex v = it.next();
-            System.out.println("vertex:" + v.getId() + ", x=" + v.getX() + ", y=" + v.getY());
-        }
     }
     
     public AbstractLayoutVertex getRoot() {
@@ -125,7 +126,7 @@ public class HierarchicalGraph
 
         // Return the first vertex with no incoming edges
         for(AbstractLayoutVertex v : arrayList) {
-            if(this.getInNeighbors(v).size() == 0 || (this.getInNeighbors(v).size() == 1 && this.getInNeighbors(v).contains(v)) )
+            if(this.isRoot(v))
                 return v;
         }
 
@@ -133,69 +134,65 @@ public class HierarchicalGraph
         return arrayList.get(0);
     }
 
-    public void deleteEdge(AbstractLayoutVertex src, AbstractLayoutVertex dst) {
-        this.outEdges.get(src).remove(dst);
-        this.inEdges.get(dst).remove(src);
+    public boolean isRoot(AbstractLayoutVertex v) {
+        return (this.getInNeighbors(v).size() == 0 || (this.getInNeighbors(v).size() == 1 && this.getInNeighbors(v).contains(v)));
     }
 
-    public boolean hasEdge(AbstractLayoutVertex src, AbstractLayoutVertex dst) {
-        return this.outEdges.containsKey(src) && this.outEdges.get(src).containsKey(dst);
-    }
-
-    public Set<AbstractLayoutVertex> getOutNeighbors(AbstractLayoutVertex v) {
+    private Set<AbstractLayoutVertex> getOutNeighbors(AbstractLayoutVertex v) {
         return this.outEdges.getOrDefault(v, new HashMap<>()).keySet();
     }
 
-    public Set<AbstractLayoutVertex> getInNeighbors(AbstractLayoutVertex v) {
+    private Set<AbstractLayoutVertex> getInNeighbors(AbstractLayoutVertex v) {
         return this.inEdges.getOrDefault(v, new HashMap<>()).keySet();
     }
 
-//    public static ArrayList<LayoutEdge> computeDummyEdges(LayoutRootVertex root)
-//    {
-//        System.out.println("Creating dummy edges: start...");
-//        ArrayList<LayoutEdge> dummies = new ArrayList<LayoutEdge>();
-//
-//        root.cleanAll();
-//        for(AbstractLayoutVertex v : root.getInnerGraph().getVertices().values())
-//            visit(v, new LinkedHashMap<String, AbstractLayoutVertex>(), dummies);
-//        
-//        System.out.println("Creating dummy edges: done!");
-//        return dummies;
-//    }
+    public Set<AbstractLayoutVertex> getVisibleOutNeighbors(AbstractLayoutVertex v) {
+        return this.visibleOutEdges.getOrDefault(v, new HashMap<>()).keySet();
+    }
 
-//    private static void visit(AbstractLayoutVertex root, HashMap<String, AbstractLayoutVertex> hash, ArrayList<LayoutEdge> dummies)
-//    {
-//        Iterator<AbstractLayoutVertex> it = root.getOutgoingNeighbors().iterator();
-//        root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
-//        String rootMethod;
-//
-//        if (root instanceof LayoutInstructionVertex)
-//            rootMethod = ((LayoutInstructionVertex) root).getInstruction().getMethodName();
-//        else // if (root instanceof LayoutMethodVertex)
-//            rootMethod = ((LayoutMethodVertex) root).getMethodName();
-//
-//        while(it.hasNext())
-//        {
-//            AbstractLayoutVertex absVertex = it.next();
-//            String nextVertexMethod;
-//
-//            if (absVertex instanceof LayoutInstructionVertex)
-//                nextVertexMethod = ((LayoutInstructionVertex) absVertex).getInstruction().getMethodName();
-//            else
-//                nextVertexMethod = ((LayoutMethodVertex) absVertex).getMethodName();
-//
-//            if(absVertex.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
-//                if(!nextVertexMethod.equals(rootMethod))
-//                {
-//                    if(hash.containsKey(nextVertexMethod)) {
-//                        System.out.println("Adding dummy edge: " + hash.get(nextVertexMethod).getId() + "-->" + absVertex.getId());
-//                        dummies.add(new LayoutEdge(hash.get(nextVertexMethod), absVertex, LayoutEdge.EDGE_TYPE.EDGE_DUMMY));
-//                    }
-//                }
-//
-    //            hash.put(nextVertexMethod, absVertex);
-    //            visit(absVertex, hash, dummies);
-    //        }
-    //    }
-    //}
+    public Set<AbstractLayoutVertex> getVisibleInNeighbors(AbstractLayoutVertex v) {
+        return this.visibleInEdges.getOrDefault(v, new HashMap<>()).keySet();
+    }
+
+    // Hides a vertex, and reconnects every incoming vertex to every outgoing vertex.
+    // We don't allow hiding the root, since it would disconnect the graph.
+    public void setHidden(AbstractLayoutVertex v) {
+        for (AbstractLayoutVertex src : this.getVisibleInNeighbors(v)) {
+            for (AbstractLayoutVertex dest : this.getVisibleOutNeighbors(v)) {
+                if(!src.equals(v) && !dest.equals(v)) {
+                    this.visibleInEdges.get(dest).remove(v);
+                    this.visibleOutEdges.get(src).remove(v);
+                    LayoutEdge edge = new LayoutEdge(src, dest, LayoutEdge.EDGE_TYPE.EDGE_REGULAR);
+                    this.addVisibleEdge(edge);
+                }
+            }
+        }
+
+        System.out.println("Hiding vertex: " + v.getId());
+        this.visibleVertices.remove(v);
+        this.visibleInEdges.put(v, new HashMap<>());
+        this.visibleOutEdges.put(v, new HashMap<>());
+    }
+
+    // Restores the graph to its original set of edges. Note that we can't simply assign visibleInEdges
+    // and visibleOutEdges; we need to make a deep copy.
+    public void setUnhidden() {
+        this.visibleVertices = new HashSet<>();
+        this.visibleInEdges = new HashMap<>();
+        this.visibleOutEdges = new HashMap<>();
+        for(AbstractLayoutVertex v : this.vertices) {
+            this.visibleVertices.add(v);
+            this.visibleInEdges.put(v, new HashMap<>());
+            for(AbstractLayoutVertex w : this.getInNeighbors(v)) {
+                LayoutEdge e = this.inEdges.get(v).get(w);
+                this.visibleInEdges.get(v).putIfAbsent(w, e);
+            }
+
+            this.visibleOutEdges.put(v, new HashMap<>());
+            for(AbstractLayoutVertex w : this.getOutNeighbors(v)) {
+                LayoutEdge e = this.outEdges.get(v).get(w);
+                this.visibleOutEdges.get(v).putIfAbsent(w, e);
+            }
+        }
+    }
 }

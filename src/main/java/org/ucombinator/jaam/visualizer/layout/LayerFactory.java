@@ -32,7 +32,7 @@ public class LayerFactory
         for (ArrayList<Integer> scc : sccs)
         {
             if(scc.size() > 1) {
-                int sccId = sccGraph.getVertices().size();
+                int sccId = sccGraph.getVisibleVertices().size();
                 LayoutSccVertex sccVertex = new LayoutSccVertex(sccId, "SCC-" + sccId);
                 sccGraph.addVertex(sccVertex);
 
@@ -72,7 +72,7 @@ public class LayerFactory
             AbstractLayoutVertex vSCC = innerToSCC.get(v);
 
             // TODO probably should have a better way
-            if(vSCC.getInnerGraph().getVertices().size() > 0) // Am a SCC node
+            if(vSCC.getInnerGraph().getVisibleVertices().size() > 0) // Am a SCC node
             {
                 for(AbstractVertex inputN: graph.getOutNeighbors(inputV))
                 {
@@ -172,7 +172,7 @@ public class LayerFactory
     // state graph (and thus had to do more work than necessary), it was simplified to getLoopLayout()
     //private static LayoutRootVertex get2layer(Graph graph)
     //{
-    //    System.out.println("JUAN Graph coming has " + graph.getVertices().size());
+    //    System.out.println("JUAN Graph coming has " + graph.getVisibleVertices().size());
 
     //    HashMap<String, AbstractVertex> id_to_vertex =  new LinkedHashMap<String, AbstractVertex>();
     //    HashMap<String, AbstractVertex> id_to_abs_vertex = new LinkedHashMap<String, AbstractVertex>();
@@ -180,7 +180,7 @@ public class LayerFactory
 
     //    // We partition the vertex set of Main.graph into buckets corresponding to the methods.
     //    HashMap<String, HashSet<AbstractVertex>> methodBuckets = new LinkedHashMap<String, HashSet<AbstractVertex>>();
-    //    for(AbstractVertex vertex: graph.getVertices()) {
+    //    for(AbstractVertex vertex: graph.getVisibleVertices()) {
     //        //System.out.println("Reading vertex: " + vertex.getInstructionText());
     //        String method = vertex.getMethodName();
     //        if(!methodBuckets.containsKey(method)){
@@ -202,7 +202,7 @@ public class LayerFactory
 
     //    // Add edges to the methodGraph.
     //    HashMap<String, LayoutEdge> edges = new LinkedHashMap<String, LayoutEdge>();
-    //    for(AbstractVertex vertex: graph.getVertices()){
+    //    for(AbstractVertex vertex: graph.getVisibleVertices()){
     //        // Not sure why we need an Object instead of a Vertex here
     //        for(Object neighborObj: vertex.getOutgoingNeighbors()) {
     //            AbstractVertex neighbor = (AbstractVertex) neighborObj;
@@ -222,7 +222,7 @@ public class LayerFactory
     //    }
 
     //    // Create inner graph for each method vertex.
-    //    for(AbstractLayoutVertex methodVertexAbs: methodGraph.getVertices().values()) {
+    //    for(AbstractLayoutVertex methodVertexAbs: methodGraph.getVisibleVertices().values()) {
     //        // Add vertices of the inner graph.
     //        LayoutMethodVertex methodVertex = (LayoutMethodVertex) methodVertexAbs;
     //        HashMap<String,String> idMapping = new LinkedHashMap<>(); // first id is the graph vertex id and the second id the New vertex id
@@ -243,8 +243,8 @@ public class LayerFactory
     //                if(v.getMethodName().equals(neighbor.getMethodName())){
     //                    methodVertex.getInnerGraph().addEdge(
     //                            new LayoutEdge(
-    //                                    methodVertex.getInnerGraph().getVertices().get(idMapping.get(v.getStrID())),
-    //                                    methodVertex.getInnerGraph().getVertices().get(idMapping.get(neighbor.getStrID())),
+    //                                    methodVertex.getInnerGraph().getVisibleVertices().get(idMapping.get(v.getStrID())),
+    //                                    methodVertex.getInnerGraph().getVisibleVertices().get(idMapping.get(neighbor.getStrID())),
     //                                    LayoutEdge.EDGE_TYPE.EDGE_REGULAR
     //                                    )
     //                            );
@@ -267,7 +267,7 @@ public class LayerFactory
        //     start.getSelfGraph().addEdge(new LayoutEdge(start, end, LayoutEdge.EDGE_TYPE.EDGE_DUMMY));
        // }
 
-    //    System.out.println("JUAN Graph coming out has " + graph.getVertices().size() + " drawn graph has " + root.getMethodVertices().size());
+    //    System.out.println("JUAN Graph coming out has " + graph.getVisibleVertices().size() + " drawn graph has " + root.getMethodVertices().size());
 
     //    graph.matchMethodsToClasses();
 
@@ -282,7 +282,7 @@ public class LayerFactory
 
     
     //static void createChainVertices(AbstractLayoutVertex parent, int k){
-    //    Iterator<AbstractLayoutVertex> it = parent.getInnerGraph().getVertices().iterator();
+    //    Iterator<AbstractLayoutVertex> it = parent.getInnerGraph().getVisibleVertices().iterator();
     //    while(it.hasNext()) {
     //        AbstractLayoutVertex absVertex = it.next();
     //        absVertex.setVertexStatus(AbstractVertex.VertexStatus.WHITE);

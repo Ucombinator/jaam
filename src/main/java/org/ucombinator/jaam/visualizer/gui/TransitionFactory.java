@@ -15,12 +15,12 @@ public class TransitionFactory {
 
         // Add transitions for current node and the edges it contains.
         pt.getChildren().add(TransitionFactory.buildVertexTransition(v));
-        for(LayoutEdge e : v.getInnerGraph().getEdges()) {
+        for(LayoutEdge e : v.getInnerGraph().getVisibleEdges()) {
             pt.getChildren().add(TransitionFactory.buildEdgeTransition(e));
         }
 
         // Recurse for its children in our graph hierarchy.
-        for(AbstractLayoutVertex v2 : v.getInnerGraph().getVertices()) {
+        for(AbstractLayoutVertex v2 : v.getInnerGraph().getVisibleVertices()) {
             pt.getChildren().add(TransitionFactory.buildRecursiveTransition(v2));
         }
 

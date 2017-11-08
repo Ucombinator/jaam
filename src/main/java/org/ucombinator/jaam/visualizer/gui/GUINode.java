@@ -12,7 +12,6 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.scene.paint.Color;
-import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 
@@ -107,7 +106,7 @@ public class GUINode extends Group
     private void handleOnMouseEntered(MouseEvent event) {
         event.consume();
         if (vertex.getSelfGraph() != null) {
-            for(LayoutEdge e : vertex.getSelfGraph().getEdges()) {
+            for(LayoutEdge e : vertex.getSelfGraph().getVisibleEdges()) {
                 if(e.getSource() == vertex || e.getDest() == vertex) {
                     e.highlightEdgePath();
                 }
@@ -120,7 +119,7 @@ public class GUINode extends Group
         //getChildren().remove(rectLabel);
 
         if (vertex.getSelfGraph() != null) {
-            for(LayoutEdge e : vertex.getSelfGraph().getEdges()) {
+            for(LayoutEdge e : vertex.getSelfGraph().getVisibleEdges()) {
                 if (e.getSource() == vertex || e.getDest() == vertex) {
                     e.resetEdgePath();
                 }
@@ -158,11 +157,11 @@ public class GUINode extends Group
 
         // First we want the content of the clicked node to appear/disappear.
         System.out.println("Changing opacity of inner graph...");
-        for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVertices()) {
+        for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVisibleVertices()) {
             v.setOpacity(newOpacity);
         }
 
-        for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getEdges()){
+        for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getVisibleEdges()){
             e.setOpacity(newOpacity);
         }
 
@@ -172,11 +171,11 @@ public class GUINode extends Group
                 // Then we want the vertices to move to their final positions and the clicked vertex to change its size.
                 doubleClickedVertex.setExpanded(!isExpanded);
 
-                for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVertices()){
+                for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVisibleVertices()){
                     v.setVisible(newVisible);
                 }
 
-                for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getEdges()){
+                for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getVisibleEdges()){
                     e.setVisible(newVisible);
                 }
 
@@ -332,7 +331,7 @@ public class GUINode extends Group
             }
         }
 
-        for (AbstractLayoutVertex next : v.getInnerGraph().getVertices()) {
+        for (AbstractLayoutVertex next : v.getInnerGraph().getVisibleVertices()) {
             if (v.isExpanded()) {
                 animateRecursive(next, pt, mainPanel);
             }

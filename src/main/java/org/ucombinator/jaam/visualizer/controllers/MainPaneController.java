@@ -43,6 +43,14 @@ public class MainPaneController {
         Main.getSelectedMainTabController().initSearch(MainTabController.SearchType.METHOD);
     }
 
+    @FXML private void hideSelectedNodes(ActionEvent event) {
+        Main.getSelectedMainTabController().hideSelectedNodes();
+    }
+
+    @FXML private void showAllHiddenNodes(ActionEvent event) {
+        Main.getSelectedMainTabController().showAllHiddenNodes();
+    }
+
     private final FileChooser fileChooser = new FileChooser();
     @FXML public void loadLoopGraph(ActionEvent event) throws IOException {
         System.out.println("Load graph: start...");
@@ -98,10 +106,6 @@ public class MainPaneController {
 //                    String className = getClassName(unit);
 //                    graph.addClass(className, unit.getText());
 //                }
-
-//                System.out.println("Reading new packet...");
-//                packet = packetInput.read();
-//                System.out.println("Packet read!");
         }
 
         // We actually create the edges here

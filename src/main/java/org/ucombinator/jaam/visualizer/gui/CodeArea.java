@@ -9,10 +9,10 @@ import javafx.scene.text.TextFlow;
 import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
+import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
@@ -40,21 +40,21 @@ public class CodeArea extends TextFlow
             int row = CodeArea.this.getChildren().indexOf(lineText);
             Instruction lineInstr = CodeArea.this.description.get(row);
 
-            VizPanelController mainPanel = Main.getSelectedVizPanelController();
+            MainTabController mainTab = Main.getSelectedMainTabController();
 
             if (event.isShiftDown()) {
                 if (lineInstr.isRealInstruction()) {
                     if (lineInstr.isSelected()) {
-                        mainPanel.searchByJimpleIndex(
+                        mainTab.searchByJimpleIndex(
                                 lineInstr.getMethodName(), lineInstr.getJimpleIndex(), false, false);
                     } else {
-                        mainPanel.searchByJimpleIndex(
+                        mainTab.searchByJimpleIndex(
                                 lineInstr.getMethodName(), lineInstr.getJimpleIndex(), false, true);
                     }
                 }
             } else {
                 if (lineInstr.isRealInstruction()) {
-                    mainPanel.searchByJimpleIndex(
+                    mainTab.searchByJimpleIndex(
                             lineInstr.getMethodName(), lineInstr.getJimpleIndex(), true, true);
                 }
             }
@@ -79,8 +79,8 @@ public class CodeArea extends TextFlow
     public void setDescription()
     {
         System.out.println("Set Description\n");
-        VizPanelController mainPanel = Main.getSelectedVizPanelController();
-        HashSet<AbstractLayoutVertex> highlighted = mainPanel.getHighlighted();
+        MainTabController mainTab = Main.getSelectedMainTabController();
+        HashSet<AbstractLayoutVertex> highlighted = mainTab.getHighlighted();
         if(highlighted.size() > 0)
         {
             HashSet<LayoutMethodVertex> methodVertices = new LinkedHashSet<>();
