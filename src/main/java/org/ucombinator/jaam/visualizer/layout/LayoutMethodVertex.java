@@ -23,7 +23,12 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
     }
 
     public String getClassName() {
+        System.out.println("JUAN SHORT " + this.compilationUnit.method().getDeclaringClass().getShortName());
         return this.compilationUnit.method().getDeclaringClass().getName();
+    }
+
+    public String getShortClassName() {
+        return this.compilationUnit.method().getDeclaringClass().getShortName();
     }
 
     public String getMethodName() {

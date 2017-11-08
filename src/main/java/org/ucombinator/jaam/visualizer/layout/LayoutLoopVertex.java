@@ -23,14 +23,18 @@ public class LayoutLoopVertex extends AbstractLayoutVertex implements Cloneable 
 
     	this.compilationUnit = compilationUnit;
     }
+    public String getClassName() {
+        return this.compilationUnit.method().getDeclaringClass().getName();
+    }
+
+    public String getShortClassName() {
+        return this.compilationUnit.method().getDeclaringClass().getShortName();
+    }
 
     public String getMethodName() {
         return this.compilationUnit.method().getName();
     }
 
-    public String getClassName() {
-        return this.compilationUnit.method().getDeclaringClass().getName();
-    }
 
     public LoopLoopNode getCompilationUnit() {
         return compilationUnit;

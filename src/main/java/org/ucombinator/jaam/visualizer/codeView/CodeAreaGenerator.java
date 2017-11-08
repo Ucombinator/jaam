@@ -32,7 +32,6 @@ public class CodeAreaGenerator {
     public StackPane generateCodeArea(String fullClassName)
     {
         CompilationUnit unit = classes.get(fullClassName);
-        String text;
 
         assert unit != null;
         CodeArea codeArea = new CodeArea();

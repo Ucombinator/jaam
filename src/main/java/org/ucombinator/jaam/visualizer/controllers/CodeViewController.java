@@ -48,14 +48,14 @@ public class CodeViewController {
             {
                 LayoutMethodVertex v = (LayoutMethodVertex)av;
 
-                Tab newTab = new Tab(v.getClassName(), codeAreaGenerator.generateCodeArea(v.getClassName()) );
+                Tab newTab = new Tab(v.getShortClassName(), codeAreaGenerator.generateCodeArea(v.getClassName()) );
                 codeTabs.getTabs().add(newTab);
             }
             if(av instanceof LayoutLoopVertex)
             {
                 LayoutLoopVertex v = (LayoutLoopVertex) av;
 
-                Tab newTab = new Tab(v.getClassName(), codeAreaGenerator.generateCodeArea(v.getClassName()) );
+                Tab newTab = new Tab(v.getShortClassName(), codeAreaGenerator.generateCodeArea(v.getClassName()) );
                 codeTabs.getTabs().add(newTab);
             }
         }
