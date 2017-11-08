@@ -190,8 +190,8 @@ object Taint3 {
           case rhs : NewMultiArrayExpr =>
             val a1 = Address.NewArray(stmt)
             val a2 = rhs.getSizes.asScala.map(eval(stmt.sootMethod, _))
-            for (i <- 0 until a2.length) {
-              addEdge(a2(i), a1, Relationship.NewMultiArraySizeEdge(i))
+            for ((b, i) <- a2.zipWithIndex) {
+              addEdge(b, a1, Relationship.NewMultiArraySizeEdge(i))
             }
             addEdge(a1, a0, Relationship.NewMultiArrayEdge)
 
