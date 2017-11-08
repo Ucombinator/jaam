@@ -16,6 +16,7 @@ import javafx.stage.Stage;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.LineNumberFactory;
+import org.fxmisc.richtext.model.Paragraph;
 import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
 
@@ -28,11 +29,14 @@ public class CodeAreaGenerator {
         classes = new HashMap<>();
     }
 
-    public StackPane generateCodeArea()
+    public StackPane generateCodeArea(String fullClassName)
     {
-       String text = sampleCode;
+        CompilationUnit unit = classes.get(fullClassName);
+        String text;
 
+        assert unit != null;
         CodeArea codeArea = new CodeArea();
+
         codeArea.setParagraphGraphicFactory(LineNumberFactory.get(codeArea));
 
         codeArea.richChanges()
@@ -40,7 +44,24 @@ public class CodeAreaGenerator {
                 .subscribe(change -> {
                     codeArea.setStyleSpans(0, computeHighlighting(codeArea.getText()));
                 });
-        codeArea.replaceText(0, 0, sampleCode);
+
+
+        AstNodeCollection<TypeDeclaration> types = unit.getTypes();
+        assert types.size() == 1;
+        TypeDeclaration typeDeclaration = types.firstOrNullObject();
+
+        for(AstNode i: typeDeclaration.getChildrenByRole(Roles.TYPE_MEMBER))
+        {
+            EntityDeclaration entity = (EntityDeclaration)i;
+            //System.out.println(i.getRole() + " " + i.getClass() + " " + entity.getName() + " " + entity.getEntityType());
+            //System.out.println("\t" + entity.getText());
+
+            codeArea.appendText(entity.getText() + "\n");
+
+        }
+
+        //String className = getClassName(unit);
+        //graph.addClass(className, unit.getText());
 
         codeArea.setMaxHeight(Double.MAX_VALUE);
 
@@ -54,6 +75,8 @@ public class CodeAreaGenerator {
 
         return result;
     }
+
+
 
     public void addClass(CompilationUnit unit)
     {
@@ -71,16 +94,6 @@ public class CodeAreaGenerator {
 
         this.classes.put(fullClassName, unit);
 
-        /*
-        for(AstNode i: typeDeclaration.getChildrenByRole(Roles.TYPE_MEMBER))
-        {
-            EntityDeclaration entity = (EntityDeclaration)i;
-            System.out.println(i.getRole() + " " + i.getClass() + " " + entity.getName() + " " + entity.getEntityType());
-        }
-        */
-
-        //String className = getClassName(unit);
-        //graph.addClass(className, unit.getText());
     }
 
     private static final String[] KEYWORDS = new String[] {

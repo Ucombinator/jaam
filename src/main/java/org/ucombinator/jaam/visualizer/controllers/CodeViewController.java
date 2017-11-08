@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -10,6 +11,7 @@ import org.ucombinator.jaam.visualizer.codeView.CodeAreaGenerator;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.CodeArea;
 import org.ucombinator.jaam.visualizer.gui.SearchResults;
+import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutLoopVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
@@ -30,9 +32,34 @@ public class CodeViewController {
 
         this.codeAreaGenerator = codeAreaGenerator;
 
-        Tab testTab = new Tab("Test", this.codeAreaGenerator.generateCodeArea());
-
-        codeTabs.getTabs().add(testTab);
     }
+
+    public void addSelectHandler(BorderPane centerPane) {
+        centerPane.addEventHandler(SelectEvent.VERTEX_SELECTED, onVertexSelect);
+    }
+
+    EventHandler<SelectEvent> onVertexSelect = new EventHandler<SelectEvent>() {
+        @Override
+        public void handle(SelectEvent selectEvent) {
+
+            AbstractLayoutVertex av = selectEvent.getVertex();
+
+            if(av instanceof LayoutMethodVertex)
+            {
+                LayoutMethodVertex v = (LayoutMethodVertex)av;
+
+                Tab newTab = new Tab(v.getClassName(), codeAreaGenerator.generateCodeArea(v.getClassName()) );
+                codeTabs.getTabs().add(newTab);
+            }
+            if(av instanceof LayoutLoopVertex)
+            {
+                LayoutLoopVertex v = (LayoutLoopVertex) av;
+
+                Tab newTab = new Tab(v.getClassName(), codeAreaGenerator.generateCodeArea(v.getClassName()) );
+                codeTabs.getTabs().add(newTab);
+            }
+        }
+    };
+
 
 }

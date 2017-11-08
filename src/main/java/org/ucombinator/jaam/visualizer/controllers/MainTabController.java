@@ -49,6 +49,8 @@ public class MainTabController {
 
         this.leftPane.getChildren().add(this.codeViewController.codeTabs);
 
+        this.codeViewController.addSelectHandler(centerPane);
+
         //this.leftPane.getScene().getStylesheets().add("resources/CodeView.css");
 
         //CodeArea codeArea = new CodeArea();

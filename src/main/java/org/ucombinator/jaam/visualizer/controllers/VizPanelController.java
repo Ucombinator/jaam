@@ -190,7 +190,6 @@ public class VizPanelController implements EventHandler<SelectEvent> {
             //currentFrame.bytecodeArea.setDescription();
             currentFrame.setRightText("Text");
         }
-
     }
 
 
