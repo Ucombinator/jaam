@@ -12,10 +12,7 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.CodeArea;
 import org.ucombinator.jaam.visualizer.gui.SearchResults;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
-import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.LayoutLoopVertex;
-import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
-import org.ucombinator.jaam.visualizer.layout.LayoutSccVertex;
+import org.ucombinator.jaam.visualizer.layout.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +41,15 @@ public class CodeViewController {
 
             AbstractLayoutVertex av = selectEvent.getVertex();
 
+            if(av instanceof CodeEntity)
+            {
+                CodeEntity v = (CodeEntity)av;
+
+                Tab newTab = new Tab(v.getShortClassName(), codeAreaGenerator.generateCodeArea(v.getClassName()) );
+                codeTabs.getTabs().add(newTab);
+            }
+
+            /*
             if(av instanceof LayoutMethodVertex)
             {
                 LayoutMethodVertex v = (LayoutMethodVertex)av;
@@ -56,8 +62,12 @@ public class CodeViewController {
                 LayoutLoopVertex v = (LayoutLoopVertex) av;
 
                 Tab newTab = new Tab(v.getShortClassName(), codeAreaGenerator.generateCodeArea(v.getClassName()) );
+
+                newTab.setTooltip(new Tooltip(v.getClassName()));
+
                 codeTabs.getTabs().add(newTab);
             }
+            */
         }
     };
 

@@ -6,7 +6,7 @@ import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 
 import java.util.LinkedHashSet;
 
-public class LayoutMethodVertex extends AbstractLayoutVertex {
+public class LayoutMethodVertex extends AbstractLayoutVertex implements CodeEntity{
 
     private static final Color defaultColor = Color.DEEPSKYBLUE;
 
@@ -23,7 +23,6 @@ public class LayoutMethodVertex extends AbstractLayoutVertex {
     }
 
     public String getClassName() {
-        System.out.println("JUAN SHORT " + this.compilationUnit.method().getDeclaringClass().getShortName());
         return this.compilationUnit.method().getDeclaringClass().getName();
     }
 

@@ -7,7 +7,7 @@ import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
-public class LayoutLoopVertex extends AbstractLayoutVertex implements Cloneable {
+public class LayoutLoopVertex extends AbstractLayoutVertex implements Cloneable, CodeEntity{
 
     private static final Color defaultColor = Color.LIGHTYELLOW;
 
