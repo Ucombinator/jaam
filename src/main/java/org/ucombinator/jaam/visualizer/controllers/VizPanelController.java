@@ -130,10 +130,10 @@ public class VizPanelController implements EventHandler<SelectEvent> {
     // Handles select events
     @Override
     public void handle(SelectEvent event) {
-        event.consume();
         AbstractLayoutVertex vertex = event.getVertex();
 
         if (vertex.getType() == AbstractLayoutVertex.VertexType.ROOT) {
+            event.consume();
             return;
         }
 

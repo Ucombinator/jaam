@@ -2,8 +2,12 @@ package org.ucombinator.jaam.visualizer.controllers;
 
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
+import org.ucombinator.jaam.visualizer.codeView.CodeAreaGenerator;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.*;
@@ -16,12 +20,14 @@ import java.util.LinkedHashSet;
 public class MainTabController {
     public final Tab tab;
     public final VizPanelController vizPanelController;
+
     private HashSet<AbstractLayoutVertex> highlighted; // TODO: Make this an observable set
     private HashSet<AbstractLayoutVertex> hidden;
 
-    // TODO: rename some of these
-    @FXML public final CodeArea bytecodeArea = null; // Initialized by Controllers.loadFXML()
+    public final CodeViewController codeViewController;
 
+    // TODO: rename some of these
+    @FXML public final VBox leftPane = null; // Initialized by Controllers.loadFXML()
     @FXML private final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML private final BorderPane centerPane = null; // Initialized by Controllers.loadFXML()
     @FXML private final TextArea descriptionArea = null; // Initialized by Controllers.loadFXML()
@@ -31,7 +37,7 @@ public class MainTabController {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
     }
 
-    public MainTabController(File file, Graph graph) throws IOException {
+    public MainTabController(File file, Graph graph, CodeAreaGenerator codeAreaGenerator) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
         this.vizPanelController = new VizPanelController();
         this.centerPane.setCenter(this.vizPanelController.root);
@@ -39,13 +45,16 @@ public class MainTabController {
         this.tab = new Tab(file.getName(), this.root);
         this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));
         Controllers.put(this.tab, this);
+
         this.highlighted = new LinkedHashSet<>();
         this.hidden = new LinkedHashSet<>();
+        this.codeViewController = new CodeViewController(codeAreaGenerator);
+        this.leftPane.getChildren().add(this.codeViewController.codeTabs);
     }
 
     public void repaintAll() {
         System.out.println("Repainting all...");
-        bytecodeArea.setDescription();
+        //bytecodeArea.setDescription();
         setRightText();
         searchResults.writeText(this);
     }

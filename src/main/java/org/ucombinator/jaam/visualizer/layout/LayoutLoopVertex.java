@@ -2,6 +2,8 @@ package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
+import org.ucombinator.jaam.serializer.LoopLoopNode;
+import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -10,26 +12,29 @@ public class LayoutLoopVertex extends AbstractLayoutVertex implements Cloneable 
 
     private static final Color defaultColor = Color.LIGHTYELLOW;
 
-    private int startJimpleIndex;
-    private String className;
-    private String methodName;
     private int statementIndex;
 
-    public LayoutLoopVertex(int id, String label, int statementIndex, String className, String methodName){
+    private LoopLoopNode compilationUnit;
+
+    public LayoutLoopVertex(int id, String label, int statementIndex, LoopLoopNode compilationUnit){
     	super(id, label, VertexType.LOOP);
     	this.setDefaultColor();
 
     	this.statementIndex = statementIndex;
-        this.className  = className;
-        this.methodName = methodName;
+
+    	this.compilationUnit = compilationUnit;
     }
 
     public String getMethodName() {
-        return this.methodName;
+        return this.compilationUnit.method().getName();
     }
 
     public String getClassName() {
-        return className;
+        return this.compilationUnit.method().getDeclaringClass().getName();
+    }
+
+    public LoopLoopNode getCompilationUnit() {
+        return compilationUnit;
     }
 
     public String getRightPanelContent() {
@@ -42,7 +47,7 @@ public class LayoutLoopVertex extends AbstractLayoutVertex implements Cloneable 
 
     @Override
     public boolean searchByMethod(String query, MainTabController mainTab) {
-        boolean found = this.methodName.contains(query);
+        boolean found = this.getMethodName().contains(query);
         if(found) {
             this.setHighlighted(found);
             mainTab.getHighlighted().add(this);

@@ -18,6 +18,7 @@ jars/*.jar
 target
 project/target
 project/project/target
+project/build.properties
 
 ### Soot/jaam generated files
 *.jaam

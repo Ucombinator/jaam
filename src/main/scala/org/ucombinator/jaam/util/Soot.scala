@@ -151,7 +151,7 @@ object Soot {
     lazy val Object = getSootClass("java.lang.Object")
     lazy val Class = getSootClass("java.lang.Class")
     lazy val String = getSootClass("java.lang.String")
-    lazy val Clonable = getSootClass("java.lang.Clonable")
+    lazy val Cloneable = getSootClass("java.lang.Cloneable")
     lazy val ClassCastException = getSootClass("java.lang.ClassCastException")
     lazy val ArithmeticException = getSootClass("java.lang.ArithmeticException")
     lazy val Serializable = getSootClass("java.io.Serializable")
@@ -168,7 +168,7 @@ object Soot {
             isSubType(at.baseType, bt.baseType)
         case (ot : Type, _ : ArrayType) =>
           ot.equals(classes.Object.getType) ||
-            ot.equals(classes.Clonable.getType) ||
+            ot.equals(classes.Cloneable.getType) ||
             ot.equals(classes.Serializable.getType)
         case (_ : ArrayType, ot : Type) =>
           Log.warn(f"Checking if a non-array type $ot is an array")

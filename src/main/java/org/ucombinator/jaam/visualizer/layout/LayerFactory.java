@@ -152,13 +152,13 @@ public class LayerFactory
         {
             LayoutLoopVertex l = (LayoutLoopVertex)v;
             newVertex = new LayoutLoopVertex(l.getId(), l.getLabel(), l.getStatementIndex(),
-                    l.getClassName(), l.getMethodName());
+                    l.getCompilationUnit());
             //newVertex = new LayoutLoopVertex(v.getId(), v.getLabel(), 0);
         }
         else if(v instanceof  LayoutMethodVertex)
         {
             LayoutMethodVertex l = (LayoutMethodVertex)v;
-            newVertex = new LayoutMethodVertex(l.getId(), l.getLabel(), l.getClassName(), l.getMethodName());
+            newVertex = new LayoutMethodVertex(l.getId(), l.getLabel(), l.getCompilationUnit());
         }
         else
         {

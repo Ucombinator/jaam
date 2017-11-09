@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
+import com.strobel.decompiler.languages.java.ast.*;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -8,6 +9,7 @@ import javafx.scene.control.TabPane;
 import javafx.stage.FileChooser;
 import javafx.util.Pair;
 import org.ucombinator.jaam.serializer.*;
+import org.ucombinator.jaam.visualizer.codeView.CodeAreaGenerator;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.LayoutLoopVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
@@ -15,8 +17,7 @@ import org.ucombinator.jaam.visualizer.main.Main;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class MainPaneController {
     @FXML public final Parent root = null; // Initialized by Controllers.loadFXML()
@@ -69,43 +70,42 @@ public class MainPaneController {
         // Make "Open" dialog remember where we last loaded a file
         fileChooser.setInitialDirectory(file.getParentFile());
 
-        Graph graph = parseLoopGraph(file);
+        CodeAreaGenerator codeAreaGenerator = new CodeAreaGenerator();
+        Graph graph = parseLoopGraph(file, codeAreaGenerator);
 
         System.out.println("--> Create visualization: start...");
-        MainTabController tabController = new MainTabController(file, graph);
+        MainTabController tabController = new MainTabController(file, graph, codeAreaGenerator);
         System.out.println("<-- Create visualization: Done!");
 
         tabPane.getTabs().add(tabController.tab);
         tabPane.getSelectionModel().select(tabController.tab);
     }
 
-    private static Graph parseLoopGraph(File file) {
+    private static Graph parseLoopGraph(File file, CodeAreaGenerator codeAreaGenerator) {
         Graph graph = new Graph();
 
         ArrayList<LoopEdge> edges = new ArrayList<>();
         for (Packet packet : Serializer.readAll(file.getAbsolutePath())) {
             if (packet instanceof LoopLoopNode) {
                 LoopLoopNode node = (LoopLoopNode) packet;
-                CodeIdentifier identifier = new CodeIdentifier(node.method().getSignature());
+
                 graph.addVertex(new LayoutLoopVertex(node.id().id(),
                         node.method().getSignature(),
-                        node.statementIndex(), identifier.className, identifier.methodName));
+                        node.statementIndex(), node));
 
             } else if (packet instanceof LoopMethodNode) {
                 LoopMethodNode node = (LoopMethodNode) packet;
-                CodeIdentifier identifier = new CodeIdentifier(node.method().getSignature());
                 graph.addVertex(new LayoutMethodVertex(node.id().id(),
-                        node.method().getSignature(),
-                        identifier.className, identifier.methodName));
+                        node.method().getSignature(), node));
             } else if (packet instanceof LoopEdge) {
                 edges.add((LoopEdge) packet);
             }
-//                else if (packet instanceof org.ucombinator.jaam.tools.decompile.DecompiledClass)
-//                {
-//                    CompilationUnit unit = ((org.ucombinator.jaam.tools.decompile.DecompiledClass) packet).compilationUnit();
-//                    String className = getClassName(unit);
-//                    graph.addClass(className, unit.getText());
-//                }
+            else if (packet instanceof org.ucombinator.jaam.tools.decompile.DecompiledClass)
+            {
+                CompilationUnit unit = ((org.ucombinator.jaam.tools.decompile.DecompiledClass) packet).compilationUnit();
+
+                codeAreaGenerator.addClass(unit);
+            }
         }
 
         // We actually create the edges here
