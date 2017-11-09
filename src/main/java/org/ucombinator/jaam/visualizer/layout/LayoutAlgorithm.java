@@ -131,7 +131,6 @@ public class LayoutAlgorithm
             parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
         }
     }
-    
 
     /**
      * Preconditions: Graph has no Cycles
@@ -154,7 +153,6 @@ public class LayoutAlgorithm
         {
            AbstractLayoutVertex v = vertexQueue.remove();
            childrenMap.put(v, new ArrayList<>());
-           System.out.println("Finding children of vertex: " + v.getId());
 
            for(AbstractLayoutVertex child : graph.getVisibleOutNeighbors(v))
            {
@@ -162,8 +160,6 @@ public class LayoutAlgorithm
                    continue; // Skip recursive edge
                }
 
-               System.out.println("Out neighbor: " + child.getId());
-               System.out.print("Visible in neighbors for child: ");
                for(AbstractLayoutVertex inNeighbor : graph.getVisibleInNeighbors(child)) {
                    System.out.print(inNeighbor.getId() + " ");
                }
@@ -183,8 +179,6 @@ public class LayoutAlgorithm
                        vertexQueue.add(child);
                    }
                    else {
-                       System.out.println("Error: Negative number of incoming edges!");
-                       System.out.print("Visible in neighbors: ");
                        for(AbstractLayoutVertex inNeighbor : graph.getVisibleInNeighbors(child)) {
                            System.out.print(inNeighbor.getId() + " ");
                        }
