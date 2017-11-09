@@ -2,11 +2,9 @@ package org.ucombinator.jaam.visualizer.controllers;
 
 import javafx.fxml.FXML;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.shape.Rectangle;
 import org.ucombinator.jaam.visualizer.codeView.CodeAreaGenerator;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
@@ -50,6 +48,8 @@ public class MainTabController {
         this.hidden = new LinkedHashSet<>();
         this.codeViewController = new CodeViewController(codeAreaGenerator);
         this.leftPane.getChildren().add(this.codeViewController.codeTabs);
+
+        this.codeViewController.addSelectHandler(centerPane);
     }
 
     public void repaintAll() {

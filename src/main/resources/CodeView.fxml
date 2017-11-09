@@ -3,9 +3,8 @@
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.layout.VBox?>
 
-
-<VBox fx:id="root" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" stylesheets="CodeView.css">
+<VBox fx:id="root" stylesheets="CodeView.css" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-       <TabPane fx:id="codeTabs" tabClosingPolicy="UNAVAILABLE" stylesheets="CodeView.css"/>
+       <TabPane fx:id="codeTabs" stylesheets="CodeView.css" tabClosingPolicy="ALL_TABS" VBox.vgrow="ALWAYS" />
    </children>
 </VBox>
