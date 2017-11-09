@@ -45,10 +45,16 @@ public class CodeViewController {
             {
                 CodeEntity v = (CodeEntity)av;
 
-                Tab newTab = new Tab(v.getShortClassName(), codeAreaGenerator.generateCodeArea(v.getClassName()) );
-                codeTabs.getTabs().add(newTab);
+                Tab t = codeTabs.getTabs().stream().filter(c-> c.getId().equals(v.getClassName())).findFirst().orElse(null);
 
-                codeTabs.getSelectionModel().select(newTab);
+                if(t == null)
+                {
+                    t= new Tab(v.getShortClassName(), codeAreaGenerator.generateCodeArea(v.getClassName()) );
+                    t.setId(v.getClassName());
+                    codeTabs.getTabs().add(t);
+                }
+
+                codeTabs.getSelectionModel().select(t);
             }
 
             /*
