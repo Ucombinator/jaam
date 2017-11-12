@@ -37,41 +37,133 @@ object Address {
 }
 
 
-abstract sealed class Relationship extends DefaultEdge
+abstract sealed class Relationship
 object Relationship {
-  case object StmtEdge extends Relationship
-  case object ReturnEdge extends Relationship
-  case object ThrowsEdge extends Relationship
-  case object UnOpEdge extends Relationship
-  case object BinOp1Edge extends Relationship
-  case object BinOp2Edge extends Relationship
-  case object CastEdge extends Relationship
-  case object InstanceOfEdge extends Relationship
-  case object RefEdge extends Relationship
-  case object InstanceFieldBaseEdge extends Relationship
-  case object InstanceFieldValueEdge extends Relationship
-  case object ArrayBaseEdge extends Relationship
-  case object ArrayIndexEdge extends Relationship
-  case object ArrayValueEdge extends Relationship
-  case object InvokeBaseEdge extends Relationship
-  case class ArgumentEdge(index: Int) extends Relationship
-  case object ResultEdge extends Relationship
-  case object LhsEdge extends Relationship
-  case object NewEdge extends Relationship
-  case object NewArrayEdge extends Relationship
-  case object NewArraySizeEdge extends Relationship
-  case object NewMultiArrayEdge extends Relationship
-  case class NewMultiArraySizeEdge(index: Int) extends Relationship
-  case object DefinitionEdge extends Relationship
-  case object ParameterRefEdge extends Relationship
-  case object StaticFieldRefEdge extends Relationship
-  case object ThisRefEdge extends Relationship
-  case object InstanceFieldRefEdge extends Relationship
-  case object ArrayRefEdge extends Relationship
+  class  StmtEdge extends Relationship
+  object  StmtEdge extends Relationship { def apply = new StmtEdge() }
+
+  class  ReturnEdge extends Relationship
+  object  ReturnEdge extends Relationship { def apply = new ReturnEdge() }
+
+  class  ThrowsEdge extends Relationship
+  object  ThrowsEdge extends Relationship { def apply = new ThrowsEdge() }
+
+  class  UnOpEdge extends Relationship
+  object  UnOpEdge extends Relationship { def apply = new UnOpEdge() }
+
+  class  BinOp1Edge extends Relationship
+  object  BinOp1Edge extends Relationship { def apply = new BinOp1Edge() }
+
+  class  BinOp2Edge extends Relationship
+  object  BinOp2Edge extends Relationship { def apply = new BinOp2Edge() }
+
+  class  CastEdge extends Relationship
+  object  CastEdge extends Relationship { def apply = new CastEdge() }
+
+  class  InstanceOfEdge extends Relationship
+  object  InstanceOfEdge extends Relationship { def apply = new InstanceOfEdge }
+
+  class  RefEdge extends Relationship
+  object RefEdge extends  Relationship { def apply = new RefEdge }
+
+  class  InstanceFieldBaseEdge extends Relationship
+  object  InstanceFieldBaseEdge extends Relationship { def apply = new InstanceFieldBaseEdge }
+
+  class  InstanceFieldValueEdge extends Relationship
+  object  InstanceFieldValueEdge extends Relationship { def apply = new InstanceFieldValueEdge }
+
+  class  ArrayBaseEdge extends Relationship
+  object  ArrayBaseEdge extends Relationship { def apply = new ArrayBaseEdge }
+
+  class  ArrayIndexEdge extends Relationship
+  object  ArrayIndexEdge extends Relationship { def apply = new ArrayIndexEdge }
+
+  class  ArrayValueEdge extends Relationship
+  object  ArrayValueEdge extends Relationship { def apply = new ArrayValueEdge }
+
+  class  InvokeBaseEdge extends Relationship
+  object  InvokeBaseEdge extends Relationship { def apply = new InvokeBaseEdge }
+
+  class  ArgumentEdge(val index: Int) extends Relationship
+  object  ArgumentEdge extends Relationship { def apply(i: Int) = new ArgumentEdge(i)}
+
+  class  ResultEdge extends Relationship
+  object  ResultEdge extends Relationship { def apply = new ResultEdge }
+
+  class  LhsEdge extends Relationship
+  object  LhsEdge extends Relationship { def apply = new LhsEdge }
+
+  class  NewEdge extends Relationship
+  object  NewEdge extends Relationship { def apply = new NewEdge }
+
+  class  NewArrayEdge extends Relationship
+  object NewArrayEdge extends Relationship { def apply = new NewArrayEdge }
+
+  class  NewArraySizeEdge extends Relationship
+  object  NewArraySizeEdge extends Relationship { def apply = new NewArraySizeEdge }
+
+  class  NewMultiArrayEdge extends Relationship
+  object  NewMultiArrayEdge extends Relationship { def apply = new NewMultiArrayEdge}
+
+  class  NewMultiArraySizeEdge(val index: Int) extends Relationship
+  object  NewMultiArraySizeEdge extends Relationship { def apply(i: Int) = new NewMultiArraySizeEdge(i) }
+
+  class  DefinitionEdge extends Relationship
+  object  DefinitionEdge extends Relationship { def apply = new DefinitionEdge }
+
+  class  ParameterRefEdge extends Relationship
+  object  ParameterRefEdge extends Relationship { def apply = new ParameterRefEdge }
+
+  class  StaticFieldRefEdge extends Relationship
+  object  StaticFieldRefEdge extends Relationship { def apply = new StaticFieldRefEdge }
+
+  class  ThisRefEdge extends Relationship
+  object ThisRefEdge extends  Relationship { def apply = new ThisRefEdge }
+
+  class  InstanceFieldRefEdge extends Relationship
+  object InstanceFieldRefEdge extends  Relationship { def apply = new InstanceFieldRefEdge }
+
+  class  ArrayRefEdge extends Relationship
+  object  ArrayRefEdge extends Relationship { def apply = new ArrayRefEdge }
 }
 
+
+
+//class tionship {
+//class ct StmtEdge extends Relationship
+//class ct ReturnEdge extends Relationship
+//class ct ThrowsEdge extends Relationship
+//class ct UnOpEdge extends Relationship
+//class ct BinOp1Edge extends Relationship
+//class ct BinOp2Edge extends Relationship
+//class ct CastEdge extends Relationship
+//class ct InstanceOfEdge extends Relationship
+//ct RefEdge extends Relationship
+//ct InstanceFieldBaseEdge extends Relationship
+//ct InstanceFieldValueEdge extends Relationship
+//ct ArrayBaseEdge extends Relationship
+//  case object ArrayIndexEdge extends Relationship
+//  case object ArrayValueEdge extends Relationship
+//  case object InvokeBaseEdge extends Relationship
+//  case class ArgumentEdge(index: Int) extends Relationship
+//  case object ResultEdge extends Relationship
+//  case object LhsEdge extends Relationship
+//  case object NewEdge extends Relationship
+//  case object NewArrayEdge extends Relationship
+//  case object NewArraySizeEdge extends Relationship
+//  case object NewMultiArrayEdge extends Relationship
+//  case class NewMultiArraySizeEdge(index: Int) extends Relationship
+//  case class DefinitionEdge() extends Relationship { override def toString: String = "DefinitionEdge" }
+//  case object ParameterRefEdge extends Relationship
+//  case object StaticFieldRefEdge extends Relationship
+//  case object ThisRefEdge extends Relationship
+//  case object InstanceFieldRefEdge extends Relationship
+//  case object ArrayRefEdge extends Relationship
+//}
+
 object Taint3 {
-  val graph = new DefaultDirectedGraph[Address, Relationship](classOf[Relationship])
+//  val graph = new DefaultDirectedGraph[Address, Relationship](classOf[Relationship])
+    val graph = new DirectedPseudograph[Address, Relationship](classOf[Relationship])
 
   def main(input: List[String], output: String): Unit = {
     println("In Taint3")
@@ -135,9 +227,22 @@ object Taint3 {
   }
 
   def addEdge(a1: Address, a2: Address, r: Relationship): Unit = {
-    graph.addVertex(a1)
-    graph.addVertex(a2)
-    graph.addEdge(a1, a2, r)
+    println("++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    var rc: Boolean = false
+    println(a1)
+    rc = graph.addVertex(a1)
+    println(rc)
+
+    println(a2)
+    rc = graph.addVertex(a2)
+    println(rc)
+
+    println("XXXXXXXXXXXXX " + graph.containsEdge(a1, a2))
+
+    println(r)
+    rc = graph.addEdge(a1, a2, r)
+    println(rc)
+    println("----------------------------------------------------")
   }
 
   // TODO: edges between method declarations and implementations
@@ -197,7 +302,7 @@ object Taint3 {
 
           case rhs =>
             val a1 = eval(stmt.sootMethod, rhs)
-            val a2 = lhs(stmt.sootMethod, sootStmt.getLeftOp)
+            println(s"$a1 --->  $a0")
             addEdge(a1, a0, Relationship.DefinitionEdge)
         }
 
@@ -292,7 +397,7 @@ object Taint3 {
 
   def eval(m: SootMethod, v: SootValue): Address = {
     val a0 = Address.Value(v)
-    graph.addVertex(a0)
+    // graph.addVertex(a0)
 
     v match {
       // Base cases
