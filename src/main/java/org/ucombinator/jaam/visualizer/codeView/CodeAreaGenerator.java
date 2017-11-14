@@ -7,16 +7,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.strobel.decompiler.languages.java.ast.*;
-import javafx.application.Application;
-import javafx.scene.Node;
-import javafx.scene.Scene;
-import javafx.scene.layout.StackPane;
-import javafx.stage.Stage;
-
-import org.fxmisc.flowless.VirtualizedScrollPane;
-import org.fxmisc.richtext.CodeArea;
-import org.fxmisc.richtext.LineNumberFactory;
-import org.fxmisc.richtext.model.Paragraph;
 import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
 
@@ -28,54 +18,6 @@ public class CodeAreaGenerator {
     {
         classes = new HashMap<>();
     }
-
-    public StackPane generateCodeArea(String fullClassName)
-    {
-        CompilationUnit unit = classes.get(fullClassName);
-
-        assert unit != null;
-        CodeArea codeArea = new CodeArea();
-
-        codeArea.setParagraphGraphicFactory(LineNumberFactory.get(codeArea));
-
-        codeArea.richChanges()
-                .filter(ch -> !ch.getInserted().equals(ch.getRemoved())) // XXX
-                .subscribe(change -> {
-                    codeArea.setStyleSpans(0, computeHighlighting(codeArea.getText()));
-                });
-
-
-        AstNodeCollection<TypeDeclaration> types = unit.getTypes();
-        assert types.size() == 1;
-        TypeDeclaration typeDeclaration = types.firstOrNullObject();
-
-        for(AstNode i: typeDeclaration.getChildrenByRole(Roles.TYPE_MEMBER))
-        {
-            EntityDeclaration entity = (EntityDeclaration)i;
-            //System.out.println(i.getRole() + " " + i.getClass() + " " + entity.getName() + " " + entity.getEntityType());
-            //System.out.println("\t" + entity.getText());
-
-            codeArea.appendText(entity.getText() + "\n");
-
-        }
-
-        //String className = getClassName(unit);
-        //graph.addClass(className, unit.getText());
-
-        codeArea.setMaxHeight(Double.MAX_VALUE);
-
-        VirtualizedScrollPane scrollPane = new VirtualizedScrollPane(codeArea);
-        scrollPane.setMaxHeight(Double.MAX_VALUE);
-
-        StackPane result = new StackPane(scrollPane);
-
-        result.setMaxWidth(Double.MAX_VALUE);
-        result.setMaxHeight(Double.MAX_VALUE);
-
-        return result;
-    }
-
-
 
     public void addClass(CompilationUnit unit)
     {
@@ -92,7 +34,6 @@ public class CodeAreaGenerator {
         //System.out.println("JUAN FullClassName " + fullClassName);
 
         this.classes.put(fullClassName, unit);
-
     }
 
     private static final String[] KEYWORDS = new String[] {
@@ -149,7 +90,7 @@ public class CodeAreaGenerator {
             "}"
     });
 
-    private static StyleSpans<Collection<String>> computeHighlighting(String text) {
+    public static StyleSpans<Collection<String>> computeHighlighting(String text) {
         Matcher matcher = PATTERN.matcher(text);
         int lastKwEnd = 0;
         StyleSpansBuilder<Collection<String>> spansBuilder

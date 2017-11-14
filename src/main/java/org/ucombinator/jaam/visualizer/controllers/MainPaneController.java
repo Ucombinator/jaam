@@ -7,9 +7,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.control.TabPane;
 import javafx.stage.FileChooser;
-import javafx.util.Pair;
 import org.ucombinator.jaam.serializer.*;
-import org.ucombinator.jaam.visualizer.codeView.CodeAreaGenerator;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.LayoutLoopVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
@@ -70,18 +68,18 @@ public class MainPaneController {
         // Make "Open" dialog remember where we last loaded a file
         fileChooser.setInitialDirectory(file.getParentFile());
 
-        CodeAreaGenerator codeAreaGenerator = new CodeAreaGenerator();
-        Graph graph = parseLoopGraph(file, codeAreaGenerator);
+        List<CompilationUnit> compilationUnits = new ArrayList<>();
+        Graph graph = parseLoopGraph(file, compilationUnits);
 
         System.out.println("--> Create visualization: start...");
-        MainTabController tabController = new MainTabController(file, graph, codeAreaGenerator);
+        MainTabController tabController = new MainTabController(file, graph,  compilationUnits);
         System.out.println("<-- Create visualization: Done!");
 
         tabPane.getTabs().add(tabController.tab);
         tabPane.getSelectionModel().select(tabController.tab);
     }
 
-    private static Graph parseLoopGraph(File file, CodeAreaGenerator codeAreaGenerator) {
+    private static Graph parseLoopGraph(File file, List<CompilationUnit> compilationUnits) {
         Graph graph = new Graph();
 
         ArrayList<LoopEdge> edges = new ArrayList<>();
@@ -103,8 +101,7 @@ public class MainPaneController {
             else if (packet instanceof org.ucombinator.jaam.tools.decompile.DecompiledClass)
             {
                 CompilationUnit unit = ((org.ucombinator.jaam.tools.decompile.DecompiledClass) packet).compilationUnit();
-
-                codeAreaGenerator.addClass(unit);
+                compilationUnits.add(unit);
             }
         }
 
