@@ -11,6 +11,7 @@ import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.LineNumberFactory;
 import org.ucombinator.jaam.visualizer.codeView.CodeHighlighter;
+import org.ucombinator.jaam.visualizer.codeView.CodeTab;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.layout.*;
 import java.io.IOException;
@@ -22,12 +23,12 @@ public class CodeViewController {
     @FXML public final VBox root = null; // Initialized by Controllers.loadFXML()
     @FXML public final TabPane codeTabs = null; // Initialized by Controllers.loadFXML()
 
-    HashMap<String, CompilationUnit> classes;
+    HashMap<String, CodeTab> tabMap;
 
     public CodeViewController(List<CompilationUnit> compilationUnits) throws IOException {
         Controllers.loadFXML("/CodeView.fxml", this);
 
-        this.classes = new HashMap<>();
+        this.tabMap = new HashMap<>();
 
         for(CompilationUnit u : compilationUnits)
             addClass(u);
@@ -36,52 +37,6 @@ public class CodeViewController {
     public void addSelectHandler(BorderPane centerPane) {
         centerPane.addEventHandler(SelectEvent.VERTEX_SELECTED, onVertexSelect);
     }
-
-    public StackPane generateCodeArea(String fullClassName)
-    {
-        CompilationUnit unit = classes.get(fullClassName);
-
-        assert unit != null;
-        CodeArea codeArea = new CodeArea();
-
-        codeArea.setParagraphGraphicFactory(LineNumberFactory.get(codeArea));
-
-        codeArea.richChanges()
-                .filter(ch -> !ch.getInserted().equals(ch.getRemoved())) // XXX
-                .subscribe(change -> {
-                    codeArea.setStyleSpans(0, CodeHighlighter.computeHighlighting(codeArea.getText()));
-                });
-
-
-        AstNodeCollection<TypeDeclaration> types = unit.getTypes();
-        assert types.size() == 1;
-        TypeDeclaration typeDeclaration = types.firstOrNullObject();
-
-        for(AstNode i: typeDeclaration.getChildrenByRole(Roles.TYPE_MEMBER))
-        {
-            EntityDeclaration entity = (EntityDeclaration)i;
-            //System.out.println(i.getRole() + " " + i.getClass() + " " + entity.getName() + " " + entity.getEntityType());
-            //System.out.println("\t" + entity.getText());
-
-            codeArea.appendText(entity.getText() + "\n");
-        }
-
-        //String className = getClassName(unit);
-        //graph.addClass(className, unit.getText());
-
-        codeArea.setMaxHeight(Double.MAX_VALUE);
-
-        VirtualizedScrollPane scrollPane = new VirtualizedScrollPane(codeArea);
-        scrollPane.setMaxHeight(Double.MAX_VALUE);
-
-        StackPane result = new StackPane(scrollPane);
-
-        result.setMaxWidth(Double.MAX_VALUE);
-        result.setMaxHeight(Double.MAX_VALUE);
-
-        return result;
-    }
-
 
     public void addClass(CompilationUnit unit)
     {
@@ -95,9 +50,7 @@ public class CodeViewController {
         String className = typeDeclaration.getName();
         String fullClassName = new String(unit.getPackage().getName() + "." + className);
 
-        //System.out.println("JUAN FullClassName " + fullClassName);
-
-        this.classes.put(fullClassName, unit);
+        this.tabMap.put(fullClassName, new CodeTab(unit, className, fullClassName));
     }
 
     EventHandler<SelectEvent> onVertexSelect = new EventHandler<SelectEvent>() {
@@ -110,22 +63,10 @@ public class CodeViewController {
             {
                 CodeEntity v = (CodeEntity)av;
 
-                Tab t = codeTabs.getTabs().stream().filter(c-> c.getId().equals(v.getClassName())).findFirst().orElse(null);
+                CodeTab t = tabMap.get(v.getClassName());
 
-
-                if(t == null)
+                if(!isDisplayed(t))
                 {
-                    t= new Tab(v.getShortClassName(), generateCodeArea(v.getClassName()) );
-                    t.setId(v.getClassName());
-
-                    final String tabId = t.getId();
-                    t.setOnClosed( e -> {
-                        e.consume();
-
-                        System.out.println("Closed tab " + tabId);
-
-                    });
-
                     codeTabs.getTabs().add(t);
                 }
 
@@ -134,5 +75,54 @@ public class CodeViewController {
         }
     };
 
+    boolean isDisplayed(CodeTab t)
+    {
+        return codeTabs.getTabs().stream().filter(
+                c-> ((CodeTab)c).fullClassName.equals(t.fullClassName)).findFirst().orElse(null)
+                != null;
+    }
+
+    /*
+    private class ClassInfo{
+        public CompilationUnit unit;
+        public CodeArea codeArea;
+        public StackPane stackPane;
+        public boolean isDisplayed;
+        private HashMap<String, ParagraphRange> methodParagraphs;
+        public String highlightedMethod;
+
+        public ClassInfo(CompilationUnit unit)
+        {
+            this.unit = unit;
+            this.isDisplayed = false;
+
+            this.methodParagraphs = new HashMap<>();
+            this.highlightedMethod = null;
+        }
+
+        public void addMethod(String methodName, int begin, int end)
+        {
+            this.methodParagraphs.put(methodName, new ParagraphRange(begin, end));
+        }
+
+        public ParagraphRange getMethodParagraph(String methodName)
+        {
+            return methodParagraphs.get(methodName);
+        }
+
+        public class ParagraphRange{
+
+            ParagraphRange(int begin, int end)
+            {
+                this.begin = begin;
+                this.end = end;
+            }
+
+            public int begin;
+            public int end;
+        }
+
+    }
+    */
 
 }

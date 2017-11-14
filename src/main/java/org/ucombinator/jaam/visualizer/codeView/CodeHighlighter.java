@@ -63,7 +63,4 @@ public class CodeHighlighter {
         spansBuilder.add(Collections.emptyList(), text.length() - lastKwEnd);
         return spansBuilder.create();
     }
-
-
-
 }
