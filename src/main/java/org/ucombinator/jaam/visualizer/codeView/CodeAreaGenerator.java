@@ -2,39 +2,13 @@ package org.ucombinator.jaam.visualizer.codeView;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.strobel.decompiler.languages.java.ast.*;
 import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
 
 public class CodeAreaGenerator {
-
-    HashMap<String, CompilationUnit> classes;
-
-    public CodeAreaGenerator()
-    {
-        classes = new HashMap<>();
-    }
-
-    public void addClass(CompilationUnit unit)
-    {
-        AstNodeCollection<TypeDeclaration> types = unit.getTypes();
-        assert types.size() == 1;
-
-        TypeDeclaration typeDeclaration = types.firstOrNullObject();
-
-        typeDeclaration.getText();
-
-        String className = typeDeclaration.getName();
-        String fullClassName = new String(unit.getPackage().getName() + "." + className);
-
-        //System.out.println("JUAN FullClassName " + fullClassName);
-
-        this.classes.put(fullClassName, unit);
-    }
 
     private static final String[] KEYWORDS = new String[] {
             "abstract", "assert", "boolean", "break", "byte",
@@ -66,29 +40,6 @@ public class CodeAreaGenerator {
                     + "|(?<STRING>" + STRING_PATTERN + ")"
                     + "|(?<COMMENT>" + COMMENT_PATTERN + ")"
     );
-
-    private static final String sampleCode = String.join("\n", new String[] {
-            "package com.example;",
-            "",
-            "import java.util.*;",
-            "",
-            "public class Foo extends Bar implements Baz {",
-            "",
-            "    /*",
-            "     * multi-line comment",
-            "     */",
-            "    public static void main(String[] args) {",
-            "        // single-line comment",
-            "        for(String arg: args) {",
-            "            if(arg.length() != 0)",
-            "                System.out.println(arg);",
-            "            else",
-            "                System.err.println(\"Warning: empty string as argument\");",
-            "        }",
-            "    }",
-            "",
-            "}"
-    });
 
     public static StyleSpans<Collection<String>> computeHighlighting(String text) {
         Matcher matcher = PATTERN.matcher(text);
