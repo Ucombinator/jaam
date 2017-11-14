@@ -10,7 +10,7 @@ import javafx.scene.layout.BorderPane;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.LineNumberFactory;
-import org.ucombinator.jaam.visualizer.codeView.CodeAreaGenerator;
+import org.ucombinator.jaam.visualizer.codeView.CodeHighlighter;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.layout.*;
 import java.io.IOException;
@@ -49,7 +49,7 @@ public class CodeViewController {
         codeArea.richChanges()
                 .filter(ch -> !ch.getInserted().equals(ch.getRemoved())) // XXX
                 .subscribe(change -> {
-                    codeArea.setStyleSpans(0, CodeAreaGenerator.computeHighlighting(codeArea.getText()));
+                    codeArea.setStyleSpans(0, CodeHighlighter.computeHighlighting(codeArea.getText()));
                 });
 
 
