@@ -28,3 +28,7 @@
 .paragraph-box:has-caret {
     -fx-background-color: #f2f9fc;
 }
+
+.paragraph-box .is-selected{
+    -fx-background-color: #f4b87c;
+}

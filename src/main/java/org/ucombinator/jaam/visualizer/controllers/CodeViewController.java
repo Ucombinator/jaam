@@ -71,6 +71,7 @@ public class CodeViewController {
                 }
 
                 codeTabs.getSelectionModel().select(t);
+                t.highlightMethod(v.getMethodName());
             }
         }
     };
