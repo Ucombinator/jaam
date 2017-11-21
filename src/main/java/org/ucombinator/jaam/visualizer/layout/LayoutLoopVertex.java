@@ -67,7 +67,7 @@ public class LayoutLoopVertex extends AbstractLayoutVertex implements Cloneable,
 
 
     public void setDefaultColor(){
-        this.setColor(defaultColor);
+        this.color = defaultColor;
     }
     
     public int getStatementIndex() {
