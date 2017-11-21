@@ -65,6 +65,12 @@ public class CodeViewController {
 
                 CodeTab t = tabMap.get(v.getClassName());
 
+                if(t == null)
+                {
+                    System.out.println("Didn't find code associated to " + v.getClassName());
+                    return;
+                }
+
                 if(!isDisplayed(t))
                 {
                     codeTabs.getTabs().add(t);
