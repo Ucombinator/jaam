@@ -50,7 +50,9 @@ public class CodeViewController {
         String className = typeDeclaration.getName();
         String fullClassName = new String(unit.getPackage().getName() + "." + className);
 
-        this.tabMap.put(fullClassName, new CodeTab(unit, className, fullClassName));
+        CodeTab tab = new CodeTab(unit, className, fullClassName);
+        tab.setTooltip(new Tooltip(fullClassName));
+        this.tabMap.put(fullClassName, tab);
     }
 
     EventHandler<SelectEvent> onVertexSelect = new EventHandler<SelectEvent>() {
