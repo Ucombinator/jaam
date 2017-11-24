@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
@@ -38,6 +39,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
 
     protected Color color;
     public static final Color highlightColor = Color.ORANGE;
+    public static final DropShadow highlightShadow = new DropShadow(10, Color.BLUE);
 
     private boolean isExpanded = true;
     private boolean isHidden = false;
@@ -256,18 +258,11 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
             this.getGraphics().setFill(this.color);
         }
 
-        Rectangle r = this.getGraphics().getHighlightingRect();
-        FadeTransition ft = new FadeTransition(Duration.millis(300), r);
         if (isHighlighted) {
-            this.getGraphics().getHighlightingRect().setVisible(true);
-            ft.setFromValue(0f);
-            ft.setToValue(1f);
+            this.getGraphics().getRect().setEffect(highlightShadow);
         } else {
-            ft.setFromValue(1f);
-            ft.setToValue(0f);
+            this.getGraphics().getRect().setEffect(null);
         }
-
-        ft.play();
     }
 
     public void setSelfGraph(HierarchicalGraph abstractGraph) {

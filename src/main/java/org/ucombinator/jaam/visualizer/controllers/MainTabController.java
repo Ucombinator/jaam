@@ -5,15 +5,16 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
-import org.ucombinator.jaam.visualizer.codeView.CodeAreaGenerator;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.*;
+import com.strobel.decompiler.languages.java.ast.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 
 public class MainTabController {
     public final Tab tab;
@@ -35,7 +36,7 @@ public class MainTabController {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
     }
 
-    public MainTabController(File file, Graph graph, CodeAreaGenerator codeAreaGenerator) throws IOException {
+    public MainTabController(File file, Graph graph, List<CompilationUnit> compilationUnits) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
         this.vizPanelController = new VizPanelController();
         this.centerPane.setCenter(this.vizPanelController.root);
@@ -46,7 +47,7 @@ public class MainTabController {
 
         this.highlighted = new LinkedHashSet<>();
         this.hidden = new LinkedHashSet<>();
-        this.codeViewController = new CodeViewController(codeAreaGenerator);
+        this.codeViewController = new CodeViewController(compilationUnits);
         this.leftPane.getChildren().add(this.codeViewController.codeTabs);
 
         this.codeViewController.addSelectHandler(centerPane);

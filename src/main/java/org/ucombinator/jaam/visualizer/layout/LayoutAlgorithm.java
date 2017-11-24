@@ -1,12 +1,8 @@
 package org.ucombinator.jaam.visualizer.layout;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Queue;
+import com.sun.org.apache.bcel.internal.classfile.Code;
+
+import java.util.*;
 
 public class LayoutAlgorithm
 {
@@ -87,6 +83,7 @@ public class LayoutAlgorithm
         // Do the BFS Pass
         HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap = maxDepthChildren(graph, root);
 
+
         // Reset all the nodes to be white AND check that we visited everybody...
         for(AbstractLayoutVertex v: graph.getVisibleVertices()) {
             if(v.getVertexStatus() != AbstractLayoutVertex.VertexStatus.BLACK)
@@ -97,11 +94,64 @@ public class LayoutAlgorithm
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
 
-        doLayout(parentVertex, childrenMap);
+        doLayout(parentVertex, childrenMap, classComp);
+    }
+
+    private static Comparator<AbstractLayoutVertex> classComp = new Comparator<AbstractLayoutVertex>() {
+        @Override
+        public int compare(AbstractLayoutVertex o1, AbstractLayoutVertex o2) {
+            if(o1 instanceof LayoutSccVertex)
+            {
+                if(o2 instanceof  LayoutSccVertex)
+                    return o1.getId() < o2.getId() ? -1 : o1.getId() == o2.getId() ? 0 : 1;
+                else
+                    return -1;
+            }
+            else if(o2 instanceof  LayoutSccVertex)
+            {
+                return 1;
+            }
+            if(o1 instanceof CodeEntity && o2 instanceof CodeEntity)
+            {
+                CodeEntity c1 = (CodeEntity)o1;
+                CodeEntity c2 = (CodeEntity)o2;
+
+                int shortClassComp = c1.getShortClassName().compareTo(c2.getShortClassName());
+
+                if(shortClassComp != 0)
+                    return shortClassComp;
+
+                int fullClassComp = c1.getClassName().compareTo(c2.getClassName());
+
+                if(fullClassComp != 0)
+                    return fullClassComp;
+
+                int methodComp = c1.getMethodName().compareTo(c2.getMethodName());
+
+                if(methodComp != 0)
+                    return methodComp;
+            }
+
+            return o1.getId() < o2.getId() ? -1 : o1.getId() == o2.getId() ? 0 : 1;
+        }
+    };
+
+    private static void doLayout(AbstractLayoutVertex parentVertex,
+                                 HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap)
+    {
+        doLayout(parentVertex, childrenMap, null);
     }
 
     private static void doLayout(AbstractLayoutVertex parentVertex,
-                                 HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap) {
+                                 HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap,
+                                 Comparator<AbstractLayoutVertex> childrenSortOrder) {
+
+        if(childrenSortOrder != null) {
+            for (ArrayList<AbstractLayoutVertex> l : childrenMap.values()) {
+                l.sort(childrenSortOrder);
+            }
+        }
+
         HierarchicalGraph graph = parentVertex.getInnerGraph();
 
         AbstractLayoutVertex root = graph.getRoot();

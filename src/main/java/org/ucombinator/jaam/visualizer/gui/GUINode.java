@@ -21,7 +21,6 @@ public class GUINode extends Group
     private static final double TEXT_HORIZONTAL_PADDING = 15;
 
     private final Rectangle rect;
-    private final Rectangle highlightingRect;
     private final Text rectLabel;
     private final AbstractLayoutVertex vertex;
     private final GUINode parent;
@@ -36,21 +35,14 @@ public class GUINode extends Group
         this.vertex.setGraphics(this);
 
         this.rect = new Rectangle();
+
         this.rectLabel = new Text(v.getId() + "");
         this.rectLabel.setVisible(v.isLabelVisible());
-
-        this.highlightingRect = new Rectangle();
-        this.highlightingRect.setVisible(false);
-        this.highlightingRect.setStroke(javafx.scene.paint.Color.BLUE);
-        this.highlightingRect.setFill(javafx.scene.paint.Color.WHITE);
-        this.highlightingRect.setStrokeWidth(10);
-        this.highlightingRect.widthProperty().bind(this.rect.widthProperty());
-        this.highlightingRect.heightProperty().bind(this.rect.heightProperty());
 
         if (v instanceof LayoutRootVertex) {
             this.getChildren().add(this.rect);
         } else {
-            this.getChildren().addAll(this.highlightingRect, this.rect, this.rectLabel);
+            this.getChildren().addAll(this.rect, this.rectLabel);
         }
 
         this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
@@ -58,8 +50,6 @@ public class GUINode extends Group
 
         this.rect.setArcWidth(5);
         this.rect.setArcHeight(5);
-        this.highlightingRect.setArcWidth(5);
-        this.highlightingRect.setArcHeight(5);
 
         this.setFill(v.getFill());
         this.rect.setStroke(Color.BLACK);
@@ -465,10 +455,6 @@ public class GUINode extends Group
         this.rectLabel.setVisible(isLabelVisible);
     }
 
-    public Rectangle getHighlightingRect() {
-        return this.highlightingRect;
-    }
-    
     public Rectangle getRect() {
         return this.rect;
     }
