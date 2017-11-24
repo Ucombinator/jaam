@@ -42,13 +42,14 @@ abstract class Main(name: String /* TODO: = Main.SubcommandName(getClass())*/) e
   // TODO: describe()
   def run(): Unit
 
-  val waitForUser = toggle(
-    descrYes = "wait for user to press enter before starting (default: off)", // TODO: note: usefull for debugging and profiling
+  val waitForUser: ScallopOption[Boolean] = toggle(
+    // TODO: note: `descrYes` is useful for debugging and profiling
+    descrYes = "wait for user to press enter before starting (default: off)",
     noshort = true, prefix = "no-", default = Some(false))
 
-  val color = toggle(prefix = "no-", default = Some(true))
+  val color: ScallopOption[Boolean] = toggle(prefix = "no-", default = Some(true))
 
-  val logLevel = enum[Log.Level](
+  val logLevel: ScallopOption[Log.Level] = enum(
     descr = "the level of logging verbosity",
     default = Some("warn"),
     argType = "log level",
@@ -56,12 +57,11 @@ abstract class Main(name: String /* TODO: = Main.SubcommandName(getClass())*/) e
 }
 
 object Main {
-  def conf = _conf
+  def conf: MainConf  = _conf
   private var _conf: MainConf = _
 
   // short-subcommand help
   def main(args : Array[String]) {
-
     _conf = new MainConf(args)
     _conf.subcommand match {
       case None => println("ERROR: No subcommand specified")
@@ -78,13 +78,11 @@ object Main {
     }
   }
 
-  def SubcommandName(o: Class[_]): String = {
-    val name = o.getName().flatMap(c => if (c.isUpper) Seq('-', c.toLower) else Seq(c))
-    name match {
-      case s if s.startsWith("-") => s.stripPrefix("-")
-      case s => s
-    }
-  }
+  // From CamelCase / camelCase to camel-case
+  def SubcommandName(o: Class[_]): String = o.
+      getName.
+      flatMap(c => if (c.isUpper) Seq('-', c.toLower) else Seq(c)).
+      stripPrefix("-")
 }
 
 /****************
@@ -184,13 +182,13 @@ object Agent extends Main("agent") {
     }
 
     val agentClass = classOf[org.ucombinator.jaam.agent.Main]
-    val jar = agentClass.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()
+    val jar = agentClass.getProtectionDomain.getCodeSource.getLocation.toURI.getPath
 
     val cmd = List(
       java,
       "-javaagent:" + jar,
       "-classpath", jar,
-      agentClass.getCanonicalName()) ++ arguments()
+      agentClass.getCanonicalName) ++ arguments()
 
     System.exit(new ProcessBuilder(cmd.asJava).inheritIO().start().waitFor())
   }
@@ -554,7 +552,7 @@ object Taint3 extends Main("taint3") {
 
 object SystemProperties extends Main("system-properties") {
   def run() {
-    for ((k, v) <- java.lang.System.getProperties().asScala.toList.sorted) {
+    for ((k, v) <- java.lang.System.getProperties.asScala.toList.sorted) {
       println(f"$k: $v")
     }
   }
