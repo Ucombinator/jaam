@@ -111,6 +111,7 @@ object Interpreter extends Main("interpreter") {
   val method      = opt[String](required = true, short = 'm', descr = "the main method", default = Some("main"))
   val libClasses  = opt[String](short = 'L', descr = "app's library classes")
   val _outfile     = opt[String](name = "outfile", short = 'o', descr = "the output file for the serialized data")
+
   def outfile() = _outfile.getOrElse(mainClass() + ".jaam") // TODO: extend scallop to do this for us
 
   val globalSnowflakeAddrLast = toggle(

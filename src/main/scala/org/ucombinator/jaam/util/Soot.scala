@@ -22,9 +22,10 @@ import soot.options.Options
 
 object Soot {
   import scala.language.implicitConversions
+
   implicit def unitToStmt(unit : SootUnit) : SootStmt = {
-    assert(unit ne null, "unit is null")
-    assert(unit.isInstanceOf[SootStmt], "unit not instance of Stmt. Unit is of class: " + unit.getClass)
+    require(unit ne null, "unit is null")
+    require(unit.isInstanceOf[SootStmt], "unit not instance of Stmt. Unit is of class: " + unit.getClass)
     unit.asInstanceOf[SootStmt]
   }
 
@@ -33,14 +34,15 @@ object Soot {
   }
 
   case class ClassData(source: String, origin: Origin, data: Array[Byte])
-  var loadedClasses = Map[String, ClassData]()
+
+  var loadedClasses: Map[String, ClassData] = Map.empty
 
   private def load(p: PathElement) {
     //println(f"p ${p.path} and ${p.root}")
     for (d <- p.classData()) {
       //println(f"d ${d.length}")
       val cr = new ClassReader(new ByteArrayInputStream(d))
-      val cn = new ClassNode()
+      val cn = new ClassNode
       cr.accept(cn, 0)
       //println(f"cn.name: ${cn.name}")
       loadedClasses += cn.name.replace('/', '.') -> ClassData("TODO:JaamClassProvider", p.origin, d)
@@ -64,8 +66,8 @@ object Soot {
   def getSootClass(s : String): SootClass = Scene.v().loadClass(s, SootClass.SIGNATURES)
 
   def getBody(m : SootMethod): Body = {
-    if (m.isNative) { throw new Exception("Attempt to Soot.getBody on native method: " + m) }
-    if (m.isAbstract) { throw new Exception("Attempt to Soot.getBody on abstract method: " + m) }
+    require(!m.isNative, "Attempt to Soot.getBody on native method: " + m)
+    require(!m.isAbstract, "Attempt to Soot.getBody on abstract method: " + m)
     // TODO: do we need to test for phantom here?
     if (!m.hasActiveBody) {
       SootResolver.v().resolveClass(m.getDeclaringClass.getName, SootClass.BODIES)
@@ -126,15 +128,15 @@ object Soot {
   def isClass(s: String): Boolean = SourceLocator.v().getClassSource(s) != null
 
   def getSootType(t : String): Type = t match {
-    case "int" => soot.IntType.v()
-    case "bool" => soot.BooleanType.v()
+    case "int"    => soot.IntType.v()
+    case "bool"   => soot.BooleanType.v()
     case "double" => soot.DoubleType.v()
-    case "float" => soot.FloatType.v()
-    case "long" => soot.LongType.v()
-    case "byte" => soot.ByteType.v()
-    case "short" => soot.ShortType.v()
-    case "char" => soot.CharType.v()
-    case _ => soot.RefType.v(t)
+    case "float"  => soot.FloatType.v()
+    case "long"   => soot.LongType.v()
+    case "byte"   => soot.ByteType.v()
+    case "short"  => soot.ShortType.v()
+    case "char"   => soot.CharType.v()
+    case _        => soot.RefType.v(t)
   }
 
   def isPrimitive(t : Type) : Boolean = !t.isInstanceOf[RefLikeType]
@@ -148,13 +150,13 @@ object Soot {
   }
 
   object classes {
-    lazy val Object = getSootClass("java.lang.Object")
-    lazy val Class = getSootClass("java.lang.Class")
-    lazy val String = getSootClass("java.lang.String")
-    lazy val Cloneable = getSootClass("java.lang.Cloneable")
-    lazy val ClassCastException = getSootClass("java.lang.ClassCastException")
-    lazy val ArithmeticException = getSootClass("java.lang.ArithmeticException")
-    lazy val Serializable = getSootClass("java.io.Serializable")
+    lazy val Object: SootClass              = getSootClass("java.lang.Object")
+    lazy val Class: SootClass               = getSootClass("java.lang.Class")
+    lazy val String: SootClass              = getSootClass("java.lang.String")
+    lazy val Cloneable: SootClass           = getSootClass("java.lang.Cloneable")
+    lazy val ClassCastException: SootClass  = getSootClass("java.lang.ClassCastException")
+    lazy val ArithmeticException: SootClass = getSootClass("java.lang.ArithmeticException")
+    lazy val Serializable: SootClass        = getSootClass("java.io.Serializable")
   }
 
   // is a of type b?
