@@ -4,6 +4,8 @@ public class GUINodeStatus
 {
     public double left, right, top, bottom;
     public double x, y, width, height;
+
+    // The width and height of the node's children within the same level of the hierarchy
     public double bboxWidth, bboxHeight;
     public double opacity;
 

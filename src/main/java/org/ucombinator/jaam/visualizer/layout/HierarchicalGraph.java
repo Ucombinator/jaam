@@ -1,10 +1,6 @@
 package org.ucombinator.jaam.visualizer.layout;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class HierarchicalGraph
 {
@@ -113,25 +109,28 @@ public class HierarchicalGraph
         output.append("\n");
         return output.toString();
     }
-    
-    public AbstractLayoutVertex getRoot() {
-        if(this.vertices.size() == 0){
-            //System.out.println("getRoot on empty graph");
+
+    public ArrayList<AbstractLayoutVertex> getRoots() {
+        if(this.vertices.size() == 0) {
             return null;
         }
 
-        ArrayList<AbstractLayoutVertex> arrayList = new ArrayList<AbstractLayoutVertex>(this.vertices);
-        Collections.sort(arrayList);
-        //System.out.println("Root ID: " + arrayList.get(0).getId());
-
-        // Return the first vertex with no incoming edges
-        for(AbstractLayoutVertex v : arrayList) {
-            if(this.isRoot(v))
-                return v;
+        ArrayList<AbstractLayoutVertex> roots = new ArrayList<>();
+        for(AbstractLayoutVertex v : this.getVisibleVertices()) {
+            if(this.isRoot(v)) {
+                roots.add(v);
+            }
         }
 
-        // Otherwise, return the first vertex, period.
-        return arrayList.get(0);
+        // If there is no root (as for a strongly connected component), choose just the first vertex
+        // in our ordering.
+        if(roots.size() == 0) {
+            ArrayList<AbstractLayoutVertex> vertices = new ArrayList<>(this.getVisibleVertices());
+            Collections.sort(vertices);
+            roots.add(vertices.get(0));
+        }
+
+        return roots;
     }
 
     public boolean isRoot(AbstractLayoutVertex v) {
