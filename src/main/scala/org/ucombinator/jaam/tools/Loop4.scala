@@ -68,11 +68,11 @@ object Main {
     println("phan" + Scene.v.getPhantomClasses.asScala)
 
     val c = Soot.getSootClass("java.lang.Object")
-    println("hier " + Scene.v.getActiveHierarchy())
-    println("hier sub " + Scene.v.getActiveHierarchy().getSubclassesOf(c))
-    println("fast hier " + Scene.v.getOrMakeFastHierarchy())
+    println("hier " + Scene.v.getActiveHierarchy)
+    println("hier sub " + Scene.v.getActiveHierarchy.getSubclassesOf(c))
+    println("fast hier " + Scene.v.getOrMakeFastHierarchy)
     println("hier sub " + Scene.v.getFastHierarchy.getSubclassesOf(c))
-    println("entry " + Scene.v.getEntryPoints().asScala)
+    println("entry " + Scene.v.getEntryPoints.asScala)
     //println("main " + Scene.v.getMainClass())
     println("pkg " + Scene.v.getPkgList)
 
@@ -102,11 +102,10 @@ object Main {
           }
       }
 
-      (for (c2 <- cs if !c2.isInterface) yield
-        c2.getMethodUnsafe(m.getNumberedSubSignature) match {
-          case null => None
-          case m2   => Some(m2)
-        }).flatten
+      cs
+        .withFilter(!_.isInterface)
+        .map(_.getMethodUnsafe(m.getNumberedSubSignature))
+        .filter(_ != null)
     }
 
     def stmtTargets(stmt: Stmt): Set[SootMethod] = stmt.sootStmt match {
@@ -114,9 +113,9 @@ object Main {
       case s: DefinitionStmt =>
         s.getRightOp match {
           case s: InvokeExpr => invokeExprTargets(s)
-          case _ => Set()
+          case _ => Set.empty
         }
-      case _ => Set()
+      case _ => Set.empty
     }
 
     // Get all classes loaded so Soot doesn't keep recomputing the Hierarchy
@@ -211,7 +210,7 @@ object Main {
     val outStream = new PrintStream(new FileOutputStream("loop4.out.out")) // or System.out
     val coverageStream = new PrintStream(new FileOutputStream("loop4.coverage.out"))
 
-    // TODO: I don't like the implementation of `appEdges` -- with my first glance I can't get an intuitive sence of it!
+    // TODO: I don't like the implementation of `appEdges` -- with my first glance I can't get an intuitive sense of it!
     val appEdges =
       for ((s, ds) <- edges;
            Some(c) = Soot.loadedClasses.get(s.sootMethod.getDeclaringClass.getName);
@@ -227,12 +226,13 @@ object Main {
       val old = appEdges2.getOrElse(s.sootMethod, Map[Stmt, Set[SootMethod]]())
       appEdges2 += s.sootMethod -> (old + (s -> ds))
     }
+
     val targets = (for ((_, s) <- appEdges2; (_, ms) <- s; m <- ms) yield m).toSet
     val roots = appEdges2.keys.filter(!targets.contains(_)).toSet
 
-    for (root <- roots) {
-      println(f"root: $root")
-    }
+    roots.
+      map("root: " + _).
+      foreach(println)
 
     println(f"appEdges: ${appEdges.size}")
 
@@ -250,8 +250,8 @@ object Main {
 
     val m = Soot.getSootClass(mainClass).getMethodByName(mainMethod) //Coverage2.freshenMethod(Soot.getSootClass(mainClass).getMethodByName(mainMethod))
     val s = Stmt(Soot.getBody(m).getUnits.asScala.toList.head.asInstanceOf[SootStmt], m)
-    val fromMain = appEdges2.getOrElse(m, Map())
-    appEdges2 += m -> (fromMain + (s -> (fromMain.getOrElse(s, Set()) ++ roots)))
+    val fromMain = appEdges2.getOrElse(m, Map.empty)
+    appEdges2 += m -> (fromMain + (s -> (fromMain.getOrElse(s, Set.empty) ++ roots)))
 
 //    computeLoopGraph(mainClass, mainMethod, /*classpath: String,*/
 //      outStream, coverageStream, jaam, prune, shrink, prettyPrint, m, appEdges2)
@@ -354,11 +354,7 @@ object Main {
     import org.ucombinator.jaam.serializer
 
     val graph = makeLoopGraph(m, cg, prettyPrint)
-    val pruned = if (prune) {
-      graph.prune
-    } else {
-      graph
-    }
+    val pruned = if (prune) graph.prune else  graph
     val shrunk = if (shrink) {
       pruned // Was: pruned.shrink // TODO: shrink currently goes in an infinite loop 
     } else {

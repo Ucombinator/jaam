@@ -1,8 +1,10 @@
 package org.ucombinator.jaam.tools.taint3
 
-import java.io.{BufferedWriter, File, FileWriter, Writer}
+import java.io._
 
 import org.ucombinator.jaam.util.Soot
+
+import scala.collection.mutable.ListBuffer
 // import org.ucombinator.jaam.serializer._
 import org.ucombinator.jaam.serializer.Serializer
 import org.ucombinator.jaam.tools.app.{App, Origin}
@@ -15,8 +17,11 @@ import soot.options.Options
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.jimple.{Stmt => SootStmt, _}
 
-import scala.collection.immutable
 import scala.collection.JavaConverters._
+
+import org.ucombinator.jaam.{serializer, tools}
+import org.ucombinator.jaam.util._
+
 
 abstract sealed class Address
 object Address {
@@ -127,46 +132,14 @@ object Relationship {
   object  ArrayRefEdge extends Relationship { def apply = new ArrayRefEdge }
 }
 
-
-
-//class tionship {
-//class ct StmtEdge extends Relationship
-//class ct ReturnEdge extends Relationship
-//class ct ThrowsEdge extends Relationship
-//class ct UnOpEdge extends Relationship
-//class ct BinOp1Edge extends Relationship
-//class ct BinOp2Edge extends Relationship
-//class ct CastEdge extends Relationship
-//class ct InstanceOfEdge extends Relationship
-//ct RefEdge extends Relationship
-//ct InstanceFieldBaseEdge extends Relationship
-//ct InstanceFieldValueEdge extends Relationship
-//ct ArrayBaseEdge extends Relationship
-//  case object ArrayIndexEdge extends Relationship
-//  case object ArrayValueEdge extends Relationship
-//  case object InvokeBaseEdge extends Relationship
-//  case class ArgumentEdge(index: Int) extends Relationship
-//  case object ResultEdge extends Relationship
-//  case object LhsEdge extends Relationship
-//  case object NewEdge extends Relationship
-//  case object NewArrayEdge extends Relationship
-//  case object NewArraySizeEdge extends Relationship
-//  case object NewMultiArrayEdge extends Relationship
-//  case class NewMultiArraySizeEdge(index: Int) extends Relationship
-//  case class DefinitionEdge() extends Relationship { override def toString: String = "DefinitionEdge" }
-//  case object ParameterRefEdge extends Relationship
-//  case object StaticFieldRefEdge extends Relationship
-//  case object ThisRefEdge extends Relationship
-//  case object InstanceFieldRefEdge extends Relationship
-//  case object ArrayRefEdge extends Relationship
-//}
-
 object Taint3 {
-//  val graph = new DefaultDirectedGraph[Address, Relationship](classOf[Relationship])
-    val graph = new DirectedPseudograph[Address, Relationship](classOf[Relationship])
+  val graph = new DirectedPseudograph[Address, Relationship](classOf[Relationship])
+  var vertices = new ListBuffer[String]()
+  var edges = new ListBuffer[String]()
 
   def main(input: List[String], output: String): Unit = {
     println("In Taint3")
+
 
     // for each class (if in APP)
     for (c <- loadInput(input)) {
@@ -191,8 +164,20 @@ object Taint3 {
       }
     }
 
+    val bw = new BufferedWriter(new FileWriter("graph.gv"))
+    bw.write("digraph G {\n")
+    vertices.foreach(bw.write)
+    edges.foreach(bw.write)
+    bw.write("}\n")
+    bw.close()
+
     // Output to a .gv file, which can be used by Graphviz to do visualization
     printToGraphvizFile(output, graph)
+
+    val outStream = new FileOutputStream(output)
+//    val po = new serializer.PacketOutput(outStream)
+//    po.write(appConfig)
+//    po.close()
   }
 
   def loadInput(input: List[String]): Set[SootClass] = {
@@ -227,22 +212,36 @@ object Taint3 {
   }
 
   def addEdge(a1: Address, a2: Address, r: Relationship): Unit = {
-    println("++++++++++++++++++++++++++++++++++++++++++++++++++++")
+//    println("++++++++++++++++++++++++++++++++++++++++++++++++++++")
     var rc: Boolean = false
-    println(a1)
+//    println(a1)
     rc = graph.addVertex(a1)
-    println(rc)
+//    println(rc)
 
-    println(a2)
+//    println(a2)
     rc = graph.addVertex(a2)
-    println(rc)
+//    println(rc)
 
-    println("XXXXXXXXXXXXX " + graph.containsEdge(a1, a2))
-
-    println(r)
+//    println(r)
     rc = graph.addEdge(a1, a2, r)
-    println(rc)
-    println("----------------------------------------------------")
+//    println(rc)
+//    println("----------------------------------------------------")
+
+    def quote(s: String): String = "\"" + s + "\""
+
+    def escapeIllegalChars(a: Address): String = {
+      a.
+        toString.
+        replace("\\", "\\\\").
+        replace("\"", "\\\"")
+    }
+
+    val node1Str = quote(escapeIllegalChars(a1))
+    val node2Str = quote(escapeIllegalChars(a2))
+
+    vertices += node1Str + ";\n"
+    vertices += node2Str + ";\n"
+    edges += node1Str + " -> " + node2Str + ";\n"
   }
 
   // TODO: edges between method declarations and implementations

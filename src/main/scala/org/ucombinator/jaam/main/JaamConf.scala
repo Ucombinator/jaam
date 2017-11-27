@@ -107,7 +107,7 @@ trait JaamConf extends ScallopConf {
 
   def enumConverter[A](name: String, elems: Map[String, A])(implicit tt: TypeTag[A]) = {
     def conv(s: String): A =
-      elems.getOrElse(s, throw new IllegalArgumentException(s"bad $name `$s` (expected one of: %s)" format (elems.keys.mkString(" "))))
+      elems.getOrElse(s, throw new IllegalArgumentException(s"bad $name `$s` (expected one of: %s)" format elems.keys.mkString(" ")))
   // TODO: allow `handler` to be specified
     val handler: PartialFunction[Throwable, Either[String, Option[A]]] = {
       case e: IllegalArgumentException => Left(e.getMessage)

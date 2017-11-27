@@ -57,7 +57,7 @@ object LoopAnalyzer {
     }
   }
 
-  case class LoopTree(val loop: SootLoop, val method: SootMethod, val children: Set[LoopTree]) {
+  case class LoopTree(loop: SootLoop, method: SootMethod, children: Set[LoopTree]) {
     def contains(stmt: SootStmt): Boolean = {
       loop.getLoopStatements.contains(stmt)
     }
@@ -209,22 +209,19 @@ object LoopAnalyzer {
   abstract sealed class Node extends CachedHashCode {
     val tag: String
   }
-  case class LoopNode(val m: SootMethod, val loop: SootLoop) extends Node {
-    override val tag = {
-      val stmt = Statement(loop.getHead, m)
-      m.getSignature + "\ninstruction #" + stmt.index
-    }
-    val index = Statement(loop.getHead, m).index
+  case class LoopNode(m: SootMethod, loop: SootLoop) extends Node {
+    override val tag: String = m.getSignature + "\ninstruction #" + Statement(loop.getHead, m).index
+    val index: Int = Statement(loop.getHead, m).index
     override def toString = "  " + quote(tag) + " [shape=diamond];\n"
   }
   // TODO we might have uniqueness problems with SootMethod objects.
   // For now, SootMethod.getSignature will do.
-  case class MethodNode(val method: SootMethod) extends Node {
-    override val tag = method.getSignature()
+  case class MethodNode(method: SootMethod) extends Node {
+    override val tag: String = method.getSignature
     override def toString = tag
   }
 
-  case class LoopGraph(val m: SootMethod, private val g: Map[Node, Set[Node]],
+  case class LoopGraph(m: SootMethod, private val g: Map[Node, Set[Node]],
       private val recurEdges: Set[(Node, Node)]) {
     private val mNode = MethodNode(m)
     def apply(n: Node): Set[Node] = g.getOrElse(n, Set.empty)
@@ -253,7 +250,7 @@ object LoopAnalyzer {
             for {
               succ <- succs
             } {
-              val parents = (parentMap.getOrElse(succ, Set.empty) + n)
+              val parents = parentMap.getOrElse(succ, Set.empty) + n
               parentMap = parentMap + (succ -> parents)
               analyze(succ, n :: path)
             }
@@ -332,7 +329,7 @@ object LoopAnalyzer {
               for {
                 child <- this(n) filter { !shouldKeep(_) }
               } {
-                val newChildren = ((newGraph(n) - child) ++ descMap(child))
+                val newChildren = (newGraph(n) - child) ++ descMap(child)
                 newGraph = newGraph + (n -> newChildren)
               }
               // and keep n
@@ -396,7 +393,7 @@ object LoopAnalyzer {
           val id = name(from)
           val packet = from match {
             case MethodNode(m) => serializer.LoopMethodNode(id, m)
-            case n@LoopNode(m, l) =>
+            case n@LoopNode(m, _) =>
               val stmt = Taint.getByIndex(m, n.index+1) // add one because the loop node is apparently the instruction before...?
               val addrs = stmt match {
                 case sootStmt: IfStmt => Taint.addrsOf(sootStmt.getCondition, m)
@@ -528,16 +525,17 @@ object LoopAnalyzer {
       }
       return map
     }
-    var expected = Map[String, Int]()
-    var actual = Map[String, Int]()
-    var missing = Map[String, Set[String]]()
+    var expected: Map[String, Int] = Map.empty
+    var actual: Map[String, Int] = Map.empty
+    var missing: Map[String, Set[String]] = Map.empty
+
     for (s <- Taint.getAllClasses(classPath)) {
       val c = Scene.v().loadClass(s, SootClass.SIGNATURES)
-      for (m <- c.getMethods()) {
+      for (m <- c.getMethods) {
         val name = c.getPackageName + "." + c.getName
         expected = add(expected, name)
         if (!graph.keySet.contains(m.getSignature)) {
-          missing += (name -> (missing.getOrElse(name, Set()) + m.getSubSignature))
+          missing += (name -> (missing.getOrElse(name, Set.empty) + m.getSubSignature))
         } else {
           actual = add(actual, name)
         }
@@ -552,8 +550,15 @@ object LoopAnalyzer {
     }
   }
 
-  def main(mainClass: String, mainMethod: String, classpath: String,
-      graphStream: PrintStream, coverageStream: PrintStream, jaam: Option[String], prune: Boolean, shrink: Boolean, prettyPrint: Boolean): Unit = {
+  def main(mainClass: String,
+           mainMethod: String,
+           classpath: String,
+           graphStream: PrintStream,
+           coverageStream: PrintStream,
+           jaam: Option[String],
+           prune: Boolean,
+           shrink: Boolean,
+           prettyPrint: Boolean): Unit = {
     Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
     Options.v().set_keep_line_number(true)
@@ -574,30 +579,20 @@ object LoopAnalyzer {
     Scene.v.setMainClass(clazz)
     val m = coverage2.Coverage2.freshenMethod(clazz.getMethodByName(mainMethod))
 
-    for {
-      className <- Taint.getAllClasses(classpath)
-    } {
+    for (className <- Taint.getAllClasses(classpath)) {
       Scene.v.addBasicClass(className, SootClass.HIERARCHY)
     }
 
     Scene.v.setSootClassPath(classpath)
-    Scene.v.loadNecessaryClasses
+    Scene.v.loadNecessaryClasses()
 
-    PackManager.v.runPacks
-    CHATransformer.v.transform
+    PackManager.v.runPacks()
+    CHATransformer.v.transform()
     val cg = Scene.v.getCallGraph
 
     val graph = LoopGraph(m, cg, prettyPrint)
-    val pruned = if (prune) {
-      graph.prune
-    } else {
-      graph
-    }
-    val shrunk = if (shrink) {
-      pruned.shrink
-    } else {
-      pruned
-    }
+    val pruned = if (prune) graph.prune else graph
+    val shrunk = if (shrink) pruned.shrink else pruned
 
     // TODO: print unpruned size
     jaam match {
@@ -610,7 +605,7 @@ object LoopAnalyzer {
 
     Console.withOut(graphStream) {
       println("digraph loops {")
-      println("ranksep=\"10\";");
+      println("ranksep=\"10\";")
       print(shrunk)
       println("}")
     }
@@ -621,13 +616,13 @@ object LoopAnalyzer {
   }
 }
 
-case class Statement(val stmt: SootStmt, val m: SootMethod) {
+case class Statement(stmt: SootStmt, m: SootMethod) {
   assert(stmt != null, "trying to create a Statement with a null object")
-  val index = if (stmt.hasTag(Statement.indexTag)) {
+  val index: Int = if (stmt.hasTag(Statement.indexTag)) {
     BigInt(stmt.getTag(Statement.indexTag).getValue).intValue
   } else {
     // label everything in m so the amortized work is linear
-    for ((u, i) <- loop.Soot.getBody(m).getUnits().toList.zipWithIndex) {
+    for ((u, i) <- loop.Soot.getBody(m).getUnits.toList.zipWithIndex) {
       u.addTag(new GenericAttribute(Statement.indexTag, BigInt(i).toByteArray))
     }
 
