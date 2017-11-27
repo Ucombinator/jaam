@@ -64,18 +64,23 @@ public abstract class AbstractLayoutVertex extends AbstractVertex
         this.setVisible(false);
     }
 
+    public void setX(double x) {
+        this.nodeStatus.x = x;
+    }
+    public void setY(double y) {
+        this.nodeStatus.y = y;
+    }
     public void setWidth(double width) {
         this.nodeStatus.width = width;
     }
     public void setHeight(double height) {
         this.nodeStatus.height = height;
     }
-
-    public void setX(double x) {
-        this.nodeStatus.x = x;
+    public void setBboxWidth(double width) {
+        this.nodeStatus.bboxWidth = width;
     }
-    public void setY(double y) {
-        this.nodeStatus.y = y;
+    public void setBboxHeight(double height) {
+        this.nodeStatus.bboxHeight = height;
     }
     public void setOpacity(double opacity) {
         this.nodeStatus.opacity = opacity;
@@ -92,6 +97,12 @@ public abstract class AbstractLayoutVertex extends AbstractVertex
     }
     public double getHeight() {
         return this.nodeStatus.height;
+    }
+    public double getBboxWidth() {
+        return this.nodeStatus.bboxWidth;
+    }
+    public double getBboxHeight() {
+        return this.nodeStatus.bboxHeight;
     }
     public double getOpacity() {
         return this.nodeStatus.opacity;

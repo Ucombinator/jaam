@@ -1,7 +1,5 @@
 package org.ucombinator.jaam.visualizer.layout;
 
-import com.sun.org.apache.bcel.internal.classfile.Code;
-
 import java.util.*;
 
 public class LayoutAlgorithm
@@ -10,12 +8,8 @@ public class LayoutAlgorithm
     private static final double MARGIN_PADDING = 10;
     private static final double NODES_PADDING = 10;
     private static final double ROOT_V_OFFSET = 10;
-    private static HashMap<Integer, Double> bboxWidthTable;
-    private static HashMap<Integer, Double> bboxHeightTable;
 
     public static void layout(AbstractLayoutVertex parentVertex) {
-        bboxWidthTable = new LinkedHashMap<>();
-        bboxHeightTable = new LinkedHashMap<>();
         initializeSizes(parentVertex);
         bfsLayout(parentVertex);
         parentVertex.setY(parentVertex.getY() + ROOT_V_OFFSET);
@@ -48,7 +42,6 @@ public class LayoutAlgorithm
     }
 
     private static void dfsLayout(AbstractLayoutVertex parentVertex) {
-        System.out.println("DFS layout: " + parentVertex.getId());
         HierarchicalGraph graph = parentVertex.getInnerGraph();
 
         expandSubGraphs(parentVertex);
@@ -168,13 +161,13 @@ public class LayoutAlgorithm
             assignXandYtoInnerNodesAndGiveParentBBox(root, MARGIN_PADDING, MARGIN_PADDING, childrenMap);
             if(root.getInnerGraph().getVisibleVertices().size() > 1)
             {
-                parentVertex.setWidth(bboxWidthTable.get(root.getId()) + 1000 * MARGIN_PADDING);
-                parentVertex.setHeight(bboxHeightTable.get(root.getId()) + 2 * MARGIN_PADDING);
+                parentVertex.setWidth(root.getBboxWidth() + 1000 * MARGIN_PADDING);
+                parentVertex.setHeight(root.getBboxHeight() + 2 * MARGIN_PADDING);
             }
             else
             {
-                parentVertex.setWidth(bboxWidthTable.get(root.getId()) + 2 * MARGIN_PADDING);
-                parentVertex.setHeight(bboxHeightTable.get(root.getId()) + 2 * MARGIN_PADDING);
+                parentVertex.setWidth(root.getBboxWidth() + 2 * MARGIN_PADDING);
+                parentVertex.setHeight(root.getBboxHeight() + 2 * MARGIN_PADDING);
             }
         } else {
             parentVertex.setWidth(AbstractLayoutVertex.DEFAULT_WIDTH);
@@ -210,10 +203,6 @@ public class LayoutAlgorithm
                    continue; // Skip recursive edge
                }
 
-               for(AbstractLayoutVertex inNeighbor : graph.getVisibleInNeighbors(child)) {
-                   System.out.print(inNeighbor.getId() + " ");
-               }
-               System.out.println();
                if (!seen.contains(child)) {
                    seen.add(child);
                    child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
@@ -277,7 +266,7 @@ public class LayoutAlgorithm
      * Changes of Status: assigns X and Y to the inner vertices of the graph
      * Output: returns the W and H to be assign to the parent node
      * */
-    private static double[] storeBBoxWidthAndHeight(
+    private static void storeBBoxWidthAndHeight(
             AbstractLayoutVertex root,
             HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap)
     {
@@ -296,9 +285,9 @@ public class LayoutAlgorithm
         double currentHeight = 0;
         for(AbstractLayoutVertex curVer: grayChildren)
         {
-            double[] boundBox = storeBBoxWidthAndHeight(curVer, childrenMap);
-            currentWidth += boundBox[0] + NODES_PADDING;
-            currentHeight = Math.max(currentHeight, boundBox[1]);
+            storeBBoxWidthAndHeight(curVer, childrenMap);
+            currentWidth += curVer.getBboxWidth() + NODES_PADDING;
+            currentHeight = Math.max(currentHeight, curVer.getBboxHeight());
         }
 
         double currBboxWidth, currBboxHeight;
@@ -314,11 +303,8 @@ public class LayoutAlgorithm
 
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
 
-        bboxWidthTable.put(root.getId(), currBboxWidth);
-        bboxHeightTable.put(root.getId(), currBboxHeight);
-
-        double[] result = {currBboxWidth, currBboxHeight};
-        return result;
+        root.setBboxWidth(currBboxWidth);
+        root.setBboxHeight(currBboxHeight);
     }
 
     /**
@@ -347,31 +333,28 @@ public class LayoutAlgorithm
 
         for(AbstractLayoutVertex curVer: grayChildren)
         {
-            currentWidth += bboxWidthTable.get(curVer.getId()) + NODES_PADDING;
+            currentWidth += curVer.getBboxWidth() + NODES_PADDING;
         }
 
-        // TODO: What is AX?
-        double AX;
+        // Check if the root overlaps the total width of its children.
+        double rootOverlap;
         if(root.getWidth() >= currentWidth - NODES_PADDING) {
-            AX = (root.getWidth() - (currentWidth - NODES_PADDING))/2;
+            rootOverlap = (root.getWidth() - (currentWidth - NODES_PADDING))/2;
         } else {
-            AX = 0;
+            rootOverlap = 0;
         }
 
         currentWidth = 0;
         for(AbstractLayoutVertex curVer: grayChildren)
         {
-            assignXandYtoInnerNodesAndGiveParentBBox(curVer,currentWidth + left + AX,
+            assignXandYtoInnerNodesAndGiveParentBBox(curVer,currentWidth + left + rootOverlap,
                     NODES_PADDING + top + root.getHeight(), childrenMap);
-            currentWidth += bboxWidthTable.get(curVer.getId()) + NODES_PADDING;
-            currentHeight = Math.max(currentHeight, bboxHeightTable.get(curVer.getId()));
+            currentWidth += curVer.getBboxWidth() + NODES_PADDING;
+            currentHeight = Math.max(currentHeight, curVer.getBboxHeight());
         }
 
-        root.setX(left + ((bboxWidthTable.get(root.getId()) - root.getWidth()) / 2.0));  //left-most corner x
+        root.setX(left + ((root.getBboxWidth() - root.getWidth()) / 2.0));  //left-most corner x
         root.setY(top);                                                    //top-most corner y
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
     }
-
 }
-
-
