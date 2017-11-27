@@ -10,7 +10,6 @@ import javafx.animation.FadeTransition;
 import javafx.scene.control.TreeItem;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
@@ -18,7 +17,8 @@ import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.GUINodeStatus;
 
-public abstract class AbstractLayoutVertex extends AbstractVertex implements Comparable<AbstractLayoutVertex>, GraphEntity
+public abstract class AbstractLayoutVertex extends AbstractVertex
+        implements Comparable<AbstractLayoutVertex>, GraphEntity
 {
     // Types of layout vertices
     public enum VertexType {
@@ -338,17 +338,14 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
     }
 
     public void toggleEdges(boolean isEdgeVisible) {
-        Iterator<LayoutEdge> itEdges = this.getInnerGraph().getVisibleEdges().iterator();
-        while(itEdges.hasNext()) {
-            LayoutEdge e = itEdges.next();
+        for(LayoutEdge e : this.getInnerGraph().getVisibleEdges()) {
             if(e.getGraphics() != null) {
                 e.getGraphics().setVisible(!e.getGraphics().isVisible() && isEdgeVisible);
             }
         }
 
-        Iterator<AbstractLayoutVertex> itNodes = this.getInnerGraph().getVisibleVertices().iterator();
-        while(itNodes.hasNext()){
-            itNodes.next().toggleEdges(isEdgeVisible);
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
+            v.toggleEdges(isEdgeVisible);
         }
     }
 
@@ -358,9 +355,8 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
 
     private HashSet<Instruction> getInstructions(HashSet<Instruction> instructions) {
         if(this.getType().equals(VertexType.ROOT) || this.getType().equals(VertexType.METHOD) || this.getType().equals(VertexType.CHAIN)) {
-            Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVisibleVertices().iterator();
-            while(it.hasNext()){
-                it.next().getInstructions(instructions);
+            for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
+                v.getInstructions(instructions);
             }
         } else if(this.getType().equals(VertexType.INSTRUCTION)){
             instructions.add(((LayoutInstructionVertex) this).getInstruction());
@@ -371,15 +367,16 @@ public abstract class AbstractLayoutVertex extends AbstractVertex implements Com
         return instructions;
     }
 
-    public HashSet<AbstractLayoutVertex> getVerticesWithInstructionID(int id, String method_name){
+    public HashSet<AbstractLayoutVertex> getVerticesWithInstructionID(int id, String method_name) {
         return getVerticesWithInstructionID(id, method_name, new LinkedHashSet<AbstractLayoutVertex>());
     }
 
-    private HashSet<AbstractLayoutVertex> getVerticesWithInstructionID(int id, String method_name, HashSet<AbstractLayoutVertex> set){
-        if(this.getType().equals(VertexType.ROOT) || this.getType().equals(VertexType.METHOD) || this.getType().equals(VertexType.CHAIN)){
-            Iterator<AbstractLayoutVertex> it = this.getInnerGraph().getVisibleVertices().iterator();
-            while(it.hasNext()){
-                it.next().getVerticesWithInstructionID(id, method_name, set);
+    private HashSet<AbstractLayoutVertex> getVerticesWithInstructionID(int id, String method_name,
+                                                                       HashSet<AbstractLayoutVertex> set)  {
+        if(this.getType().equals(VertexType.ROOT) || this.getType().equals(VertexType.METHOD)
+                || this.getType().equals(VertexType.CHAIN)){
+            for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
+                v.getVerticesWithInstructionID(id, method_name, set);
             }
         } else if(this.getType().equals(VertexType.INSTRUCTION)) {
             Instruction inst = ((LayoutInstructionVertex) this).getInstruction();
