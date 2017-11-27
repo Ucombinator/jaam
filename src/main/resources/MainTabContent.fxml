@@ -3,6 +3,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.VBox?>
 <?import org.ucombinator.jaam.visualizer.gui.SearchResults?>
@@ -13,7 +14,7 @@
          <items>
             <VBox fx:id="leftPane" SplitPane.resizableWithParent="false" />
             <BorderPane fx:id="centerPane" />
-            <SplitPane dividerPositions="0.5" orientation="VERTICAL" SplitPane.resizableWithParent="false">
+            <SplitPane dividerPositions="0.2, 0.6" orientation="VERTICAL" SplitPane.resizableWithParent="false">
                <items>
                   <BorderPane>
                      <center>
@@ -23,6 +24,7 @@
                         <Label text="Description" BorderPane.alignment="CENTER" />
                      </top>
                   </BorderPane>
+                  <TreeView fx:id="classTree" showRoot="false" />
                   <SearchResults fx:id="searchResults" />
                </items>
             </SplitPane>

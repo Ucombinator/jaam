@@ -40,12 +40,14 @@ public abstract class AbstractLayoutVertex extends AbstractVertex
     protected Color color;
     public static final Color highlightColor = Color.ORANGE;
     public static final DropShadow highlightShadow = new DropShadow(10, Color.BLUE);
+    public static final DropShadow classHighlightShadow = new DropShadow(20, Color.GREEN);
 
     private boolean isExpanded = true;
     private boolean isHidden = false;
     private boolean isLabelVisible = false;
     private boolean isEdgeVisible = true;
     private boolean drawEdges;
+    private boolean isSelected = false;
 
     // TODO we should probably replace this with only a id version
     public AbstractLayoutVertex(String label, VertexType type, boolean drawEdges) {
@@ -263,6 +265,8 @@ public abstract class AbstractLayoutVertex extends AbstractVertex
 
     public void setHighlighted(boolean isHighlighted)
     {
+        this.isSelected = isHighlighted;
+
         if (isHighlighted) {
             this.getGraphics().setFill(highlightColor);
         } else {
@@ -399,5 +403,18 @@ public abstract class AbstractLayoutVertex extends AbstractVertex
         }
 
         return set;
+    }
+
+    public boolean isInnerGraphEmpty()
+    {
+        return innerGraph.isEmpty();
+    }
+
+    public void setClassHighlight(boolean isHiglighted)
+    {
+        if(!isSelected)
+        {
+            this.getGraphics().getRect().setEffect(isHiglighted ? classHighlightShadow : null);
+        }
     }
 }

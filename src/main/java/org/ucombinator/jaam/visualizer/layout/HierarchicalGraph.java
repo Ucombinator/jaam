@@ -28,6 +28,15 @@ public class HierarchicalGraph
         return this.visibleVertices;
     }
 
+    public boolean isEmpty()
+    {
+        return vertices.isEmpty();
+    }
+
+    public HashSet<AbstractLayoutVertex> getVertices() {
+        return vertices;
+    }
+
     public void setVertices(HashSet<AbstractLayoutVertex> vertices) {
         this.vertices = vertices;
         for(AbstractLayoutVertex vertex : this.vertices) {
