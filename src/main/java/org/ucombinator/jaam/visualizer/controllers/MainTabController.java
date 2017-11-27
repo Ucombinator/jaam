@@ -33,7 +33,7 @@ public class MainTabController {
     //Right Side Components
     @FXML private final TextArea descriptionArea = null; // Initialized by Controllers.loadFXML()
 
-    @FXML private final TreeView classTree = null; // Initialized by Controllers.loadFXML()
+    @FXML private final TreeView<ClassTreeNode> classTree = null; // Initialized by Controllers.loadFXML()
 
     @FXML private final SearchResults searchResults = null; // Initialized by Controllers.loadFXML()
 
@@ -57,26 +57,17 @@ public class MainTabController {
 
         this.codeViewController.addSelectHandler(centerPane);
 
-        buildClassTree(compilationUnits);
+        buildClassTree(this.codeViewController.getClassNames());
     }
 
-    private void buildClassTree(List<CompilationUnit> compilationUnits)
+    private void buildClassTree(HashSet<String> classNames)
     {
         ClassTreeNode root = new ClassTreeNode("root", null);
         ArrayList<ClassTreeNode> topLevel = new ArrayList<>();
 
-        for(CompilationUnit u : compilationUnits)
+        for(String c : classNames)
         {
-            String p = u.getPackage().getName();
-
-            System.out.println("Processing " + p);
-
-            String[] split = p.split("\\.");
-
-            for(int i = 0; i < split.length; ++i)
-            {
-                System.out.print(split[i] + " -- ");
-            }
+            String[] split = c.split("\\.");
 
             ClassTreeNode current = root;
             for(String s : split)
@@ -84,9 +75,6 @@ public class MainTabController {
                 current = current.addIfAbsent(s);
             }
         }
-
-        System.out.println("JUAN:\n" + root.toString(0));
-
 
         for(ClassTreeNode f : root.subDirs)
         {
@@ -98,10 +86,9 @@ public class MainTabController {
         {
             f.compress();
         }
-        System.out.println("After Compression:\n" + root.toString(0));
 
         // Build the Tree
-        TreeItem<ClassTreeNode> treeRoot = new TreeItem<ClassTreeNode>();
+        TreeItem<ClassTreeNode> treeRoot = new TreeItem<>();
         treeRoot.setValue(new ClassTreeNode("root", null));
         treeRoot.setExpanded(true);
 
@@ -119,9 +106,9 @@ public class MainTabController {
                 TreeItem<ClassTreeNode> prev = (TreeItem<ClassTreeNode>)oldValue;
                 TreeItem<ClassTreeNode> curr = (TreeItem<ClassTreeNode>)newValue;
 
-
-
-                System.out.println("Was " + prev + " is " + curr);
+                setClassHighlight(vizPanelController.getPanelRoot(),
+                        prev != null? prev.getValue().fullName : null,
+                        curr.getValue().fullName);
             }
         });
 
@@ -398,6 +385,29 @@ public class MainTabController {
         }
     }
 
+    private void setClassHighlight(AbstractLayoutVertex v, String prevName, String currName)
+    {
+        if(!v.isHidden()) {
+
+            if (v instanceof CodeEntity) {
+                if (((CodeEntity) v).getClassName().compareTo(currName) == 0) {
+                    //System.out.println("Highlight " + ((CodeEntity) v).getClassName() + " --> " + ((CodeEntity) v).getMethodName() + " --> " + v.getId());
+                    v.setClassHighlight(true);
+                }
+                else if(prevName != null && ((CodeEntity) v).getClassName().compareTo(prevName) == 0) {
+                    v.setClassHighlight(false);
+                }
+            }
+
+            if(!v.isInnerGraphEmpty())
+            {
+                for(AbstractLayoutVertex i : v.getInnerGraph().getVertices())
+                {
+                    setClassHighlight(i, prevName, currName);
+                }
+            }
+        }
+    }
 
     // End of ClassTree Code ------------------------------
 
