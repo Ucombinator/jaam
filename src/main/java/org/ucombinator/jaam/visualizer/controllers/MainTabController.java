@@ -62,7 +62,8 @@ public class MainTabController {
 
     private void buildClassTree(List<CompilationUnit> compilationUnits)
     {
-        ClassTreeNode root = new ClassTreeNode("root");
+        ClassTreeNode root = new ClassTreeNode("root", null);
+        ArrayList<ClassTreeNode> topLevel = new ArrayList<>();
 
         for(CompilationUnit u : compilationUnits)
         {
@@ -86,7 +87,6 @@ public class MainTabController {
 
         System.out.println("JUAN:\n" + root.toString(0));
 
-        ArrayList<ClassTreeNode> topLevel = new ArrayList<>();
 
         for(ClassTreeNode f : root.subDirs)
         {
@@ -102,7 +102,7 @@ public class MainTabController {
 
         // Build the Tree
         TreeItem<ClassTreeNode> treeRoot = new TreeItem<ClassTreeNode>();
-        treeRoot.setValue(new ClassTreeNode("root"));
+        treeRoot.setValue(new ClassTreeNode("root", null));
         treeRoot.setExpanded(true);
 
         for(ClassTreeNode f : topLevel)
@@ -114,9 +114,14 @@ public class MainTabController {
 
         classTree.getSelectionModel().selectedItemProperty().addListener(new ChangeListener() {
             @Override
-            public void changed(ObservableValue observableValue, Object o, Object t1) {
+            public void changed(ObservableValue observableValue, Object oldValue, Object newValue) {
 
-                System.out.println("JUAN: " + observableValue + " -- " + o + " -- " + t1);
+                TreeItem<ClassTreeNode> prev = (TreeItem<ClassTreeNode>)oldValue;
+                TreeItem<ClassTreeNode> curr = (TreeItem<ClassTreeNode>)newValue;
+
+
+
+                System.out.println("Was " + prev + " is " + curr);
             }
         });
 
@@ -313,12 +318,19 @@ public class MainTabController {
     class ClassTreeNode
     {
         public String name;
+        public String fullName;
         public HashSet<ClassTreeNode> subDirs;
 
-        public ClassTreeNode(String name)
+        public ClassTreeNode(String name, String prefix)
         {
             this.name = name;
             this.subDirs = new HashSet<>();
+            if(prefix == null)
+                fullName = new String("");
+            else if(prefix.compareTo("") == 0)
+                fullName = name;
+            else
+                fullName = prefix + "." + name;
         }
 
         public ClassTreeNode addIfAbsent(String name)
@@ -334,7 +346,7 @@ public class MainTabController {
             }
             if(subDir == null)
             {
-                subDir = new ClassTreeNode(name);
+                subDir = new ClassTreeNode(name, this.fullName);
                 subDirs.add(subDir);
             }
 
@@ -358,6 +370,8 @@ public class MainTabController {
         public String toString() {
             return name;
         }
+
+        public String getFullName() { return  fullName; }
 
         public String toString(int depth) {
             StringBuilder subTree = new StringBuilder(depth + "-" + name + "\n");
