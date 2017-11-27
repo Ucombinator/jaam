@@ -99,16 +99,15 @@ public class MainTabController {
 
         classTree.setRoot(treeRoot);
 
-        classTree.getSelectionModel().selectedItemProperty().addListener(new ChangeListener() {
+        classTree.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<TreeItem<ClassTreeNode>>() {
             @Override
-            public void changed(ObservableValue observableValue, Object oldValue, Object newValue) {
+            public void changed(ObservableValue<? extends TreeItem<ClassTreeNode>> observableValue,
+                                TreeItem<ClassTreeNode> oldValue, TreeItem<ClassTreeNode> newValue) {
 
-                TreeItem<ClassTreeNode> prev = (TreeItem<ClassTreeNode>)oldValue;
-                TreeItem<ClassTreeNode> curr = (TreeItem<ClassTreeNode>)newValue;
-
-                setClassHighlight(vizPanelController.getPanelRoot(),
-                        prev != null? prev.getValue().fullName : null,
-                        curr.getValue().fullName);
+                if(newValue.isLeaf())
+                    setClassHighlight(vizPanelController.getPanelRoot(),
+                            oldValue != null? oldValue.getValue().fullName : null,
+                            newValue.getValue().fullName);
             }
         });
 
