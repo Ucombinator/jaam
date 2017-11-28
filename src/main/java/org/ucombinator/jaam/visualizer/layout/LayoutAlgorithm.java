@@ -144,7 +144,7 @@ public class LayoutAlgorithm
         }
 
         HierarchicalGraph graph = parentVertex.getInnerGraph();
-        ArrayList<AbstractLayoutVertex> roots = graph.getRoots();
+        ArrayList<AbstractLayoutVertex> roots = graph.getVisibleRoots();
 
         double parentWidth = AbstractLayoutVertex.DEFAULT_WIDTH;
         double parentHeight = AbstractLayoutVertex.DEFAULT_HEIGHT;
@@ -186,7 +186,7 @@ public class LayoutAlgorithm
         Queue<AbstractLayoutVertex> vertexQueue = new ArrayDeque<>();
         HashSet<AbstractLayoutVertex> seen = new HashSet<>();
 
-        ArrayList<AbstractLayoutVertex> roots = graph.getRoots();
+        ArrayList<AbstractLayoutVertex> roots = graph.getVisibleRoots();
         for(AbstractLayoutVertex root : roots) {
             vertexQueue.add(root);
             seen.add(root);
