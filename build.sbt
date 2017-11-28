@@ -12,8 +12,10 @@ resolvers += "Ucombinator maven repository on github" at "https://ucombinator.gi
 
 libraryDependencies ++= Seq(
   "com.esotericsoftware" % "minlog" % "1.3.0",
+  "com.novocode" % "junit-interface" % "0.11" % "test",
   "com.twitter" %% "chill" % "0.8.0",
   "de.javakaffee" % "kryo-serializers" % "0.38",
+  "junit" % "junit" % "4.11" % "test",
   "org.bitbucket.mstrobel" % "procyon-compilertools" % "0.5.32",
   "org.controlsfx" % "controlsfx" % "8.40.13",
   "org.fxmisc.richtext" % "richtextfx" % "0.8.0",
@@ -22,6 +24,8 @@ libraryDependencies ++= Seq(
   "org.ow2.asm" % "asm-commons" % "5.1",
   "org.rogach" %% "scallop" % "2.0.1",
   "org.scala-lang" % "scala-reflect" % "2.11.8",
+  "org.scalactic" %% "scalactic" % "3.0.4",
+  "org.scalatest" %% "scalatest" % "3.0.4" % "test",
   "org.slf4j" % "slf4j-nop" % "1.7.22",
   "org.ucombinator.dockfx" % "DockFX" % "0.1.12",
   "org.ucombinator.soot" % "soot" % "nightly.20161021"
