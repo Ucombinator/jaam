@@ -79,7 +79,8 @@ public class LayoutAlgorithm
         for (AbstractLayoutVertex v : graph.getVisibleVertices()) {
             if (v.getVertexStatus() != AbstractLayoutVertex.VertexStatus.BLACK) {
                 System.out.println("ERROR in Max Depth Drawings. Does your graph have a cycle?");
-                System.out.println("BFS ERROR Didn't process " + v.getId() + " in BFS Children Pass " + v.getVertexStatus());
+                System.out.println("BFS ERROR Didn't process " + v.getId()
+                        + " in BFS Children Pass " + v.getVertexStatus());
             }
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
@@ -205,7 +206,9 @@ public class LayoutAlgorithm
                if (!seen.contains(child)) {
                    seen.add(child);
                    child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-                   int numberOfIncomingEdges = graph.getVisibleInNeighbors(child).size() - 1; // v's incoming edge (v --> child)
+
+                   // Subtract v's incoming edge (v --> child)
+                   int numberOfIncomingEdges = graph.getVisibleInNeighbors(child).size() - 1;
                    if (graph.getVisibleInNeighbors(child).contains(child)) {
                        numberOfIncomingEdges -= 1; // Ignore recursive call in edge count
                    }
