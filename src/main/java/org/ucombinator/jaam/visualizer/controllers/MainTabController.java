@@ -104,10 +104,9 @@ public class MainTabController {
             public void changed(ObservableValue<? extends TreeItem<ClassTreeNode>> observableValue,
                                 TreeItem<ClassTreeNode> oldValue, TreeItem<ClassTreeNode> newValue) {
 
-                if(newValue.isLeaf())
-                    setClassHighlight(vizPanelController.getPanelRoot(),
-                            oldValue != null? oldValue.getValue().fullName : null,
-                            newValue.getValue().fullName);
+                setClassHighlight(vizPanelController.getPanelRoot(),
+                        oldValue != null? oldValue.getValue().fullName : null,
+                        newValue.getValue().fullName);
             }
         });
 
@@ -384,16 +383,16 @@ public class MainTabController {
         }
     }
 
-    private void setClassHighlight(AbstractLayoutVertex v, String prevName, String currName)
+    private void setClassHighlight(AbstractLayoutVertex v, String prevPrefix, String currPrefix)
     {
         if(!v.isHidden()) {
 
             if (v instanceof CodeEntity) {
-                if (((CodeEntity) v).getClassName().compareTo(currName) == 0) {
+                if (((CodeEntity) v).getClassName().startsWith(currPrefix)) {
                     //System.out.println("Highlight " + ((CodeEntity) v).getClassName() + " --> " + ((CodeEntity) v).getMethodName() + " --> " + v.getId());
                     v.setClassHighlight(true);
                 }
-                else if(prevName != null && ((CodeEntity) v).getClassName().compareTo(prevName) == 0) {
+                else if(prevPrefix != null && ((CodeEntity) v).getClassName().startsWith(prevPrefix)) {
                     v.setClassHighlight(false);
                 }
             }
@@ -402,7 +401,7 @@ public class MainTabController {
             {
                 for(AbstractLayoutVertex i : v.getInnerGraph().getVertices())
                 {
-                    setClassHighlight(i, prevName, currName);
+                    setClassHighlight(i, prevPrefix, currPrefix);
                 }
             }
         }
