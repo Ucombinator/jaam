@@ -75,14 +75,14 @@ case class KontStack(k : KontAddr) extends CachedHashCode {
   // TODO/generalize: Handle PDCFA
   def push(meth : SootMethod, newFP : FramePointer, frame : Frame) : KontStack = {
     val kAddr = kalloca(meth, newFP, frame)
-    System.kstore.update(kAddr, KontD(Set(RetKont(frame, k))))
+    System.kStore.update(kAddr, KontD(Set(RetKont(frame, k))))
     KontStack(kAddr)
     //KontStack(RetKont(frame, kAddr))
   }
 
   // Pop returns all possible frames beneath the current one.
   def pop() : Set[(Frame, KontStack)] = {
-    for (topk <- System.kstore(k).values) yield {
+    for (topk <- System.kStore(k).values) yield {
       topk match {
         case RetKont(frame, kontAddr) => (frame, KontStack(kontAddr))
       }
@@ -96,7 +96,7 @@ case class KontStack(k : KontAddr) extends CachedHashCode {
 
     if (!Main.conf.exceptions()) {
       Log.info("Ignoring thrown exception: "+exception)
-      return Set()
+      return Set.empty
     }
 
     //TODO: if the JVM implementation does not enforce the rules on structured locking described in §2.11.10,
@@ -110,7 +110,7 @@ case class KontStack(k : KontAddr) extends CachedHashCode {
         val nullPointerException = Soot.getSootClass("java.lang.NullPointerException");
         return handleException(ObjectValue(nullPointerException, OneCFABasePointer(stmt, fp)), stmt, fp)
       }
-      return Set()
+      return Set.empty
     }
 
     /* TODO: can this iterative version of stack walking be deleted?
@@ -145,7 +145,7 @@ case class KontStack(k : KontAddr) extends CachedHashCode {
       if (visited.contains((stmt, fp, kontStack))) return Set()
       visited = visited + ((stmt, fp, kontStack)) // TODO: do we really need all of these in here?
       for (trap <- TrapManager.getTrapsAt(stmt.sootStmt, Soot.getBody(stmt.sootMethod))) {
-        val caughtType = trap.getException()
+        val caughtType = trap.getException
         // The handler will expect the exception to be waiting at CaughtExceptionFrameAddr(fp).
         // It'll be referenced through CaughtExceptionRef.
 
@@ -169,16 +169,16 @@ case class KontStack(k : KontAddr) extends CachedHashCode {
   }
 }
 
-case class Frame( val stmt : Stmt,
-                  val fp : FramePointer,
-                  val destAddr : Option[Set[Addr]]) extends CachedHashCode {
-  def acceptsReturnValue() : Boolean = !destAddr.isEmpty
+case class Frame(stmt : Stmt,
+                 fp : FramePointer,
+                 destAddr : Option[Set[Addr]]) extends CachedHashCode {
+  def acceptsReturnValue : Boolean = destAddr.nonEmpty
 }
 
 abstract class Kont extends CachedHashCode
 
-case class RetKont( val frame : Frame,
-                    val k : KontAddr
+case class RetKont(frame : Frame,
+                   k : KontAddr
                   ) extends Kont
 
 //----------- ABSTRACT VALUES -----------------
@@ -201,22 +201,22 @@ abstract class AtomicValue extends Value
 case object AnyAtomicValue extends AtomicValue
 // TODO: separate 'null' from AnyAtomicValue
 
-case class ObjectValue(val sootClass : SootClass, val bp : BasePointer) extends Value {
+case class ObjectValue(sootClass : SootClass, bp : BasePointer) extends Value {
   if (!sootClass.isConcrete && !Snowflakes.isSnowflakeObject(bp)) {
     throw new Exception("Created ObjectValue for non-concrete type: " + sootClass + " ; base pointer: " + bp)
   }
 }
 
 // The sootType is the type with array wrapper
-case class ArrayValue(val sootType : Type, val bp : BasePointer) extends Value
+case class ArrayValue(sootType : Type, bp : BasePointer) extends Value
 
 //----------------- POINTERS ------------------
 
 // FramePointers, when paired with variable names, yield the addresses of variables.
 abstract class FramePointer extends CachedHashCode
 case object InvariantFramePointer extends FramePointer // TODO: delete this?  Is seems unused
-case class ZeroCFAFramePointer(val method : SootMethod) extends FramePointer
-case class OneCFAFramePointer(val method : SootMethod, val nextStmt : Stmt) extends FramePointer
+case class ZeroCFAFramePointer(method : SootMethod) extends FramePointer
+case class OneCFAFramePointer(method : SootMethod, nextStmt : Stmt) extends FramePointer
 case object InitialFramePointer extends FramePointer
 
 abstract class From
@@ -227,21 +227,21 @@ case object FromJava extends From
 abstract class BasePointer
 case class OneCFABasePointer(stmt : Stmt, fp : FramePointer) extends BasePointer
 case object InitialBasePointer extends BasePointer
-case class PreloadedBasePointer(id: Int) extends BasePointer {}
+case class PreloadedBasePointer(id: Int) extends BasePointer
 
 // Note that due to interning, strings and classes may share base pointers with each other
 // Oh, and class loaders are a headache(!)
-abstract class StringBasePointer extends BasePointer {}
+abstract class StringBasePointer extends BasePointer
 
 case object StringLiteralAddr extends Addr {} // HACK: so string literals can be smuggled to Class.forName0
 case class StringLiteralValue(s: String) extends Value {} // HACK: so string literals can be smuggled to Class.forName0
 
 // TODO/soundness: how to mix literal string base pointer and string base pointer top?
 object StringBasePointer {
-  var constants = Map[String, StringBasePointer]()
-  val value = Soot.classes.String.getFieldByName("value")
-  val hash = Soot.classes.String.getFieldByName("hash")
-  val hash32 = Soot.classes.String.getFieldByName("hash32")
+  var constants= Map.empty[String, StringBasePointer]
+  val value: SootField  = Soot.classes.String.getFieldByName("value")
+  val hash: SootField   = Soot.classes.String.getFieldByName("hash")
+  val hash32: SootField = Soot.classes.String.getFieldByName("hash32")
 
   // Fields of StringBasePointerTop
   System.store.update(
@@ -265,19 +265,19 @@ object StringBasePointer {
       constants.get(string) match {
         case Some(bp) => bp
         case None =>
-        // TODO: should this go here or should we throw an exception for top level handling?
-        // TODO: we can reuse base pointers when strings are the same because all the fields are immutable. Research: can we generalize this idea?
-        Log.info("Initializing string constant: \""+string+"\"")
-        val bp = LiteralStringBasePointer(string)
+          // TODO: should this go here or should we throw an exception for top level handling?
+          // TODO: we can reuse base pointers when strings are the same because all the fields are immutable. Research: can we generalize this idea?
+          Log.info("Initializing string constant: \""+string+"\"")
+          val bp = LiteralStringBasePointer(string)
 
-        state.createArray( // TODO: use 'current state' instead of state parameter
-          ArrayType.v(CharType.v,1),
-          List(D.atomicTop/*string.length*/),
-          Set(InstanceFieldAddr(bp, value)))
-        System.store.update(InstanceFieldAddr(bp, hash), D.atomicTop)
-        System.store.update(InstanceFieldAddr(bp, hash32), D.atomicTop)
-        constants += string -> bp
-        bp
+          state.createArray( // TODO: use 'current state' instead of state parameter
+            ArrayType.v(CharType.v,1),
+            List(D.atomicTop/*string.length*/),
+            Set(InstanceFieldAddr(bp, value)))
+          System.store.update(InstanceFieldAddr(bp, hash), D.atomicTop)
+          System.store.update(InstanceFieldAddr(bp, hash32), D.atomicTop)
+          constants += string -> bp
+          bp
       }
     }
   }
@@ -287,7 +287,7 @@ case object StringBasePointerTop extends StringBasePointer
 case object StringArrayBasePointerTop extends BasePointer
 case object InitialStringBasePointer extends StringBasePointer
 case object InitialStringArrayBasePointer extends StringBasePointer
-case class LiteralStringBasePointer(val string : String) extends StringBasePointer {
+case class LiteralStringBasePointer(string: String) extends StringBasePointer {
   // Use escape codes (e.g., `\n`) in the string.  We do this by getting a
   // representation of a string constant and then printing that.
   override lazy val toString = {
@@ -297,7 +297,7 @@ case class LiteralStringBasePointer(val string : String) extends StringBasePoint
 }
 
 // we remvoe the argument of ClassBasePointer, to make all ClassBasePointer points to the same
-case class ClassBasePointer(val name : String) extends BasePointer
+case class ClassBasePointer(name : String) extends BasePointer
 //case object ClassBasePointer extends BasePointer
 
 //----------------- ADDRESSES ------------------
@@ -306,7 +306,7 @@ case class ClassBasePointer(val name : String) extends BasePointer
 // Addresses of continuations on the stack
 abstract class KontAddr extends Addr
 //case class OneCFAKontAddr(val fp : FramePointer) extends KontAddr
-case class ZeroCFAKontAddr(val fp : FramePointer) extends KontAddr
+case class ZeroCFAKontAddr(fp : FramePointer) extends KontAddr
 case object HaltKontAddr extends KontAddr // Should never be assigned a continuation
 
 abstract class Addr extends CachedHashCode
@@ -315,22 +315,22 @@ abstract class FrameAddr extends Addr
 case object GlobalSnowflakeAddr extends Addr
 
 // For local variables
-case class LocalFrameAddr(val fp : FramePointer, val register : Local) extends FrameAddr
+case class LocalFrameAddr(fp : FramePointer, register : Local) extends FrameAddr
 
-case class ParameterFrameAddr(val fp : FramePointer, val parameter : Int) extends FrameAddr
+case class ParameterFrameAddr(fp : FramePointer, parameter : Int) extends FrameAddr
 
-case class ThisFrameAddr(val fp : FramePointer) extends FrameAddr
+case class ThisFrameAddr(fp : FramePointer) extends FrameAddr
 
 // Holds the most recently caught exception in this frame
-case class CaughtExceptionFrameAddr(val fp : FramePointer) extends FrameAddr
+case class CaughtExceptionFrameAddr(fp : FramePointer) extends FrameAddr
 
-case class InstanceFieldAddr(val bp : BasePointer, val field : SootField) extends Addr
+case class InstanceFieldAddr(bp : BasePointer, field : SootField) extends Addr
 
-case class ArrayRefAddr(val bp : BasePointer) extends Addr // TODO: add index (it is all AtomicValue anyway)
+case class ArrayRefAddr(bp : BasePointer) extends Addr // TODO: add index (it is all AtomicValue anyway)
 
-case class ArrayLengthAddr(val bp : BasePointer) extends Addr
+case class ArrayLengthAddr(bp : BasePointer) extends Addr
 
-case class StaticFieldAddr(val field : SootField) extends Addr
+case class StaticFieldAddr(field : SootField) extends Addr
 
 // TODO: replace KontD and D with AbstractDomain[...]
 // TODO: cache hashcode for Kont and Value
@@ -338,20 +338,20 @@ case class StaticFieldAddr(val field : SootField) extends Addr
 // TODO: why is values private?
 case class D(private val values: Set[Value]) {
   def getValues: Set[Value] = values
-  def join(that : D) = D(this.getValues.union(that.getValues))
+  def join(that : D): D = D(this.getValues.union(that.getValues))
   def maybeZero() : Boolean = getValues.exists(_.isInstanceOf[AtomicValue])
 }
 object D {
   val atomicTop = D(Set(AnyAtomicValue))
 }
 
-object GlobalD extends D(Set[Value]()) {
-  val globalValues: mutable.Set[Value] = mutable.Set[Value]()
-  val map = mutable.Map[SootClass, mutable.Set[Value]]()
+object GlobalD extends D(Set.empty[Value]) {
+  val globalValues: mutable.Set[Value] = mutable.Set.empty
+  val map: mutable.Map[SootClass, mutable.Set[Value]] = mutable.Map.empty
   var modified: Boolean = false
 
   var size: Int = 0
-  var cachedValues: Set[Value] = Set[Value]()
+  var cachedValues: Set[Value] = Set.empty
 
   override def getValues: Set[Value] = {
     if (size != globalValues.size) {
@@ -364,7 +364,7 @@ object GlobalD extends D(Set[Value]()) {
   def update(vs: Set[Value]): D = {
     val oldSize = globalValues.size
     globalValues ++= vs
-    modified = (oldSize != globalValues.size)
+    modified = oldSize != globalValues.size
     this
   }
 
@@ -384,25 +384,26 @@ object GlobalD extends D(Set[Value]()) {
   }
 }
 
-case class KontD(val values: Set[Kont]) {
+case class KontD(values: Set[Kont]) {
   def join(that : KontD) = KontD(this.values ++ that.values)
 }
 
 abstract sealed class AbstractState {
   def next() : Set[AbstractState]
 
-  def getReadAddrs: Set[Addr] = Set()
-  def setReadAddrs(s: Set[Addr]) = {}
-  def getKReadAddrs: Set[KontAddr] = Set()
-  def setKReadAddrs(s: Set[KontAddr]) = {}
-  def getWriteAddrs: Set[Addr] = Set()
-  def setWriteAddrs(s: Set[Addr]) = {}
-  def getKWriteAddrs: Set[KontAddr] = Set()
-  def setKWriteAddrs(s: Set[KontAddr]) = {}
+  // All the getter here are implemented, though they all return a Unit value directly
+  def getReadAddrs: Set[Addr] = Set.empty
+  def setReadAddrs(s: Set[Addr]): Unit = {}
+  def getKReadAddrs: Set[KontAddr] = Set.empty
+  def setKReadAddrs(s: Set[KontAddr]): Unit = {}
+  def getWriteAddrs: Set[Addr] = Set.empty
+  def setWriteAddrs(s: Set[Addr]): Unit = {}
+  def getKWriteAddrs: Set[KontAddr] = Set.empty
+  def setKWriteAddrs(s: Set[KontAddr]): Unit = {}
 
-  def toPacket() : serializer.AbstractState
+  def toPacket : serializer.AbstractState
 
-  val id = AbstractState.idMap.getOrElseUpdate(this, AbstractState.nextId)
+  val id: AbstractState.Id = AbstractState.idMap.getOrElseUpdate(this, AbstractState.nextId())
 
 // TODO: can't have because AbstractState.idMap would use it
 //  override def equals(that: Any): Boolean = {
@@ -413,20 +414,20 @@ abstract sealed class AbstractState {
 
 object AbstractState {
   type Id = Int
-  val idMap = mutable.Map[AbstractState, Id]()
+  val idMap: mutable.Map[AbstractState, Id] = mutable.Map.empty
   var nextId_ = 0
   def nextId() : Id = { nextId_ += 1; nextId_ }
 }
 
 case object ErrorState extends AbstractState {
   override def next() : Set[AbstractState] = Set.empty
-  override def toPacket() = serializer.ErrorState(serializer.Id[serializer.Node](id))
+  override def toPacket = serializer.ErrorState(serializer.Id[serializer.Node](id))
 }
 
 // State abstracts a collection of concrete states of execution.
-case class State(val stmt : Stmt,
-                 val fp : FramePointer,
-                 val kontStack : KontStack) extends AbstractState with CachedHashCode {
+case class State(stmt : Stmt,
+                 fp : FramePointer,
+                 kontStack : KontStack) extends AbstractState with CachedHashCode {
   // Needed because different "stores" should lead to different objects
   //  override def equals(that: Any): Boolean =
   //    that match {
@@ -434,27 +435,27 @@ case class State(val stmt : Stmt,
   //      case _ => false
   //   }
 
-  var readAddrs = Set[Addr]()
+  var readAddrs = Set.empty[Addr]
   override def getReadAddrs = readAddrs
-  override def setReadAddrs(s: Set[Addr]) = readAddrs = s
+  override def setReadAddrs(s: Set[Addr]) { readAddrs = s }
 
-  var kReadAddrs = Set[KontAddr]()
+  var kReadAddrs = Set.empty[KontAddr]
   override def getKReadAddrs = kReadAddrs
-  override def setKReadAddrs(s: Set[KontAddr]) = kReadAddrs = s
+  override def setKReadAddrs(s: Set[KontAddr]) { kReadAddrs = s }
 
-  var writeAddrs = Set[Addr]()
+  var writeAddrs = Set.empty[Addr]
   override def getWriteAddrs = writeAddrs
-  override def setWriteAddrs(s: Set[Addr]) = writeAddrs = s
+  override def setWriteAddrs(s: Set[Addr]) { writeAddrs = s }
 
-  var kWriteAddrs = Set[KontAddr]()
+  var kWriteAddrs = Set.empty[KontAddr]
   override def getKWriteAddrs = kWriteAddrs
-  override def setKWriteAddrs(s: Set[KontAddr]) = kWriteAddrs = s
+  override def setKWriteAddrs(s: Set[KontAddr]) { kWriteAddrs = s }
 
-  override def toPacket() = serializer.State(serializer.Id[serializer.Node](id), stmt.toPacket, fp.toString, kontStack.toString)
+  override def toPacket = serializer.State(serializer.Id[serializer.Node](id), stmt.toPacket, fp.toString, kontStack.toString)
 
   // When you call next, you may realize you are going to end up throwing some exceptions
   // TODO/refactor: Consider turning this into a list of exceptions.
-  var exceptions = D(Set())
+  var exceptions = D(Set.empty)
 
   // Allocates a new frame pointer (currently uses 0CFA)
   def alloca(expr : InvokeExpr, nextStmt : Stmt) : FramePointer = ZeroCFAFramePointer(expr.getMethod)
@@ -487,10 +488,10 @@ case class State(val stmt : Stmt,
         System.checkInitializedClasses(c)
         Set(StaticFieldAddr(f))
       case lhs : ParameterRef => Set(ParameterFrameAddr(fp, lhs.getIndex))
-      case lhs : ThisRef => Set(ThisFrameAddr(fp))
+      case _ : ThisRef => Set(ThisFrameAddr(fp))
       // TODO/precision: have multiple addresses per "catch" clause?
       // Perhaps mix left-hand side into address?
-      case lhs : CaughtExceptionRef => Set(CaughtExceptionFrameAddr(fp))
+      case _ : CaughtExceptionRef => Set(CaughtExceptionFrameAddr(fp))
       case lhs : ArrayRef =>
         // TODO/precision: Use more than a single address for each Array.
         val b = eval(lhs.getBase)
@@ -529,7 +530,7 @@ case class State(val stmt : Stmt,
       //TODO missing: MethodHandle
       //TODO/precision actually do the calculations
       case (_ : Local) | (_ : Ref) =>
-        D(System.store(addrsOf(v)).getValues.filter(Value.canStoreType(_, v.getType())))
+        D(System.store(addrsOf(v)).getValues.filter(Value.canStoreType(_, v.getType)))
       case _ : NullConstant =>
         D.atomicTop
       case _ : NumericConstant => D.atomicTop
@@ -583,7 +584,7 @@ case class State(val stmt : Stmt,
         val addrs : Set[Addr] = for {
           ArrayValue(_, bp) <- eval(v.getOp).getValues
         } yield ArrayLengthAddr(bp)
-        D(System.store(addrs).getValues.filter(Value.canStoreType(_, v.getType())))
+        D(System.store(addrs).getValues.filter(Value.canStoreType(_, v.getType)))
 
       // TODO/precision: implement the actual check
       case v : InstanceOfExpr => D.atomicTop
@@ -601,20 +602,18 @@ case class State(val stmt : Stmt,
         def isCastableTo(v : Value, t : Type) : Boolean = {
           v match {
             case _ : AtomicValue => true // null is always castable
-            case ObjectValue(sootClass, _) =>
-              t match {
-                case rt : RefType => Soot.canStoreClass(sootClass, rt.getSootClass)
-                case _ => false
-              }
+            case ObjectValue(sootClass, _) if t.isInstanceOf[RefType] =>
+              Soot.canStoreClass(sootClass, t.asInstanceOf[RefType].getSootClass)
+            case ObjectValue(_, _) => false
             case ArrayValue(sootType, _) => Soot.canStoreType(sootType, t)
           }
         }
-        var d2 = D(Set())
+        var d2 = D(Set.empty)
         for (v <- d.getValues) {
           // TODO/Guannan: Can we remove rhs of this `||`?
           if (v == AnyAtomicValue || isCastableTo(v, castedType) || castedType.isInstanceOf[ArrayType]) {
             // Up casts are always legal
-            d2 = d2.join(D(Set((v))))
+            d2 = d2.join(D(Set(v)))
           }
           else if (Snowflakes.isSnowflakeObject(v)) {
             // && Soot.canStoreType(castedType, v.asInstanceOf[ObjectValue].sootClass.getType)) {
@@ -669,10 +668,10 @@ case class State(val stmt : Stmt,
                    destAddr : Option[Set[Addr]],
                    nextStmt : Stmt = stmt.nextSyntactic) : Set[AbstractState] = {
     val base = expr match {
-      case expr : DynamicInvokeExpr =>
+      case _ : DynamicInvokeExpr =>
         // Could only come from non-Java sources
         throw new Exception(s"Unexpected DynamicInvokeExpr: $expr")
-      case expr : StaticInvokeExpr => None
+      case _ : StaticInvokeExpr => None
       case expr : InstanceInvokeExpr =>
         // Possibilities:
         //  - SpecialInvokeExpr: <init>, private methods, and methods of superclass
@@ -692,12 +691,12 @@ case class State(val stmt : Stmt,
   // static class initialization because in that case we want to
   // return to the current statement instead of the next statement.
   def handleInvoke2(base : Option[(D, Boolean)],
-                   method : SootMethod,
-                   args : List[D],
-                   newFP : FramePointer,
-                   destAddr : Option[Set[Addr]],
+                    method : SootMethod,
+                    args : List[D],
+                    newFP : FramePointer,
+                    destAddr : Option[Set[Addr]],
     // TODO: use `Option` for nextStmt
-                   nextStmt : Stmt = stmt.nextSyntactic) : Set[AbstractState] = {
+                    nextStmt : Stmt = stmt.nextSyntactic) : Set[AbstractState] = {
     // This function finds all methods that could override root_m.
     // These methods are returned with the root-most at the end of
     // the list and the leaf-most at the head.  Thus the caller
@@ -711,12 +710,12 @@ case class State(val stmt : Stmt,
       val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
       if (curr_m == null) {
         Log.debug("root_m: " + root_m.toString)
-        overrides(curr.getSuperclass(), root_m)
+        overrides(curr.getSuperclass, root_m)
       }
       else if (root_m.getDeclaringClass.isInterface || AccessManager.isAccessLegal(curr_m, root_m)) { List(curr_m) }
       else {
-        val o = overrides(curr.getSuperclass(), root_m)
-        (if (o.exists(m => AccessManager.isAccessLegal(curr_m, m))) List(curr_m) else List()) ++ o
+        val o = overrides(curr.getSuperclass, root_m)
+        (if (o.exists(m => AccessManager.isAccessLegal(curr_m, m))) List(curr_m) else List.empty) ++ o
       }
     }
 
@@ -740,8 +739,8 @@ case class State(val stmt : Stmt,
             case Some(s) => System.store.update(ThisFrameAddr(newFP), D(Set(s)))
             case None => {} // TODO: throw exception here?
           }
-          for (i <- 0 until args.length) {
-            System.store.update(ParameterFrameAddr(newFP, i), args(i))
+          for ((arg, i)<- args.zipWithIndex) {
+            System.store.update(ParameterFrameAddr(newFP, i), arg)
           }
           Set(State(Stmt.methodEntry(meth), newFP, newKontStack))
       }
@@ -749,45 +748,47 @@ case class State(val stmt : Stmt,
 
     base match {
       case None =>
-        System.checkInitializedClasses(method.getDeclaringClass())
+        System.checkInitializedClasses(method.getDeclaringClass)
         dispatch(None, method)
       case Some((b, isSpecial)) =>
-        var r = Set[AbstractState]()
+        var r = Set.empty[AbstractState]
         for (v <- b.getValues) {
           r ++= (v match {
-            case ObjectValue(_, bp) if bp.isInstanceOf[AbstractSnowflakeBasePointer] => dispatch(Some(v), method)
-            case ObjectValue(sootClass, bp) if Soot.canStoreClass(sootClass, method.getDeclaringClass) =>
+            case ObjectValue(_, bp) if bp.isInstanceOf[AbstractSnowflakeBasePointer] =>
+              dispatch(Some(v), method)
+            case ObjectValue(sootClass, _) if Soot.canStoreClass(sootClass, method.getDeclaringClass) =>
               val meth = if (isSpecial) method else overrides(sootClass, method).head
               dispatch(Some(v), meth)
-            case ArrayValue(sootType, bp) =>
+            case ArrayValue(_, _) =>
               dispatch(Some(v), method)
-            case _ => Set()
+            case _ => Set.empty
           })
         }
         r
     }
   }
 
-  // If you reference an unititialized field, what should it be?
+  // If you reference an uninitialized field, what should it be?
   def defaultInitialValue(t : Type) : D = {
     t match {
-      case t : RefLikeType => eval(NullConstant.v())
-      case t : PrimType => D.atomicTop // TODO/precision: should eval based on specific type
+      case _ : RefLikeType => eval(NullConstant.v)
+      case _ : PrimType => D.atomicTop // TODO/precision: should eval based on specific type
     }
   }
 
-  // If you reference an unititialized static field, what should it be?
+  // If you reference an uninitialized static field, what should it be?
   def staticInitialValue(f : SootField) : D = {
     for (t <- f.getTags)
       t match {
-        case t : DoubleConstantValueTag => return D.atomicTop
-        case t : FloatConstantValueTag => return D.atomicTop
-        case t : IntegerConstantValueTag => return D.atomicTop
-        case t : LongConstantValueTag => return D.atomicTop
-        case t : StringConstantValueTag => return D(Set(ObjectValue(Soot.classes.String, StringBasePointer(t.getStringValue(), this))))
+        case _ : DoubleConstantValueTag  => return D.atomicTop
+        case _ : FloatConstantValueTag   => return D.atomicTop
+        case _ : IntegerConstantValueTag => return D.atomicTop
+        case _ : LongConstantValueTag    => return D.atomicTop
+        case t : StringConstantValueTag  => return D(Set(ObjectValue(Soot.classes.String, StringBasePointer(t.getStringValue, this))))
         case _ => ()
       }
-    return defaultInitialValue(f.getType)
+
+    defaultInitialValue(f.getType)
   }
 
   // Update the store to contain the possibly nested arrays described
@@ -801,7 +802,7 @@ case class State(val stmt : Stmt,
       // TODO/soundness: exception for a negative length
       // TODO/precision: stop allocating if a zero length
       // TODO/precision: separately allocate each array element
-      createArray(t.asInstanceOf[ArrayType].getElementType(), ss, Set(ArrayRefAddr(bp)))
+      createArray(t.asInstanceOf[ArrayType].getElementType, ss, Set(ArrayRefAddr(bp)))
         .update(addrs, D(Set(ArrayValue(t, bp))))
         .update(ArrayLengthAddr(bp), s).asInstanceOf[Store]
   }
@@ -811,15 +812,15 @@ case class State(val stmt : Stmt,
     try {
       val nexts = true_next()
       if (!Main.conf.exceptions()) {
-        if (exceptions.getValues.size != 0) {
+        if (exceptions.getValues.nonEmpty) {
           // TODO: put entry in jaam file
           Log.info("Ignoring thrown exceptions: "+exceptions)
         }
         nexts
       } else {
-        val exceptionStates = (exceptions.getValues map {
+        val exceptionStates = exceptions.getValues flatMap {
           kontStack.handleException(_, stmt, fp)//, store)
-        }).flatten
+        }
         // `exceptionStates` is usually empty so it is slightly faster to put that first
         exceptionStates ++ nexts
       }
@@ -862,11 +863,11 @@ Exception in thread "main" java.lang.RuntimeException: No field value in class j
             val typ = Utilities.parseType(t)
             typ match {
               case typ: RefType =>
-                val c = Soot.getSootClass(typ.getClassName())
+                val c = Soot.getSootClass(typ.getClassName)
                 if (!System.loadedObjects(id)) {
                   System.loadedObjects += id
-                  for (System.Field(d, f, t, v) <- members) {
-                    val d2 = Soot.getSootClass(Utilities.parseType(d).asInstanceOf[RefType].getClassName())
+                  for (System.Field(d, f, _, v) <- members) {
+                    val d2 = Soot.getSootClass(Utilities.parseType(d).asInstanceOf[RefType].getClassName)
                     System.store.update(InstanceFieldAddr(bp, d2.getFieldByName(f)), loadObject(v))
                   }
                 }
@@ -875,8 +876,8 @@ Exception in thread "main" java.lang.RuntimeException: No field value in class j
                 if (!System.loadedObjects(id)) {
                   System.loadedObjects += id
                   System.store.update(ArrayLengthAddr(bp), D.atomicTop)
-                  val (t, elements) = System.objects(id)
-                  for (System.Element(i,e) <- elements) {
+                  val (_, elements) = System.objects(id)
+                  for (System.Element(_, e) <- elements) {
                     System.store.update(ArrayRefAddr(bp), loadObject(e))
                   }
                 }
@@ -886,14 +887,14 @@ Exception in thread "main" java.lang.RuntimeException: No field value in class j
           }
         }
 
-        exceptions = D(Set())
+        exceptions = D(Set.empty)
 
         // NOTE: we dont initialize the super class until one of its fields is
         // mentioned.  I think we get away with delaying it, but that might
         // not technically be the right thing to do.
         val fields = System.staticFields.getOrElse(sootClass.getName, null)
         if (fields != null) {
-          for (System.Field(_, name, typ, value) <- fields) {
+          for (System.Field(_, name, _, value) <- fields) {
             Log.info(f"Static field $sootClass $name is $value")
             val sootField = sootClass.getFieldByName(name)
             System.store.update(StaticFieldAddr(sootField), loadObject(value))
@@ -930,7 +931,7 @@ Exception in thread "main" java.lang.RuntimeException: No field value in class j
         // TODO: is this right? (filter to do only on snowflake objects) (might have trouble determining if snowflake b/c we don't have the target)
         val states = for (addr <- addrs) yield {
           addr match {
-            case InstanceFieldAddr(bp, field) =>
+            case InstanceFieldAddr(_, field) =>
               DefaultReturnSnowflake.initField(Set(addr), field)
               Set(this)
             case StaticFieldAddr(field) =>
@@ -939,14 +940,14 @@ Exception in thread "main" java.lang.RuntimeException: No field value in class j
             case _ =>
               System.undefined += 1
               Log.error("Undefined Addrs in state "+this.id+"; stmt = "+stmt+"; addrs = "+addrs)
-              Set()
+              Set.empty
           }
         }
-        states.foldLeft(Set[AbstractState]())(_++_)
+        states.foldLeft(Set.empty[AbstractState])(_++_)
     }
   }
 
-  def newExpr(lhsAddr : Set[Addr], sootClass : SootClass) = {
+  def newExpr(lhsAddr : Set[Addr], sootClass : SootClass): Unit = {
     //if (System.isLibraryClass(sootClass) && !sootClass.getPackageName.startsWith("com.sun.net.httpserver")
     /*
     val md = MethodDescription(sootClass.getName, SootMethod.constructorName, List(), "void")
@@ -961,7 +962,7 @@ Exception in thread "main" java.lang.RuntimeException: No field value in class j
       System.store.update(lhsAddr, d)
       System.checkInitializedClasses(sootClass)
       // initialize instance fields to default values for their type
-      def initInstanceFields(c : SootClass) {
+      def initInstanceFields(c : SootClass): Unit = {
         for (f <- c.getFields) {
           System.store.update(InstanceFieldAddr(bp, f), defaultInitialValue(f.getType))
         }
@@ -977,14 +978,14 @@ Exception in thread "main" java.lang.RuntimeException: No field value in class j
       case sootStmt : InvokeStmt => handleInvoke(sootStmt.getInvokeExpr, None)
 
       case sootStmt : DefinitionStmt =>
-        val lhsAddr = addrsOf(sootStmt.getLeftOp())
+        val lhsAddr = addrsOf(sootStmt.getLeftOp)
 
-        sootStmt.getRightOp() match {
+        sootStmt.getRightOp match {
           case rhs : InvokeExpr =>
             handleInvoke(rhs, Some(lhsAddr))
           case rhs : NewExpr =>
-            val baseType : RefType = rhs.getBaseType()
-            val sootClass = baseType.getSootClass()
+            val baseType : RefType = rhs.getBaseType
+            val sootClass = baseType.getSootClass
             this.newExpr(lhsAddr, sootClass)
             Set(this.copy(stmt = stmt.nextSyntactic))
           case rhs : NewArrayExpr =>
@@ -1009,27 +1010,27 @@ Exception in thread "main" java.lang.RuntimeException: No field value in class j
         }
 
       case sootStmt : IfStmt =>
-        eval(sootStmt.getCondition()) //in case of side effects //TODO/precision evaluate the condition
-        val trueState = this.copy(stmt = stmt.copy(sootStmt = sootStmt.getTarget()))
+        eval(sootStmt.getCondition) //in case of side effects //TODO/precision evaluate the condition
+        val trueState = this.copy(stmt = stmt.copy(sootStmt = sootStmt.getTarget))
         val falseState = this.copy(stmt = stmt.nextSyntactic)
         Set(trueState, falseState)
 
       case sootStmt : SwitchStmt =>
         //TODO/precision dont take all the switches
-        (sootStmt.getDefaultTarget() :: sootStmt.getTargets().toList)
+        (sootStmt.getDefaultTarget :: sootStmt.getTargets.toList)
           .map(t => this.copy(stmt = stmt.copy(sootStmt = t))).toSet
 
       case sootStmt : ReturnStmt =>
-        val evaled = eval(sootStmt.getOp())
-        for ((frame, newStack) <- kontStack.pop) yield {
-          if (frame.acceptsReturnValue()) {
-            System.store.update(frame.destAddr.get, evaled)
+        val evaluated = eval(sootStmt.getOp)
+        for ((frame, newStack) <- kontStack.pop()) yield {
+          if (frame.acceptsReturnValue) {
+            System.store.update(frame.destAddr.get, evaluated)
           }
           State(frame.stmt, frame.fp, newStack)
         }
 
       case sootStmt : ReturnVoidStmt =>
-        for ((frame, newStack) <- kontStack.pop() if !frame.acceptsReturnValue()) yield {
+        for ((frame, newStack) <- kontStack.pop() if !frame.acceptsReturnValue) yield {
           State(frame.stmt, frame.fp, newStack)
         }
 
@@ -1045,7 +1046,7 @@ Exception in thread "main" java.lang.RuntimeException: No field value in class j
       //   Set(State(stmt.nextSyntactic, fp, store, kontStack, initializedClasses))
       case sootStmt : NopStmt => throw new Exception("Impossible statement: " + sootStmt)
 
-      case sootStmt : GotoStmt => Set(this.copy(stmt = stmt.copy(sootStmt = sootStmt.getTarget())))
+      case sootStmt : GotoStmt => Set(this.copy(stmt = stmt.copy(sootStmt = sootStmt.getTarget)))
 
       // For now we don't model monitor statements, so we just skip over them
       // TODO/soundness: In the event of multi-threaded code with precise interleaving, this is not sound.
@@ -1054,9 +1055,9 @@ Exception in thread "main" java.lang.RuntimeException: No field value in class j
 
       // TODO: needs testing
       case sootStmt : ThrowStmt =>
-        val v = eval(sootStmt.getOp())
+        val v = eval(sootStmt.getOp)
         exceptions = exceptions.join(v)
-        Set()
+        Set.empty
 
       // TODO: We're missing BreakPointStmt and RetStmt (but these might not be used)
       case _ =>
@@ -1108,19 +1109,19 @@ object System {
   // TODO: more statistics on what kind of statement and why.  Also, remove from list if it later gets a successor?
   // TODO: should these go in Main?
   var undefined: Int = 0
-  var noSucc = mutable.Set[AbstractState]()
-  val store: Store = Store(mutable.Map[Addr, D]())
-  val kstore: KontStore = KontStore(mutable.Map[KontAddr, KontD](HaltKontAddr -> KontD(Set())))
+  var noSucc = mutable.Set.empty[AbstractState]
+  val store: Store = Store(mutable.Map.empty[Addr, D])
+  val kStore: KontStore = KontStore(mutable.Map[KontAddr, KontD](HaltKontAddr -> KontD(Set.empty)))
 
   // TODO: possible bug if we attempt to eval a state that is waiting for a class to be initialized
   // Possible solutions:
   //   Keep a set of classing being initialized
-  //   A more general dependancy
+  //   A more general dependency
   var isInitializedClassesChanged: Boolean = false
-  val initializedClasses: mutable.Set[SootClass] = mutable.Set[SootClass]()
+  val initializedClasses: mutable.Set[SootClass] = mutable.Set.empty
 
-  val readTable: mutable.Map[Addr, Set[AbstractState]] = mutable.Map[Addr, Set[AbstractState]]()
-  val readKTable: mutable.Map[KontAddr, Set[AbstractState]] = mutable.Map[KontAddr, Set[AbstractState]]()
+  val readTable: mutable.Map[Addr, Set[AbstractState]] = mutable.Map.empty
+  val readKTable: mutable.Map[KontAddr, Set[AbstractState]] = mutable.Map.empty
 
   // Any time you reference a class, you have to run this to make sure it's initialized.
   // If it isn't, the exception should be caught so the class can be initialized.
@@ -1134,7 +1135,7 @@ object System {
   def checkInitializedClasses(t : Type) {
     t match {
       case at : ArrayType => checkInitializedClasses(at.baseType)
-      case pt : PrimType => {}
+      case _ : PrimType => {}
       case rt : RefType => checkInitializedClasses(rt.getSootClass)
     }
   }
@@ -1144,21 +1145,22 @@ object System {
   // Application Library package names is in resources/libclasses.txt
   // We put a dot at the end in case the package name is an exact match
   // We end these with "." so we don't hit similarly named libraries
-  var appLibClasses: List[String] = List()
+  var appLibClasses: List[String] = List.empty
   def setAppLibraryClasses(libClassesFile: String) {
-    if (libClassesFile != null && libClassesFile.size > 0)
-      appLibClasses = Source.fromFile(libClassesFile).getLines.toList.foldLeft(List[String]()) { (acc, l) =>
-        val line = l.trim
-        // TODO: post-pend "." if not already present
-        // TODO: trim after '#' anywhere
-        if (line(0) == '#') acc else line::acc
+    if (libClassesFile != null && libClassesFile.nonEmpty)
+      appLibClasses = Source.fromFile(libClassesFile).getLines.toList.foldLeft(List.empty[String]) {
+        (acc, l) =>
+          val line = l.trim
+          // TODO: post-pend "." if not already present
+          // TODO: trim after '#' anywhere
+          if (line.head == '#') acc else line::acc
       }
   }
 
   def isAppLibraryClass(c : SootClass) : Boolean =
-    System.appLibClasses.exists((c.getPackageName()+".").startsWith(_))
+    System.appLibClasses.exists((c.getPackageName+".").startsWith(_))
 
-  def isJavaLibraryClass(sootClass: SootClass) = {
+  def isJavaLibraryClass(sootClass: SootClass): Boolean = {
     sootClass.isJavaLibraryClass || sootClass.getName.startsWith("org.w3c") || sootClass.getName.startsWith("jdk.")
   }
 
@@ -1169,15 +1171,15 @@ object System {
     }
   }
   private def trunOnRecording() {
-    store.resetReadAddrsAndWriteAddrs
-    kstore.resetReadAddrsAndWriteAddrs
+    store.resetReadAddrsAndWriteAddrs()
+    kStore.resetReadAddrsAndWriteAddrs()
     store.on = true
-    kstore.on = true
+    kStore.on = true
     isInitializedClassesChanged = false
   }
   private def turnOffRecording() {
     store.on = false
-    kstore.on = false
+    kStore.on = false
   }
   def addInitializedClass(sootClass: SootClass) {
     initializedClasses += sootClass
@@ -1189,7 +1191,7 @@ object System {
   def next(state: AbstractState): Set[AbstractState] = {
     trunOnRecording()
     val nexts = state.next()
-    if (nexts.size != 0 ||
+    if (nexts.nonEmpty ||
       state == ErrorState ||
       state.isInstanceOf[State] && state.asInstanceOf[State].kontStack.k == HaltKontAddr) {
       noSucc -= state
@@ -1216,26 +1218,26 @@ object System {
     for (addr <- store.readAddrs) {
       addToReadTable(addr, state)
     }
-    for (kaddr <- kstore.readAddrs) {
+    for (kaddr <- kStore.readAddrs) {
       addToReadKTable(kaddr, state)
     }
 
     state.setReadAddrs(store.readAddrs)
     state.setWriteAddrs(store.writeAddrs)
-    state.setKReadAddrs(kstore.readAddrs)
-    state.setKWriteAddrs(kstore.writeAddrs)
+    state.setKReadAddrs(kStore.readAddrs)
+    state.setKWriteAddrs(kStore.writeAddrs)
 
     nexts
   }
 
-  abstract class Member() {}
-  case class Field(declaringClass: String, name: String, typ: String, value: String) extends Member() {}
-  case class Element(index: Int, element: String) extends Member() {}
+  abstract class Member
+  case class Field(declaringClass: String, name: String, typ: String, value: String) extends Member
+  case class Element(index: Int, element: String) extends Member
 
-  val loadedStatics = mutable.Set[String]()
-  val loadedObjects = mutable.Set[Int]()
-  val staticFields = mutable.Map[String/*class name*/, List[Field]]()
-  val objects = mutable.Map[Int/*addr*/, (String/*type*/,List[Member])]()
+  val loadedStatics = mutable.Set.empty[String]
+  val loadedObjects = mutable.Set.empty[Int]
+  val staticFields = mutable.Map.empty[String/*class name*/, List[Field]]
+  val objects = mutable.Map.empty[Int/*addr*/, (String/*type*/,List[Member])]
 
   def loadStore(file: File) {
     val f = new BufferedReader(new FileReader(file))
@@ -1249,7 +1251,7 @@ object System {
       if (tag == "static fields") {
         parts match {
           case List(List("class",c)) =>
-            staticFields(c) = List()
+            staticFields(c) = List.empty
         }
       } else if (tag == "static field") {
         parts match {
@@ -1259,8 +1261,8 @@ object System {
       } else if (tag == "instance fields") {
         parts match { // TODO: [] in pattern match?
           case List(List("object", o), List("type", c)) =>
-            if (objects.getOrElse(o.toInt,null) == null) { // TODO: clean up this code
-              objects(o.toInt) = (c, List())
+            if (objects.getOrElse(o.toInt, null) == null) { // TODO: clean up this code
+              objects(o.toInt) = (c, List.empty)
             } else {
               objects(o.toInt) = (c, objects(o.toInt)._2)
             }
@@ -1272,8 +1274,8 @@ object System {
         }
       } else if (tag == "array elements") {
         parts match {
-          case List(List("array", a), List("type", t), List("length", l)) =>
-            objects(a.toInt) = (t, List())
+          case List(List("array", a), List("type", t), List("length", _)) =>
+            objects(a.toInt) = (t, List.empty)
         }
       } else if (tag == "array element") {
         parts match {
@@ -1302,7 +1304,7 @@ object Main {
 
       for (className <- Utilities.getAllClasses(conf.classpath().toString)) {
         val c = Scene.v().loadClassAndSupport(className)
-        c.setApplicationClass
+        c.setApplicationClass()
       }
 
       //Options.v().setPhaseOption("cg", "verbose:true")
@@ -1320,15 +1322,15 @@ object Main {
     })
 
     CHATransformer.v().transform()
-    val cg = Scene.v().getCallGraph()
-    Log.info("Total number of reachable methods (including Java library): " + Scene.v().getReachableMethods().size())
-    for (m <- Scene.v().getReachableMethods().listener.toList) {
+    val cg = Scene.v().getCallGraph
+    Log.info("Total number of reachable methods (including Java library): " + Scene.v().getReachableMethods.size)
+    for (m <- Scene.v().getReachableMethods.listener.toList) {
       Log.debug("  " + m)
     }
 
-    var seen = Set[State]() // includes everything including todo elements
-    var todo = Set[State]()
-    var seenMethods = Set[SootMethod]()
+    var seen = Set.empty[State] // includes everything including todo elements
+    var todo = Set.empty[State]
+    var seenMethods = Set.empty[SootMethod]
     var stateCount = 0
     var edgeCount = 0
 
@@ -1359,7 +1361,7 @@ object Main {
     try {
       val mainMethod = Soot.getSootClass(conf.mainClass()).getMethodByName(conf.method())
       val initialState = State.inject(Stmt.methodEntry(mainMethod))
-      val javaMethodsToAppMethods = mutable.Map[SootMethod, Set[SootMethod]]()
+      val javaMethodsToAppMethods = mutable.Map.empty[SootMethod, Set[SootMethod]]
       def getReachableAppMethods(m: SootMethod, level: Option[Int]): Set[SootMethod] = {
         assert(System.isJavaLibraryClass(m.getDeclaringClass))
         def search(todo: Set[SootMethod], seen: Set[SootMethod],
@@ -1368,15 +1370,17 @@ object Main {
           level match {
             case None => result
             case Some(n) =>
-              val outMethods = todo.map((m: SootMethod) => cg.edgesOutOf(m).toSet.map((e: Edge) => e.tgt.method)).flatten
+              val outMethods = todo flatMap { (m: SootMethod) =>
+                cg.edgesOutOf(m).toSet.map((e: Edge) => e.tgt.method)
+              }
               val (jMethods, appMethods) = outMethods.partition((m: SootMethod) => System.isJavaLibraryClass(m.getDeclaringClass))
-              val (newSeen, notSeen) = jMethods.partition((m: SootMethod) => seen.contains(m))
+              val (_, notSeen) = jMethods.partition((m: SootMethod) => seen.contains(m))
               search(notSeen, seen++todo, appMethods++result, if (n==0) None else Some(n-1))
           }
         }
 
         if (javaMethodsToAppMethods.contains(m)) { return javaMethodsToAppMethods(m) }
-        val appMethods = search(Set(m), Set[SootMethod](), Set[SootMethod](), level)
+        val appMethods = search(Set(m), Set.empty[SootMethod], Set.empty[SootMethod], level)
         javaMethodsToAppMethods += ((m, appMethods))
         appMethods
       }
@@ -1388,12 +1392,12 @@ object Main {
         Log.info("Processing:"+state)
 
         for (edge <- cg.edgesOutOf(state.stmt.sootStmt)) {
-          val m = edge.tgt().method()
+          val m = edge.tgt.method
           Log.debug("  -->" + m)
-          if (m.isPhantom) { } else if (m.isAbstract) {  } else if (m.isNative) {  }
+          if (m.isPhantom || m.isAbstract || m.isNative) {  }
           else if (System.isJavaLibraryClass(m.getDeclaringClass)) {
             // Here we construct spurious edges between `m` and reachable application methods
-            // by stepover searching the reachable methods with some level
+            // by stepping over searching the reachable methods with some level
             val rms = getReachableAppMethods(m, Some(1))
             for (rm <- rms) {
               Log.info(s" inside of $m calls $rm")
@@ -1414,9 +1418,9 @@ object Main {
           for (edge <- cg.edgesInto(state.stmt.sootMethod)) {
             // TODO: do something for non-explicit edges (they have a null stmt and unit) (probably are due to throwing exceptions)
             val clazz = edge.src.method.getDeclaringClass
-            if (edge.isExplicit() && !System.isJavaLibraryClass(clazz)) {
+            if (edge.isExplicit && !System.isJavaLibraryClass(clazz)) {
               Log.info(s"  goes back to ${edge.src.method}")
-              val returnState = State.inject(Stmt(edge.srcStmt(), edge.src()).nextSyntactic)
+              val returnState = State.inject(Stmt(edge.srcStmt, edge.src).nextSyntactic)
               addState(returnState)
               addEdge(state, returnState)
             }
@@ -1434,7 +1438,7 @@ object Main {
 
       val allAppMethods = Utilities.getAllClasses(conf.classpath().toString)
                           .map(Scene.v().loadClassAndSupport(_))
-                          .map(_.getMethods).flatten.toSet
+                          .flatMap(_.getMethods)
       val seenAndInJar = seenMethods.intersect(allAppMethods)
       val seenButNotInJar = seenMethods.diff(allAppMethods)
       val inJarButNotSeen = allAppMethods.diff(seenMethods)
@@ -1448,7 +1452,7 @@ object Main {
 
       // Many of the methods not covered but appeared in jar file are maybe never been called,
       // we can safely omit these methods if the call graph is correct.
-      val (called, notCalled) = inJarButNotSeen.partition(cg.edgesInto(_).toList.size > 0)
+      val (called, notCalled) = inJarButNotSeen.partition(cg.edgesInto(_).nonEmpty)
       Log.info(s"number of methods not covered but in jar file and have been called: ${called.size}")
       Log.info(s"real method coverage: ${seenAndInJar.size.toDouble/(allAppMethods.size-notCalled.size)}")
 
@@ -1465,7 +1469,7 @@ object Main {
   }
 
   def aam() {
-    val startInstant = java.time.Instant.now()
+    val startInstant = java.time.Instant.now
 
     Main.conf.initialStore.toOption match {
       case Some(f) => System.loadStore(f)
@@ -1483,15 +1487,15 @@ object Main {
     // TODO: check if we are initializing superclasses
     // TODO: check if we initialize on java.lang.Class
 
-    var visitCounts: Map[AbstractState.Id, Int] = Map()
+    var visitCounts: Map[AbstractState.Id, Int] = Map.empty
 
-    var done: Set[AbstractState.Id] = Set()
-    var doneEdges: Map[(Int, Int), Int] = Map()
+    var done: Set[AbstractState.Id] = Set.empty
+    var doneEdges: Map[(Int, Int), Int] = Map.empty
 
     val todo: mutable.PriorityQueue[AbstractState] = mutable.PriorityQueue()(
       conf.stateOrdering()(conf.globalSnowflakeAddrLast()))
     todo.enqueue(initialState)
-    outSerializer.write(initialState.toPacket())
+    outSerializer.write(initialState.toPacket)
 
     var steps = 0
     var realSteps = 0

@@ -54,9 +54,8 @@ class PacketInput(private val input : InputStream) {
   // TODO: check for exceptions
   def read() : Packet = {
     this.kryo.readClassAndObject(in) match {
-      case o : Packet =>
-        o
-      case o => throw new IOException(f"Read object is not a Packet: $o")
+      case o : Packet => o
+      case o          => throw new IOException(f"Read object is not a Packet: $o")
     }
   }
 
@@ -139,20 +138,20 @@ private[this] object Signatures {
 ////////////////////////////////////////
 
 // The super type of all packets
-abstract class Packet {}
+abstract class Packet
 
 // Signals that all packets are done
 // TODO: check if "object" is okay here
-case class EOF () extends Packet {}
+case class EOF () extends Packet
 
 // Declare a transition edge between two 'State' nodes
-case class Edge(id : Id[Edge], src : Id[Node], dst : Id[Node]) extends Packet {}
+case class Edge(id : Id[Edge], src : Id[Node], dst : Id[Node]) extends Packet
 
 // Declare the Node - the counterpart to the edge
-abstract class Node(val id : Id[Node]) extends Packet {}
+abstract class Node(val id : Id[Node]) extends Packet
 
 // Declare 'AbstractState' nodes
-class AbstractState(override val id : Id[Node]) extends Node(id) {}
+class AbstractState(override val id : Id[Node]) extends Node(id)
 
 // AnalysisNodes from the analyzer
 case class AnalysisNode(var node : Node = null,
@@ -160,26 +159,26 @@ case class AnalysisNode(var node : Node = null,
                         abstNodes : mutable.MutableList[Int],
                         inEdges : mutable.MutableList[Int],
                         outEdges : mutable.MutableList[Int],
-                        tag : Tag) extends Node(id) {}
+                        tag : Tag) extends Node(id)
 
-case class ErrorState(override val id : Id[Node]) extends AbstractState(id) {}
-case class State(override val id : Id[Node], stmt : Stmt, framePointer : String, kontStack : String) extends AbstractState(id) {}
+case class ErrorState(override val id : Id[Node]) extends AbstractState(id)
+case class State(override val id : Id[Node], stmt : Stmt, framePointer : String, kontStack : String) extends AbstractState(id)
 
 // Declare 'MissingState' nodes, used by jaam.tools.Validate
-case class MissingReferencedState(override val id : Id[Node]) extends Node(id) {}
+case class MissingReferencedState(override val id : Id[Node]) extends Node(id)
 
 //case class Group(id : Id[Node], states : java.util.List[Node], labels : String)
 
 //tags for the analyzer
-case class NodeTag(id : Id[Tag], node : Id[Node], tag : Tag) extends Packet {}
-abstract class Tag {}
-case class AllocationTag(sootType : soot.Type) extends Tag {}
-case class ChainTag() extends Tag {}
+case class NodeTag(id : Id[Tag], node : Id[Node], tag : Tag) extends Packet
+abstract class Tag
+case class AllocationTag(sootType : soot.Type) extends Tag
+case class ChainTag() extends Tag
 
-abstract class LoopNode extends Packet {}
-case class LoopLoopNode(id: Id[LoopNode], method: SootMethod, depends: Set[TaintAddress], statementIndex: Int) extends LoopNode {}
-case class LoopMethodNode(id: Id[LoopNode], method: SootMethod) extends LoopNode {}
-case class LoopEdge(src: Id[LoopNode], dst: Id[LoopNode], isRecursion: Boolean) extends Packet {}
+abstract class LoopNode extends Packet
+case class LoopLoopNode(id: Id[LoopNode], method: SootMethod, depends: Set[TaintAddress], statementIndex: Int) extends LoopNode
+case class LoopMethodNode(id: Id[LoopNode], method: SootMethod) extends LoopNode
+case class LoopEdge(src: Id[LoopNode], dst: Id[LoopNode], isRecursion: Boolean) extends Packet
 
 ////////////////////////////////////////
 // Types inside packets
@@ -192,7 +191,7 @@ case class Id[Namespace](id : Int) {
 
 // Type for statements (needed because 'SootStmt' doesn't specify the
 // 'SootMethod' that it is in)
-case class Stmt(method : SootMethod, index : Int, stmt : SootStmt) {}
+case class Stmt(method : SootMethod, index : Int, stmt : SootStmt)
 
 // Type for taint addresses
 abstract sealed class TaintValue
@@ -222,7 +221,7 @@ case class InvokeTaintAddress(override val m: SootMethod, ie: InvokeExpr)
 // structures of read and written objects to be sure they match what was
 // expected.
 class JaamKryo extends KryoBase {
-  var seenClasses = Set[Class[_]]()
+  var seenClasses = Set.empty[Class[_]]
 
   // This is copied from Chill
   this.setRegistrationRequired(false)
@@ -240,10 +239,10 @@ class JaamKryo extends KryoBase {
       case null => ""
       case typ : Class[_] =>
         "  "+typ.getCanonicalName + "\n" +
-         (for (i <- typ.getDeclaredFields().toList.sortBy(_.toString)) yield {
+         (for (i <- typ.getDeclaredFields.toList.sortBy(_.toString)) yield {
           "   "+i+"\n"
          }).mkString("") +
-         classSignature(typ.getGenericSuperclass())
+         classSignature(typ.getGenericSuperclass)
       case _ => ""
     }
   }
@@ -453,7 +452,13 @@ class JaamKryo extends KryoBase {
     )
     classes.foreach(Class.forName)
 
+    // TODO: refactor
     // Build a mapping from nodeType and name to a Role index
+//    (for {
+//      i <- 0 until (1 << Role.ROLE_INDEX_BITS);
+//      r = Role.get(i) if r != null
+//    } yield (r.getNodeType.toString, r.toString) -> i)
+//      ) .toMap
     (for (i <- 0 until (1 << Role.ROLE_INDEX_BITS)) yield
       Role.get(i) match {
         case null => None
