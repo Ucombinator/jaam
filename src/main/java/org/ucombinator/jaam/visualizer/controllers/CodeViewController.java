@@ -16,6 +16,7 @@ import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.layout.*;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 public class CodeViewController {
@@ -24,11 +25,13 @@ public class CodeViewController {
     @FXML public final TabPane codeTabs = null; // Initialized by Controllers.loadFXML()
 
     HashMap<String, CodeTab> tabMap;
+    HashSet<String> classNames;
 
     public CodeViewController(List<CompilationUnit> compilationUnits) throws IOException {
         Controllers.loadFXML("/CodeView.fxml", this);
 
-        this.tabMap = new HashMap<>();
+        this.tabMap     = new HashMap<>();
+        this.classNames = new HashSet<>();
 
         for(CompilationUnit u : compilationUnits)
             addClass(u);
@@ -53,6 +56,12 @@ public class CodeViewController {
         CodeTab tab = new CodeTab(unit, className, fullClassName);
         tab.setTooltip(new Tooltip(fullClassName));
         this.tabMap.put(fullClassName, tab);
+
+        this.classNames.add(fullClassName);
+    }
+
+    public HashSet<String> getClassNames() {
+        return classNames;
     }
 
     EventHandler<SelectEvent> onVertexSelect = new EventHandler<SelectEvent>() {

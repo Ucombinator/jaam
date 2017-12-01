@@ -1,10 +1,6 @@
 package org.ucombinator.jaam.visualizer.layout;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class HierarchicalGraph
 {
@@ -30,6 +26,15 @@ public class HierarchicalGraph
 
     public HashSet<AbstractLayoutVertex> getVisibleVertices() {
         return this.visibleVertices;
+    }
+
+    public boolean isEmpty()
+    {
+        return vertices.isEmpty();
+    }
+
+    public HashSet<AbstractLayoutVertex> getVertices() {
+        return vertices;
     }
 
     public void setVertices(HashSet<AbstractLayoutVertex> vertices) {
@@ -113,29 +118,32 @@ public class HierarchicalGraph
         output.append("\n");
         return output.toString();
     }
-    
-    public AbstractLayoutVertex getRoot() {
-        if(this.vertices.size() == 0){
-            //System.out.println("getRoot on empty graph");
+
+    public ArrayList<AbstractLayoutVertex> getVisibleRoots() {
+        if(this.vertices.size() == 0) {
             return null;
         }
 
-        ArrayList<AbstractLayoutVertex> arrayList = new ArrayList<AbstractLayoutVertex>(this.vertices);
-        Collections.sort(arrayList);
-        //System.out.println("Root ID: " + arrayList.get(0).getId());
-
-        // Return the first vertex with no incoming edges
-        for(AbstractLayoutVertex v : arrayList) {
-            if(this.isRoot(v))
-                return v;
+        ArrayList<AbstractLayoutVertex> roots = new ArrayList<>();
+        for(AbstractLayoutVertex v : this.getVisibleVertices()) {
+            if(this.isVisibleRoot(v)) {
+                roots.add(v);
+            }
         }
 
-        // Otherwise, return the first vertex, period.
-        return arrayList.get(0);
+        // If there is no root (as for a strongly connected component), choose just the first vertex
+        // in our ordering.
+        if(roots.size() == 0) {
+            ArrayList<AbstractLayoutVertex> vertices = new ArrayList<>(this.getVisibleVertices());
+            Collections.sort(vertices);
+            roots.add(vertices.get(0));
+        }
+
+        return roots;
     }
 
-    public boolean isRoot(AbstractLayoutVertex v) {
-        return (this.getInNeighbors(v).size() == 0 || (this.getInNeighbors(v).size() == 1 && this.getInNeighbors(v).contains(v)));
+    public boolean isVisibleRoot(AbstractLayoutVertex v) {
+        return (this.getVisibleInNeighbors(v).size() == 0 || (this.getVisibleInNeighbors(v).size() == 1 && this.getVisibleInNeighbors(v).contains(v)));
     }
 
     private Set<AbstractLayoutVertex> getOutNeighbors(AbstractLayoutVertex v) {
@@ -155,20 +163,33 @@ public class HierarchicalGraph
     }
 
     // Hides a vertex, and reconnects every incoming vertex to every outgoing vertex.
-    // We don't allow hiding the root, since it would disconnect the graph.
     public void setHidden(AbstractLayoutVertex v) {
+        ArrayList<AbstractLayoutVertex> srcs = new ArrayList<>();
+        ArrayList<AbstractLayoutVertex> dests = new ArrayList<>();
+
         for (AbstractLayoutVertex src : this.getVisibleInNeighbors(v)) {
-            for (AbstractLayoutVertex dest : this.getVisibleOutNeighbors(v)) {
+            if(!src.equals(v)) {
+                srcs.add(src);
+                this.visibleOutEdges.get(src).remove(v);
+            }
+        }
+
+        for (AbstractLayoutVertex dest : this.getVisibleOutNeighbors(v)) {
+            if(!dest.equals(v)) {
+                dests.add(dest);
+                this.visibleInEdges.get(dest).remove(v);
+            }
+        }
+
+        for(AbstractLayoutVertex src : srcs) {
+            for(AbstractLayoutVertex dest : dests) {
                 if(!src.equals(v) && !dest.equals(v)) {
-                    this.visibleInEdges.get(dest).remove(v);
-                    this.visibleOutEdges.get(src).remove(v);
                     LayoutEdge edge = new LayoutEdge(src, dest, LayoutEdge.EDGE_TYPE.EDGE_REGULAR);
                     this.addVisibleEdge(edge);
                 }
             }
         }
 
-        System.out.println("Hiding vertex: " + v.getId());
         this.visibleVertices.remove(v);
         this.visibleInEdges.put(v, new HashMap<>());
         this.visibleOutEdges.put(v, new HashMap<>());

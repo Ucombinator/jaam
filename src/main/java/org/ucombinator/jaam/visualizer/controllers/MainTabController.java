@@ -1,5 +1,7 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -12,9 +14,7 @@ import com.strobel.decompiler.languages.java.ast.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.*;
 
 public class MainTabController {
     public final Tab tab;
@@ -29,7 +29,12 @@ public class MainTabController {
     @FXML public final VBox leftPane = null; // Initialized by Controllers.loadFXML()
     @FXML private final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML private final BorderPane centerPane = null; // Initialized by Controllers.loadFXML()
+
+    //Right Side Components
     @FXML private final TextArea descriptionArea = null; // Initialized by Controllers.loadFXML()
+
+    @FXML private final TreeView<ClassTreeNode> classTree = null; // Initialized by Controllers.loadFXML()
+
     @FXML private final SearchResults searchResults = null; // Initialized by Controllers.loadFXML()
 
     public enum SearchType {
@@ -51,6 +56,60 @@ public class MainTabController {
         this.leftPane.getChildren().add(this.codeViewController.codeTabs);
 
         this.codeViewController.addSelectHandler(centerPane);
+
+        buildClassTree(this.codeViewController.getClassNames());
+    }
+
+    private void buildClassTree(HashSet<String> classNames)
+    {
+        ClassTreeNode root = new ClassTreeNode("root", null);
+        ArrayList<ClassTreeNode> topLevel = new ArrayList<>();
+
+        for(String c : classNames)
+        {
+            String[] split = c.split("\\.");
+
+            ClassTreeNode current = root;
+            for(String s : split)
+            {
+                current = current.addIfAbsent(s);
+            }
+        }
+
+        for(ClassTreeNode f : root.subDirs)
+        {
+            topLevel.add(f);
+        }
+
+        // Compression Step
+        for(ClassTreeNode f : topLevel)
+        {
+            f.compress();
+        }
+
+        // Build the Tree
+        TreeItem<ClassTreeNode> treeRoot = new TreeItem<>();
+        treeRoot.setValue(new ClassTreeNode("root", null));
+        treeRoot.setExpanded(true);
+
+        for(ClassTreeNode f : topLevel)
+        {
+            f.build(treeRoot);
+        }
+
+        classTree.setRoot(treeRoot);
+
+        classTree.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<TreeItem<ClassTreeNode>>() {
+            @Override
+            public void changed(ObservableValue<? extends TreeItem<ClassTreeNode>> observableValue,
+                                TreeItem<ClassTreeNode> oldValue, TreeItem<ClassTreeNode> newValue) {
+
+                setClassHighlight(vizPanelController.getPanelRoot(),
+                        oldValue != null? oldValue.getValue().fullName : null,
+                        newValue.getValue().fullName);
+            }
+        });
+
     }
 
     public void repaintAll() {
@@ -236,4 +295,119 @@ public class MainTabController {
             newHighlighted.setHighlighted(true);
         }
     }
+
+    // ClassTree Code -------------------------------------
+
+    // Has a double function, either a folder(inner node) in which case it has no vertex
+    // Or a leaf node in which case it is associated to a one or more vertices
+    class ClassTreeNode
+    {
+        public String name;
+        public String fullName;
+        public HashSet<ClassTreeNode> subDirs;
+
+        public ClassTreeNode(String name, String prefix)
+        {
+            this.name = name;
+            this.subDirs = new HashSet<>();
+            if(prefix == null)
+                fullName = new String("");
+            else if(prefix.compareTo("") == 0)
+                fullName = name;
+            else
+                fullName = prefix + "." + name;
+        }
+
+        public ClassTreeNode addIfAbsent(String name)
+        {
+            ClassTreeNode subDir = null;
+            for(ClassTreeNode f : subDirs)
+            {
+                if(f.name.compareTo(name) == 0)
+                {
+                    subDir = f;
+                    break;
+                }
+            }
+            if(subDir == null)
+            {
+                subDir = new ClassTreeNode(name, this.fullName);
+                subDirs.add(subDir);
+            }
+
+            return subDir;
+        }
+
+        public void compress()
+        {
+            while(subDirs.size() == 1)
+            {
+                ClassTreeNode onlyElement = subDirs.iterator().next();
+                name = name.concat("." + onlyElement.name);
+                subDirs = onlyElement.subDirs;
+            }
+
+            for(ClassTreeNode f : subDirs)
+                f.compress();
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+
+        public String getFullName() { return  fullName; }
+
+        public String toString(int depth) {
+            StringBuilder subTree = new StringBuilder(depth + "-" + name + "\n");
+
+            for(int i = 0; i < depth; ++i)
+                subTree.insert(0, '\t');
+
+            for(ClassTreeNode f : subDirs)
+            {
+                subTree.append(f.toString(depth+1));
+            }
+
+            return subTree.toString();
+        }
+
+
+        public void build(TreeItem<ClassTreeNode> parent) {
+            TreeItem<ClassTreeNode> item = new TreeItem<ClassTreeNode>();
+            item.setValue(this);
+            parent.getChildren().add(item);
+
+            for(ClassTreeNode f : subDirs)
+                f.build(item);
+        }
+    }
+
+    private void setClassHighlight(AbstractLayoutVertex v, String prevPrefix, String currPrefix)
+    {
+        if(!v.isHidden()) {
+
+            if (v instanceof CodeEntity) {
+                if (((CodeEntity) v).getClassName().startsWith(currPrefix)) {
+                    //System.out.println("Highlight " + ((CodeEntity) v).getClassName() + " --> " + ((CodeEntity) v).getMethodName() + " --> " + v.getId());
+                    v.setClassHighlight(true);
+                }
+                else if(prevPrefix != null && ((CodeEntity) v).getClassName().startsWith(prevPrefix)) {
+                    v.setClassHighlight(false);
+                }
+            }
+
+            if(!v.isInnerGraphEmpty())
+            {
+                for(AbstractLayoutVertex i : v.getInnerGraph().getVertices())
+                {
+                    setClassHighlight(i, prevPrefix, currPrefix);
+                }
+            }
+        }
+    }
+
+    // End of ClassTree Code ------------------------------
+
+
 }
