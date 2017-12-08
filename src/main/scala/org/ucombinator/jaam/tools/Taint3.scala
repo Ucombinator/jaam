@@ -39,6 +39,9 @@ object Address {
   case class New(stmt: org.ucombinator.jaam.util.Stmt) extends Address
   case class NewArray(stmt: org.ucombinator.jaam.util.Stmt) extends Address
   case class NewMultiArray(stmt: org.ucombinator.jaam.util.Stmt) extends Address
+
+  // NEW
+  case class Class(c: SootClass) extends Address
 }
 
 
@@ -130,19 +133,58 @@ object Relationship {
 
   class  ArrayRefEdge extends Relationship
   object  ArrayRefEdge extends Relationship { def apply = new ArrayRefEdge }
+
+  // NEW
+  class  MethodOverriddenEdge extends Relationship
+  object MethodOverriddenEdge extends Relationship { def apply = new MethodOverriddenEdge }
+
+  class  ParameterSubtypePolymorphismEdge extends Relationship
+  object ParameterSubtypePolymorphismEdge extends Relationship { def apply = new ParameterSubtypePolymorphismEdge }
+
+  class  ParametersDependencyEdge extends Relationship
+  object ParametersDependencyEdge extends Relationship { def apply = new ParametersDependencyEdge }
 }
 
 object Taint3 {
   val graph = new DirectedPseudograph[Address, Relationship](classOf[Relationship])
-  var vertices = new ListBuffer[String]()
-  var edges = new ListBuffer[String]()
+  var vertices = new ListBuffer[String]
+  var edges = new ListBuffer[String]
 
   def main(input: List[String], output: String): Unit = {
-    println("In Taint3")
+    val allClasses = loadInput(input)
 
+    // TODO: Interface ???
+    def findInheritanceChain(mtd: SootMethod, thisClass: SootClass): List[SootClass] = {
+      @annotation.tailrec
+      def helper(superClass: SootClass, inheritanceChain: List[SootClass]): List[SootClass] =
+        if (superClass.declaresMethod(mtd.getName, mtd.getParameterTypes, mtd.getReturnType) &&
+            allClasses.contains(superClass))
+          helper(superClass.getSuperclass, superClass :: inheritanceChain)
+        else
+          inheritanceChain
+
+      helper(thisClass.getSuperclass, List(thisClass))
+    }
+
+    // TEST
+    for (c <- allClasses) {
+      println()
+      println("----------------")
+      println(c)
+      c.getFields.asScala.foreach(println)
+
+      for (m <- c.getMethods.asScala) {
+        println()
+        println("----------------")
+        println(m)
+        for (u <- Soot.getBody(m).getUnits.asScala) {
+          println(u)
+        }
+      }
+    }
 
     // for each class (if in APP)
-    for (c <- loadInput(input)) {
+    for (c <- allClasses) {
       // Fields
       for (f <- c.getFields.asScala) {
         graph.addVertex(Address.Field(f))
@@ -150,6 +192,25 @@ object Taint3 {
 
       // Methods
       for (m <- c.getMethods.asScala) {
+        val chain = findInheritanceChain(m, c)
+
+        for (List(sup: SootClass, sub: SootClass) <- chain.sliding(2)) {
+          val target = Address.Return(sup.getMethod(m.getName, m.getParameterTypes, m.getReturnType))
+          val source = Address.Return(sub.getMethod(m.getName, m.getParameterTypes, m.getReturnType))
+          addEdge(source, target, Relationship.MethodOverriddenEdge)
+
+          // TODO: By signature ???
+          val superMethod = sup.getMethodByName(m.getName)
+          val subMethod = sub.getMethodByName(m.getName)
+
+          for (i <- 0 until m.getParameterCount) {
+            addEdge(Address.Parameter(superMethod, i),
+              Address.Parameter(subMethod, i),
+              Relationship.ParameterSubtypePolymorphismEdge)
+          }
+        }
+        // DONE #1
+
         graph.addVertex(Address.Return(m))
         graph.addVertex(Address.Throws(m))
 
@@ -175,9 +236,9 @@ object Taint3 {
     printToGraphvizFile(output, graph)
 
     val outStream = new FileOutputStream(output)
-//    val po = new serializer.PacketOutput(outStream)
-//    po.write(appConfig)
-//    po.close()
+    //    val po = new serializer.PacketOutput(outStream)
+    //    po.write(appConfig)
+    //    po.close()
   }
 
   def loadInput(input: List[String]): Set[SootClass] = {
@@ -250,6 +311,8 @@ object Taint3 {
     // Base (if non-static)
     rhs match {
       case rhs: InstanceInvokeExpr => // TODO
+        // NEW
+        // NEW
         val aBase = eval(sootMethod, rhs.getBase)
         addEdge(aBase, a0, Relationship.InvokeBaseEdge)
       case _ => /* Do nothing */
@@ -258,7 +321,7 @@ object Taint3 {
     // Parameters
     val aArgs = rhs.getArgs.asScala.map(eval(sootMethod, _))
     val aParams = for (i <- 0 until rhs.getMethod.getParameterCount)
-      yield { Address.Parameter(rhs.getMethod, i) }
+      yield Address.Parameter(rhs.getMethod, i)
 
     for ((param, arg) <- aParams zip aArgs) {
       addEdge(arg, param, Relationship.ArgumentEdge(param.index))
@@ -270,58 +333,72 @@ object Taint3 {
   }
 
   def sootStmt(stmt: Stmt): Unit = {
+    val thisMethod = stmt.sootMethod
     val a0 = Address.Stmt(stmt)
     stmt.sootStmt match {
       case sootStmt : InvokeStmt =>
-       handleInvoke(a0, stmt.sootMethod, sootStmt.getInvokeExpr)
+       handleInvoke(a0, thisMethod, sootStmt.getInvokeExpr)
 
       case sootStmt : DefinitionStmt =>
-        val aLhs = lhs(stmt.sootMethod, sootStmt.getLeftOp)
+        val aLhs = lhs(thisMethod, sootStmt.getLeftOp)
         addEdge(a0, aLhs, Relationship.LhsEdge)
 
         sootStmt.getRightOp match {
-          case rhs: InvokeExpr => handleInvoke(a0, stmt.sootMethod, rhs)
-          case rhs : NewExpr =>
+          case rhs: InvokeExpr => handleInvoke(a0, thisMethod, rhs)
+          case _: NewExpr =>
             val a1 = Address.New(stmt)
             addEdge(a1, a0, Relationship.NewEdge)
 
           case rhs : NewArrayExpr =>
             val a1 = Address.NewArray(stmt)
-            val a2 = eval(stmt.sootMethod, rhs.getSize)
+            val a2 = eval(thisMethod, rhs.getSize)
             addEdge(a2, a1, Relationship.NewArraySizeEdge)
             addEdge(a1, a0, Relationship.NewArrayEdge)
 
           case rhs : NewMultiArrayExpr =>
             val a1 = Address.NewArray(stmt)
-            val a2 = rhs.getSizes.asScala.map(eval(stmt.sootMethod, _))
+            val a2 = rhs.getSizes.asScala.map(eval(thisMethod, _))
             for ((b, i) <- a2.zipWithIndex) {
               addEdge(b, a1, Relationship.NewMultiArraySizeEdge(i))
             }
             addEdge(a1, a0, Relationship.NewMultiArrayEdge)
 
           case rhs =>
-            val a1 = eval(stmt.sootMethod, rhs)
-            println(s"$a1 --->  $a0")
+            val a1 = eval(thisMethod, rhs)
+//            println(s"$a1 --->  $a0")
             addEdge(a1, a0, Relationship.DefinitionEdge)
         }
 
       case sootStmt : IfStmt =>
-        val a1 = eval(stmt.sootMethod, sootStmt.getCondition)
+        val a1 = eval(thisMethod, sootStmt.getCondition)
         // TODO: branch target
         addEdge(a1, a0, Relationship.StmtEdge)
 
       case sootStmt : SwitchStmt =>
-        val a1 = eval(stmt.sootMethod, sootStmt.getKey)
+        val a1 = eval(thisMethod, sootStmt.getKey)
         // TODO: branch target
         addEdge(a1, a0, Relationship.StmtEdge)
 
       case sootStmt : ReturnStmt =>
-        val a1 = eval(stmt.sootMethod, sootStmt.getOp)
+        val a1 = eval(thisMethod, sootStmt.getOp)
         addEdge(a1, a0, Relationship.StmtEdge)
-        addEdge(a0, Address.Return(stmt.sootMethod), Relationship.ReturnEdge)
+
+        val returnAddress = Address.Return(thisMethod)
+        addEdge(a0, returnAddress, Relationship.ReturnEdge)
+        for (i <- 0 until thisMethod.getParameterCount) {
+          addEdge(Address.Parameter(thisMethod, i),
+                  returnAddress,
+                  Relationship.ParametersDependencyEdge)
+        }
 
       case sootStmt : ReturnVoidStmt =>
-        addEdge(a0, Address.Return(stmt.sootMethod), Relationship.ReturnEdge)
+        val returnAddress = Address.Return(thisMethod)
+        addEdge(a0, returnAddress, Relationship.ReturnEdge)
+        for (i <- 0 until thisMethod.getParameterCount) {
+          addEdge(Address.Parameter(thisMethod, i),
+                  returnAddress,
+                  Relationship.ParametersDependencyEdge)
+        }
 
       // Since Soot's NopEliminator run before us, no "nop" should be
       // left in the code and this case isn't needed (and also is
@@ -351,6 +428,7 @@ object Taint3 {
         val a1 = eval(stmt.sootMethod, sootStmt.getOp)
         addEdge(a1, a0, Relationship.StmtEdge)
         addEdge(a0, Address.Throws(stmt.sootMethod),Relationship.ThrowsEdge)
+      // TODO: parameters as ReturnStmt and ReturnVoidStmt ???
 
       // TODO: We're missing BreakPointStmt and RetStmt (but these might not be used)
       case _ =>
@@ -396,7 +474,6 @@ object Taint3 {
 
   def eval(m: SootMethod, v: SootValue): Address = {
     val a0 = Address.Value(v)
-    // graph.addVertex(a0)
 
     v match {
       // Base cases
