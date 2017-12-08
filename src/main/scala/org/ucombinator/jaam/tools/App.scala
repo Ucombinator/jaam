@@ -19,16 +19,16 @@ object Origin { // TODO: Move into App object?
 case class PathElement(path: String, root: String, origin: Origin, data: Array[Byte]) {
   def classData(): List[Array[Byte]] =
     if (path.endsWith(".class")) List(data)
-    else if (path.endsWith(".jar")) {
+    else if (path.endsWith(".jar"))
       for ((e, d) <- org.ucombinator.jaam.util.Jar.entries(new java.io.ByteArrayInputStream(data))
            if e.getName.endsWith(".class"))
         yield d
-    } else List()
+    else Nil
 }
 
 case class App() extends serializer.Packet {
   var name: Option[String] = None
-  var classpath: Array[PathElement] = Array()
+  var classpath: Array[PathElement] = Array.empty
   object main {
     var className: Option[String] = None
     var methodName: Option[String] = None
@@ -44,19 +44,19 @@ case class App() extends serializer.Packet {
 // TODO: automatically determine app vs lib classes by finding main
 // TODO: automatically find all jar files in subdirectory
 object Main {
-  var mains = List[String]() // TODO: set class and method name from mains (error if multiple)
+  var mains: List[String] = List.empty // TODO: set class and method name from mains (error if multiple)
 
   // relative to root
   def read(root: Path, path: Path, origin: Option[Origin]): List[PathElement] = {
     if (path.toFile.isDirectory) {
-      return (for (p <- Files.newDirectoryStream(path).asScala) yield {
-        try { read(root, p, origin) }
+      return Files.newDirectoryStream(path).asScala.toList.flatMap { p =>
+        try read(root, p, origin)
         catch {
           case e: Exception =>
             println("Ignoring " + root + " and " + p + " because " + e)
-            List()
+            Nil
         }
-      }).toList.flatten
+      }
     } else if (path.toString.endsWith(".class")) {
       val data = Files.readAllBytes(path)
       println(f"${data(0)}%x ${data(1)}%x ${data(2)}%x ${data(3)}%x")
@@ -88,7 +88,7 @@ object Main {
           r
         case None =>
           getMains match {
-            case List() => Origin.LIB
+            case Nil => Origin.LIB
             case es => mains ++= es; Origin.APP
           }
       }
@@ -154,10 +154,12 @@ object Main {
         }
     }
 
-    appConfig.main.methodName = mainMethod.orElse(appConfig.main.className match {
-      case Some(_) => Some("main")
-      case None => None
-    })
+    appConfig.main.methodName = mainMethod orElse {
+      appConfig.main.className match {
+        case Some(_) => Some("main")
+        case None => None
+      }
+    }
 
     println(f"Main class: ${appConfig.main.className}")
     println(f"Main method: ${appConfig.main.methodName}")
