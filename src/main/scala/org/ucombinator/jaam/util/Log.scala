@@ -45,11 +45,11 @@ object Log {
     LEVEL_TRACE)
 
   // TODO: make these more efficient by making them macros
-  def error(message: => String): Unit = if (minlog.Log.ERROR) minlog.Log.error(null, message, null)
-  def warn(message: => String): Unit = if (minlog.Log.WARN) minlog.Log.warn(null, message, null)
-  def info(message: => String): Unit = if (minlog.Log.INFO) minlog.Log.info(null, message, null)
-  def debug(message: => String): Unit = if (minlog.Log.DEBUG) minlog.Log.debug(null, message, null)
-  def trace(message: => String): Unit = if (minlog.Log.TRACE) minlog.Log.trace(null, message, null)
+  def error(message: => String) { if (minlog.Log.ERROR) minlog.Log.error(null, message, null) }
+  def warn(message: => String)  { if (minlog.Log.WARN) minlog.Log.warn(null, message, null)   }
+  def info(message: => String)  { if (minlog.Log.INFO) minlog.Log.info(null, message, null)   }
+  def debug(message: => String) { if (minlog.Log.DEBUG) minlog.Log.debug(null, message, null) }
+  def trace(message: => String) { if (minlog.Log.TRACE) minlog.Log.trace(null, message, null) }
 
   def setLogging(level: Level): Unit = minlog.Log.set(level.level)
 

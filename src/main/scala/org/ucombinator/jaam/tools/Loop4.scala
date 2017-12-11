@@ -81,7 +81,7 @@ object Main {
     var stmt_count = 0
     var target_count = 0
 
-    var edges = immutable.Map[Stmt, Set[SootMethod]]()
+    var edges: immutable.Map[Stmt, Set[SootMethod]] = Map.empty
 
     def invokeExprTargets(expr: InvokeExpr): Set[SootMethod] = {
       val m = expr.getMethod
@@ -221,9 +221,9 @@ object Main {
            if new_ds.nonEmpty)
         yield { s -> new_ds }
 
-    var appEdges2 = Map[SootMethod, Map[Stmt, Set[SootMethod]]]()
+    var appEdges2: Map[SootMethod, Map[Stmt, Set[SootMethod]]] = Map.empty
     for ((s, ds) <- appEdges) {
-      val old = appEdges2.getOrElse(s.sootMethod, Map[Stmt, Set[SootMethod]]())
+      val old = appEdges2.getOrElse(s.sootMethod, Map.empty[Stmt, Set[SootMethod]])
       appEdges2 += s.sootMethod -> (old + (s -> ds))
     }
 
@@ -405,7 +405,7 @@ object Main {
         // to it prevents an infinite loop.
         var newGraph: Map[Node, Set[Node]] = g + (mNode -> Set.empty)
         newGraph = addForest(g, mNode, forest, m)
-        for ((stmt, methods) <- cg.getOrElse(m, Map())) {
+        for ((stmt, methods) <- cg.getOrElse(m, Map.empty)) {
           for (tgt <- methods) {
             println(f"src $stmt tgt $tgt")
             val sootStmt = stmt.sootStmt

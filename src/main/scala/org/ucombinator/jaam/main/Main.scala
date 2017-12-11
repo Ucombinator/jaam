@@ -33,6 +33,7 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamCon
   addSubcommand(DecompileToFile)
   addSubcommand(Taint2)
   addSubcommand(Taint3)
+  addSubcommand(Taint4)
   addSubcommand(SystemProperties)
 
   verify()
@@ -111,6 +112,7 @@ object Interpreter extends Main("interpreter") {
   val method      = opt[String](required = true, short = 'm', descr = "the main method", default = Some("main"))
   val libClasses  = opt[String](short = 'L', descr = "app's library classes")
   val _outfile     = opt[String](name = "outfile", short = 'o', descr = "the output file for the serialized data")
+
   def outfile() = _outfile.getOrElse(mainClass() + ".jaam") // TODO: extend scallop to do this for us
 
   val globalSnowflakeAddrLast = toggle(
@@ -549,6 +551,19 @@ object Taint3 extends Main("taint3") {
       input = input(), output = output())
   }
 }
+
+object Taint4 extends Main("taint4") {
+  banner("TODO")
+
+  val input = inputOpt()
+  val output = outputOpt()
+
+  def run() {
+    org.ucombinator.jaam.tools.taint4.Taint4.main(
+      input = input(), output = output())
+  }
+}
+
 
 object SystemProperties extends Main("system-properties") {
   def run() {

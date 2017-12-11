@@ -65,14 +65,9 @@ object LoopAnalyzer {
       other.loop.getLoopStatements.toSet.subsetOf(loop.getLoopStatements.toSet)
     }
     def insert(child: LoopTree): LoopTree = {
-      val grandchildren: Set[LoopTree] = children flatMap {
-        case ln: LoopTree if child.isParent(ln) => Some(ln)
-        case _ => None
-      }
-      val parents: Set[LoopTree] = children flatMap {
-        case ln: LoopTree if ln.isParent(child) => Some(ln)
-        case _ => None
-      }
+      val grandchildren: Set[LoopTree] = children filter child.isParent
+      val parents: Set[LoopTree] = children filter { _.isParent(child) }
+
       if (parents.nonEmpty) {
         assert(parents.size <= 1,
             "two disparate loops contain the same child")
@@ -88,11 +83,7 @@ object LoopAnalyzer {
     }
     // assumes that its loop contains the stmt in question
     def parent(stmt: SootStmt): LoopTree = {
-      val parents = children flatMap {
-        case ln: LoopTree if ln.loop.getLoopStatements.contains(stmt) =>
-          Some(ln)
-        case _ => None
-      }
+      val parents = children filter  { _.loop.getLoopStatements.contains(stmt) }
       if (parents.isEmpty) {
         this
       } else {
@@ -185,7 +176,7 @@ object LoopAnalyzer {
       }
       println("END_DOM2")
 
-      var imm = immutable.Map[V, V]()
+      var imm: immutable.Map[V, V] = Map.empty
 
       for (i <- graph.vertexSet if i != root) {
         for (j <- dom(i)) {
@@ -224,20 +215,24 @@ object LoopAnalyzer {
   case class LoopGraph(m: SootMethod, private val g: Map[Node, Set[Node]],
       private val recurEdges: Set[(Node, Node)]) {
     private val mNode = MethodNode(m)
+
     def apply(n: Node): Set[Node] = g.getOrElse(n, Set.empty)
-    def keySet: Set[String] = g.keySet flatMap {
-      case m: MethodNode => Some(m.tag)
-      case _ => None
-    }
+
+    def keySet: Set[String] = g.keySet.
+      withFilter(_.isInstanceOf[MethodNode]).
+      map(_.tag)
+
     def +(binding: (Node, Set[Node])): LoopGraph = {
       val (k, v) = binding
       LoopGraph(m, g + (k -> (this(k) ++ v)), recurEdges)
     }
+
     // remove method leaves
     def prune: LoopGraph = {
-      var keepMap = Map.empty[Node, Boolean]
-      var parentMap = Map.empty[Node, Set[Node]]
+      var keepMap: Map[Node, Boolean] = Map.empty[Node, Boolean]
+      var parentMap: Map[Node, Set[Node]] = Map.empty[Node, Set[Node]]
       var recursionEdges = recurEdges
+
       def analyze(n: Node, path: List[Node]): Unit = {
         if (!keepMap.isDefinedAt(n)) {
           if (path.contains(n)) {
@@ -285,6 +280,7 @@ object LoopAnalyzer {
       })
       LoopGraph(m, newGraph, recursionEdges)
     }
+
     // remove loopless method calls, replacing them with downstream loops
     def shrink: LoopGraph = {
       // keepers is a set of MethodNode objects that should remain. All LoopNode
@@ -347,6 +343,7 @@ object LoopAnalyzer {
       analyze(mNode, List.empty)
       LoopGraph(m, newGraph, recursionEdges)
     }
+
     override def toString: String = {
       val builder = new StringBuilder
       var seen = Set.empty[Node]
@@ -403,21 +400,19 @@ object LoopAnalyzer {
               }
               serializer.LoopLoopNode(id, m, addrs, n.index)
           }
+
           println("Writing: "+packet)
+
           s.write(packet)
-          for {
-            to <- this(from)
-          } {
+
+          for (to <- this(from)) {
             println("Edge: "+name(from)+"->"+name(to))
             s.write(serializer.LoopEdge(
               name(from), name(to), recurEdges.contains((from, to))))
           }
+
           // enforce a BFS order
-          for {
-            to <- this(from)
-          } {
-            inner(to)
-          }
+          for (to <- this(from)) inner(to)
         }
       }
       inner(mNode)
