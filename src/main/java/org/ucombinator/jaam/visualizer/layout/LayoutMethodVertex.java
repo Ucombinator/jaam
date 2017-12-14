@@ -68,4 +68,9 @@ public class LayoutMethodVertex extends AbstractLayoutVertex implements CodeEnti
     public void setDefaultColor(){
         this.color = defaultColor;
     }
+
+    @Override
+    public String toString() {
+        return ("Method vertex: " + label);
+    }
 }

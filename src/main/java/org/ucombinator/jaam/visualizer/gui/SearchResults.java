@@ -10,7 +10,6 @@ public class SearchResults extends BorderPane
 {
     public TreeView<String> searchTree;
     private TreeItem<String> root;
-    public static int nodeHeight = 40;
     
     public SearchResults()
     {

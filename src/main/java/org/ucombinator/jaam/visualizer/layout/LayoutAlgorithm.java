@@ -1,6 +1,12 @@
 package org.ucombinator.jaam.visualizer.layout;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Queue;
 
 public class LayoutAlgorithm
 {
@@ -20,7 +26,7 @@ public class LayoutAlgorithm
         parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
         parentVertex.setX(0);
         parentVertex.setY(0);
-        for(AbstractLayoutVertex v : parentVertex.getInnerGraph().getVisibleVertices()) {
+        for (AbstractLayoutVertex v : parentVertex.getInnerGraph().getVisibleVertices()) {
             initializeSizes(v);
         }
     }
@@ -301,7 +307,6 @@ public class LayoutAlgorithm
         }
 
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
-
         root.setBboxWidth(currBboxWidth);
         root.setBboxHeight(currBboxHeight);
     }

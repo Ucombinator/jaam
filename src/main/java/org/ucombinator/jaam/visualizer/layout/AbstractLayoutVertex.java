@@ -3,10 +3,6 @@ package org.ucombinator.jaam.visualizer.layout;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.Rectangle;
-import javafx.util.Duration;
-
-import javafx.animation.FadeTransition;
 import javafx.scene.control.TreeItem;
 
 import java.util.HashSet;
@@ -129,7 +125,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex
     // Subclasses must override these so that we have descriptions for each of them,
     // and so that our generic collapsing can work for all of them
     public abstract String getRightPanelContent();
-    public abstract String getShortDescription();
 
     // These searches may be different for different subclasses, so we implement them there.
     public abstract boolean searchByMethod(String query, MainTabController mainTab);
@@ -369,7 +364,8 @@ public abstract class AbstractLayoutVertex extends AbstractVertex
     }
 
     private HashSet<Instruction> getInstructions(HashSet<Instruction> instructions) {
-        if(this.getType().equals(VertexType.ROOT) || this.getType().equals(VertexType.METHOD) || this.getType().equals(VertexType.CHAIN)) {
+        if(this.getType().equals(VertexType.ROOT) || this.getType().equals(VertexType.METHOD)
+                || this.getType().equals(VertexType.CHAIN)) {
             for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
                 v.getInstructions(instructions);
             }

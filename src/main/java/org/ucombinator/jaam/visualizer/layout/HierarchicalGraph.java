@@ -132,8 +132,10 @@ public class HierarchicalGraph
         }
 
         // If there is no root (as for a strongly connected component), choose just the first vertex
-        // in our ordering.
+        // in our ordering. But this should never be necessary, since we bundle SCC's into their own
+        // vertices.
         if(roots.size() == 0) {
+            System.out.println("Error: couldn't find root!");
             ArrayList<AbstractLayoutVertex> vertices = new ArrayList<>(this.getVisibleVertices());
             Collections.sort(vertices);
             roots.add(vertices.get(0));

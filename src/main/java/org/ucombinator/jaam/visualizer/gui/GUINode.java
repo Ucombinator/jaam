@@ -106,7 +106,6 @@ public class GUINode extends Group
 
     private void handleOnMouseExited(MouseEvent event) {
         event.consume();
-        //getChildren().remove(rectLabel);
 
         if (vertex.getSelfGraph() != null) {
             for(LayoutEdge e : vertex.getSelfGraph().getVisibleEdges()) {
@@ -158,7 +157,8 @@ public class GUINode extends Group
         ParallelTransition pt = TransitionFactory.buildRecursiveTransition(root);
         pt.setOnFinished(
             event1 -> {
-                // Then we want the vertices to move to their final positions and the clicked vertex to change its size.
+                // Then we want the vertices to move to their final positions and the clicked vertex
+                // to change its size.
                 doubleClickedVertex.setExpanded(!isExpanded);
 
                 for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVisibleVertices()){
@@ -182,152 +182,6 @@ public class GUINode extends Group
         System.out.println("Simultaneous transitions: " + pt.getChildren().size());
         pt.play();
     }
-
-//    private void collapse()
-//    {
-//        //System.out.println("\nCollapsing node: " + v.getId() + ", " + v.getGraphics().toString());
-//        Iterator<Node> it = this.getVertex().getGraphics().getChildren().iterator();
-//
-//        // Fade edges out?
-//        /*while(it.hasNext())
-//        {
-//            final Node n = it.next();
-//            if(!n.getClass().equals(Rectangle.class))
-//            {
-//                FadeTransition ft = new FadeTransition(Duration.millis(transitionTime), n);
-//                ft.setToValue(0.0);
-//
-//                ft.setOnFinished(new EventHandler<ActionEvent>() {
-//                    @Override
-//                    public void handle(ActionEvent event) {
-//                        n.setVisible(false);
-//                    }
-//                });
-//
-//                ft.play();
-//            }
-//        }*/
-//
-//        this.getVertex().setCollapsed();
-//        VizPanelController panel = Main.getSelectedVizPanelController();
-//        final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
-//        panel.resetContent();
-//        LayoutAlgorithm.layout(panelRoot);
-//        panel.drawGraph();
-//
-//        /*ParallelTransition pt = new ParallelTransition();
-//        animateRecursive(panelRoot, pt, panel);
-//        pt.play();
-//
-//        pt.setOnFinished(new EventHandler<ActionEvent>() {
-//            @Override
-//            public void handle(ActionEvent event) {
-//                LayoutEdge.redrawEdges(panelRoot, true);
-//            }
-//        });*/
-//    }
-//
-//    private void expand()
-//    {
-//        //System.out.println("\nExpanding node: " + v.getId() + ", " + v.getGraphics().toString());
-//        Iterator<Node> it = this.getVertex().getGraphics().getChildren().iterator();
-//
-//        // Fade edges in?
-//        /*while(it.hasNext())
-//        {
-//            final Node n = it.next();
-//            if(!n.getClass().equals(Rectangle.class))
-//            {
-//                FadeTransition ft = new FadeTransition(Duration.millis(transitionTime), n);
-//                ft.setToValue(1.0);
-//
-//                ft.setOnFinished(new EventHandler<ActionEvent>() {
-//                    @Override
-//                    public void handle(ActionEvent event) {
-//                        n.setVisible(true);
-//                    }
-//                });
-//
-//                ft.play();
-//            }
-//        }*/
-//
-//        this.getVertex().setExpanded();
-//        VizPanelController panel = Main.getSelectedVizPanelController();
-//        final AbstractLayoutVertex panelRoot = panel.getPanelRoot();
-//        panel.resetContent();
-//        LayoutAlgorithm.layout(panelRoot);
-//        panel.drawGraph();
-//
-//        //ParallelTransition pt = new ParallelTransition();
-//        //animateRecursive(panelRoot, pt, panel);
-//        //pt.play();
-//
-//        //pt.setOnFinished(new EventHandler<ActionEvent>() {
-//        //    @Override
-//        //    public void handle(ActionEvent event) {
-//                //LayoutEdge.redrawEdges(panelRoot, true);
-//        //    }
-//        //});
-//    }
-
-/*
-    private static void animateRecursive(final AbstractLayoutVertex v, ParallelTransition pt, VizPanelController mainPanel)
-    {
-        // TODO: Move arrows as well as nodes.
-        if(!(v instanceof LayoutRootVertex)) {
-            boolean toPrint = (v instanceof LayoutMethodVertex);
-            System.out.println("Size of node " + v.getId() + ": " + v.getWidth() + ", " + v.getHeight());
-            System.out.println("Location: " + v.getX() + ", " + v.getY());
-            System.out.println("Node: " + v.getGraphics());
-            GUINode node = v.getGraphics();
-            double newWidth = mainPanel.scaleX(v.getWidth());
-            double newHeight = mainPanel.scaleY(v.getHeight());
-            double currWidth = node.getWidth() * node.getTotalParentScaleX();
-            double currHeight = node.getHeight() * node.getTotalParentScaleY();
-
-            double toScaleX = newWidth / currWidth;
-            double toScaleY = newHeight / currHeight;
-            node.setTotalScaleX(toScaleX * node.getTotalParentScaleX());
-            node.setTotalScaleY(toScaleY * node.getTotalParentScaleY());
-            System.out.println(String.format("Scale X: %.3f", toScaleX));
-            System.out.println(String.format("Scale Y: %.3f", toScaleY));
-
-            // Shift to keep upper left corner in the same place after scaling
-            System.out.println("Compare widths: " + currWidth + ", " + newWidth);
-            System.out.println("Compare heights: " + currHeight + ", " + newHeight);
-            double xShift = node.getXShift();
-            double yShift = node.getYShift();
-            //double xShift = 0;
-            //double yShift = 0;
-            System.out.println("Shift: " + xShift + ", " + yShift);
-            double toX = mainPanel.scaleX(v.getX() + xShift);
-            double toY = mainPanel.scaleY(v.getY() + yShift);
-            System.out.println(String.format("Translate X: %.3f", toX));
-            System.out.println(String.format("Translate Y: %.3f", toY));
-
-            if (toScaleX != node.getScaleX() || toScaleY != node.getScaleY()) {
-                ScaleTransition st = new ScaleTransition(Duration.millis(transitionTime), node);
-                st.setToX(toScaleX);
-                st.setToY(toScaleY);
-                pt.getChildren().addAll(st);
-            }
-
-            if (toX != node.getTranslateX() || toY != node.getTranslateY()) {
-                TranslateTransition tt = new TranslateTransition(Duration.millis(transitionTime), node);
-                tt.setToX(toX);
-                tt.setToY(toY);
-                pt.getChildren().addAll(tt);
-            }
-        }
-
-        for (AbstractLayoutVertex next : v.getInnerGraph().getVisibleVertices()) {
-            if (v.isExpanded()) {
-                animateRecursive(next, pt, mainPanel);
-            }
-        }
-    }
-    */
 
     public AbstractLayoutVertex getVertex() {
         return vertex;
@@ -370,7 +224,8 @@ public class GUINode extends Group
         Bounds nodeBoundsLocal = this.getBoundsInLocal();
         Bounds rectBounds = this.rect.getBoundsInParent();
         return new BoundingBox(nodeBounds.getMinX() + rectBounds.getMinX() - nodeBoundsLocal.getMinX(),
-                nodeBounds.getMinY() + rectBounds.getMinY() - nodeBoundsLocal.getMinY(), rectBounds.getWidth(), rectBounds.getHeight());
+                nodeBounds.getMinY() + rectBounds.getMinY() - nodeBoundsLocal.getMinY(),
+                rectBounds.getWidth(), rectBounds.getHeight());
     }
 
     public void printLocation() {
@@ -404,9 +259,9 @@ public class GUINode extends Group
         double destCenterY = (destBounds.getMinY() + destBounds.getMaxY()) / 2.0;
         double sourceExitX, sourceExitY;
 
-        // To find which side a line exits from, we compute both diagonals of the rectangle and determine whether
-        // the other end lies above or below each diagonal. The positive diagonal uses the positive slope, and the
-        // negative diagonal uses the negative slope.
+        // To find which side a line exits from, we compute both diagonals of the rectangle and
+        // determine whether the other end lies above or below each diagonal. The positive diagonal
+        // uses the positive slope, and the negative diagonal uses the negative slope.
         // Keep in mind that the increasing y direction is downward.
         double startDiagSlope = sourceBounds.getHeight() / sourceBounds.getWidth();
         double startInterceptPos = sourceCenterY - sourceCenterX * startDiagSlope;
@@ -458,5 +313,4 @@ public class GUINode extends Group
     public Rectangle getRect() {
         return this.rect;
     }
-
 }
