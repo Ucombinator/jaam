@@ -286,12 +286,13 @@ public class LayoutAlgorithm
         for(AbstractLayoutVertex curVer: grayChildren)
         {
             storeBBoxWidthAndHeight(curVer, childrenMap);
-            currentWidth += curVer.getBboxWidth() + NODES_PADDING;
+            currentWidth += curVer.getBboxWidth();
             currentHeight = Math.max(currentHeight, curVer.getBboxHeight());
         }
+        currentWidth += (grayChildren.size() - 1) * NODES_PADDING;
 
         double currBboxWidth, currBboxHeight;
-        currBboxWidth = Math.max(root.getWidth(), currentWidth - NODES_PADDING);
+        currBboxWidth = Math.max(root.getWidth(), currentWidth);
         if(grayChildren.size() == 0) {
             currBboxHeight = root.getHeight();
         }
