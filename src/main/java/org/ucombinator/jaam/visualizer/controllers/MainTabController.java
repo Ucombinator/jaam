@@ -5,6 +5,7 @@ import javafx.beans.property.SimpleSetProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableSet;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -64,6 +65,8 @@ public class MainTabController {
 
         this.highlighted = new LinkedHashSet<>();
         this.hidden = new SimpleSetProperty<AbstractLayoutVertex>(FXCollections.observableSet());
+
+        this.hidden.addListener(this.vizPanelController);
     }
 
     private void buildClassTree(HashSet<String> classNames)
@@ -187,10 +190,12 @@ public class MainTabController {
         Parameters.rightArea.setText("");*/
     }
 
+    public ObservableSet<AbstractLayoutVertex> getHidden() {
+        return hidden.get();
+    }
+
     public void hideSelectedNodes() {
         for(AbstractLayoutVertex v : this.getHighlighted()) {
-            v.setHighlighted(false);
-            v.setHidden();
             this.hidden.add(v);
         }
 
@@ -200,12 +205,7 @@ public class MainTabController {
 
     public void showAllHiddenNodes() {
         System.out.println("Showing all hidden nodes...");
-        for(AbstractLayoutVertex v : this.hidden) {
-            v.setUnhidden();
-        }
-
         this.hidden.clear();
-        this.vizPanelController.resetAndRedraw();
     }
 
     public String getSearchInput(SearchType search) {

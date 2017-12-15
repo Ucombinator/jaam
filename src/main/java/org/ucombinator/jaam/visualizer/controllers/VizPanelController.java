@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
+import javafx.collections.SetChangeListener;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -23,7 +24,7 @@ import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 
-public class VizPanelController implements EventHandler<SelectEvent> {
+public class VizPanelController implements EventHandler<SelectEvent>, SetChangeListener<AbstractLayoutVertex> {
     @FXML public final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML public final Spinner<Double> zoomSpinner = null; // Initialized by Controllers.loadFXML()
 
@@ -227,6 +228,24 @@ public class VizPanelController implements EventHandler<SelectEvent> {
             for (AbstractLayoutVertex child : v.getInnerGraph().getVisibleVertices()) {
                 drawEdges(child);
             }
+        }
+    }
+
+    @Override
+    public void onChanged(Change<? extends AbstractLayoutVertex> change) {
+        System.out.println("JUAN: Hidden changed: " + change);
+        if(change.wasAdded())
+        {
+            System.out.println("Added " + change.getElementAdded());
+            AbstractLayoutVertex v = change.getElementAdded();
+            v.setHighlighted(false);
+            v.setHidden();
+        }
+        else
+        {
+            AbstractLayoutVertex v = change.getElementRemoved();
+            v.setUnhidden();
+            this.resetAndRedraw();
         }
     }
 }
