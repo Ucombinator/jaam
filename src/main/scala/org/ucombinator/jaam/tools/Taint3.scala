@@ -22,6 +22,9 @@ import scala.collection.JavaConverters._
 import org.ucombinator.jaam.{serializer, tools}
 import org.ucombinator.jaam.util._
 
+import soot.util.{Chain => SootChain}
+import soot.util.IterableSet
+
 
 abstract sealed class Address
 object Address {
@@ -152,34 +155,16 @@ object Taint3 {
 
   def main(input: List[String], output: String): Unit = {
     val allClasses = loadInput(input)
+    allClasses.foreach(println)
 
-    // TODO: Interface ???
-    def findInheritanceChain(mtd: SootMethod, thisClass: SootClass): List[SootClass] = {
-      @annotation.tailrec
-      def helper(superClass: SootClass, inheritanceChain: List[SootClass]): List[SootClass] =
-        if (superClass.declaresMethod(mtd.getName, mtd.getParameterTypes, mtd.getReturnType) &&
-            allClasses.contains(superClass))
-          helper(superClass.getSuperclass, superClass :: inheritanceChain)
-        else
-          inheritanceChain
+    def buildInheritanceConnections(m: SootMethod, superMethod: SootMethod, source: Address): Unit = {
+      val target = Address.Return(superMethod)
+      addEdge(source, target, Relationship.MethodOverriddenEdge)
 
-      helper(thisClass.getSuperclass, List(thisClass))
-    }
-
-    // TEST
-    for (c <- allClasses) {
-      println()
-      println("----------------")
-      println(c)
-      c.getFields.asScala.foreach(println)
-
-      for (m <- c.getMethods.asScala) {
-        println()
-        println("----------------")
-        println(m)
-        for (u <- Soot.getBody(m).getUnits.asScala) {
-          println(u)
-        }
+      for (i <- 0 until m.getParameterCount) {
+        addEdge(Address.Parameter(superMethod, i),
+          Address.Parameter(m, i),
+          Relationship.ParameterSubtypePolymorphismEdge)
       }
     }
 
@@ -192,26 +177,22 @@ object Taint3 {
 
       // Methods
       for (m <- c.getMethods.asScala) {
-        val chain = findInheritanceChain(m, c)
+        val source = Address.Return(m)
+        val declaringClass = m.getDeclaringClass
 
-        for (List(sup: SootClass, sub: SootClass) <- chain.sliding(2)) {
-          val target = Address.Return(sup.getMethod(m.getName, m.getParameterTypes, m.getReturnType))
-          val source = Address.Return(sub.getMethod(m.getName, m.getParameterTypes, m.getReturnType))
-          addEdge(source, target, Relationship.MethodOverriddenEdge)
+        val directSuperTypesOfInApp =  {
+          val superClass = declaringClass.getSuperclass
+          val interfaces = declaringClass.getInterfaces.asScala.toSet
+          allClasses.intersect(interfaces + superClass)
+        }
 
-          // TODO: By signature ???
-          val superMethod = sup.getMethodByName(m.getName)
-          val subMethod = sub.getMethodByName(m.getName)
-
-          for (i <- 0 until m.getParameterCount) {
-            addEdge(Address.Parameter(superMethod, i),
-              Address.Parameter(subMethod, i),
-              Relationship.ParameterSubtypePolymorphismEdge)
+        for (typ <- directSuperTypesOfInApp) {
+          if (!m.isConstructor || !typ.isInterface) {
+            val superMethod = typ.getMethod(m.getName, m.getParameterTypes, m.getReturnType)
+            buildInheritanceConnections(m, superMethod, source)
           }
         }
-        // DONE #1
 
-        graph.addVertex(Address.Return(m))
         graph.addVertex(Address.Throws(m))
 
         for (p <- 0 until m.getParameterCount) {
@@ -219,8 +200,10 @@ object Taint3 {
         }
 
         // TODO: keep track of data-flow due to exceptions
-        for (u <- Soot.getBody(m).getUnits.asScala) {
-          sootStmt(Stmt(u, m))
+        if (!m.getDeclaringClass.isAbstract) {
+          for (u <- Soot.getBody(m).getUnits.asScala) {
+            sootStmt(Stmt(u, m))
+          }
         }
       }
     }
@@ -340,7 +323,9 @@ object Taint3 {
        handleInvoke(a0, thisMethod, sootStmt.getInvokeExpr)
 
       case sootStmt : DefinitionStmt =>
-        val aLhs = lhs(thisMethod, sootStmt.getLeftOp)
+        val leftOp = sootStmt.getLeftOp
+        val aLhs = Address.Value(leftOp)
+        lhs(thisMethod, leftOp, aLhs)
         addEdge(a0, aLhs, Relationship.LhsEdge)
 
         sootStmt.getRightOp match {
@@ -436,10 +421,7 @@ object Taint3 {
     }
   }
 
-  def lhs(m: SootMethod, v: SootValue): Address = {
-    val a0 = Address.Value(v)
-    graph.addVertex(a0)
-
+  def lhs(m: SootMethod, v: SootValue, a0: Address.Value): Unit =
     v match {
       case v: Local => // TODO: Set(LocalFrameAddr(fp, lhs))
       case v: ParameterRef =>
@@ -468,9 +450,6 @@ object Taint3 {
       case v: CaughtExceptionRef => {} // TODO
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
-
-    return a0
-  }
 
   def eval(m: SootMethod, v: SootValue): Address = {
     val a0 = Address.Value(v)
