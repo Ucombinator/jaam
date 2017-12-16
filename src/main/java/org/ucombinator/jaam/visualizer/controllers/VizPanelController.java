@@ -39,6 +39,9 @@ public class VizPanelController implements EventHandler<SelectEvent>, SetChangeL
     private Group graphContentGroup;
     private LayoutRootVertex panelRoot;
 
+    private boolean inBatchMode = false;
+    private boolean changedWhileInBatchMode = false;
+
     public VizPanelController() throws IOException {
         Controllers.loadFXML("/VizPanel.fxml", this);
 
@@ -245,7 +248,21 @@ public class VizPanelController implements EventHandler<SelectEvent>, SetChangeL
         {
             AbstractLayoutVertex v = change.getElementRemoved();
             v.setUnhidden();
-            this.resetAndRedraw();
+            if(!inBatchMode)
+                this.resetAndRedraw();
+            else
+                changedWhileInBatchMode = true;
         }
+    }
+
+    public void startBatchMode()
+    {
+        inBatchMode = true;
+        changedWhileInBatchMode = false;
+    }
+    public void endBatchMode() {
+        inBatchMode = false;
+        if(changedWhileInBatchMode)
+            this.resetAndRedraw();
     }
 }

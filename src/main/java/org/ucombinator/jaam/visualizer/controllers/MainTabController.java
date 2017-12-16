@@ -258,7 +258,9 @@ public class MainTabController {
 
     public void showAllHiddenNodes() {
         System.out.println("Showing all hidden nodes...");
+        vizPanelController.startBatchMode();
         this.hidden.clear();
+        vizPanelController.endBatchMode();
     }
 
     public String getSearchInput(SearchType search) {
