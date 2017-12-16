@@ -16,6 +16,7 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.*;
 import com.strobel.decompiler.languages.java.ast.*;
+import org.ucombinator.jaam.visualizer.main.Main;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,7 +62,7 @@ public class MainTabController {
 
         this.codeViewController.addSelectHandler(centerPane);
 
-        buildClassTree(this.codeViewController.getClassNames());
+        buildClassTree(this.codeViewController.getClassNames(), this.vizPanelController.getPanelRoot());
 
         this.highlighted = new LinkedHashSet<>();
         this.hidden = new SimpleSetProperty<AbstractLayoutVertex>(FXCollections.observableSet());
@@ -69,7 +70,7 @@ public class MainTabController {
         this.hidden.addListener(this.vizPanelController);
     }
 
-    private void buildClassTree(HashSet<String> classNames)
+    private void buildClassTree(HashSet<String> classNames, LayoutRootVertex panelRoot)
     {
         this.classTree.setCellFactory(CheckBoxTreeCell.<ClassTreeNode>forTreeView());
 
@@ -98,6 +99,10 @@ public class MainTabController {
             f.compress();
         }
 
+        // Add the vertices
+        addVerticesToClassTree(topLevel, panelRoot);
+
+
         // Build the Tree
         CheckBoxTreeItem<ClassTreeNode> treeRoot = new CheckBoxTreeItem<>();
         treeRoot.setSelected(true);
@@ -122,6 +127,54 @@ public class MainTabController {
             }
         });
 
+    }
+
+    private void addVerticesToClassTree(ArrayList<ClassTreeNode> topLevel, AbstractLayoutVertex root) {
+
+       if(root instanceof CodeEntity)
+       {
+           ClassTreeNode topLevelNode = getTopLevel(topLevel, ((CodeEntity) root).getClassName());
+           boolean success = false;
+           if(topLevelNode != null)
+               success = addVertex(topLevelNode, root);
+
+           if(!success)
+               System.out.println("Warning didn't find package for: " + ((CodeEntity) root).getClassName());
+       }
+
+       for(AbstractLayoutVertex v : root.getInnerGraph().getVertices())
+       {
+           addVerticesToClassTree(topLevel, v);
+       }
+    }
+
+    private ClassTreeNode getTopLevel(ArrayList<ClassTreeNode> topLevel, String className) {
+
+        for(ClassTreeNode n : topLevel)
+        {
+            if(className.startsWith(n.name))
+                return n;
+        }
+
+        return null;
+    }
+
+    private boolean addVertex(ClassTreeNode node, AbstractLayoutVertex vertex) {
+
+        if(!node.subDirs.isEmpty())
+        {
+            for(ClassTreeNode n : node.subDirs)
+            {
+                if(((CodeEntity)vertex).getClassName().startsWith(n.fullName))
+                {
+                    return addVertex(n, vertex);
+                }
+            }
+            return false;
+        }
+
+        node.vertices.add(vertex);
+        return true;
     }
 
     public void repaintAll() {
@@ -315,6 +368,7 @@ public class MainTabController {
         public String name;
         public String fullName;
         public HashSet<ClassTreeNode> subDirs;
+        public HashSet<AbstractLayoutVertex> vertices; // Leaf nodes store their associated vertices
 
         public ClassTreeNode(String name, String prefix)
         {
@@ -359,6 +413,9 @@ public class MainTabController {
 
             for(ClassTreeNode f : subDirs)
                 f.compress();
+
+            if(subDirs.isEmpty())
+                vertices = new HashSet<>();
         }
 
         @Override
@@ -382,6 +439,39 @@ public class MainTabController {
             return subTree.toString();
         }
 
+        private boolean isLeaf()
+        {
+            return subDirs.isEmpty();
+        }
+
+        private HashSet<AbstractLayoutVertex> getChildrenVertices()
+        {
+            if(this.isLeaf())
+                return this.vertices;
+
+            HashSet<AbstractLayoutVertex> all = new HashSet<>();
+
+            for(ClassTreeNode f : subDirs)
+            {
+                f.getChildrenVertices(all);
+            }
+            return all;
+        }
+
+        private void getChildrenVertices(HashSet<AbstractLayoutVertex> all)
+        {
+            if(this.isLeaf())
+            {
+                all.addAll(this.vertices);
+            }
+            else
+            {
+                for(ClassTreeNode f : subDirs)
+                {
+                    f.getChildrenVertices(all);
+                }
+            }
+        }
 
         public void build(TreeItem<ClassTreeNode> parent) {
             CheckBoxTreeItem<ClassTreeNode> item = new CheckBoxTreeItem<>();
@@ -391,17 +481,29 @@ public class MainTabController {
             item.selectedProperty().addListener(new ChangeListener<Boolean>() {
                 @Override
                 public void changed(ObservableValue<? extends Boolean> observableValue, Boolean prevVal, Boolean currVal) {
-                    System.out.println("Changed checkbox " + observableValue + " -- " + prevVal + " -- " + currVal);
 
-                    System.out.println("Item is " + item.getValue().fullName + " value was " + prevVal + " is now " + currVal);
+                    System.out.println("JUAN: Firing off " + item.getValue());
+
+                    HashSet<AbstractLayoutVertex> childVertices = item.getValue().getChildrenVertices();
+
+                    System.out.println("\t\tJUAN children is: " + childVertices);
+
+                    if(currVal)
+                    {
+                        Main.getSelectedMainTabController().getHidden().removeAll(childVertices);
+                    }
+                    else
+                    {
+                        Main.getSelectedMainTabController().getHidden().addAll(childVertices);
+                    }
                 }
             });
             parent.getChildren().add(item);
 
-            for(ClassTreeNode f : subDirs)
+            for (ClassTreeNode f : subDirs)
                 f.build(item);
         }
-    }
+    } // End of class TreeNode
 
     private void setClassHighlight(AbstractLayoutVertex v, String prevPrefix, String currPrefix)
     {
