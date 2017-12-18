@@ -1,16 +1,22 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
+import javafx.beans.property.SetProperty;
+import javafx.beans.property.SimpleSetProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableSet;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.CheckBoxTreeCell;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.*;
 import com.strobel.decompiler.languages.java.ast.*;
+import org.ucombinator.jaam.visualizer.main.Main;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,23 +25,22 @@ import java.util.*;
 public class MainTabController {
     public final Tab tab;
     public final VizPanelController vizPanelController;
-
-    private HashSet<AbstractLayoutVertex> highlighted; // TODO: Make this an observable set
-    private HashSet<AbstractLayoutVertex> hidden;
-
     public final CodeViewController codeViewController;
 
-    // TODO: rename some of these
+    // Left Side Components
     @FXML public final VBox leftPane = null; // Initialized by Controllers.loadFXML()
+
+    // Center Components
     @FXML private final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML private final BorderPane centerPane = null; // Initialized by Controllers.loadFXML()
 
     //Right Side Components
     @FXML private final TextArea descriptionArea = null; // Initialized by Controllers.loadFXML()
-
     @FXML private final TreeView<ClassTreeNode> classTree = null; // Initialized by Controllers.loadFXML()
-
     @FXML private final SearchResults searchResults = null; // Initialized by Controllers.loadFXML()
+
+    private HashSet<AbstractLayoutVertex> highlighted; // TODO: Make this an observable set
+    private SetProperty<AbstractLayoutVertex> hidden;
 
     public enum SearchType {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
@@ -43,6 +48,8 @@ public class MainTabController {
 
     public MainTabController(File file, Graph graph, List<CompilationUnit> compilationUnits) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
+
+
         this.vizPanelController = new VizPanelController();
         this.centerPane.setCenter(this.vizPanelController.root);
         this.vizPanelController.initFX(graph);
@@ -50,18 +57,23 @@ public class MainTabController {
         this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));
         Controllers.put(this.tab, this);
 
-        this.highlighted = new LinkedHashSet<>();
-        this.hidden = new LinkedHashSet<>();
         this.codeViewController = new CodeViewController(compilationUnits);
         this.leftPane.getChildren().add(this.codeViewController.codeTabs);
 
         this.codeViewController.addSelectHandler(centerPane);
 
-        buildClassTree(this.codeViewController.getClassNames());
+        buildClassTree(this.codeViewController.getClassNames(), this.vizPanelController.getPanelRoot());
+
+        this.highlighted = new LinkedHashSet<>();
+        this.hidden = new SimpleSetProperty<AbstractLayoutVertex>(FXCollections.observableSet());
+
+        this.hidden.addListener(this.vizPanelController);
     }
 
-    private void buildClassTree(HashSet<String> classNames)
+    private void buildClassTree(HashSet<String> classNames, LayoutRootVertex panelRoot)
     {
+        this.classTree.setCellFactory(CheckBoxTreeCell.<ClassTreeNode>forTreeView());
+
         ClassTreeNode root = new ClassTreeNode("root", null);
         ArrayList<ClassTreeNode> topLevel = new ArrayList<>();
 
@@ -87,8 +99,13 @@ public class MainTabController {
             f.compress();
         }
 
+        // Add the vertices
+        addVerticesToClassTree(topLevel, panelRoot);
+
+
         // Build the Tree
-        TreeItem<ClassTreeNode> treeRoot = new TreeItem<>();
+        CheckBoxTreeItem<ClassTreeNode> treeRoot = new CheckBoxTreeItem<>();
+        treeRoot.setSelected(true);
         treeRoot.setValue(new ClassTreeNode("root", null));
         treeRoot.setExpanded(true);
 
@@ -110,6 +127,54 @@ public class MainTabController {
             }
         });
 
+    }
+
+    private void addVerticesToClassTree(ArrayList<ClassTreeNode> topLevel, AbstractLayoutVertex root) {
+
+       if(root instanceof CodeEntity)
+       {
+           ClassTreeNode topLevelNode = getTopLevel(topLevel, ((CodeEntity) root).getClassName());
+           boolean success = false;
+           if(topLevelNode != null)
+               success = addVertex(topLevelNode, root);
+
+           if(!success)
+               System.out.println("Warning didn't find package for: " + ((CodeEntity) root).getClassName());
+       }
+
+       for(AbstractLayoutVertex v : root.getInnerGraph().getVertices())
+       {
+           addVerticesToClassTree(topLevel, v);
+       }
+    }
+
+    private ClassTreeNode getTopLevel(ArrayList<ClassTreeNode> topLevel, String className) {
+
+        for(ClassTreeNode n : topLevel)
+        {
+            if(className.startsWith(n.name))
+                return n;
+        }
+
+        return null;
+    }
+
+    private boolean addVertex(ClassTreeNode node, AbstractLayoutVertex vertex) {
+
+        if(!node.subDirs.isEmpty())
+        {
+            for(ClassTreeNode n : node.subDirs)
+            {
+                if(((CodeEntity)vertex).getClassName().startsWith(n.fullName))
+                {
+                    return addVertex(n, vertex);
+                }
+            }
+            return false;
+        }
+
+        node.vertices.add(vertex);
+        return true;
     }
 
     public void repaintAll() {
@@ -178,26 +243,24 @@ public class MainTabController {
         Parameters.rightArea.setText("");*/
     }
 
+    public ObservableSet<AbstractLayoutVertex> getHidden() {
+        return hidden.get();
+    }
+
     public void hideSelectedNodes() {
-        System.out.println("Hiding selected nodes...");
         for(AbstractLayoutVertex v : this.getHighlighted()) {
-            v.setHighlighted(false);
-            v.setHidden();
             this.hidden.add(v);
         }
 
-        this.highlighted = new LinkedHashSet<>();
+        this.highlighted.clear();
         this.vizPanelController.resetAndRedraw();
     }
 
     public void showAllHiddenNodes() {
         System.out.println("Showing all hidden nodes...");
-        for(AbstractLayoutVertex v : this.hidden) {
-            v.setUnhidden();
-        }
-
-        this.hidden = new LinkedHashSet<>();
-        this.vizPanelController.resetAndRedraw();
+        vizPanelController.startBatchMode();
+        this.hidden.clear();
+        vizPanelController.endBatchMode();
     }
 
     public String getSearchInput(SearchType search) {
@@ -254,6 +317,7 @@ public class MainTabController {
         return this.highlighted;
     }
 
+    /*
     //Called when the user clicks on a line in the left area.
     //Updates the vertex highlights to those that correspond to the instruction clicked.
     public void searchByJimpleIndex(String method, int index, boolean removeCurrent, boolean addChosen)
@@ -281,6 +345,7 @@ public class MainTabController {
             highlighted.removeAll(toRemoveHighlights);
         }
     }
+    */
 
     public void resetHighlighted(AbstractLayoutVertex newHighlighted)
     {
@@ -305,6 +370,7 @@ public class MainTabController {
         public String name;
         public String fullName;
         public HashSet<ClassTreeNode> subDirs;
+        public HashSet<AbstractLayoutVertex> vertices; // Leaf nodes store their associated vertices
 
         public ClassTreeNode(String name, String prefix)
         {
@@ -349,6 +415,9 @@ public class MainTabController {
 
             for(ClassTreeNode f : subDirs)
                 f.compress();
+
+            if(subDirs.isEmpty())
+                vertices = new HashSet<>();
         }
 
         @Override
@@ -372,16 +441,71 @@ public class MainTabController {
             return subTree.toString();
         }
 
+        private boolean isLeaf()
+        {
+            return subDirs.isEmpty();
+        }
 
-        public void build(TreeItem<ClassTreeNode> parent) {
-            TreeItem<ClassTreeNode> item = new TreeItem<ClassTreeNode>();
-            item.setValue(this);
-            parent.getChildren().add(item);
+        private HashSet<AbstractLayoutVertex> getChildrenVertices()
+        {
+            if(this.isLeaf())
+                return this.vertices;
+
+            HashSet<AbstractLayoutVertex> all = new HashSet<>();
 
             for(ClassTreeNode f : subDirs)
+            {
+                f.getChildrenVertices(all);
+            }
+            return all;
+        }
+
+        private void getChildrenVertices(HashSet<AbstractLayoutVertex> all)
+        {
+            if(this.isLeaf())
+            {
+                all.addAll(this.vertices);
+            }
+            else
+            {
+                for(ClassTreeNode f : subDirs)
+                {
+                    f.getChildrenVertices(all);
+                }
+            }
+        }
+
+        public void build(TreeItem<ClassTreeNode> parent) {
+            CheckBoxTreeItem<ClassTreeNode> item = new CheckBoxTreeItem<>();
+            item.setSelected(true);
+            item.setValue(this);
+            item.setIndependent(true);
+            item.selectedProperty().addListener(new ChangeListener<Boolean>() {
+                @Override
+                public void changed(ObservableValue<? extends Boolean> observableValue, Boolean prevVal, Boolean currVal) {
+
+                    System.out.println("JUAN: Firing off " + item.getValue());
+
+                    HashSet<AbstractLayoutVertex> childVertices = item.getValue().getChildrenVertices();
+
+                    System.out.println("\t\tJUAN children is: " + childVertices);
+
+                    if(currVal)
+                    {
+                        Main.getSelectedMainTabController().getHidden().removeAll(childVertices);
+                    }
+                    else
+                    {
+                        Main.getSelectedMainTabController().getHidden().addAll(childVertices);
+                    }
+                }
+            });
+            parent.getChildren().add(item);
+
+            for (ClassTreeNode f : subDirs)
                 f.build(item);
         }
-    }
+    } // End of class TreeNode
 
     private void setClassHighlight(AbstractLayoutVertex v, String prevPrefix, String currPrefix)
     {

@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
+import javafx.collections.SetChangeListener;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -23,7 +24,7 @@ import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 
-public class VizPanelController implements EventHandler<SelectEvent> {
+public class VizPanelController implements EventHandler<SelectEvent>, SetChangeListener<AbstractLayoutVertex> {
     @FXML public final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML public final Spinner<Double> zoomSpinner = null; // Initialized by Controllers.loadFXML()
 
@@ -37,6 +38,9 @@ public class VizPanelController implements EventHandler<SelectEvent> {
     // TODO: should this stuff be moved to a model class?
     private Group graphContentGroup;
     private LayoutRootVertex panelRoot;
+
+    private boolean inBatchMode = false;
+    private boolean changedWhileInBatchMode = false;
 
     public VizPanelController() throws IOException {
         Controllers.loadFXML("/VizPanel.fxml", this);
@@ -228,5 +232,37 @@ public class VizPanelController implements EventHandler<SelectEvent> {
                 drawEdges(child);
             }
         }
+    }
+
+    @Override
+    public void onChanged(Change<? extends AbstractLayoutVertex> change) {
+        System.out.println("JUAN: Hidden changed: " + change);
+        if(change.wasAdded())
+        {
+            System.out.println("Added " + change.getElementAdded());
+            AbstractLayoutVertex v = change.getElementAdded();
+            v.setHighlighted(false);
+            v.setHidden();
+        }
+        else
+        {
+            AbstractLayoutVertex v = change.getElementRemoved();
+            v.setUnhidden();
+            if(!inBatchMode)
+                this.resetAndRedraw();
+            else
+                changedWhileInBatchMode = true;
+        }
+    }
+
+    public void startBatchMode()
+    {
+        inBatchMode = true;
+        changedWhileInBatchMode = false;
+    }
+    public void endBatchMode() {
+        inBatchMode = false;
+        if(changedWhileInBatchMode)
+            this.resetAndRedraw();
     }
 }
