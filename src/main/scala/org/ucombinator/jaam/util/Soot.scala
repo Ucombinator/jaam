@@ -76,7 +76,7 @@ object Soot {
     m.getActiveBody
   }
 
-  def getBodyGraph(m: SootMethod): (Stmt, DirectedGraph[Stmt, DefaultEdge]) = {
+  def getBodyGraph(m: SootMethod): (Stmt, Graph[Stmt, DefaultEdge]) = {
     val graph = new DirectedPseudograph[Stmt, DefaultEdge](classOf[DefaultEdge])
     var start: Stmt = null
 
