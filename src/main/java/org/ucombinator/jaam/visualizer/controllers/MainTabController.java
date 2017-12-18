@@ -235,7 +235,7 @@ public class MainTabController {
         } else if (search == SearchType.INSTRUCTION) {
             this.vizPanelController.getPanelRoot().searchByInstruction(query, this);
         } else if (search == SearchType.METHOD) {
-            this.vizPanelController.getPanelRoot().searchByMethod(query, this);
+            this.vizPanelController.getPanelRoot().searchByMethod(query.toLowerCase(), this);
         }
 
         this.repaintAll();

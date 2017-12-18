@@ -48,9 +48,13 @@ public class LayoutMethodVertex extends AbstractLayoutVertex implements CodeEnti
 
     @Override
     public boolean searchByMethod(String query, MainTabController mainTab) {
-        boolean found = query.contains(this.getMethodName());
-        this.setHighlighted(found);
-        mainTab.getHighlighted().add(this);
+        boolean found = this.getMethodName().toLowerCase().contains(query);
+        System.out.println(this.getMethodName() + " Method Checking:");
+        if(found) {
+            System.out.println("Found " + this);
+            this.setHighlighted(found);
+            mainTab.getHighlighted().add(this);
+        }
 
         for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
             v.searchByMethod(query, mainTab);
@@ -67,5 +71,10 @@ public class LayoutMethodVertex extends AbstractLayoutVertex implements CodeEnti
 
     public void setDefaultColor(){
         this.color = defaultColor;
+    }
+
+    public String toString()
+    {
+        return "Method " + getClassName() + ":" + getMethodName();
     }
 }
