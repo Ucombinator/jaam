@@ -18,7 +18,7 @@ import scala.collection.immutable
 import scala.collection.mutable
 
 import org.jgrapht._
-import org.jgrapht.ext.DOTExporter
+import org.jgrapht.io.DOTExporter
 import org.jgrapht.graph._
 
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
@@ -139,7 +139,7 @@ object LoopAnalyzer {
       println("END_IMM")
     }
 
-    def dominatorTree[V,E](root: V, graph: DirectedGraph[V,E]): immutable.Map[V, V] = {
+    def dominatorTree[V,E](root: V, graph: Graph[V,E]): immutable.Map[V, V] = {
       val dom = new mutable.HashMap[V, mutable.Set[V]] with mutable.MultiMap[V, V]
 
       dom.addBinding(root, root)

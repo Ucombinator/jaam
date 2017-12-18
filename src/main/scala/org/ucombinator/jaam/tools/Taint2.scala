@@ -10,7 +10,7 @@ import org.ucombinator.jaam.util.Stmt
 import org.ucombinator.jaam.util.Soot.unitToStmt
 import org.jgrapht._
 import org.jgrapht.graph._
-import org.jgrapht.ext.{DOTExporter, StringComponentNameProvider}
+import org.jgrapht.io.{DOTExporter, StringComponentNameProvider}
 import soot.options.Options
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.jimple.{Stmt => SootStmt, _}
