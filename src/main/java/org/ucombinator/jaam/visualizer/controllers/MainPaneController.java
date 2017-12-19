@@ -122,23 +122,4 @@ public class MainPaneController {
         System.out.println("Edge packets: " + edgePackets);
         return graph;
     }
-
-    private static class CodeIdentifier
-    {
-        String signature;
-        String className;
-        String methodName;
-
-        CodeIdentifier(String signature)
-        {
-            this.signature = signature;
-            String[] fields = signature.split(" ");
-
-            className  = fields[0].substring(1, fields[0].indexOf(":"));
-            methodName = fields[2].substring(0, fields[2].indexOf("("));
-        }
-
-        public String toString(){ return className + ":" + methodName;}
-    }
-
 }

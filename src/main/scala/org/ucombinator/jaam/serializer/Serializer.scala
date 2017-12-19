@@ -1,12 +1,12 @@
 package org.ucombinator.jaam.serializer
 
-/*****************************************
- * This library handles reading and writting ".jaam" files.  For usage see
- * PacketInput and PacketOutput in this package.
- * ****************************************/
+/******************************************************************
+ * This library handles reading and writing ".jaam" files.
+ *
+ * See `PacketInput` and `PacketOutput` in this package for usage.
+ * ****************************************************************/
 
 import java.io.{FileInputStream, IOException, InputStream, OutputStream}
-import java.lang.Object
 import java.lang.reflect.Type
 import java.util.zip.{DeflaterOutputStream, InflaterInputStream}
 
@@ -33,7 +33,7 @@ object Serializer {
     val pi = new PacketInput(stream)
 
     var packet: Packet = null
-    var packets = List[Packet]()
+    var packets: List[Packet] = List.empty
     while ({packet = pi.read(); !packet.isInstanceOf[EOF]}) {
       // TODO: for (packet <- pi) {
       packets +:= packet
@@ -82,8 +82,8 @@ class PacketInput(private val input : InputStream) {
     }
 
     if (found.toList != expected.toList) {
-      val e = (for (i <- expected) yield { "%x".format(i) }).mkString("")
-      val f = (for (i <- found)    yield { "%x".format(i) }).mkString("")
+      val e = expected.map(_.toHexString).mkString("")
+      val f = found.map(_.toHexString).mkString("")
       throw new IOException(f"Invalid $name\n Expected: 0x$e\n Found:    0x$f")
     }
   }
@@ -359,7 +359,7 @@ class JaamKryo extends KryoBase {
       extends FieldSerializer(this, typ) {
     override def rebuildCachedFields(minorRebuild : Boolean) {
       // Save and clear removedFields since the below calls to removeField
-      // will repopulate it.  Otherwise, we get a ConcurentModificationException.
+      // will repopulate it.  Otherwise, we get a ConcurrentModificationException.
       val removed = this.removedFields
       if (!minorRebuild) {
         this.removedFields = new java.util.HashSet()
@@ -403,7 +403,8 @@ class JaamKryo extends KryoBase {
       val nodeType = input.readString()
       val name = input.readString()
       roles.get((nodeType,name)) match {
-        case None => throw new Exception(f"Error deserializing a $typ: could not find Role for $nodeType and $name")
+        case None =>
+          throw new Exception(f"Error during deserialize a $typ: could not find Role for $nodeType and $name")
         case Some(index) => obj.asInstanceOf[AstNode].setRole(Role.get(index))
       }
       return obj
@@ -454,16 +455,11 @@ class JaamKryo extends KryoBase {
 
     // TODO: refactor
     // Build a mapping from nodeType and name to a Role index
-//    (for {
-//      i <- 0 until (1 << Role.ROLE_INDEX_BITS);
-//      r = Role.get(i) if r != null
-//    } yield (r.getNodeType.toString, r.toString) -> i)
-//      ) .toMap
-    (for (i <- 0 until (1 << Role.ROLE_INDEX_BITS)) yield
-      Role.get(i) match {
-        case null => None
-        case r => Some((r.getNodeType.toString, r.toString) -> i)
-      })
-      .flatten.toMap
+    (0 until (1 << Role.ROLE_INDEX_BITS)).
+      map(i => (i, Role.get(i))).
+      withFilter(_._2 != null).
+      map {
+        case (i, r) => (r.getNodeType.toString, r.toString) -> i
+      }.toMap
   }
 }

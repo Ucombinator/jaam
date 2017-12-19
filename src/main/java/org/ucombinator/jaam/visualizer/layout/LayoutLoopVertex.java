@@ -51,8 +51,10 @@ public class LayoutLoopVertex extends AbstractLayoutVertex implements Cloneable,
 
     @Override
     public boolean searchByMethod(String query, MainTabController mainTab) {
-        boolean found = this.getMethodName().contains(query);
+        boolean found = this.getMethodName().toLowerCase().contains(query);
+        System.out.println(this.getMethodName() + " Loop Checking:");
         if(found) {
+            System.out.println("\t\t\tFound " + this);
             this.setHighlighted(found);
             mainTab.getHighlighted().add(this);
         }
@@ -69,7 +71,12 @@ public class LayoutLoopVertex extends AbstractLayoutVertex implements Cloneable,
     public void setDefaultColor(){
         this.color = defaultColor;
     }
-    
+
+    public String toString()
+    {
+        return "Loop " + getClassName() + ":" + getMethodName();
+    }
+
     public int getStatementIndex() {
 		return statementIndex;
 	}

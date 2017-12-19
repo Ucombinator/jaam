@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import javafx.scene.effect.BlurType;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -36,7 +37,8 @@ public abstract class AbstractLayoutVertex extends AbstractVertex
     protected Color color;
     public static final Color highlightColor = Color.ORANGE;
     public static final DropShadow highlightShadow = new DropShadow(10, Color.BLUE);
-    public static final DropShadow classHighlightShadow = new DropShadow(20, Color.GREEN);
+    public static final DropShadow classHighlightShadow = new DropShadow(BlurType.ONE_PASS_BOX, Color.GREEN, 20,
+            0.5, 0, 0);
 
     private boolean isExpanded = true;
     private boolean isHidden = false;
