@@ -17,7 +17,17 @@ public class LayoutSccVertex extends AbstractLayoutVertex {
     }
 
     public boolean searchByMethod(String query, MainTabController mainTab) {
-        return false;
+        boolean found = false;
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
+            found = v.searchByMethod(query, mainTab) || found;
+        }
+
+        if(found) {
+            //this.setHighlighted(found);
+            //mainTab.getHighlighted().add(this);
+        }
+
+        return found;
     }
 
     public String getRightPanelContent() {

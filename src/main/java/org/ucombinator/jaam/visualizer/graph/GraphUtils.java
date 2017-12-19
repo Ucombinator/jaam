@@ -76,11 +76,6 @@ public class GraphUtils {
             }
             components.add(newComponent);
         }
-        else
-        {
-            //System.out.println("\t\t\t TERE Didn't find a leader! " + vSCC);
-        }
-
     }
 
     public static ArrayList<ArrayList<Integer>> StronglyConnectedComponents(final Graph g)
@@ -92,12 +87,11 @@ public class GraphUtils {
 
         ArrayList<AbstractVertex> vertices = g.getVertices();
 
-        for(AbstractVertex v : vertices)
-        {
-            if(stack.size() > 0)
-            {
+        for(AbstractVertex v : vertices) {
+            if(stack.size() > 0) {
                 System.out.println("JUAN FOUND A NON EMPTY STACK!");
             }
+
             if(!visitedVertices.containsKey(v.getId())) {
                 visit(g, v, visitedVertices, stack, components);
             }

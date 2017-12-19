@@ -246,12 +246,15 @@ object Main {
     //    println("}")
 
     val m = Soot.getSootClass(mainClass).getMethodByName(mainMethod) //Coverage2.freshenMethod(Soot.getSootClass(mainClass).getMethodByName(mainMethod))
+    // The next three lines add edges from the main method to any method that has no incoming edges.
     val s = Stmt(Soot.getBody(m).getUnits.asScala.toList.head.asInstanceOf[SootStmt], m)
     val fromMain = appEdges2.getOrElse(m, Map())
     appEdges2 += m -> (fromMain + (s -> (fromMain.getOrElse(s, Set()) ++ roots)))
+    println(f"Printing appEdges2(m): ${appEdges2(m)}")
+    println(f"roots: $roots");
 
     computeLoopGraph(mainClass, mainMethod, /*classpath: String,*/
-      outStream, coverageStream, jaam, prune, shrink, prettyPrint, m, appEdges2)
+      outStream, coverageStream, jaam, prune, shrink, prettyPrint, m, appEdges2, roots)
 
   }
 
@@ -265,7 +268,8 @@ object Main {
                        shrink: Boolean,
                        prettyPrint: Boolean,
                        m: SootMethod,
-                       cg: Map[SootMethod, Map[Stmt, Set[SootMethod]]]): Unit = {
+                       cg: Map[SootMethod, Map[Stmt, Set[SootMethod]]],
+                       roots: Set[SootMethod]): Unit = {
     // import org.ucombinator.jaam.tools.LoopAnalyzer
     import org.ucombinator.jaam.serializer
 
@@ -283,8 +287,11 @@ object Main {
 
     // TODO: print unpruned size
     val outSerializer = new serializer.PacketOutput(new FileOutputStream(jaam))
-    shrunk.toJaam(outSerializer)
+    shrunk.toJaam(outSerializer, roots)
     outSerializer.close()
+    println(f"Prune = $prune, shrink = $shrink")
+    println("number of roots: " + roots.size)
+    println("set of roots: " + roots)
 
     Console.withOut(graphStream) {
       println("digraph loops {")

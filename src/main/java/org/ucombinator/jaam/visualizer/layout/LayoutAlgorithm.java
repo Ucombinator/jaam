@@ -1,6 +1,12 @@
 package org.ucombinator.jaam.visualizer.layout;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Queue;
 
 public class LayoutAlgorithm
 {
@@ -20,7 +26,7 @@ public class LayoutAlgorithm
         parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
         parentVertex.setX(0);
         parentVertex.setY(0);
-        for(AbstractLayoutVertex v : parentVertex.getInnerGraph().getVisibleVertices()) {
+        for (AbstractLayoutVertex v : parentVertex.getInnerGraph().getVisibleVertices()) {
             initializeSizes(v);
         }
     }
@@ -286,12 +292,13 @@ public class LayoutAlgorithm
         for(AbstractLayoutVertex curVer: grayChildren)
         {
             storeBBoxWidthAndHeight(curVer, childrenMap);
-            currentWidth += curVer.getBboxWidth() + NODES_PADDING;
+            currentWidth += curVer.getBboxWidth();
             currentHeight = Math.max(currentHeight, curVer.getBboxHeight());
         }
+        currentWidth += (grayChildren.size() - 1) * NODES_PADDING;
 
         double currBboxWidth, currBboxHeight;
-        currBboxWidth = Math.max(root.getWidth(), currentWidth - NODES_PADDING);
+        currBboxWidth = Math.max(root.getWidth(), currentWidth);
         if(grayChildren.size() == 0) {
             currBboxHeight = root.getHeight();
         }
@@ -300,7 +307,6 @@ public class LayoutAlgorithm
         }
 
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
-
         root.setBboxWidth(currBboxWidth);
         root.setBboxHeight(currBboxHeight);
     }
