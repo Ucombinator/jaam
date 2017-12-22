@@ -123,19 +123,23 @@ object Relationship {
   class  ArrayRef extends Relationship
   object  ArrayRef extends Relationship { def apply = new ArrayRef }
 
-  // NEW
+  // Return flow when methods are overridden
   class  MethodOverridden extends Relationship
   object MethodOverridden extends Relationship { def apply = new MethodOverridden }
 
+  // Parameter flow when methods are overridden
   class  ParameterSubtypePolymorphism extends Relationship
   object ParameterSubtypePolymorphism extends Relationship { def apply = new ParameterSubtypePolymorphism }
 
+  // Return value of call depends on parameters of call
   class  ParametersDependency extends Relationship
   object ParametersDependency extends Relationship { def apply = new ParametersDependency }
 }
 
 final class Edge(val source: Address, val target: Address, val relation: Relationship) extends serializer.Packet {
-  override def toString: String = relation.getClass.getSimpleName.stripSuffix("$")
+  // TODO: does this code for `toString` work?
+  override def toString: String = f"Edge($source, $target, $relation)"
+  //override def toString: String = relation.getClass.getSimpleName.stripSuffix("$")
 }
 
 object Taint3 {
@@ -167,27 +171,39 @@ object Taint3 {
         val source = Address.Return(m)
         val declaringClass = m.getDeclaringClass
 
-        val directSuperTypesOfInApp =  {
-          val superClass = declaringClass.getSuperclass
-          val interfaces = declaringClass.getInterfaces.asScala.toSet
-          allClasses.intersect(interfaces + superClass)
-        }
-
-        for (typ <- directSuperTypesOfInApp) {
-          if (!m.isConstructor || !typ.isInterface) {
-            val superMethod = typ.getMethod(m.getName, m.getParameterTypes, m.getReturnType)
-            buildInheritanceConnections(m, superMethod, source)
+        if (!m.isConstructor && !m.isStaticInitializer && !m.isStatic) {
+          // NOTE: This counts as overriding methods that
+          // <https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-5.html#jvms-5.4.5>
+          // says should not override.  But it is an over approximation so it is okay.
+          def go(t: SootClass): Unit = {
+            t.getMethodUnsafe(m.getName, m.getParameterTypes, m.getReturnType) match {
+              case null =>
+                if (t != Soot.classes.Object) {
+                  (t.getInterfaces.asScala ++ List(t.getSuperclass)).foreach(go)
+                }
+              case m2 =>
+                addEdge(source, Address.Return(m2), Relationship.MethodOverridden)
+                for (i <- 0 until m.getParameterCount) {
+                  addEdge(Address.Parameter(m2, i),
+                    Address.Parameter(m, i),
+                    Relationship.ParameterSubtypePolymorphism)
+                }
+            }
           }
+
+          (declaringClass.getInterfaces.asScala ++
+            List(declaringClass.getSuperclass)).foreach(go)
         }
 
+        // TODO: keep track of data-flow due to exceptions
+        // TODO: currently not connected to callers
         graph.addVertex(Address.Throws(m))
 
         for (p <- 0 until m.getParameterCount) {
           graph.addVertex(Address.Parameter(m, p))
         }
 
-        // TODO: keep track of data-flow due to exceptions
-        if (!m.getDeclaringClass.isAbstract) {
+        if (m.isConcrete) {
           for (u <- Soot.getBody(m).getUnits.asScala) {
             sootStmt(Stmt(u, m))
           }
@@ -197,6 +213,7 @@ object Taint3 {
 
     val outSerializer = new serializer.PacketOutput(new FileOutputStream(output))
     output2JaamFile(outSerializer)
+    outSerializer.close
 
     printToGraphvizFile(output, graph)
   }
@@ -216,20 +233,29 @@ object Taint3 {
 
     val inputPackets = input.flatMap(serializer.Serializer.readAll(_).asScala)
 
-    val apps = inputPackets.filter(_.isInstanceOf[App])
-    for (a <- apps) { Soot.addClasses(a.asInstanceOf[App]) }
+    val apps = inputPackets.filter(_.isInstanceOf[App]).map(_.asInstanceOf[App])
+    for (a <- apps) { Soot.addClasses(a) }
 
-    val mainClasses = for (a <- apps) yield { a.asInstanceOf[App].main.className }
-    val mainMethods = for (a <- apps) yield { a.asInstanceOf[App].main.methodName }
-    val mainClass = mainClasses.head.get // TODO: fix
-    val mainMethod = mainMethods.head.get // TODO: fix
+    Scene.v.loadBasicClasses()
+    PackManager.v.runPacks()
 
-    Scene.v.loadBasicClasses()   // ???
-    PackManager.v.runPacks()    // ???
+    // TODO: add all super classes and super interfaces (recursively)
+    var classes = Set[SootClass]()
+    def go(c: SootClass): Unit = {
+      if (classes(c)) { /* do nothing */ }
+      else {
+        classes += c
+        go(c.getSuperclass)
+        c.getInterfaces.asScala.foreach(go)
+      }
+    }
 
     for(name <- Soot.loadedClasses.keys.toSet
-        if Soot.loadedClasses(name).origin == Origin.APP)  // TODO: try non-APP
-      yield Soot.getSootClass(name)
+        if Soot.loadedClasses(name).origin == Origin.APP) { // TODO: try non-APP
+        go(Soot.getSootClass(name))
+    }
+
+    return classes
   }
 
   def addEdge(a1: Address, a2: Address, r: Relationship): Unit = {
