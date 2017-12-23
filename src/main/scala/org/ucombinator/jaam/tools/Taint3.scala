@@ -138,8 +138,8 @@ object Relationship {
 
 final class Edge(val source: Address, val target: Address, val relation: Relationship) extends serializer.Packet {
   // TODO: does this code for `toString` work?
-  override def toString: String = f"Edge($source, $target, $relation)"
-  //override def toString: String = relation.getClass.getSimpleName.stripSuffix("$")
+//  override def toString: String = f"Edge($source, $target, $relation)"
+  override def toString: String = relation.getClass.getSimpleName.stripSuffix("$")
 }
 
 object Taint3 {
@@ -148,16 +148,16 @@ object Taint3 {
   def main(input: List[String], output: String): Unit = {
     val allClasses = loadInput(input)
 
-    def buildInheritanceConnections(m: SootMethod, superMethod: SootMethod, source: Address): Unit = {
-      val target = Address.Return(superMethod)
-      addEdge(source, target, Relationship.MethodOverridden)
-
-      for (i <- 0 until m.getParameterCount) {
-        addEdge(Address.Parameter(superMethod, i),
-          Address.Parameter(m, i),
-          Relationship.ParameterSubtypePolymorphism)
-      }
-    }
+//    def buildInheritanceConnections(m: SootMethod, superMethod: SootMethod, source: Address): Unit = {
+//      val target = Address.Return(superMethod)
+//      addEdge(source, target, Relationship.MethodOverridden)
+//
+//      for (i <- 0 until m.getParameterCount) {
+//        addEdge(Address.Parameter(superMethod, i),
+//          Address.Parameter(m, i),
+//          Relationship.ParameterSubtypePolymorphism)
+//      }
+//    }
 
     // for each class (if in APP)
     for (c <- allClasses) {
@@ -176,23 +176,28 @@ object Taint3 {
           // <https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-5.html#jvms-5.4.5>
           // says should not override.  But it is an over approximation so it is okay.
           def go(t: SootClass): Unit = {
-            t.getMethodUnsafe(m.getName, m.getParameterTypes, m.getReturnType) match {
-              case null =>
-                if (t != Soot.classes.Object) {
-                  (t.getInterfaces.asScala ++ List(t.getSuperclass)).foreach(go)
-                }
-              case m2 =>
-                addEdge(source, Address.Return(m2), Relationship.MethodOverridden)
-                for (i <- 0 until m.getParameterCount) {
-                  addEdge(Address.Parameter(m2, i),
-                    Address.Parameter(m, i),
-                    Relationship.ParameterSubtypePolymorphism)
-                }
+            if (t != null) {
+              t.getMethodUnsafe(m.getName, m.getParameterTypes, m.getReturnType) match {
+                case null =>
+                  if (t != Soot.classes.Object) {
+                    (t.getInterfaces.asScala.toSet + t.getSuperclass).foreach(go)
+                  }
+                case m2 =>
+                  addEdge(source, Address.Return(m2), Relationship.MethodOverridden)
+                  for (i <- 0 until m.getParameterCount) {
+                    addEdge(Address.Parameter(m2, i),
+                      Address.Parameter(m, i),
+                      Relationship.ParameterSubtypePolymorphism)
+                  }
+              }
             }
           }
 
-          (declaringClass.getInterfaces.asScala ++
-            List(declaringClass.getSuperclass)).foreach(go)
+          if (declaringClass.hasSuperclass) {
+            (declaringClass.getInterfaces.asScala.toSet + declaringClass.getSuperclass).foreach(go)
+          } else {
+           declaringClass.getInterfaces.asScala.toSet.foreach(go)
+          }
         }
 
         // TODO: keep track of data-flow due to exceptions
@@ -213,7 +218,7 @@ object Taint3 {
 
     val outSerializer = new serializer.PacketOutput(new FileOutputStream(output))
     output2JaamFile(outSerializer)
-    outSerializer.close
+    outSerializer.close()
 
     printToGraphvizFile(output, graph)
   }
@@ -240,12 +245,14 @@ object Taint3 {
     PackManager.v.runPacks()
 
     // TODO: add all super classes and super interfaces (recursively)
-    var classes = Set[SootClass]()
+    var classes = Set.empty[SootClass]
     def go(c: SootClass): Unit = {
       if (classes(c)) { /* do nothing */ }
       else {
         classes += c
-        go(c.getSuperclass)
+        if (c.hasSuperclass) {
+          go(c.getSuperclass)
+        }
         c.getInterfaces.asScala.foreach(go)
       }
     }
