@@ -479,7 +479,7 @@ public class MainTabController {
             CheckBoxTreeItem<ClassTreeNode> item = new CheckBoxTreeItem<>();
             item.setSelected(true);
             item.setValue(this);
-            item.setIndependent(true);
+            item.setIndependent(false);
             item.selectedProperty().addListener(new ChangeListener<Boolean>() {
                 @Override
                 public void changed(ObservableValue<? extends Boolean> observableValue, Boolean prevVal, Boolean currVal) {
@@ -490,6 +490,7 @@ public class MainTabController {
 
                     System.out.println("\t\tJUAN children is: " + childVertices);
 
+                    vizPanelController.startBatchMode();
                     if(currVal)
                     {
                         Main.getSelectedMainTabController().getHidden().removeAll(childVertices);
@@ -498,6 +499,8 @@ public class MainTabController {
                     {
                         Main.getSelectedMainTabController().getHidden().addAll(childVertices);
                     }
+                    vizPanelController.endBatchMode();
+                    vizPanelController.resetAndRedraw();
                 }
             });
             parent.getChildren().add(item);
