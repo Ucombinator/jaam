@@ -28,7 +28,7 @@ import scala.collection.mutable
  */
 
 object Main {
-  def main(input: List[String]) {
+  def main(input: List[String], printBodies: Boolean) {
     val (c, m) = prepFromInput(input)
 
     // Count up all loops found.
@@ -42,6 +42,12 @@ object Main {
         for (method <- c.getMethods.asScala.filter(_.isConcrete)) {
           val lnt = new LoopNestTree(Soot.getBody(method))
           if (lnt.size > 0) {
+            // Print the method body if (a) it was requested and (b) this method contains at least one loop.
+            if (printBodies) {
+              println("Statements in method: " + method)
+              method.getActiveBody.getUnits.asScala.foreach(u => println("  " + u))
+            }
+            // Identify all the loops in the method.
             lnt.asScala.foreach(loop => {
               val ident = identifyLoop(loop, method)
               val s = loops.getOrElse(ident.getClass, mutable.Set[LoopIdentity]())

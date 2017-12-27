@@ -438,9 +438,14 @@ object Loop4 extends Main("loop4") {
 
 object LoopIdentifier extends Main("loopident") {
   val input = inputOpt()
+  val printBodies = toggle(
+    descrYes = "Print out the bodies of methods which contain loops",
+    descrNo = "Do not print the bodies of methods [default]",
+    default = Some(false)
+  )
 
   def run(): Unit = {
-    org.ucombinator.jaam.tools.loopidentifier.Main.main(input())
+    org.ucombinator.jaam.tools.loopidentifier.Main.main(input(), printBodies())
   }
 }
 
