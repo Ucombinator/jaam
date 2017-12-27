@@ -3,6 +3,7 @@ file=`basename $1 ".jar"`
 ./bin/jaam decompile --input $file.app.jaam --output $file.decompile.jaam
 ./bin/jaam loop3  --input $file.app.jaam --output $file.loop3.jaam
 ./bin/jaam cat --input $file.app.jaam --input $file.decompile.jaam --input $file.loop3.jaam --output $file.all.jaam
+./bin/jaam taint3 --input $file.all.jaam --output $file.taint.jaam
 rm *.app.jaam
 rm *.loop3.jaam
 rm *.decompile.jaam

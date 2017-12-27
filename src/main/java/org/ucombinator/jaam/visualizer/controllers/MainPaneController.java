@@ -82,9 +82,13 @@ public class MainPaneController {
     private static Graph parseLoopGraph(File file, List<CompilationUnit> compilationUnits) {
         Graph graph = new Graph();
 
+        int loopPackets = 0;
+        int methodPackets = 0;
+        int edgePackets = 0;
         ArrayList<LoopEdge> edges = new ArrayList<>();
         for (Packet packet : Serializer.readAll(file.getAbsolutePath())) {
             if (packet instanceof LoopLoopNode) {
+                loopPackets++;
                 LoopLoopNode node = (LoopLoopNode) packet;
 
                 graph.addVertex(new LayoutLoopVertex(node.id().id(),
@@ -92,10 +96,13 @@ public class MainPaneController {
                         node.statementIndex(), node));
 
             } else if (packet instanceof LoopMethodNode) {
+                methodPackets++;
                 LoopMethodNode node = (LoopMethodNode) packet;
                 graph.addVertex(new LayoutMethodVertex(node.id().id(),
                         node.method().getSignature(), node));
+                System.out.println("Reading method packet: " + node.method().getSignature());
             } else if (packet instanceof LoopEdge) {
+                edgePackets++;
                 edges.add((LoopEdge) packet);
             }
             else if (packet instanceof org.ucombinator.jaam.tools.decompile.DecompiledClass)
@@ -110,25 +117,9 @@ public class MainPaneController {
             graph.addEdge(edge.src().id(), edge.dst().id());
         }
 
+        System.out.println("Loop packets: " + loopPackets);
+        System.out.println("Method packets: " + methodPackets);
+        System.out.println("Edge packets: " + edgePackets);
         return graph;
     }
-
-    private static class CodeIdentifier
-    {
-        String signature;
-        String className;
-        String methodName;
-
-        CodeIdentifier(String signature)
-        {
-            this.signature = signature;
-            String[] fields = signature.split(" ");
-
-            className  = fields[0].substring(1, fields[0].indexOf(":"));
-            methodName = fields[2].substring(0, fields[2].indexOf("("));
-        }
-
-        public String toString(){ return className + ":" + methodName;}
-    }
-
 }

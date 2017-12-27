@@ -9,7 +9,7 @@ import org.jgrapht._
 
 object JGraphT {
   // Returns a mapping from nodes to the set of nodes that dominate them
-  def dominators[V,E](graph: DirectedGraph[V,E], start: V):
+  def dominators[V,E](graph: Graph[V,E], start: V):
   immutable.Map[V, immutable.Set[V]] = {
     val vs = graph.vertexSet.asScala.toSet
     var dom: immutable.Map[V, immutable.Set[V]]  = Map.empty
@@ -38,7 +38,7 @@ object JGraphT {
   }
 
   // Returns a mapping from head nodes to back-jump nodes
-  def loopHeads[V,E](graph: DirectedGraph[V,E], start: V):
+  def loopHeads[V,E](graph: Graph[V,E], start: V):
   immutable.Map[V, immutable.Set[V]] = {
 
     val dom = JGraphT.dominators(graph, start)
@@ -56,7 +56,7 @@ object JGraphT {
 
   // Takes head and back-jump nodes for a loop, and returns the set of
   // nodes that are part of that loop
-  def loopNodes[V,E](graph: DirectedGraph[V,E], head: V, backJumpNodes: immutable.Set[V]):
+  def loopNodes[V,E](graph: Graph[V,E], head: V, backJumpNodes: immutable.Set[V]):
   immutable.Set[V] = {
     var loop: immutable.Set[V] = Set.empty
 
@@ -75,7 +75,7 @@ object JGraphT {
   }
 
   // Maps head nodes to sets of nodes that are part of the loop
-  def loopNodes[V,E](graph: DirectedGraph[V,E], start: V):
+  def loopNodes[V,E](graph: Graph[V,E], start: V):
   immutable.Map[V, immutable.Set[V]] = {
     val heads = JGraphT.loopHeads(graph, start)
     return heads.map({ case (k, vs) => (k, loopNodes(graph, k, vs)) })

@@ -18,7 +18,7 @@ import scala.collection.immutable
 import scala.collection.mutable
 
 import org.jgrapht._
-import org.jgrapht.ext.DOTExporter
+import org.jgrapht.io.DOTExporter
 import org.jgrapht.graph._
 
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
@@ -139,7 +139,7 @@ object LoopAnalyzer {
       println("END_IMM")
     }
 
-    def dominatorTree[V,E](root: V, graph: DirectedGraph[V,E]): immutable.Map[V, V] = {
+    def dominatorTree[V,E](root: V, graph: Graph[V,E]): immutable.Map[V, V] = {
       val dom = new mutable.HashMap[V, mutable.Set[V]] with mutable.MultiMap[V, V]
 
       dom.addBinding(root, root)
@@ -372,7 +372,8 @@ object LoopAnalyzer {
       builder.toString
     }
 
-    def toJaam(s: serializer.PacketOutput) {
+    def toJaam(s: serializer.PacketOutput,
+               roots: Set[SootMethod] = Set()) {
       var seen = Set.empty[Node]
       var names = Map.empty[Node, serializer.Id[serializer.LoopNode]]
       def name(node: Node): serializer.Id[serializer.LoopNode] = {
@@ -389,7 +390,9 @@ object LoopAnalyzer {
           seen = seen + from
           val id = name(from)
           val packet = from match {
-            case MethodNode(m) => serializer.LoopMethodNode(id, m)
+            case MethodNode(m) =>
+              println(f"Serializing method: $m")
+              serializer.LoopMethodNode(id, m)
             case n@LoopNode(m, _) =>
               val stmt = Taint.getByIndex(m, n.index+1) // add one because the loop node is apparently the instruction before...?
               val addrs = stmt match {
@@ -401,14 +404,20 @@ object LoopAnalyzer {
               serializer.LoopLoopNode(id, m, addrs, n.index)
           }
 
-          println("Writing: "+packet)
-
+          // println("Writing: " + packet)
           s.write(packet)
-
-          for (to <- this(from)) {
-            println("Edge: "+name(from)+"->"+name(to))
-            s.write(serializer.LoopEdge(
-              name(from), name(to), recurEdges.contains((from, to))))
+          for {
+            to: Node <- this(from)
+          } {
+            // TODO: Instead of ignoring the roots this way, modify the BFS, both here and in makeLoopGraph in Loop3.
+            if (!to.isInstanceOf[MethodNode] || !roots.contains(to.asInstanceOf[MethodNode].method)) {
+              // println("Edge: " + name(from) + "->" + name(to))
+              s.write(serializer.LoopEdge(
+                name(from), name(to), recurEdges.contains((from, to))))
+            }
+            else {
+              // println("Skipping edge: " + name(from) + "->" + name(to))
+            }
           }
 
           // enforce a BFS order

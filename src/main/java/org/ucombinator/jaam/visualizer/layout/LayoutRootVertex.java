@@ -25,12 +25,14 @@ public class LayoutRootVertex extends AbstractLayoutVertex {
 
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = false;
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
-            found = found || v.searchByMethod(query, mainTab);
+        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices()) {
+            found = v.searchByMethod(query, mainTab) || found;
         }
 
-        this.setHighlighted(found);
-        mainTab.getHighlighted().add(this);
+        if(found) {
+            //this.setHighlighted(found);
+            //mainTab.getHighlighted().add(this);
+        }
 
         return found;
     }
