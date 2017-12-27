@@ -22,15 +22,16 @@ import org.jgrapht.io.DOTExporter
 import org.jgrapht.graph._
 
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
-import soot.jimple.{Stmt => SootStmt, IfStmt}
+import soot.jimple.{IfStmt, Stmt => SootStmt}
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
-import soot.jimple.toolkits.callgraph.{CallGraph, CHATransformer, Edge}
+import soot.jimple.toolkits.callgraph.{CHATransformer, CallGraph, Edge}
 import soot.options.Options
 import soot.tagkit.GenericAttribute
 import soot.toolkits.graph.LoopNestTree
 
 import org.ucombinator.jaam.serializer
 import org.ucombinator.jaam.serializer.TaintAddress
+import org.ucombinator.jaam.tools.loopidentifier.Main.{ExceptionLoop, identifyLoop}
 import org.ucombinator.jaam.util.CachedHashCode
 import org.ucombinator.jaam.util.Stmt
 
@@ -48,7 +49,8 @@ object LoopAnalyzer {
             // println("Unable to retrieve body for " + m.getName)
         }
         val result = if (body != null) {
-          new LoopNestTree(body).toSet
+          // Filter out ExceptionLoops from the set, since they aren't real loops.
+          new LoopNestTree(body).toSet.filterNot(loop => identifyLoop(loop, m).isInstanceOf[ExceptionLoop])
         } else {
           Set.empty[SootLoop]
         }
