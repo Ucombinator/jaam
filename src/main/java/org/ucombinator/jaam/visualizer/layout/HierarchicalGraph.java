@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.layout;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class HierarchicalGraph
 {
@@ -124,12 +125,9 @@ public class HierarchicalGraph
             return null;
         }
 
-        ArrayList<AbstractLayoutVertex> roots = new ArrayList<>();
-        for(AbstractLayoutVertex v : this.getVisibleVertices()) {
-            if(this.isVisibleRoot(v)) {
-                roots.add(v);
-            }
-        }
+        ArrayList<AbstractLayoutVertex> roots = this.getVisibleVertices().stream()
+                .filter(v -> this.isVisibleRoot(v))
+                .collect(Collectors.toCollection(ArrayList::new));
 
         // If there is no root (as for a strongly connected component), choose just the first vertex
         // in our ordering. But this should never be necessary, since we bundle SCC's into their own
@@ -137,8 +135,10 @@ public class HierarchicalGraph
         if(roots.size() == 0) {
             System.out.println("Error: couldn't find root!");
             ArrayList<AbstractLayoutVertex> vertices = new ArrayList<>(this.getVisibleVertices());
-            Collections.sort(vertices);
-            roots.add(vertices.get(0));
+            if(!this.getVisibleVertices().isEmpty()) {
+                Collections.sort(vertices);
+                roots.add(vertices.get(0));
+            }
         }
 
         return roots;

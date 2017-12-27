@@ -152,6 +152,11 @@ public class LayoutAlgorithm
         HierarchicalGraph graph = parentVertex.getInnerGraph();
         ArrayList<AbstractLayoutVertex> roots = graph.getVisibleRoots();
 
+        if(roots.isEmpty())
+        {
+            return;
+        }
+
         double parentWidth = AbstractLayoutVertex.DEFAULT_WIDTH;
         double parentHeight = AbstractLayoutVertex.DEFAULT_HEIGHT;
         if(roots.size() > 0) {
