@@ -31,32 +31,12 @@ import soot.toolkits.graph.LoopNestTree
 
 import org.ucombinator.jaam.serializer
 import org.ucombinator.jaam.serializer.TaintAddress
-import org.ucombinator.jaam.tools.loopidentifier.Main.{ExceptionLoop, identifyLoop}
 import org.ucombinator.jaam.util.CachedHashCode
-import org.ucombinator.jaam.util.Stmt
+import org.ucombinator.jaam.util.{Stmt, Loop}
 
 object LoopAnalyzer {
-  private var loops = Map.empty[SootMethod, Set[SootLoop]]
-  def getLoops(m: SootMethod, skipExceptionLoops: Boolean = true): Set[SootLoop] = {
-    loops.get(m) match {
-      case Some(l) => l
-      case None =>
-        var body: Body = null
-        try {
-          body = m.retrieveActiveBody
-        } catch {
-          case _: RuntimeException =>
-            // println("Unable to retrieve body for " + m.getName)
-        }
-        val result = if (body != null) {
-          // Filter out ExceptionLoops from the set, since they aren't real loops.
-          new LoopNestTree(body).toSet.filterNot(loop => skipExceptionLoops && identifyLoop(loop, m).isInstanceOf[ExceptionLoop])
-        } else {
-          Set.empty[SootLoop]
-        }
-        loops = loops + (m -> result)
-        result
-    }
+  def getLoops(m: SootMethod): Set[SootLoop] = {
+    Loop.getLoopInfoSet(m).map(_.loop)
   }
 
   case class LoopTree(loop: SootLoop, method: SootMethod, children: Set[LoopTree]) {
