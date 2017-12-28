@@ -62,9 +62,9 @@ object Main {
     for ((cls, idents) <- loops) {
       println(cls.getSimpleName + ": " + idents.size)
       idents.foreach(ident => {
-        println("  " + ident.stmt.sourceFile + ":" + ident.stmt.line + " in " + ident.method.getName)
-        println("    index: " + ident.stmt.index + ", " + ident.stmt)
-        println("    prehead: " + ident.prehead)
+        println("  " + ident.head.sourceFile + ", line " + ident.head.line + " in " + ident.method.getName)
+        println("    prehead: " + ident.prehead.sootStmt)
+        println("    head:    " + ident.head.sootStmt)
         if (printStatements) {
           println("    statements:")
           ident.loop.getLoopStatements.asScala.foreach(s => println("      " + s))
@@ -80,9 +80,8 @@ object Main {
   }
 
   abstract class LoopIdentity(val loop: Loop, val method: SootMethod) {
-    val head: SootStmt = loop.getHead
-    val stmt: Stmt = Stmt(head, method)
-    val prehead: Stmt = stmt.prevSyntactic
+    val head: Stmt = Stmt(loop.getHead, method)
+    val prehead: Stmt = head.prevSyntactic
     val exits: Int = loop.getLoopExits.size()
     val assignees: Set[Value] = getAssignees(loop.getLoopStatements)
   }
