@@ -74,18 +74,6 @@ object Main {
     }
   }
 
-  def printRed(x: Any): Unit = {
-    println(Console.RED + x + Console.RESET)
-  }
-
-  def printYellow(x: Any): Unit = {
-    println(Console.YELLOW + x + Console.RESET)
-  }
-
-  def printBlue(x: Any): Unit = {
-    println(Console.BLUE + x + Console.RESET)
-  }
-
   def getAssignees(statements: java.util.List[SootStmt]): Set[Value] = {
     // Get list of all values assigned to in a set of statements.
     statements.asScala.toSet.filter(s => s.isInstanceOf[AssignStmt]).map(s => s.asInstanceOf[AssignStmt].getLeftOp)
