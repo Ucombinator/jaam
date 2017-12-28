@@ -24,7 +24,7 @@ import scala.collection.mutable
  */
 
 object Main {
-  def main(input: List[String], printBodies: Boolean, printStatements: Boolean) {
+  def main(input: List[String], printBodies: Boolean, printStatements: Boolean, skipExceptionLoops: Boolean) {
     // Set everything up for analysis.
     prepFromInput(input)
 
@@ -37,7 +37,7 @@ object Main {
       if (Soot.loadedClasses(c.getName).origin == Origin.APP) {
         // Search through only concrete methods.
         for (method <- c.getMethods.asScala.filter(_.isConcrete)) {
-          val infoSet = Loop.getLoopInfoSet(method)
+          val infoSet = Loop.getLoopInfoSet(method, skipExceptionLoops)
           if (infoSet.nonEmpty && printBodies) {
             println("Statements in method: " + method)
             method.getActiveBody.getUnits.asScala.foreach(u => println("  " + u))
