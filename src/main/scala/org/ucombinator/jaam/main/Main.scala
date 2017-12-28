@@ -443,9 +443,14 @@ object LoopIdentifier extends Main("loopident") {
     descrNo = "Do not print the bodies of methods [default]",
     default = Some(false)
   )
+  val printStatements = toggle(
+    descrYes = "Print out the statements belonging to each loop",
+    descrNo = "Do not print out the statements for each loop [default]",
+    default = Some(false)
+  )
 
   def run(): Unit = {
-    org.ucombinator.jaam.tools.loopidentifier.Main.main(input(), printBodies())
+    org.ucombinator.jaam.tools.loopidentifier.Main.main(input(), printBodies(), printStatements())
   }
 }
 

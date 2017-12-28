@@ -28,7 +28,7 @@ import scala.collection.mutable
  */
 
 object Main {
-  def main(input: List[String], printBodies: Boolean) {
+  def main(input: List[String], printBodies: Boolean, printStatements: Boolean) {
     val (c, m) = prepFromInput(input)
 
     // Count up all loops found.
@@ -65,8 +65,10 @@ object Main {
         println("  " + ident.stmt.sourceFile + ":" + ident.stmt.line + " in " + ident.method.getName)
         println("    index: " + ident.stmt.index + ", " + ident.stmt)
         println("    prehead: " + ident.prehead)
-        println("    statements:")
-        ident.loop.getLoopStatements.asScala.foreach(s => println("      " + s))
+        if (printStatements) {
+          println("    statements:")
+          ident.loop.getLoopStatements.asScala.foreach(s => println("      " + s))
+        }
       })
       println()
     }
