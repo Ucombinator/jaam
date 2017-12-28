@@ -37,7 +37,7 @@ import org.ucombinator.jaam.util.Stmt
 
 object LoopAnalyzer {
   private var loops = Map.empty[SootMethod, Set[SootLoop]]
-  def getLoops(m: SootMethod): Set[SootLoop] = {
+  def getLoops(m: SootMethod, skipExceptionLoops: Boolean = true): Set[SootLoop] = {
     loops.get(m) match {
       case Some(l) => l
       case None =>
@@ -50,7 +50,7 @@ object LoopAnalyzer {
         }
         val result = if (body != null) {
           // Filter out ExceptionLoops from the set, since they aren't real loops.
-          new LoopNestTree(body).toSet.filterNot(loop => identifyLoop(loop, m).isInstanceOf[ExceptionLoop])
+          new LoopNestTree(body).toSet.filterNot(loop => skipExceptionLoops && identifyLoop(loop, m).isInstanceOf[ExceptionLoop])
         } else {
           Set.empty[SootLoop]
         }
