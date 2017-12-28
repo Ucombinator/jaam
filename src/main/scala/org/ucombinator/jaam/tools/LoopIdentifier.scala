@@ -94,7 +94,7 @@ object Main {
     val op2: Value = cond.getOp2
   }
   case class IteratorLoop(override val loop: Loop, override val method: SootMethod) extends LoopIdentity(loop, method)
-  case class AssignmentLoop(override val loop: Loop, override val method: SootMethod) extends LoopIdentity(loop, method)
+  case class UnclassifiedAssignmentLoop(override val loop: Loop, override val method: SootMethod) extends LoopIdentity(loop, method)
   case class InterfaceInvokeLoop(override val loop: Loop, override val method: SootMethod) extends LoopIdentity(loop, method)
   case class ExceptionLoop(override val loop: Loop, override val method: SootMethod) extends LoopIdentity(loop, method)
 
@@ -129,7 +129,7 @@ object Main {
               */
             ExceptionLoop(loop, method)
           case _ =>
-            AssignmentLoop(loop, method)
+            UnclassifiedAssignmentLoop(loop, method)
         }
       case _: InterfaceInvokeExpr =>
         IteratorLoop(loop, method)
