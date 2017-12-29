@@ -277,11 +277,8 @@ object Taint3 {
   def handleInvoke(a0: Address, sootMethod: SootMethod, rhs: InvokeExpr): Unit = {
     // Base (if non-static)
     rhs match {
-      case rhs: InstanceInvokeExpr => // TODO
-        // NEW
-        // NEW
-        val aBase = eval(sootMethod, rhs.getBase)
-        addEdge(aBase, a0, Relationship.InvokeBase)
+      case rhs: InstanceInvokeExpr =>
+        addEdge(eval(sootMethod, rhs.getBase), a0, Relationship.InvokeBase)
       case _ => /* Do nothing */
     }
 
@@ -295,8 +292,14 @@ object Taint3 {
     }
 
     // Return
-    val aReturn = Address.Return(rhs.getMethod)
-    addEdge(aReturn, a0, Relationship.Result)
+    addEdge(Address.Return(rhs.getMethod), a0, Relationship.Result)
+
+    // From arguments to return value of call
+    // Needed in case we do not have the method implementation
+    for (a <- aArgs) {
+      addEdge(a, a0, Relationship.ParametersDependency)
+    }
+
   }
 
   def sootStmt(stmt: Stmt): Unit = {
@@ -308,7 +311,7 @@ object Taint3 {
 
       case sootStmt : DefinitionStmt =>
         val leftOp = sootStmt.getLeftOp
-        val aLhs = Address.Value(leftOp)
+        val aLhs = Address.Value(leftOp) // TODO: refactor to be returned by `lhs`
         lhs(thisMethod, leftOp, aLhs)
         addEdge(a0, aLhs, Relationship.Lhs)
 
@@ -340,34 +343,21 @@ object Taint3 {
 
       case sootStmt : IfStmt =>
         val a1 = eval(thisMethod, sootStmt.getCondition)
-        // TODO: branch target
+        // TODO: implicit flow
         addEdge(a1, a0, Relationship.Stmt)
 
       case sootStmt : SwitchStmt =>
         val a1 = eval(thisMethod, sootStmt.getKey)
-        // TODO: branch target
+        // TODO: implicit flow
         addEdge(a1, a0, Relationship.Stmt)
 
       case sootStmt : ReturnStmt =>
         val a1 = eval(thisMethod, sootStmt.getOp)
         addEdge(a1, a0, Relationship.Stmt)
 
-        val returnAddress = Address.Return(thisMethod)
-        addEdge(a0, returnAddress, Relationship.Return)
-        for (i <- 0 until thisMethod.getParameterCount) {
-          addEdge(Address.Parameter(thisMethod, i),
-                  returnAddress,
-                  Relationship.ParametersDependency)
-        }
-
       case _ : ReturnVoidStmt =>
         val returnAddress = Address.Return(thisMethod)
         addEdge(a0, returnAddress, Relationship.Return)
-        for (i <- 0 until thisMethod.getParameterCount) {
-          addEdge(Address.Parameter(thisMethod, i),
-                  returnAddress,
-                  Relationship.ParametersDependency)
-        }
 
       // Since Soot's NopEliminator run before us, no "nop" should be
       // left in the code and this case isn't needed (and also is
@@ -387,10 +377,10 @@ object Taint3 {
       // TODO/soundness: In the event of multi-threaded code with precise interleaving, this is not sound.
       case sootStmt : EnterMonitorStmt =>
         val a1 = eval(stmt.sootMethod, sootStmt.getOp)
-        addEdge(a1, Address.Stmt(stmt), Relationship.Stmt)
+        addEdge(a1, a0, Relationship.Stmt)
       case sootStmt : ExitMonitorStmt =>
         val a1 = eval(stmt.sootMethod, sootStmt.getOp)
-        addEdge(a1, Address.Stmt(stmt),Relationship.Stmt)
+        addEdge(a1, a0, Relationship.Stmt)
 
       // TODO: needs testing
       case sootStmt : ThrowStmt =>
@@ -405,9 +395,18 @@ object Taint3 {
     }
   }
 
+  // Does two things:
+  // 1. adds edges from components of an LHS (v) to the result of the LHS (a0)
+  // 2. adds edge from result of LHS (a0) to where its values are stored
+  //    (e.g., `Int[]` for an array type)
+  // Note that the second part must correspond to eval and be the dual of eval
+  //
+  // TODO: refactor to share code with eval
   def lhs(m: SootMethod, v: SootValue, a0: Address.Value): Unit =
     v match {
-      case v: Local => // TODO: Set(LocalFrameAddr(fp, lhs))
+      case v: Local =>
+        val a1 = Address.Local(v.getName)
+        addEdge(a0, a1, Relationship.Ref)
       case v: ParameterRef =>
         val a1 = Address.Parameter(m, v.getIndex)
         addEdge(a0, a1, Relationship.ParameterRef)
