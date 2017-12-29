@@ -12,7 +12,7 @@ import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.jimple.{Stmt => SootStmt, _}
 import org.jgrapht._
 import org.jgrapht.graph._
-import org.jgrapht.io.{DOTExporter, StringComponentNameProvider}
+import org.jgrapht.io._
 
 
 abstract sealed class Address extends serializer.Packet
@@ -28,6 +28,7 @@ object Address {
   case class StaticField(sootField: SootField) extends Address
   case class InstanceField(sootField: SootField) extends Address
   case class ArrayRef(typ: Type) extends Address
+  // TODO: we do not actually need sootMethod since we have Stmt
   case class New(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
   case class NewArray(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
   case class NewMultiArray(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
@@ -220,7 +221,7 @@ object Taint3 {
     output2JaamFile(outSerializer)
     outSerializer.close()
 
-    printToGraphvizFile(output, graph)
+    printToGraphvizFile(output, graph, allClasses)
   }
 
   def loadInput(input: List[String]): Set[SootClass] = {
@@ -498,10 +499,43 @@ object Taint3 {
     }
   }
 
-  def printToGraphvizFile[V, E](output: String, graph: Graph[V, E]): Unit = {
-    val dotExporter = new DOTExporter[V, E](
-      new EscapedStringComponentNameProvider[V](true), null,
-      new EscapedStringComponentNameProvider[E](false)
+  class ColoredVertexAttributeProvider(classes: Set[SootClass]) extends ComponentAttributeProvider[Address] {
+    override def getComponentAttributes(a: Address): java.util.Map[String, Attribute] = {
+      val m = new java.util.HashMap[String,Attribute]()
+      if (shouldColor(a)) {
+        m.put("color", new DefaultAttribute[String]("red", AttributeType.STRING))
+      }
+      return m
+    }
+
+    def shouldColor(address: Address): Boolean = {
+      address match {
+        case Address.Field(sootField) => classes.contains(sootField.getDeclaringClass)
+
+        case Address.Return(sootMethod) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.Parameter(sootMethod, _) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.Throws(sootMethod) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.Stmt(stmt) => classes.contains(stmt.sootMethod.getDeclaringClass)
+        case Address.Value(sootMethod, _) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.Local(sootMethod, _) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.This(typ) => false // TODO: better answer
+        case Address.StaticField(sootField) => classes.contains(sootField.getDeclaringClass)
+        case Address.InstanceField(sootField) => classes.contains(sootField.getDeclaringClass)
+        case Address.ArrayRef(typ) => false // TODO: better answer
+        case Address.New(sootMethod, stmt) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.NewArray(sootMethod, stmt) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.NewMultiArray(sootMethod, stmt) => classes.contains(sootMethod.getDeclaringClass)
+      }
+    }
+  }
+
+  def printToGraphvizFile(output: String, graph: Graph[Address, Edge], classes: Set[SootClass]): Unit = {
+    val dotExporter = new DOTExporter[Address, Edge](
+      new EscapedStringComponentNameProvider[Address](true),
+      null,
+      new EscapedStringComponentNameProvider[Edge](false),
+      new ColoredVertexAttributeProvider(classes),
+      null
     )
     dotExporter.putGraphAttribute("Defcolor", "0 0 0.8")
     dotExporter.exportGraph(graph, new File(output.replace("jaam", "gv")))
