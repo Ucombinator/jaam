@@ -22,15 +22,15 @@ object Address {
   case class Parameter(sootMethod: SootMethod, index: Int) extends Address
   case class Throws(sootMethod: SootMethod) extends Address
   case class Stmt(stmt: org.ucombinator.jaam.util.Stmt) extends Address
-  case class Value(sootValue: SootValue) extends Address
-  case class Local(name: String) extends Address
+  case class Value(sootMethod: SootMethod, sootValue: SootValue) extends Address
+  case class Local(sootMethod: SootMethod, name: String) extends Address
   case class This(typ: Type) extends Address
   case class StaticField(sootField: SootField) extends Address
   case class InstanceField(sootField: SootField) extends Address
   case class ArrayRef(typ: Type) extends Address
-  case class New(stmt: org.ucombinator.jaam.util.Stmt) extends Address
-  case class NewArray(stmt: org.ucombinator.jaam.util.Stmt) extends Address
-  case class NewMultiArray(stmt: org.ucombinator.jaam.util.Stmt) extends Address
+  case class New(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
+  case class NewArray(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
+  case class NewMultiArray(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
 }
 
 
@@ -311,24 +311,24 @@ object Taint3 {
 
       case sootStmt : DefinitionStmt =>
         val leftOp = sootStmt.getLeftOp
-        val aLhs = Address.Value(leftOp) // TODO: refactor to be returned by `lhs`
+        val aLhs = Address.Value(thisMethod, leftOp) // TODO: refactor to be returned by `lhs`
         lhs(thisMethod, leftOp, aLhs)
         addEdge(a0, aLhs, Relationship.Lhs)
 
         sootStmt.getRightOp match {
           case rhs: InvokeExpr => handleInvoke(a0, thisMethod, rhs)
           case _: NewExpr =>
-            val a1 = Address.New(stmt)
+            val a1 = Address.New(thisMethod, stmt)
             addEdge(a1, a0, Relationship.New)
 
           case rhs : NewArrayExpr =>
-            val a1 = Address.NewArray(stmt)
+            val a1 = Address.NewArray(thisMethod, stmt)
             val a2 = eval(thisMethod, rhs.getSize)
             addEdge(a2, a1, Relationship.NewArraySize)
             addEdge(a1, a0, Relationship.NewArray)
 
           case rhs : NewMultiArrayExpr =>
-            val a1 = Address.NewArray(stmt)
+            val a1 = Address.NewArray(thisMethod, stmt)
             val a2 = rhs.getSizes.asScala.map(eval(thisMethod, _))
             for ((b, i) <- a2.zipWithIndex) {
               addEdge(b, a1, Relationship.NewMultiArraySize(i))
@@ -405,7 +405,7 @@ object Taint3 {
   def lhs(m: SootMethod, v: SootValue, a0: Address.Value): Unit =
     v match {
       case v: Local =>
-        val a1 = Address.Local(v.getName)
+        val a1 = Address.Local(m, v.getName)
         addEdge(a0, a1, Relationship.Ref)
       case v: ParameterRef =>
         val a1 = Address.Parameter(m, v.getIndex)
@@ -435,12 +435,12 @@ object Taint3 {
     }
 
   def eval(m: SootMethod, v: SootValue): Address = {
-    val a0 = Address.Value(v)
+    val a0 = Address.Value(m, v)
 
     v match {
       // Base cases
       case v : Local =>
-        val a1 = Address.Local(v.getName)
+        val a1 = Address.Local(m, v.getName)
         addEdge(a1, a0, Relationship.Ref)
       case v : ParameterRef =>
         val a1 = Address.Parameter(m, v.getIndex)
