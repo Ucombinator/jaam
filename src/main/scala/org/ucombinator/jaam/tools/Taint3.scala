@@ -503,7 +503,7 @@ object Taint3 {
       new EscapedStringComponentNameProvider[V](true), null,
       new EscapedStringComponentNameProvider[E](false)
     )
-
+    dotExporter.putGraphAttribute("Defcolor", "0 0 0.8")
     dotExporter.exportGraph(graph, new File(output.replace("jaam", "gv")))
   }
 
