@@ -147,7 +147,7 @@ object Taint3 {
   val graph = new DirectedPseudograph[Address, Edge](classOf[Edge])
 
   def main(input: List[String], output: String): Unit = {
-    val allClasses = loadInput(input)
+    val (allClasses, appClasses) = loadInput(input)
 
 //    def buildInheritanceConnections(m: SootMethod, superMethod: SootMethod, source: Address): Unit = {
 //      val target = Address.Return(superMethod)
@@ -221,10 +221,10 @@ object Taint3 {
     output2JaamFile(outSerializer)
     outSerializer.close()
 
-    printToGraphvizFile(output, graph, allClasses)
+    printToGraphvizFile(output, graph, appClasses)
   }
 
-  def loadInput(input: List[String]): Set[SootClass] = {
+  def loadInput(input: List[String]): (Set[SootClass], Set[SootClass]) = {
     Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
     Options.v().set_keep_line_number(true)
@@ -263,7 +263,11 @@ object Taint3 {
         go(Soot.getSootClass(name))
     }
 
-    return classes
+    val appClasses = for(name <- Soot.loadedClasses.keys.toSet
+        if Soot.loadedClasses(name).origin == Origin.APP)
+        yield Soot.getSootClass(name)
+
+    return (classes, appClasses)
   }
 
   def addEdge(a1: Address, a2: Address, r: Relationship): Unit = {
