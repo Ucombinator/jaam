@@ -8,4 +8,6 @@ public interface CodeEntity {
 
     String getMethodName();
 
+    String getClassDeclaration();
+
 }

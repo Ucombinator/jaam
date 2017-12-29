@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.layout;
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.serializer.LoopLoopNode;
+import soot.SootClass;
 import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 
 import java.util.HashSet;
@@ -34,6 +35,28 @@ public class LayoutLoopVertex extends AbstractLayoutVertex implements Cloneable,
 
     public String getMethodName() {
         return this.compilationUnit.method().getName();
+    }
+
+    public String getClassDeclaration() {
+        StringBuilder classDecl = new StringBuilder("class");
+
+        this.compilationUnit.method().getDeclaringClass();
+
+        SootClass declaringClass = this.compilationUnit.method().getDeclaringClass();
+
+        classDecl.append(" " + declaringClass.getShortName());
+
+        if(declaringClass.hasSuperclass())
+        {
+            classDecl.append(" extends " + declaringClass.getSuperclass().getShortName());
+        }
+        if(declaringClass.getInterfaceCount() > 0)
+        {
+            classDecl.append(" implements ");
+            declaringClass.getInterfaces().stream().forEach(i -> classDecl.append(i.getName() + ", "));
+        }
+
+        return classDecl.toString();
     }
 
 

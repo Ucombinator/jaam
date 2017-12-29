@@ -196,17 +196,17 @@ public class MainTabController {
     public void setRightText(LayoutLoopVertex v)
     {
         this.descriptionArea.setText("Loop:\n  Class: "
-                + v.getClassName().substring(v.getClassName().lastIndexOf(".")+1) + "\n  Method: "
-                + v.getMethodName()     + "\n  Index: " +
-                + v.getStatementIndex() + "\n  Signature: " + v.getLabel());
+                + v.getClassDeclaration() + "\n  Method: "
+                + v.getMethodName()       + "\n  Index: "
+                + v.getStatementIndex()   + "\n  Signature: " + v.getLabel());
     }
 
 
     public void setRightText(LayoutMethodVertex v)
     {
         this.descriptionArea.setText("Method:\n  Class: "
-                + v.getClassName().substring(v.getClassName().lastIndexOf(".")+1) + "\n  Method: "
-                + v.getMethodName() + "\n  Signature: " + v.getLabel());
+                + v.getClassDeclaration() + "\n  Method: "
+                + v.getMethodName()       + "\n  Signature: " + v.getLabel());
     }
 
     public void setRightText(LayoutSccVertex v)

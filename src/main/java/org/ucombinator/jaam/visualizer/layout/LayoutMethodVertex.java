@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.layout;
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.serializer.LoopMethodNode;
+import soot.SootClass;
 
 import java.util.LinkedHashSet;
 
@@ -24,6 +25,26 @@ public class LayoutMethodVertex extends AbstractLayoutVertex implements CodeEnti
 
     public String getShortClassName() {
         return this.compilationUnit.method().getDeclaringClass().getShortName();
+    }
+
+    public String getClassDeclaration() {
+        StringBuilder classDecl = new StringBuilder("class");
+
+        SootClass declaringClass = this.compilationUnit.method().getDeclaringClass();
+
+        classDecl.append(" " + declaringClass.getShortName());
+
+        if(declaringClass.hasSuperclass() && declaringClass.getSuperclass().getShortName().compareTo("Object") != 0)
+        {
+            classDecl.append(" extends " + declaringClass.getSuperclass().getShortName());
+        }
+        if(declaringClass.getInterfaceCount() > 0)
+        {
+            classDecl.append(" implements ");
+            declaringClass.getInterfaces().stream().forEach(i -> classDecl.append(i.getShortName() + ", "));
+        }
+
+        return classDecl.toString();
     }
 
     public String getMethodName() {

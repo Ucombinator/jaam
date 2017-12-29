@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.codeView;
 
 import com.strobel.decompiler.languages.EntityType;
 import com.strobel.decompiler.languages.java.ast.*;
+import com.strobel.decompiler.patterns.Role;
 import javafx.scene.control.IndexRange;
 import javafx.scene.control.Tab;
 import javafx.scene.layout.StackPane;
@@ -28,6 +29,7 @@ public class CodeTab extends Tab{
         super(shortClassName);
         this.unit = unit;
         this.methodParagraphs = new HashMap<>();
+
         generateCodeArea(unit);
 
         this.setContent(this.stackPane);
@@ -59,14 +61,62 @@ public class CodeTab extends Tab{
         assert types.size() == 1;
         TypeDeclaration typeDeclaration = types.firstOrNullObject();
 
+        /*
+        for (AstNode i : typeDeclaration.getChildren()) {
+
+            if(i.getRole() == Roles.TYPE_MEMBER)
+                continue;
+
+            System.out.println("JUAN " + i + "\t\t" + i.getRole() + "\t\t" + i.getText());
+        }
+        */
+
+        // Preamble
+
+        codeArea.appendText(unit.getPackage().getText());
+
+        unit.getImports().stream().forEach(i -> codeArea.appendText(i.getText()));
+
+        // Class Declaration
+
+        StringBuilder classDeclaration = new StringBuilder("class ");
+
+        {
+            Identifier className = typeDeclaration.getChildrenByRole(Roles.IDENTIFIER).firstOrNullObject();
+            if (!className.isNull()) {
+                classDeclaration.append(className.getText());
+            } else {
+                classDeclaration.append("?????");
+            }
+        }
+        {
+            AstType baseType = typeDeclaration.getChildrenByRole(Roles.BASE_TYPE).firstOrNullObject();
+            if (!baseType.isNull()) {
+                classDeclaration.append(" extends ");
+                classDeclaration.append(baseType.getText());
+            }
+        }
+        {
+            AstNodeCollection<AstType> interfaces = typeDeclaration.getChildrenByRole(Roles.IMPLEMENTED_INTERFACE);
+            if(!interfaces.isEmpty())
+            {
+                classDeclaration.append(" implements ");
+                interfaces.stream().forEach(i -> classDeclaration.append(i.getText() + ", "));
+            }
+        }
+
+        codeArea.appendText(classDeclaration.toString() + "\n\n");
+
+        // Methods
+
         for(AstNode i: typeDeclaration.getChildrenByRole(Roles.TYPE_MEMBER))
         {
             EntityDeclaration entity = (EntityDeclaration)i;
-            //System.out.println(i.getRole() + " " + i.getClass() + " " + entity.getName() + " " + entity.getEntityType());
-            //System.out.println("\t" + entity.getText());
 
             int startParagraph = codeArea.getParagraphs().size()-1;
-            codeArea.appendText(entity.getText() + "\n");
+            if(entity.getEntityType() == EntityType.METHOD || entity.getEntityType() == EntityType.CONSTRUCTOR)
+                codeArea.appendText("\n");
+            codeArea.appendText(entity.getText());
             int endParagraph = codeArea.getParagraphs().size()-1;
 
             if(entity.getEntityType() == EntityType.METHOD || entity.getEntityType() == EntityType.CONSTRUCTOR)
@@ -85,7 +135,7 @@ public class CodeTab extends Tab{
         this.stackPane.setMaxWidth(Double.MAX_VALUE);
         this.stackPane.setMaxHeight(Double.MAX_VALUE);
 
-        return typeDeclaration.getName();
+        return classDeclaration.toString();
     }
 
     public void highlightMethod(String methodName) {
