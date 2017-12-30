@@ -123,6 +123,14 @@ public class GUINode extends Group
 
         switch (event.getClickCount()) {
             case 1:
+                if(event.isShiftDown()) {
+                    System.out.println("Shift is down!\n");
+                    Main.getSelectedMainTabController().addToHighlighted(vertex);
+                }
+                else
+                {
+                    Main.getSelectedMainTabController().resetHighlighted(vertex);
+                }
                 this.fireEvent(new SelectEvent(MouseButton.PRIMARY, this));
                 break;
             case 2:

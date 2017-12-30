@@ -144,7 +144,7 @@ public class VizPanelController implements EventHandler<SelectEvent>, SetChangeL
         System.out.println("Received event from vertex " + vertex.toString());
 
         MainTabController currentFrame = Main.getSelectedMainTabController();
-        currentFrame.resetHighlighted(vertex);
+        //currentFrame.resetHighlighted(vertex);
 
         if(vertex instanceof  LayoutLoopVertex) {
             currentFrame.setRightText((LayoutLoopVertex)vertex);

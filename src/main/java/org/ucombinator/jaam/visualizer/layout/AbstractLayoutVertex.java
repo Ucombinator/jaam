@@ -349,6 +349,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex
         }
     }
 
+
     public void toggleEdges(boolean isEdgeVisible) {
         for(LayoutEdge e : this.getInnerGraph().getVisibleEdges()) {
             if(e.getGraphics() != null) {
@@ -361,58 +362,16 @@ public abstract class AbstractLayoutVertex extends AbstractVertex
         }
     }
 
-    public HashSet<Instruction> getInstructions() {
-        return this.getInstructions(new LinkedHashSet<Instruction>());
-    }
-
-    private HashSet<Instruction> getInstructions(HashSet<Instruction> instructions) {
-        if(this.getType().equals(VertexType.ROOT) || this.getType().equals(VertexType.METHOD)
-                || this.getType().equals(VertexType.CHAIN)) {
-            for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
-                v.getInstructions(instructions);
-            }
-        } else if(this.getType().equals(VertexType.INSTRUCTION)){
-            instructions.add(((LayoutInstructionVertex) this).getInstruction());
-        } else {
-            System.out.println("Unrecognized type in method getInstructions: " + this.getType());
-        }
-
-        return instructions;
-    }
-
-    public HashSet<AbstractLayoutVertex> getVerticesWithInstructionID(int id, String method_name) {
-        return getVerticesWithInstructionID(id, method_name, new LinkedHashSet<AbstractLayoutVertex>());
-    }
-
-    private HashSet<AbstractLayoutVertex> getVerticesWithInstructionID(int id, String method_name,
-                                                                       HashSet<AbstractLayoutVertex> set)  {
-        if(this.getType().equals(VertexType.ROOT) || this.getType().equals(VertexType.METHOD)
-                || this.getType().equals(VertexType.CHAIN)){
-            for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
-                v.getVerticesWithInstructionID(id, method_name, set);
-            }
-        } else if(this.getType().equals(VertexType.INSTRUCTION)) {
-            Instruction inst = ((LayoutInstructionVertex) this).getInstruction();
-            if(inst.getMethodName() == method_name && inst.getJimpleIndex() == id) {
-                set.add(this);
-            }
-        } else {
-            System.out.println("Unrecognized type in method getInstructions: " + this.getType());
-        }
-
-        return set;
-    }
-
     public boolean isInnerGraphEmpty()
     {
         return innerGraph.isEmpty();
     }
 
-    public void setClassHighlight(boolean isHiglighted)
+    public void setClassHighlight(boolean isHighlighted)
     {
         if(!isSelected)
         {
-            this.getGraphics().getRect().setEffect(isHiglighted ? classHighlightShadow : null);
+            this.getGraphics().getRect().setEffect(isHighlighted ? classHighlightShadow : null);
         }
     }
 }

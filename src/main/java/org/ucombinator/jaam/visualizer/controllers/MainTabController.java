@@ -347,6 +347,14 @@ public class MainTabController {
     }
     */
 
+    public void addToHighlighted(AbstractLayoutVertex v)
+    {
+        if(v != null) {
+            highlighted.add(v);
+            v.setHighlighted(true);
+        }
+    }
+
     public void resetHighlighted(AbstractLayoutVertex newHighlighted)
     {
         System.out.println("Resetting highlighted: " + newHighlighted);
@@ -355,10 +363,7 @@ public class MainTabController {
         }
         highlighted.clear();
 
-        if(newHighlighted != null) {
-            highlighted.add(newHighlighted);
-            newHighlighted.setHighlighted(true);
-        }
+        addToHighlighted(newHighlighted);
     }
 
     // ClassTree Code -------------------------------------
