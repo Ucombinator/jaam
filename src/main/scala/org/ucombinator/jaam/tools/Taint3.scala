@@ -12,7 +12,7 @@ import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.jimple.{Stmt => SootStmt, _}
 import org.jgrapht._
 import org.jgrapht.graph._
-import org.jgrapht.io.{DOTExporter, StringComponentNameProvider}
+import org.jgrapht.io._
 
 
 abstract sealed class Address extends serializer.Packet
@@ -22,15 +22,16 @@ object Address {
   case class Parameter(sootMethod: SootMethod, index: Int) extends Address
   case class Throws(sootMethod: SootMethod) extends Address
   case class Stmt(stmt: org.ucombinator.jaam.util.Stmt) extends Address
-  case class Value(sootValue: SootValue) extends Address
-  case class Local(name: String) extends Address
+  case class Value(sootMethod: SootMethod, sootValue: SootValue) extends Address
+  case class Local(sootMethod: SootMethod, name: String) extends Address
   case class This(typ: Type) extends Address
   case class StaticField(sootField: SootField) extends Address
   case class InstanceField(sootField: SootField) extends Address
   case class ArrayRef(typ: Type) extends Address
-  case class New(stmt: org.ucombinator.jaam.util.Stmt) extends Address
-  case class NewArray(stmt: org.ucombinator.jaam.util.Stmt) extends Address
-  case class NewMultiArray(stmt: org.ucombinator.jaam.util.Stmt) extends Address
+  // TODO: we do not actually need sootMethod since we have Stmt
+  case class New(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
+  case class NewArray(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
+  case class NewMultiArray(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
 }
 
 
@@ -123,18 +124,22 @@ object Relationship {
   class  ArrayRef extends Relationship
   object  ArrayRef extends Relationship { def apply = new ArrayRef }
 
-  // NEW
+  // Return flow when methods are overridden
   class  MethodOverridden extends Relationship
   object MethodOverridden extends Relationship { def apply = new MethodOverridden }
 
+  // Parameter flow when methods are overridden
   class  ParameterSubtypePolymorphism extends Relationship
   object ParameterSubtypePolymorphism extends Relationship { def apply = new ParameterSubtypePolymorphism }
 
+  // Return value of call depends on parameters of call
   class  ParametersDependency extends Relationship
   object ParametersDependency extends Relationship { def apply = new ParametersDependency }
 }
 
 final class Edge(val source: Address, val target: Address, val relation: Relationship) extends serializer.Packet {
+  // TODO: does this code for `toString` work?
+//  override def toString: String = f"Edge($source, $target, $relation)"
   override def toString: String = relation.getClass.getSimpleName.stripSuffix("$")
 }
 
@@ -142,18 +147,18 @@ object Taint3 {
   val graph = new DirectedPseudograph[Address, Edge](classOf[Edge])
 
   def main(input: List[String], output: String): Unit = {
-    val allClasses = loadInput(input)
+    val (allClasses, appClasses) = loadInput(input)
 
-    def buildInheritanceConnections(m: SootMethod, superMethod: SootMethod, source: Address): Unit = {
-      val target = Address.Return(superMethod)
-      addEdge(source, target, Relationship.MethodOverridden)
-
-      for (i <- 0 until m.getParameterCount) {
-        addEdge(Address.Parameter(superMethod, i),
-          Address.Parameter(m, i),
-          Relationship.ParameterSubtypePolymorphism)
-      }
-    }
+//    def buildInheritanceConnections(m: SootMethod, superMethod: SootMethod, source: Address): Unit = {
+//      val target = Address.Return(superMethod)
+//      addEdge(source, target, Relationship.MethodOverridden)
+//
+//      for (i <- 0 until m.getParameterCount) {
+//        addEdge(Address.Parameter(superMethod, i),
+//          Address.Parameter(m, i),
+//          Relationship.ParameterSubtypePolymorphism)
+//      }
+//    }
 
     // for each class (if in APP)
     for (c <- allClasses) {
@@ -167,27 +172,44 @@ object Taint3 {
         val source = Address.Return(m)
         val declaringClass = m.getDeclaringClass
 
-        val directSuperTypesOfInApp =  {
-          val superClass = declaringClass.getSuperclass
-          val interfaces = declaringClass.getInterfaces.asScala.toSet
-          allClasses.intersect(interfaces + superClass)
-        }
+        if (!m.isConstructor && !m.isStaticInitializer && !m.isStatic) {
+          // NOTE: This counts as overriding methods that
+          // <https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-5.html#jvms-5.4.5>
+          // says should not override.  But it is an over approximation so it is okay.
+          def go(t: SootClass): Unit = {
+            if (t != null) {
+              t.getMethodUnsafe(m.getName, m.getParameterTypes, m.getReturnType) match {
+                case null =>
+                  if (t != Soot.classes.Object) {
+                    (t.getInterfaces.asScala.toSet + t.getSuperclass).foreach(go)
+                  }
+                case m2 =>
+                  addEdge(source, Address.Return(m2), Relationship.MethodOverridden)
+                  for (i <- 0 until m.getParameterCount) {
+                    addEdge(Address.Parameter(m2, i),
+                      Address.Parameter(m, i),
+                      Relationship.ParameterSubtypePolymorphism)
+                  }
+              }
+            }
+          }
 
-        for (typ <- directSuperTypesOfInApp) {
-          if (!m.isConstructor || !typ.isInterface) {
-            val superMethod = typ.getMethod(m.getName, m.getParameterTypes, m.getReturnType)
-            buildInheritanceConnections(m, superMethod, source)
+          if (declaringClass.hasSuperclass) {
+            (declaringClass.getInterfaces.asScala.toSet + declaringClass.getSuperclass).foreach(go)
+          } else {
+           declaringClass.getInterfaces.asScala.toSet.foreach(go)
           }
         }
 
+        // TODO: keep track of data-flow due to exceptions
+        // TODO: currently not connected to callers
         graph.addVertex(Address.Throws(m))
 
         for (p <- 0 until m.getParameterCount) {
           graph.addVertex(Address.Parameter(m, p))
         }
 
-        // TODO: keep track of data-flow due to exceptions
-        if (!m.getDeclaringClass.isAbstract) {
+        if (m.isConcrete) {
           for (u <- Soot.getBody(m).getUnits.asScala) {
             sootStmt(Stmt(u, m))
           }
@@ -197,11 +219,12 @@ object Taint3 {
 
     val outSerializer = new serializer.PacketOutput(new FileOutputStream(output))
     output2JaamFile(outSerializer)
+    outSerializer.close()
 
-    printToGraphvizFile(output, graph)
+    printToGraphvizFile(output, graph, appClasses)
   }
 
-  def loadInput(input: List[String]): Set[SootClass] = {
+  def loadInput(input: List[String]): (Set[SootClass], Set[SootClass]) = {
     Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
     Options.v().set_keep_line_number(true)
@@ -216,20 +239,35 @@ object Taint3 {
 
     val inputPackets = input.flatMap(serializer.Serializer.readAll(_).asScala)
 
-    val apps = inputPackets.filter(_.isInstanceOf[App])
-    for (a <- apps) { Soot.addClasses(a.asInstanceOf[App]) }
+    val apps = inputPackets.filter(_.isInstanceOf[App]).map(_.asInstanceOf[App])
+    for (a <- apps) { Soot.addClasses(a) }
 
-    val mainClasses = for (a <- apps) yield { a.asInstanceOf[App].main.className }
-    val mainMethods = for (a <- apps) yield { a.asInstanceOf[App].main.methodName }
-    val mainClass = mainClasses.head.get // TODO: fix
-    val mainMethod = mainMethods.head.get // TODO: fix
+    Scene.v.loadBasicClasses()
+    PackManager.v.runPacks()
 
-    Scene.v.loadBasicClasses()   // ???
-    PackManager.v.runPacks()    // ???
+    // TODO: add all super classes and super interfaces (recursively)
+    var classes = Set.empty[SootClass]
+    def go(c: SootClass): Unit = {
+      if (classes(c)) { /* do nothing */ }
+      else {
+        classes += c
+        if (c.hasSuperclass) {
+          go(c.getSuperclass)
+        }
+        c.getInterfaces.asScala.foreach(go)
+      }
+    }
 
     for(name <- Soot.loadedClasses.keys.toSet
-        if Soot.loadedClasses(name).origin == Origin.APP)  // TODO: try non-APP
-      yield Soot.getSootClass(name)
+        if Soot.loadedClasses(name).origin == Origin.APP) { // TODO: try non-APP
+        go(Soot.getSootClass(name))
+    }
+
+    val appClasses = for(name <- Soot.loadedClasses.keys.toSet
+        if Soot.loadedClasses(name).origin == Origin.APP)
+        yield Soot.getSootClass(name)
+
+    return (classes, appClasses)
   }
 
   def addEdge(a1: Address, a2: Address, r: Relationship): Unit = {
@@ -244,11 +282,8 @@ object Taint3 {
   def handleInvoke(a0: Address, sootMethod: SootMethod, rhs: InvokeExpr): Unit = {
     // Base (if non-static)
     rhs match {
-      case rhs: InstanceInvokeExpr => // TODO
-        // NEW
-        // NEW
-        val aBase = eval(sootMethod, rhs.getBase)
-        addEdge(aBase, a0, Relationship.InvokeBase)
+      case rhs: InstanceInvokeExpr =>
+        addEdge(eval(sootMethod, rhs.getBase), a0, Relationship.InvokeBase)
       case _ => /* Do nothing */
     }
 
@@ -262,8 +297,14 @@ object Taint3 {
     }
 
     // Return
-    val aReturn = Address.Return(rhs.getMethod)
-    addEdge(aReturn, a0, Relationship.Result)
+    addEdge(Address.Return(rhs.getMethod), a0, Relationship.Result)
+
+    // From arguments to return value of call
+    // Needed in case we do not have the method implementation
+    for (a <- aArgs) {
+      addEdge(a, a0, Relationship.ParametersDependency)
+    }
+
   }
 
   def sootStmt(stmt: Stmt): Unit = {
@@ -275,24 +316,24 @@ object Taint3 {
 
       case sootStmt : DefinitionStmt =>
         val leftOp = sootStmt.getLeftOp
-        val aLhs = Address.Value(leftOp)
+        val aLhs = Address.Value(thisMethod, leftOp) // TODO: refactor to be returned by `lhs`
         lhs(thisMethod, leftOp, aLhs)
         addEdge(a0, aLhs, Relationship.Lhs)
 
         sootStmt.getRightOp match {
           case rhs: InvokeExpr => handleInvoke(a0, thisMethod, rhs)
           case _: NewExpr =>
-            val a1 = Address.New(stmt)
+            val a1 = Address.New(thisMethod, stmt)
             addEdge(a1, a0, Relationship.New)
 
           case rhs : NewArrayExpr =>
-            val a1 = Address.NewArray(stmt)
+            val a1 = Address.NewArray(thisMethod, stmt)
             val a2 = eval(thisMethod, rhs.getSize)
             addEdge(a2, a1, Relationship.NewArraySize)
             addEdge(a1, a0, Relationship.NewArray)
 
           case rhs : NewMultiArrayExpr =>
-            val a1 = Address.NewArray(stmt)
+            val a1 = Address.NewArray(thisMethod, stmt)
             val a2 = rhs.getSizes.asScala.map(eval(thisMethod, _))
             for ((b, i) <- a2.zipWithIndex) {
               addEdge(b, a1, Relationship.NewMultiArraySize(i))
@@ -307,34 +348,21 @@ object Taint3 {
 
       case sootStmt : IfStmt =>
         val a1 = eval(thisMethod, sootStmt.getCondition)
-        // TODO: branch target
+        // TODO: implicit flow
         addEdge(a1, a0, Relationship.Stmt)
 
       case sootStmt : SwitchStmt =>
         val a1 = eval(thisMethod, sootStmt.getKey)
-        // TODO: branch target
+        // TODO: implicit flow
         addEdge(a1, a0, Relationship.Stmt)
 
       case sootStmt : ReturnStmt =>
         val a1 = eval(thisMethod, sootStmt.getOp)
         addEdge(a1, a0, Relationship.Stmt)
 
-        val returnAddress = Address.Return(thisMethod)
-        addEdge(a0, returnAddress, Relationship.Return)
-        for (i <- 0 until thisMethod.getParameterCount) {
-          addEdge(Address.Parameter(thisMethod, i),
-                  returnAddress,
-                  Relationship.ParametersDependency)
-        }
-
       case _ : ReturnVoidStmt =>
         val returnAddress = Address.Return(thisMethod)
         addEdge(a0, returnAddress, Relationship.Return)
-        for (i <- 0 until thisMethod.getParameterCount) {
-          addEdge(Address.Parameter(thisMethod, i),
-                  returnAddress,
-                  Relationship.ParametersDependency)
-        }
 
       // Since Soot's NopEliminator run before us, no "nop" should be
       // left in the code and this case isn't needed (and also is
@@ -354,10 +382,10 @@ object Taint3 {
       // TODO/soundness: In the event of multi-threaded code with precise interleaving, this is not sound.
       case sootStmt : EnterMonitorStmt =>
         val a1 = eval(stmt.sootMethod, sootStmt.getOp)
-        addEdge(a1, Address.Stmt(stmt), Relationship.Stmt)
+        addEdge(a1, a0, Relationship.Stmt)
       case sootStmt : ExitMonitorStmt =>
         val a1 = eval(stmt.sootMethod, sootStmt.getOp)
-        addEdge(a1, Address.Stmt(stmt),Relationship.Stmt)
+        addEdge(a1, a0, Relationship.Stmt)
 
       // TODO: needs testing
       case sootStmt : ThrowStmt =>
@@ -372,9 +400,18 @@ object Taint3 {
     }
   }
 
+  // Does two things:
+  // 1. adds edges from components of an LHS (v) to the result of the LHS (a0)
+  // 2. adds edge from result of LHS (a0) to where its values are stored
+  //    (e.g., `Int[]` for an array type)
+  // Note that the second part must correspond to eval and be the dual of eval
+  //
+  // TODO: refactor to share code with eval
   def lhs(m: SootMethod, v: SootValue, a0: Address.Value): Unit =
     v match {
-      case v: Local => // TODO: Set(LocalFrameAddr(fp, lhs))
+      case v: Local =>
+        val a1 = Address.Local(m, v.getName)
+        addEdge(a0, a1, Relationship.Ref)
       case v: ParameterRef =>
         val a1 = Address.Parameter(m, v.getIndex)
         addEdge(a0, a1, Relationship.ParameterRef)
@@ -403,12 +440,12 @@ object Taint3 {
     }
 
   def eval(m: SootMethod, v: SootValue): Address = {
-    val a0 = Address.Value(v)
+    val a0 = Address.Value(m, v)
 
     v match {
       // Base cases
       case v : Local =>
-        val a1 = Address.Local(v.getName)
+        val a1 = Address.Local(m, v.getName)
         addEdge(a1, a0, Relationship.Ref)
       case v : ParameterRef =>
         val a1 = Address.Parameter(m, v.getIndex)
@@ -466,12 +503,45 @@ object Taint3 {
     }
   }
 
-  def printToGraphvizFile[V, E](output: String, graph: Graph[V, E]): Unit = {
-    val dotExporter = new DOTExporter[V, E](
-      new EscapedStringComponentNameProvider[V](true), null,
-      new EscapedStringComponentNameProvider[E](false)
-    )
+  class ColoredVertexAttributeProvider(classes: Set[SootClass]) extends ComponentAttributeProvider[Address] {
+    override def getComponentAttributes(a: Address): java.util.Map[String, Attribute] = {
+      val m = new java.util.HashMap[String,Attribute]()
+      if (shouldColor(a)) {
+        m.put("color", new DefaultAttribute[String]("red", AttributeType.STRING))
+      }
+      return m
+    }
 
+    def shouldColor(address: Address): Boolean = {
+      address match {
+        case Address.Field(sootField) => classes.contains(sootField.getDeclaringClass)
+
+        case Address.Return(sootMethod) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.Parameter(sootMethod, _) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.Throws(sootMethod) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.Stmt(stmt) => classes.contains(stmt.sootMethod.getDeclaringClass)
+        case Address.Value(sootMethod, _) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.Local(sootMethod, _) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.This(typ) => false // TODO: better answer
+        case Address.StaticField(sootField) => classes.contains(sootField.getDeclaringClass)
+        case Address.InstanceField(sootField) => classes.contains(sootField.getDeclaringClass)
+        case Address.ArrayRef(typ) => false // TODO: better answer
+        case Address.New(sootMethod, stmt) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.NewArray(sootMethod, stmt) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.NewMultiArray(sootMethod, stmt) => classes.contains(sootMethod.getDeclaringClass)
+      }
+    }
+  }
+
+  def printToGraphvizFile(output: String, graph: Graph[Address, Edge], classes: Set[SootClass]): Unit = {
+    val dotExporter = new DOTExporter[Address, Edge](
+      new EscapedStringComponentNameProvider[Address](true),
+      null,
+      new EscapedStringComponentNameProvider[Edge](false),
+      new ColoredVertexAttributeProvider(classes),
+      null
+    )
+    dotExporter.putGraphAttribute("Defcolor", "0 0 0.8")
     dotExporter.exportGraph(graph, new File(output.replace("jaam", "gv")))
   }
 
