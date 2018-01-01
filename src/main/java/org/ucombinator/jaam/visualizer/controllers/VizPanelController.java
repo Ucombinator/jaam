@@ -51,9 +51,6 @@ public class VizPanelController implements EventHandler<SelectEvent>, SetChangeL
 
         this.graphContentGroup = new Group();
         this.graphContentGroup.setVisible(true);
-
-        this.graphContentGroup = new Group();
-        this.graphContentGroup.setVisible(true);
         this.vizPanel.setVisible(true);
         this.vizPanel.getChildren().add(graphContentGroup);
         //this.requestFocus();
@@ -134,7 +131,7 @@ public class VizPanelController implements EventHandler<SelectEvent>, SetChangeL
     // Handles select events
     @Override
     public void handle(SelectEvent event) {
-        AbstractLayoutVertex vertex = event.getVertex();
+        StateVertex vertex = (StateVertex) event.getVertex();
 
         if (vertex.getType() == AbstractLayoutVertex.VertexType.ROOT) {
             event.consume();
@@ -213,7 +210,8 @@ public class VizPanelController implements EventHandler<SelectEvent>, SetChangeL
         double height = v.getHeight();
         node.setTranslateLocation(translateX, translateY, width, height);
 
-        for (AbstractLayoutVertex child : v.getInnerGraph().getVisibleVertices()) {
+        HierarchicalGraph<StateVertex> innerGraph = v.getInnerGraph();
+        for (StateVertex child : innerGraph.getVisibleVertices()) {
             if (v.isExpanded()) {
                 drawNodes(node, child);
             }
@@ -223,12 +221,13 @@ public class VizPanelController implements EventHandler<SelectEvent>, SetChangeL
     private void drawEdges(AbstractLayoutVertex v)
     {
         if(v.isExpanded()) {
-            for (LayoutEdge e : v.getInnerGraph().getVisibleEdges()) {
+            HierarchicalGraph<StateVertex> innerGraph = v.getInnerGraph();
+            for (LayoutEdge e : innerGraph.getVisibleEdges()) {
                 e.setVisible(v.isEdgeVisible());
                 e.draw();
             }
 
-            for (AbstractLayoutVertex child : v.getInnerGraph().getVisibleVertices()) {
+            for (AbstractLayoutVertex child : innerGraph.getVisibleVertices()) {
                 drawEdges(child);
             }
         }

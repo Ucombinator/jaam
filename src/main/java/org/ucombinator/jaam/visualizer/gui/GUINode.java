@@ -95,8 +95,9 @@ public class GUINode extends Group
 
     private void handleOnMouseEntered(MouseEvent event) {
         event.consume();
-        if (vertex.getSelfGraph() != null) {
-            for(LayoutEdge e : vertex.getSelfGraph().getVisibleEdges()) {
+        HierarchicalGraph<AbstractLayoutVertex> selfGraph = vertex.getSelfGraph();
+        if (selfGraph != null) {
+            for(LayoutEdge e : selfGraph.getVisibleEdges()) {
                 if(e.getSource() == vertex || e.getDest() == vertex) {
                     e.highlightEdgePath();
                 }
@@ -107,8 +108,9 @@ public class GUINode extends Group
     private void handleOnMouseExited(MouseEvent event) {
         event.consume();
 
-        if (vertex.getSelfGraph() != null) {
-            for(LayoutEdge e : vertex.getSelfGraph().getVisibleEdges()) {
+        HierarchicalGraph<AbstractLayoutVertex> selfGraph = vertex.getSelfGraph();
+        if (selfGraph != null) {
+            for(LayoutEdge e : selfGraph.getVisibleEdges()) {
                 if (e.getSource() == vertex || e.getDest() == vertex) {
                     e.resetEdgePath();
                 }
@@ -139,6 +141,7 @@ public class GUINode extends Group
 
         System.out.println("Double Click");
         AbstractLayoutVertex doubleClickedVertex = this.vertex;
+        HierarchicalGraph<AbstractLayoutVertex> innerGraph = doubleClickedVertex.getInnerGraph();
         boolean isExpanded = doubleClickedVertex.isExpanded();
 
         double newOpacity = isExpanded ? 0.0 : 1.0;
@@ -146,11 +149,11 @@ public class GUINode extends Group
 
         // First we want the content of the clicked node to appear/disappear.
         System.out.println("Changing opacity of inner graph...");
-        for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVisibleVertices()) {
+        for(AbstractLayoutVertex v: innerGraph.getVisibleVertices()) {
             v.setOpacity(newOpacity);
         }
 
-        for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getVisibleEdges()){
+        for(LayoutEdge e: innerGraph.getVisibleEdges()){
             e.setOpacity(newOpacity);
         }
 
@@ -161,11 +164,11 @@ public class GUINode extends Group
                 // to change its size.
                 doubleClickedVertex.setExpanded(!isExpanded);
 
-                for(AbstractLayoutVertex v: doubleClickedVertex.getInnerGraph().getVisibleVertices()){
+                for(AbstractLayoutVertex v: innerGraph.getVisibleVertices()){
                     v.setVisible(newVisible);
                 }
 
-                for(LayoutEdge e: doubleClickedVertex.getInnerGraph().getVisibleEdges()){
+                for(LayoutEdge e: innerGraph.getVisibleEdges()){
                     e.setVisible(newVisible);
                 }
 

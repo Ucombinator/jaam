@@ -8,10 +8,14 @@ import javafx.scene.Parent;
 import javafx.scene.control.TabPane;
 import javafx.stage.FileChooser;
 import org.ucombinator.jaam.serializer.*;
+import org.ucombinator.jaam.tools.taint3.Address;
+import org.ucombinator.jaam.tools.taint3.Edge;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.LayoutLoopVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.taint.TaintAddress;
+import org.ucombinator.jaam.visualizer.taint.TaintGraph;
 
 import java.io.File;
 import java.io.IOException;
@@ -121,5 +125,67 @@ public class MainPaneController {
         System.out.println("Method packets: " + methodPackets);
         System.out.println("Edge packets: " + edgePackets);
         return graph;
+    }
+
+    @FXML public void loadTaintGraph(ActionEvent event) throws IOException {
+        System.out.println("Load graph: start...");
+
+        fileChooser.setTitle("Load graph file");
+        List<File> files = fileChooser.showOpenMultipleDialog(this.tabPane.getScene().getWindow());
+
+        if (files != null) {
+            for (File file : files) {
+                loadTaintGraphFile(file);
+            }
+        }
+    }
+
+    public void loadTaintGraphFile(File file) throws IOException {
+        // Make "Open" dialog remember where we last loaded a file
+        fileChooser.setInitialDirectory(file.getParentFile());
+
+        TaintGraph taintGraph = parseTaintGraph(file);
+        TaintTabController tabController = new TaintTabController(file, taintGraph);
+        tabPane.getTabs().add(tabController.tab);
+        tabPane.getSelectionModel().select(tabController.tab);
+    }
+
+    private static TaintGraph parseTaintGraph(File file) {
+        System.out.println("Parsing taint graph...");
+        TaintGraph taintGraph = new TaintGraph();
+        HashMap<Address, Integer> addressIndex = new HashMap<>();
+
+        int addressPackets = 0;
+        int edgePackets = 0;
+        ArrayList<Edge> edges = new ArrayList<>();
+        for (Packet packet : Serializer.readAll(file.getAbsolutePath())) {
+            if(packet instanceof Address) {
+                Address address = (Address) packet;
+                taintGraph.addVertex(new TaintAddress(address));
+                addressIndex.put(address, addressPackets);
+                addressPackets++;
+                System.out.println("Read address: " + address);
+            }
+            else if(packet instanceof Edge) {
+                Edge edge = (Edge) packet;
+                edges.add(edge);
+                edgePackets++;
+                System.out.println("Read edge: " + edge);
+            }
+        }
+
+        // We actually create the edges here
+        for (Edge edge : edges) {
+            if(addressIndex.containsKey(edge.source()) && addressIndex.containsKey(edge.target())) {
+                taintGraph.addEdge(addressIndex.get(edge.source()), addressIndex.get(edge.target()));
+            }
+            else {
+                System.out.println("Ignoring edge: " + edge.source() + " --> " + edge.target());
+            }
+        }
+
+        System.out.println("Address packets: " + addressPackets);
+        System.out.println("Relationship packets: " + edgePackets);
+        return taintGraph;
     }
 }

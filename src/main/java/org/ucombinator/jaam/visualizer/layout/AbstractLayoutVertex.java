@@ -14,17 +14,17 @@ import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.GUINodeStatus;
 
-public abstract class AbstractLayoutVertex extends AbstractVertex
+public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> extends AbstractVertex
         implements Comparable<AbstractLayoutVertex>, GraphEntity
 {
     // Types of layout vertices
     public enum VertexType {
-        INSTRUCTION, LOOP, METHOD, CHAIN, ROOT, SHRINK, SCC
+        INSTRUCTION, LOOP, METHOD, CHAIN, ROOT, SHRINK, SCC, TAINT_ADDRESS
     }
 
     // Because layout vertices are also HierarchicalGraphs they have two associated graphs:
-    private HierarchicalGraph selfGraph = null; // The graph to which this vertex belongs
-    private HierarchicalGraph innerGraph = new HierarchicalGraph(); // The graph contained inside this vertex
+    private HierarchicalGraph<T> selfGraph = null; // The graph to which this vertex belongs
+    private HierarchicalGraph<T> innerGraph = new HierarchicalGraph(); // The graph contained inside this vertex
     private VertexType vertexType;
 
     // Graphic related fields
@@ -124,16 +124,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex
         return ((Integer)(this.getMinInstructionLine())).compareTo(v.getMinInstructionLine());
     }
 
-    // Subclasses must override these so that we have descriptions for each of them,
-    // and so that our generic collapsing can work for all of them
-    public abstract String getRightPanelContent();
-
-    // These searches may be different for different subclasses, so we implement them there.
-    public abstract boolean searchByMethod(String query, MainTabController mainTab);
-
-    // This is needed so that we can show the code for the methods that correspond to selected vertices
-    public abstract HashSet<LayoutMethodVertex> getMethodVertices();
-
     public void setColor(Color c) {
         this.color = c;
     }
@@ -156,11 +146,11 @@ public abstract class AbstractLayoutVertex extends AbstractVertex
         return this.drawEdges;
     }
 
-    public HierarchicalGraph getInnerGraph() {
+    public HierarchicalGraph<T> getInnerGraph() {
         return innerGraph;
     }
 
-    public HierarchicalGraph getSelfGraph() {
+    public HierarchicalGraph<T> getSelfGraph() {
         return selfGraph;
     }
 
@@ -171,7 +161,7 @@ public abstract class AbstractLayoutVertex extends AbstractVertex
     public void setHidden() {
         this.isHidden = true;
         this.setVisible(false);
-        this.getSelfGraph().setHidden(this);
+        this.getSelfGraph().setHidden((T) this); // TODO: Can we avoid the need for this type cast?
     }
 
     // Warning: Setting a single vertex in a graph to be unhidden must change the entire graph to be unhidden.
@@ -227,37 +217,6 @@ public abstract class AbstractLayoutVertex extends AbstractVertex
         }
 
         this.graphics = null;
-    }
-
-    public void searchByID(int id, MainTabController mainTab)
-    {
-        this.searchByIDRange(id, id, mainTab);
-    }
-
-    public void searchByIDRange(int id1, int id2, MainTabController mainTab)
-    {
-        if(this.getId() >= id1 && this.getId() <= id2) {
-            this.setHighlighted(true);
-            mainTab.getHighlighted().add(this);
-            System.out.println("Search successful: " + this.getId());
-        }
-
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices())
-            v.searchByIDRange(id1, id2, mainTab);
-    }
-
-    public void searchByInstruction(String query, MainTabController mainTab)
-    {
-        if(this instanceof LayoutInstructionVertex) {
-            String instStr = ((LayoutInstructionVertex) this).getInstruction().getText();
-            if(instStr.contains(query)) {
-                this.setHighlighted(true);
-                mainTab.getHighlighted().add(this);
-            }
-        }
-
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices())
-            v.searchByInstruction(query, mainTab);
     }
 
     public void setHighlighted(boolean isHighlighted)

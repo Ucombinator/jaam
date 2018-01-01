@@ -7,7 +7,7 @@ import org.ucombinator.jaam.visualizer.graph.Instruction;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
-public class LayoutInstructionVertex extends AbstractLayoutVertex {
+public class LayoutInstructionVertex extends StateVertex {
 
     private static Color color = Color.YELLOW;
     private Instruction instruction;
@@ -32,10 +32,6 @@ public class LayoutInstructionVertex extends AbstractLayoutVertex {
         return "Method: " + this.instruction.getMethodName() + "\nInstruction: " + this.instruction.getJimpleIndex()
                 + "\n" + this.instruction.getText();
                 //+ "\nLoop height: " + this.getLoopHeight() + "\n";
-    }
-
-    public String getShortDescription() {
-        return this.instruction.getText();
     }
 
     @Override

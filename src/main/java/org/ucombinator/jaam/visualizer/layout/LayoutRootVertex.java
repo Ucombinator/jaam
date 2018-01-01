@@ -6,7 +6,7 @@ import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
-public class LayoutRootVertex extends AbstractLayoutVertex {
+public class LayoutRootVertex extends StateVertex {
 
     Color defaultColor = Color.WHITE;
 
@@ -19,13 +19,9 @@ public class LayoutRootVertex extends AbstractLayoutVertex {
         return "Root vertex";
     }
 
-    public String getShortDescription() {
-        return "Root vertex";
-    }
-
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = false;
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVertices()) {
+        for(StateVertex v : this.getInnerGraph().getVertices()) {
             found = v.searchByMethod(query, mainTab) || found;
         }
 
@@ -40,7 +36,7 @@ public class LayoutRootVertex extends AbstractLayoutVertex {
     public HashSet<LayoutMethodVertex> getMethodVertices()
     {
         HashSet<LayoutMethodVertex> methodVertices = new LinkedHashSet<LayoutMethodVertex>();
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
+        for(StateVertex v : this.getInnerGraph().getVisibleVertices()) {
             if(v instanceof LayoutMethodVertex)
                 methodVertices.add((LayoutMethodVertex) v);
             else

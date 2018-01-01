@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-public class Graph
+public class Graph<T extends AbstractVertex>
 {
-    private ArrayList<AbstractVertex> vertices;
-    private HashMap<AbstractVertex, HashSet<AbstractVertex>> outEdges;
-    private HashMap<AbstractVertex, HashSet<AbstractVertex>> inEdges;
+    private ArrayList<T> vertices;
+    private HashMap<T, HashSet<T>> outEdges;
+    private HashMap<T, HashSet<T>> inEdges;
     
     public Graph()
     {
@@ -17,18 +17,18 @@ public class Graph
         this.inEdges = new HashMap<>();
     }
 
-    public ArrayList<AbstractVertex> getVertices() {
+    public ArrayList<T> getVertices() {
         return this.vertices;
     }
 
-    public void addVertex(AbstractVertex vertex){
+    public void addVertex(T vertex){
     	this.vertices.add(vertex);
     }
 
     public void addEdge(int src, int dest)
     {
         //System.out.println("Adding input edge: " + src + ", " + dest);
-        AbstractVertex vSrc, vDest;
+        T vSrc, vDest;
 
         vSrc = this.containsInputVertex(src);
         vDest = this.containsInputVertex(dest);
@@ -41,17 +41,25 @@ public class Graph
         System.out.println("Adding edge: " + vSrc.getLabel() + " --> " + vDest.getLabel());
     }
 
-    public HashSet<AbstractVertex> getOutNeighbors(AbstractVertex v) {
+    public void addEdge(T src, T dest) {
+        this.outEdges.putIfAbsent(src, new HashSet<>());
+        this.outEdges.get(src).add(dest);
+
+        this.inEdges.putIfAbsent(dest, new HashSet<>());
+        this.inEdges.get(dest).add(src);
+    }
+
+    public HashSet<T> getOutNeighbors(T v) {
         return this.outEdges.getOrDefault(v, new HashSet<>());
     }
 
-    public HashSet<AbstractVertex> getInNeighbors(AbstractVertex v) {
+    public HashSet<T> getInNeighbors(T v) {
         return this.inEdges.getOrDefault(v, new HashSet<>());
     }
     
-    public AbstractVertex containsInputVertex(int id)
+    public T containsInputVertex(int id)
     {
-        for(AbstractVertex v : this.vertices)
+        for(T v : this.vertices)
         {
             if(v.getId() == id)
                 return v;

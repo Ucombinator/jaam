@@ -5,20 +5,18 @@ import java.util.*;
 import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
+import org.ucombinator.jaam.visualizer.taint.TaintAddress;
 
 public class LayerFactory
 {
-    private static final boolean createChains = true;
-    private static final boolean chainsExpanded = true;
-    private static final int CHAIN_LENGTH = 3 ; // This value should ALWAYS be LARGER THAN OR EQUAL 3 (otherwise it will break)
-
     public static LayoutRootVertex getLayeredGraph(Graph graph){
         return getStronglyConnectedComponentsGraph(graph);
-        //return getLoopLayout(graph);
     }
-    private static LayoutRootVertex getStronglyConnectedComponentsGraph(Graph graph)
+
+    private static LayoutRootVertex getStronglyConnectedComponentsGraph(Graph<AbstractVertex> graph)
     {
         ArrayList< ArrayList<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
+        System.out.println("Strongly connected components: " + sccs.size());
 
     	LayoutRootVertex root = new LayoutRootVertex();
 
@@ -28,6 +26,7 @@ public class LayerFactory
         // Need these two maps for the second pass to avoid having to look around for everything
         HashMap<AbstractVertex      , AbstractLayoutVertex> inputToInner = new HashMap<>();
         HashMap<AbstractLayoutVertex, AbstractLayoutVertex> innerToSCC   = new HashMap<>();
+
         // First pass create SCC vertex and populate with layout vertices
         for (ArrayList<Integer> scc : sccs)
         {
@@ -107,24 +106,26 @@ public class LayerFactory
 
     // Takes an input vertex (a AbstractVertex which is actually a Loop or Method Vertex) and returns a new
     // vertex of the correct type
+    // TODO: Is this even necessary? If so, replace by requiring a copy constructor for subclasses of AbstractVertex.
     private static AbstractLayoutVertex upgradeVertex(AbstractVertex v)
     {
         AbstractLayoutVertex newVertex;
 
-        if(v instanceof LayoutLoopVertex)
-        {
+        if(v instanceof LayoutLoopVertex) {
             LayoutLoopVertex l = (LayoutLoopVertex) v;
             newVertex = new LayoutLoopVertex(l.getId(), l.getLabel(), l.getStatementIndex(),
                     l.getCompilationUnit());
             //newVertex = new LayoutLoopVertex(v.getId(), v.getLabel(), 0);
         }
-        else if(v instanceof  LayoutMethodVertex)
-        {
+        else if(v instanceof  LayoutMethodVertex) {
             LayoutMethodVertex l = (LayoutMethodVertex) v;
             newVertex = new LayoutMethodVertex(l.getId(), l.getLabel(), l.getCompilationUnit());
         }
-        else
-        {
+        else if(v instanceof TaintAddress) {
+            TaintAddress l = (TaintAddress) v;
+            newVertex = new TaintAddress(v.getLabel());
+        }
+        else {
             newVertex = null;
         }
 

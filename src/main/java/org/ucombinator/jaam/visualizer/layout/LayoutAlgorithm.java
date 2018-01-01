@@ -26,15 +26,17 @@ public class LayoutAlgorithm
         parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
         parentVertex.setX(0);
         parentVertex.setY(0);
-        for (AbstractLayoutVertex v : parentVertex.getInnerGraph().getVisibleVertices()) {
+        HierarchicalGraph<AbstractLayoutVertex> innerGraph = parentVertex.getInnerGraph();
+        for (AbstractLayoutVertex v : innerGraph.getVisibleVertices()) {
             initializeSizes(v);
         }
     }
 
     private static void expandSubGraphs(AbstractLayoutVertex parentVertex) {
-        for(AbstractLayoutVertex v: parentVertex.getInnerGraph().getVisibleVertices()) {
-            HierarchicalGraph innerGraph = v.getInnerGraph();
-            if (innerGraph.getVisibleVertices().size() != 0)
+        HierarchicalGraph<AbstractLayoutVertex> parentInnerGraph = parentVertex.getInnerGraph();
+        for(AbstractLayoutVertex v: parentInnerGraph.getVisibleVertices()) {
+            HierarchicalGraph childInnerGraph = v.getInnerGraph();
+            if (childInnerGraph.getVisibleVertices().size() != 0)
             {
                 // Layout the inner graphs of each node and assign width W and height H to each node
                 // X and Y coordinates are RELATIVE to the parent
@@ -48,7 +50,7 @@ public class LayoutAlgorithm
     }
 
     private static void dfsLayout(AbstractLayoutVertex parentVertex) {
-        HierarchicalGraph graph = parentVertex.getInnerGraph();
+        HierarchicalGraph<AbstractLayoutVertex> graph = parentVertex.getInnerGraph();
 
         expandSubGraphs(parentVertex);
 
@@ -67,7 +69,7 @@ public class LayoutAlgorithm
     }
 
     private static void bfsLayout(AbstractLayoutVertex parentVertex) {
-        HierarchicalGraph graph = parentVertex.getInnerGraph();
+        HierarchicalGraph<AbstractLayoutVertex> graph = parentVertex.getInnerGraph();
 
         // Interior graphs use the DFS Layout
         expandSubGraphs(parentVertex);
@@ -149,7 +151,7 @@ public class LayoutAlgorithm
             }
         }
 
-        HierarchicalGraph graph = parentVertex.getInnerGraph();
+        HierarchicalGraph<AbstractLayoutVertex> graph = parentVertex.getInnerGraph();
         ArrayList<AbstractLayoutVertex> roots = graph.getVisibleRoots();
 
         double parentWidth = AbstractLayoutVertex.DEFAULT_WIDTH;
@@ -185,7 +187,7 @@ public class LayoutAlgorithm
      * Every node appears as a child as deep as possible in the tree (ties, broken arbitrarily)
      */
     private static HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> maxDepthChildren(
-            HierarchicalGraph graph)
+            HierarchicalGraph<AbstractLayoutVertex> graph)
     {
         HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap = new HashMap<>();
         HashMap<AbstractLayoutVertex, Integer> vertexCounters = new HashMap<>();
@@ -257,7 +259,7 @@ public class LayoutAlgorithm
             for (Map.Entry<AbstractLayoutVertex, Integer> entry : vertexCounters.entrySet()) {
 
                 System.out.println("\t\t" + entry + " --> " + entry.getKey().getId() + " "
-                        + entry.getKey().getVertexStatus() + " " +  entry.getKey().getMethodVertices());
+                        + entry.getKey().getVertexStatus() /*+ " " +  entry.getKey().getMethodVertices()*/);
                 for(AbstractLayoutVertex n : graph.getVisibleInNeighbors(entry.getKey()))
                 {
                     System.out.println("\t\t\t" + n + " --> " + n.getId() + " " + n.getVertexStatus());
