@@ -15,19 +15,34 @@ import org.jgrapht.graph._
 import org.jgrapht.io._
 
 
-abstract sealed class Address extends serializer.Packet
+abstract sealed class Address extends serializer.Packet {
+  def sootMethod: SootMethod
+}
 object Address {
-  case class Field(sootField: SootField) extends Address
+  // TODO: remove and use StaticField and InstanceField instead
+  case class Field(sootField: SootField) extends Address {
+    def sootMethod = null
+  }
   case class Return(sootMethod: SootMethod) extends Address
   case class Parameter(sootMethod: SootMethod, index: Int) extends Address
   case class Throws(sootMethod: SootMethod) extends Address
-  case class Stmt(stmt: org.ucombinator.jaam.util.Stmt) extends Address
+  case class Stmt(stmt: org.ucombinator.jaam.util.Stmt) extends Address {
+    def sootMethod = stmt.sootMethod
+  }
   case class Value(sootMethod: SootMethod, sootValue: SootValue) extends Address
   case class Local(sootMethod: SootMethod, name: String) extends Address
-  case class This(typ: Type) extends Address
-  case class StaticField(sootField: SootField) extends Address
-  case class InstanceField(sootField: SootField) extends Address
-  case class ArrayRef(typ: Type) extends Address
+  case class This(typ: Type) extends Address {
+    def sootMethod = null
+  }
+  case class StaticField(sootField: SootField) extends Address {
+    def sootMethod = null
+  }
+  case class InstanceField(sootField: SootField) extends Address {
+    def sootMethod = null
+  }
+  case class ArrayRef(typ: Type) extends Address {
+    def sootMethod = null
+  }
   // TODO: we do not actually need sootMethod since we have Stmt
   case class New(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
   case class NewArray(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
