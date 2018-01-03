@@ -15,7 +15,7 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 
-public class GUINode<T extends AbstractLayoutVertex> extends Group
+public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
 {
     private static final double TEXT_VERTICAL_PADDING = 15;
     private static final double TEXT_HORIZONTAL_PADDING = 15;
@@ -23,11 +23,11 @@ public class GUINode<T extends AbstractLayoutVertex> extends Group
     private final Rectangle rect;
     private final Text rectLabel;
     private final T vertex;
-    private final GUINode parent;
+    private final GUINode<T> parent;
 
     private Point2D dragStart;
 
-    public GUINode(GUINode parent, T v)
+    public GUINode(GUINode<T> parent, T v)
     {
         super();
         this.parent = parent;
@@ -95,9 +95,9 @@ public class GUINode<T extends AbstractLayoutVertex> extends Group
 
     private void handleOnMouseEntered(MouseEvent event) {
         event.consume();
-        HierarchicalGraph<AbstractLayoutVertex> selfGraph = vertex.getSelfGraph();
+        HierarchicalGraph<T> selfGraph = vertex.getSelfGraph();
         if (selfGraph != null) {
-            for(LayoutEdge e : selfGraph.getVisibleEdges()) {
+            for (LayoutEdge<T> e : selfGraph.getVisibleEdges()) {
                 if(e.getSource() == vertex || e.getDest() == vertex) {
                     e.highlightEdgePath();
                 }
@@ -108,9 +108,9 @@ public class GUINode<T extends AbstractLayoutVertex> extends Group
     private void handleOnMouseExited(MouseEvent event) {
         event.consume();
 
-        HierarchicalGraph<AbstractLayoutVertex> selfGraph = vertex.getSelfGraph();
+        HierarchicalGraph<T> selfGraph = vertex.getSelfGraph();
         if (selfGraph != null) {
-            for(LayoutEdge e : selfGraph.getVisibleEdges()) {
+            for (LayoutEdge<T> e : selfGraph.getVisibleEdges()) {
                 if (e.getSource() == vertex || e.getDest() == vertex) {
                     e.resetEdgePath();
                 }
@@ -125,7 +125,7 @@ public class GUINode<T extends AbstractLayoutVertex> extends Group
 
         switch (event.getClickCount()) {
             case 1:
-                this.fireEvent(new SelectEvent(MouseButton.PRIMARY, this));
+                this.fireEvent(new SelectEvent<>(MouseButton.PRIMARY, this));
                 break;
             case 2:
                 handleDoubleClick(event);
@@ -137,23 +137,23 @@ public class GUINode<T extends AbstractLayoutVertex> extends Group
     }
 
     private void handleDoubleClick(MouseEvent event){
-        AbstractLayoutVertex root = Main.getSelectedVizPanelController().getPanelRoot();
+        StateVertex root = Main.getSelectedVizPanelController().getPanelRoot();
 
         System.out.println("Double Click");
-        AbstractLayoutVertex doubleClickedVertex = this.vertex;
-        HierarchicalGraph<AbstractLayoutVertex> innerGraph = doubleClickedVertex.getInnerGraph();
+        T doubleClickedVertex = this.vertex;
+        HierarchicalGraph<T> innerGraph = doubleClickedVertex.getInnerGraph();
         boolean isExpanded = doubleClickedVertex.isExpanded();
 
         double newOpacity = isExpanded ? 0.0 : 1.0;
-        boolean newVisible = isExpanded ? false : true;
+        boolean newVisible = !isExpanded;
 
         // First we want the content of the clicked node to appear/disappear.
         System.out.println("Changing opacity of inner graph...");
-        for(AbstractLayoutVertex v: innerGraph.getVisibleVertices()) {
+        for(T v: innerGraph.getVisibleVertices()) {
             v.setOpacity(newOpacity);
         }
 
-        for(LayoutEdge e: innerGraph.getVisibleEdges()){
+        for(LayoutEdge<T> e: innerGraph.getVisibleEdges()){
             e.setOpacity(newOpacity);
         }
 
@@ -164,11 +164,11 @@ public class GUINode<T extends AbstractLayoutVertex> extends Group
                 // to change its size.
                 doubleClickedVertex.setExpanded(!isExpanded);
 
-                for(AbstractLayoutVertex v: innerGraph.getVisibleVertices()){
+                for (T v: innerGraph.getVisibleVertices()) {
                     v.setVisible(newVisible);
                 }
 
-                for(LayoutEdge e: innerGraph.getVisibleEdges()){
+                for (LayoutEdge<T> e: innerGraph.getVisibleEdges()) {
                     e.setVisible(newVisible);
                 }
 
@@ -238,7 +238,7 @@ public class GUINode<T extends AbstractLayoutVertex> extends Group
     }
 
 
-    public static Line getLine(GUINode sourceNode, GUINode destNode) {
+    public static <T extends AbstractLayoutVertex<T>> Line getLine(GUINode<T> sourceNode, GUINode<T> destNode) {
         if(sourceNode == null || destNode == null) {
             System.out.println("This should never happen!");
             return new Line(0, 0, 0, 0);
@@ -252,7 +252,7 @@ public class GUINode<T extends AbstractLayoutVertex> extends Group
         }
     }
 
-    private Point2D getLineIntersection(GUINode otherNode) {
+    private Point2D getLineIntersection(GUINode<T> otherNode) {
         Bounds sourceBounds = this.getRectBoundsInParent();
         Bounds destBounds = otherNode.getRectBoundsInParent();
 
@@ -304,7 +304,7 @@ public class GUINode<T extends AbstractLayoutVertex> extends Group
         return new Point2D(sourceExitX, sourceExitY);
     }
 
-    public GUINode getParentNode() {
+    public GUINode<T> getParentNode() {
         return this.parent;
     }
 

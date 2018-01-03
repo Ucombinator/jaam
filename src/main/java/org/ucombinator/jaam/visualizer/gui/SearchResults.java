@@ -73,9 +73,9 @@ public class SearchResults extends BorderPane
     public void writeText(MainTabController mainTab)
     {
         this.root.getChildren().clear();
-        if(mainTab.getHighlighted().size() > 0) {
+        if (mainTab.getHighlighted().size() > 0) {
             // We don't want to include the panel root, so we start our check with its children
-            for(AbstractLayoutVertex v : mainTab.vizPanelController.getPanelRoot().getInnerGraph().getVisibleVertices())
+            for (AbstractLayoutVertex v : mainTab.vizPanelController.getPanelRoot().getInnerGraph().getVisibleVertices())
                 v.addTreeNodes(this.root, mainTab);
 
             // TODO: Auto-expand nodes?

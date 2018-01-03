@@ -133,22 +133,22 @@ public class MainTabController {
 
     }
 
-    private void addVerticesToClassTree(ArrayList<ClassTreeNode> topLevel, AbstractLayoutVertex root) {
+    private void addVerticesToClassTree(ArrayList<ClassTreeNode> topLevel, StateVertex root) {
 
-       if(root instanceof CodeEntity)
-       {
+       if(root instanceof CodeEntity) {
            ClassTreeNode topLevelNode = getTopLevel(topLevel, ((CodeEntity) root).getClassName());
            boolean success = false;
-           if(topLevelNode != null)
+           if (topLevelNode != null) {
                success = addVertex(topLevelNode, root);
+           }
 
-           if(!success)
+           if (!success) {
                System.out.println("Warning didn't find package for: " + ((CodeEntity) root).getClassName());
+           }
        }
 
-       HierarchicalGraph<AbstractLayoutVertex> innerGraph = root.getInnerGraph();
-       for(AbstractLayoutVertex v : innerGraph.getVertices())
-       {
+       HierarchicalGraph<StateVertex> innerGraph = root.getInnerGraph();
+       for (StateVertex v : innerGraph.getVertices()) {
            addVerticesToClassTree(topLevel, v);
        }
     }
@@ -518,7 +518,7 @@ public class MainTabController {
 
     } // End of class TreeNode
 
-    private void setClassHighlight(AbstractLayoutVertex v, String prevPrefix, String currPrefix)
+    private void setClassHighlight(StateVertex v, String prevPrefix, String currPrefix)
     {
         if(!v.isHidden()) {
 
@@ -526,17 +526,14 @@ public class MainTabController {
                 if (((CodeEntity) v).getClassName().startsWith(currPrefix)) {
                     //System.out.println("Highlight " + ((CodeEntity) v).getClassName() + " --> " + ((CodeEntity) v).getMethodName() + " --> " + v.getId());
                     v.setClassHighlight(true);
-                }
-                else if(prevPrefix != null && ((CodeEntity) v).getClassName().startsWith(prevPrefix)) {
+                } else if(prevPrefix != null && ((CodeEntity) v).getClassName().startsWith(prevPrefix)) {
                     v.setClassHighlight(false);
                 }
             }
 
-            if(!v.isInnerGraphEmpty())
-            {
-                HierarchicalGraph<AbstractLayoutVertex> innerGraph = v.getInnerGraph();
-                for(AbstractLayoutVertex i : innerGraph.getVertices())
-                {
+            if (!v.isInnerGraphEmpty()) {
+                HierarchicalGraph<StateVertex> innerGraph = v.getInnerGraph();
+                for (StateVertex i : innerGraph.getVertices()) {
                     setClassHighlight(i, prevPrefix, currPrefix);
                 }
             }

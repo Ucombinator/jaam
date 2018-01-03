@@ -7,6 +7,7 @@ import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
+import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.layout.*;
@@ -46,9 +47,9 @@ public class TaintPanelController {
         panelRoot.setVisible(true);
     }
 
-    private void drawNodes(GUINode parent, AbstractLayoutVertex v)
+    private void drawNodes(GUINode<TaintVertex> parent, TaintVertex v)
     {
-        GUINode node = new GUINode(parent, v);
+        GUINode<TaintVertex> node = new GUINode<>(parent, v);
 
         if (parent == null) {
             graphContentGroup.getChildren().add(node);
@@ -62,24 +63,24 @@ public class TaintPanelController {
         double height = v.getHeight();
         node.setTranslateLocation(translateX, translateY, width, height);
 
-        HierarchicalGraph<AbstractLayoutVertex> innerGraph = v.getInnerGraph();
-        for (AbstractLayoutVertex child : innerGraph.getVisibleVertices()) {
+        HierarchicalGraph<TaintVertex> innerGraph = v.getInnerGraph();
+        for (TaintVertex child : innerGraph.getVisibleVertices()) {
             if (v.isExpanded()) {
                 drawNodes(node, child);
             }
         }
     }
 
-    private void drawEdges(AbstractLayoutVertex v)
+    private void drawEdges(TaintVertex v)
     {
         if(v.isExpanded()) {
-            HierarchicalGraph<AbstractLayoutVertex> innerGraph = v.getInnerGraph();
-            for (LayoutEdge e : innerGraph.getVisibleEdges()) {
+            HierarchicalGraph<TaintVertex> innerGraph = v.getInnerGraph();
+            for (LayoutEdge<TaintVertex> e : innerGraph.getVisibleEdges()) {
                 e.setVisible(v.isEdgeVisible());
                 e.draw();
             }
 
-            for (AbstractLayoutVertex child : innerGraph.getVisibleVertices()) {
+            for (TaintVertex child : innerGraph.getVisibleVertices()) {
                 drawEdges(child);
             }
         }
@@ -113,7 +114,7 @@ public class TaintPanelController {
         HashSet<TaintVertex> toSearch = (HashSet<TaintVertex>) (taintVertices.clone());
 
         // Search upwards
-        while(toSearch.size() > 0) {
+        while (toSearch.size() > 0) {
             HashSet<TaintVertex> newSearch = new HashSet<>();
             for (TaintVertex v : toSearch) {
                 results.add(v);
@@ -129,7 +130,7 @@ public class TaintPanelController {
 
         // Search downwards
         toSearch = (HashSet<TaintVertex>) (taintVertices.clone());
-        while(toSearch.size() > 0) {
+        while (toSearch.size() > 0) {
             HashSet<TaintVertex> newSearch = new HashSet<>();
             for (TaintVertex v : toSearch) {
                 results.add(v);

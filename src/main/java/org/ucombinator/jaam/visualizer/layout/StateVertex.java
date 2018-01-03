@@ -1,6 +1,5 @@
 package org.ucombinator.jaam.visualizer.layout;
 
-import org.ucombinator.jaam.serializer.State;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.graph.Instruction;
 
@@ -87,12 +86,12 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex> {
         return instructions;
     }
 
-    public HashSet<AbstractLayoutVertex> getVerticesWithInstructionID(int id, String method_name) {
-        return getVerticesWithInstructionID(id, method_name, new LinkedHashSet<AbstractLayoutVertex>());
+    public HashSet<StateVertex> getVerticesWithInstructionID(int id, String method_name) {
+        return getVerticesWithInstructionID(id, method_name, new LinkedHashSet<>());
     }
 
-    private HashSet<AbstractLayoutVertex> getVerticesWithInstructionID(int id, String method_name,
-                                                                       HashSet<AbstractLayoutVertex> set)  {
+    private HashSet<StateVertex> getVerticesWithInstructionID(int id, String method_name,
+                                                                       HashSet<StateVertex> set)  {
         if(this.getType().equals(VertexType.ROOT) || this.getType().equals(VertexType.METHOD)
                 || this.getType().equals(VertexType.CHAIN)){
             for(StateVertex v : this.getInnerGraph().getVisibleVertices()) {

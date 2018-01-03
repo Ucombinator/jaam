@@ -1,5 +1,7 @@
 package org.ucombinator.jaam.visualizer.graph;
 
+import org.ucombinator.jaam.visualizer.layout.StateVertex;
+
 import java.util.ArrayList;
 
 public class Method
@@ -7,7 +9,7 @@ public class Method
     private final String methodName;
     private OurClass our_class;
     //private final String functionName;
-    private ArrayList<AbstractVertex> vertices;
+    private ArrayList<StateVertex> vertices;
     private ArrayList<Instruction> instructionList;
 
     public Method()
@@ -18,7 +20,7 @@ public class Method
         instructionList = new ArrayList<>();
     }
 
-    public Method(Graph graph, String methodName)
+    public Method(Graph<StateVertex> graph, String methodName)
     {
         this.our_class = new OurClass();
         this.methodName = methodName;
@@ -48,7 +50,7 @@ public class Method
         this.our_class = c;
     }
     
-    public void addVertex(AbstractVertex v)
+    public void addVertex(StateVertex v)
     {
         this.vertices.add(v);
     }
