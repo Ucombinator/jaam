@@ -63,6 +63,12 @@ public class LayoutLoopVertex extends StateVertex implements Cloneable, CodeEnti
         return methods;
     }
 
+    @Override
+    public HashSet<String> getMethodNames() {
+        HashSet<String> methodNames = new HashSet<>();
+        methodNames.add(this.getMethodName());
+        return methodNames;
+    }
 
     public void setDefaultColor(){
         this.color = defaultColor;
