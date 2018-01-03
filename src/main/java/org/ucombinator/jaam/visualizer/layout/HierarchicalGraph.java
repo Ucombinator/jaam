@@ -135,7 +135,7 @@ public class HierarchicalGraph<T extends AbstractLayoutVertex>
         // in our ordering. But this should never be necessary, since we bundle SCC's into their own
         // vertices.
         if(roots.size() == 0) {
-            System.out.println("Error: couldn't find root!");
+            // System.out.println("Error: couldn't find root!");
             ArrayList<T> vertices = new ArrayList<>(this.getVisibleVertices());
             Collections.sort(vertices);
             roots.add(vertices.get(0));

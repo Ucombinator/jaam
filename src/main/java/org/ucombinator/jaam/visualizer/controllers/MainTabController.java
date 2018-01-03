@@ -34,7 +34,7 @@ public class MainTabController {
 
     // Center Components
     @FXML private final Node root = null; // Initialized by Controllers.loadFXML()
-    @FXML private final BorderPane centerPane = null; // Initialized by Controllers.loadFXML()
+    @FXML private final BorderPane vizPane = null; // Initialized by Controllers.loadFXML()
     @FXML private final BorderPane taintPane = null; // Initialized by Controllers.loadFXML()
 
     //Right Side Components
@@ -53,7 +53,7 @@ public class MainTabController {
         Controllers.loadFXML("/MainTabContent.fxml", this);
 
         this.vizPanelController = new VizPanelController();
-        this.centerPane.setCenter(this.vizPanelController.root);
+        this.vizPane.setCenter(this.vizPanelController.root);
         this.vizPanelController.initFX(graph);
 
         this.taintPanelController = new TaintPanelController(taintGraph);
@@ -66,7 +66,8 @@ public class MainTabController {
         this.codeViewController = new CodeViewController(compilationUnits);
         this.leftPane.getChildren().add(this.codeViewController.codeTabs);
 
-        this.codeViewController.addSelectHandler(centerPane);
+        this.codeViewController.addSelectHandler(vizPane);
+        this.taintPanelController.addSelectHandler(vizPane);
 
         buildClassTree(this.codeViewController.getClassNames(), this.vizPanelController.getPanelRoot());
 

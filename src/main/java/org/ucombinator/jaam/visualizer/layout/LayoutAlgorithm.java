@@ -1,5 +1,7 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import org.ucombinator.jaam.visualizer.taint.TaintSccVertex;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -99,14 +101,14 @@ public class LayoutAlgorithm
     private static Comparator<AbstractLayoutVertex> classComp = new Comparator<AbstractLayoutVertex>() {
         @Override
         public int compare(AbstractLayoutVertex o1, AbstractLayoutVertex o2) {
-            if(o1 instanceof LayoutSccVertex)
+            if(o1 instanceof LayoutSccVertex || o1 instanceof TaintSccVertex)
             {
-                if(o2 instanceof  LayoutSccVertex)
+                if(o2 instanceof LayoutSccVertex || o2 instanceof TaintSccVertex)
                     return o1.getId() < o2.getId() ? -1 : o1.getId() == o2.getId() ? 0 : 1;
                 else
                     return -1;
             }
-            else if(o2 instanceof  LayoutSccVertex)
+            else if(o2 instanceof LayoutSccVertex || o2 instanceof TaintSccVertex)
             {
                 return 1;
             }

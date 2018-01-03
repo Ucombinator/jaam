@@ -99,12 +99,4 @@ public class GraphUtils {
 
         return components;
     }
-
-    public static void firstTest(Graph g)
-    {
-        g.addEdge(26,25);
-        g.addEdge(25,8);
-        g.addEdge(8,27);
-    }
-
 }

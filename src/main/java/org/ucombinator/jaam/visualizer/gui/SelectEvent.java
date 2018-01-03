@@ -2,13 +2,14 @@ package org.ucombinator.jaam.visualizer.gui;
 
 import javafx.event.*;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.layout.StateVertex;
 
-public class SelectEvent extends javafx.event.Event{
+public class SelectEvent<T extends AbstractLayoutVertex> extends javafx.event.Event {
 
-    private AbstractLayoutVertex vertex;
+    private T vertex;
 
     /** The only valid EventType for the CustomEvent. */
-    public static final EventType<SelectEvent> VERTEX_SELECTED =
+    public static final EventType<SelectEvent<StateVertex>> VERTEX_SELECTED =
         new EventType<>(Event.ANY, "VERTEX_SELECTED");
 
     public SelectEvent() {
@@ -19,10 +20,10 @@ public class SelectEvent extends javafx.event.Event{
     public SelectEvent(Object source, EventTarget target) {
         super(source, target, VERTEX_SELECTED);
 
-        vertex = ((GUINode)target).getVertex();
+        vertex = ((GUINode<T>)target).getVertex();
     }
 
-    public AbstractLayoutVertex getVertex() { return vertex; }
+    public T getVertex() { return vertex; }
 
     @Override
     public SelectEvent copyFor(Object newSource, EventTarget newTarget) {

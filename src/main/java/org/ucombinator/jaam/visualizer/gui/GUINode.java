@@ -15,19 +15,19 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 
-public class GUINode extends Group
+public class GUINode<T extends AbstractLayoutVertex> extends Group
 {
     private static final double TEXT_VERTICAL_PADDING = 15;
     private static final double TEXT_HORIZONTAL_PADDING = 15;
 
     private final Rectangle rect;
     private final Text rectLabel;
-    private final AbstractLayoutVertex vertex;
+    private final T vertex;
     private final GUINode parent;
 
     private Point2D dragStart;
 
-    public GUINode(GUINode parent, AbstractLayoutVertex v)
+    public GUINode(GUINode parent, T v)
     {
         super();
         this.parent = parent;
@@ -186,7 +186,7 @@ public class GUINode extends Group
         pt.play();
     }
 
-    public AbstractLayoutVertex getVertex() {
+    public T getVertex() {
         return vertex;
     }
 

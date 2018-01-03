@@ -8,10 +8,10 @@ import java.util.LinkedHashSet;
 
 public class LayoutRootVertex extends StateVertex {
 
-    Color defaultColor = Color.WHITE;
+    private static final Color defaultColor = Color.WHITE;
 
     public LayoutRootVertex() {
-        super("root", VertexType.ROOT, false);
+        super("root", AbstractLayoutVertex.VertexType.ROOT, false);
         this.color = defaultColor;
     }
 
@@ -45,5 +45,4 @@ public class LayoutRootVertex extends StateVertex {
 
         return methodVertices;
     }
-
 }

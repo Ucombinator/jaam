@@ -200,13 +200,6 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> exten
             return false;
     }
 
-    public double distTo(double x, double y)
-    {
-        double xDiff = x - this.nodeStatus.x;
-        double yDiff = y - this.nodeStatus.y;
-        return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
-    }
-
     public void resetGraphics() {
         for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
             v.resetGraphics();
@@ -236,8 +229,8 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> exten
         }
     }
 
-    public void setSelfGraph(HierarchicalGraph abstractGraph) {
-        this.selfGraph = abstractGraph;
+    public void setSelfGraph(HierarchicalGraph graph) {
+        this.selfGraph = graph;
     }
 
     public boolean isExpanded() {
@@ -318,48 +311,6 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> exten
         for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
             v.toggleEdges(isEdgeVisible);
         }
-    }
-
-    public HashSet<Instruction> getInstructions() {
-        return this.getInstructions(new LinkedHashSet<Instruction>());
-    }
-
-    private HashSet<Instruction> getInstructions(HashSet<Instruction> instructions) {
-        if(this.getType().equals(VertexType.ROOT) || this.getType().equals(VertexType.METHOD)
-                || this.getType().equals(VertexType.CHAIN)) {
-            for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
-                v.getInstructions(instructions);
-            }
-        } else if(this.getType().equals(VertexType.INSTRUCTION)){
-            instructions.add(((LayoutInstructionVertex) this).getInstruction());
-        } else {
-            System.out.println("Unrecognized type in method getInstructions: " + this.getType());
-        }
-
-        return instructions;
-    }
-
-    public HashSet<AbstractLayoutVertex> getVerticesWithInstructionID(int id, String method_name) {
-        return getVerticesWithInstructionID(id, method_name, new LinkedHashSet<AbstractLayoutVertex>());
-    }
-
-    private HashSet<AbstractLayoutVertex> getVerticesWithInstructionID(int id, String method_name,
-                                                                       HashSet<AbstractLayoutVertex> set)  {
-        if(this.getType().equals(VertexType.ROOT) || this.getType().equals(VertexType.METHOD)
-                || this.getType().equals(VertexType.CHAIN)){
-            for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
-                v.getVerticesWithInstructionID(id, method_name, set);
-            }
-        } else if(this.getType().equals(VertexType.INSTRUCTION)) {
-            Instruction inst = ((LayoutInstructionVertex) this).getInstruction();
-            if(inst.getMethodName() == method_name && inst.getJimpleIndex() == id) {
-                set.add(this);
-            }
-        } else {
-            System.out.println("Unrecognized type in method getInstructions: " + this.getType());
-        }
-
-        return set;
     }
 
     public boolean isInnerGraphEmpty()

@@ -1,15 +1,19 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
+import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.layout.*;
-import org.ucombinator.jaam.visualizer.taint.TaintGraph;
+import org.ucombinator.jaam.visualizer.taint.*;
 
 import java.io.IOException;
+import java.util.HashSet;
 
 // TODO: Make base PanelController class or interface?
 public class TaintPanelController {
@@ -17,7 +21,7 @@ public class TaintPanelController {
     @FXML private final ScrollPane scrollPane = null; // Initialized by Controllers.loadFXML()
     @FXML private final Pane taintPanel = null; // Initialized by Controllers.loadFXML()
 
-    private LayoutRootVertex panelRoot;
+    private TaintRootVertex panelRoot;
     private Group graphContentGroup;
 
     public TaintPanelController(TaintGraph graph) throws IOException {
@@ -28,7 +32,8 @@ public class TaintPanelController {
         this.taintPanel.setVisible(true);
         this.taintPanel.getChildren().add(graphContentGroup);
 
-        this.panelRoot = LayerFactory.getLayeredGraph(graph);
+        this.panelRoot = new TaintRootVertex();
+        LayerFactory.getLayeredGraph(graph, this.panelRoot);
         LayoutAlgorithm.layout(this.panelRoot);
         this.drawGraph();
     }
@@ -79,5 +84,64 @@ public class TaintPanelController {
             }
         }
     }
-}
 
+    public void addSelectHandler(BorderPane centerPane) {
+        centerPane.addEventHandler(SelectEvent.VERTEX_SELECTED, onVertexSelect);
+    }
+
+    // Draw the graph of taint addresses for the selected node, and addresses connected to them.
+    EventHandler<SelectEvent<StateVertex>> onVertexSelect = new EventHandler<SelectEvent<StateVertex>>() {
+        @Override
+        public void handle(SelectEvent<StateVertex> selectEvent) {
+
+            StateVertex v = selectEvent.getVertex();
+            HashSet<TaintVertex> methodAddresses = findAddressesByMethods(v.getMethodNames());
+            HashSet<TaintVertex> verticesToDraw = findConnectedAddresses(methodAddresses);
+            System.out.println("Taint vertices to draw: " + verticesToDraw.size());
+            // TODO: Redraw graph with only this set of vertices.
+        }
+    };
+
+    public HashSet<TaintVertex> findAddressesByMethods(HashSet<String> methodNames) {
+        HashSet<TaintVertex> results = new HashSet<>();
+        this.panelRoot.searchByMethodNames(methodNames, results);
+        return results;
+    }
+
+    public HashSet<TaintVertex> findConnectedAddresses(HashSet<TaintVertex> taintVertices) {
+        HashSet<TaintVertex> results = (HashSet<TaintVertex>) (taintVertices.clone());
+        HashSet<TaintVertex> toSearch = (HashSet<TaintVertex>) (taintVertices.clone());
+
+        // Search upwards
+        while(toSearch.size() > 0) {
+            HashSet<TaintVertex> newSearch = new HashSet<>();
+            for (TaintVertex v : toSearch) {
+                results.add(v);
+                HierarchicalGraph<TaintVertex> selfGraph = v.getSelfGraph();
+                for (TaintVertex vIn : selfGraph.getVisibleInNeighbors(v)) {
+                    if (!results.contains(vIn)) {
+                        newSearch.add(vIn);
+                    }
+                }
+            }
+            toSearch = newSearch;
+        }
+
+        // Search downwards
+        toSearch = (HashSet<TaintVertex>) (taintVertices.clone());
+        while(toSearch.size() > 0) {
+            HashSet<TaintVertex> newSearch = new HashSet<>();
+            for (TaintVertex v : toSearch) {
+                results.add(v);
+                HierarchicalGraph<TaintVertex> selfGraph = v.getSelfGraph();
+                for (TaintVertex vOut : selfGraph.getVisibleOutNeighbors(v)) {
+                    if (!results.contains(vOut)) {
+                        newSearch.add(vOut);
+                    }
+                }
+            }
+            toSearch = newSearch;
+        }
+        return results;
+    }
+}

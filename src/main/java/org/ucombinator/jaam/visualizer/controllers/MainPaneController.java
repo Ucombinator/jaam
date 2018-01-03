@@ -124,12 +124,12 @@ public class MainPaneController {
                 taintGraph.addVertex(vertex);
                 addressIndex.put(address, vertex);
                 addressPackets++;
-                System.out.println("Read address: " + address);
+                //System.out.println("Read address: " + address);
             } else if(packet instanceof Edge) {
                 Edge edge = (Edge) packet;
                 taintEdges.add(edge);
                 taintEdgePackets++;
-                System.out.println("Read edge: " + edge);
+                //System.out.println("Read edge: " + edge);
             }
         }
 
@@ -139,20 +139,23 @@ public class MainPaneController {
         }
 
         // We actually create the edges here
+        int ignoredEdges = 0;
         for (Edge edge : taintEdges) {
             if(addressIndex.containsKey(edge.source()) && addressIndex.containsKey(edge.target())) {
                 taintGraph.addEdge(addressIndex.get(edge.source()), addressIndex.get(edge.target()));
             }
             else {
                 System.out.println("Ignoring edge: " + edge.source() + " --> " + edge.target());
+                ignoredEdges++;
             }
         }
 
         System.out.println("Loop packets: " + loopPackets);
         System.out.println("Method packets: " + methodPackets);
-        System.out.println("Loop Edge packets: " + loopEdgePackets);
+        System.out.println("Loop edge packets: " + loopEdgePackets);
         System.out.println("Address packets: " + addressPackets);
-        System.out.println("Relationship packets: " + taintEdgePackets);
+        System.out.println("Taint edge packets: " + taintEdgePackets);
+        System.out.println("Ignored edges: " + ignoredEdges);
 
         return Pair.of(graph, taintGraph);
     }

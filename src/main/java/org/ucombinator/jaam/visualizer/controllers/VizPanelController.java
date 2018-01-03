@@ -162,7 +162,8 @@ public class VizPanelController implements EventHandler<SelectEvent>, SetChangeL
 
     public void initFX(Graph graph)
     {
-        this.panelRoot = LayerFactory.getLayeredGraph(graph);
+        this.panelRoot = new LayoutRootVertex();
+        LayerFactory.getLayeredGraph(graph, this.panelRoot);
         LayoutAlgorithm.layout(this.panelRoot);
         this.drawGraph();
     }
