@@ -51,10 +51,12 @@ analyzed is in the `<application>` directory, then run the following commands.
     ./bin/jaam app       --input <application>/         --output <application>.app.jaam
     ./bin/jaam decompile --input <application>.app.jaam --output <application>.decompile.jaam
     ./bin/jaam loop3     --input <application>.app.jaam --output <application>.loop3.jaam
+    ./bin/jaam taint3    --input <application>.app.jaam --output <application>.taint3.jaam
     ./bin/jaam cat       --input <application>.app.jaam \
-                         --input <application>.decompile.jaam \
-                         --input <application>.loop3.jaam \
-                         --output <application>.all.jaam
+                            --input <application>.decompile.jaam \
+                            --input <application>.loop3.jaam \
+                            --input <application>.taint3.jaam \
+                            --output <application>.all.jaam
 
 Now that you have an `.all.jaam` file, run the visualizer with the following.
 

@@ -9,7 +9,7 @@ import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
-public class LayoutLoopVertex extends AbstractLayoutVertex implements Cloneable, CodeEntity{
+public class LayoutLoopVertex extends StateVertex implements Cloneable, CodeEntity {
 
     private static final Color defaultColor = Color.LIGHTYELLOW;
 
@@ -68,10 +68,6 @@ public class LayoutLoopVertex extends AbstractLayoutVertex implements Cloneable,
         return "Loop vertex: " + this.getMethodName();
     }
 
-    public String getShortDescription() {
-        return this.getMethodName();
-    }
-
     @Override
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = this.getMethodName().toLowerCase().contains(query);
@@ -90,6 +86,12 @@ public class LayoutLoopVertex extends AbstractLayoutVertex implements Cloneable,
         return methods;
     }
 
+    @Override
+    public HashSet<String> getMethodNames() {
+        HashSet<String> methodNames = new HashSet<>();
+        methodNames.add(this.getMethodName());
+        return methodNames;
+    }
 
     public void setDefaultColor(){
         this.color = defaultColor;

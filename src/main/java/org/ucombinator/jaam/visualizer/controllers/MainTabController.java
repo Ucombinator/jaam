@@ -15,8 +15,9 @@ import javafx.scene.layout.VBox;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.*;
-import com.strobel.decompiler.languages.java.ast.*;
+import com.strobel.decompiler.languages.java.ast.CompilationUnit;
 import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.taint.TaintGraph;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,34 +26,39 @@ import java.util.*;
 public class MainTabController {
     public final Tab tab;
     public final VizPanelController vizPanelController;
+    public final TaintPanelController taintPanelController;
     public final CodeViewController codeViewController;
 
     // Left Side Components
-    @FXML public final VBox leftPane = null; // Initialized by Controllers.loadFXML()
+    @FXML private final VBox leftPane = null; // Initialized by Controllers.loadFXML()
 
     // Center Components
     @FXML private final Node root = null; // Initialized by Controllers.loadFXML()
-    @FXML private final BorderPane centerPane = null; // Initialized by Controllers.loadFXML()
+    @FXML private final BorderPane vizPane = null; // Initialized by Controllers.loadFXML()
+    @FXML private final BorderPane taintPane = null; // Initialized by Controllers.loadFXML()
 
     //Right Side Components
     @FXML private final TextArea descriptionArea = null; // Initialized by Controllers.loadFXML()
     @FXML private final TreeView<ClassTreeNode> classTree = null; // Initialized by Controllers.loadFXML()
     @FXML private final SearchResults searchResults = null; // Initialized by Controllers.loadFXML()
 
-    private HashSet<AbstractLayoutVertex> highlighted; // TODO: Make this an observable set
-    private SetProperty<AbstractLayoutVertex> hidden;
+    private HashSet<StateVertex> highlighted; // TODO: Make this an observable set
+    private SetProperty<StateVertex> hidden;
 
     public enum SearchType {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
     }
 
-    public MainTabController(File file, Graph graph, List<CompilationUnit> compilationUnits) throws IOException {
+    public MainTabController(File file, Graph graph, List<CompilationUnit> compilationUnits, TaintGraph taintGraph) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
 
-
         this.vizPanelController = new VizPanelController();
-        this.centerPane.setCenter(this.vizPanelController.root);
+        this.vizPane.setCenter(this.vizPanelController.root);
         this.vizPanelController.initFX(graph);
+
+        this.taintPanelController = new TaintPanelController(taintGraph);
+        this.taintPane.setCenter(this.taintPanelController.root);
+
         this.tab = new Tab(file.getName(), this.root);
         this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));
         Controllers.put(this.tab, this);
@@ -60,12 +66,13 @@ public class MainTabController {
         this.codeViewController = new CodeViewController(compilationUnits);
         this.leftPane.getChildren().add(this.codeViewController.codeTabs);
 
-        this.codeViewController.addSelectHandler(centerPane);
+        this.codeViewController.addSelectHandler(vizPane);
+        this.taintPanelController.addSelectHandler(vizPane);
 
         buildClassTree(this.codeViewController.getClassNames(), this.vizPanelController.getPanelRoot());
 
         this.highlighted = new LinkedHashSet<>();
-        this.hidden = new SimpleSetProperty<AbstractLayoutVertex>(FXCollections.observableSet());
+        this.hidden = new SimpleSetProperty<StateVertex>(FXCollections.observableSet());
 
         this.hidden.addListener(this.vizPanelController);
     }
@@ -88,10 +95,7 @@ public class MainTabController {
             }
         }
 
-        for(ClassTreeNode f : root.subDirs)
-        {
-            topLevel.add(f);
-        }
+        topLevel.addAll(root.subDirs);
 
         // Compression Step
         for(ClassTreeNode f : topLevel)
@@ -142,7 +146,8 @@ public class MainTabController {
                System.out.println("Warning didn't find package for: " + ((CodeEntity) root).getClassName());
        }
 
-       for(AbstractLayoutVertex v : root.getInnerGraph().getVertices())
+       HierarchicalGraph<AbstractLayoutVertex> innerGraph = root.getInnerGraph();
+       for(AbstractLayoutVertex v : innerGraph.getVertices())
        {
            addVerticesToClassTree(topLevel, v);
        }
@@ -161,20 +166,7 @@ public class MainTabController {
 
     private boolean addVertex(ClassTreeNode node, AbstractLayoutVertex vertex) {
 
-        if(!node.subDirs.isEmpty())
-        {
-            for(ClassTreeNode n : node.subDirs)
-            {
-                if(((CodeEntity)vertex).getClassName().startsWith(n.fullName))
-                {
-                    return addVertex(n, vertex);
-                }
-            }
-            return false;
-        }
-
-        node.vertices.add(vertex);
-        return true;
+        return node.addVertex(vertex);
     }
 
     public void repaintAll() {
@@ -186,7 +178,7 @@ public class MainTabController {
 
     public void setRightText() {
         StringBuilder text = new StringBuilder();
-        for (AbstractLayoutVertex v : this.getHighlighted()) {
+        for (StateVertex v : this.getHighlighted()) {
             text.append(v.getRightPanelContent() + "\n");
         }
 
@@ -213,8 +205,8 @@ public class MainTabController {
     {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        for(AbstractLayoutVertex i : v.getInnerGraph().getVisibleVertices())
-        {
+        HierarchicalGraph<StateVertex> innerGraph = v.getInnerGraph();
+        for(AbstractLayoutVertex i : innerGraph.getVisibleVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
         this.descriptionArea.setText(text.toString());
@@ -243,12 +235,12 @@ public class MainTabController {
         Parameters.rightArea.setText("");*/
     }
 
-    public ObservableSet<AbstractLayoutVertex> getHidden() {
+    public ObservableSet<StateVertex> getHidden() {
         return hidden.get();
     }
 
     public void hideSelectedNodes() {
-        for(AbstractLayoutVertex v : this.getHighlighted()) {
+        for(StateVertex v : this.getHighlighted()) {
             this.hidden.add(v);
         }
 
@@ -313,7 +305,7 @@ public class MainTabController {
         }
     }
 
-    public HashSet<AbstractLayoutVertex> getHighlighted() {
+    public HashSet<StateVertex> getHighlighted() {
         return this.highlighted;
     }
 
@@ -347,7 +339,7 @@ public class MainTabController {
     }
     */
 
-    public void addToHighlighted(AbstractLayoutVertex v)
+    public void addToHighlighted(StateVertex v)
     {
         if(v != null) {
             highlighted.add(v);
@@ -355,10 +347,9 @@ public class MainTabController {
         }
     }
 
-    public void resetHighlighted(AbstractLayoutVertex newHighlighted)
+    public void resetHighlighted(StateVertex newHighlighted)
     {
-        System.out.println("Resetting highlighted: " + newHighlighted);
-        for(AbstractLayoutVertex currHighlighted : highlighted) {
+        for(StateVertex currHighlighted : highlighted) {
             currHighlighted.setHighlighted(false);
         }
         highlighted.clear();
@@ -370,12 +361,12 @@ public class MainTabController {
 
     // Has a double function, either a folder(inner node) in which case it has no vertex
     // Or a leaf node in which case it is associated to a one or more vertices
-    class ClassTreeNode
+    class ClassTreeNode<T>
     {
         public String name;
         public String fullName;
-        public HashSet<ClassTreeNode> subDirs;
-        public HashSet<AbstractLayoutVertex> vertices; // Leaf nodes store their associated vertices
+        public HashSet<ClassTreeNode<T>> subDirs;
+        public HashSet<T> vertices; // Leaf nodes store their associated vertices
 
         public ClassTreeNode(String name, String prefix)
         {
@@ -451,12 +442,12 @@ public class MainTabController {
             return subDirs.isEmpty();
         }
 
-        private HashSet<AbstractLayoutVertex> getChildrenVertices()
+        private HashSet<T> getChildrenVertices()
         {
             if(this.isLeaf())
                 return this.vertices;
 
-            HashSet<AbstractLayoutVertex> all = new HashSet<>();
+            HashSet<T> all = new HashSet<>();
 
             for(ClassTreeNode f : subDirs)
             {
@@ -465,7 +456,7 @@ public class MainTabController {
             return all;
         }
 
-        private void getChildrenVertices(HashSet<AbstractLayoutVertex> all)
+        private void getChildrenVertices(HashSet<T> all)
         {
             if(this.isLeaf())
             {
@@ -491,7 +482,7 @@ public class MainTabController {
 
                     System.out.println("JUAN: Firing off " + item.getValue());
 
-                    HashSet<AbstractLayoutVertex> childVertices = item.getValue().getChildrenVertices();
+                    HashSet<StateVertex> childVertices = item.getValue().getChildrenVertices();
 
                     System.out.println("\t\tJUAN children is: " + childVertices);
 
@@ -513,6 +504,25 @@ public class MainTabController {
             for (ClassTreeNode f : subDirs)
                 f.build(item);
         }
+
+        public boolean addVertex(T vertex) {
+
+            if(!this.subDirs.isEmpty())
+            {
+                for(ClassTreeNode<T> n : this.subDirs)
+                {
+                    if(((CodeEntity)vertex).getClassName().startsWith(n.fullName))
+                    {
+                        return n.addVertex(vertex);
+                    }
+                }
+                return false;
+            }
+
+            this.vertices.add(vertex);
+            return true;
+        }
+
     } // End of class TreeNode
 
     private void setClassHighlight(AbstractLayoutVertex v, String prevPrefix, String currPrefix)
@@ -531,7 +541,8 @@ public class MainTabController {
 
             if(!v.isInnerGraphEmpty())
             {
-                for(AbstractLayoutVertex i : v.getInnerGraph().getVertices())
+                HierarchicalGraph<AbstractLayoutVertex> innerGraph = v.getInnerGraph();
+                for(AbstractLayoutVertex i : innerGraph.getVertices())
                 {
                     setClassHighlight(i, prevPrefix, currPrefix);
                 }

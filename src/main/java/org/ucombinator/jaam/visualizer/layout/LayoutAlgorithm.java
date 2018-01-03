@@ -1,5 +1,7 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import org.ucombinator.jaam.visualizer.taint.TaintSccVertex;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -26,15 +28,17 @@ public class LayoutAlgorithm
         parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
         parentVertex.setX(0);
         parentVertex.setY(0);
-        for (AbstractLayoutVertex v : parentVertex.getInnerGraph().getVisibleVertices()) {
+        HierarchicalGraph<AbstractLayoutVertex> innerGraph = parentVertex.getInnerGraph();
+        for (AbstractLayoutVertex v : innerGraph.getVisibleVertices()) {
             initializeSizes(v);
         }
     }
 
     private static void expandSubGraphs(AbstractLayoutVertex parentVertex) {
-        for(AbstractLayoutVertex v: parentVertex.getInnerGraph().getVisibleVertices()) {
-            HierarchicalGraph innerGraph = v.getInnerGraph();
-            if (innerGraph.getVisibleVertices().size() != 0)
+        HierarchicalGraph<AbstractLayoutVertex> parentInnerGraph = parentVertex.getInnerGraph();
+        for(AbstractLayoutVertex v: parentInnerGraph.getVisibleVertices()) {
+            HierarchicalGraph childInnerGraph = v.getInnerGraph();
+            if (childInnerGraph.getVisibleVertices().size() != 0)
             {
                 // Layout the inner graphs of each node and assign width W and height H to each node
                 // X and Y coordinates are RELATIVE to the parent
@@ -48,7 +52,7 @@ public class LayoutAlgorithm
     }
 
     private static void dfsLayout(AbstractLayoutVertex parentVertex) {
-        HierarchicalGraph graph = parentVertex.getInnerGraph();
+        HierarchicalGraph<AbstractLayoutVertex> graph = parentVertex.getInnerGraph();
 
         expandSubGraphs(parentVertex);
 
@@ -67,7 +71,7 @@ public class LayoutAlgorithm
     }
 
     private static void bfsLayout(AbstractLayoutVertex parentVertex) {
-        HierarchicalGraph graph = parentVertex.getInnerGraph();
+        HierarchicalGraph<AbstractLayoutVertex> graph = parentVertex.getInnerGraph();
 
         // Interior graphs use the DFS Layout
         expandSubGraphs(parentVertex);
@@ -97,14 +101,14 @@ public class LayoutAlgorithm
     private static Comparator<AbstractLayoutVertex> classComp = new Comparator<AbstractLayoutVertex>() {
         @Override
         public int compare(AbstractLayoutVertex o1, AbstractLayoutVertex o2) {
-            if(o1 instanceof LayoutSccVertex)
+            if(o1 instanceof LayoutSccVertex || o1 instanceof TaintSccVertex)
             {
-                if(o2 instanceof  LayoutSccVertex)
+                if(o2 instanceof LayoutSccVertex || o2 instanceof TaintSccVertex)
                     return o1.getId() < o2.getId() ? -1 : o1.getId() == o2.getId() ? 0 : 1;
                 else
                     return -1;
             }
-            else if(o2 instanceof  LayoutSccVertex)
+            else if(o2 instanceof LayoutSccVertex || o2 instanceof TaintSccVertex)
             {
                 return 1;
             }
@@ -149,7 +153,7 @@ public class LayoutAlgorithm
             }
         }
 
-        HierarchicalGraph graph = parentVertex.getInnerGraph();
+        HierarchicalGraph<AbstractLayoutVertex> graph = parentVertex.getInnerGraph();
         ArrayList<AbstractLayoutVertex> roots = graph.getVisibleRoots();
 
         if(roots.isEmpty())
@@ -190,7 +194,7 @@ public class LayoutAlgorithm
      * Every node appears as a child as deep as possible in the tree (ties, broken arbitrarily)
      */
     private static HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> maxDepthChildren(
-            HierarchicalGraph graph)
+            HierarchicalGraph<AbstractLayoutVertex> graph)
     {
         HashMap<AbstractLayoutVertex, ArrayList<AbstractLayoutVertex>> childrenMap = new HashMap<>();
         HashMap<AbstractLayoutVertex, Integer> vertexCounters = new HashMap<>();
@@ -262,7 +266,7 @@ public class LayoutAlgorithm
             for (Map.Entry<AbstractLayoutVertex, Integer> entry : vertexCounters.entrySet()) {
 
                 System.out.println("\t\t" + entry + " --> " + entry.getKey().getId() + " "
-                        + entry.getKey().getVertexStatus() + " " +  entry.getKey().getMethodVertices());
+                        + entry.getKey().getVertexStatus() /*+ " " +  entry.getKey().getMethodVertices()*/);
                 for(AbstractLayoutVertex n : graph.getVisibleInNeighbors(entry.getKey()))
                 {
                     System.out.println("\t\t\t" + n + " --> " + n.getId() + " " + n.getVertexStatus());

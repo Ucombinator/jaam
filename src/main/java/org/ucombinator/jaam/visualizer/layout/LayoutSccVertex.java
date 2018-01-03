@@ -1,12 +1,13 @@
 package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
+import org.ucombinator.jaam.serializer.State;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
-public class LayoutSccVertex extends AbstractLayoutVertex {
+public class LayoutSccVertex extends StateVertex {
 
     private Color defaultColor = Color.DARKGREY;
 
@@ -18,7 +19,7 @@ public class LayoutSccVertex extends AbstractLayoutVertex {
 
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = false;
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
+        for(StateVertex v : this.getInnerGraph().getVisibleVertices()) {
             found = v.searchByMethod(query, mainTab) || found;
         }
 
@@ -32,10 +33,6 @@ public class LayoutSccVertex extends AbstractLayoutVertex {
 
     public String getRightPanelContent() {
         return "SCC vertex: " + this.getId();
-    }
-
-    public String getShortDescription() {
-        return "I am a SCC vertex!";
     }
 
     public HashSet<LayoutMethodVertex> getMethodVertices() {

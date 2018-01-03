@@ -7,7 +7,7 @@ import soot.SootClass;
 
 import java.util.LinkedHashSet;
 
-public class LayoutMethodVertex extends AbstractLayoutVertex implements CodeEntity{
+public class LayoutMethodVertex extends StateVertex implements CodeEntity {
 
     private static final Color defaultColor = Color.DEEPSKYBLUE;
 
@@ -59,10 +59,6 @@ public class LayoutMethodVertex extends AbstractLayoutVertex implements CodeEnti
         return "Method vertex: " + this.getId();
     }
 
-    public String getShortDescription() {
-        return this.getMethodName();
-    }
-
     @Override
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = this.getMethodName().toLowerCase().contains(query);
@@ -73,7 +69,7 @@ public class LayoutMethodVertex extends AbstractLayoutVertex implements CodeEnti
             mainTab.getHighlighted().add(this);
         }
 
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
+        for(StateVertex v : this.getInnerGraph().getVisibleVertices()) {
             v.searchByMethod(query, mainTab);
         }
 

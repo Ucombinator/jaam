@@ -3,15 +3,15 @@ package org.ucombinator.jaam.visualizer.layout;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class HierarchicalGraph
+public class HierarchicalGraph<T extends AbstractLayoutVertex>
 {
-    private HashSet<AbstractLayoutVertex> vertices;
-    private HashMap<AbstractLayoutVertex, HashMap<AbstractLayoutVertex, LayoutEdge>> outEdges;
-    private HashMap<AbstractLayoutVertex, HashMap<AbstractLayoutVertex, LayoutEdge>> inEdges;
+    private HashSet<T> vertices;
+    private HashMap<T, HashMap<T, LayoutEdge<T>>> outEdges;
+    private HashMap<T, HashMap<T, LayoutEdge<T>>> inEdges;
 
-    private HashSet<AbstractLayoutVertex> visibleVertices;
-    private HashMap<AbstractLayoutVertex, HashMap<AbstractLayoutVertex, LayoutEdge>> visibleOutEdges;
-    private HashMap<AbstractLayoutVertex, HashMap<AbstractLayoutVertex, LayoutEdge>> visibleInEdges;
+    private HashSet<T> visibleVertices;
+    private HashMap<T, HashMap<T, LayoutEdge<T>>> visibleOutEdges;
+    private HashMap<T, HashMap<T, LayoutEdge<T>>> visibleInEdges;
 
     public HierarchicalGraph()
     {
@@ -25,7 +25,7 @@ public class HierarchicalGraph
         this.visibleInEdges = new HashMap<>();
     }
 
-    public HashSet<AbstractLayoutVertex> getVisibleVertices() {
+    public HashSet<T> getVisibleVertices() {
         return this.visibleVertices;
     }
 
@@ -34,41 +34,41 @@ public class HierarchicalGraph
         return vertices.isEmpty();
     }
 
-    public HashSet<AbstractLayoutVertex> getVertices() {
+    public HashSet<T> getVertices() {
         return vertices;
     }
 
-    public void setVertices(HashSet<AbstractLayoutVertex> vertices) {
+    public void setVertices(HashSet<T> vertices) {
         this.vertices = vertices;
-        for(AbstractLayoutVertex vertex : this.vertices) {
+        for(T vertex : this.vertices) {
             this.visibleVertices.add(vertex);
         }
     }
 
     private HashSet<LayoutEdge> getEdges() {
         HashSet<LayoutEdge> edgeSet = new HashSet<>();
-        for (HashMap<AbstractLayoutVertex, LayoutEdge> inEdgeSet : inEdges.values()) {
+        for (HashMap<T, LayoutEdge<T>> inEdgeSet : inEdges.values()) {
             edgeSet.addAll(inEdgeSet.values());
         }
         return edgeSet;
     }
 
-    public HashSet<LayoutEdge> getVisibleEdges() {
-        HashSet<LayoutEdge> edgeSet = new HashSet<>();
-        for(HashMap<AbstractLayoutVertex, LayoutEdge> inEdgeSet : visibleInEdges.values()) {
+    public HashSet<LayoutEdge<T>> getVisibleEdges() {
+        HashSet<LayoutEdge<T>> edgeSet = new HashSet<>();
+        for(HashMap<T, LayoutEdge<T>> inEdgeSet : visibleInEdges.values()) {
             edgeSet.addAll(inEdgeSet.values());
         }
         return edgeSet;
     }
 
-    public void addVertex(AbstractLayoutVertex vertex)
+    public void addVertex(T vertex)
     {
         this.vertices.add(vertex);
         this.visibleVertices.add(vertex);
         vertex.setSelfGraph(this);
     }
     
-    public void addEdge(LayoutEdge edge)
+    public void addEdge(LayoutEdge<T> edge)
     {
         this.outEdges.putIfAbsent(edge.getSource(), new HashMap<>());
         this.outEdges.get(edge.getSource()).put(edge.getDest(), edge);
@@ -83,13 +83,13 @@ public class HierarchicalGraph
         this.visibleInEdges.get(edge.getDest()).put(edge.getSource(), edge);
     }
 
-    public void addVisibleEdge(LayoutEdge edge) {
+    public void addVisibleEdge(LayoutEdge<T> edge) {
         System.out.println("Adding visible edge: " + edge.getSource().getId() + " --> " + edge.getDest().getId());
         this.visibleOutEdges.get(edge.getSource()).putIfAbsent(edge.getDest(), edge);
         this.visibleInEdges.get(edge.getDest()).putIfAbsent(edge.getSource(), edge);
 
         System.out.print("In neighbors for destination:");
-        for(AbstractLayoutVertex inNeighbor : this.getVisibleInNeighbors(edge.getDest())) {
+        for(T inNeighbor : this.getVisibleInNeighbors(edge.getDest())) {
             System.out.print(inNeighbor.getId() + " ");
         }
         System.out.println();
@@ -102,7 +102,7 @@ public class HierarchicalGraph
             return "";
 
         output.append("Vertices: ");
-        for(AbstractLayoutVertex v : this.vertices)
+        for(T v : this.vertices)
         {
             output.append(v.getLabel() + ", ");
             output.append("\n");
@@ -120,12 +120,12 @@ public class HierarchicalGraph
         return output.toString();
     }
 
-    public ArrayList<AbstractLayoutVertex> getVisibleRoots() {
+    public ArrayList<T> getVisibleRoots() {
         if(this.vertices.size() == 0) {
             return null;
         }
 
-        ArrayList<AbstractLayoutVertex> roots = this.getVisibleVertices().stream()
+        ArrayList<T> roots = this.getVisibleVertices().stream()
                 .filter(v -> this.isVisibleRoot(v))
                 .collect(Collectors.toCollection(ArrayList::new));
 
@@ -134,7 +134,7 @@ public class HierarchicalGraph
         // vertices.
         if(roots.size() == 0) {
             System.out.println("Error: couldn't find root!");
-            ArrayList<AbstractLayoutVertex> vertices = new ArrayList<>(this.getVisibleVertices());
+            ArrayList<T> vertices = new ArrayList<>(this.getVisibleVertices());
             if(!this.getVisibleVertices().isEmpty()) {
                 Collections.sort(vertices);
                 roots.add(vertices.get(0));
@@ -144,47 +144,47 @@ public class HierarchicalGraph
         return roots;
     }
 
-    public boolean isVisibleRoot(AbstractLayoutVertex v) {
+    public boolean isVisibleRoot(T v) {
         return (this.getVisibleInNeighbors(v).size() == 0 || (this.getVisibleInNeighbors(v).size() == 1 && this.getVisibleInNeighbors(v).contains(v)));
     }
 
-    private Set<AbstractLayoutVertex> getOutNeighbors(AbstractLayoutVertex v) {
+    private Set<T> getOutNeighbors(T v) {
         return this.outEdges.getOrDefault(v, new HashMap<>()).keySet();
     }
 
-    private Set<AbstractLayoutVertex> getInNeighbors(AbstractLayoutVertex v) {
+    private Set<T> getInNeighbors(T v) {
         return this.inEdges.getOrDefault(v, new HashMap<>()).keySet();
     }
 
-    public Set<AbstractLayoutVertex> getVisibleOutNeighbors(AbstractLayoutVertex v) {
+    public Set<T> getVisibleOutNeighbors(T v) {
         return this.visibleOutEdges.getOrDefault(v, new HashMap<>()).keySet();
     }
 
-    public Set<AbstractLayoutVertex> getVisibleInNeighbors(AbstractLayoutVertex v) {
+    public Set<T> getVisibleInNeighbors(T v) {
         return this.visibleInEdges.getOrDefault(v, new HashMap<>()).keySet();
     }
 
     // Hides a vertex, and reconnects every incoming vertex to every outgoing vertex.
-    public void setHidden(AbstractLayoutVertex v) {
-        ArrayList<AbstractLayoutVertex> srcs = new ArrayList<>();
-        ArrayList<AbstractLayoutVertex> dests = new ArrayList<>();
+    public void setHidden(T v) {
+        ArrayList<T> srcs = new ArrayList<>();
+        ArrayList<T> dests = new ArrayList<>();
 
-        for (AbstractLayoutVertex src : this.getVisibleInNeighbors(v)) {
+        for (T src : this.getVisibleInNeighbors(v)) {
             if(!src.equals(v)) {
                 srcs.add(src);
                 this.visibleOutEdges.get(src).remove(v);
             }
         }
 
-        for (AbstractLayoutVertex dest : this.getVisibleOutNeighbors(v)) {
+        for (T dest : this.getVisibleOutNeighbors(v)) {
             if(!dest.equals(v)) {
                 dests.add(dest);
                 this.visibleInEdges.get(dest).remove(v);
             }
         }
 
-        for(AbstractLayoutVertex src : srcs) {
-            for(AbstractLayoutVertex dest : dests) {
+        for(T src : srcs) {
+            for(T dest : dests) {
                 if(!src.equals(v) && !dest.equals(v)) {
                     LayoutEdge edge = new LayoutEdge(src, dest, LayoutEdge.EDGE_TYPE.EDGE_REGULAR);
                     this.addVisibleEdge(edge);
@@ -203,16 +203,16 @@ public class HierarchicalGraph
         this.visibleVertices = new HashSet<>();
         this.visibleInEdges = new HashMap<>();
         this.visibleOutEdges = new HashMap<>();
-        for(AbstractLayoutVertex v : this.vertices) {
+        for(T v : this.vertices) {
             this.visibleVertices.add(v);
             this.visibleInEdges.put(v, new HashMap<>());
-            for(AbstractLayoutVertex w : this.getInNeighbors(v)) {
+            for(T w : this.getInNeighbors(v)) {
                 LayoutEdge e = this.inEdges.get(v).get(w);
                 this.visibleInEdges.get(v).putIfAbsent(w, e);
             }
 
             this.visibleOutEdges.put(v, new HashMap<>());
-            for(AbstractLayoutVertex w : this.getOutNeighbors(v)) {
+            for(T w : this.getOutNeighbors(v)) {
                 LayoutEdge e = this.outEdges.get(v).get(w);
                 this.visibleOutEdges.get(v).putIfAbsent(w, e);
             }

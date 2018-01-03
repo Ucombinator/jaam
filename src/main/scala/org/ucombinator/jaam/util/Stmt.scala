@@ -47,6 +47,7 @@ case class Stmt(sootStmt : SootStmt, sootMethod : SootMethod) extends CachedHash
     }
 
   def toPacket: serializer.Stmt = serializer.Stmt(sootMethod, index, sootStmt)
+  def prevSyntactic: Stmt = this.copy(sootStmt = Soot.getBody(sootMethod).getUnits.getPredOf(sootStmt))
   def nextSyntactic: Stmt = this.copy(sootStmt = Soot.getBody(sootMethod).getUnits.getSuccOf(sootStmt))
   def nextSemantic: List[Stmt] =
     sootStmt match {

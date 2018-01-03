@@ -157,6 +157,7 @@ object Soot {
     lazy val ClassCastException: SootClass  = getSootClass("java.lang.ClassCastException")
     lazy val ArithmeticException: SootClass = getSootClass("java.lang.ArithmeticException")
     lazy val Serializable: SootClass        = getSootClass("java.io.Serializable")
+    lazy val Iterator: SootClass            = getSootClass("java.util.Iterator")
   }
 
   // is a of type b?

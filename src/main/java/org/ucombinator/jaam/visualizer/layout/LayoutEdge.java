@@ -6,7 +6,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 
-public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.layout.LayoutEdge>, GraphEntity
+public class LayoutEdge<T extends AbstractLayoutVertex> implements Comparable<org.ucombinator.jaam.visualizer.layout.LayoutEdge>, GraphEntity
 {
     private static final Color highlightColor = Color.ORANGERED;
 
@@ -17,7 +17,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     public enum EDGE_TYPE {EDGE_REGULAR, EDGE_DUMMY};
     private final EDGE_TYPE type;
 
-    private final AbstractLayoutVertex source, dest;
+    private final T source, dest;
 
     private static final double defaultStrokeWidth = 0.5;
     private static final double highlightStrokeWidthMultiplier = 4;
@@ -30,7 +30,7 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
     private boolean colorIsSet = false;
     private double opacity;
 
-    public LayoutEdge(AbstractLayoutVertex source, AbstractLayoutVertex dest, EDGE_TYPE edgeType)
+    public LayoutEdge(T source, T dest, EDGE_TYPE edgeType)
     {
         this.type = edgeType;
         this.source = source;
@@ -69,11 +69,11 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
         }
     }
 
-    public AbstractLayoutVertex getSource() {
+    public T getSource() {
         return source;
     }
 
-    public AbstractLayoutVertex getDest() {
+    public T getDest() {
         return dest;
     }
 
@@ -201,11 +201,12 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
                 && this.dest.isEdgeVisible() && this.isVisible();
     }
 
-    public static void redrawEdges(AbstractLayoutVertex v, boolean recurse)
+    public static <T extends AbstractLayoutVertex> void redrawEdges(T v, boolean recurse)
     {
         if(v.getSelfGraph() != null)
         {
-            for (LayoutEdge e : v.getSelfGraph().getVisibleEdges())
+            HierarchicalGraph<AbstractLayoutVertex> selfGraph = v.getSelfGraph();
+            for (LayoutEdge e : selfGraph.getVisibleEdges())
             {
                 if (v.getId() == e.source.getId() || v.getId() == e.dest.getId())
                 {
@@ -220,7 +221,8 @@ public class LayoutEdge implements Comparable<org.ucombinator.jaam.visualizer.la
 
         if(recurse)
         {
-            for (AbstractLayoutVertex w : v.getInnerGraph().getVisibleVertices())
+            HierarchicalGraph<AbstractLayoutVertex> innerGraph = v.getInnerGraph();
+            for (AbstractLayoutVertex w : innerGraph.getVisibleVertices())
                 redrawEdges(w, recurse);
         }
     }

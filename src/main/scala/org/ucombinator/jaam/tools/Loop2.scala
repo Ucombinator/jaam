@@ -22,9 +22,9 @@ import org.jgrapht.io.DOTExporter
 import org.jgrapht.graph._
 
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
-import soot.jimple.{Stmt => SootStmt, IfStmt}
+import soot.jimple.{IfStmt, Stmt => SootStmt}
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
-import soot.jimple.toolkits.callgraph.{CallGraph, CHATransformer, Edge}
+import soot.jimple.toolkits.callgraph.{CHATransformer, CallGraph, Edge}
 import soot.options.Options
 import soot.tagkit.GenericAttribute
 import soot.toolkits.graph.LoopNestTree
@@ -32,29 +32,11 @@ import soot.toolkits.graph.LoopNestTree
 import org.ucombinator.jaam.serializer
 import org.ucombinator.jaam.serializer.TaintAddress
 import org.ucombinator.jaam.util.CachedHashCode
-import org.ucombinator.jaam.util.Stmt
+import org.ucombinator.jaam.util.{Stmt, Loop}
 
 object LoopAnalyzer {
-  private var loops = Map.empty[SootMethod, Set[SootLoop]]
   def getLoops(m: SootMethod): Set[SootLoop] = {
-    loops.get(m) match {
-      case Some(l) => l
-      case None =>
-        var body: Body = null
-        try {
-          body = m.retrieveActiveBody
-        } catch {
-          case _: RuntimeException =>
-            // println("Unable to retrieve body for " + m.getName)
-        }
-        val result = if (body != null) {
-          new LoopNestTree(body).toSet
-        } else {
-          Set.empty[SootLoop]
-        }
-        loops = loops + (m -> result)
-        result
-    }
+    Loop.getLoopInfoSet(m).map(_.loop)
   }
 
   case class LoopTree(loop: SootLoop, method: SootMethod, children: Set[LoopTree]) {
