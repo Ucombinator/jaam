@@ -32,7 +32,10 @@ public class Graph<T extends AbstractVertex>
 
         vSrc = this.containsInputVertex(src);
         vDest = this.containsInputVertex(dest);
-        
+
+        assert vSrc != null;
+        assert vDest != null;
+
         this.outEdges.putIfAbsent(vSrc, new HashSet<>());
         this.outEdges.get(vSrc).add(vDest);
 
@@ -42,6 +45,9 @@ public class Graph<T extends AbstractVertex>
     }
 
     public void addEdge(T src, T dest) {
+        assert src != null;
+        assert dest != null;
+
         this.outEdges.putIfAbsent(src, new HashSet<>());
         this.outEdges.get(src).add(dest);
 
@@ -56,7 +62,8 @@ public class Graph<T extends AbstractVertex>
     public HashSet<T> getInNeighbors(T v) {
         return this.inEdges.getOrDefault(v, new HashSet<>());
     }
-    
+
+    // TODO: inefficient
     public T containsInputVertex(int id)
     {
         for(T v : this.vertices)

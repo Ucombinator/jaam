@@ -17,6 +17,7 @@ import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.*;
 import com.strobel.decompiler.languages.java.ast.CompilationUnit;
 import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.taint.TaintGraph;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,14 +26,16 @@ import java.util.*;
 public class MainTabController {
     public final Tab tab;
     public final VizPanelController vizPanelController;
+    public final TaintPanelController taintPanelController;
     public final CodeViewController codeViewController;
 
     // Left Side Components
-    @FXML public final VBox leftPane = null; // Initialized by Controllers.loadFXML()
+    @FXML private final VBox leftPane = null; // Initialized by Controllers.loadFXML()
 
     // Center Components
     @FXML private final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML private final BorderPane centerPane = null; // Initialized by Controllers.loadFXML()
+    @FXML private final BorderPane taintPane = null; // Initialized by Controllers.loadFXML()
 
     //Right Side Components
     @FXML private final TextArea descriptionArea = null; // Initialized by Controllers.loadFXML()
@@ -46,13 +49,16 @@ public class MainTabController {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
     }
 
-    public MainTabController(File file, Graph graph, List<CompilationUnit> compilationUnits) throws IOException {
+    public MainTabController(File file, Graph graph, List<CompilationUnit> compilationUnits, TaintGraph taintGraph) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
-
 
         this.vizPanelController = new VizPanelController();
         this.centerPane.setCenter(this.vizPanelController.root);
         this.vizPanelController.initFX(graph);
+
+        this.taintPanelController = new TaintPanelController(taintGraph);
+        this.taintPane.setCenter(this.taintPanelController.root);
+
         this.tab = new Tab(file.getName(), this.root);
         this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));
         Controllers.put(this.tab, this);
