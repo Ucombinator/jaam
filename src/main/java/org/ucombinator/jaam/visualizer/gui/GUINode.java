@@ -12,9 +12,10 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.scene.paint.Color;
-import org.ucombinator.jaam.interpreter.State;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.taint.TaintRootVertex;
+import org.ucombinator.jaam.visualizer.taint.TaintVertex;
 
 public class GUINode<T extends AbstractLayoutVertex> extends Group
 {
@@ -40,7 +41,7 @@ public class GUINode<T extends AbstractLayoutVertex> extends Group
         this.rectLabel = new Text(v.getId() + "");
         this.rectLabel.setVisible(v.isLabelVisible());
 
-        if (v instanceof LayoutRootVertex) {
+        if (v instanceof LayoutRootVertex || v instanceof TaintRootVertex) {
             this.getChildren().add(this.rect);
         } else {
             this.getChildren().addAll(this.rect, this.rectLabel);
@@ -96,7 +97,7 @@ public class GUINode<T extends AbstractLayoutVertex> extends Group
 
     private void handleOnMouseEntered(MouseEvent event) {
         event.consume();
-        HierarchicalGraph<AbstractLayoutVertex> selfGraph = vertex.getSelfGraph();
+        HierarchicalGraph<T> selfGraph = vertex.getSelfGraph();
         if (selfGraph != null) {
             for(LayoutEdge e : selfGraph.getVisibleEdges()) {
                 if(e.getSource() == vertex || e.getDest() == vertex) {
@@ -109,7 +110,7 @@ public class GUINode<T extends AbstractLayoutVertex> extends Group
     private void handleOnMouseExited(MouseEvent event) {
         event.consume();
 
-        HierarchicalGraph<AbstractLayoutVertex> selfGraph = vertex.getSelfGraph();
+        HierarchicalGraph<T> selfGraph = vertex.getSelfGraph();
         if (selfGraph != null) {
             for(LayoutEdge e : selfGraph.getVisibleEdges()) {
                 if (e.getSource() == vertex || e.getDest() == vertex) {
@@ -120,21 +121,20 @@ public class GUINode<T extends AbstractLayoutVertex> extends Group
     }
 
     private void handleOnMouseClicked(MouseEvent event) {
-        if (this.vertex instanceof LayoutRootVertex) { return; }
+        if (this.vertex instanceof LayoutRootVertex || this.vertex instanceof TaintRootVertex) { return; }
 
         event.consume();
-
-        if(this.vertex instanceof StateVertex) {
-
+        if (this.vertex instanceof StateVertex) {
+            StateVertex stateVertex = (StateVertex) this.vertex;
             switch (event.getClickCount()) {
                 case 1:
                     if (event.isShiftDown()) {
                         System.out.println("Shift is down!\n");
-                        Main.getSelectedMainTabController().addToHighlighted((StateVertex)this.vertex);
+                        Main.getSelectedMainTabController().addToHighlighted(stateVertex);
                     } else {
-                        Main.getSelectedMainTabController().resetHighlighted((StateVertex)this.vertex);
+                        Main.getSelectedMainTabController().resetHighlighted(stateVertex);
                     }
-                    this.fireEvent(new SelectEvent(MouseButton.PRIMARY, this));
+                    this.fireEvent(new SelectEvent<StateVertex>(MouseButton.PRIMARY, this, stateVertex));
                     break;
                 case 2:
                     handleDoubleClick(event);
@@ -143,10 +143,14 @@ public class GUINode<T extends AbstractLayoutVertex> extends Group
                 /* Do nothing */
                     break;
             }
+        } else if (this.vertex instanceof TaintVertex) {
+            System.out.println("Selecting taint vertex...");
+            TaintVertex taintVertex = (TaintVertex) this.vertex;
+            this.fireEvent(new SelectEvent<TaintVertex>(MouseButton.PRIMARY, this, taintVertex));
         }
     }
 
-    private void handleDoubleClick(MouseEvent event){
+    private void handleDoubleClick(MouseEvent event) {
         AbstractLayoutVertex root = Main.getSelectedVizPanelController().getPanelRoot();
 
         System.out.println("Double Click");
@@ -159,11 +163,11 @@ public class GUINode<T extends AbstractLayoutVertex> extends Group
 
         // First we want the content of the clicked node to appear/disappear.
         System.out.println("Changing opacity of inner graph...");
-        for(AbstractLayoutVertex v: innerGraph.getVisibleVertices()) {
+        for (AbstractLayoutVertex v: innerGraph.getVisibleVertices()) {
             v.setOpacity(newOpacity);
         }
 
-        for(LayoutEdge e: innerGraph.getVisibleEdges()){
+        for (LayoutEdge e: innerGraph.getVisibleEdges()) {
             e.setOpacity(newOpacity);
         }
 
@@ -174,11 +178,11 @@ public class GUINode<T extends AbstractLayoutVertex> extends Group
                 // to change its size.
                 doubleClickedVertex.setExpanded(!isExpanded);
 
-                for(AbstractLayoutVertex v: innerGraph.getVisibleVertices()){
+                for (AbstractLayoutVertex v: innerGraph.getVisibleVertices()) {
                     v.setVisible(newVisible);
                 }
 
-                for(LayoutEdge e: innerGraph.getVisibleEdges()){
+                for (LayoutEdge e: innerGraph.getVisibleEdges()) {
                     e.setVisible(newVisible);
                 }
 

@@ -19,16 +19,17 @@
                   <BorderPane fx:id="taintPane" />
                </items>
             </SplitPane>
-            <SplitPane dividerPositions="0.2, 0.6" orientation="VERTICAL" SplitPane.resizableWithParent="false">
+            <SplitPane dividerPositions="0.2, 0.6, 0.5" orientation="VERTICAL" SplitPane.resizableWithParent="false">
                <items>
                   <BorderPane>
                      <center>
-                        <TextArea fx:id="descriptionArea" />
+                        <TextArea fx:id="vizDescriptionArea" />
                      </center>
                      <top>
                         <Label text="Description" BorderPane.alignment="CENTER" />
                      </top>
                   </BorderPane>
+                  <TextArea fx:id="taintDescriptionArea" prefHeight="459.0" prefWidth="107.0" />
                   <TreeView fx:id="classTree" showRoot="false" />
                   <SearchResults fx:id="searchResults" />
                </items>

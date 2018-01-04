@@ -10,13 +10,14 @@ import javafx.scene.layout.Pane;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.layout.*;
+import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.taint.*;
 
 import java.io.IOException;
 import java.util.HashSet;
 
 // TODO: Make base PanelController class or interface?
-public class TaintPanelController {
+public class TaintPanelController implements EventHandler<SelectEvent<TaintVertex>> {
     @FXML public final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML private final ScrollPane scrollPane = null; // Initialized by Controllers.loadFXML()
     @FXML private final Pane taintPanel = null; // Initialized by Controllers.loadFXML()
@@ -31,6 +32,7 @@ public class TaintPanelController {
         this.graphContentGroup.setVisible(true);
         this.taintPanel.setVisible(true);
         this.taintPanel.getChildren().add(graphContentGroup);
+        graphContentGroup.addEventFilter(SelectEvent.TAINT_VERTEX_SELECTED, this);
 
         this.panelRoot = new TaintRootVertex();
         LayerFactory.getLayeredGraph(graph, this.panelRoot);
@@ -46,7 +48,7 @@ public class TaintPanelController {
         panelRoot.setVisible(true);
     }
 
-    private void drawNodes(GUINode parent, AbstractLayoutVertex v)
+    private void drawNodes(GUINode parent, TaintVertex v)
     {
         GUINode node = new GUINode(parent, v);
 
@@ -62,31 +64,59 @@ public class TaintPanelController {
         double height = v.getHeight();
         node.setTranslateLocation(translateX, translateY, width, height);
 
-        HierarchicalGraph<AbstractLayoutVertex> innerGraph = v.getInnerGraph();
-        for (AbstractLayoutVertex child : innerGraph.getVisibleVertices()) {
+        HierarchicalGraph<TaintVertex> innerGraph = v.getInnerGraph();
+        for (TaintVertex child : innerGraph.getVisibleVertices()) {
             if (v.isExpanded()) {
                 drawNodes(node, child);
             }
         }
     }
 
-    private void drawEdges(AbstractLayoutVertex v)
+    private void drawEdges(TaintVertex v)
     {
         if(v.isExpanded()) {
-            HierarchicalGraph<AbstractLayoutVertex> innerGraph = v.getInnerGraph();
+            HierarchicalGraph<TaintVertex> innerGraph = v.getInnerGraph();
             for (LayoutEdge e : innerGraph.getVisibleEdges()) {
                 e.setVisible(v.isEdgeVisible());
                 e.draw();
             }
 
-            for (AbstractLayoutVertex child : innerGraph.getVisibleVertices()) {
+            for (TaintVertex child : innerGraph.getVisibleVertices()) {
                 drawEdges(child);
             }
         }
     }
 
     public void addSelectHandler(BorderPane centerPane) {
-        centerPane.addEventHandler(SelectEvent.VERTEX_SELECTED, onVertexSelect);
+        centerPane.addEventHandler(SelectEvent.STATE_VERTEX_SELECTED, onVertexSelect);
+    }
+
+    @Override
+    public void handle(SelectEvent<TaintVertex> event) {
+        TaintVertex vertex = event.getVertex();
+
+        if (vertex.getType() == AbstractLayoutVertex.VertexType.ROOT) {
+            System.out.println("Ignoring click on vertex root.");
+            event.consume();
+            return;
+        }
+
+        System.out.println("Received event from vertex " + vertex.toString());
+
+        MainTabController currentFrame = Main.getSelectedMainTabController();
+        //currentFrame.resetHighlighted(vertex);
+
+        if(vertex instanceof TaintAddress) {
+            currentFrame.setRightText((TaintAddress) vertex);
+        }
+        else if(vertex instanceof TaintSccVertex)
+        {
+            currentFrame.setRightText((TaintSccVertex) vertex);
+        }
+        else {
+            //currentFrame.bytecodeArea.setDescription();
+            currentFrame.setTaintRightText("Text");
+        }
     }
 
     // Draw the graph of taint addresses for the selected node, and addresses connected to them.
@@ -97,14 +127,20 @@ public class TaintPanelController {
             StateVertex v = selectEvent.getVertex();
             HashSet<TaintVertex> methodAddresses = findAddressesByMethods(v.getMethodNames());
             HashSet<TaintVertex> verticesToDraw = findConnectedAddresses(methodAddresses);
+            verticesToDraw.add(panelRoot);
             System.out.println("Taint vertices to draw: " + verticesToDraw.size());
-            // TODO: Redraw graph with only this set of vertices.
+
+            // Redraw graph with only this set of vertices.
+            panelRoot.getInnerGraph().setUnhidden(true);
+            panelRoot.setHiddenExcept(verticesToDraw);
+            LayoutAlgorithm.layout(panelRoot);
+            TaintPanelController.this.drawGraph();
         }
     };
 
     public HashSet<TaintVertex> findAddressesByMethods(HashSet<String> methodNames) {
         HashSet<TaintVertex> results = new HashSet<>();
-        this.panelRoot.searchByMethodNames(methodNames, results);
+        this.panelRoot.searchByMethodNames(methodNames, results); // TODO: This step is a little inefficient.
         return results;
     }
 
@@ -144,4 +180,6 @@ public class TaintPanelController {
         }
         return results;
     }
+
+
 }

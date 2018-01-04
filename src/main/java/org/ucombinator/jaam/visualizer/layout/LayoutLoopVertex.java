@@ -4,7 +4,6 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.serializer.LoopLoopNode;
 import soot.SootClass;
-import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -75,7 +74,7 @@ public class LayoutLoopVertex extends StateVertex implements Cloneable, CodeEnti
         if(found) {
             System.out.println("\t\t\tFound " + this);
             this.setHighlighted(found);
-            mainTab.getHighlighted().add(this);
+            mainTab.getVizHighlighted().add(this);
         }
 
         return found;

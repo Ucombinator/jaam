@@ -17,7 +17,10 @@ import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.*;
 import com.strobel.decompiler.languages.java.ast.CompilationUnit;
 import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.taint.TaintAddress;
 import org.ucombinator.jaam.visualizer.taint.TaintGraph;
+import org.ucombinator.jaam.visualizer.taint.TaintSccVertex;
+import org.ucombinator.jaam.visualizer.taint.TaintVertex;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,11 +41,13 @@ public class MainTabController {
     @FXML private final BorderPane taintPane = null; // Initialized by Controllers.loadFXML()
 
     //Right Side Components
-    @FXML private final TextArea descriptionArea = null; // Initialized by Controllers.loadFXML()
+    @FXML private final TextArea vizDescriptionArea = null; // Initialized by Controllers.loadFXML()
+    @FXML private final TextArea taintDescriptionArea = null;
     @FXML private final TreeView<ClassTreeNode> classTree = null; // Initialized by Controllers.loadFXML()
     @FXML private final SearchResults searchResults = null; // Initialized by Controllers.loadFXML()
 
-    private HashSet<StateVertex> highlighted; // TODO: Make this an observable set
+    private HashSet<StateVertex> vizHighlighted; // TODO: Make this an observable set
+    private HashSet<TaintVertex> taintHighlighted;
     private SetProperty<StateVertex> hidden;
 
     public enum SearchType {
@@ -71,7 +76,8 @@ public class MainTabController {
 
         buildClassTree(this.codeViewController.getClassNames(), this.vizPanelController.getPanelRoot());
 
-        this.highlighted = new LinkedHashSet<>();
+        this.vizHighlighted = new LinkedHashSet<>();
+        this.taintHighlighted = new LinkedHashSet<>();
         this.hidden = new SimpleSetProperty<StateVertex>(FXCollections.observableSet());
 
         this.hidden.addListener(this.vizPanelController);
@@ -172,22 +178,26 @@ public class MainTabController {
     public void repaintAll() {
         System.out.println("Repainting all...");
         //bytecodeArea.setDescription();
-        setRightText();
+        setVizRightText();
         searchResults.writeText(this);
     }
 
-    public void setRightText() {
+    public void setVizRightText() {
         StringBuilder text = new StringBuilder();
-        for (StateVertex v : this.getHighlighted()) {
+        for (StateVertex v : this.getVizHighlighted()) {
             text.append(v.getRightPanelContent() + "\n");
         }
 
-        this.descriptionArea.setText(text.toString());
+        this.vizDescriptionArea.setText(text.toString());
+
+        for(TaintVertex v : this.getTaintHighlighted()) {
+
+        }
     }
 
     public void setRightText(LayoutLoopVertex v)
     {
-        this.descriptionArea.setText("Loop:\n  Class: "
+        this.vizDescriptionArea.setText("Loop:\n  Class: "
                 + v.getClassDeclaration() + "\n  Method: "
                 + v.getMethodName()       + "\n  Index: "
                 + v.getStatementIndex()   + "\n  Signature: " + v.getLabel());
@@ -196,7 +206,7 @@ public class MainTabController {
 
     public void setRightText(LayoutMethodVertex v)
     {
-        this.descriptionArea.setText("Method:\n  Class: "
+        this.vizDescriptionArea.setText("Method:\n  Class: "
                 + v.getClassDeclaration() + "\n  Method: "
                 + v.getMethodName()       + "\n  Signature: " + v.getLabel());
     }
@@ -209,17 +219,35 @@ public class MainTabController {
         for(AbstractLayoutVertex i : innerGraph.getVisibleVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
-        this.descriptionArea.setText(text.toString());
+        this.vizDescriptionArea.setText(text.toString());
     }
 
-    public void setRightText(String text)
+    public void setRightText(TaintAddress v) {
+        this.taintDescriptionArea.setText("Taint address: " + v.toString());
+    }
+
+    public void setRightText(TaintSccVertex v) {
+        StringBuilder text = new StringBuilder("SCC contains:\n");
+        int k = 0;
+        HierarchicalGraph<TaintVertex> innerGraph = v.getInnerGraph();
+        for(AbstractLayoutVertex i : innerGraph.getVisibleVertices()) {
+            text.append(k++ + "  " + i.getLabel() + "\n");
+        }
+        this.taintDescriptionArea.setText(text.toString());
+    }
+
+    public void setVizRightText(String text)
     {
-        this.descriptionArea.setText(text);
+        this.vizDescriptionArea.setText(text);
+    }
+
+    public void setTaintRightText(String text) {
+        this.taintDescriptionArea.setText(text);
     }
 
     // Clean up info from previous searches
     public void initSearch(SearchType search) {
-        this.resetHighlighted(null);
+        this.resetVizHighlighted();
         String query = getSearchInput(search);
 
         if (search == SearchType.ID) {
@@ -240,11 +268,11 @@ public class MainTabController {
     }
 
     public void hideSelectedNodes() {
-        for(StateVertex v : this.getHighlighted()) {
+        for(StateVertex v : this.getVizHighlighted()) {
             this.hidden.add(v);
         }
 
-        this.highlighted.clear();
+        this.vizHighlighted.clear();
         this.vizPanelController.resetAndRedraw();
     }
 
@@ -305,8 +333,12 @@ public class MainTabController {
         }
     }
 
-    public HashSet<StateVertex> getHighlighted() {
-        return this.highlighted;
+    public HashSet<StateVertex> getVizHighlighted() {
+        return this.vizHighlighted;
+    }
+
+    public HashSet<TaintVertex> getTaintHighlighted() {
+        return this.taintHighlighted;
     }
 
     /*
@@ -342,18 +374,40 @@ public class MainTabController {
     public void addToHighlighted(StateVertex v)
     {
         if(v != null) {
-            highlighted.add(v);
+            vizHighlighted.add(v);
             v.setHighlighted(true);
         }
     }
 
-    public void resetHighlighted(StateVertex newHighlighted)
-    {
-        for(StateVertex currHighlighted : highlighted) {
+    public void resetVizHighlighted() {
+        for(StateVertex currHighlighted : vizHighlighted) {
             currHighlighted.setHighlighted(false);
         }
-        highlighted.clear();
+        vizHighlighted.clear();
+    }
 
+    public void resetHighlighted(StateVertex newHighlighted)
+    {
+        resetVizHighlighted();
+        addToHighlighted(newHighlighted);
+    }
+
+    public void addToHighlighted(TaintVertex v) {
+        if(v != null) {
+            taintHighlighted.add(v);
+            v.setHighlighted(true);
+        }
+    }
+
+    public void resetTaintHighlighted() {
+        for(TaintVertex currHighlighted : taintHighlighted) {
+            currHighlighted.setHighlighted(false);
+        }
+        taintHighlighted.clear();
+    }
+
+    public void resetHighlighted(TaintVertex newHighlighted) {
+        resetTaintHighlighted();
         addToHighlighted(newHighlighted);
     }
 

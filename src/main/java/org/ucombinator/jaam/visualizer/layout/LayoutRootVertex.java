@@ -27,7 +27,7 @@ public class LayoutRootVertex extends StateVertex {
 
         if(found) {
             //this.setHighlighted(found);
-            //mainTab.getHighlighted().add(this);
+            //mainTab.getVizHighlighted().add(this);
         }
 
         return found;

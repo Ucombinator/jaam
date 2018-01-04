@@ -24,7 +24,7 @@ import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 
-public class VizPanelController implements EventHandler<SelectEvent>, SetChangeListener<AbstractLayoutVertex> {
+public class VizPanelController implements EventHandler<SelectEvent<StateVertex>>, SetChangeListener<AbstractLayoutVertex> {
     @FXML public final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML public final Spinner<Double> zoomSpinner = null; // Initialized by Controllers.loadFXML()
 
@@ -56,7 +56,7 @@ public class VizPanelController implements EventHandler<SelectEvent>, SetChangeL
         //this.requestFocus();
 
         //Custom event handlers
-        graphContentGroup.addEventFilter(SelectEvent.VERTEX_SELECTED, this);
+        graphContentGroup.addEventFilter(SelectEvent.STATE_VERTEX_SELECTED, this);
 
         this.scrollPane.addEventFilter(ScrollEvent.SCROLL, this::scrollAction);
     }
@@ -130,8 +130,8 @@ public class VizPanelController implements EventHandler<SelectEvent>, SetChangeL
 
     // Handles select events
     @Override
-    public void handle(SelectEvent event) {
-        StateVertex vertex = (StateVertex) event.getVertex();
+    public void handle(SelectEvent<StateVertex> event) {
+        StateVertex vertex = event.getVertex();
 
         if (vertex.getType() == AbstractLayoutVertex.VertexType.ROOT) {
             event.consume();
@@ -156,7 +156,7 @@ public class VizPanelController implements EventHandler<SelectEvent>, SetChangeL
         }
         else {
             //currentFrame.bytecodeArea.setDescription();
-            currentFrame.setRightText("Text");
+            currentFrame.setVizRightText("Text");
         }
     }
 

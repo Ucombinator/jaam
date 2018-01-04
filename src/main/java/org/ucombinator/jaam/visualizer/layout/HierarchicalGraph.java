@@ -84,15 +84,15 @@ public class HierarchicalGraph<T extends AbstractLayoutVertex>
     }
 
     public void addVisibleEdge(LayoutEdge<T> edge) {
-        System.out.println("Adding visible edge: " + edge.getSource().getId() + " --> " + edge.getDest().getId());
+        //System.out.println("Adding visible edge: " + edge.getSource().getId() + " --> " + edge.getDest().getId());
         this.visibleOutEdges.get(edge.getSource()).putIfAbsent(edge.getDest(), edge);
         this.visibleInEdges.get(edge.getDest()).putIfAbsent(edge.getSource(), edge);
 
-        System.out.print("In neighbors for destination:");
+        /*System.out.print("In neighbors for destination: ");
         for(T inNeighbor : this.getVisibleInNeighbors(edge.getDest())) {
             System.out.print(inNeighbor.getId() + " ");
         }
-        System.out.println();
+        System.out.println();*/
     }
     
     public String toString()
@@ -133,7 +133,6 @@ public class HierarchicalGraph<T extends AbstractLayoutVertex>
         // in our ordering. But this should never be necessary, since we bundle SCC's into their own
         // vertices.
         if(roots.size() == 0) {
-            System.out.println("Error: couldn't find root!");
             ArrayList<T> vertices = new ArrayList<>(this.getVisibleVertices());
             if(!this.getVisibleVertices().isEmpty()) {
                 Collections.sort(vertices);
@@ -199,11 +198,15 @@ public class HierarchicalGraph<T extends AbstractLayoutVertex>
 
     // Restores the graph to its original set of edges. Note that we can't simply assign visibleInEdges
     // and visibleOutEdges; we need to make a deep copy.
-    public void setUnhidden() {
+    public void setUnhidden(boolean recurse) {
         this.visibleVertices = new HashSet<>();
         this.visibleInEdges = new HashMap<>();
         this.visibleOutEdges = new HashMap<>();
         for(T v : this.vertices) {
+            if(recurse) {
+                v.getInnerGraph().setUnhidden(recurse);
+            }
+
             this.visibleVertices.add(v);
             this.visibleInEdges.put(v, new HashMap<>());
             for(T w : this.getInNeighbors(v)) {

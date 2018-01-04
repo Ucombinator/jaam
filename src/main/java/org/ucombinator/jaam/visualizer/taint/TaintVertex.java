@@ -23,5 +23,16 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex> {
         }
     }
 
+    public void setHiddenExcept(HashSet<TaintVertex> verticesToDraw) {
+        if(!verticesToDraw.contains(this)) {
+            this.getSelfGraph().setHidden(this);
+        }
+        else {
+            for(TaintVertex v : this.getInnerGraph().getVertices()) {
+                v.setHiddenExcept(verticesToDraw);
+            }
+        }
+    }
+
     public abstract HashSet<String> getMethodNames();
 }

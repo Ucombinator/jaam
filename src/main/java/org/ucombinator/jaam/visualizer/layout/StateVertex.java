@@ -1,6 +1,5 @@
 package org.ucombinator.jaam.visualizer.layout;
 
-import org.ucombinator.jaam.serializer.State;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.graph.Instruction;
 
@@ -26,7 +25,7 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex> {
     {
         if(this.getId() >= id1 && this.getId() <= id2) {
             this.setHighlighted(true);
-            mainTab.getHighlighted().add(this);
+            mainTab.getVizHighlighted().add(this);
             System.out.println("Search successful: " + this.getId());
         }
 
@@ -40,7 +39,7 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex> {
             String instStr = ((LayoutInstructionVertex) this).getInstruction().getText();
             if(instStr.contains(query)) {
                 this.setHighlighted(true);
-                mainTab.getHighlighted().add(this);
+                mainTab.getVizHighlighted().add(this);
             }
         }
 

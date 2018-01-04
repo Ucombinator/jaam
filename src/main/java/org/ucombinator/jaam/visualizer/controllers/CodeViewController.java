@@ -38,7 +38,7 @@ public class CodeViewController {
     }
 
     public void addSelectHandler(BorderPane centerPane) {
-        centerPane.addEventHandler(SelectEvent.VERTEX_SELECTED, onVertexSelect);
+        centerPane.addEventHandler(SelectEvent.STATE_VERTEX_SELECTED, onVertexSelect);
     }
 
     public void addClass(CompilationUnit unit)

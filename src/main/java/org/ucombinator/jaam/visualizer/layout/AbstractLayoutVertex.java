@@ -6,9 +6,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.control.TreeItem;
 
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
@@ -159,17 +156,21 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> exten
     }
 
     public void setHidden() {
-        this.isHidden = true;
-        this.setVisible(false);
-        this.getSelfGraph().setHidden((T) this); // TODO: Can we avoid the need for this type cast?
+        if(this.getSelfGraph() != null) {
+            this.isHidden = true;
+            this.setVisible(false);
+            this.getSelfGraph().setHidden((T) this); // TODO: Can we avoid the need for this type cast?
+        }
     }
 
     // Warning: Setting a single vertex in a graph to be unhidden must change the entire graph to be unhidden.
-    // This should be more clearly structured so that it is automatically enforced.
+    // TODO: This should be more clearly structured so that it is automatically enforced.
     public void setUnhidden() {
         this.isHidden = false;
         this.setVisible(true);
-        this.getSelfGraph().setUnhidden();
+        if(this.getSelfGraph() != null) {
+            this.getSelfGraph().setUnhidden(false);
+        }
     }
 
     public boolean isHidden() {
@@ -192,7 +193,7 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> exten
         for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices())
             addedNodes |= v.addTreeNodes(newNode, mainTab);
 
-        if(mainTab.getHighlighted().contains(this) || addedNodes) {
+        if(mainTab.getVizHighlighted().contains(this) || addedNodes) {
             parentNode.getChildren().add(newNode);
             return true;
         }
