@@ -224,7 +224,7 @@ public class MainTabController {
     }
 
     public void setRightText(TaintAddress v) {
-        this.taintDescriptionArea.setText("Taint address: " + v.toString());
+        this.taintDescriptionArea.setText("Taint address:\n" + v.toString());
     }
 
     public void setRightText(TaintSccVertex v) {
