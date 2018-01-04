@@ -204,13 +204,13 @@ public class HierarchicalGraph<T extends AbstractLayoutVertex<T>>
             this.visibleVertices.add(v);
             this.visibleInEdges.put(v, new HashMap<>());
             for(T w : this.getInNeighbors(v)) {
-                LayoutEdge e = this.inEdges.get(v).get(w);
+                LayoutEdge<T> e = this.inEdges.get(v).get(w);
                 this.visibleInEdges.get(v).putIfAbsent(w, e);
             }
 
             this.visibleOutEdges.put(v, new HashMap<>());
             for(T w : this.getOutNeighbors(v)) {
-                LayoutEdge e = this.outEdges.get(v).get(w);
+                LayoutEdge<T> e = this.outEdges.get(v).get(w);
                 this.visibleOutEdges.get(v).putIfAbsent(w, e);
             }
         }

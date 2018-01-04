@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.codeView;
 
 import com.strobel.decompiler.languages.EntityType;
 import com.strobel.decompiler.languages.java.ast.*;
+import javafx.scene.Node;
 import javafx.scene.control.IndexRange;
 import javafx.scene.control.Tab;
 import javafx.scene.layout.StackPane;
@@ -15,8 +16,6 @@ import java.util.HashMap;
 public class CodeTab extends Tab{
 
     private CompilationUnit unit;
-    private StackPane stackPane;
-    private VirtualizedScrollPane scrollPane;
     private CodeArea codeArea;
     public final String shortClassName;
     public final String fullClassName;
@@ -28,9 +27,8 @@ public class CodeTab extends Tab{
         super(shortClassName);
         this.unit = unit;
         this.methodParagraphs = new HashMap<>();
-        generateCodeArea(unit);
 
-        this.setContent(this.stackPane);
+        this.setContent(generateCodeArea(unit));
 
         this.shortClassName = shortClassName;
         this.fullClassName = fullClassName;
@@ -40,7 +38,7 @@ public class CodeTab extends Tab{
         this.currentlySelected = new IndexRange(0,0); // Empty range
     }
 
-    private String generateCodeArea(CompilationUnit unit)
+    private Node generateCodeArea(CompilationUnit unit)
     {
         assert unit != null;
         this.codeArea = new CodeArea();
@@ -77,20 +75,19 @@ public class CodeTab extends Tab{
 
         codeArea.setMaxHeight(Double.MAX_VALUE);
 
-        scrollPane = new VirtualizedScrollPane(codeArea);
+        VirtualizedScrollPane<CodeArea> scrollPane = new VirtualizedScrollPane<>(codeArea);
         scrollPane.setMaxHeight(Double.MAX_VALUE);
 
-        this.stackPane = new StackPane(scrollPane);
+        StackPane stackPane = new StackPane(scrollPane);
+        stackPane.setMaxWidth(Double.MAX_VALUE);
+        stackPane.setMaxHeight(Double.MAX_VALUE);
 
-        this.stackPane.setMaxWidth(Double.MAX_VALUE);
-        this.stackPane.setMaxHeight(Double.MAX_VALUE);
-
-        return typeDeclaration.getName();
+        return stackPane;
     }
 
     public void highlightMethod(String methodName) {
 
-        for(int i = currentlySelected.getStart(); i < currentlySelected.getEnd(); ++i)
+        for (int i = currentlySelected.getStart(); i < currentlySelected.getEnd(); ++i)
         {
             codeArea.setParagraphStyle(i, Collections.EMPTY_LIST);
         }
