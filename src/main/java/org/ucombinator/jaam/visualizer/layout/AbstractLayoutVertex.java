@@ -14,8 +14,8 @@ import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.GUINodeStatus;
 
-public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> extends AbstractVertex
-        implements Comparable<AbstractLayoutVertex>, GraphEntity
+public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>> extends AbstractVertex
+        implements Comparable<AbstractLayoutVertex<T>>, GraphEntity
 {
     // Types of layout vertices
     public enum VertexType {
@@ -24,11 +24,11 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> exten
 
     // Because layout vertices are also HierarchicalGraphs they have two associated graphs:
     private HierarchicalGraph<T> selfGraph = null; // The graph to which this vertex belongs
-    private HierarchicalGraph<T> innerGraph = new HierarchicalGraph(); // The graph contained inside this vertex
+    private HierarchicalGraph<T> innerGraph = new HierarchicalGraph<>(); // The graph contained inside this vertex
     private VertexType vertexType;
 
     // Graphic related fields
-    private GUINode graphics;
+    private GUINode<T> graphics;
     private GUINodeStatus nodeStatus = new GUINodeStatus();
 
     public static final double DEFAULT_WIDTH = 10.0;
@@ -111,17 +111,17 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> exten
         return this.nodeStatus;
     }
 
-    public GUINode getGraphics()
+    public GUINode<T> getGraphics()
     {
-        return graphics;
+        return this.graphics;
     }
-    public void setGraphics(GUINode graphics)
+    public void setGraphics(GUINode<T> graphics)
     {
         this.graphics = graphics;
     }
 
-    public int compareTo(AbstractLayoutVertex v) {
-        return ((Integer)(this.getMinInstructionLine())).compareTo(v.getMinInstructionLine());
+    public int compareTo(AbstractLayoutVertex<T> v) {
+        return Integer.compare(this.getMinInstructionLine(), v.getMinInstructionLine());
     }
 
     public void setColor(Color c) {
@@ -135,7 +135,7 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> exten
     // Override in base case, LayoutInstructionVertex
     public int getMinInstructionLine() {
         int minIndex = Integer.MAX_VALUE;
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
+        for(AbstractLayoutVertex<T> v : this.getInnerGraph().getVisibleVertices()) {
             minIndex = Math.min(minIndex, v.getMinInstructionLine());
         }
 
@@ -154,14 +154,14 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> exten
         return selfGraph;
     }
 
-    public void setInnerGraph(HierarchicalGraph innerGraph) {
+    public void setInnerGraph(HierarchicalGraph<T> innerGraph) {
         this.innerGraph = innerGraph;
     }
 
     public void setHidden() {
         this.isHidden = true;
         this.setVisible(false);
-        this.getSelfGraph().setHidden((T) this); // TODO: Can we avoid the need for this type cast?
+        this.getSelfGraph().setHidden((T)this); // TODO: Can we avoid the need for this type cast?
     }
 
     // Warning: Setting a single vertex in a graph to be unhidden must change the entire graph to be unhidden.
@@ -182,30 +182,32 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> exten
 
     public void setVisible(boolean isVisible)
     {
-        if(this.getGraphics() != null)
+        if(this.getGraphics() != null) {
             this.getGraphics().setVisible(isVisible);
+        }
     }
 
-    public boolean addTreeNodes(TreeItem parentNode, MainTabController mainTab) {
+    public boolean addTreeNodes(TreeItem<T> parentNode, MainTabController mainTab) {
         boolean addedNodes = false;
-        TreeItem newNode = new TreeItem(this);
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices())
+        TreeItem<T> newNode = new TreeItem<>((T)this);
+        for (T v : this.getInnerGraph().getVisibleVertices()) {
             addedNodes |= v.addTreeNodes(newNode, mainTab);
+        }
 
-        if(mainTab.getHighlighted().contains(this) || addedNodes) {
+        if (mainTab.getHighlighted().contains(this) || addedNodes) {
             parentNode.getChildren().add(newNode);
             return true;
-        }
-        else
+        } else {
             return false;
+        }
     }
 
     public void resetGraphics() {
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
+        for(T v : this.getInnerGraph().getVisibleVertices()) {
             v.resetGraphics();
         }
 
-        for(LayoutEdge e : this.getInnerGraph().getVisibleEdges()) {
+        for(LayoutEdge<T> e : this.getInnerGraph().getVisibleEdges()) {
             e.resetGraphics();
         }
 
@@ -229,7 +231,7 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> exten
         }
     }
 
-    public void setSelfGraph(HierarchicalGraph graph) {
+    public void setSelfGraph(HierarchicalGraph<T> graph) {
         this.selfGraph = graph;
     }
 
@@ -239,7 +241,6 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> exten
 
     public void setExpanded(boolean expanded) {
         this.isExpanded = expanded;
-
     }
 
     public boolean isLabelVisible() {
@@ -260,11 +261,13 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> exten
     public void setEdgeVisibility(boolean isEdgeVisible)
     {
         this.setEdgeVisible(isEdgeVisible);
-        for(LayoutEdge e : this.innerGraph.getVisibleEdges())
+        for (LayoutEdge<T> e : this.innerGraph.getVisibleEdges()) {
             e.setVisible(isEdgeVisible);
+        }
 
-        for(AbstractLayoutVertex v : this.innerGraph.getVisibleVertices())
+        for (T v : this.innerGraph.getVisibleVertices()) {
             v.setEdgeVisibility(isEdgeVisible);
+        }
     }
 
     public void setLabelVisibility(boolean isLabelVisible)
@@ -272,18 +275,19 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> exten
         this.setLabelVisible(isLabelVisible);
         this.getGraphics().setLabelVisible(isLabelVisible);
 
-        for(AbstractLayoutVertex v : this.innerGraph.getVisibleVertices())
+        for (T v : this.innerGraph.getVisibleVertices()) {
             v.setLabelVisibility(isLabelVisible);
+        }
     }
 
     public void resetStrokeWidth(double factor) {
         this.getGraphics().setStrokeWidth(factor);
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices())
+        for (T v : this.getInnerGraph().getVisibleVertices()) {
             v.resetStrokeWidth(factor);
+        }
     }
     
-    public void printCoordinates()
-    {
+    public void printCoordinates() {
         System.out.println("Vertex " + this.getId() + this.nodeStatus.toString());
     }
 
@@ -292,30 +296,29 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex> exten
     }
 
     public void toggleNodesOfType(VertexType type, boolean isExpanded) {
-        if(this.getType() == type){
+        if (this.getType() == type) {
             this.setExpanded(isExpanded);
         }
 
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
+        for (T v : this.getInnerGraph().getVisibleVertices()) {
             v.toggleNodesOfType(type, isExpanded);
         }
     }
 
 
     public void toggleEdges(boolean isEdgeVisible) {
-        for(LayoutEdge e : this.getInnerGraph().getVisibleEdges()) {
+        for (LayoutEdge<T> e : this.getInnerGraph().getVisibleEdges()) {
             if(e.getGraphics() != null) {
                 e.getGraphics().setVisible(!e.getGraphics().isVisible() && isEdgeVisible);
             }
         }
 
-        for(AbstractLayoutVertex v : this.getInnerGraph().getVisibleVertices()) {
+        for (T v : this.getInnerGraph().getVisibleVertices()) {
             v.toggleEdges(isEdgeVisible);
         }
     }
 
-    public boolean isInnerGraphEmpty()
-    {
+    public boolean isInnerGraphEmpty() {
         return innerGraph.isEmpty();
     }
 

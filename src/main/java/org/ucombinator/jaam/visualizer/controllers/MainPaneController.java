@@ -14,6 +14,7 @@ import org.ucombinator.jaam.tools.taint3.Edge;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.LayoutLoopVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
+import org.ucombinator.jaam.visualizer.layout.StateVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.taint.TaintAddress;
 import org.ucombinator.jaam.visualizer.taint.TaintGraph;
@@ -74,7 +75,7 @@ public class MainPaneController {
         fileChooser.setInitialDirectory(file.getParentFile());
 
         List<CompilationUnit> compilationUnits = new ArrayList<>();
-        Pair<Graph,TaintGraph> s = parseLoopGraph(file, compilationUnits);
+        Pair<Graph<StateVertex>,TaintGraph> s = parseLoopGraph(file, compilationUnits);
 
         System.out.println("--> Create visualization: start...");
         MainTabController tabController = new MainTabController(file, s.getLeft(),  compilationUnits, s.getRight());
@@ -84,8 +85,8 @@ public class MainPaneController {
         tabPane.getSelectionModel().select(tabController.tab);
     }
 
-    private static Pair<Graph,TaintGraph> parseLoopGraph(File file, List<CompilationUnit> compilationUnits) {
-        Graph graph = new Graph();
+    private static Pair<Graph<StateVertex>,TaintGraph> parseLoopGraph(File file, List<CompilationUnit> compilationUnits) {
+        Graph<StateVertex> graph = new Graph<>();
         int loopPackets = 0;
         int methodPackets = 0;
         int loopEdgePackets = 0;

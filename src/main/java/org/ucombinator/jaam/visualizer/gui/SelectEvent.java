@@ -4,7 +4,7 @@ import javafx.event.*;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.StateVertex;
 
-public class SelectEvent<T extends AbstractLayoutVertex> extends javafx.event.Event {
+public class SelectEvent<T extends AbstractLayoutVertex<T>> extends javafx.event.Event {
 
     private T vertex;
 
@@ -14,24 +14,24 @@ public class SelectEvent<T extends AbstractLayoutVertex> extends javafx.event.Ev
 
     public SelectEvent() {
         super(VERTEX_SELECTED);
-        vertex = null;
+        this.vertex = null;
     }
 
-    public SelectEvent(Object source, EventTarget target) {
+    public SelectEvent(Object source, GUINode<T> target) {
         super(source, target, VERTEX_SELECTED);
 
-        vertex = ((GUINode<T>)target).getVertex();
+        this.vertex = target.getVertex();
     }
 
-    public T getVertex() { return vertex; }
+    public T getVertex() { return this.vertex; }
 
     @Override
-    public SelectEvent copyFor(Object newSource, EventTarget newTarget) {
-        return (SelectEvent) super.copyFor(newSource, newTarget);
+    public SelectEvent<T> copyFor(Object newSource, EventTarget newTarget) {
+        return (SelectEvent<T>) super.copyFor(newSource, newTarget);
     }
 
     @Override
-    public EventType<? extends SelectEvent> getEventType() {
-        return (EventType<? extends SelectEvent>) super.getEventType();
+    public EventType<? extends SelectEvent<T>> getEventType() {
+        return (EventType<? extends SelectEvent<T>>) super.getEventType();
     }
 }

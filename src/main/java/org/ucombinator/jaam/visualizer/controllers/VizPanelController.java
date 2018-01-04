@@ -24,7 +24,7 @@ import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 
-public class VizPanelController implements EventHandler<SelectEvent>, SetChangeListener<AbstractLayoutVertex> {
+public class VizPanelController implements EventHandler<SelectEvent<StateVertex>>, SetChangeListener<StateVertex> {
     @FXML public final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML public final Spinner<Double> zoomSpinner = null; // Initialized by Controllers.loadFXML()
 
@@ -130,8 +130,8 @@ public class VizPanelController implements EventHandler<SelectEvent>, SetChangeL
 
     // Handles select events
     @Override
-    public void handle(SelectEvent event) {
-        StateVertex vertex = (StateVertex) event.getVertex();
+    public void handle(SelectEvent<StateVertex> event) {
+        StateVertex vertex = event.getVertex();
 
         if (vertex.getType() == AbstractLayoutVertex.VertexType.ROOT) {
             event.consume();
@@ -160,7 +160,7 @@ public class VizPanelController implements EventHandler<SelectEvent>, SetChangeL
         }
     }
 
-    public void initFX(Graph graph)
+    public void initFX(Graph<StateVertex> graph)
     {
         this.panelRoot = new LayoutRootVertex();
         LayerFactory.getLayeredGraph(graph, this.panelRoot);
@@ -195,9 +195,9 @@ public class VizPanelController implements EventHandler<SelectEvent>, SetChangeL
         this.getPanelRoot().resetStrokeWidth(1.0 / this.zoomSpinner.getValue());
     }
 
-    private void drawNodes(GUINode parent, AbstractLayoutVertex v)
+    private void drawNodes(GUINode<StateVertex> parent, StateVertex v)
     {
-        GUINode node = new GUINode(parent, v);
+        GUINode<StateVertex> node = new GUINode<>(parent, v);
 
         if (parent == null) {
             graphContentGroup.getChildren().add(node);
@@ -219,34 +219,34 @@ public class VizPanelController implements EventHandler<SelectEvent>, SetChangeL
         }
     }
 
-    private void drawEdges(AbstractLayoutVertex v)
+    private void drawEdges(StateVertex v)
     {
         if(v.isExpanded()) {
             HierarchicalGraph<StateVertex> innerGraph = v.getInnerGraph();
-            for (LayoutEdge e : innerGraph.getVisibleEdges()) {
+            for (LayoutEdge<StateVertex> e : innerGraph.getVisibleEdges()) {
                 e.setVisible(v.isEdgeVisible());
                 e.draw();
             }
 
-            for (AbstractLayoutVertex child : innerGraph.getVisibleVertices()) {
+            for (StateVertex child : innerGraph.getVisibleVertices()) {
                 drawEdges(child);
             }
         }
     }
 
     @Override
-    public void onChanged(Change<? extends AbstractLayoutVertex> change) {
+    public void onChanged(Change<? extends StateVertex> change) {
         System.out.println("JUAN: Hidden changed: " + change);
         if(change.wasAdded())
         {
             System.out.println("Added " + change.getElementAdded());
-            AbstractLayoutVertex v = change.getElementAdded();
+            StateVertex v = change.getElementAdded();
             v.setHighlighted(false);
             v.setHidden();
         }
         else
         {
-            AbstractLayoutVertex v = change.getElementRemoved();
+            StateVertex v = change.getElementRemoved();
             v.setUnhidden();
             if(!inBatchMode)
                 this.resetAndRedraw();

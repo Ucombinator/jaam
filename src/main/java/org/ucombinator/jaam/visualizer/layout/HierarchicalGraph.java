@@ -3,7 +3,7 @@ package org.ucombinator.jaam.visualizer.layout;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class HierarchicalGraph<T extends AbstractLayoutVertex>
+public class HierarchicalGraph<T extends AbstractLayoutVertex<T>>
 {
     private HashSet<T> vertices;
     private HashMap<T, HashMap<T, LayoutEdge<T>>> outEdges;
@@ -45,8 +45,8 @@ public class HierarchicalGraph<T extends AbstractLayoutVertex>
         }
     }
 
-    private HashSet<LayoutEdge> getEdges() {
-        HashSet<LayoutEdge> edgeSet = new HashSet<>();
+    private HashSet<LayoutEdge<T>> getEdges() {
+        HashSet<LayoutEdge<T>> edgeSet = new HashSet<>();
         for (HashMap<T, LayoutEdge<T>> inEdgeSet : inEdges.values()) {
             edgeSet.addAll(inEdgeSet.values());
         }
@@ -61,15 +61,13 @@ public class HierarchicalGraph<T extends AbstractLayoutVertex>
         return edgeSet;
     }
 
-    public void addVertex(T vertex)
-    {
+    public void addVertex(T vertex) {
         this.vertices.add(vertex);
         this.visibleVertices.add(vertex);
         vertex.setSelfGraph(this);
     }
     
-    public void addEdge(LayoutEdge<T> edge)
-    {
+    public void addEdge(LayoutEdge<T> edge) {
         this.outEdges.putIfAbsent(edge.getSource(), new HashMap<>());
         this.outEdges.get(edge.getSource()).put(edge.getDest(), edge);
 
@@ -89,21 +87,20 @@ public class HierarchicalGraph<T extends AbstractLayoutVertex>
         this.visibleInEdges.get(edge.getDest()).putIfAbsent(edge.getSource(), edge);
 
         System.out.print("In neighbors for destination:");
-        for(T inNeighbor : this.getVisibleInNeighbors(edge.getDest())) {
+        for (T inNeighbor : this.getVisibleInNeighbors(edge.getDest())) {
             System.out.print(inNeighbor.getId() + " ");
         }
         System.out.println();
     }
     
-    public String toString()
-    {
+    public String toString() {
         StringBuilder output = new StringBuilder();
-        if(this.vertices.size() == 0)
+        if (this.vertices.size() == 0) {
             return "";
+        }
 
         output.append("Vertices: ");
-        for(T v : this.vertices)
-        {
+        for (T v : this.vertices) {
             output.append(v.getLabel() + ", ");
             output.append("\n");
             output.append("Inner graph: \n");
@@ -113,7 +110,7 @@ public class HierarchicalGraph<T extends AbstractLayoutVertex>
         output.append("\n");
 
         output.append("Edges: ");
-        for(LayoutEdge e : this.getEdges()) {
+        for (LayoutEdge<T> e : this.getEdges()) {
             output.append("( " + e.getSource().getLabel() + "->" + e.getDest().getLabel() + " ), ");
         }
         output.append("\n");
@@ -186,7 +183,7 @@ public class HierarchicalGraph<T extends AbstractLayoutVertex>
         for(T src : srcs) {
             for(T dest : dests) {
                 if(!src.equals(v) && !dest.equals(v)) {
-                    LayoutEdge edge = new LayoutEdge(src, dest, LayoutEdge.EDGE_TYPE.EDGE_REGULAR);
+                    LayoutEdge<T> edge = new LayoutEdge<>(src, dest, LayoutEdge.EDGE_TYPE.EDGE_REGULAR);
                     this.addVisibleEdge(edge);
                 }
             }
@@ -207,13 +204,13 @@ public class HierarchicalGraph<T extends AbstractLayoutVertex>
             this.visibleVertices.add(v);
             this.visibleInEdges.put(v, new HashMap<>());
             for(T w : this.getInNeighbors(v)) {
-                LayoutEdge e = this.inEdges.get(v).get(w);
+                LayoutEdge<T> e = this.inEdges.get(v).get(w);
                 this.visibleInEdges.get(v).putIfAbsent(w, e);
             }
 
             this.visibleOutEdges.put(v, new HashMap<>());
             for(T w : this.getOutNeighbors(v)) {
-                LayoutEdge e = this.outEdges.get(v).get(w);
+                LayoutEdge<T> e = this.outEdges.get(v).get(w);
                 this.visibleOutEdges.get(v).putIfAbsent(w, e);
             }
         }
