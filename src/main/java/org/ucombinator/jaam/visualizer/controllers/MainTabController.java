@@ -162,9 +162,8 @@ public class MainTabController {
 
     private ClassTreeNode getTopLevel(ArrayList<ClassTreeNode> topLevel, String className) {
 
-        for(ClassTreeNode n : topLevel)
-        {
-            if(className.startsWith(n.name))
+        for (ClassTreeNode n : topLevel) {
+            if (className.startsWith(n.name))
                 return n;
         }
 

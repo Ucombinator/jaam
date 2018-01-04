@@ -30,4 +30,8 @@ public class TaintAddress extends TaintVertex {
     public Address getAddress() {
         return this.address;
     }
+
+    public String toString() {
+        return address.toString();
+    }
 }
