@@ -14,10 +14,13 @@ import org.ucombinator.jaam.visualizer.codeView.CodeHighlighter;
 import org.ucombinator.jaam.visualizer.codeView.CodeTab;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.layout.*;
+import soot.SootClass;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class CodeViewController {
 
@@ -27,14 +30,15 @@ public class CodeViewController {
     HashMap<String, CodeTab> tabMap;
     HashSet<String> classNames;
 
-    public CodeViewController(List<CompilationUnit> compilationUnits) throws IOException {
+    public CodeViewController(List<CompilationUnit> compilationUnits, Set<SootClass> sootClasses) throws IOException {
         Controllers.loadFXML("/CodeView.fxml", this);
 
         this.tabMap     = new HashMap<>();
         this.classNames = new HashSet<>();
 
-        for(CompilationUnit u : compilationUnits)
+        for(CompilationUnit u : compilationUnits) {
             addClass(u);
+        }
     }
 
     public void addSelectHandler(BorderPane centerPane) {

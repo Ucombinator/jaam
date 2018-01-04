@@ -18,6 +18,7 @@ import org.ucombinator.jaam.visualizer.layout.StateVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.taint.TaintAddress;
 import org.ucombinator.jaam.visualizer.taint.TaintGraph;
+import soot.SootClass;
 
 import java.io.File;
 import java.io.IOException;
@@ -75,17 +76,18 @@ public class MainPaneController {
         fileChooser.setInitialDirectory(file.getParentFile());
 
         List<CompilationUnit> compilationUnits = new ArrayList<>();
-        Pair<Graph<StateVertex>,TaintGraph> s = parseLoopGraph(file, compilationUnits);
+        Set<SootClass> sootClasses = new HashSet<>();
+        Pair<Graph<StateVertex>,TaintGraph> s = parseLoopGraph(file, compilationUnits, sootClasses);
 
         System.out.println("--> Create visualization: start...");
-        MainTabController tabController = new MainTabController(file, s.getLeft(),  compilationUnits, s.getRight());
+        MainTabController tabController = new MainTabController(file, s.getLeft(),  compilationUnits, s.getRight(), sootClasses);
         System.out.println("<-- Create visualization: Done!");
 
         tabPane.getTabs().add(tabController.tab);
         tabPane.getSelectionModel().select(tabController.tab);
     }
 
-    private static Pair<Graph<StateVertex>,TaintGraph> parseLoopGraph(File file, List<CompilationUnit> compilationUnits) {
+    private static Pair<Graph<StateVertex>,TaintGraph> parseLoopGraph(File file, List<CompilationUnit> compilationUnits, Set<SootClass> sootClasses) {
         Graph<StateVertex> graph = new Graph<>();
         int loopPackets = 0;
         int methodPackets = 0;
@@ -107,11 +109,16 @@ public class MainPaneController {
                         node.method().getSignature(),
                         node.statementIndex(), node));
 
+                sootClasses.add(node.method().getDeclaringClass());
+
             } else if (packet instanceof LoopMethodNode) {
                 methodPackets++;
                 LoopMethodNode node = (LoopMethodNode) packet;
                 graph.addVertex(new LayoutMethodVertex(node.id().id(),
                         node.method().getSignature(), node));
+
+                sootClasses.add(node.method().getDeclaringClass());
+
                 System.out.println("Reading method packet: " + node.method().getSignature());
             } else if (packet instanceof LoopEdge) {
                 loopEdgePackets++;
@@ -125,6 +132,11 @@ public class MainPaneController {
                 taintGraph.addVertex(vertex);
                 addressIndex.put(address, vertex);
                 addressPackets++;
+
+                if (address.sootMethod() != null) {
+                    sootClasses.add(address.sootMethod().getDeclaringClass());
+                }
+
                 //System.out.println("Read address: " + address);
             } else if(packet instanceof Edge) {
                 Edge edge = (Edge) packet;

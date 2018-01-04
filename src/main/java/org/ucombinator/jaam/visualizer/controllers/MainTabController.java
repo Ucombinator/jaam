@@ -21,6 +21,7 @@ import org.ucombinator.jaam.visualizer.taint.TaintAddress;
 import org.ucombinator.jaam.visualizer.taint.TaintGraph;
 import org.ucombinator.jaam.visualizer.taint.TaintSccVertex;
 import org.ucombinator.jaam.visualizer.taint.TaintVertex;
+import soot.SootClass;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +43,7 @@ public class MainTabController {
 
     //Right Side Components
     @FXML private final TextArea vizDescriptionArea = null; // Initialized by Controllers.loadFXML()
-    @FXML private final TextArea taintDescriptionArea = null;
+    @FXML private final TextArea taintDescriptionArea = null; // Initialized by Controllers.loadFXML()
     @FXML private final TreeView<ClassTreeNode> classTree = null; // Initialized by Controllers.loadFXML()
     @FXML private final SearchResults searchResults = null; // Initialized by Controllers.loadFXML()
 
@@ -54,7 +55,7 @@ public class MainTabController {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
     }
 
-    public MainTabController(File file, Graph<StateVertex> graph, List<CompilationUnit> compilationUnits, TaintGraph taintGraph) throws IOException {
+    public MainTabController(File file, Graph<StateVertex> graph, List<CompilationUnit> compilationUnits, TaintGraph taintGraph, Set<SootClass> sootClasses) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
 
         this.vizPanelController = new VizPanelController();
@@ -68,7 +69,7 @@ public class MainTabController {
         this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));
         Controllers.put(this.tab, this);
 
-        this.codeViewController = new CodeViewController(compilationUnits);
+        this.codeViewController = new CodeViewController(compilationUnits, sootClasses);
         this.leftPane.getChildren().add(this.codeViewController.codeTabs);
 
         this.codeViewController.addSelectHandler(vizPane);
