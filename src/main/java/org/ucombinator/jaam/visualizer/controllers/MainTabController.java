@@ -54,7 +54,7 @@ public class MainTabController {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
     }
 
-    public MainTabController(File file, Graph graph, List<CompilationUnit> compilationUnits, TaintGraph taintGraph) throws IOException {
+    public MainTabController(File file, Graph<StateVertex> graph, List<CompilationUnit> compilationUnits, TaintGraph taintGraph) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
 
         this.vizPanelController = new VizPanelController();
@@ -85,7 +85,7 @@ public class MainTabController {
 
     private void buildClassTree(HashSet<String> classNames, LayoutRootVertex panelRoot)
     {
-        this.classTree.setCellFactory(CheckBoxTreeCell.<ClassTreeNode>forTreeView());
+        this.classTree.setCellFactory(CheckBoxTreeCell.forTreeView());
 
         ClassTreeNode root = new ClassTreeNode("root", null);
         ArrayList<ClassTreeNode> topLevel = new ArrayList<>();
@@ -139,22 +139,22 @@ public class MainTabController {
 
     }
 
-    private void addVerticesToClassTree(ArrayList<ClassTreeNode> topLevel, AbstractLayoutVertex root) {
+    private void addVerticesToClassTree(ArrayList<ClassTreeNode> topLevel, StateVertex root) {
 
-       if(root instanceof CodeEntity)
-       {
+       if(root instanceof CodeEntity) {
            ClassTreeNode topLevelNode = getTopLevel(topLevel, ((CodeEntity) root).getClassName());
            boolean success = false;
-           if(topLevelNode != null)
+           if (topLevelNode != null) {
                success = addVertex(topLevelNode, root);
+           }
 
-           if(!success)
+           if (!success) {
                System.out.println("Warning didn't find package for: " + ((CodeEntity) root).getClassName());
+           }
        }
 
-       HierarchicalGraph<AbstractLayoutVertex> innerGraph = root.getInnerGraph();
-       for(AbstractLayoutVertex v : innerGraph.getVertices())
-       {
+       HierarchicalGraph<StateVertex> innerGraph = root.getInnerGraph();
+       for (StateVertex v : innerGraph.getVertices()) {
            addVerticesToClassTree(topLevel, v);
        }
     }
@@ -170,7 +170,7 @@ public class MainTabController {
         return null;
     }
 
-    private boolean addVertex(ClassTreeNode node, AbstractLayoutVertex vertex) {
+    private boolean addVertex(ClassTreeNode node, StateVertex vertex) {
 
         return node.addVertex(vertex);
     }
@@ -216,7 +216,7 @@ public class MainTabController {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
         HierarchicalGraph<StateVertex> innerGraph = v.getInnerGraph();
-        for(AbstractLayoutVertex i : innerGraph.getVisibleVertices()) {
+        for (StateVertex i : innerGraph.getVisibleVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
         this.vizDescriptionArea.setText(text.toString());
@@ -415,12 +415,12 @@ public class MainTabController {
 
     // Has a double function, either a folder(inner node) in which case it has no vertex
     // Or a leaf node in which case it is associated to a one or more vertices
-    class ClassTreeNode<T>
+    class ClassTreeNode
     {
         public String name;
         public String fullName;
-        public HashSet<ClassTreeNode<T>> subDirs;
-        public HashSet<T> vertices; // Leaf nodes store their associated vertices
+        public HashSet<ClassTreeNode> subDirs;
+        public HashSet<StateVertex> vertices; // Leaf nodes store their associated vertices
 
         public ClassTreeNode(String name, String prefix)
         {
@@ -496,12 +496,12 @@ public class MainTabController {
             return subDirs.isEmpty();
         }
 
-        private HashSet<T> getChildrenVertices()
+        private HashSet<StateVertex> getChildrenVertices()
         {
             if(this.isLeaf())
                 return this.vertices;
 
-            HashSet<T> all = new HashSet<>();
+            HashSet<StateVertex> all = new HashSet<>();
 
             for(ClassTreeNode f : subDirs)
             {
@@ -510,7 +510,7 @@ public class MainTabController {
             return all;
         }
 
-        private void getChildrenVertices(HashSet<T> all)
+        private void getChildrenVertices(HashSet<StateVertex> all)
         {
             if(this.isLeaf())
             {
@@ -559,11 +559,11 @@ public class MainTabController {
                 f.build(item);
         }
 
-        public boolean addVertex(T vertex) {
+        public boolean addVertex(StateVertex vertex) {
 
             if(!this.subDirs.isEmpty())
             {
-                for(ClassTreeNode<T> n : this.subDirs)
+                for(ClassTreeNode n : this.subDirs)
                 {
                     if(((CodeEntity)vertex).getClassName().startsWith(n.fullName))
                     {
@@ -579,7 +579,7 @@ public class MainTabController {
 
     } // End of class TreeNode
 
-    private void setClassHighlight(AbstractLayoutVertex v, String prevPrefix, String currPrefix)
+    private void setClassHighlight(StateVertex v, String prevPrefix, String currPrefix)
     {
         if(!v.isHidden()) {
 
@@ -587,17 +587,14 @@ public class MainTabController {
                 if (((CodeEntity) v).getClassName().startsWith(currPrefix)) {
                     //System.out.println("Highlight " + ((CodeEntity) v).getClassName() + " --> " + ((CodeEntity) v).getMethodName() + " --> " + v.getId());
                     v.setClassHighlight(true);
-                }
-                else if(prevPrefix != null && ((CodeEntity) v).getClassName().startsWith(prevPrefix)) {
+                } else if(prevPrefix != null && ((CodeEntity) v).getClassName().startsWith(prevPrefix)) {
                     v.setClassHighlight(false);
                 }
             }
 
-            if(!v.isInnerGraphEmpty())
-            {
-                HierarchicalGraph<AbstractLayoutVertex> innerGraph = v.getInnerGraph();
-                for(AbstractLayoutVertex i : innerGraph.getVertices())
-                {
+            if (!v.isInnerGraphEmpty()) {
+                HierarchicalGraph<StateVertex> innerGraph = v.getInnerGraph();
+                for (StateVertex i : innerGraph.getVertices()) {
                     setClassHighlight(i, prevPrefix, currPrefix);
                 }
             }

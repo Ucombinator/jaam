@@ -13,8 +13,8 @@ public class LayoutAlgorithmTest {
 
     @Test
     public void layoutIsCorrect() {
-        HierarchicalGraph graph = new HierarchicalGraph();
-        HashSet<AbstractLayoutVertex> vertices = new HashSet<>();
+        HierarchicalGraph<StateVertex> graph = new HierarchicalGraph<>();
+        HashSet<StateVertex> vertices = new HashSet<>();
         for(int i = 1; i <= 5; i++) {
             vertices.add(new LayoutMethodVertex(i, "Method " + i, null));
         }

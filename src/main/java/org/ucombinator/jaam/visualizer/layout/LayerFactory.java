@@ -10,21 +10,21 @@ import org.ucombinator.jaam.visualizer.taint.*;
 public class LayerFactory
 {
     // TODO: Template these functions instead of copying them.
-    public static void getLayeredGraph(Graph graph, LayoutRootVertex root) {
+    public static void getLayeredGraph(Graph<StateVertex> graph, LayoutRootVertex root) {
         getStronglyConnectedComponentsGraph(graph, root);
     }
 
-    private static void getStronglyConnectedComponentsGraph(Graph<AbstractVertex> graph, LayoutRootVertex root)
+    private static void getStronglyConnectedComponentsGraph(Graph<StateVertex> graph, LayoutRootVertex root)
     {
         ArrayList<ArrayList<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
         System.out.println("Strongly connected components: " + sccs.size());
 
-        HierarchicalGraph<StateVertex> sccGraph = new HierarchicalGraph();
+        HierarchicalGraph<StateVertex> sccGraph = new HierarchicalGraph<>();
         root.setInnerGraph(sccGraph);
 
         // Need these two maps for the second pass to avoid having to look around for everything
-        HashMap<AbstractVertex      , AbstractLayoutVertex> inputToInner = new HashMap<>();
-        HashMap<AbstractLayoutVertex, AbstractLayoutVertex> innerToSCC   = new HashMap<>();
+        HashMap<StateVertex, StateVertex> inputToInner = new HashMap<>();
+        HashMap<StateVertex, StateVertex> innerToSCC   = new HashMap<>();
 
         // First pass create SCC vertex and populate with layout vertices
         for (ArrayList<Integer> scc : sccs)
@@ -38,7 +38,7 @@ public class LayerFactory
                 sccVertex.setInnerGraph(sccInner);
 
                 for (Integer id : scc) {
-                    AbstractVertex v = graph.containsInputVertex(id);
+                    StateVertex v = graph.containsInputVertex(id);
                     StateVertex innerVertex = upgradeStateVertex(v);
                     sccInner.addVertex(innerVertex);
 
@@ -49,7 +49,7 @@ public class LayerFactory
             }
             else {
                 int id = scc.get(0);
-                AbstractVertex v = graph.containsInputVertex(id);
+                StateVertex v = graph.containsInputVertex(id);
                 StateVertex newVertex = upgradeStateVertex(v);
                 sccGraph.addVertex(newVertex);
 
@@ -60,48 +60,48 @@ public class LayerFactory
         }
 
         // Second pass add edges between SCC vertices and add edges inside SCC vertices
-        for(AbstractVertex inputV: graph.getVertices())
+        for(StateVertex inputV: graph.getVertices())
         {
-            AbstractLayoutVertex v = inputToInner.get(inputV);
-            AbstractLayoutVertex vSCC = innerToSCC.get(v);
+            StateVertex v = inputToInner.get(inputV);
+            StateVertex vSCC = innerToSCC.get(v);
 
             // TODO probably should have a better way
             if(vSCC.getInnerGraph().getVisibleVertices().size() > 0) // Am a SCC node
             {
-                for(AbstractVertex inputN: graph.getOutNeighbors(inputV))
+                for(StateVertex inputN: graph.getOutNeighbors(inputV))
                 {
-                    AbstractLayoutVertex n = inputToInner.get(inputN);
-                    AbstractLayoutVertex nSCC = innerToSCC.get(n);
+                    StateVertex n = inputToInner.get(inputN);
+                    StateVertex nSCC = innerToSCC.get(n);
 
                     if(vSCC == nSCC)
                     {
-                        HierarchicalGraph inner = vSCC.getInnerGraph();
-                        inner.addEdge(new LayoutEdge(v,n, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                        HierarchicalGraph<StateVertex> inner = vSCC.getInnerGraph();
+                        inner.addEdge(new LayoutEdge<>(v,n, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
                     }
                     else
                     {
-                        sccGraph.addEdge(new LayoutEdge(vSCC, nSCC, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                        sccGraph.addEdge(new LayoutEdge<>(vSCC, nSCC, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
                     }
                 }
             }
             else // Am some other type node not part of an SCC
             {
-                for(AbstractVertex inputN: graph.getOutNeighbors(inputV)) {
-                    AbstractLayoutVertex n = inputToInner.get(inputN);
+                for (StateVertex inputN: graph.getOutNeighbors(inputV)) {
+                    StateVertex n = inputToInner.get(inputN);
 
-                    AbstractLayoutVertex nSCC = innerToSCC.get(n);
+                    StateVertex nSCC = innerToSCC.get(n);
 
-                    sccGraph.addEdge(new LayoutEdge(vSCC, nSCC, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                    sccGraph.addEdge(new LayoutEdge<>(vSCC, nSCC, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
                 }
             }
         }
     }
 
-    public static void getLayeredGraph(Graph graph, TaintRootVertex root) {
+    public static void getLayeredGraph(Graph<TaintVertex> graph, TaintRootVertex root) {
         getStronglyConnectedComponentsGraph(graph, root);
     }
 
-    private static void getStronglyConnectedComponentsGraph(Graph<AbstractVertex> graph, TaintRootVertex root)
+    private static void getStronglyConnectedComponentsGraph(Graph<TaintVertex> graph, TaintRootVertex root)
     {
         ArrayList<ArrayList<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
         System.out.println("Strongly connected components: " + sccs.size());
@@ -110,8 +110,8 @@ public class LayerFactory
         root.setInnerGraph(sccGraph);
 
         // Need these two maps for the second pass to avoid having to look around for everything
-        HashMap<AbstractVertex      , AbstractLayoutVertex> inputToInner = new HashMap<>();
-        HashMap<AbstractLayoutVertex, AbstractLayoutVertex> innerToSCC   = new HashMap<>();
+        HashMap<TaintVertex, TaintVertex> inputToInner = new HashMap<>();
+        HashMap<TaintVertex, TaintVertex> innerToSCC   = new HashMap<>();
 
         // First pass create SCC vertex and populate with layout vertices
         for (ArrayList<Integer> scc : sccs)
@@ -121,11 +121,11 @@ public class LayerFactory
                 TaintSccVertex sccVertex = new TaintSccVertex(sccId, "SCC-" + sccId);
                 sccGraph.addVertex(sccVertex);
 
-                HierarchicalGraph<TaintVertex> sccInner = new HierarchicalGraph();
+                HierarchicalGraph<TaintVertex> sccInner = new HierarchicalGraph<>();
                 sccVertex.setInnerGraph(sccInner);
 
                 for (Integer id : scc) {
-                    AbstractVertex v = graph.containsInputVertex(id);
+                    TaintVertex v = graph.containsInputVertex(id);
                     TaintVertex innerVertex = upgradeTaintVertex(v);
                     sccInner.addVertex(innerVertex);
 
@@ -136,7 +136,7 @@ public class LayerFactory
             }
             else {
                 int id = scc.get(0);
-                AbstractVertex v = graph.containsInputVertex(id);
+                TaintVertex v = graph.containsInputVertex(id);
                 TaintVertex newVertex = upgradeTaintVertex(v);
                 sccGraph.addVertex(newVertex);
 
@@ -147,38 +147,38 @@ public class LayerFactory
         }
 
         // Second pass add edges between SCC vertices and add edges inside SCC vertices
-        for(AbstractVertex inputV: graph.getVertices())
+        for(TaintVertex inputV: graph.getVertices())
         {
-            AbstractLayoutVertex v = inputToInner.get(inputV);
-            AbstractLayoutVertex vSCC = innerToSCC.get(v);
+            TaintVertex v = inputToInner.get(inputV);
+            TaintVertex vSCC = innerToSCC.get(v);
 
             // TODO probably should have a better way
             if(vSCC.getInnerGraph().getVisibleVertices().size() > 0) // Am a SCC node
             {
-                for(AbstractVertex inputN: graph.getOutNeighbors(inputV))
+                for(TaintVertex inputN: graph.getOutNeighbors(inputV))
                 {
-                    AbstractLayoutVertex n = inputToInner.get(inputN);
-                    AbstractLayoutVertex nSCC = innerToSCC.get(n);
+                    TaintVertex n = inputToInner.get(inputN);
+                    TaintVertex nSCC = innerToSCC.get(n);
 
                     if(vSCC == nSCC)
                     {
-                        HierarchicalGraph inner = vSCC.getInnerGraph();
-                        inner.addEdge(new LayoutEdge(v,n, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                        HierarchicalGraph<TaintVertex> inner = vSCC.getInnerGraph();
+                        inner.addEdge(new LayoutEdge<>(v,n, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
                     }
                     else
                     {
-                        sccGraph.addEdge(new LayoutEdge(vSCC, nSCC, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                        sccGraph.addEdge(new LayoutEdge<>(vSCC, nSCC, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
                     }
                 }
             }
             else // Am some other type node not part of an SCC
             {
-                for(AbstractVertex inputN: graph.getOutNeighbors(inputV)) {
-                    AbstractLayoutVertex n = inputToInner.get(inputN);
+                for(TaintVertex inputN: graph.getOutNeighbors(inputV)) {
+                    TaintVertex n = inputToInner.get(inputN);
 
-                    AbstractLayoutVertex nSCC = innerToSCC.get(n);
+                    TaintVertex nSCC = innerToSCC.get(n);
 
-                    sccGraph.addEdge(new LayoutEdge(vSCC, nSCC, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                    sccGraph.addEdge(new LayoutEdge<>(vSCC, nSCC, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
                 }
             }
         }
@@ -187,7 +187,7 @@ public class LayerFactory
     // Takes an input vertex (a AbstractVertex which is actually a Loop or Method Vertex) and returns a new
     // vertex of the correct type
     // TODO: Can we rewrite our algorithm to make this upgrading unnecessary?
-    private static StateVertex upgradeStateVertex(AbstractVertex v)
+    private static StateVertex upgradeStateVertex(StateVertex v)
     {
         StateVertex newVertex;
 
@@ -209,7 +209,7 @@ public class LayerFactory
     }
 
     // Takes an input vertex and upgrades it to a TaintAddress
-    private static TaintVertex upgradeTaintVertex(AbstractVertex v)
+    private static TaintVertex upgradeTaintVertex(TaintVertex v)
     {
         TaintVertex newVertex;
 

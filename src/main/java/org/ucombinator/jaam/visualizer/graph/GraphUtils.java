@@ -1,5 +1,7 @@
 package org.ucombinator.jaam.visualizer.graph;
 
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,8 +29,9 @@ public class GraphUtils {
         public int lowlink; // minIndex of a vertex reachable from my subtree that is not already part of a SCC
     }
 
-    private static void visit(Graph g, AbstractVertex v, HashMap<Integer, SCCVertex> visitedVertices, Stack<Integer> stack,
-                       ArrayList<ArrayList<Integer>> components )
+    private static <T extends AbstractLayoutVertex<T>>
+    void visit(Graph<T> g, T v, HashMap<Integer, SCCVertex> visitedVertices, Stack<Integer> stack,
+               ArrayList<ArrayList<Integer>> components )
     {
 
         SCCVertex vSCC = new SCCVertex(v.getId(), visitedVertices.size());
@@ -38,36 +41,31 @@ public class GraphUtils {
 
         //System.out.println("TERE Visiting " + v.getId() + " == " + vSCC);
 
-        HashSet<AbstractVertex> neighbors = g.getOutNeighbors(v);
-        for(AbstractVertex n : neighbors)
-        {
-            if(n.getId() == v.getId()) // No self loops
+        HashSet<T> neighbors = g.getOutNeighbors(v);
+        for (T n : neighbors) {
+            if (n.getId() == v.getId()) { // No self loops
                 continue;
+            }
             //System.out.print("\tTERE Neighbor " + n.getId());
-            if(!visitedVertices.containsKey(n.getId())) {
+            if (!visitedVertices.containsKey(n.getId())) {
                 //System.out.println(" Hadn't been visited");
                 visit(g, n, visitedVertices, stack, components);
                 vSCC.lowlink = Math.min(vSCC.lowlink, visitedVertices.get(n.getId()).lowlink);
-            }
-            else if(stack.contains(n.getId())) // Should be fast because the stack is small
-            {
+            } else if (stack.contains(n.getId())) { // Should be fast because the stack is small
                 //System.out.println(" Still On Stack" + stack );
 
                 vSCC.lowlink = Math.min(vSCC.lowlink, visitedVertices.get(n.getId()).index);
-            }
-            else {
+            } else {
                 //System.out.println(" Already processed and popped " + stack + visitedVertices);
             }
         }
 
         //System.out.println("TERE Finished Visiting " + v.getId() + " == " + vSCC);
 
-        if(vSCC.lowlink == vSCC.index)
-        {
+        if (vSCC.lowlink == vSCC.index) {
             //System.out.println("\t\t\tTERE Found a leader " + vSCC);
             ArrayList<Integer> newComponent = new ArrayList<Integer>();
-            while(true)
-            {
+            while (true) {
                 int w = stack.pop();
                 //System.out.println("\t\t\t\tTERE Popped " + w);
                 newComponent.add(w);
@@ -78,16 +76,16 @@ public class GraphUtils {
         }
     }
 
-    public static ArrayList<ArrayList<Integer>> StronglyConnectedComponents(final Graph g)
+    public static <T extends AbstractLayoutVertex<T>> ArrayList<ArrayList<Integer>> StronglyConnectedComponents(final Graph<T> g)
     {
         ArrayList<ArrayList<Integer>> components = new ArrayList<>();
 
         Stack<Integer> stack = new Stack<>();
         HashMap<Integer, SCCVertex> visitedVertices = new HashMap<>();
 
-        ArrayList<AbstractVertex> vertices = g.getVertices();
+        ArrayList<T> vertices = g.getVertices();
 
-        for(AbstractVertex v : vertices) {
+        for(T v : vertices) {
             if(stack.size() > 0) {
                 System.out.println("JUAN FOUND A NON EMPTY STACK!");
             }

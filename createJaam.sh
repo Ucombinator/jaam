@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+
 file="`basename "$1" ".jar"`"
 ./bin/jaam app --input "$1"  --output "$file".app.jaam
 ./bin/jaam decompile --input "$file".app.jaam --output "$file".decompile.jaam

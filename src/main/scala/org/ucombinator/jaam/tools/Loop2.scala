@@ -35,10 +35,6 @@ import org.ucombinator.jaam.util.CachedHashCode
 import org.ucombinator.jaam.util.{Stmt, Loop}
 
 object LoopAnalyzer {
-  def getLoops(m: SootMethod): Set[SootLoop] = {
-    Loop.getLoopInfoSet(m).map(_.loop)
-  }
-
   case class LoopTree(loop: SootLoop, method: SootMethod, children: Set[LoopTree]) {
     def contains(stmt: SootStmt): Boolean = {
       loop.getLoopStatements.contains(stmt)
@@ -471,7 +467,9 @@ object LoopAnalyzer {
   def getLoopForest(m: SootMethod): Set[LoopTree] = {
     loopForests.get(m) match {
       case None =>
-        val loops = getLoops(m)
+        val loops =
+          if (m.isConcrete) { Loop.getLoopInfoSet(m).map(_.loop) }
+          else { Set() }
         var forest = Set.empty[LoopTree]
         if (loops.nonEmpty) {
           forest = Set(LoopTree(loops.head, m))

@@ -64,11 +64,11 @@ public class CodeViewController {
         return classNames;
     }
 
-    EventHandler<SelectEvent> onVertexSelect = new EventHandler<SelectEvent>() {
+    EventHandler<SelectEvent<StateVertex>> onVertexSelect = new EventHandler<SelectEvent<StateVertex>>() {
         @Override
-        public void handle(SelectEvent selectEvent) {
+        public void handle(SelectEvent<StateVertex> selectEvent) {
 
-            AbstractLayoutVertex av = selectEvent.getVertex();
+            StateVertex av = selectEvent.getVertex();
 
             if(av instanceof CodeEntity)
             {
