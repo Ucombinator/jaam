@@ -237,21 +237,21 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
     @Override
     public void onChanged(Change<? extends StateVertex> change) {
         System.out.println("JUAN: Hidden changed: " + change);
-        if(change.wasAdded())
-        {
-            System.out.println("Added " + change.getElementAdded());
+        if(change.wasAdded()) {
             StateVertex v = change.getElementAdded();
+            // System.out.println("Added " + v);
             v.setHighlighted(false);
             v.setHidden();
-        }
-        else
-        {
+        } else {
             StateVertex v = change.getElementRemoved();
+            // System.out.println("Removed " + change.getElementRemoved());
             v.setUnhidden();
-            if(!inBatchMode)
+
+            if(!inBatchMode) {
                 this.resetAndRedraw();
-            else
+            } else {
                 changedWhileInBatchMode = true;
+            }
         }
     }
 
@@ -260,9 +260,11 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         inBatchMode = true;
         changedWhileInBatchMode = false;
     }
+
     public void endBatchMode() {
         inBatchMode = false;
-        if(changedWhileInBatchMode)
+        if(changedWhileInBatchMode) {
             this.resetAndRedraw();
+        }
     }
 }

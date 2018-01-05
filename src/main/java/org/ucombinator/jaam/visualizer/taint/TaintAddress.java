@@ -31,7 +31,8 @@ public class TaintAddress extends TaintVertex {
         return this.address;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         return this.address.toString();
     }
 }

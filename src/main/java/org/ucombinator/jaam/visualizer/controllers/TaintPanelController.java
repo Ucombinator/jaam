@@ -7,7 +7,6 @@ import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
-import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.layout.*;
@@ -132,7 +131,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             System.out.println("Taint vertices to draw: " + verticesToDraw.size());
 
             // Redraw graph with only this set of vertices.
-            panelRoot.getInnerGraph().setUnhidden(true);
+            panelRoot.getInnerGraph().setGraphUnhidden(true);
             panelRoot.setHiddenExcept(verticesToDraw);
             LayoutAlgorithm.layout(panelRoot);
             TaintPanelController.this.drawGraph();

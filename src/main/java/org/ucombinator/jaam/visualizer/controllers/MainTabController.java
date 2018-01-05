@@ -133,7 +133,7 @@ public class MainTabController {
                                 TreeItem<ClassTreeNode> oldValue, TreeItem<ClassTreeNode> newValue) {
 
                 setClassHighlight(vizPanelController.getPanelRoot(),
-                        oldValue != null? oldValue.getValue().fullName : null,
+                        oldValue != null ? oldValue.getValue().fullName : null,
                         newValue.getValue().fullName);
             }
         });
@@ -142,17 +142,17 @@ public class MainTabController {
 
     private void addVerticesToClassTree(ArrayList<ClassTreeNode> topLevel, StateVertex root) {
 
-       if(root instanceof CodeEntity) {
-           ClassTreeNode topLevelNode = getTopLevel(topLevel, ((CodeEntity) root).getClassName());
-           boolean success = false;
-           if (topLevelNode != null) {
-               success = addVertex(topLevelNode, root);
-           }
+        if(root instanceof CodeEntity) {
+            ClassTreeNode topLevelNode = getTopLevel(topLevel, ((CodeEntity) root).getClassName());
+            boolean success = false;
+            if (topLevelNode != null) {
+                success = addVertex(topLevelNode, root);
+            }
 
-           if (!success) {
-               System.out.println("Warning didn't find package for: " + ((CodeEntity) root).getClassName());
-           }
-       }
+            if (!success) {
+                System.out.println("Warning didn't find package for: " + ((CodeEntity) root).getClassName());
+            }
+        }
 
        HierarchicalGraph<StateVertex> innerGraph = root.getInnerGraph();
        for (StateVertex v : innerGraph.getVertices()) {
@@ -162,9 +162,8 @@ public class MainTabController {
 
     private ClassTreeNode getTopLevel(ArrayList<ClassTreeNode> topLevel, String className) {
 
-        for(ClassTreeNode n : topLevel)
-        {
-            if(className.startsWith(n.name))
+        for (ClassTreeNode n : topLevel) {
+            if (className.startsWith(n.name))
                 return n;
         }
 
@@ -246,22 +245,18 @@ public class MainTabController {
         this.taintDescriptionArea.setText(text);
     }
 
-    // Clean up info from previous searches
     public void initSearch(SearchType search) {
+        // Clean up info from previous searches
         this.resetVizHighlighted();
         String query = getSearchInput(search);
 
         if (search == SearchType.ID) {
             searchByID(query); // TODO: Fix inconsistency with panel root
-        } else if (search == SearchType.INSTRUCTION) {
-            this.vizPanelController.getPanelRoot().searchByInstruction(query, this);
         } else if (search == SearchType.METHOD) {
             this.vizPanelController.getPanelRoot().searchByMethod(query.toLowerCase(), this);
         }
 
         this.repaintAll();
-        /*Parameters.bytecodeArea.clear();
-        Parameters.rightArea.setText("");*/
     }
 
     public ObservableSet<StateVertex> getHidden() {
@@ -342,36 +337,6 @@ public class MainTabController {
         return this.taintHighlighted;
     }
 
-    /*
-    //Called when the user clicks on a line in the left area.
-    //Updates the vertex highlights to those that correspond to the instruction clicked.
-    public void searchByJimpleIndex(String method, int index, boolean removeCurrent, boolean addChosen)
-    {
-        if(removeCurrent) {
-            // Unhighlight currently highlighted vertices
-            for (AbstractLayoutVertex v : this.highlighted) {
-                v.setHighlighted(false);
-            }
-            highlighted.clear();
-        }
-
-        if(addChosen) {
-            //Next we add the highlighted vertices
-            HashSet<AbstractLayoutVertex> toAddHighlights = this.vizPanelController.getPanelRoot().getVerticesWithInstructionID(index, method);
-            for (AbstractLayoutVertex v : toAddHighlights) {
-                highlighted.add(v);
-                v.setHighlighted(true);
-            }
-        } else {
-            HashSet<AbstractLayoutVertex> toRemoveHighlights = this.vizPanelController.getPanelRoot().getVerticesWithInstructionID(index, method);
-            for(AbstractLayoutVertex v : toRemoveHighlights) {
-                v.setHighlighted(false);
-            }
-            highlighted.removeAll(toRemoveHighlights);
-        }
-    }
-    */
-
     public void addToHighlighted(StateVertex v)
     {
         if(v != null) {
@@ -413,8 +378,7 @@ public class MainTabController {
     }
 
     // ClassTree Code -------------------------------------
-
-    // Has a double function, either a folder(inner node) in which case it has no vertex
+    // Has a double function, either a folder (inner node) in which case it has no vertex;
     // Or a leaf node in which case it is associated to a one or more vertices
     class ClassTreeNode
     {
@@ -481,11 +445,11 @@ public class MainTabController {
         public String toString(int depth) {
             StringBuilder subTree = new StringBuilder(depth + "-" + name + "\n");
 
-            for(int i = 0; i < depth; ++i)
+            for (int i = 0; i < depth; i++) {
                 subTree.insert(0, '\t');
+            }
 
-            for(ClassTreeNode f : subDirs)
-            {
+            for (ClassTreeNode f : subDirs) {
                 subTree.append(f.toString(depth+1));
             }
 
@@ -497,31 +461,27 @@ public class MainTabController {
             return subDirs.isEmpty();
         }
 
-        private HashSet<StateVertex> getChildrenVertices()
+        private HashSet<StateVertex> getChildVertices()
         {
-            if(this.isLeaf())
+            if (this.isLeaf()) {
                 return this.vertices;
-
-            HashSet<StateVertex> all = new HashSet<>();
-
-            for(ClassTreeNode f : subDirs)
-            {
-                f.getChildrenVertices(all);
             }
-            return all;
+            else {
+                HashSet<StateVertex> all = new HashSet<>();
+                for (ClassTreeNode f : subDirs) {
+                    f.getChildVertices(all);
+                }
+                return all;
+            }
         }
 
-        private void getChildrenVertices(HashSet<StateVertex> all)
+        private void getChildVertices(HashSet<StateVertex> all)
         {
-            if(this.isLeaf())
-            {
+            if (this.isLeaf()) {
                 all.addAll(this.vertices);
-            }
-            else
-            {
-                for(ClassTreeNode f : subDirs)
-                {
-                    f.getChildrenVertices(all);
+            } else {
+                for (ClassTreeNode f : subDirs) {
+                    f.getChildVertices(all);
                 }
             }
         }
@@ -536,18 +496,17 @@ public class MainTabController {
                 public void changed(ObservableValue<? extends Boolean> observableValue, Boolean prevVal, Boolean currVal) {
 
                     System.out.println("JUAN: Firing off " + item.getValue());
-
-                    HashSet<StateVertex> childVertices = item.getValue().getChildrenVertices();
-
+                    HashSet<StateVertex> childVertices = item.getValue().getChildVertices();
                     System.out.println("\t\tJUAN children is: " + childVertices);
+                    System.out.println("Current value: " + currVal);
+                    System.out.println("Previous value: " + prevVal);
 
                     vizPanelController.startBatchMode();
-                    if(currVal)
-                    {
+                    if(currVal) {
+                        System.out.println("Showing nodes...");
                         Main.getSelectedMainTabController().getHidden().removeAll(childVertices);
-                    }
-                    else
-                    {
+                    } else {
+                        System.out.println("Hiding nodes...");
                         Main.getSelectedMainTabController().getHidden().addAll(childVertices);
                     }
                     vizPanelController.endBatchMode();
@@ -556,39 +515,38 @@ public class MainTabController {
             });
             parent.getChildren().add(item);
 
-            for (ClassTreeNode f : subDirs)
+            for (ClassTreeNode f : subDirs) {
                 f.build(item);
+            }
         }
 
         public boolean addVertex(StateVertex vertex) {
 
-            if(!this.subDirs.isEmpty())
-            {
-                for(ClassTreeNode n : this.subDirs)
-                {
-                    if(((CodeEntity)vertex).getClassName().startsWith(n.fullName))
-                    {
-                        return n.addVertex(vertex);
+            if (vertex instanceof CodeEntity) {
+                if (!this.subDirs.isEmpty()) {
+                    for (ClassTreeNode n : this.subDirs) {
+                        if (((CodeEntity) vertex).getClassName().startsWith(n.fullName)) {
+                            return n.addVertex(vertex);
+                        }
                     }
+                    return false;
                 }
-                return false;
             }
 
             this.vertices.add(vertex);
             return true;
         }
-
     } // End of class TreeNode
 
     private void setClassHighlight(StateVertex v, String prevPrefix, String currPrefix)
     {
         if(!v.isHidden()) {
-
-            if (v instanceof CodeEntity) {
-                if (((CodeEntity) v).getClassName().startsWith(currPrefix)) {
-                    //System.out.println("Highlight " + ((CodeEntity) v).getClassName() + " --> " + ((CodeEntity) v).getMethodName() + " --> " + v.getId());
+            if(v instanceof CodeEntity) {
+                CodeEntity cv = (CodeEntity) v;
+                if (cv.getClassName().startsWith(currPrefix)) {
+                    //System.out.println("Highlight " + cv.getClassName() + " --> " + cv.getMethodName() + " --> " + v.getId());
                     v.setClassHighlight(true);
-                } else if(prevPrefix != null && ((CodeEntity) v).getClassName().startsWith(prevPrefix)) {
+                } else if (prevPrefix != null && cv.getClassName().startsWith(prevPrefix)) {
                     v.setClassHighlight(false);
                 }
             }
@@ -601,8 +559,5 @@ public class MainTabController {
             }
         }
     }
-
     // End of ClassTree Code ------------------------------
-
-
 }
