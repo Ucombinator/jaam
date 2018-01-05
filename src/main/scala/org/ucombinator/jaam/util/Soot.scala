@@ -44,8 +44,16 @@ object Soot {
       val cr = new ClassReader(new ByteArrayInputStream(d))
       val cn = new ClassNode
       cr.accept(cn, 0)
-      //println(f"cn.name: ${cn.name}")
-      loadedClasses += cn.name.replace('/', '.') -> ClassData("TODO:JaamClassProvider", p.origin, d)
+
+      // TODO: temporary hack
+      val appPackages = List("com/ainfosec/", "com/bbn/", "com/stac/", "com/cyberpointllc/")
+      val isAppPackage = appPackages.exists(prefix => cn.name.startsWith(prefix))
+      val newOrigin = p.origin match {
+        case Origin.APP => if (isAppPackage) Origin.APP else Origin.LIB
+        case otherwise => otherwise
+      }
+      //println(f"cn.name: ${cn.name} ${p.origin} $newOrigin")
+      loadedClasses += cn.name.replace('/', '.') -> ClassData("TODO:JaamClassProvider", newOrigin, d)
     }
   }
 
