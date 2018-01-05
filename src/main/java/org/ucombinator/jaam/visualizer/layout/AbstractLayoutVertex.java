@@ -162,12 +162,11 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>> ex
     }
 
     // Warning: Setting a single vertex in a graph to be unhidden must change the entire graph to be unhidden.
-    // TODO: This should be more clearly structured so that it is automatically enforced.
     public void setUnhidden() {
         this.isHidden = false;
         this.setVisible(true);
         if(this.getSelfGraph() != null) {
-            this.getSelfGraph().setUnhidden(false);
+            this.getSelfGraph().setUnhidden((T) this, false); // TODO: Can we avoid the need for this typecast?
         }
     }
 

@@ -188,13 +188,13 @@ public class HierarchicalGraph<T extends AbstractLayoutVertex<T>>
 
     // Restores the graph to its original set of edges. Note that we can't simply assign visibleInEdges
     // and visibleOutEdges; we need to make a deep copy.
-    public void setUnhidden(boolean recurse) {
+    public void setGraphUnhidden(boolean recurse) {
         this.visibleVertices = new HashSet<>();
         this.visibleInEdges = new HashMap<>();
         this.visibleOutEdges = new HashMap<>();
         for(T v : this.vertices) {
             if(recurse) {
-                v.getInnerGraph().setUnhidden(recurse);
+                v.getInnerGraph().setGraphUnhidden(recurse);
             }
 
             this.visibleVertices.add(v);
@@ -208,6 +208,75 @@ public class HierarchicalGraph<T extends AbstractLayoutVertex<T>>
             for(T w : this.getOutNeighbors(v)) {
                 LayoutEdge<T> e = this.outEdges.get(v).get(w);
                 this.visibleOutEdges.get(v).putIfAbsent(w, e);
+            }
+        }
+    }
+
+    public void setUnhidden(T v, boolean recurse) {
+        if(recurse) {
+            v.getInnerGraph().setGraphUnhidden(recurse);
+        }
+
+        this.visibleVertices.add(v);
+        this.visibleInEdges.put(v, new HashMap<>());
+        this.visibleOutEdges.put(v, new HashMap<>());
+        this.findVisibleInEdges(v);
+        this.findVisibleOutEdges(v);
+
+        for(T w : this.getVisibleInNeighbors(v)) {
+            this.visibleOutEdges.put(w, new HashMap<>());
+            this.findVisibleOutEdges(w);
+        }
+
+        for(T w : this.getVisibleOutNeighbors(v)) {
+            this.visibleInEdges.put(w, new HashMap<>());
+            this.findVisibleInEdges(w);
+        }
+    }
+
+    private void findVisibleInEdges(T v) {
+        Queue<T> queue = new LinkedList<>();
+        HashSet<T> found = new HashSet<>();
+        for (T w : this.getInNeighbors(v)) {
+            queue.add(w);
+        }
+
+        while (queue.size() > 0) {
+            T w = queue.poll();
+            found.add(w);
+            if(w.isVisible()) {
+                this.addVisibleEdge(new LayoutEdge<>(w, v, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+            }
+            else {
+                for (T nextW : this.getInNeighbors(w)) {
+                    if (!found.contains(nextW)) {
+                        queue.add(nextW);
+                    }
+                }
+            }
+        }
+    }
+
+    private void findVisibleOutEdges(T v) {
+        Queue<T> queue = new LinkedList<>();
+        HashSet<T> found = new HashSet<>();
+        found.add(v);
+        for (T w : this.getOutNeighbors(v)) {
+            queue.add(w);
+        }
+
+        while (queue.size() > 0) {
+            T w = queue.poll();
+            found.add(w);
+            if(w.isVisible()) {
+                this.addVisibleEdge(new LayoutEdge<>(v, w, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+            }
+            else {
+                for (T nextW : this.getOutNeighbors(w)) {
+                    if (!found.contains(nextW)) {
+                        queue.add(nextW);
+                    }
+                }
             }
         }
     }

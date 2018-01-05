@@ -33,20 +33,6 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex> {
             v.searchByIDRange(id1, id2, mainTab);
     }
 
-    public void searchByInstruction(String query, MainTabController mainTab)
-    {
-        if(this instanceof LayoutInstructionVertex) {
-            String instStr = ((LayoutInstructionVertex) this).getInstruction().getText();
-            if(instStr.contains(query)) {
-                this.setHighlighted(true);
-                mainTab.getVizHighlighted().add(this);
-            }
-        }
-
-        for(StateVertex v : this.getInnerGraph().getVisibleVertices())
-            v.searchByInstruction(query, mainTab);
-    }
-
     // Subclasses must implement these so that we have descriptions for each of them,
     // and so that our generic collapsing can work for all of them
     public abstract String getRightPanelContent();
@@ -65,47 +51,5 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex> {
         }
 
         return methodNames;
-    }
-
-    public HashSet<Instruction> getInstructions() {
-        return this.getInstructions(new LinkedHashSet<Instruction>());
-    }
-
-    private HashSet<Instruction> getInstructions(HashSet<Instruction> instructions) {
-        if(this.getType().equals(VertexType.ROOT) || this.getType().equals(VertexType.METHOD)
-                || this.getType().equals(VertexType.CHAIN)) {
-            for(StateVertex v : this.getInnerGraph().getVisibleVertices()) {
-                v.getInstructions(instructions);
-            }
-        } else if(this.getType().equals(VertexType.INSTRUCTION)){
-            instructions.add(((LayoutInstructionVertex) this).getInstruction());
-        } else {
-            System.out.println("Unrecognized type in method getInstructions: " + this.getType());
-        }
-
-        return instructions;
-    }
-
-    public HashSet<StateVertex> getVerticesWithInstructionID(int id, String method_name) {
-        return getVerticesWithInstructionID(id, method_name, new LinkedHashSet<>());
-    }
-
-    private HashSet<StateVertex> getVerticesWithInstructionID(int id, String method_name,
-                                                                       HashSet<StateVertex> set)  {
-        if(this.getType().equals(VertexType.ROOT) || this.getType().equals(VertexType.METHOD)
-                || this.getType().equals(VertexType.CHAIN)){
-            for(StateVertex v : this.getInnerGraph().getVisibleVertices()) {
-                v.getVerticesWithInstructionID(id, method_name, set);
-            }
-        } else if(this.getType().equals(VertexType.INSTRUCTION)) {
-            Instruction inst = ((LayoutInstructionVertex) this).getInstruction();
-            if(inst.getMethodName() == method_name && inst.getJimpleIndex() == id) {
-                set.add(this);
-            }
-        } else {
-            System.out.println("Unrecognized type in method getInstructions: " + this.getType());
-        }
-
-        return set;
     }
 }
