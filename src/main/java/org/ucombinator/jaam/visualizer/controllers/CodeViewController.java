@@ -36,8 +36,27 @@ public class CodeViewController {
         this.tabMap     = new HashMap<>();
         this.classNames = new HashSet<>();
 
-        for(CompilationUnit u : compilationUnits) {
-            addClass(u);
+        for (SootClass s : sootClasses)
+        {
+            System.out.println(s.getName());
+        }
+
+        HashMap<String,SootClass> lookup = new HashMap<String,SootClass>();
+
+        sootClasses.stream().forEach(s -> lookup.put(s.getName(), s));
+
+
+        for (CompilationUnit u : compilationUnits) {
+            String fullClassName = getFullClassName(u);
+
+            SootClass s = lookup.get(fullClassName);
+
+            if (s == null)
+            {
+                System.out.println("ERROR Didn't find soot class matching " + fullClassName);
+            }
+
+            addClass(u, s);
         }
     }
 
@@ -45,7 +64,7 @@ public class CodeViewController {
         centerPane.addEventHandler(SelectEvent.STATE_VERTEX_SELECTED, onVertexSelect);
     }
 
-    public void addClass(CompilationUnit unit)
+    public void addClass(CompilationUnit unit, SootClass s)
     {
         AstNodeCollection<TypeDeclaration> types = unit.getTypes();
         assert types.size() == 1;
@@ -57,7 +76,7 @@ public class CodeViewController {
         String className = typeDeclaration.getName();
         String fullClassName = new String(unit.getPackage().getName() + "." + className);
 
-        CodeTab tab = new CodeTab(unit, className, fullClassName);
+        CodeTab tab = new CodeTab(unit, s, className, fullClassName);
         tab.setTooltip(new Tooltip(fullClassName));
         this.tabMap.put(fullClassName, tab);
 
@@ -103,6 +122,13 @@ public class CodeViewController {
                 c-> ((CodeTab)c).fullClassName.equals(t.fullClassName)).findFirst().orElse(null)
                 != null;
     }
+
+
+    private String getFullClassName(CompilationUnit u)
+    {
+        return u.getPackage().getName() + "." + u.getTypes().firstOrNullObject().getName();
+    }
+
 
     /*
     private class ClassInfo{
