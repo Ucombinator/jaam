@@ -2,34 +2,43 @@ package org.ucombinator.jaam.visualizer.codeView;
 
 import com.strobel.decompiler.languages.EntityType;
 import com.strobel.decompiler.languages.java.ast.*;
-import com.strobel.decompiler.patterns.Role;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.ObservableSet;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.IndexRange;
 import javafx.scene.control.Tab;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.StackPane;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.LineNumberFactory;
+import soot.SootClass;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
 public class CodeTab extends Tab{
 
     private CompilationUnit unit;
-    private CodeArea codeArea;
+    private SootClass soot;
+    private CodeArea javaCodeArea;
+    private CodeArea sootCodeArea;
     public final String shortClassName;
     public final String fullClassName;
     private HashMap<String, IndexRange> methodParagraphs;
     private IndexRange currentlySelected;
 
 
-    public CodeTab(CompilationUnit unit, String shortClassName, String fullClassName) {
+    public CodeTab(CompilationUnit unit, SootClass soot, String shortClassName, String fullClassName) {
         super(shortClassName);
         this.unit = unit;
+        this.soot = soot;
         this.methodParagraphs = new HashMap<>();
 
-        this.setContent(generateCodeArea(unit));
+        this.setContent(generateCodeAreas(unit, soot));
 
         this.shortClassName = shortClassName;
         this.fullClassName = fullClassName;
@@ -39,11 +48,43 @@ public class CodeTab extends Tab{
         this.currentlySelected = new IndexRange(0,0); // Empty range
     }
 
-    private Node generateCodeArea(CompilationUnit unit)
+    private Node generateCodeAreas(CompilationUnit unit, SootClass soot)
     {
         assert unit != null;
-        this.codeArea = new CodeArea();
-        this.codeArea.setEditable(false);
+
+        this.javaCodeArea = buildJavaCodeArea(unit);
+        VirtualizedScrollPane<CodeArea> javaScrollPane = new VirtualizedScrollPane<>(javaCodeArea);
+        //javaScrollPane.setMaxHeight(Double.MAX_VALUE);
+
+        this.sootCodeArea = buildSootCodeArea(soot);
+        VirtualizedScrollPane<CodeArea> sootScrollPane = new VirtualizedScrollPane<>(sootCodeArea);
+        //sootScrollPane.setMaxHeight(Double.MAX_VALUE);
+        sootScrollPane.setVisible(false);
+
+        StackPane stackPane = new StackPane(javaScrollPane, sootScrollPane);
+        stackPane.setMaxWidth(Double.MAX_VALUE);
+        stackPane.setMaxHeight(Double.MAX_VALUE);
+
+        ToggleButton viewToggle = new ToggleButton("Soot");
+
+        viewToggle.selectedProperty().addListener( (observable, oldValue, newValue) -> {
+                    javaScrollPane.setVisible(!newValue);
+                    sootScrollPane.setVisible( newValue);
+                    viewToggle.setText( newValue ? "Java" : "Soot");
+                } );
+
+        stackPane.setAlignment(viewToggle, Pos.TOP_RIGHT);
+
+        stackPane.getChildren().add(viewToggle);
+
+        return stackPane;
+    }
+
+
+    private CodeArea buildJavaCodeArea(CompilationUnit unit)
+    {
+        CodeArea codeArea = new CodeArea();
+        codeArea.setEditable(false);
 
         codeArea.setParagraphGraphicFactory(LineNumberFactory.get(codeArea));
 
@@ -57,16 +98,6 @@ public class CodeTab extends Tab{
         AstNodeCollection<TypeDeclaration> types = unit.getTypes();
         assert types.size() == 1;
         TypeDeclaration typeDeclaration = types.firstOrNullObject();
-
-        /*
-        for (AstNode i : typeDeclaration.getChildren()) {
-
-            if(i.getRole() == Roles.TYPE_MEMBER)
-                continue;
-
-            System.out.println("JUAN " + i + "\t\t" + i.getRole() + "\t\t" + i.getText());
-        }
-        */
 
         // Preamble
 
@@ -124,21 +155,38 @@ public class CodeTab extends Tab{
 
         codeArea.setMaxHeight(Double.MAX_VALUE);
 
-        VirtualizedScrollPane<CodeArea> scrollPane = new VirtualizedScrollPane<>(codeArea);
-        scrollPane.setMaxHeight(Double.MAX_VALUE);
+        return codeArea;
+    }
 
-        StackPane stackPane = new StackPane(scrollPane);
-        stackPane.setMaxWidth(Double.MAX_VALUE);
-        stackPane.setMaxHeight(Double.MAX_VALUE);
+    private CodeArea buildSootCodeArea(SootClass soot) {
 
-        return stackPane;
+        CodeArea codeArea = new CodeArea();
+        codeArea.setEditable(false);
+
+        codeArea.setParagraphGraphicFactory(LineNumberFactory.get(codeArea));
+
+        codeArea.richChanges()
+                .filter(ch -> !ch.getInserted().equals(ch.getRemoved())) // XXX
+                .subscribe(change -> {
+                    codeArea.setStyleSpans(0, CodeHighlighter.computeHighlighting(codeArea.getText()));
+                });
+
+
+        codeArea.appendText(soot.getName() + "\n");
+
+        codeArea.appendText(soot.getClass().toString());
+
+        //Arrays.stream(soot.getClass().getFields()).forEach(f -> System.out.println(f.getName() + "-->" + f.toString() + "-->" + f.toGenericString()));
+
+        return codeArea;
+
     }
 
     public void highlightMethod(String methodName) {
 
         for (int i = currentlySelected.getStart(); i < currentlySelected.getEnd(); ++i)
         {
-            codeArea.setParagraphStyle(i, Collections.EMPTY_LIST);
+            javaCodeArea.setParagraphStyle(i, Collections.EMPTY_LIST);
         }
         this.currentlySelected = new IndexRange(0,0);
 
@@ -148,10 +196,10 @@ public class CodeTab extends Tab{
             return;
         }
 
-        codeArea.showParagraphAtTop(range.getStart() - 1);
+        javaCodeArea.showParagraphAtTop(range.getStart() - 1);
 
         for (int i = range.getStart(); i < range.getEnd(); ++i) {
-            codeArea.setParagraphStyle(i, Collections.singleton("is-selected"));
+            javaCodeArea.setParagraphStyle(i, Collections.singleton("is-selected"));
         }
 
         this.currentlySelected = range;
