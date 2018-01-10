@@ -1,17 +1,18 @@
 package org.ucombinator.jaam.util
 
 import java.io._
+import java.lang.invoke.LambdaMetafactory
 
 import scala.collection.JavaConverters._
-
 import org.jgrapht._
 import org.jgrapht.graph._
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.tree.ClassNode
 import org.ucombinator.jaam.serializer
-import org.ucombinator.jaam.tools.app.{App, PathElement, Origin}
+import org.ucombinator.jaam.tools.app.{App, Origin, PathElement}
+import soot.coffi.Util
 import soot.{Unit => SootUnit, _}
-import soot.jimple.{Stmt => SootStmt, Expr}
+import soot.jimple.{ClassConstant, DynamicInvokeExpr, Expr, IntConstant, Stmt => SootStmt}
 import soot.options.Options
 
 // Helpers for working with Soot.
@@ -166,6 +167,7 @@ object Soot {
     lazy val ArithmeticException: SootClass = getSootClass("java.lang.ArithmeticException")
     lazy val Serializable: SootClass        = getSootClass("java.io.Serializable")
     lazy val Iterator: SootClass            = getSootClass("java.util.Iterator")
+    lazy val LambdaMetafactory: SootClass   = getSootClass("java.lang.invoke.LambdaMetafactory")
   }
 
   // is a of type b?
@@ -190,5 +192,90 @@ object Soot {
             case lub => !lub.equals(a)
           }
       }
+  }
+
+  private lazy val metafactory = classes.LambdaMetafactory.getMethodByName("metafactory")
+  private lazy val altMetafactory = classes.LambdaMetafactory.getMethodByName("altMetafactory")
+
+  case class DecodedLambda(interface: SootClass, interfaceMethod: SootMethod, implementationMethod: SootMethod, captures: java.util.List[soot.Value])
+
+  def decodeLambda(e: DynamicInvokeExpr): DecodedLambda = {
+
+    def decodeSimple(): DecodedLambda = {
+      // Step 1: Find `interface`, which is the type of the closure returned by the lambda.
+      assert(e.getType.isInstanceOf[RefType])
+      val interface = e.getType.asInstanceOf[RefType].getSootClass
+
+      // Step 2: Find the method in `interface` that the lambda corresponds to.
+      // Unfortunately, this is not already computed so we find it manually.
+      // This is complicated by the fact that it may be in a super-class or
+      // super-interface of `interface`.
+      assert(e.getBootstrapArg(0).isInstanceOf[ClassConstant])
+      val bytecodeSignature = e.getBootstrapArg(0).asInstanceOf[ClassConstant].getValue
+      val types = Util.v().jimpleTypesOfFieldOrMethodDescriptor(bytecodeSignature)
+      val paramTypes = java.util.Arrays.asList[Type](types:_*).subList(0, types.length - 1)
+      val returnType = types(types.length - 1)
+
+      def findMethod(klass: SootClass): SootMethod = {
+        val m = klass.getMethodUnsafe(e.getMethod.getName, paramTypes, returnType)
+        if (m != null) { return m }
+
+        if (klass.hasSuperclass) {
+          val m = findMethod(klass.getSuperclass)
+          if (m != null) { return m }
+        }
+
+        for (i <- klass.getInterfaces.asScala) {
+          val m = findMethod(i)
+          if (m != null) { return m }
+        }
+
+        return null
+      }
+
+      val interfaceMethod = findMethod(interface)
+
+      // Step 3: Find `implementationMethod`, which is the method implementing the lambda
+      //   Because calling e.getMethodRef.resolve may throw missmatched `static` errors,
+      //   we look for the method manually.
+      assert(e.getBootstrapArg(1).isInstanceOf[soot.jimple.MethodHandle])
+      val implementationMethodRef = e.getBootstrapArg(1).asInstanceOf[soot.jimple.MethodHandle].getMethodRef
+      val implementationMethod = implementationMethodRef.declaringClass().getMethod(implementationMethodRef.getSubSignature)
+
+      // Step 4: Find the `captures` which are values that should be saved and passed
+      //   to `implementationMethod` before any other arguments
+      val captures = e.getArgs
+
+      return DecodedLambda(interface, interfaceMethod, implementationMethod, captures)
+    }
+
+    def bootstrapArgIsInt(index: Int, i: Int): Boolean = {
+      e.getBootstrapArg(index) match {
+        case arg: IntConstant => arg.value == i
+        case _ => false
+      }
+    }
+
+    // Check that this dynamic invoke uses LambdaMetafactory
+    val bootstrapMethod = e.getBootstrapMethodRef.resolve
+    if (bootstrapMethod == metafactory) {
+      assert(e.getBootstrapArgCount == 3)
+      return decodeSimple()
+    } else if (bootstrapMethod == altMetafactory) {
+      e.getBootstrapArg(3) match {
+        case flags: IntConstant =>
+          val bridges = (flags.value & LambdaMetafactory.FLAG_BRIDGES) != 0
+          val markers = (flags.value & LambdaMetafactory.FLAG_MARKERS) != 0
+          val isSimple =
+            (bridges && !markers && bootstrapArgIsInt(4, 0)) ||
+            (!bridges && markers && bootstrapArgIsInt(4, 0)) ||
+            (bridges && markers && bootstrapArgIsInt(4, 0) && bootstrapArgIsInt(5, 0))
+          if (isSimple) { decodeSimple() }
+          else { throw new Exception("Unimplemented altMetafactory: e = " + e) }
+        case _ => throw new Exception("Non-int flags passed to altMetafactory: e = " + e)
+      }
+    } else {
+      throw new Exception("Soot.decodeLambda could not decode: e = " + e)
+    }
   }
 }

@@ -84,9 +84,11 @@ object Main {
       val m = expr.getMethod
       val c = m.getDeclaringClass
       val cs: Set[SootClass] = expr match {
-        case _ : DynamicInvokeExpr =>
-          // Could only come from non-Java sources
-          throw new Exception(s"Unexpected DynamicInvokeExpr: $expr")
+        case e : DynamicInvokeExpr =>
+          val Soot.DecodedLambda(_, _, implementationMethod, _) = Soot.decodeLambda(e)
+          // A bit of a cheat, since the method isn't called from here, but it seems as good a place as any to put it
+          // Note that we use `return` to bypass the rest of `invokeExprTargets`
+          return Set(implementationMethod)
         case _ : StaticInvokeExpr => Set(c)
         // SpecialInvokeExpr is also a subclasses of InstanceInvokeExpr but we need to treat it special
         case _: SpecialInvokeExpr => Set(c)

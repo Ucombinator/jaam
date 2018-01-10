@@ -1,9 +1,10 @@
 package org.ucombinator.jaam.tools.taint3
 
 import java.io._
+
 import scala.collection.JavaConverters._
 import org.ucombinator.jaam.util.Soot
-import org.ucombinator.jaam.util.Soot.unitToStmt
+import org.ucombinator.jaam.util.Soot.{DecodedLambda, unitToStmt}
 import org.ucombinator.jaam.util.Stmt
 import org.ucombinator.jaam.tools.app.{App, Origin}
 import org.ucombinator.jaam.serializer
@@ -47,6 +48,8 @@ object Address {
   case class New(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
   case class NewArray(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
   case class NewMultiArray(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
+
+  case class Lambda(sootMethod: SootMethod, lambda: DecodedLambda) extends Address
 }
 
 
@@ -92,43 +95,43 @@ object Relationship {
   object  ArrayIndex extends Relationship { def apply = new ArrayIndex }
 
   class  ArrayValue extends Relationship
-  object  ArrayValue extends Relationship { def apply = new ArrayValue }
+  object ArrayValue extends Relationship { def apply = new ArrayValue }
 
   class  InvokeBase extends Relationship
-  object  InvokeBase extends Relationship { def apply = new InvokeBase }
+  object InvokeBase extends Relationship { def apply = new InvokeBase }
 
-  class  Argument(val index: Int) extends Relationship
-  object  Argument extends Relationship { def apply(i: Int) = new Argument(i)}
+  class  Argument(index: Int) extends Relationship
+  object Argument extends Relationship { def apply(i: Int) = new Argument(i)}
 
   class  Result extends Relationship
-  object  Result extends Relationship { def apply = new Result }
+  object Result extends Relationship { def apply = new Result }
 
   class  Lhs extends Relationship
-  object  Lhs extends Relationship { def apply = new Lhs }
+  object Lhs extends Relationship { def apply = new Lhs }
 
   class  New extends Relationship
-  object  New extends Relationship { def apply = new New }
+  object New extends Relationship { def apply = new New }
 
   class  NewArray extends Relationship
   object NewArray extends Relationship { def apply = new NewArray }
 
   class  NewArraySize extends Relationship
-  object  NewArraySize extends Relationship { def apply = new NewArraySize }
+  object NewArraySize extends Relationship { def apply = new NewArraySize }
 
   class  NewMultiArray extends Relationship
-  object  NewMultiArray extends Relationship { def apply = new NewMultiArray}
+  object NewMultiArray extends Relationship { def apply = new NewMultiArray}
 
   class  NewMultiArraySize(val index: Int) extends Relationship
-  object  NewMultiArraySize extends Relationship { def apply(i: Int) = new NewMultiArraySize(i) }
+  object NewMultiArraySize extends Relationship { def apply(i: Int) = new NewMultiArraySize(i) }
 
   class  Definition extends Relationship
-  object  Definition extends Relationship { def apply = new Definition }
+  object Definition extends Relationship { def apply = new Definition }
 
   class  ParameterRef extends Relationship
-  object  ParameterRef extends Relationship { def apply = new ParameterRef }
+  object ParameterRef extends Relationship { def apply = new ParameterRef }
 
   class  StaticFieldRef extends Relationship
-  object  StaticFieldRef extends Relationship { def apply = new StaticFieldRef }
+  object StaticFieldRef extends Relationship { def apply = new StaticFieldRef }
 
   class  ThisRef extends Relationship
   object ThisRef extends  Relationship { def apply = new ThisRef }
@@ -137,7 +140,7 @@ object Relationship {
   object InstanceFieldRef extends  Relationship { def apply = new InstanceFieldRef }
 
   class  ArrayRef extends Relationship
-  object  ArrayRef extends Relationship { def apply = new ArrayRef }
+  object ArrayRef extends Relationship { def apply = new ArrayRef }
 
   // Return flow when methods are overridden
   class  MethodOverridden extends Relationship
@@ -150,6 +153,24 @@ object Relationship {
   // Return value of call depends on parameters of call
   class  ParametersDependency extends Relationship
   object ParametersDependency extends Relationship { def apply = new ParametersDependency }
+
+  class  LambdaCaptureThis extends Relationship
+  object LambdaCaptureThis extends Relationship { def apply = new LambdaCaptureThis }
+
+  class  LambdaCapture(index: Int) extends Relationship
+  object LambdaCapture extends Relationship { def apply(index: Int) = new LambdaCapture(index) }
+
+  class  LambdaParameter(index: Int) extends Relationship
+  object LambdaParameter extends Relationship { def apply(index: Int) = new LambdaParameter(index) }
+
+  class  LambdaReturn extends Relationship
+  object LambdaReturn extends Relationship { def apply = new LambdaReturn }
+
+  class  LambdaClosure extends Relationship
+  object LambdaClosure extends Relationship { def apply = new LambdaClosure }
+
+  class  LambdaCaptureDependency extends Relationship
+  object LambdaCaptureDependency extends Relationship { def apply = new LambdaCaptureDependency }
 }
 
 final class Edge(val source: Address, val target: Address, val relation: Relationship) extends serializer.Packet {
@@ -292,11 +313,47 @@ object Taint3 {
     rc = graph.addEdge(a1, a2, new Edge(a1, a2, r))
   }
 
+  def handleDynamicInvoke(a0: Address, sootMethod: SootMethod, rhs: DynamicInvokeExpr): Unit = {
+    val lambda@Soot.DecodedLambda(_, interfaceMethod, implementationMethod, captures) = Soot.decodeLambda(rhs)
+
+    val aCaptures = captures.asScala.map(eval(sootMethod, _))
+    val aIfaceParams = for (i <- 0 until interfaceMethod.getParameterCount)
+      yield Address.Parameter(interfaceMethod, i)
+    val aImplParams = for (i <- 0 until implementationMethod.getParameterCount)
+      yield Address.Parameter(implementationMethod, i)
+
+    // We have to do some extra work in case the first parameter is the value of `this`
+    val aArgs =
+      if (implementationMethod.isStatic || implementationMethod.isConstructor) {
+        aCaptures ++ aIfaceParams
+      } else {
+        val all = aCaptures ++ aIfaceParams
+        addEdge(Address.This(implementationMethod.getDeclaringClass.getType),
+          all.head, Relationship.LambdaCaptureThis)
+        all.tail
+      }
+
+    for (i <- aArgs.indices) {
+      addEdge(aArgs(i), aImplParams(i), Relationship.LambdaCapture(i))
+    }
+
+    addEdge(Address.Return(implementationMethod), Address.Return(interfaceMethod), Relationship.LambdaReturn)
+
+    addEdge(Address.Lambda(sootMethod, lambda), a0, Relationship.LambdaClosure)
+    for (c <- aCaptures) {
+      addEdge(c, a0, Relationship.LambdaCaptureDependency)
+    }
+  }
+
   // TODO: edges between method declarations and implementations
   // TODO:             Scene.v.getActiveHierarchy.getSubclassesOfIncluding(c).asScala.toSet
   def handleInvoke(a0: Address, sootMethod: SootMethod, rhs: InvokeExpr): Unit = {
-    // Base (if non-static)
     rhs match {
+      // Skip normal processing
+      case rhs: DynamicInvokeExpr =>
+        handleDynamicInvoke(a0, sootMethod, rhs)
+        return
+      // Add edge for invocation base (if non-static)
       case rhs: InstanceInvokeExpr =>
         addEdge(eval(sootMethod, rhs.getBase), a0, Relationship.InvokeBase)
       case _ => /* Do nothing */
@@ -544,6 +601,7 @@ object Taint3 {
         case Address.New(sootMethod, stmt) => classes.contains(sootMethod.getDeclaringClass)
         case Address.NewArray(sootMethod, stmt) => classes.contains(sootMethod.getDeclaringClass)
         case Address.NewMultiArray(sootMethod, stmt) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.Lambda(sootMethod, lambda) => classes.contains(sootMethod.getDeclaringClass)
       }
     }
   }
