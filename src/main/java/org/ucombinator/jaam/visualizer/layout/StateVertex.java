@@ -45,11 +45,13 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex> {
 
     public HashSet<String> getMethodNames() {
         HashSet<LayoutMethodVertex> methodVertices = this.getMethodVertices();
-        HashSet<String> methodNames = new HashSet<String>();
+        HashSet<String> methodNames = new HashSet<>();
         for(LayoutMethodVertex v : methodVertices) {
             methodNames.add(v.getMethodName());
         }
 
         return methodNames;
     }
+
+    public abstract HashSet<String> getClassNames();
 }

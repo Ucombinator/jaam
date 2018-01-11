@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.layout;
 
 import java.util.*;
 
+import org.ucombinator.jaam.interpreter.State;
 import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
@@ -179,6 +180,43 @@ public class LayerFactory
                     TaintVertex nSCC = innerToSCC.get(n);
 
                     sccGraph.addEdge(new LayoutEdge<>(vSCC, nSCC, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                }
+            }
+        }
+    }
+
+    public static void getGraphByClass(Graph<StateVertex> graph, LayoutRootVertex root) {
+        HashMap<String, ArrayList<StateVertex>> classGroups = GraphUtils.groupByClass(graph);
+        HierarchicalGraph<StateVertex> classGraph = new HierarchicalGraph<>();
+        root.setInnerGraph(classGraph);
+
+        // Need this map for the second pass in which we add edges
+        HashMap<StateVertex, LayoutClassVertex> innerToClass   = new HashMap<>();
+
+        for (String className : classGroups.keySet()) {
+            LayoutClassVertex classVertex = new LayoutClassVertex(className);
+            classGraph.addVertex(classVertex);
+
+            HierarchicalGraph<StateVertex> classInnerGraph = new HierarchicalGraph<>();
+            classVertex.setInnerGraph(classInnerGraph);
+
+            for (StateVertex innerVertex : classGroups.get(className)) {
+                classInnerGraph.addVertex(innerVertex);
+                innerToClass.put(innerVertex, classVertex);
+            }
+        }
+
+        for (String className : classGroups.keySet()) {
+            for (StateVertex v : classGroups.get(className)) {
+                for (StateVertex w : graph.getOutNeighbors(v)) {
+                    LayoutClassVertex classVertexV = innerToClass.get(v);
+                    LayoutClassVertex classVertexW = innerToClass.get(w);
+                    if(classVertexV.equals(classVertexW)) {
+                        classVertexV.getInnerGraph().addEdge(new LayoutEdge(v, w, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                    } else {
+                        classGraph.addEdge(new LayoutEdge(classVertexV, classVertexW,
+                                LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                    }
                 }
             }
         }

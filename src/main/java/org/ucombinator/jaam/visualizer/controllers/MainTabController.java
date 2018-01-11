@@ -58,9 +58,9 @@ public class MainTabController {
     public MainTabController(File file, Graph<StateVertex> graph, List<CompilationUnit> compilationUnits, TaintGraph taintGraph, Set<SootClass> sootClasses) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
 
-        this.vizPanelController = new VizPanelController();
+        this.vizPanelController = new VizPanelController(graph);
         this.vizPane.setCenter(this.vizPanelController.root);
-        this.vizPanelController.initFX(graph);
+        this.vizPanelController.initFX();
 
         this.taintPanelController = new TaintPanelController(taintGraph);
         this.taintPane.setCenter(this.taintPanelController.root);

@@ -16,7 +16,7 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>> ex
 {
     // Types of layout vertices
     public enum VertexType {
-        INSTRUCTION, LOOP, METHOD, CHAIN, ROOT, SHRINK, SCC, TAINT_ADDRESS
+        INSTRUCTION, LOOP, METHOD, CLASS, ROOT, SHRINK, SCC, TAINT_ADDRESS
     }
 
     // Because layout vertices are also HierarchicalGraphs they have two associated graphs:

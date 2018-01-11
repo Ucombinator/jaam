@@ -45,4 +45,16 @@ public class LayoutRootVertex extends StateVertex {
 
         return methodVertices;
     }
+
+    public HashSet<String> getClassNames() {
+        HashSet<String> classNames = new HashSet<>();
+        for(StateVertex v : this.getInnerGraph().getVertices()) {
+            classNames.addAll(v.getClassNames());
+        }
+        return classNames;
+    }
+
+    public void toggleGroupByClass() {
+
+    }
 }
