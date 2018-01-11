@@ -40,4 +40,11 @@ public class LayoutSccVertex extends StateVertex {
         return methods;
     }
 
+    public HashSet<String> getClassNames() {
+        HashSet<String> classNames = new HashSet<>();
+        for(StateVertex v : this.getInnerGraph().getVertices()) {
+            classNames.addAll(v.getClassNames());
+        }
+        return classNames;
+    }
 }

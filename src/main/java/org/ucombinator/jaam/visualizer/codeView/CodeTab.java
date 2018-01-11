@@ -22,8 +22,6 @@ import java.util.HashMap;
 
 public class CodeTab extends Tab{
 
-    private CompilationUnit unit;
-    private SootClass soot;
     private CodeArea javaCodeArea;
     private CodeArea sootCodeArea;
     public final String shortClassName;
@@ -34,8 +32,6 @@ public class CodeTab extends Tab{
 
     public CodeTab(CompilationUnit unit, SootClass soot, String shortClassName, String fullClassName) {
         super(shortClassName);
-        this.unit = unit;
-        this.soot = soot;
         this.methodParagraphs = new HashMap<>();
 
         this.setContent(generateCodeAreas(unit, soot));
@@ -69,7 +65,7 @@ public class CodeTab extends Tab{
 
         viewToggle.selectedProperty().addListener( (observable, oldValue, newValue) -> {
                     javaScrollPane.setVisible(!newValue);
-                    sootScrollPane.setVisible( newValue);
+                    //sootScrollPane.setVisible( newValue);
                     viewToggle.setText( newValue ? "Java" : "Soot");
                 } );
 

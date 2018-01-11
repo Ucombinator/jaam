@@ -30,19 +30,20 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
 
     @FXML private final CheckBox showEdges = null; // Initialized by Controllers.loadFXML()
     @FXML private final CheckBox showLabels = null; // Initialized by Controllers.loadFXML()
-    @FXML private final CheckBox methodsExpanded = null; // Initialized by Controllers.loadFXML()
-    @FXML private final CheckBox chainsExpanded = null; // Initialized by Controllers.loadFXML()
+    @FXML private final CheckBox groupByClass = null; // Initialized by Controllers.loadFXML()
     @FXML private final ScrollPane scrollPane = null; // Initialized by Controllers.loadFXML()
     @FXML private final Pane vizPanel = null; // Initialized by Controllers.loadFXML()
 
     // TODO: should this stuff be moved to a model class?
     private Group graphContentGroup;
     private LayoutRootVertex panelRoot;
+    private Graph loopGraph;
+    private boolean groupedByClass;
 
     private boolean inBatchMode = false;
     private boolean changedWhileInBatchMode = false;
 
-    public VizPanelController() throws IOException {
+    public VizPanelController(Graph<StateVertex> graph) throws IOException {
         Controllers.loadFXML("/VizPanel.fxml", this);
 
         this.zoomSpinner.setValueFactory(new ZoomSpinnerValueFactory(1.0, 1.2));
@@ -59,6 +60,8 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         graphContentGroup.addEventFilter(SelectEvent.STATE_VERTEX_SELECTED, this);
 
         this.scrollPane.addEventFilter(ScrollEvent.SCROLL, this::scrollAction);
+        this.loopGraph = graph;
+        this.groupedByClass = false;
     }
 
     @FXML private void showEdgesAction(ActionEvent event) {
@@ -74,16 +77,9 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         this.getPanelRoot().setVisible(true);
     }
 
-    @FXML private void methodCollapseAction(ActionEvent event) {
-        this.getPanelRoot().toggleNodesOfType(
-                AbstractLayoutVertex.VertexType.METHOD, methodsExpanded.isSelected());
-        this.resetAndRedraw();
-    }
-
-    @FXML private void chainCollapseAction(ActionEvent event) {
-        this.getPanelRoot().toggleNodesOfType(
-                AbstractLayoutVertex.VertexType.CHAIN, chainsExpanded.isSelected());
-        this.resetAndRedraw();
+    @FXML private void groupByClassAction(ActionEvent event) {
+        this.groupedByClass = groupByClass.isSelected();
+        this.resetGraphGrouping();
     }
 
     @FXML private void exportImageAction(ActionEvent event) throws IOException {
@@ -141,29 +137,37 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         System.out.println("Received event from vertex " + vertex.toString());
 
         MainTabController currentFrame = Main.getSelectedMainTabController();
-        //currentFrame.resetHighlighted(vertex);
-
-        if(vertex instanceof  LayoutLoopVertex) {
-            currentFrame.setRightText((LayoutLoopVertex)vertex);
-        }
-        else if(vertex instanceof LayoutMethodVertex)
-        {
-            currentFrame.setRightText((LayoutMethodVertex)vertex);
-        }
-        else if(vertex instanceof LayoutSccVertex)
-        {
-            currentFrame.setRightText((LayoutSccVertex)vertex);
+        if(vertex instanceof LayoutLoopVertex) {
+            currentFrame.setRightText((LayoutLoopVertex) vertex);
+        } else if(vertex instanceof LayoutMethodVertex) {
+            currentFrame.setRightText((LayoutMethodVertex) vertex);
+        } else if(vertex instanceof LayoutSccVertex) {
+            currentFrame.setRightText((LayoutSccVertex) vertex);
         }
         else {
-            //currentFrame.bytecodeArea.setDescription();
             currentFrame.setVizRightText("Text");
         }
     }
 
-    public void initFX(Graph<StateVertex> graph)
+    public void initFX()
     {
         this.panelRoot = new LayoutRootVertex();
-        LayerFactory.getLayeredGraph(graph, this.panelRoot);
+        if(this.groupedByClass) {
+            LayerFactory.getLayeredGraph(this.loopGraph, this.panelRoot);
+        }
+        else {
+            LayerFactory.getGraphByClass(this.loopGraph, this.panelRoot);
+        }
+        LayoutAlgorithm.layout(this.panelRoot);
+        this.drawGraph();
+    }
+
+    @FXML public void resetGraphGrouping() {
+        if(this.groupedByClass) {
+            LayerFactory.getGraphByClass(this.loopGraph, this.panelRoot);
+        } else {
+            LayerFactory.getLayeredGraph(this.loopGraph, this.panelRoot);
+        }
         LayoutAlgorithm.layout(this.panelRoot);
         this.drawGraph();
     }

@@ -124,17 +124,23 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         @Override
         public void handle(SelectEvent<StateVertex> selectEvent) {
 
+            long time1 = System.nanoTime();
             StateVertex v = selectEvent.getVertex();
             HashSet<TaintVertex> methodAddresses = findAddressesByMethods(v.getMethodNames());
             HashSet<TaintVertex> verticesToDraw = findConnectedAddresses(methodAddresses);
             verticesToDraw.add(panelRoot);
             System.out.println("Taint vertices to draw: " + verticesToDraw.size());
 
+            long time2 = System.nanoTime();
             // Redraw graph with only this set of vertices.
             panelRoot.getInnerGraph().setGraphUnhidden(true);
             panelRoot.setHiddenExcept(verticesToDraw);
             LayoutAlgorithm.layout(panelRoot);
             TaintPanelController.this.drawGraph();
+            long time3 = System.nanoTime();
+
+            System.out.println("Time to compute taint subgraph: " + (time2 - time1) / 1000000000.0);
+            System.out.println("Time to draw graph: " + (time3 - time2) / 1000000000.0);
         }
     };
 

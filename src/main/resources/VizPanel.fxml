@@ -10,7 +10,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 
-<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/9" xmlns:fx="http://javafx.com/fxml/1">
    <center>
       <ScrollPane fx:id="scrollPane" hbarPolicy="ALWAYS" vbarPolicy="ALWAYS">
          <content>
@@ -27,8 +27,7 @@
          <children>
             <CheckBox fx:id="showEdges" onAction="#showEdgesAction" selected="true" text="Edges" />
             <CheckBox fx:id="showLabels" onAction="#showLabelsAction" text="Labels" />
-            <CheckBox fx:id="methodsExpanded" onAction="#methodCollapseAction" selected="true" text="Expand Methods" />
-            <CheckBox fx:id="chainsExpanded" onAction="#chainCollapseAction" selected="true" text="Expand Chains" />
+            <CheckBox fx:id="groupByClass" onAction="#groupByClassAction" selected="true" text="Group by class" />
             <Button onAction="#exportImageAction" text="Export PNG" />
             <Label text="Zoom:" />
             <Spinner fx:id="zoomSpinner" editable="true" prefWidth="100.0" />

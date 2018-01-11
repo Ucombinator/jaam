@@ -112,6 +112,7 @@ public class HierarchicalGraph<T extends AbstractLayoutVertex<T>>
 
     public ArrayList<T> getVisibleRoots() {
         if(this.vertices.size() == 0) {
+            System.out.println("Error: No vertices!");
             return null;
         }
 
@@ -134,7 +135,8 @@ public class HierarchicalGraph<T extends AbstractLayoutVertex<T>>
     }
 
     public boolean isVisibleRoot(T v) {
-        return (this.getVisibleInNeighbors(v).size() == 0 || (this.getVisibleInNeighbors(v).size() == 1 && this.getVisibleInNeighbors(v).contains(v)));
+        return (this.getVisibleInNeighbors(v).size() == 0
+                || (this.getVisibleInNeighbors(v).size() == 1 && this.getVisibleInNeighbors(v).contains(v)));
     }
 
     private Set<T> getOutNeighbors(T v) {

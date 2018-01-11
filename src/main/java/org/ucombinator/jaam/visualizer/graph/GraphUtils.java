@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.graph;
 
-import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.interpreter.State;
+import org.ucombinator.jaam.visualizer.layout.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,10 +65,10 @@ public class GraphUtils {
 
         if (vSCC.lowlink == vSCC.index) {
             //System.out.println("\t\t\tTERE Found a leader " + vSCC);
-            ArrayList<Integer> newComponent = new ArrayList<Integer>();
+            ArrayList<Integer> newComponent = new ArrayList<>();
             while (true) {
                 int w = stack.pop();
-                //System.out.println("\t\t\t\tTERE Popped " + w);
+                // System.out.println("\t\t\t\tTERE Popped " + w);
                 newComponent.add(w);
                 if(w == v.getId())
                     break;
@@ -84,6 +85,7 @@ public class GraphUtils {
         HashMap<Integer, SCCVertex> visitedVertices = new HashMap<>();
 
         ArrayList<T> vertices = g.getVertices();
+        System.out.println("Vertices: " + vertices.size());
 
         for(T v : vertices) {
             if(stack.size() > 0) {
@@ -96,5 +98,42 @@ public class GraphUtils {
         }
 
         return components;
+    }
+
+    public static HashMap<String, ArrayList<StateVertex>> groupByClass(final Graph<StateVertex> graph) {
+        HashMap<String, ArrayList<StateVertex>> visitedVertices = new HashMap<>();
+
+        Stack<StateVertex> stack = new Stack<StateVertex>();
+        for(StateVertex v : graph.getVertices()) {
+            stack.add(v);
+        }
+
+        while(stack.size() > 0) {
+            StateVertex v = stack.pop();
+            if (v instanceof LayoutMethodVertex) {
+                String className = ((LayoutMethodVertex) v).getClassName();
+                addVertexToClassGroup(visitedVertices, className, v);
+            } else if (v instanceof LayoutLoopVertex) {
+                String className = ((LayoutLoopVertex) v).getClassName();
+                addVertexToClassGroup(visitedVertices, className, v);
+            } else {
+                System.out.println("Error! Unhandled vertex type in GraphUtils.groupByClass.");
+            }
+        }
+
+        return visitedVertices;
+    }
+
+    public static void addVertexToClassGroup(HashMap<String, ArrayList<StateVertex>> visitedVertices,
+                                             String className, StateVertex vertex) {
+
+        if(visitedVertices.containsKey(className)) {
+            visitedVertices.get(className).add(vertex);
+        }
+        else {
+            ArrayList<StateVertex> list = new ArrayList<>();
+            list.add(vertex);
+            visitedVertices.put(className, list);
+        }
     }
 }

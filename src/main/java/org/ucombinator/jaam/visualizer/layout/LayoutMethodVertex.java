@@ -5,6 +5,7 @@ import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.serializer.LoopMethodNode;
 import soot.SootClass;
 
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 
 public class LayoutMethodVertex extends StateVertex implements CodeEntity {
@@ -25,6 +26,13 @@ public class LayoutMethodVertex extends StateVertex implements CodeEntity {
 
     public String getShortClassName() {
         return this.compilationUnit.method().getDeclaringClass().getShortName();
+    }
+
+    public HashSet<String> getClassNames() {
+        String className = this.getClassName();
+        HashSet<String> set = new HashSet<>();
+        set.add(className);
+        return set;
     }
 
     public String getClassDeclaration() {
