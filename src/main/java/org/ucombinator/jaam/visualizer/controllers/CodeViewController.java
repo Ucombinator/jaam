@@ -76,7 +76,6 @@ public class CodeViewController {
         String className = typeDeclaration.getName();
         String fullClassName = new String(unit.getPackage().getName() + "." + className);
 
-        System.out.println("Soot class name: " + s.getName());
         CodeTab tab = new CodeTab(unit, s, className, fullClassName);
         tab.setTooltip(new Tooltip(fullClassName));
         this.tabMap.put(fullClassName, tab);

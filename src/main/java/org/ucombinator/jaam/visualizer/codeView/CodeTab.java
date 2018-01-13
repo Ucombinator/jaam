@@ -167,9 +167,12 @@ public class CodeTab extends Tab{
                     codeArea.setStyleSpans(0, CodeHighlighter.computeHighlighting(codeArea.getText()));
                 });
 
+        if (soot == null) {
+            codeArea.appendText("Soot class not found!\n");
+            return codeArea;
+        }
 
         codeArea.appendText(soot.getName() + "\n");
-
         codeArea.appendText(soot.getClass().toString());
 
         //Arrays.stream(soot.getClass().getFields()).forEach(f -> System.out.println(f.getName() + "-->" + f.toString() + "-->" + f.toGenericString()));
