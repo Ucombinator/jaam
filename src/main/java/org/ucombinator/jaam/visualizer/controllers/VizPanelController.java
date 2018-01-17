@@ -152,22 +152,22 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
     public void initFX()
     {
         this.panelRoot = new LayoutRootVertex();
-        if(this.groupedByClass) {
+        // if(this.groupedByClass) {
             LayerFactory.getLayeredGraph(this.loopGraph, this.panelRoot);
-        }
+        /*}
         else {
             LayerFactory.getGraphByClass(this.loopGraph, this.panelRoot);
-        }
+        }*/
         LayoutAlgorithm.layout(this.panelRoot);
         this.drawGraph();
     }
 
     @FXML public void resetGraphGrouping() {
-        if(this.groupedByClass) {
+        /*if(this.groupedByClass) {
             LayerFactory.getGraphByClass(this.loopGraph, this.panelRoot);
-        } else {
+        } else {*/
             LayerFactory.getLayeredGraph(this.loopGraph, this.panelRoot);
-        }
+        //}
         LayoutAlgorithm.layout(this.panelRoot);
         this.drawGraph();
     }
