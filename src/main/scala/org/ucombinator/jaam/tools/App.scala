@@ -17,13 +17,15 @@ object Origin { // TODO: Move into App object?
 }
 
 case class PathElement(path: String, root: String, origin: Origin, data: Array[Byte]) {
-  def classData(): List[Array[Byte]] =
+  private def classData(data: Array[Byte]): List[Array[Byte]] =
     if (path.endsWith(".class")) List(data)
-    else if (path.endsWith(".jar"))
-      for ((e, d) <- org.ucombinator.jaam.util.Jar.entries(new java.io.ByteArrayInputStream(data))
-           if e.getName.endsWith(".class"))
-        yield d
-    else Nil
+    else if (path.endsWith(".jar")) {
+      val entries = org.ucombinator.jaam.util.Jar.entries(new java.io.ByteArrayInputStream(data))
+      val classes = for ((e, d) <- entries if e.getName.endsWith(".class")) yield d
+      val recursiveClasses = for ((e, d) <- entries if e.getName.endsWith(".jar")) yield classData(d)
+      classes ++ recursiveClasses.flatten
+    } else Nil
+  def classData(): List[Array[Byte]] = classData(data)
 }
 
 case class App() extends serializer.Packet {

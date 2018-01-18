@@ -51,12 +51,12 @@ public class CodeViewController {
 
             SootClass s = lookup.get(fullClassName);
 
-            if (s == null)
-            {
+            if (s != null) {
+                addClass(u, s);
+            } else {
                 System.out.println("ERROR Didn't find soot class matching " + fullClassName);
             }
 
-            addClass(u, s);
         }
     }
 
