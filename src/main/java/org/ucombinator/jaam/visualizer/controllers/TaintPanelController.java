@@ -35,9 +35,11 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         graphContentGroup.addEventFilter(SelectEvent.TAINT_VERTEX_SELECTED, this);
 
         this.panelRoot = new TaintRootVertex();
+
+        // Set up graph, but avoid drawing the entire thing
         LayerFactory.getLayeredGraph(graph, this.panelRoot);
-        LayoutAlgorithm.layout(this.panelRoot);
-        this.drawGraph();
+        /*LayoutAlgorithm.layout(this.panelRoot);
+        this.drawGraph();*/
     }
 
     public void drawGraph() {

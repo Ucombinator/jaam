@@ -216,10 +216,17 @@ object Main {
            Some(c) = Soot.loadedClasses.get(s.sootMethod.getDeclaringClass.getName);
            if c.origin == Origin.APP;
            new_ds = for (d <- ds;
-                         Some(c2) = Soot.loadedClasses.get(d.getDeclaringClass.getName);
-                         if c2.origin == Origin.APP) yield { d };
+                         c2 = Soot.loadedClasses.get(d.getDeclaringClass.getName) match {
+                           case None =>
+                             throw new Exception("no class for: " + d.getDeclaringClass.getName + " s: " + s.sootMethod.getDeclaringClass.getName)
+                           case Some(v) =>
+                             v
+                         };
+                         if c2.origin == Origin.APP) yield {d};
            if new_ds.nonEmpty)
-        yield { s -> new_ds }
+        yield {
+          s -> new_ds
+        }
 
     var appEdges2 = Map[SootMethod, Map[Stmt, Set[SootMethod]]]()
     for ((s, ds) <- appEdges) {
