@@ -540,6 +540,8 @@ public class MainTabController {
             for (ClassTreeNode f : subDirs) {
                 f.build(item);
             }
+
+            item.getChildren().sort(Comparator.comparing(t->t.getValue().name));
         }
 
         public boolean addVertex(StateVertex vertex) {
