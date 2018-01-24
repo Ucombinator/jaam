@@ -53,6 +53,11 @@ public class MainPaneController {
         Main.getSelectedMainTabController().hideSelectedNodes();
     }
 
+    @FXML private void hideUnrelatedNodes(ActionEvent event) {
+        Main.getSelectedMainTabController().hideUnrelatedToHighlighted();
+    }
+
+
     @FXML private void showAllHiddenNodes(ActionEvent event) {
         Main.getSelectedMainTabController().showAllHiddenNodes();
     }

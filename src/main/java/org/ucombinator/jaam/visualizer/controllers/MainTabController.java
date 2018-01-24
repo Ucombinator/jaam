@@ -377,6 +377,28 @@ public class MainTabController {
         addToHighlighted(newHighlighted);
     }
 
+    public void hideUnrelatedToHighlighted()
+    {
+        HashSet<StateVertex> keep = new HashSet<>();
+
+        this.vizHighlighted.stream().forEach(v -> keep.addAll(v.getAncestors()) );
+        this.vizHighlighted.stream().forEach(v -> keep.addAll(v.getDescendants()) );
+
+        HashSet<StateVertex> hide = new HashSet<>();
+
+        this.vizPanelController.getPanelRoot().getInnerGraph().getVertices().stream().forEach(v -> {
+            if (!keep.contains(v)) {
+                hide.add(v);
+            }
+        });
+
+        this.vizPanelController.startBatchMode();
+        this.getHidden().addAll(hide);
+        this.vizPanelController.endBatchMode();
+        this.vizHighlighted.clear();
+        this.vizPanelController.resetAndRedraw();
+    }
+
     // ClassTree Code -------------------------------------
     // Has a double function, either a folder (inner node) in which case it has no vertex;
     // Or a leaf node in which case it is associated to a one or more vertices

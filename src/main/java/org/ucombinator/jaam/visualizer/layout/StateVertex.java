@@ -33,6 +33,46 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex> {
             v.searchByIDRange(id1, id2, mainTab);
     }
 
+    public HashSet<StateVertex> getAncestors()
+    {
+        HashSet<StateVertex> ancestors = new HashSet<>();
+        this.getAncestors(ancestors);
+
+        return ancestors;
+    }
+
+    public void getAncestors(HashSet<StateVertex> ancestors)
+    {
+       if(this instanceof LayoutRootVertex)
+           return;
+       ancestors.add(this);
+       this.getSelfGraph().getVisibleInNeighbors(this).stream().forEach(v -> {
+           if (!ancestors.contains(v)) {
+               v.getAncestors(ancestors);
+           }
+       });
+    }
+
+    public HashSet<StateVertex> getDescendants()
+    {
+        HashSet<StateVertex> ancestors = new HashSet<>();
+        this.getDescendants(ancestors);
+
+        return ancestors;
+    }
+
+    public void getDescendants(HashSet<StateVertex> ancestors)
+    {
+        if(this instanceof LayoutRootVertex)
+            return;
+        ancestors.add(this);
+        this.getSelfGraph().getVisibleOutNeighbors(this).stream().forEach(v -> {
+            if (!ancestors.contains(v)) {
+                v.getDescendants(ancestors);
+            }
+        });
+    }
+
     // Subclasses must implement these so that we have descriptions for each of them,
     // and so that our generic collapsing can work for all of them
     public abstract String getRightPanelContent();
@@ -54,4 +94,6 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex> {
     }
 
     public abstract HashSet<String> getClassNames();
+
+
 }
