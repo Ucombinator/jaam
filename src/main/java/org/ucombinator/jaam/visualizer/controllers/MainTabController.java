@@ -138,6 +138,18 @@ public class MainTabController {
             }
         });
 
+        classTree.setOnMouseClicked(m -> {
+            if (m.getClickCount() == 2) {
+                final TreeItem<ClassTreeNode> item = classTree.getSelectionModel().getSelectedItem();
+
+                if (item.isLeaf()) {
+                    codeViewController.displayCodeTab(item.getValue().fullName, null);
+                }
+
+            }
+
+        });
+
     }
 
     private void addVerticesToClassTree(ArrayList<ClassTreeNode> topLevel, StateVertex root) {

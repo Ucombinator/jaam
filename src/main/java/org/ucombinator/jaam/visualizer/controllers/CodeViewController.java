@@ -97,24 +97,32 @@ public class CodeViewController {
             {
                 CodeEntity v = (CodeEntity)av;
 
-                CodeTab t = tabMap.get(v.getClassName());
+                displayCodeTab(v.getClassName(), v.getMethodName());
 
-                if(t == null)
-                {
-                    System.out.println("Didn't find code associated to " + v.getClassName());
-                    return;
-                }
-
-                if(!isDisplayed(t))
-                {
-                    codeTabs.getTabs().add(t);
-                }
-
-                codeTabs.getSelectionModel().select(t);
-                t.highlightMethod(v.getMethodName());
             }
         }
     };
+
+    public void displayCodeTab(String className, String highlightMethod)
+    {
+        CodeTab t = tabMap.get(className);
+
+        if(t == null)
+        {
+            System.out.println("Didn't find code associated to " + className);
+            return;
+        }
+
+        if(!isDisplayed(t))
+        {
+            codeTabs.getTabs().add(t);
+        }
+
+        codeTabs.getSelectionModel().select(t);
+
+        if(highlightMethod != null)
+            t.highlightMethod(highlightMethod);
+    }
 
     boolean isDisplayed(CodeTab t)
     {
