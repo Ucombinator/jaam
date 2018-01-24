@@ -2,6 +2,8 @@
 
 : ${SBT_JAVA:="java"}
 
+: ${JAAM_dir:="$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}")")" && pwd -P)"}
+
 # -XX:MaxPermSize=256M is deprecated in Java 8 but required in Java 7 so we have to check
 if "${SBT_JAVA}" -XX:MaxPermSize=256M -version 2>&1 |grep 'ignoring option MaxPermSize' >/dev/null; then
 : ${SBT_OPTS:="-Xms512M -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled"}
@@ -9,4 +11,4 @@ else
 : ${SBT_OPTS:="-Xms512M -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256M"}
 fi
 
-"${SBT_JAVA}" ${SBT_OPTS} -jar "$(dirname $0)/../jars/sbt-launch.jar" "$@"
+"${SBT_JAVA}" ${SBT_OPTS} -jar "$JAAM_dir/jars/sbt-launch.jar" "$@"

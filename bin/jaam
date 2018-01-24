@@ -2,8 +2,8 @@
 
 # JAAM: The JVM Abstracting Abstract Machine
 
-: ${JAAM_dir:="$(cd $(dirname $(dirname $0)); pwd -P)"}
-: ${JAAM_jar:="${JAAM_dir}/jars/jaam.jar"}
+: ${JAAM_dir:="$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}")")" && pwd -P)"}
+: ${JAAM_jar:="$JAAM_dir/jars/jaam.jar"}
 : ${JAAM_java:="java"}
 : ${JAAM_java_opts:=""}
 
