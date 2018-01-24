@@ -105,14 +105,18 @@ public class MainTabController {
         topLevel.addAll(root.subDirs);
 
         // Compression Step
-        for(ClassTreeNode f : topLevel)
-        {
-            f.compress();
+        topLevel.stream().forEach(f -> f.compress());
+
+        // Fix top level names. If a node is on the top level and a leaf due to compression
+        // it's fullname is missing package information, this fixes it.
+        for (ClassTreeNode f : topLevel) {
+            if (f.isLeaf()) {
+                f.fullName = f.name;// name is correct due to compressions step
+            }
         }
 
         // Add the vertices
         addVerticesToClassTree(topLevel, panelRoot);
-
 
         // Build the Tree
         CheckBoxTreeItem<ClassTreeNode> treeRoot = new CheckBoxTreeItem<>();
@@ -120,10 +124,7 @@ public class MainTabController {
         treeRoot.setValue(new ClassTreeNode("root", null));
         treeRoot.setExpanded(true);
 
-        for(ClassTreeNode f : topLevel)
-        {
-            f.build(treeRoot);
-        }
+        topLevel.stream().forEach(f -> f.build(treeRoot));
 
         classTree.setRoot(treeRoot);
 
@@ -145,9 +146,7 @@ public class MainTabController {
                 if (item.isLeaf()) {
                     codeViewController.displayCodeTab(item.getValue().fullName, null);
                 }
-
             }
-
         });
 
     }
