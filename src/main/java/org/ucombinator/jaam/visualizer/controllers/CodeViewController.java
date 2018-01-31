@@ -54,7 +54,7 @@ public class CodeViewController {
             if (s != null) {
                 addClass(u, s);
             } else {
-                System.out.println("ERROR Didn't find soot class matching " + fullClassName);
+                System.out.println("Warning: Didn't find soot class matching " + fullClassName);
             }
 
         }
