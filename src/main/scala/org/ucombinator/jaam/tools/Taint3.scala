@@ -15,69 +15,29 @@ import org.jgrapht._
 import org.jgrapht.graph._
 import org.jgrapht.io._
 
-abstract sealed class Address extends serializer.Packet {
-  def stmt: Stmt
-  def sootMethod: SootMethod
-  def sootClass: SootClass = this.sootMethod.getDeclaringClass
+abstract sealed class Address(val stmt: Stmt, val sootMethod: SootMethod, val sootClass: SootClass) extends serializer.Packet {
+  def this(stmt: org.ucombinator.jaam.util.Stmt) = this(stmt, stmt.sootMethod, stmt.sootMethod.getDeclaringClass)
+  def this(sootMethod: SootMethod) = this(null, sootMethod, sootMethod.getDeclaringClass)
+  def this(sootClass: SootClass) = this(null, null, sootClass)
+  def this(nil: Null) = this(null, null, null)
 }
 object Address {
   // TODO: remove and use StaticField and InstanceField instead
-  case class Field(sootField: SootField) extends Address {
-    def stmt = null
-    def sootMethod = null
-    override def sootClass = this.sootField.getDeclaringClass
-  }
-  case class Return(sootMethod: SootMethod) extends Address {
-    def stmt = null
-  }
-  case class Parameter(sootMethod: SootMethod, index: Int) extends Address {
-    def stmt = null
-  }
-  case class Throws(sootMethod: SootMethod) extends Address {
-    def stmt = null
-  }
-  case class Stmt(stmt: org.ucombinator.jaam.util.Stmt) extends Address {
-    def sootMethod = stmt.sootMethod
-  }
-  case class Value(stmt: org.ucombinator.jaam.util.Stmt, sootValue: SootValue) extends Address {
-    def sootMethod = stmt.sootMethod
-  }
-  case class Local(sootMethod: SootMethod, name: String) extends Address {
-    def stmt = null
-  }
-  case class This(typ: RefType) extends Address {
-    def stmt = null
-    def sootMethod = null
-    override def sootClass = typ.getSootClass
-  }
-  case class StaticField(sootField: SootField) extends Address {
-    def stmt = null
-    def sootMethod = null
-    override def sootClass = this.sootField.getDeclaringClass
-  }
-  case class InstanceField(sootField: SootField) extends Address {
-    def stmt = null
-    def sootMethod = null
-    override def sootClass = this.sootField.getDeclaringClass
-  }
-  case class ArrayRef(typ: Type) extends Address {
-    def stmt = null
-    def sootMethod = null
-    override def sootClass = null
-  }
-  case class New(stmt: org.ucombinator.jaam.util.Stmt) extends Address {
-    def sootMethod = stmt.sootMethod
-  }
-  case class NewArray(stmt: org.ucombinator.jaam.util.Stmt) extends Address {
-    def sootMethod = stmt.sootMethod
-  }
-  case class NewMultiArray(stmt: org.ucombinator.jaam.util.Stmt) extends Address {
-    def sootMethod = stmt.sootMethod
-  }
-
-  case class Lambda(stmt: org.ucombinator.jaam.util.Stmt, lambda: DecodedLambda) extends Address {
-    def sootMethod = stmt.sootMethod
-  }
+  case class Field(sootField: SootField) extends Address(sootField.getDeclaringClass)
+  case class Return(sootMethodX: SootMethod) extends Address(sootMethodX)
+  case class Parameter(sootMethodX: SootMethod, index: Int) extends Address(sootMethodX)
+  case class Throws(sootMethodX: SootMethod) extends Address(sootMethodX)
+  case class Stmt(stmtX: org.ucombinator.jaam.util.Stmt) extends Address(stmtX)
+  case class Value(stmtX: org.ucombinator.jaam.util.Stmt, sootValue: SootValue) extends Address(stmtX)
+  case class Local(sootMethodX: SootMethod, name: String) extends Address(sootMethodX)
+  case class This(typ: RefType) extends Address(typ.getSootClass)
+  case class StaticField(sootField: SootField) extends Address(sootField.getDeclaringClass)
+  case class InstanceField(sootField: SootField) extends Address(sootField.getDeclaringClass)
+  case class ArrayRef(typ: Type) extends Address(null)
+  case class New(stmtX: org.ucombinator.jaam.util.Stmt) extends Address(stmtX)
+  case class NewArray(stmtX: org.ucombinator.jaam.util.Stmt) extends Address(stmtX)
+  case class NewMultiArray(stmtX: org.ucombinator.jaam.util.Stmt) extends Address(stmtX)
+  case class Lambda(stmtX: org.ucombinator.jaam.util.Stmt, lambda: DecodedLambda) extends Address(stmtX)
 }
 
 
