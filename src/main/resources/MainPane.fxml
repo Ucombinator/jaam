@@ -31,6 +31,7 @@
                   <MenuItem onAction="#searchByStatement" text="By _Statement..." />
                   <MenuItem onAction="#searchByMethod" text="By _Method..." />
                   <MenuItem onAction="#hideSelectedNodes" text="Hide_Selected" />
+                  <MenuItem onAction="#hideUnrelatedNodes" text="Hide_Unrelated" />
                   <MenuItem onAction="#showAllHiddenNodes" text="Unhide_All" />
             </items>
           </Menu>

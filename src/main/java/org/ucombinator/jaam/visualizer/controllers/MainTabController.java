@@ -105,14 +105,18 @@ public class MainTabController {
         topLevel.addAll(root.subDirs);
 
         // Compression Step
-        for(ClassTreeNode f : topLevel)
-        {
-            f.compress();
+        topLevel.stream().forEach(f -> f.compress());
+
+        // Fix top level names. If a node is on the top level and a leaf due to compression
+        // it's fullname is missing package information, this fixes it.
+        for (ClassTreeNode f : topLevel) {
+            if (f.isLeaf()) {
+                f.fullName = f.name;// name is correct due to compressions step
+            }
         }
 
         // Add the vertices
         addVerticesToClassTree(topLevel, panelRoot);
-
 
         // Build the Tree
         CheckBoxTreeItem<ClassTreeNode> treeRoot = new CheckBoxTreeItem<>();
@@ -120,10 +124,7 @@ public class MainTabController {
         treeRoot.setValue(new ClassTreeNode("root", null));
         treeRoot.setExpanded(true);
 
-        for(ClassTreeNode f : topLevel)
-        {
-            f.build(treeRoot);
-        }
+        topLevel.stream().forEach(f -> f.build(treeRoot));
 
         classTree.setRoot(treeRoot);
 
@@ -135,6 +136,16 @@ public class MainTabController {
                 setClassHighlight(vizPanelController.getPanelRoot(),
                         oldValue != null ? oldValue.getValue().fullName : null,
                         newValue.getValue().fullName);
+            }
+        });
+
+        classTree.setOnMouseClicked(m -> {
+            if (m.getClickCount() == 2) {
+                final TreeItem<ClassTreeNode> item = classTree.getSelectionModel().getSelectedItem();
+
+                if (item.isLeaf()) {
+                    codeViewController.displayCodeTab(item.getValue().fullName, null);
+                }
             }
         });
 
@@ -377,6 +388,28 @@ public class MainTabController {
         addToHighlighted(newHighlighted);
     }
 
+    public void hideUnrelatedToHighlighted()
+    {
+        HashSet<StateVertex> keep = new HashSet<>();
+
+        this.vizHighlighted.stream().forEach(v -> keep.addAll(v.getAncestors()) );
+        this.vizHighlighted.stream().forEach(v -> keep.addAll(v.getDescendants()) );
+
+        HashSet<StateVertex> hide = new HashSet<>();
+
+        this.vizPanelController.getPanelRoot().getInnerGraph().getVertices().stream().forEach(v -> {
+            if (!keep.contains(v)) {
+                hide.add(v);
+            }
+        });
+
+        this.vizPanelController.startBatchMode();
+        this.getHidden().addAll(hide);
+        this.vizPanelController.endBatchMode();
+        this.vizHighlighted.clear();
+        this.vizPanelController.resetAndRedraw();
+    }
+
     // ClassTree Code -------------------------------------
     // Has a double function, either a folder (inner node) in which case it has no vertex;
     // Or a leaf node in which case it is associated to a one or more vertices
@@ -518,6 +551,8 @@ public class MainTabController {
             for (ClassTreeNode f : subDirs) {
                 f.build(item);
             }
+
+            item.getChildren().sort(Comparator.comparing(t->t.getValue().name));
         }
 
         public boolean addVertex(StateVertex vertex) {

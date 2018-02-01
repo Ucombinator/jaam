@@ -14,7 +14,10 @@ import javafx.scene.layout.StackPane;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.LineNumberFactory;
+import org.ucombinator.jaam.util.Soot;
 import soot.SootClass;
+import soot.SootMethod;
+import soot.jimple.Stmt;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -65,7 +68,7 @@ public class CodeTab extends Tab{
 
         viewToggle.selectedProperty().addListener( (observable, oldValue, newValue) -> {
                     javaScrollPane.setVisible(!newValue);
-                    //sootScrollPane.setVisible( newValue);
+                    sootScrollPane.setVisible( newValue);
                     viewToggle.setText( newValue ? "Java" : "Soot");
                 } );
 
@@ -167,15 +170,33 @@ public class CodeTab extends Tab{
                     codeArea.setStyleSpans(0, CodeHighlighter.computeHighlighting(codeArea.getText()));
                 });
 
+        if (soot == null) {
+            codeArea.appendText("Soot class not found!\n");
+            return codeArea;
+        }
 
         codeArea.appendText(soot.getName() + "\n");
+        codeArea.appendText(soot.getClass().toString() + "\n\n");
 
-        codeArea.appendText(soot.getClass().toString());
+        soot.getFields().stream().forEach(f -> codeArea.appendText(f.toString() + "\n"));
+
+        codeArea.appendText("\n");
+
+        for (SootMethod m : soot.getMethods())
+        {
+            codeArea.appendText(m.getSubSignature() + "\n");
+            if (m.isConcrete()) {
+                Soot.getBody(m).getUnits().stream().forEach(u -> {
+                    Stmt s = (Stmt) u;
+                    codeArea.appendText("    " + s.toString() + "\n");
+                });
+            }
+            codeArea.appendText("\n");
+        }
 
         //Arrays.stream(soot.getClass().getFields()).forEach(f -> System.out.println(f.getName() + "-->" + f.toString() + "-->" + f.toGenericString()));
 
         return codeArea;
-
     }
 
     public void highlightMethod(String methodName) {
