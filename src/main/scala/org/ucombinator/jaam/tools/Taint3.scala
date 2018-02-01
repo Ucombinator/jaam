@@ -15,42 +15,56 @@ import org.jgrapht._
 import org.jgrapht.graph._
 import org.jgrapht.io._
 
-
 abstract sealed class Address extends serializer.Packet {
+  def stmt: Stmt
   def sootMethod: SootMethod
   def sootClass: SootClass = this.sootMethod.getDeclaringClass
 }
 object Address {
   // TODO: remove and use StaticField and InstanceField instead
   case class Field(sootField: SootField) extends Address {
+    def stmt = null
     def sootMethod = null
     override def sootClass = this.sootField.getDeclaringClass
   }
-  case class Return(sootMethod: SootMethod) extends Address
-  case class Parameter(sootMethod: SootMethod, index: Int) extends Address
-  case class Throws(sootMethod: SootMethod) extends Address
+  case class Return(sootMethod: SootMethod) extends Address {
+    def stmt = null
+  }
+  case class Parameter(sootMethod: SootMethod, index: Int) extends Address {
+    def stmt = null
+  }
+  case class Throws(sootMethod: SootMethod) extends Address {
+    def stmt = null
+  }
   case class Stmt(stmt: org.ucombinator.jaam.util.Stmt) extends Address {
     def sootMethod = stmt.sootMethod
   }
-  case class Value(sootMethod: SootMethod, sootValue: SootValue) extends Address
-  case class Local(sootMethod: SootMethod, name: String) extends Address
+  case class Value(stmt: org.ucombinator.jaam.util.Stmt, sootValue: SootValue) extends Address {
+    def sootMethod = stmt.sootMethod
+  }
+  case class Local(sootMethod: SootMethod, name: String) extends Address {
+    def stmt = null
+  }
   case class This(typ: RefType) extends Address {
+    def stmt = null
     def sootMethod = null
     override def sootClass = typ.getSootClass
   }
   case class StaticField(sootField: SootField) extends Address {
+    def stmt = null
     def sootMethod = null
     override def sootClass = this.sootField.getDeclaringClass
   }
   case class InstanceField(sootField: SootField) extends Address {
+    def stmt = null
     def sootMethod = null
     override def sootClass = this.sootField.getDeclaringClass
   }
   case class ArrayRef(typ: Type) extends Address {
+    def stmt = null
     def sootMethod = null
     override def sootClass = null
   }
-  // TODO: we do not actually need sootMethod since we have Stmt
   case class New(stmt: org.ucombinator.jaam.util.Stmt) extends Address {
     def sootMethod = stmt.sootMethod
   }
@@ -61,7 +75,9 @@ object Address {
     def sootMethod = stmt.sootMethod
   }
 
-  case class Lambda(sootMethod: SootMethod, lambda: DecodedLambda) extends Address
+  case class Lambda(stmt: org.ucombinator.jaam.util.Stmt, lambda: DecodedLambda) extends Address {
+    def sootMethod = stmt.sootMethod
+  }
 }
 
 
@@ -325,10 +341,10 @@ object Taint3 {
     rc = graph.addEdge(a1, a2, new Edge(a1, a2, r))
   }
 
-  def handleDynamicInvoke(a0: Address, sootMethod: SootMethod, rhs: DynamicInvokeExpr): Unit = {
+  def handleDynamicInvoke(a0: Address, stmt: Stmt, rhs: DynamicInvokeExpr): Unit = {
     val lambda@Soot.DecodedLambda(_, interfaceMethod, implementationMethod, captures) = Soot.decodeLambda(rhs)
 
-    val aCaptures = captures.asScala.map(eval(sootMethod, _))
+    val aCaptures = captures.asScala.map(eval(stmt, _))
     val aIfaceParams = for (i <- 0 until interfaceMethod.getParameterCount)
       yield Address.Parameter(interfaceMethod, i)
     val aImplParams = for (i <- 0 until implementationMethod.getParameterCount)
@@ -351,7 +367,7 @@ object Taint3 {
 
     addEdge(Address.Return(implementationMethod), Address.Return(interfaceMethod), Relationship.LambdaReturn)
 
-    addEdge(Address.Lambda(sootMethod, lambda), a0, Relationship.LambdaClosure)
+    addEdge(Address.Lambda(stmt, lambda), a0, Relationship.LambdaClosure)
     for (c <- aCaptures) {
       addEdge(c, a0, Relationship.LambdaCaptureDependency)
     }
@@ -359,20 +375,20 @@ object Taint3 {
 
   // TODO: edges between method declarations and implementations
   // TODO:             Scene.v.getActiveHierarchy.getSubclassesOfIncluding(c).asScala.toSet
-  def handleInvoke(a0: Address, sootMethod: SootMethod, rhs: InvokeExpr): Unit = {
+  def handleInvoke(a0: Address, stmt: Stmt, rhs: InvokeExpr): Unit = {
     rhs match {
       // Skip normal processing
       case rhs: DynamicInvokeExpr =>
-        handleDynamicInvoke(a0, sootMethod, rhs)
+        handleDynamicInvoke(a0, stmt, rhs)
         return
       // Add edge for invocation base (if non-static)
       case rhs: InstanceInvokeExpr =>
-        addEdge(eval(sootMethod, rhs.getBase), a0, Relationship.InvokeBase)
+        addEdge(eval(stmt, rhs.getBase), a0, Relationship.InvokeBase)
       case _ => /* Do nothing */
     }
 
     // Parameters
-    val aArgs = rhs.getArgs.asScala.map(eval(sootMethod, _))
+    val aArgs = rhs.getArgs.asScala.map(eval(stmt, _))
     val aParams = for (i <- 0 until rhs.getMethod.getParameterCount)
       yield Address.Parameter(rhs.getMethod, i)
 
@@ -396,52 +412,51 @@ object Taint3 {
     val a0 = Address.Stmt(stmt)
     stmt.sootStmt match {
       case sootStmt : InvokeStmt =>
-       handleInvoke(a0, thisMethod, sootStmt.getInvokeExpr)
+       handleInvoke(a0, stmt, sootStmt.getInvokeExpr)
 
       case sootStmt : DefinitionStmt =>
         val leftOp = sootStmt.getLeftOp
-        val aLhs = Address.Value(thisMethod, leftOp) // TODO: refactor to be returned by `lhs`
-        lhs(thisMethod, leftOp, aLhs)
+        val aLhs = Address.Value(stmt, leftOp) // TODO: refactor to be returned by `lhs`
+        lhs(stmt, leftOp, aLhs)
         addEdge(a0, aLhs, Relationship.Lhs)
 
         sootStmt.getRightOp match {
-          case rhs: InvokeExpr => handleInvoke(a0, thisMethod, rhs)
+          case rhs: InvokeExpr => handleInvoke(a0, stmt, rhs)
           case _: NewExpr =>
             val a1 = Address.New(stmt)
             addEdge(a1, a0, Relationship.New)
 
           case rhs : NewArrayExpr =>
             val a1 = Address.NewArray(stmt)
-            val a2 = eval(thisMethod, rhs.getSize)
+            val a2 = eval(stmt, rhs.getSize)
             addEdge(a2, a1, Relationship.NewArraySize)
             addEdge(a1, a0, Relationship.NewArray)
 
           case rhs : NewMultiArrayExpr =>
             val a1 = Address.NewArray(stmt)
-            val a2 = rhs.getSizes.asScala.map(eval(thisMethod, _))
+            val a2 = rhs.getSizes.asScala.map(eval(stmt, _))
             for ((b, i) <- a2.zipWithIndex) {
               addEdge(b, a1, Relationship.NewMultiArraySize(i))
             }
             addEdge(a1, a0, Relationship.NewMultiArray)
 
           case rhs =>
-            val a1 = eval(thisMethod, rhs)
-//            println(s"$a1 --->  $a0")
+            val a1 = eval(stmt, rhs)
             addEdge(a1, a0, Relationship.Definition)
         }
 
       case sootStmt : IfStmt =>
-        val a1 = eval(thisMethod, sootStmt.getCondition)
+        val a1 = eval(stmt, sootStmt.getCondition)
         // TODO: implicit flow
         addEdge(a1, a0, Relationship.Stmt)
 
       case sootStmt : SwitchStmt =>
-        val a1 = eval(thisMethod, sootStmt.getKey)
+        val a1 = eval(stmt, sootStmt.getKey)
         // TODO: implicit flow
         addEdge(a1, a0, Relationship.Stmt)
 
       case sootStmt : ReturnStmt =>
-        val a1 = eval(thisMethod, sootStmt.getOp)
+        val a1 = eval(stmt, sootStmt.getOp)
         addEdge(a1, a0, Relationship.Stmt)
 
       case _ : ReturnVoidStmt =>
@@ -465,15 +480,15 @@ object Taint3 {
       // For now we don't model monitor statements, so we just skip over them
       // TODO/soundness: In the event of multi-threaded code with precise interleaving, this is not sound.
       case sootStmt : EnterMonitorStmt =>
-        val a1 = eval(stmt.sootMethod, sootStmt.getOp)
+        val a1 = eval(stmt, sootStmt.getOp)
         addEdge(a1, a0, Relationship.Stmt)
       case sootStmt : ExitMonitorStmt =>
-        val a1 = eval(stmt.sootMethod, sootStmt.getOp)
+        val a1 = eval(stmt, sootStmt.getOp)
         addEdge(a1, a0, Relationship.Stmt)
 
       // TODO: needs testing
       case sootStmt : ThrowStmt =>
-        val a1 = eval(stmt.sootMethod, sootStmt.getOp)
+        val a1 = eval(stmt, sootStmt.getOp)
         addEdge(a1, a0, Relationship.Stmt)
         addEdge(a0, Address.Throws(stmt.sootMethod),Relationship.Throws)
       // TODO: parameters as ReturnStmt and ReturnVoidStmt ???
@@ -491,30 +506,30 @@ object Taint3 {
   // Note that the second part must correspond to eval and be the dual of eval
   //
   // TODO: refactor to share code with eval
-  def lhs(m: SootMethod, v: SootValue, a0: Address.Value): Unit =
+  def lhs(s: Stmt, v: SootValue, a0: Address.Value): Unit =
     v match {
       case v: Local =>
-        val a1 = Address.Local(m, v.getName)
+        val a1 = Address.Local(s.sootMethod, v.getName)
         addEdge(a0, a1, Relationship.Ref)
       case v: ParameterRef =>
-        val a1 = Address.Parameter(m, v.getIndex)
+        val a1 = Address.Parameter(s.sootMethod, v.getIndex)
         addEdge(a0, a1, Relationship.ParameterRef)
       case v: StaticFieldRef =>
         val a1 = Address.StaticField(v.getField)
         addEdge(a0, a1, Relationship.StaticFieldRef)
       case v: ThisRef =>
-        val a1 = Address.This(v.getType)
+        val a1 = Address.This(v.getType.asInstanceOf[RefType])
         addEdge(a0, a1, Relationship.ThisRef)
 
       case v: InstanceFieldRef =>
         // TODO: avoid duplication with `eval` by having an `addr` function
-        val a1 = eval(m, v.getBase)
+        val a1 = eval(s, v.getBase)
         val a2 = Address.InstanceField(v.getField)
         addEdge(a1, a0, Relationship.InstanceFieldBase)
         addEdge(a0, a2, Relationship.InstanceFieldRef)
       case v: ArrayRef =>
-        val a1 = eval(m, v.getBase)
-        val a2 = eval(m, v.getIndex)
+        val a1 = eval(s, v.getBase)
+        val a2 = eval(s, v.getIndex)
         val a3 = Address.ArrayRef(v.getType)
         addEdge(a1, a0, Relationship.ArrayBase)
         addEdge(a2, a0, Relationship.ArrayIndex)
@@ -523,16 +538,16 @@ object Taint3 {
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
 
-  def eval(m: SootMethod, v: SootValue): Address = {
-    val a0 = Address.Value(m, v)
+  def eval(s: Stmt, v: SootValue): Address = {
+    val a0 = Address.Value(s, v)
 
     v match {
       // Base cases
       case v : Local =>
-        val a1 = Address.Local(m, v.getName)
+        val a1 = Address.Local(s.sootMethod, v.getName)
         addEdge(a1, a0, Relationship.Ref)
       case v : ParameterRef =>
-        val a1 = Address.Parameter(m, v.getIndex)
+        val a1 = Address.Parameter(s.sootMethod, v.getIndex)
         addEdge(a1, a0, Relationship.Ref)
       case v : StaticFieldRef =>
         val a1 = Address.StaticField(v.getField)
@@ -543,13 +558,13 @@ object Taint3 {
 
       // Recursive
       case v : InstanceFieldRef =>
-        val a1 = eval(m, v.getBase)
+        val a1 = eval(s, v.getBase)
         val a2 = Address.InstanceField(v.getField)
         addEdge(a1, a0, Relationship.InstanceFieldBase)
         addEdge(a2, a0, Relationship.InstanceFieldValue)
       case v : ArrayRef =>
-        val a1 = eval(m, v.getBase)
-        val a2 = eval(m, v.getIndex)
+        val a1 = eval(s, v.getBase)
+        val a2 = eval(s, v.getIndex)
         val a3 = Address.ArrayRef(v.getType)
         addEdge(a1, a0, Relationship.ArrayBase)
         addEdge(a2, a0, Relationship.ArrayIndex)
@@ -558,18 +573,18 @@ object Taint3 {
         // TODO
       case _ : Constant => {}
       case v : UnopExpr =>
-        val a1 = eval(m, v.getOp)
+        val a1 = eval(s, v.getOp)
         addEdge(a1, a0, Relationship.UnOp)
       case v : BinopExpr =>
-        val a1 = eval(m, v.getOp1)
-        val a2 = eval(m, v.getOp2)
+        val a1 = eval(s, v.getOp1)
+        val a2 = eval(s, v.getOp2)
         addEdge(a1, a0, Relationship.BinOp1)
         addEdge(a2, a0, Relationship.BinOp2)
       case v : InstanceOfExpr =>
-        val a1 = eval(m, v.getOp)
+        val a1 = eval(s, v.getOp)
         addEdge(a1, a0, Relationship.InstanceOf)
       case v : CastExpr =>
-        val a1 = eval(m, v.getOp)
+        val a1 = eval(s, v.getOp)
         addEdge(a1, a0, Relationship.Cast)
       case _ =>  throw new Exception("No match for " + v.getClass + " : " + v)
     }
@@ -604,7 +619,7 @@ object Taint3 {
         case Address.Parameter(sootMethod, _) => classes.contains(sootMethod.getDeclaringClass)
         case Address.Throws(sootMethod) => classes.contains(sootMethod.getDeclaringClass)
         case Address.Stmt(stmt) => classes.contains(stmt.sootMethod.getDeclaringClass)
-        case Address.Value(sootMethod, _) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.Value(stmt, _) => classes.contains(stmt.sootMethod.getDeclaringClass)
         case Address.Local(sootMethod, _) => classes.contains(sootMethod.getDeclaringClass)
         case Address.This(typ) => false // TODO: better answer
         case Address.StaticField(sootField) => classes.contains(sootField.getDeclaringClass)
@@ -613,7 +628,7 @@ object Taint3 {
         case Address.New(stmt) => classes.contains(stmt.sootMethod.getDeclaringClass)
         case Address.NewArray(stmt) => classes.contains(stmt.sootMethod.getDeclaringClass)
         case Address.NewMultiArray(stmt) => classes.contains(stmt.sootMethod.getDeclaringClass)
-        case Address.Lambda(sootMethod, lambda) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.Lambda(stmt, lambda) => classes.contains(stmt.sootMethod.getDeclaringClass)
       }
     }
   }
