@@ -45,9 +45,15 @@ object Address {
     def sootMethod = null
   }
   // TODO: we do not actually need sootMethod since we have Stmt
-  case class New(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
-  case class NewArray(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
-  case class NewMultiArray(sootMethod: SootMethod, stmt: org.ucombinator.jaam.util.Stmt) extends Address
+  case class New(stmt: org.ucombinator.jaam.util.Stmt) extends Address {
+    def sootMethod = stmt.sootMethod
+  }
+  case class NewArray(stmt: org.ucombinator.jaam.util.Stmt) extends Address {
+    def sootMethod = stmt.sootMethod
+  }
+  case class NewMultiArray(stmt: org.ucombinator.jaam.util.Stmt) extends Address {
+    def sootMethod = stmt.sootMethod
+  }
 
   case class Lambda(sootMethod: SootMethod, lambda: DecodedLambda) extends Address
 }
@@ -395,17 +401,17 @@ object Taint3 {
         sootStmt.getRightOp match {
           case rhs: InvokeExpr => handleInvoke(a0, thisMethod, rhs)
           case _: NewExpr =>
-            val a1 = Address.New(thisMethod, stmt)
+            val a1 = Address.New(stmt)
             addEdge(a1, a0, Relationship.New)
 
           case rhs : NewArrayExpr =>
-            val a1 = Address.NewArray(thisMethod, stmt)
+            val a1 = Address.NewArray(stmt)
             val a2 = eval(thisMethod, rhs.getSize)
             addEdge(a2, a1, Relationship.NewArraySize)
             addEdge(a1, a0, Relationship.NewArray)
 
           case rhs : NewMultiArrayExpr =>
-            val a1 = Address.NewArray(thisMethod, stmt)
+            val a1 = Address.NewArray(stmt)
             val a2 = rhs.getSizes.asScala.map(eval(thisMethod, _))
             for ((b, i) <- a2.zipWithIndex) {
               addEdge(b, a1, Relationship.NewMultiArraySize(i))
@@ -598,9 +604,9 @@ object Taint3 {
         case Address.StaticField(sootField) => classes.contains(sootField.getDeclaringClass)
         case Address.InstanceField(sootField) => classes.contains(sootField.getDeclaringClass)
         case Address.ArrayRef(typ) => false // TODO: better answer
-        case Address.New(sootMethod, stmt) => classes.contains(sootMethod.getDeclaringClass)
-        case Address.NewArray(sootMethod, stmt) => classes.contains(sootMethod.getDeclaringClass)
-        case Address.NewMultiArray(sootMethod, stmt) => classes.contains(sootMethod.getDeclaringClass)
+        case Address.New(stmt) => classes.contains(stmt.sootMethod.getDeclaringClass)
+        case Address.NewArray(stmt) => classes.contains(stmt.sootMethod.getDeclaringClass)
+        case Address.NewMultiArray(stmt) => classes.contains(stmt.sootMethod.getDeclaringClass)
         case Address.Lambda(sootMethod, lambda) => classes.contains(sootMethod.getDeclaringClass)
       }
     }
