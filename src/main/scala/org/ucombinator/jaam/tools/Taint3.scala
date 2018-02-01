@@ -44,43 +44,43 @@ object Address {
 abstract sealed class Relationship
 object Relationship {
   class  Stmt extends Relationship
-  object  Stmt extends Relationship { def apply = new Stmt() }
+  object Stmt extends Relationship { def apply = new Stmt() }
 
   class  Return extends Relationship
-  object  Return extends Relationship { def apply = new Return() }
+  object Return extends Relationship { def apply = new Return() }
 
   class  Throws extends Relationship
-  object  Throws extends Relationship { def apply = new Throws() }
+  object Throws extends Relationship { def apply = new Throws() }
 
   class  UnOp extends Relationship
-  object  UnOp extends Relationship { def apply = new UnOp() }
+  object UnOp extends Relationship { def apply = new UnOp() }
 
   class  BinOp1 extends Relationship
-  object  BinOp1 extends Relationship { def apply = new BinOp1() }
+  object BinOp1 extends Relationship { def apply = new BinOp1() }
 
   class  BinOp2 extends Relationship
-  object  BinOp2 extends Relationship { def apply = new BinOp2() }
+  object BinOp2 extends Relationship { def apply = new BinOp2() }
 
   class  Cast extends Relationship
-  object  Cast extends Relationship { def apply = new Cast() }
+  object Cast extends Relationship { def apply = new Cast() }
 
   class  InstanceOf extends Relationship
-  object  InstanceOf extends Relationship { def apply = new InstanceOf }
+  object InstanceOf extends Relationship { def apply = new InstanceOf }
 
   class  Ref extends Relationship
   object Ref extends  Relationship { def apply = new Ref }
 
   class  InstanceFieldBase extends Relationship
-  object  InstanceFieldBase extends Relationship { def apply = new InstanceFieldBase }
+  object InstanceFieldBase extends Relationship { def apply = new InstanceFieldBase }
 
   class  InstanceFieldValue extends Relationship
-  object  InstanceFieldValue extends Relationship { def apply = new InstanceFieldValue }
+  object InstanceFieldValue extends Relationship { def apply = new InstanceFieldValue }
 
   class  ArrayBase extends Relationship
-  object  ArrayBase extends Relationship { def apply = new ArrayBase }
+  object ArrayBase extends Relationship { def apply = new ArrayBase }
 
   class  ArrayIndex extends Relationship
-  object  ArrayIndex extends Relationship { def apply = new ArrayIndex }
+  object ArrayIndex extends Relationship { def apply = new ArrayIndex }
 
   class  ArrayValue extends Relationship
   object ArrayValue extends Relationship { def apply = new ArrayValue }
