@@ -18,11 +18,13 @@ import org.jgrapht.io._
 
 abstract sealed class Address extends serializer.Packet {
   def sootMethod: SootMethod
+  def sootClass: SootClass = this.sootMethod.getDeclaringClass
 }
 object Address {
   // TODO: remove and use StaticField and InstanceField instead
   case class Field(sootField: SootField) extends Address {
     def sootMethod = null
+    override def sootClass = this.sootField.getDeclaringClass
   }
   case class Return(sootMethod: SootMethod) extends Address
   case class Parameter(sootMethod: SootMethod, index: Int) extends Address
@@ -32,17 +34,21 @@ object Address {
   }
   case class Value(sootMethod: SootMethod, sootValue: SootValue) extends Address
   case class Local(sootMethod: SootMethod, name: String) extends Address
-  case class This(typ: Type) extends Address {
+  case class This(typ: RefType) extends Address {
     def sootMethod = null
+    override def sootClass = typ.getSootClass
   }
   case class StaticField(sootField: SootField) extends Address {
     def sootMethod = null
+    override def sootClass = this.sootField.getDeclaringClass
   }
   case class InstanceField(sootField: SootField) extends Address {
     def sootMethod = null
+    override def sootClass = this.sootField.getDeclaringClass
   }
   case class ArrayRef(typ: Type) extends Address {
     def sootMethod = null
+    override def sootClass = null
   }
   // TODO: we do not actually need sootMethod since we have Stmt
   case class New(stmt: org.ucombinator.jaam.util.Stmt) extends Address {
@@ -532,7 +538,7 @@ object Taint3 {
         val a1 = Address.StaticField(v.getField)
         addEdge(a1, a0, Relationship.Ref)
       case v : ThisRef =>
-        val a1 = Address.This(v.getType)
+        val a1 = Address.This(v.getType.asInstanceOf[RefType])
         addEdge(a1, a0, Relationship.Ref)
 
       // Recursive
