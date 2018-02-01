@@ -1,14 +1,38 @@
 #!/bin/bash
 set -e
+set -x
 
+# Usage: createJaam <file>
+# Or:    createJaam <file> --no-prune
+# where <file> is a folder, class or jar file to be processed
+
+# Setup
 : ${JAAM_dir:="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"}
 : ${JAAM_exec:="$JAAM_dir/bin/jaam"}
 
-file="`basename "$1" ".jar"`"
+# Process arguments
+if test -z "$1"; then
+  echo "ERROR: missing argument: file or directory to process"
+  exit 1
+elif ! test -e "$1"; then
+  echo "ERROR: no such file or directory: $1"
+  exit 1
+else
+  file="$(readlink -m $1)"
+  shift
+fi
 
-"$JAAM_exec" app --input "$1"  --output "$file".app.jaam
+if test -n "$*"; then
+  case "$*" in
+    (--no-prune) loop3_flags=--no-prune ;;
+    (*) echo "ERROR: unknown argument(s): $*"; exit 1 ;;
+  esac
+fi
+
+# Run Jaam
+"$JAAM_exec" app --input "$file" --output "$file".app.jaam
 "$JAAM_exec" decompile --input "$file".app.jaam --output "$file".decompile.jaam
-"$JAAM_exec" loop3  --input "$file".app.jaam --output "$file".loop3.jaam
+"$JAAM_exec" loop3  $loop3_flags --input "$file".app.jaam --output "$file".loop3.jaam
 "$JAAM_exec" taint3 --input "$file".app.jaam --output "$file".taint3.jaam
 "$JAAM_exec" cat \
   --input "$file".app.jaam \
@@ -16,8 +40,9 @@ file="`basename "$1" ".jar"`"
   --input "$file".loop3.jaam \
   --input "$file".taint3.jaam \
   --output "$file".all.jaam
+
+# Cleanup
 rm "$file".app.jaam
 rm "$file".loop3.jaam
 rm "$file".decompile.jaam
 rm "$file".taint3.jaam
-#sh buildjaam.sh airplan_1
