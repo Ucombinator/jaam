@@ -13,7 +13,7 @@
         <menus>
           <Menu text="_File">
             <items>
-                  <MenuItem onAction="#loadLoopGraph" text="_Open Loop Graph...">
+                  <MenuItem onAction="#loadLoopGraph" text="_Open Jaam File...">
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="O" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator>
