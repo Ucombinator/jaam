@@ -85,6 +85,11 @@ object Soot {
     m.getActiveBody
   }
 
+  def getBodyUnsafe(m: SootMethod): Body = {
+    try { getBody(m) }
+    catch { case _ => null }
+  }
+
   def getBodyGraph(m: SootMethod): (Stmt, Graph[Stmt, DefaultEdge]) = {
     val graph = new DirectedPseudograph[Stmt, DefaultEdge](classOf[DefaultEdge])
     var start: Stmt = null

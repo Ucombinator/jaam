@@ -15,6 +15,7 @@ import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.LineNumberFactory;
 import org.ucombinator.jaam.util.Soot;
+import soot.Body;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.jimple.Stmt;
@@ -186,10 +187,11 @@ public class CodeTab extends Tab{
         {
             codeArea.appendText(m.getSubSignature() + "\n");
             if (m.isConcrete()) {
-                Soot.getBody(m).getUnits().stream().forEach(u -> {
-                    Stmt s = (Stmt) u;
-                    codeArea.appendText("    " + s.toString() + "\n");
-                });
+                Body body = Soot.getBodyUnsafe(m);
+                if (body != null) {
+                    body.getUnits().stream().forEach(u ->
+                      codeArea.appendText("    " + u.toString() + "\n"));
+                }
             }
             codeArea.appendText("\n");
         }
