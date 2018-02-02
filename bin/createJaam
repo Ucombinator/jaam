@@ -1,14 +1,14 @@
 #!/bin/bash
-set -e
-set -x
-
 # Usage: createJaam <file>
 # Or:    createJaam <file> --no-prune
 # where <file> is a folder, class or jar file to be processed
 
+set -e
+shopt -s extglob
+
 # Setup
 : ${JAAM_dir:="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"}
-: ${JAAM_exec:="$JAAM_dir/bin/jaam"}
+: ${JAAM_exec:="$JAAM_dir/jaam"}
 
 # Process arguments
 if test -z "$1"; then
@@ -18,7 +18,7 @@ elif ! test -e "$1"; then
   echo "ERROR: no such file or directory: $1"
   exit 1
 else
-  file="$(readlink -m $1)"
+  file="${1%%+(/)}" # Remove any trailing slashes
   shift
 fi
 
