@@ -136,49 +136,4 @@ public class CodeViewController {
     {
         return u.getPackage().getName() + "." + u.getTypes().firstOrNullObject().getName();
     }
-
-
-    /*
-    private class ClassInfo{
-        public CompilationUnit unit;
-        public CodeArea codeArea;
-        public StackPane stackPane;
-        public boolean isDisplayed;
-        private HashMap<String, ParagraphRange> methodParagraphs;
-        public String highlightedMethod;
-
-        public ClassInfo(CompilationUnit unit)
-        {
-            this.unit = unit;
-            this.isDisplayed = false;
-
-            this.methodParagraphs = new HashMap<>();
-            this.highlightedMethod = null;
-        }
-
-        public void addMethod(String methodName, int begin, int end)
-        {
-            this.methodParagraphs.put(methodName, new ParagraphRange(begin, end));
-        }
-
-        public ParagraphRange getMethodParagraph(String methodName)
-        {
-            return methodParagraphs.get(methodName);
-        }
-
-        public class ParagraphRange{
-
-            ParagraphRange(int begin, int end)
-            {
-                this.begin = begin;
-                this.end = end;
-            }
-
-            public int begin;
-            public int end;
-        }
-
-    }
-    */
-
 }

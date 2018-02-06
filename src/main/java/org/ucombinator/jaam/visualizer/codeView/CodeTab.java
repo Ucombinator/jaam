@@ -2,9 +2,7 @@ package org.ucombinator.jaam.visualizer.codeView;
 
 import com.strobel.decompiler.languages.EntityType;
 import com.strobel.decompiler.languages.java.ast.*;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.ObservableSet;
+import com.sun.org.apache.bcel.internal.classfile.Code;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.IndexRange;
@@ -18,25 +16,27 @@ import org.ucombinator.jaam.util.Soot;
 import soot.Body;
 import soot.SootClass;
 import soot.SootMethod;
-import soot.jimple.Stmt;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
 public class CodeTab extends Tab{
 
-    private CodeArea javaCodeArea;
-    private CodeArea sootCodeArea;
     public final String shortClassName;
     public final String fullClassName;
-    private HashMap<String, IndexRange> methodParagraphs;
-    private IndexRange currentlySelected;
 
+    private CodeArea javaCodeArea;
+    private CodeArea sootCodeArea;
+
+    private HashMap<String, IndexRange> javaMethodParagraphs;
+    private HashMap<String, IndexRange> sootMethodParagraphs;
+    private IndexRange javaCurrentlySelected;
+    private IndexRange sootCurrentlySelected;
 
     public CodeTab(CompilationUnit unit, SootClass soot, String shortClassName, String fullClassName) {
         super(shortClassName);
-        this.methodParagraphs = new HashMap<>();
+        this.javaMethodParagraphs = new HashMap<>();
+        this.sootMethodParagraphs = new HashMap<>();
 
         this.setContent(generateCodeAreas(unit, soot));
 
@@ -45,7 +45,8 @@ public class CodeTab extends Tab{
 
         this.setId(this.fullClassName);
 
-        this.currentlySelected = new IndexRange(0,0); // Empty range
+        this.javaCurrentlySelected = new IndexRange(0,0); // Empty range
+        this.sootCurrentlySelected = new IndexRange(0,0); // EMpty range
     }
 
     private Node generateCodeAreas(CompilationUnit unit, SootClass soot)
@@ -149,7 +150,7 @@ public class CodeTab extends Tab{
 
             if(entity.getEntityType() == EntityType.METHOD || entity.getEntityType() == EntityType.CONSTRUCTOR)
             {
-                this.methodParagraphs.put(entity.getName(), new IndexRange(startParagraph, endParagraph));
+                this.javaMethodParagraphs.put(entity.getName(), new IndexRange(startParagraph, endParagraph));
             }
         }
 
@@ -185,6 +186,7 @@ public class CodeTab extends Tab{
 
         for (SootMethod m : soot.getMethods())
         {
+            int startParagraph = codeArea.getParagraphs().size()-1;
             codeArea.appendText(m.getSubSignature() + "\n");
             if (m.isConcrete()) {
                 Body body = Soot.getBodyUnsafe(m);
@@ -194,6 +196,9 @@ public class CodeTab extends Tab{
                 }
             }
             codeArea.appendText("\n");
+            int endParagraph = codeArea.getParagraphs().size()-1;
+
+            this.sootMethodParagraphs.put(m.getName(), new IndexRange(startParagraph, endParagraph));
         }
 
         //Arrays.stream(soot.getClass().getFields()).forEach(f -> System.out.println(f.getName() + "-->" + f.toString() + "-->" + f.toGenericString()));
@@ -202,25 +207,26 @@ public class CodeTab extends Tab{
     }
 
     public void highlightMethod(String methodName) {
+        this.javaCurrentlySelected = doHighlightMethod(javaCodeArea, javaCurrentlySelected, javaMethodParagraphs.get(methodName));
+        this.sootCurrentlySelected = doHighlightMethod(sootCodeArea, sootCurrentlySelected, sootMethodParagraphs.get(methodName));
+    }
 
+    public IndexRange doHighlightMethod(CodeArea codeArea, IndexRange currentlySelected, IndexRange newRange)
+    {
         for (int i = currentlySelected.getStart(); i < currentlySelected.getEnd(); ++i)
         {
-            javaCodeArea.setParagraphStyle(i, Collections.EMPTY_LIST);
-        }
-        this.currentlySelected = new IndexRange(0,0);
-
-        IndexRange range = methodParagraphs.get(methodName);
-        if (range == null) {
-            System.out.println("Didn't find method " + methodName);
-            return;
+            codeArea.setParagraphStyle(i, Collections.EMPTY_LIST);
         }
 
-        javaCodeArea.showParagraphAtTop(range.getStart() - 1);
+        if(newRange == null)
+            return new IndexRange(0,0);
 
-        for (int i = range.getStart(); i < range.getEnd(); ++i) {
-            javaCodeArea.setParagraphStyle(i, Collections.singleton("is-selected"));
+        codeArea.showParagraphAtTop(newRange.getStart() - 1);
+
+        for (int i = newRange.getStart(); i < newRange.getEnd(); ++i) {
+            codeArea.setParagraphStyle(i, Collections.singleton("is-selected"));
         }
 
-        this.currentlySelected = range;
+        return newRange;
     }
 }
