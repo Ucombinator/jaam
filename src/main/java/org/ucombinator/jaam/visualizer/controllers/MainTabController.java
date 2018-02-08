@@ -17,10 +17,7 @@ import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.*;
 import com.strobel.decompiler.languages.java.ast.CompilationUnit;
 import org.ucombinator.jaam.visualizer.main.Main;
-import org.ucombinator.jaam.visualizer.taint.TaintAddress;
-import org.ucombinator.jaam.visualizer.taint.TaintGraph;
-import org.ucombinator.jaam.visualizer.taint.TaintSccVertex;
-import org.ucombinator.jaam.visualizer.taint.TaintVertex;
+import org.ucombinator.jaam.visualizer.taint.*;
 import soot.SootClass;
 
 import java.io.File;
@@ -244,6 +241,12 @@ public class MainTabController {
         for(AbstractLayoutVertex i : innerGraph.getVisibleVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
+        this.taintDescriptionArea.setText(text.toString());
+    }
+
+    public void setRightText(TaintStmtVertex v) {
+        StringBuilder text = new StringBuilder("Statement: " + v.getStmt());
+        text.append("\nAddresses: " + v.getAddresses().size());
         this.taintDescriptionArea.setText(text.toString());
     }
 

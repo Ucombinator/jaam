@@ -251,10 +251,14 @@ public class LayerFactory
     {
         TaintVertex newVertex;
 
-        if(v instanceof TaintAddress) {
+        if(v instanceof TaintStmtVertex) {
+            TaintStmtVertex l = (TaintStmtVertex) v;
+            newVertex = new TaintStmtVertex(l.getAddresses());
+        } else if(v instanceof TaintAddress) {
             TaintAddress l = (TaintAddress) v;
             newVertex = new TaintAddress(l.getAddress());
-        } else {
+        }
+        else {
             newVertex = null;
         }
 
