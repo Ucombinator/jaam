@@ -206,7 +206,7 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
 
     public String toString()
     {
-        return rectLabel.getText().toString();
+        return rectLabel.getText();
     }
 
     public void setLabel(String text)

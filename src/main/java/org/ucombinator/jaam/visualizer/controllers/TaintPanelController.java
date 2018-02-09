@@ -115,6 +115,9 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         {
             currentFrame.setRightText((TaintSccVertex) vertex);
         }
+        else if(vertex instanceof TaintStmtVertex) {
+            currentFrame.setRightText((TaintStmtVertex) vertex);
+        }
         else {
             //currentFrame.bytecodeArea.setDescription();
             currentFrame.setTaintRightText("Text");

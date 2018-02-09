@@ -175,6 +175,7 @@ public class MainPaneController {
         System.out.println("Taint edge packets: " + taintEdgePackets);
         System.out.println("Ignored edges: " + ignoredEdges);
 
-        return Pair.of(graph, taintGraph);
+        TaintGraph stmtTaintGraph = taintGraph.groupByStatement();
+        return Pair.of(graph, stmtTaintGraph);
     }
 }
