@@ -23,7 +23,7 @@ abstract sealed class Address(val stmt: Stmt, val sootMethod: SootMethod, val so
 }
 object Address {
   // TODO: remove and use StaticField and InstanceField instead
-  case class Field(sootField: SootField) extends Address(sootField.getDeclaringClass)
+  //case class Field(sootField: SootField) extends Address(sootField.getDeclaringClass)
   case class Return(sootMethodX: SootMethod) extends Address(sootMethodX)
   case class Parameter(sootMethodX: SootMethod, index: Int) extends Address(sootMethodX)
   case class Throws(sootMethodX: SootMethod) extends Address(sootMethodX)
@@ -188,7 +188,8 @@ object Taint3 {
     for (c <- allClasses) {
       // Fields
       for (f <- c.getFields.asScala) {
-        graph.addVertex(Address.Field(f))
+        val field = if (f.isStatic) { Address.StaticField(f) } else { Address.InstanceField(f) }
+        graph.addVertex(field)
       }
 
       // Methods
@@ -573,7 +574,7 @@ object Taint3 {
 
     def shouldColor(address: Address): Boolean = {
       address match {
-        case Address.Field(sootField) => classes.contains(sootField.getDeclaringClass)
+        //case Address.Field(sootField) => classes.contains(sootField.getDeclaringClass)
 
         case Address.Return(sootMethod) => classes.contains(sootMethod.getDeclaringClass)
         case Address.Parameter(sootMethod, _) => classes.contains(sootMethod.getDeclaringClass)
