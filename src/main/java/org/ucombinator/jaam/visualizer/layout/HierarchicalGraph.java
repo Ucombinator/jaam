@@ -139,11 +139,11 @@ public class HierarchicalGraph<T extends AbstractLayoutVertex<T>>
                 || (this.getVisibleInNeighbors(v).size() == 1 && this.getVisibleInNeighbors(v).contains(v)));
     }
 
-    private Set<T> getOutNeighbors(T v) {
+    public Set<T> getOutNeighbors(T v) {
         return this.outEdges.getOrDefault(v, new HashMap<>()).keySet();
     }
 
-    private Set<T> getInNeighbors(T v) {
+    public Set<T> getInNeighbors(T v) {
         return this.inEdges.getOrDefault(v, new HashMap<>()).keySet();
     }
 
