@@ -145,6 +145,12 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
             }
         } else if (this.vertex instanceof TaintVertex) {
             TaintVertex taintVertex = (TaintVertex) this.vertex;
+            if (event.isShiftDown()) {
+                System.out.println("Shift is down!\n");
+                Main.getSelectedMainTabController().addToHighlighted(taintVertex);
+            } else {
+                Main.getSelectedMainTabController().resetHighlighted(taintVertex);
+            }
             this.fireEvent(new SelectEvent<TaintVertex>(MouseButton.PRIMARY, this, taintVertex));
         }
     }

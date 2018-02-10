@@ -134,6 +134,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             HashSet<TaintVertex> methodAddresses = findAddressesByMethods(v.getMethodNames());
             HashSet<TaintVertex> verticesToDraw = findConnectedAddresses(methodAddresses);
             verticesToDraw.add(panelRoot);
+            System.out.println("Taint vertices in method: " + methodAddresses.size());
             System.out.println("Taint vertices to draw: " + verticesToDraw.size());
 
             long time2 = System.nanoTime();
@@ -141,11 +142,13 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             panelRoot.getInnerGraph().setGraphUnhidden(true);
             panelRoot.setHiddenExcept(verticesToDraw);
             LayoutAlgorithm.layout(panelRoot);
-            TaintPanelController.this.drawGraph();
             long time3 = System.nanoTime();
+            TaintPanelController.this.drawGraph();
+            long time4 = System.nanoTime();
 
             System.out.println("Time to compute taint subgraph: " + (time2 - time1) / 1000000000.0);
-            System.out.println("Time to draw graph: " + (time3 - time2) / 1000000000.0);
+            System.out.println("Time to compute layout: " + (time3 - time2) / 1000000000.0);
+            System.out.println("Time to draw graph: " + (time4 - time3) / 1000000000.0);
         }
     };
 
@@ -191,6 +194,4 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         }
         return results;
     }
-
-
 }
