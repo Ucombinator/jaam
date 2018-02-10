@@ -225,7 +225,6 @@ public class CodeTab extends Tab{
                 //        this.fullClassName + ":" + sootParagraphField.get(codeArea.getCurrentParagraph()) ));
 
                 Main.getSelectedMainTabController().selectFieldInTaintGraph(this.fullClassName, sootParagraphField.get(codeArea.getCurrentParagraph()));
-                System.out.println("\tJUAN: Found the Key! " + sootParagraphField.get(codeArea.getCurrentParagraph()));
             }
         });
 

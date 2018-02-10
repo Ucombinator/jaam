@@ -27,12 +27,10 @@ public class TaintAddress extends TaintVertex {
             SootField f = ((StaticField) address).sootField();
 
             fieldId = address.sootClass().getName() + ":" + f.getName();
-            System.out.println("TERE Static " + fieldId);
         }
         else if (address instanceof InstanceField) {
             SootField f = ((InstanceField) address).sootField();
             fieldId = address.sootClass().getName() + ":" + f.getName();
-            System.out.println("TERE Instance " + fieldId);
         }
         else {
            fieldId = null;

@@ -416,7 +416,6 @@ public class MainTabController {
     // TODO: This should be done using event and event handling using FieldSelectEvent
     public void selectFieldInTaintGraph(String fullClassName, String fieldName)
     {
-        System.out.println("Find taint graph of " + fullClassName  + ":" + fieldName);
         taintPanelController.showFieldTaintGraph(fullClassName, fieldName);
     }
 

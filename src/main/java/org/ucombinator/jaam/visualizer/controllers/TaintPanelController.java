@@ -137,22 +137,29 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             long time1 = System.nanoTime();
             StateVertex v = selectEvent.getVertex();
             HashSet<TaintVertex> methodAddresses = findAddressesByMethods(v.getMethodNames());
-            HashSet<TaintVertex> verticesToDraw = findConnectedAddresses(methodAddresses);
-            verticesToDraw.add(panelRoot);
-            System.out.println("Taint vertices to draw: " + verticesToDraw.size());
-
             long time2 = System.nanoTime();
-            // Redraw graph with only this set of vertices.
-            panelRoot.getInnerGraph().setGraphUnhidden(true);
-            panelRoot.setHiddenExcept(verticesToDraw);
-            LayoutAlgorithm.layout(panelRoot);
-            TaintPanelController.this.drawGraph();
-            long time3 = System.nanoTime();
-
-            System.out.println("Time to compute taint subgraph: " + (time2 - time1) / 1000000000.0);
-            System.out.println("Time to draw graph: " + (time3 - time2) / 1000000000.0);
+            System.out.println("Time to compute method addresses: " + (time2 - time1) / 1000000000.0);
+            drawConnectedVertices(methodAddresses);
         }
     };
+
+    private void drawConnectedVertices(HashSet<TaintVertex> addresses) {
+        long time1 = System.nanoTime();
+        HashSet<TaintVertex> verticesToDraw = findConnectedAddresses(addresses);
+        verticesToDraw.add(panelRoot);
+        System.out.println("Taint vertices to draw: " + verticesToDraw.size());
+
+        long time2 = System.nanoTime();
+        // Redraw graph with only this set of vertices.
+        panelRoot.getInnerGraph().setGraphUnhidden(true);
+        panelRoot.setHiddenExcept(verticesToDraw);
+        LayoutAlgorithm.layout(panelRoot);
+        TaintPanelController.this.drawGraph();
+        long time3 = System.nanoTime();
+
+        System.out.println("Time to compute connected vertices: " + (time2 - time1) / 1000000000.0);
+        System.out.println("Time to draw graph: " + (time3 - time2) / 1000000000.0);
+    }
 
     public HashSet<TaintVertex> findAddressesByMethods(HashSet<String> methodNames) {
         HashSet<TaintVertex> results = new HashSet<>();
@@ -204,11 +211,13 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         TaintAddress a = fieldVertices.get(fieldId);
 
         if (a != null) {
-            System.out.println("\tJUAN: FOUND VERTEX " + a.toString());
+            HashSet<TaintVertex> vertices = new HashSet<>();
+            vertices.add(a);
+            drawConnectedVertices(vertices);
         }
         else
         {
-            System.out.println("\tJUAN: DID NOT FIND VERTEX " + fieldId);
+            System.out.println("\tWarning: Did not find taint vertex " + fieldId);
         }
     }
 
