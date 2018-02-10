@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.taint;
 import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 
 public class TaintStmtVertex extends TaintVertex {
@@ -30,5 +31,19 @@ public class TaintStmtVertex extends TaintVertex {
 
     public String getStmt() {
         return stmt;
+    }
+
+    @Override
+    public boolean hasField() {
+       for (TaintAddress a : taintAddresses) {
+           if(a.hasField())
+               return true;
+       }
+       return false;
+    }
+
+    @Override
+    public void getFields(Collection<TaintAddress> store) {
+        taintAddresses.forEach(a -> a.getFields(store));
     }
 }

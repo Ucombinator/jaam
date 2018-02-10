@@ -6,6 +6,7 @@ import com.sun.org.apache.bcel.internal.classfile.Code;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
+import javafx.event.EventTarget;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.IndexRange;
@@ -16,10 +17,13 @@ import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.LineNumberFactory;
 import org.ucombinator.jaam.util.Soot;
+import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.taint.FieldSelectEvent;
 import soot.Body;
 import soot.SootClass;
 import soot.SootMethod;
 
+import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.util.Collections;
 import java.util.HashMap;
@@ -216,6 +220,11 @@ public class CodeTab extends Tab{
 
             if(sootParagraphField.containsKey(codeArea.getCurrentParagraph()))
             {
+                //TODO this the correct way but for now we are doing a direct call
+                //codeArea.fireEvent(new FieldSelectEvent(codeArea, Main.getSelectedMainTab(),
+                //        this.fullClassName + ":" + sootParagraphField.get(codeArea.getCurrentParagraph()) ));
+
+                Main.getSelectedMainTabController().selectFieldInTaintGraph(this.fullClassName, sootParagraphField.get(codeArea.getCurrentParagraph()));
                 System.out.println("\tJUAN: Found the Key! " + sootParagraphField.get(codeArea.getCurrentParagraph()));
             }
         });

@@ -14,6 +14,8 @@ import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.taint.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 // TODO: Make base PanelController class or interface?
@@ -24,6 +26,8 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
 
     private TaintRootVertex panelRoot;
     private Group graphContentGroup;
+
+    private HashMap<String, TaintAddress> fieldVertices;
 
     public TaintPanelController(TaintGraph graph) throws IOException {
         Controllers.loadFXML("/TaintPanel.fxml", this);
@@ -40,6 +44,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         LayerFactory.getLayeredGraph(graph, this.panelRoot);
         /*LayoutAlgorithm.layout(this.panelRoot);
         this.drawGraph();*/
+        fillFieldDictionary();
     }
 
     public void drawGraph() {
@@ -192,5 +197,32 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         return results;
     }
 
+    public void showFieldTaintGraph(String fullClassName, String fieldName) {
+
+        String fieldId = fullClassName + ":" + fieldName;
+
+        TaintAddress a = fieldVertices.get(fieldId);
+
+        if (a != null) {
+            System.out.println("\tJUAN: FOUND VERTEX " + a.toString());
+        }
+        else
+        {
+            System.out.println("\tJUAN: DID NOT FIND VERTEX " + fieldId);
+        }
+    }
+
+    public void fillFieldDictionary()
+    {
+        fieldVertices = new HashMap<>();
+
+        ArrayList<TaintAddress> allFields = new ArrayList<>();
+
+        this.panelRoot.getFields(allFields);
+
+        allFields.stream().forEach(v -> {
+            fieldVertices.put(v.getFieldId(), v);
+        });
+    }
 
 }
