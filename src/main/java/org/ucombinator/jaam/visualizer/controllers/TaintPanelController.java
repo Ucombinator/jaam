@@ -179,7 +179,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             for (TaintVertex v : toSearch) {
                 results.add(v);
                 HierarchicalGraph<TaintVertex> selfGraph = v.getSelfGraph();
-                for (TaintVertex vIn : selfGraph.getVisibleInNeighbors(v)) {
+                for (TaintVertex vIn : selfGraph.getInNeighbors(v)) {
                     if (!results.contains(vIn)) {
                         newSearch.add(vIn);
                     }
@@ -195,7 +195,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             for (TaintVertex v : toSearch) {
                 results.add(v);
                 HierarchicalGraph<TaintVertex> selfGraph = v.getSelfGraph();
-                for (TaintVertex vOut : selfGraph.getVisibleOutNeighbors(v)) {
+                for (TaintVertex vOut : selfGraph.getOutNeighbors(v)) {
                     if (!results.contains(vOut)) {
                         newSearch.add(vOut);
                     }
