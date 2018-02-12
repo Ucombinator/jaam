@@ -14,6 +14,8 @@ import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.taint.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 // TODO: Make base PanelController class or interface?
@@ -24,6 +26,8 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
 
     private TaintRootVertex panelRoot;
     private Group graphContentGroup;
+
+    private HashMap<String, TaintAddress> fieldVertices;
 
     public TaintPanelController(TaintGraph graph) throws IOException {
         Controllers.loadFXML("/TaintPanel.fxml", this);
@@ -40,6 +44,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         LayerFactory.getLayeredGraph(graph, this.panelRoot);
         /*LayoutAlgorithm.layout(this.panelRoot);
         this.drawGraph();*/
+        fillFieldDictionary();
     }
 
     public void drawGraph() {
@@ -136,21 +141,27 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             verticesToDraw.add(panelRoot);
             System.out.println("Taint vertices in method: " + methodAddresses.size());
             System.out.println("Taint vertices to draw: " + verticesToDraw.size());
-
-            long time2 = System.nanoTime();
-            // Redraw graph with only this set of vertices.
-            panelRoot.getInnerGraph().setGraphUnhidden(true);
-            panelRoot.setHiddenExcept(verticesToDraw);
-            LayoutAlgorithm.layout(panelRoot);
-            long time3 = System.nanoTime();
-            TaintPanelController.this.drawGraph();
-            long time4 = System.nanoTime();
-
-            System.out.println("Time to compute taint subgraph: " + (time2 - time1) / 1000000000.0);
-            System.out.println("Time to compute layout: " + (time3 - time2) / 1000000000.0);
-            System.out.println("Time to draw graph: " + (time4 - time3) / 1000000000.0);
+            drawConnectedVertices(methodAddresses);
         }
     };
+
+    private void drawConnectedVertices(HashSet<TaintVertex> addresses) {
+        long time1 = System.nanoTime();
+        HashSet<TaintVertex> verticesToDraw = findConnectedAddresses(addresses);
+        verticesToDraw.add(panelRoot);
+        System.out.println("Taint vertices to draw: " + verticesToDraw.size());
+
+        long time2 = System.nanoTime();
+        // Redraw graph with only this set of vertices.
+        panelRoot.getInnerGraph().setGraphUnhidden(true);
+        panelRoot.setHiddenExcept(verticesToDraw);
+        LayoutAlgorithm.layout(panelRoot);
+        TaintPanelController.this.drawGraph();
+        long time3 = System.nanoTime();
+
+        System.out.println("Time to compute connected vertices: " + (time2 - time1) / 1000000000.0);
+        System.out.println("Time to draw graph: " + (time3 - time2) / 1000000000.0);
+    }
 
     public HashSet<TaintVertex> findAddressesByMethods(HashSet<String> methodNames) {
         HashSet<TaintVertex> results = new HashSet<>();
@@ -193,5 +204,35 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             toSearch = newSearch;
         }
         return results;
+    }
+
+    public void showFieldTaintGraph(String fullClassName, String fieldName) {
+
+        String fieldId = fullClassName + ":" + fieldName;
+
+        TaintAddress a = fieldVertices.get(fieldId);
+
+        if (a != null) {
+            HashSet<TaintVertex> vertices = new HashSet<>();
+            vertices.add(a);
+            drawConnectedVertices(vertices);
+        }
+        else
+        {
+            System.out.println("\tWarning: Did not find taint vertex " + fieldId);
+        }
+    }
+
+    public void fillFieldDictionary()
+    {
+        fieldVertices = new HashMap<>();
+
+        ArrayList<TaintAddress> allFields = new ArrayList<>();
+
+        this.panelRoot.getFields(allFields);
+
+        allFields.stream().forEach(v -> {
+            fieldVertices.put(v.getFieldId(), v);
+        });
     }
 }

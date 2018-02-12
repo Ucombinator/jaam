@@ -413,6 +413,12 @@ public class MainTabController {
         this.vizPanelController.resetAndRedraw();
     }
 
+    // TODO: This should be done using event and event handling using FieldSelectEvent
+    public void selectFieldInTaintGraph(String fullClassName, String fieldName)
+    {
+        taintPanelController.showFieldTaintGraph(fullClassName, fieldName);
+    }
+
     // ClassTree Code -------------------------------------
     // Has a double function, either a folder (inner node) in which case it has no vertex;
     // Or a leaf node in which case it is associated to a one or more vertices

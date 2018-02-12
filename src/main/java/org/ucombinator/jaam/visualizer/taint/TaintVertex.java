@@ -2,6 +2,8 @@ package org.ucombinator.jaam.visualizer.taint;
 
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 
 public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex> {
@@ -35,4 +37,9 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex> {
     }
 
     public abstract HashSet<String> getMethodNames();
+
+    public abstract boolean hasField();
+
+    // This should probably less specific
+    public abstract void getFields(Collection<TaintAddress> store);
 }

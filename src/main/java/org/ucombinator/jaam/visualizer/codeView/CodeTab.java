@@ -3,6 +3,10 @@ package org.ucombinator.jaam.visualizer.codeView;
 import com.strobel.decompiler.languages.EntityType;
 import com.strobel.decompiler.languages.java.ast.*;
 import com.sun.org.apache.bcel.internal.classfile.Code;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.event.EventHandler;
+import javafx.event.EventTarget;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.IndexRange;
@@ -13,10 +17,14 @@ import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.LineNumberFactory;
 import org.ucombinator.jaam.util.Soot;
+import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.taint.FieldSelectEvent;
 import soot.Body;
 import soot.SootClass;
 import soot.SootMethod;
 
+import java.awt.*;
+import java.awt.event.MouseEvent;
 import java.util.Collections;
 import java.util.HashMap;
 
@@ -33,17 +41,20 @@ public class CodeTab extends Tab{
     private IndexRange javaCurrentlySelected;
     private IndexRange sootCurrentlySelected;
 
+    private HashMap<Integer, String> sootParagraphField;
+
     public CodeTab(CompilationUnit unit, SootClass soot, String shortClassName, String fullClassName) {
         super(shortClassName);
-        this.javaMethodParagraphs = new HashMap<>();
-        this.sootMethodParagraphs = new HashMap<>();
-
-        this.setContent(generateCodeAreas(unit, soot));
 
         this.shortClassName = shortClassName;
         this.fullClassName = fullClassName;
-
         this.setId(this.fullClassName);
+
+        this.javaMethodParagraphs = new HashMap<>();
+        this.sootMethodParagraphs = new HashMap<>();
+        this.sootParagraphField   = new HashMap<>();
+
+        this.setContent(generateCodeAreas(unit, soot));
 
         this.javaCurrentlySelected = new IndexRange(0,0); // Empty range
         this.sootCurrentlySelected = new IndexRange(0,0); // EMpty range
@@ -180,7 +191,11 @@ public class CodeTab extends Tab{
         codeArea.appendText(soot.getName() + "\n");
         codeArea.appendText(soot.getClass().toString() + "\n\n");
 
-        soot.getFields().stream().forEach(f -> codeArea.appendText(f.toString() + "\n"));
+        soot.getFields().stream().forEach(f -> {
+            int currentParagraph = codeArea.getCurrentParagraph();
+            codeArea.appendText(f.toString() + "\n");
+            sootParagraphField.put(currentParagraph, f.getName());
+        });
 
         codeArea.appendText("\n");
 
@@ -200,6 +215,18 @@ public class CodeTab extends Tab{
 
             this.sootMethodParagraphs.put(m.getName(), new IndexRange(startParagraph, endParagraph));
         }
+
+        codeArea.selectionProperty().addListener((observableValue, oldIndexRange, newIndexRange) -> {
+
+            if(sootParagraphField.containsKey(codeArea.getCurrentParagraph()))
+            {
+                //TODO this the correct way but for now we are doing a direct call
+                //codeArea.fireEvent(new FieldSelectEvent(codeArea, Main.getSelectedMainTab(),
+                //        this.fullClassName + ":" + sootParagraphField.get(codeArea.getCurrentParagraph()) ));
+
+                Main.getSelectedMainTabController().selectFieldInTaintGraph(this.fullClassName, sootParagraphField.get(codeArea.getCurrentParagraph()));
+            }
+        });
 
         //Arrays.stream(soot.getClass().getFields()).forEach(f -> System.out.println(f.getName() + "-->" + f.toString() + "-->" + f.toGenericString()));
 
