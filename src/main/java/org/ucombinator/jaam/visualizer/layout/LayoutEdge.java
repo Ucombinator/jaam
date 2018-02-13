@@ -25,7 +25,7 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>> implements Comparable
     private static final double arrowLengthRatio = 0.5;
 
     private static final Color downwardColor = Color.BLACK;
-    private static final Color upwardColor = Color.VIOLET;
+    private static final Color upwardColor = Color.rgb(0xAA,0,0);
     private Color color;
     private boolean colorIsSet = false;
     private double opacity;
