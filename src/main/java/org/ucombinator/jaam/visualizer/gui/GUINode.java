@@ -9,6 +9,8 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Polygon;
+import javafx.scene.shape.QuadCurve;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.scene.paint.Color;
@@ -272,6 +274,26 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
         }
     }
 
+    public static <T extends AbstractLayoutVertex<T>> QuadCurve getCurve(GUINode<T> sourceNode, GUINode<T> destNode) {
+        if(sourceNode == null || destNode == null) {
+            System.out.println("This should never happen!");
+            return new QuadCurve(0, 0, 0, 0, 0, 0);
+        }
+        else {
+            Point2D sourceIntersect = sourceNode.getLineIntersection(destNode);
+            Point2D destIntersect = destNode.getLineIntersection(sourceNode);
+            Point2D controlPoint = getControlPoint(sourceIntersect, destIntersect);
+            return new QuadCurve(sourceIntersect.getX(), sourceIntersect.getY(),
+                    controlPoint.getX(), controlPoint.getY(), destIntersect.getX(), destIntersect.getY());
+        }
+    }
+
+    private static Point2D getControlPoint(Point2D p1, Point2D p2) {
+        double frac = 0.8;
+        return new Point2D((1 - frac) * p1.getX() + frac * p2.getX(),
+                frac * p1.getY() + (1 - frac) * p2.getY());
+    }
+
     private Point2D getLineIntersection(GUINode<T> otherNode) {
         Bounds sourceBounds = this.getRectBoundsInParent();
         Bounds destBounds = otherNode.getRectBoundsInParent();
@@ -322,6 +344,21 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
         }
 
         return new Point2D(sourceExitX, sourceExitY);
+    }
+
+    public static Polygon computeArrowhead(double xTip, double yTip, double length, double orientAngle, double angleWidth) {
+        double x1 = xTip + length * Math.cos(orientAngle + angleWidth);
+        double y1 = yTip + length * Math.sin(orientAngle + angleWidth);
+        double x2 = xTip + length * Math.cos(orientAngle - angleWidth);
+        double y2 = yTip + length * Math.sin(orientAngle - angleWidth);
+
+        Polygon arrowhead = new Polygon();
+        arrowhead.getPoints().addAll(
+                xTip, yTip,
+                x1, y1,
+                x2, y2
+        );
+        return arrowhead;
     }
 
     public GUINode<T> getParentNode() {

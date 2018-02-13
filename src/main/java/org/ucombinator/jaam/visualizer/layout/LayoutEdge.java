@@ -21,13 +21,12 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>> implements Comparable
 
     private static final double defaultStrokeWidth = 0.5;
     private static final double highlightStrokeWidthMultiplier = 4;
-    private static final double arrowheadAngleDiff = 0.15 * Math.PI;
+    private static final double arrowheadAngleWidth = 0.15 * Math.PI;
     private static final double arrowLengthRatio = 0.5;
 
     private static final Color downwardColor = Color.BLACK;
-    private static final Color upwardColor = Color.VIOLET;
+    private static final Color upwardColor = Color.DARKRED;
     private Color color;
-    private boolean colorIsSet = false;
     private double opacity;
 
     public LayoutEdge(T source, T dest, EDGE_TYPE edgeType)
@@ -105,41 +104,43 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>> implements Comparable
         //System.out.println("Passed checks for drawing edge: " + this.getID());
         GUINode<T> sourceNode = source.getGraphics();
         GUINode<T> destNode   = dest.getGraphics();
-        Line line = GUINode.getLine(sourceNode, destNode);
-        if (this.getType() == EDGE_TYPE.EDGE_DUMMY) {
-            line.getStrokeDashArray().addAll(5D, 4D);
-        }
 
-        line.setStrokeWidth(defaultStrokeWidth);
         if (dest.getY() >= source.getY()) {
             this.color = downwardColor;
-        } else {
-            this.color = upwardColor;
+            Line line = GUINode.getLine(sourceNode, destNode);
+            line.setStroke(this.color);
+            line.setStrokeWidth(defaultStrokeWidth);
+            this.edgePath = line;
+
+            if (this.getType() == EDGE_TYPE.EDGE_DUMMY) {
+                line.getStrokeDashArray().addAll(5D, 4D);
+            }
+
+            // Compute arrowhead
+            double orientAngle = Math.PI + Math.atan2(line.getEndY() - line.getStartY(), line.getEndX() - line.getStartX());
+            // TODO: Adjust arrowLength by scale
+            double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getRect().getWidth());
+            this.arrowhead = GUINode.computeArrowhead(line.getEndX(), line.getEndY(), arrowLength, orientAngle, arrowheadAngleWidth);
+            this.arrowhead.setFill(this.color);
         }
-        line.setStroke(this.color);
+        else {
+            this.color = upwardColor;
+            QuadCurve curve = GUINode.getCurve(sourceNode, destNode);
+            curve.setStroke(this.color);
+            curve.setFill(Color.TRANSPARENT);
+            curve.setStrokeWidth(defaultStrokeWidth);
+            this.edgePath = curve;
 
-        // Compute arrowhead
-        double angle = Math.PI + Math.atan2(line.getEndY() - line.getStartY(), line.getEndX() - line.getStartX());
-        // TODO: Adjust arrowLength by scale
-        double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getRect().getWidth());
+            if (this.getType() == EDGE_TYPE.EDGE_DUMMY) {
+                curve.getStrokeDashArray().addAll(5D, 4D);
+            }
 
-        double destEnterX = line.getEndX();
-        double destEnterY = line.getEndY();
-        double x1 = destEnterX;
-        double y1 = destEnterY;
-        double x2 = destEnterX + arrowLength * Math.cos(angle + arrowheadAngleDiff);
-        double y2 = destEnterY + arrowLength * Math.sin(angle + arrowheadAngleDiff);
-        double x3 = destEnterX + arrowLength * Math.cos(angle - arrowheadAngleDiff);
-        double y3 = destEnterY + arrowLength * Math.sin(angle - arrowheadAngleDiff);
+            double orientAngle = Math.PI + Math.atan2(curve.getEndY() - curve.getControlY(), curve.getEndX() - curve.getControlX());
+            double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getRect().getWidth());
+            this.arrowhead = GUINode.computeArrowhead(curve.getEndX(), curve.getEndY(), arrowLength, orientAngle, arrowheadAngleWidth);
+            this.arrowhead.setFill(this.color);
+        }
 
-        arrowhead = new Polygon();
-        arrowhead.getPoints().addAll(
-                x1, y1,
-                x2, y2,
-                x3, y3);
-        arrowhead.setFill(color);
-
-        this.edgePath = line;
         this.graphics.getChildren().removeAll(this.graphics.getChildren());
         this.graphics.getChildren().add(edgePath);
         this.graphics.getChildren().add(arrowhead);

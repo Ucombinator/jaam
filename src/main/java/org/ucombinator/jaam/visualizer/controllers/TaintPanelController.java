@@ -170,17 +170,18 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
     }
 
     public HashSet<TaintVertex> findConnectedAddresses(HashSet<TaintVertex> taintVertices) {
-        HashSet<TaintVertex> results = (HashSet<TaintVertex>) (taintVertices.clone());
-        HashSet<TaintVertex> toSearch = (HashSet<TaintVertex>) (taintVertices.clone());
+        HashSet<TaintVertex> upResults = new HashSet<>();
+        HashSet<TaintVertex> downResults = new HashSet<>();
 
         // Search upwards
+        HashSet<TaintVertex> toSearch = (HashSet<TaintVertex>) (taintVertices.clone());
         while (toSearch.size() > 0) {
             HashSet<TaintVertex> newSearch = new HashSet<>();
             for (TaintVertex v : toSearch) {
-                results.add(v);
+                upResults.add(v);
                 HierarchicalGraph<TaintVertex> selfGraph = v.getSelfGraph();
                 for (TaintVertex vIn : selfGraph.getInNeighbors(v)) {
-                    if (!results.contains(vIn)) {
+                    if (!upResults.contains(vIn)) {
                         newSearch.add(vIn);
                     }
                 }
@@ -193,17 +194,37 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         while (toSearch.size() > 0) {
             HashSet<TaintVertex> newSearch = new HashSet<>();
             for (TaintVertex v : toSearch) {
-                results.add(v);
+                downResults.add(v);
                 HierarchicalGraph<TaintVertex> selfGraph = v.getSelfGraph();
                 for (TaintVertex vOut : selfGraph.getOutNeighbors(v)) {
-                    if (!results.contains(vOut)) {
+                    if (!downResults.contains(vOut)) {
                         newSearch.add(vOut);
                     }
                 }
             }
             toSearch = newSearch;
         }
-        return results;
+
+        HashSet<TaintVertex> allResults = new HashSet<>();
+        allResults.addAll(taintVertices);
+        allResults.addAll(upResults);
+        allResults.addAll(downResults);
+
+        // TODO: Set colors for results
+        // Do we want to use colors to distinguish statements from addresses,
+        // and also to distinguish positions in the graph?
+        /*for (TaintVertex v : allResults) {
+            if(taintVertices.contains(v)) {
+                v.setDefaultColor();
+            }
+            else if(upResults.contains(v)) {
+                if(downResults.contains(v)) {
+                    v.setColor(TaintVertex.bothDirColor);
+                }
+            }
+        } */
+
+        return allResults;
     }
 
     public void showFieldTaintGraph(String fullClassName, String fieldName) {

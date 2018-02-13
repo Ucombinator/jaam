@@ -1,8 +1,6 @@
 package org.ucombinator.jaam.visualizer.taint;
 
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 
