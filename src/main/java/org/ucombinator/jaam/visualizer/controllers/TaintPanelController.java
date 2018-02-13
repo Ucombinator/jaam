@@ -7,11 +7,14 @@ import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
+import org.ucombinator.jaam.tools.taint3.Address;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.taint.*;
+import soot.Value;
+import soot.jimple.Constant;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -169,18 +172,19 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         return results;
     }
 
-    public HashSet<TaintVertex> findConnectedAddresses(HashSet<TaintVertex> taintVertices) {
-        HashSet<TaintVertex> results = (HashSet<TaintVertex>) (taintVertices.clone());
-        HashSet<TaintVertex> toSearch = (HashSet<TaintVertex>) (taintVertices.clone());
+    public HashSet<TaintVertex> findConnectedAddresses(HashSet<TaintVertex> startVertices) {
+        HashSet<TaintVertex> upResults = new HashSet<>();
+        HashSet<TaintVertex> downResults = new HashSet<>();
 
         // Search upwards
+        HashSet<TaintVertex> toSearch = (HashSet<TaintVertex>) (startVertices.clone());
         while (toSearch.size() > 0) {
             HashSet<TaintVertex> newSearch = new HashSet<>();
             for (TaintVertex v : toSearch) {
-                results.add(v);
+                upResults.add(v);
                 HierarchicalGraph<TaintVertex> selfGraph = v.getSelfGraph();
                 for (TaintVertex vIn : selfGraph.getInNeighbors(v)) {
-                    if (!results.contains(vIn)) {
+                    if (!upResults.contains(vIn)) {
                         newSearch.add(vIn);
                     }
                 }
@@ -189,21 +193,57 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         }
 
         // Search downwards
-        toSearch = (HashSet<TaintVertex>) (taintVertices.clone());
+        toSearch = (HashSet<TaintVertex>) (startVertices.clone());
         while (toSearch.size() > 0) {
             HashSet<TaintVertex> newSearch = new HashSet<>();
             for (TaintVertex v : toSearch) {
-                results.add(v);
+                downResults.add(v);
                 HierarchicalGraph<TaintVertex> selfGraph = v.getSelfGraph();
                 for (TaintVertex vOut : selfGraph.getOutNeighbors(v)) {
-                    if (!results.contains(vOut)) {
+                    if (!downResults.contains(vOut)) {
                         newSearch.add(vOut);
                     }
                 }
             }
             toSearch = newSearch;
         }
-        return results;
+
+        HashSet<TaintVertex> allResults = new HashSet<>();
+        allResults.addAll(startVertices);
+        allResults.addAll(upResults);
+        allResults.addAll(downResults);
+
+        for (TaintVertex v : allResults) {
+            v.setColor(TaintVertex.defaultColor);
+            if(v instanceof TaintAddress) {
+                TaintAddress vAddr = (TaintAddress) v;
+                Address addr = vAddr.getAddress();
+                if (addr instanceof Address.Value) {
+                    Value val = (Value) vAddr.getAddress();
+                    if (val instanceof Constant) {
+                        v.setColor(TaintVertex.constColor);
+                    }
+                }
+            }
+            else if (v instanceof TaintSccVertex) {
+                v.setColor(TaintVertex.sccColor);
+            }
+            else if (startVertices.contains(v)) {
+                v.setColor(TaintVertex.currMethodColor);
+            } else if (upResults.contains(v)) {
+                if (downResults.contains(v)) {
+                    v.setColor(TaintVertex.bothColor);
+                }
+                else {
+                    v.setColor(TaintVertex.upColor);
+                }
+            }
+            else if (downResults.contains(v)) {
+                v.setColor(TaintVertex.downColor);
+            }
+        }
+
+        return allResults;
     }
 
     public void showFieldTaintGraph(String fullClassName, String fieldName) {
