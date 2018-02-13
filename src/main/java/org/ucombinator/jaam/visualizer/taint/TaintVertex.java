@@ -1,10 +1,19 @@
 package org.ucombinator.jaam.visualizer.taint;
 
+import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import java.util.Collection;
 import java.util.HashSet;
 
 public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex> {
+
+    public static Color defaultColor = Color.LIGHTGREEN;
+    public static Color currMethodColor = Color.DARKGREEN;
+    public static Color upColor = Color.RED;
+    public static Color downColor = Color.BLUE;
+    public static Color bothColor = Color.DARKGOLDENROD;
+    public static Color constColor = Color.BEIGE;
+    public static Color sccColor = Color.GRAY;
 
     public TaintVertex(String label, VertexType type, boolean drawEdges) {
         super(label, type, drawEdges);
