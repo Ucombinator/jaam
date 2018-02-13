@@ -137,8 +137,10 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             long time1 = System.nanoTime();
             StateVertex v = selectEvent.getVertex();
             HashSet<TaintVertex> methodAddresses = findAddressesByMethods(v.getMethodNames());
-            long time2 = System.nanoTime();
-            System.out.println("Time to compute method addresses: " + (time2 - time1) / 1000000000.0);
+            HashSet<TaintVertex> verticesToDraw = findConnectedAddresses(methodAddresses);
+            verticesToDraw.add(panelRoot);
+            System.out.println("Taint vertices in method: " + methodAddresses.size());
+            System.out.println("Taint vertices to draw: " + verticesToDraw.size());
             drawConnectedVertices(methodAddresses);
         }
     };
@@ -233,5 +235,4 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             fieldVertices.put(v.getFieldId(), v);
         });
     }
-
 }
