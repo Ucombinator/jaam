@@ -26,3 +26,7 @@ sootOutput
 
 ### GraphViz generated files
 *.dot
+
+# Floobits
+*.floo
+*.flooignore
