@@ -15,6 +15,7 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
+import org.ucombinator.jaam.serializer.LoopMethodNode;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.*;
@@ -23,6 +24,7 @@ import org.ucombinator.jaam.visualizer.main.Main;
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class VizPanelController implements EventHandler<SelectEvent<StateVertex>>, SetChangeListener<StateVertex> {
     @FXML public final Node root = null; // Initialized by Controllers.loadFXML()
@@ -236,6 +238,36 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
                 drawEdges(child);
             }
         }
+    }
+
+    public ArrayList<StateVertex> pruneVisibleGraph() {
+        // A vertex should be pruned if it is a method vertex, and is a leaf in the graph.
+        // We then repeat this procedure with new leaf vertices.
+        // TODO (Timothy): Our current algorithm is implemented lazily, and could take a while to run.
+        // But our graphs should be relatively small, so I suspect it's unlikely to be the limiting step.
+
+        HierarchicalGraph<StateVertex> graph = this.panelRoot.getInnerGraph();
+        ArrayList<StateVertex> allPruned = new ArrayList<>();
+        while(true) {
+            ArrayList<StateVertex> toPrune = new ArrayList<>();
+            for(StateVertex v : graph.getVisibleVertices()) {
+                if(v instanceof LayoutMethodVertex && graph.getVisibleOutNeighbors(v).size() == 0) {
+                    toPrune.add(v);
+                }
+            }
+
+            if(toPrune.size() > 0) {
+                allPruned.addAll(toPrune);
+                for (StateVertex v : toPrune) {
+                    graph.setHidden(v);
+                }
+            }
+            else {
+                break;
+            }
+        }
+
+        return allPruned;
     }
 
     @Override

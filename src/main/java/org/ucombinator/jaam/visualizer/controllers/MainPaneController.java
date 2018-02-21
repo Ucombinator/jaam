@@ -57,9 +57,12 @@ public class MainPaneController {
         Main.getSelectedMainTabController().hideUnrelatedToHighlighted();
     }
 
+    @FXML private void pruneVisibleGraph(ActionEvent event) {
+        Main.getSelectedMainTabController().pruneVisibleGraph();
+    }
 
-    @FXML private void showAllHiddenNodes(ActionEvent event) {
-        Main.getSelectedMainTabController().showAllHiddenNodes();
+    @FXML private void showAllNodes(ActionEvent event) {
+        Main.getSelectedMainTabController().showAllNodes();
     }
 
     private final FileChooser fileChooser = new FileChooser();

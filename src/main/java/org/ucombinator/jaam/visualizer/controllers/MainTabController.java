@@ -286,7 +286,17 @@ public class MainTabController {
         this.vizPanelController.resetAndRedraw();
     }
 
-    public void showAllHiddenNodes() {
+    public void pruneVisibleGraph() {
+        ArrayList<StateVertex> prunedVertices = this.vizPanelController.pruneVisibleGraph();
+        for(StateVertex v : prunedVertices) {
+            this.hidden.add(v);
+            this.vizHighlighted.remove(v);
+        }
+
+        this.vizPanelController.resetAndRedraw();
+    }
+
+    public void showAllNodes() {
         System.out.println("Showing all hidden nodes...");
         vizPanelController.startBatchMode();
         this.hidden.clear();
@@ -398,16 +408,15 @@ public class MainTabController {
         this.vizHighlighted.stream().forEach(v -> keep.addAll(v.getAncestors()) );
         this.vizHighlighted.stream().forEach(v -> keep.addAll(v.getDescendants()) );
 
-        HashSet<StateVertex> hide = new HashSet<>();
-
+        HashSet<StateVertex> toHide = new HashSet<>();
         this.vizPanelController.getPanelRoot().getInnerGraph().getVertices().stream().forEach(v -> {
             if (!keep.contains(v)) {
-                hide.add(v);
+                toHide.add(v);
             }
         });
 
         this.vizPanelController.startBatchMode();
-        this.getHidden().addAll(hide);
+        this.hidden.addAll(toHide);
         this.vizPanelController.endBatchMode();
         this.vizHighlighted.clear();
         this.vizPanelController.resetAndRedraw();
