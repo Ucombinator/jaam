@@ -1,6 +1,5 @@
 package org.ucombinator.jaam.visualizer.taint;
 
-import org.ucombinator.jaam.main.Taint;
 import org.ucombinator.jaam.util.Stmt;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 
@@ -25,7 +24,7 @@ public class TaintGraph extends Graph<TaintVertex> {
                 TaintAddress vAddress = (TaintAddress) v;
                 Stmt stmt = vAddress.getAddress().stmt();
 
-                // Separate vertices whose statement is null
+                // Separate vertices whose statement is null by adding a unique counter
                 String stmtString;
                 if (stmt == null) {
                     stmtString = "null" + Integer.toString(nullCounter);

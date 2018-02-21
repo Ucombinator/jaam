@@ -36,7 +36,8 @@
               <items>
                   <MenuItem onAction="#hideSelectedNodes" text="Hide_Selected" />
                   <MenuItem onAction="#hideUnrelatedNodes" text="Hide_Unrelated" />
-                  <MenuItem onAction="#showAllHiddenNodes" text="Unhide_All" />
+                  <MenuItem mnemonicParsing="false" onAction="#pruneVisibleGraph" text="Prune current graph" />
+                  <MenuItem onAction="#showAllNodes" text="Unhide_All" />
               </items>
             </Menu>
             <Menu mnemonicParsing="false" text="_View">
