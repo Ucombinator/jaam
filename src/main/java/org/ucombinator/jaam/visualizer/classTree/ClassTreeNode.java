@@ -4,7 +4,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.CheckBoxTreeItem;
 import javafx.scene.control.TreeItem;
-import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import org.ucombinator.jaam.visualizer.layout.CodeEntity;
 import org.ucombinator.jaam.visualizer.layout.StateVertex;
@@ -78,6 +77,7 @@ public class ClassTreeNode
 
     public String getFullName() { return  fullName; }
 
+    // Usefull for debugging name issues
     public String toString(int depth) {
         StringBuilder subTree = new StringBuilder(depth + "-" + name + "\n");
 
