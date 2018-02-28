@@ -12,7 +12,10 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTreeCell;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import org.controlsfx.glyphfont.GlyphFont;
+import org.controlsfx.glyphfont.GlyphFontRegistry;
 import org.ucombinator.jaam.visualizer.classTree.ClassTreeNode;
+import org.ucombinator.jaam.visualizer.classTree.PackageNode;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.*;
@@ -85,21 +88,23 @@ public class MainTabController {
     {
         this.classTree.setCellFactory(CheckBoxTreeCell.forTreeView());
 
-        ClassTreeNode root = new ClassTreeNode("root", null);
-        ArrayList<ClassTreeNode> topLevel = new ArrayList<>();
+        PackageNode root = new PackageNode("root", null);
+        ArrayList<PackageNode> topLevel = new ArrayList<>();
 
         for(String c : classNames)
         {
             String[] split = c.split("\\.");
 
-            ClassTreeNode current = root;
-            for(String s : split)
-            {
-                current = current.addIfAbsent(s);
+            PackageNode current = root;
+            for (int i = 0; i < split.length-1; ++i) {
+                current = current.addPackageIfAbsent(split[i]);
             }
+
+            String className = split[split.length-1];
+            current.addClassIfAbsent(className);
         }
 
-        topLevel.addAll(root.subDirs);
+        topLevel.addAll(root.subPackages);
 
         // Compression Step
         topLevel.stream().forEach(f -> f.compress());
@@ -148,13 +153,13 @@ public class MainTabController {
 
     }
 
-    private void addVerticesToClassTree(ArrayList<ClassTreeNode> topLevel, StateVertex root) {
+    private void addVerticesToClassTree(ArrayList<PackageNode> topLevel, StateVertex root) {
 
         if(root instanceof CodeEntity) {
-            ClassTreeNode topLevelNode = getTopLevel(topLevel, ((CodeEntity) root).getClassName());
+            PackageNode topLevelNode = getTopLevel(topLevel, ((CodeEntity) root).getClassName());
             boolean success = false;
             if (topLevelNode != null) {
-                success = addVertex(topLevelNode, root);
+                success = topLevelNode.addVertex(root);
             }
 
             if (!success) {
@@ -168,19 +173,13 @@ public class MainTabController {
        }
     }
 
-    private ClassTreeNode getTopLevel(ArrayList<ClassTreeNode> topLevel, String className) {
-
-        for (ClassTreeNode n : topLevel) {
+    private PackageNode getTopLevel(ArrayList<PackageNode> topLevel, String className) {
+        for (PackageNode n : topLevel) {
             if (className.startsWith(n.name))
                 return n;
         }
 
         return null;
-    }
-
-    private boolean addVertex(ClassTreeNode node, StateVertex vertex) {
-
-        return node.addVertex(vertex);
     }
 
     public void repaintAll() {
