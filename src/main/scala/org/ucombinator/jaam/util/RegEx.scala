@@ -23,11 +23,11 @@ class RegEx[State, AtomType] {
       case Cat(List()) => (List(), List())
       case Cat(x::xs) =>
         val (bs, cs) = derive(x, state, atom)
-        val derivedBs = flatMap2(bs, derive(Cat(xs), _, atom))
+        val derivedBs = flatMap2(bs, derive(Cat(xs), _: State, atom))
         val derivedCs = cs.map({ case (e, s) => (Cat(e::xs), s) })
         (derivedBs._1, derivedBs._2 ++ derivedCs)
       case Alt(List()) => (List(), List())
-      case Alt(xs) => flatMap2(xs, derive(_, state, atom))
+      case Alt(xs) => flatMap2(xs, derive(_: Exp, state, atom))
       case Rep(x) =>
         val (bs, cs) = derive(x, state, atom)
         (state :: bs, cs)
@@ -37,7 +37,7 @@ class RegEx[State, AtomType] {
 
   def deriveAll(exp: Exp, state: State, atoms: Seq[AtomType]): List[State] = {
     def step(oldTup: (List[State], List[(Exp, State)]), atom: AtomType): (List[State], List[(Exp, State)]) = {
-      flatMap2(oldTup._2, { case (e, s) => derive(e, s, atom) })
+      flatMap2[(Exp, State), State, (Exp, State)](oldTup._2, { case (e, s) => derive(e, s, atom) })
     }
 
     atoms.foldLeft((List[State](), List((exp, state))))(step)._1
