@@ -62,8 +62,43 @@ case class DecompiledClass(name: String,
   extends serializer.Packet
 
 object Main {
+  // Set the type loader in the global static fields in Procyon.
+  // This deals with a SEGFAULT in Zip_Close when garbage collection is run.
+  // The problem is that the default type loader is a ClasspathTypeLoader,
+  // which contains a URLClassPath.  Aside from that not being the ITypeLoader
+  // that we setup to read from the jaam file, that URLClassPath seems to still
+  // have references into the file handles from when the data was serialized.
+  // When the garbage collector is run, the finalizer on a JarFile object
+  // is run which calls the native method ZipFile.close (i.e., Zip_Close at
+  // the C level).
+  def setTypeLoader(typeLoader: ITypeLoader): Unit = {
+    val metadataSystem = new MetadataSystem(typeLoader)
+
+    val instanceField = classOf[MetadataSystem].getDeclaredField("_instance")
+    instanceField.setAccessible(true)
+    instanceField.set(metadataSystem, metadataSystem)
+
+    val resolverField = classOf[TypeDefinition].getDeclaredField("_resolver")
+    resolverField.setAccessible(true)
+    for (i <- List(
+      BuiltinTypes.Boolean,
+      BuiltinTypes.Byte,
+      BuiltinTypes.Character,
+      BuiltinTypes.Short,
+      BuiltinTypes.Integer,
+      BuiltinTypes.Long,
+      BuiltinTypes.Float,
+      BuiltinTypes.Double,
+      BuiltinTypes.Void,
+      BuiltinTypes.Object,
+      BuiltinTypes.Class)) {
+      resolverField.set(i, metadataSystem)
+    }
+  }
+
   def main(input: List[String], output: String, exclude: List[String], jvm: Boolean, lib: Boolean, app: Boolean) {
     val typeLoader = new HashMapTypeLoader()
+    Main.setTypeLoader(typeLoader)
 
     for (file <- input) {
       for (a0 <- org.ucombinator.jaam.serializer.Serializer.readAll(file).asScala) {
@@ -92,6 +127,8 @@ object Main {
                       typeLoader.add(path + "!" + entry.getName, origin, org.ucombinator.jaam.util.Misc.toByteArray(jar))
                     }
                   }
+
+                  jar.close()
                 }
             }
           }
@@ -105,7 +142,6 @@ object Main {
     val total = typeLoader.classes.keys.size
     var index = 1
     val settings = DecompilerSettings.javaDefaults()
-    val metadataSystem = new MetadataSystem(typeLoader)
 
     val options = new DecompilationOptions()
 
@@ -124,7 +160,7 @@ object Main {
       } else {
         try {
           println(f"Decompiling ($index of $total) $name")
-          decompile(metadataSystem, options, name) match {
+          decompile(options, name) match {
             case None =>
               println(f"Skipping inner class ($index of $total) $name")
             case Some(cu) =>
@@ -141,15 +177,14 @@ object Main {
     po.close()
   }
 
-  def decompile(metadataSystem: MetadataSystem,
-                options: DecompilationOptions,
+  def decompile(options: DecompilationOptions,
                 internalName: String): Option[CompilationUnit] = {
     val typ: TypeReference =
       if (internalName.length == 1) {
         val parser = new MetadataParser(IMetadataResolver.EMPTY)
         val reference = parser.parseTypeDescriptor(internalName)
-        metadataSystem.resolve(reference)
-      } else metadataSystem.lookupType(internalName)
+        MetadataSystem.instance().resolve(reference)
+      } else MetadataSystem.instance().lookupType(internalName)
 
     if (typ == null) {
       println(f"!!! ERROR: Failed to load type $internalName.")
