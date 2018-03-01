@@ -64,6 +64,25 @@ case class DecompiledClass(name: String,
 object Main {
   def main(input: List[String], output: String, exclude: List[String], jvm: Boolean, lib: Boolean, app: Boolean) {
     val typeLoader = new HashMapTypeLoader()
+    val metadataSystem = new MetadataSystem(typeLoader)
+    val instanceField = classOf[MetadataSystem].getDeclaredField("_instance")
+    instanceField.setAccessible(true)
+    instanceField.set(metadataSystem, metadataSystem)
+    val resolverField0 = classOf[TypeDefinition].getDeclaredField("_resolver")
+    resolverField0.setAccessible(true)
+    for (i <- List(BuiltinTypes.Boolean,
+BuiltinTypes.Byte,
+BuiltinTypes.Character,
+BuiltinTypes.Short,
+BuiltinTypes.Integer,
+BuiltinTypes.Long,
+BuiltinTypes.Float,
+BuiltinTypes.Double,
+BuiltinTypes.Void,
+BuiltinTypes.Object,
+BuiltinTypes.Class)) {
+  resolverField0.set(i, metadataSystem)
+}
 
     for (file <- input) {
       for (a0 <- org.ucombinator.jaam.serializer.Serializer.readAll(file).asScala) {
@@ -92,6 +111,8 @@ object Main {
                       typeLoader.add(path + "!" + entry.getName, origin, org.ucombinator.jaam.util.Misc.toByteArray(jar))
                     }
                   }
+
+                  jar.close()
                 }
             }
           }
@@ -105,7 +126,7 @@ object Main {
     val total = typeLoader.classes.keys.size
     var index = 1
     val settings = DecompilerSettings.javaDefaults()
-    val metadataSystem = new MetadataSystem(typeLoader)
+    settings.setTypeLoader(typeLoader)
 
     val options = new DecompilationOptions()
 
