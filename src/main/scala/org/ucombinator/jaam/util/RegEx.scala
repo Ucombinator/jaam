@@ -6,47 +6,38 @@ class RegEx[State, AtomType] {
   case class Cat(x: List[Exp]) extends Exp
   case class Alt(x: List[Exp]) extends Exp
   case class Rep(x: Exp) extends Exp
-  case class Fun(x: (State, AtomType) => List[(Option[Exp], State)]) extends Exp
+  case class Fun(x: (State, AtomType) => (List[State], List[(Exp, State)])) extends Exp
 
-  def split[A, B, C](list: List[A], fun: (A => Either[B, C])): (List[B], List[C]) = {
-    list match {
+  def flatMap2[A, B, C](aList: List[A], fun: A => (List[B], List[C])): (List[B], List[C]) = {
+    aList match {
       case List() => (List(), List())
-      case x::xs =>
-        val (bs, cs) = split(xs, fun)
-        fun(x) match {
-          case Left(b) => (b :: bs, cs)
-          case Right(c) => (bs, c :: cs)
-        }
+      case a::as =>
+        val (bs, cs) = fun(a)
+        val (moreBs, moreCs) = flatMap2(as, fun)
+        (bs ++ moreBs, cs ++ moreCs)
     }
   }
 
-  def extractOption(tup: (Option[Exp], State)): Either[State, (Exp, State)] = {
-    tup match {
-      case (None, s) => Left(s)
-      case (Some(e), s) => Right((e, s))
-    }
-  }
-
-  def derive(exp: Exp, state: State, atom: AtomType): List[(Option[Exp], State)] = {
+  def derive(exp: Exp, state: State, atom: AtomType): (List[State], List[(Exp, State)]) = {
     exp match {
-      case Cat(List()) => List()
+      case Cat(List()) => (List(), List())
       case Cat(x::xs) =>
-        val (bs, cs) = split(derive(x, state, atom), extractOption)
-        val derivedBs = bs.flatMap(derive(Cat(xs), _, atom))
-        val derivedCs = cs.map({ case (e, s) => (Some(Cat(e::xs)), s) })
-        derivedBs ++ derivedCs
-      case Alt(List()) => List()
-      case Alt(x) => x.flatMap(derive(_, state, atom))
+        val (bs, cs) = derive(x, state, atom)
+        val derivedBs = flatMap2(bs, derive(Cat(xs), _, atom))
+        val derivedCs = cs.map({ case (e, s) => (Cat(e::xs), s) })
+        (derivedBs._1, derivedBs._2 ++ derivedCs)
+      case Alt(List()) => (List(), List())
+      case Alt(xs) => flatMap2(xs, derive(_, state, atom))
       case Rep(x) =>
-        val (_, cs) = split(derive(x, state, atom), extractOption)
-        (None, state) :: cs.map({ case (e, s) => (Some(e), s) })
+        val (bs, cs) = derive(x, state, atom)
+        (state :: bs, cs)
       case Fun(x) => x(state, atom)
     }
   }
 
   def deriveAll(exp: Exp, state: State, atoms: Seq[AtomType]): List[State] = {
     def step(oldTup: (List[State], List[(Exp, State)]), atom: AtomType): (List[State], List[(Exp, State)]) = {
-      split(oldTup._2.flatMap({ case (e, s) => derive(e, s, atom) }), extractOption)
+      flatMap2(oldTup._2, { case (e, s) => derive(e, s, atom) })
     }
 
     atoms.foldLeft((List[State](), List((exp, state))))(step)._1
