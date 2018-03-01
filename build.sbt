@@ -28,6 +28,7 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.4" % "test",
   "org.slf4j" % "slf4j-nop" % "1.7.22",
   "org.ucombinator.dockfx" % "DockFX" % "0.1.12",
+  "de.jensd" % "fontawesomefx" % "8.9",
   "org.ucombinator.soot" % "soot" % "nightly.20161021"
 )
 

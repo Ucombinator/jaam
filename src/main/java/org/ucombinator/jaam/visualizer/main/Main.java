@@ -6,6 +6,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.Tab;
 import javafx.stage.Stage;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.controlsfx.glyphfont.FontAwesome;
+import org.controlsfx.glyphfont.GlyphFont;
+import org.controlsfx.glyphfont.GlyphFontRegistry;
 import org.ucombinator.jaam.visualizer.controllers.Controllers;
 import org.ucombinator.jaam.visualizer.controllers.MainPaneController;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
@@ -27,6 +30,12 @@ public class Main extends Application {
 
     public static VizPanelController getSelectedVizPanelController() {
         return getSelectedMainTabController().vizPanelController;
+    }
+
+    public static GlyphFont getIconFont() {
+        GlyphFont fontAwesome = GlyphFontRegistry.font("FontAwesome");
+
+        return fontAwesome;
     }
 
     private static void uncaughtExceptionHandler(Thread t, Throwable e) {
