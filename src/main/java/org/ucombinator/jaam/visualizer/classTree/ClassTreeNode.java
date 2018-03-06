@@ -49,18 +49,12 @@ public class ClassTreeNode
             public void changed(ObservableValue<? extends Boolean> observableValue, Boolean prevVal, Boolean currVal) {
 
                 HashSet<StateVertex> childVertices = item.getValue().getChildVertices();
-                System.out.println("\t\tJUAN children is: " + childVertices);
-                System.out.println("Current value: " + currVal);
-                System.out.println("Previous value: " + prevVal);
-
                 VizPanelController vizPanelController = Main.getSelectedVizPanelController();
 
                 vizPanelController.startBatchMode();
                 if(currVal) {
-                    System.out.println("Showing nodes...");
                     Main.getSelectedMainTabController().getHidden().removeAll(childVertices);
                 } else {
-                    System.out.println("Hiding nodes...");
                     Main.getSelectedMainTabController().getHidden().addAll(childVertices);
                 }
                 vizPanelController.endBatchMode();

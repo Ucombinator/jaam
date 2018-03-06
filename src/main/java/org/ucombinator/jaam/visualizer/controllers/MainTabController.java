@@ -135,9 +135,18 @@ public class MainTabController {
             public void changed(ObservableValue<? extends TreeItem<ClassTreeNode>> observableValue,
                                 TreeItem<ClassTreeNode> oldValue, TreeItem<ClassTreeNode> newValue) {
 
+                if (oldValue != null) {
+                    setClassHighlight(oldValue.getValue().getChildVertices(), false);
+                }
+
+                setClassHighlight(newValue.getValue().getChildVertices(), true);
+
+
+                /*
                 setClassHighlight(vizPanelController.getPanelRoot(),
                         oldValue != null ? oldValue.getValue().fullName : null,
                         newValue.getValue().fullName);
+                        */
             }
         });
 
@@ -425,6 +434,15 @@ public class MainTabController {
     public void selectFieldInTaintGraph(String fullClassName, String fieldName)
     {
         taintPanelController.showFieldTaintGraph(fullClassName, fieldName);
+    }
+
+    private void setClassHighlight(HashSet<StateVertex> vertices, boolean value) {
+
+        for (StateVertex v : vertices) {
+            if (!v.isHidden()) {
+                v.setClassHighlight(value);
+            }
+        }
     }
 
     private void setClassHighlight(StateVertex v, String prevPrefix, String currPrefix)
