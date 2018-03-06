@@ -13,7 +13,7 @@ import java.util.HashSet;
 
 // ClassTree Code -------------------------------------
 // Has a double function, either a folder (inner node) in which case it has no vertex;
-// Or a leaf node in which case it is associated to a one or more vertices
+// Or a leaf node in which case it is associated to a one or more methods
 public class ClassTreeNode
 {
     public String name;
