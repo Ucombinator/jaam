@@ -5,7 +5,6 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.paint.Color;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.ucombinator.jaam.visualizer.controllers.CodeViewController;
-import org.ucombinator.jaam.visualizer.graph.Method;
 import org.ucombinator.jaam.visualizer.layout.CodeEntity;
 import org.ucombinator.jaam.visualizer.layout.StateVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
@@ -44,13 +43,13 @@ public class ClassNode extends ClassTreeNode {
 
     @Override
     public void handleDoubleClick(CodeViewController codeView) {
-        codeView.displayCodeTab(this.fullName);
+        codeView.displayCodeTab(this.name);
     }
 
     public boolean addVertex(StateVertex vertex) {
 
         assert vertex instanceof CodeEntity;
-        assert ((CodeEntity) vertex).getClassName().startsWith(this.getFullName()); //Maybe should be fullCompare...
+        assert ((CodeEntity) vertex).getClassName().startsWith(this.getName()); //Maybe should be fullCompare...
 
         CodeEntity c = (CodeEntity)vertex;
 

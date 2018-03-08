@@ -12,11 +12,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTreeCell;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
-import org.controlsfx.glyphfont.GlyphFont;
-import org.controlsfx.glyphfont.GlyphFontRegistry;
-import org.ucombinator.jaam.visualizer.classTree.ClassNode;
 import org.ucombinator.jaam.visualizer.classTree.ClassTreeNode;
-import org.ucombinator.jaam.visualizer.classTree.MethodNode;
 import org.ucombinator.jaam.visualizer.classTree.PackageNode;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
@@ -116,7 +112,7 @@ public class MainTabController {
         /*
         for (ClassTreeNode f : topLevel) {
             if (f.isLeaf()) {
-                f.fullName = f.name;// name is correct due to compressions step
+                f.name = f.shortName;// shortName is correct due to compressions step
             }
         }
         */
@@ -179,7 +175,7 @@ public class MainTabController {
 
     private PackageNode getTopLevel(ArrayList<PackageNode> topLevel, String className) {
         for (PackageNode n : topLevel) {
-            if (className.startsWith(n.name))
+            if (className.startsWith(n.shortName))
                 return n;
         }
 

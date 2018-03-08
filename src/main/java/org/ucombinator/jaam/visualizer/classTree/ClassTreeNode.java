@@ -17,26 +17,26 @@ import java.util.HashSet;
 // Or a leaf node in which case it is associated to a one or more methods
 public class ClassTreeNode
 {
+    public String shortName;
     public String name;
-    public String fullName;
 
-    public ClassTreeNode(String name, String prefix)
+    public ClassTreeNode(String shortName, String prefix)
     {
-        this.name = name;
+        this.shortName = shortName;
         if(prefix == null)
-            fullName = new String("");
+            name = new String("");
         else if(prefix.compareTo("") == 0)
-            fullName = name;
+            name = shortName;
         else
-            fullName = prefix + "." + name;
+            name = prefix + "." + shortName;
     }
 
     @Override
     public String toString() {
-        return name;
+        return shortName;
     }
 
-    public String getFullName() { return  fullName; }
+    public String getName() { return name; }
 
     public boolean hasCode() {return false;}
 
@@ -65,7 +65,7 @@ public class ClassTreeNode
         parent.getChildren().add(item);
 
 
-        item.getChildren().sort(Comparator.comparing(t->t.getValue().name));
+        item.getChildren().sort(Comparator.comparing(t->t.getValue().shortName));
 
         return item;
     }
