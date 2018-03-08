@@ -103,6 +103,10 @@ public class CodeViewController {
         }
     };
 
+    public void displayCodeTab(String className) {
+        displayCodeTab(className, null);
+    }
+
     public void displayCodeTab(String className, String highlightMethod)
     {
         CodeTab t = tabMap.get(className);

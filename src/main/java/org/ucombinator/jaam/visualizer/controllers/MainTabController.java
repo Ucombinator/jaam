@@ -151,14 +151,7 @@ public class MainTabController {
             if (m.getClickCount() == 2) {
                 final TreeItem<ClassTreeNode> item = classTree.getSelectionModel().getSelectedItem();
 
-                if (item.getValue().hasCode()) {
-                    if (item.getValue() instanceof ClassNode) {
-                        codeViewController.displayCodeTab(item.getValue().fullName, null);
-                    }
-                    else if (item.getValue() instanceof MethodNode) {
-                        codeViewController.displayCodeTab(((MethodNode) item.getValue()).getClassName(), ((MethodNode) item.getValue()).getMethodName() );
-                    }
-                }
+                item.getValue().handleDoubleClick(codeViewController);
             }
         });
 

@@ -4,6 +4,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.CheckBoxTreeItem;
 import javafx.scene.control.TreeItem;
+import org.ucombinator.jaam.visualizer.controllers.CodeViewController;
 import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import org.ucombinator.jaam.visualizer.layout.StateVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
@@ -67,6 +68,10 @@ public class ClassTreeNode
         item.getChildren().sort(Comparator.comparing(t->t.getValue().name));
 
         return item;
+    }
+
+    public void handleDoubleClick(CodeViewController codeView) {
+        // Do Nothing
     }
 
     public HashSet<StateVertex> getChildVertices() {

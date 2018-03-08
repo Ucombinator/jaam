@@ -4,6 +4,7 @@ import javafx.scene.control.CheckBoxTreeItem;
 import javafx.scene.control.TreeItem;
 import javafx.scene.paint.Color;
 import org.controlsfx.glyphfont.FontAwesome;
+import org.ucombinator.jaam.visualizer.controllers.CodeViewController;
 import org.ucombinator.jaam.visualizer.graph.Method;
 import org.ucombinator.jaam.visualizer.layout.CodeEntity;
 import org.ucombinator.jaam.visualizer.layout.StateVertex;
@@ -39,6 +40,11 @@ public class ClassNode extends ClassTreeNode {
     @Override
     public boolean hasCode() {
         return true;
+    }
+
+    @Override
+    public void handleDoubleClick(CodeViewController codeView) {
+        codeView.displayCodeTab(this.fullName);
     }
 
     public boolean addVertex(StateVertex vertex) {

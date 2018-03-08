@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.classTree;
 
 import javafx.scene.control.CheckBoxTreeItem;
 import org.controlsfx.glyphfont.FontAwesome;
+import org.ucombinator.jaam.visualizer.controllers.CodeViewController;
 import org.ucombinator.jaam.visualizer.layout.CodeEntity;
 import org.ucombinator.jaam.visualizer.layout.LayoutLoopVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
@@ -70,6 +71,11 @@ public class MethodNode extends ClassTreeNode {
         return true;
     }
 
+    @Override
+    public void handleDoubleClick(CodeViewController codeView) {
+        codeView.displayCodeTab(this.getClassName(), this.getMethodName());
+
+    }
 
     public String getMethodName() {
         return methodName;
