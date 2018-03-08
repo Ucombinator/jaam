@@ -36,6 +36,11 @@ public class ClassNode extends ClassTreeNode {
         return all;
     }
 
+    @Override
+    public boolean hasCode() {
+        return true;
+    }
+
     public boolean addVertex(StateVertex vertex) {
 
         assert vertex instanceof CodeEntity;

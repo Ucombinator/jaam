@@ -37,7 +37,7 @@ public class ClassTreeNode
 
     public String getFullName() { return  fullName; }
 
-    public boolean isLeaf() { return false;}
+    public boolean hasCode() {return false;}
 
     protected CheckBoxTreeItem<ClassTreeNode> buildTreeItem(TreeItem<ClassTreeNode> parent) {
         CheckBoxTreeItem<ClassTreeNode> item = new CheckBoxTreeItem<>();

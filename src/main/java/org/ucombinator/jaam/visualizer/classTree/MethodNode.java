@@ -12,11 +12,17 @@ import java.util.HashSet;
 
 public class MethodNode extends ClassTreeNode {
 
-    LayoutMethodVertex methodVertex;
-    HashSet<LayoutLoopVertex> loopVertices;
+    private LayoutMethodVertex methodVertex;
+    private HashSet<LayoutLoopVertex> loopVertices;
+
+    private String className;
+    private String methodName;
 
     public MethodNode(StateVertex v) {
-        super(((CodeEntity)v).getClassName(), ((CodeEntity)v).getMethodName());
+        super(((CodeEntity)v).getMethodName(), ((CodeEntity)v).getClassName());
+
+        this.className = ((CodeEntity) v).getClassName();
+        this.methodName = ((CodeEntity) v).getMethodName();
 
         methodVertex = null;
         this.loopVertices = new HashSet<>();
@@ -42,6 +48,8 @@ public class MethodNode extends ClassTreeNode {
         methodVertex = v;
     }
 
+
+
     @Override
     public String toString() {
         return super.toString();
@@ -55,6 +63,20 @@ public class MethodNode extends ClassTreeNode {
         result.addAll(loopVertices);
 
         return result;
+    }
+
+    @Override
+    public boolean hasCode() {
+        return true;
+    }
+
+
+    public String getMethodName() {
+        return methodName;
+    }
+
+    public String getClassName() {
+        return className;
     }
 
     public void build(CheckBoxTreeItem<ClassTreeNode> parent) {

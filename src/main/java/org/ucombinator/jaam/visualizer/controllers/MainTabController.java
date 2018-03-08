@@ -14,7 +14,9 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import org.controlsfx.glyphfont.GlyphFont;
 import org.controlsfx.glyphfont.GlyphFontRegistry;
+import org.ucombinator.jaam.visualizer.classTree.ClassNode;
 import org.ucombinator.jaam.visualizer.classTree.ClassTreeNode;
+import org.ucombinator.jaam.visualizer.classTree.MethodNode;
 import org.ucombinator.jaam.visualizer.classTree.PackageNode;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
@@ -111,11 +113,13 @@ public class MainTabController {
 
         // Fix top level names. If a node is on the top level and a leaf due to compression
         // it's fullname is missing package information, this fixes it.
+        /*
         for (ClassTreeNode f : topLevel) {
             if (f.isLeaf()) {
                 f.fullName = f.name;// name is correct due to compressions step
             }
         }
+        */
 
         // Add the vertices
         addVerticesToClassTree(topLevel, panelRoot);
@@ -140,13 +144,6 @@ public class MainTabController {
                 }
 
                 setClassHighlight(newValue.getValue().getChildVertices(), true);
-
-
-                /*
-                setClassHighlight(vizPanelController.getPanelRoot(),
-                        oldValue != null ? oldValue.getValue().fullName : null,
-                        newValue.getValue().fullName);
-                        */
             }
         });
 
@@ -154,8 +151,13 @@ public class MainTabController {
             if (m.getClickCount() == 2) {
                 final TreeItem<ClassTreeNode> item = classTree.getSelectionModel().getSelectedItem();
 
-                if (item.isLeaf()) {
-                    codeViewController.displayCodeTab(item.getValue().fullName, null);
+                if (item.getValue().hasCode()) {
+                    if (item.getValue() instanceof ClassNode) {
+                        codeViewController.displayCodeTab(item.getValue().fullName, null);
+                    }
+                    else if (item.getValue() instanceof MethodNode) {
+                        codeViewController.displayCodeTab(((MethodNode) item.getValue()).getClassName(), ((MethodNode) item.getValue()).getMethodName() );
+                    }
                 }
             }
         });
