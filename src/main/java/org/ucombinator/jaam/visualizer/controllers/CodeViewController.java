@@ -36,10 +36,12 @@ public class CodeViewController {
         this.tabMap     = new HashMap<>();
         this.classNames = new HashSet<>();
 
+        /*
         for (SootClass s : sootClasses)
         {
             System.out.println(s.getName());
         }
+        */
 
         HashMap<String,SootClass> lookup = new HashMap<String,SootClass>();
 

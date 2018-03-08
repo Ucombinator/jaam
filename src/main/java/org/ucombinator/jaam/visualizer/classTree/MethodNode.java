@@ -89,7 +89,7 @@ public class MethodNode extends ClassTreeNode {
         CheckBoxTreeItem<ClassTreeNode> item = buildTreeItem(parent);
 
         if (methodVertex == null) {
-            System.out.println("Method vertex was null " + this.fullName);
+            System.out.println("Warning: Method vertex was null " + this.fullName);
             return;
         }
 
