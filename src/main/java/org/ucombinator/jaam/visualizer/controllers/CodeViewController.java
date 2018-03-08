@@ -4,13 +4,8 @@ import com.strobel.decompiler.languages.java.ast.*;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.BorderPane;
-import org.fxmisc.flowless.VirtualizedScrollPane;
-import org.fxmisc.richtext.CodeArea;
-import org.fxmisc.richtext.LineNumberFactory;
-import org.ucombinator.jaam.visualizer.codeView.CodeHighlighter;
 import org.ucombinator.jaam.visualizer.codeView.CodeTab;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.layout.*;
@@ -27,12 +22,14 @@ public class CodeViewController {
     @FXML public final VBox root = null; // Initialized by Controllers.loadFXML()
     @FXML public final TabPane codeTabs = null; // Initialized by Controllers.loadFXML()
 
+    HashMap<String, ClassCode> codeMap;
     HashMap<String, CodeTab> tabMap;
     HashSet<String> classNames;
 
     public CodeViewController(List<CompilationUnit> compilationUnits, Set<SootClass> sootClasses) throws IOException {
         Controllers.loadFXML("/CodeView.fxml", this);
 
+        this.codeMap    = new HashMap<>();
         this.tabMap     = new HashMap<>();
         this.classNames = new HashSet<>();
 
@@ -73,16 +70,17 @@ public class CodeViewController {
 
         TypeDeclaration typeDeclaration = types.firstOrNullObject();
 
-        typeDeclaration.getText();
-
         String className = typeDeclaration.getName();
         String fullClassName = new String(unit.getPackage().getName() + "." + className);
 
-        CodeTab tab = new CodeTab(unit, s, className, fullClassName);
-        tab.setTooltip(new Tooltip(fullClassName));
-        this.tabMap.put(fullClassName, tab);
-
+        this.codeMap.put(fullClassName, new ClassCode(unit, s, className, fullClassName));
         this.classNames.add(fullClassName);
+    }
+
+    private void addTab(ClassCode c) {
+        CodeTab tab = new CodeTab(c.compilationUnit, c.sootClass, c.className, c.fullClassName);
+        tab.setTooltip(new Tooltip(c.fullClassName));
+        this.tabMap.put(c.fullClassName, tab);
     }
 
     public HashSet<String> getClassNames() {
@@ -100,7 +98,6 @@ public class CodeViewController {
                 CodeEntity v = (CodeEntity)av;
 
                 displayCodeTab(v.getClassName(), v.getMethodName());
-
             }
         }
     };
@@ -111,13 +108,16 @@ public class CodeViewController {
 
     public void displayCodeTab(String className, String highlightMethod)
     {
-        CodeTab t = tabMap.get(className);
-
-        if(t == null)
-        {
-            System.out.println("Didn't find code associated to " + className);
-            return;
+        if (!tabMap.containsKey(className)) {
+            ClassCode c = codeMap.get(className);
+            if (c == null) {
+                System.out.println("Didn't find code associated to " + className);
+                return;
+            }
+            addTab(c);
         }
+
+        CodeTab t = tabMap.get(className);
 
         if(!isDisplayed(t))
         {
@@ -141,5 +141,24 @@ public class CodeViewController {
     private String getFullClassName(CompilationUnit u)
     {
         return u.getPackage().getName() + "." + u.getTypes().firstOrNullObject().getName();
+    }
+
+    private class ClassCode{
+
+        public CompilationUnit compilationUnit;
+        public SootClass sootClass;
+
+        public String className;
+        public String fullClassName;
+
+
+
+        ClassCode(CompilationUnit u, SootClass s, String className, String fullClassName) {
+            compilationUnit = u;
+            sootClass = s;
+            this.className = className;
+            this.fullClassName = fullClassName;
+        }
+
     }
 }
