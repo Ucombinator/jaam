@@ -37,11 +37,6 @@ public class ClassNode extends ClassTreeNode {
     }
 
     @Override
-    public boolean hasCode() {
-        return true;
-    }
-
-    @Override
     public void handleDoubleClick(CodeViewController codeView) {
         codeView.displayCodeTab(this.name);
     }

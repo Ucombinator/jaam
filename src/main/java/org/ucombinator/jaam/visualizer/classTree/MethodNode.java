@@ -67,11 +67,6 @@ public class MethodNode extends ClassTreeNode {
     }
 
     @Override
-    public boolean hasCode() {
-        return true;
-    }
-
-    @Override
     public void handleDoubleClick(CodeViewController codeView) {
         codeView.displayCodeTab(this.getClassName(), this.getMethodName());
 
