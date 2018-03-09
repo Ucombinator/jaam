@@ -127,7 +127,7 @@ public class MainPaneController {
 
                 sootClasses.add(node.method().getDeclaringClass());
 
-                System.out.println("Reading method packet: " + node.method().getSignature());
+                //System.out.println("Reading method packet: " + node.method().getSignature());
             } else if (packet instanceof LoopEdge) {
                 loopEdgePackets++;
                 loopEdges.add((LoopEdge) packet);

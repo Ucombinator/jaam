@@ -4,6 +4,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.CheckBoxTreeItem;
 import javafx.scene.control.TreeItem;
+import org.ucombinator.jaam.visualizer.controllers.CodeViewController;
 import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import org.ucombinator.jaam.visualizer.layout.StateVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
@@ -13,31 +14,31 @@ import java.util.HashSet;
 
 // ClassTree Code -------------------------------------
 // Has a double function, either a folder (inner node) in which case it has no vertex;
-// Or a leaf node in which case it is associated to a one or more vertices
+// Or a leaf node in which case it is associated to a one or more methods
 public class ClassTreeNode
 {
+    public String shortName;
     public String name;
-    public String fullName;
 
-    public ClassTreeNode(String name, String prefix)
+    public ClassTreeNode(String shortName, String prefix)
     {
-        this.name = name;
+        this.shortName = shortName;
         if(prefix == null)
-            fullName = new String("");
+            name = new String("");
         else if(prefix.compareTo("") == 0)
-            fullName = name;
+            name = shortName;
         else
-            fullName = prefix + "." + name;
+            name = prefix + "." + shortName;
     }
 
     @Override
     public String toString() {
-        return name;
+        return shortName;
     }
 
-    public String getFullName() { return  fullName; }
+    public String getName() { return name; }
 
-    public boolean isLeaf() { return false;}
+    public boolean hasCode() {return false;}
 
     protected CheckBoxTreeItem<ClassTreeNode> buildTreeItem(TreeItem<ClassTreeNode> parent) {
         CheckBoxTreeItem<ClassTreeNode> item = new CheckBoxTreeItem<>();
@@ -49,18 +50,12 @@ public class ClassTreeNode
             public void changed(ObservableValue<? extends Boolean> observableValue, Boolean prevVal, Boolean currVal) {
 
                 HashSet<StateVertex> childVertices = item.getValue().getChildVertices();
-                System.out.println("\t\tJUAN children is: " + childVertices);
-                System.out.println("Current value: " + currVal);
-                System.out.println("Previous value: " + prevVal);
-
                 VizPanelController vizPanelController = Main.getSelectedVizPanelController();
 
                 vizPanelController.startBatchMode();
                 if(currVal) {
-                    System.out.println("Showing nodes...");
                     Main.getSelectedMainTabController().getHidden().removeAll(childVertices);
                 } else {
-                    System.out.println("Hiding nodes...");
                     Main.getSelectedMainTabController().getHidden().addAll(childVertices);
                 }
                 vizPanelController.endBatchMode();
@@ -70,9 +65,13 @@ public class ClassTreeNode
         parent.getChildren().add(item);
 
 
-        item.getChildren().sort(Comparator.comparing(t->t.getValue().name));
+        item.getChildren().sort(Comparator.comparing(t->t.getValue().shortName));
 
         return item;
+    }
+
+    public void handleDoubleClick(CodeViewController codeView) {
+        // Do Nothing
     }
 
     public HashSet<StateVertex> getChildVertices() {

@@ -13,7 +13,7 @@ import java.util.HashSet;
 public class PackageNode extends ClassTreeNode {
 
     public HashSet<PackageNode> subPackages;
-    public HashSet<ClassNode>   classNodes; // Leaf nodes store their associated vertices
+    public HashSet<ClassNode>   classNodes; // Leaf nodes store their associated methods
 
     public PackageNode(String name, String prefix) {
         super(name,prefix);
@@ -30,7 +30,7 @@ public class PackageNode extends ClassTreeNode {
         PackageNode subDir = null;
         for(PackageNode f : subPackages)
         {
-            if(f.name.compareTo(name) == 0)
+            if(f.shortName.compareTo(name) == 0)
             {
                 subDir = f;
                 break;
@@ -38,7 +38,7 @@ public class PackageNode extends ClassTreeNode {
         }
         if(subDir == null)
         {
-            subDir = new PackageNode(name, this.fullName);
+            subDir = new PackageNode(name, this.name);
             subPackages.add(subDir);
         }
 
@@ -46,7 +46,7 @@ public class PackageNode extends ClassTreeNode {
     }
 
     public void addClassIfAbsent(String name) {
-        classNodes.add(new ClassNode(name, this.fullName));
+        classNodes.add(new ClassNode(name, this.name));
     }
 
     public void compress()
@@ -54,7 +54,7 @@ public class PackageNode extends ClassTreeNode {
         while(subPackages.size() == 1 && classNodes.isEmpty())
         {
             PackageNode onlyElement = subPackages.iterator().next();
-            name = name.concat("." + onlyElement.name);
+            shortName = shortName.concat("." + onlyElement.shortName);
             subPackages = onlyElement.subPackages;
             classNodes.addAll(onlyElement.classNodes);
         }
@@ -66,9 +66,7 @@ public class PackageNode extends ClassTreeNode {
     public void build(TreeItem<ClassTreeNode> parent) {
         CheckBoxTreeItem<ClassTreeNode> item = buildTreeItem(parent);
 
-        item.setGraphic(Main.getIconFont().create(FontAwesome.Glyph.FOLDER).color(Color.DARKBLUE));
-
-        Main.getIconFont().create(FontAwesome.Glyph.FOLDER_ALT).color(Color.DARKBLUE);
+        item.setGraphic(Main.getIconFont().create(FontAwesome.Glyph.FOLDER).color(Color.DARKGRAY));
 
         for (PackageNode p: subPackages) {
             p.build(item);
@@ -100,12 +98,12 @@ public class PackageNode extends ClassTreeNode {
         String vertexClassName = ((CodeEntity) vertex).getClassName();
 
         for (PackageNode p : subPackages) {
-            if (vertexClassName.startsWith(p.fullName)) {
+            if (vertexClassName.startsWith(p.name)) {
                 return p.addVertex(vertex);
             }
         }
         for (ClassNode c : classNodes) {
-            if (vertexClassName.startsWith(c.fullName)) {
+            if (vertexClassName.startsWith(c.name)) {
                 return c.addVertex(vertex);
             }
         }
