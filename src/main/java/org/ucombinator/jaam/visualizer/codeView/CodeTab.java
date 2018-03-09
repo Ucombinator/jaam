@@ -20,6 +20,7 @@ import org.ucombinator.jaam.util.Soot;
 import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.taint.FieldSelectEvent;
 import soot.Body;
+import soot.Modifier;
 import soot.SootClass;
 import soot.SootMethod;
 
@@ -193,7 +194,7 @@ public class CodeTab extends Tab{
 
         soot.getFields().stream().forEach(f -> {
             int currentParagraph = codeArea.getCurrentParagraph();
-            codeArea.appendText(f.toString() + "\n");
+            codeArea.appendText("\u24D5 " + Modifier.toString(f.getModifiers()) + " " + f.getSubSignature() + "\n");
             sootParagraphField.put(currentParagraph, f.getName());
         });
 
