@@ -248,12 +248,11 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         System.out.println("JUAN: Hidden changed: " + change);
         if(change.wasAdded()) {
             StateVertex v = change.getElementAdded();
-            // System.out.println("Added " + v);
             v.setHighlighted(false);
             v.setHidden();
+            this.redrawGraph();
         } else {
             StateVertex v = change.getElementRemoved();
-            // System.out.println("Removed " + change.getElementRemoved());
             v.setUnhidden();
 
             if(!inBatchMode) {

@@ -87,7 +87,7 @@ public class MainTabController {
         this.classTree.setCellFactory(CheckBoxTreeCell.forTreeView());
 
         PackageNode root = new PackageNode("root", null);
-        ArrayList<PackageNode> topLevel = new ArrayList<>();
+        ArrayList<PackageNode> topLevel = new ArrayList<PackageNode>(root.subPackages);
 
         for(String c : classNames)
         {
@@ -102,11 +102,10 @@ public class MainTabController {
             current.addClassIfAbsent(className);
         }
 
-        topLevel.addAll(root.subPackages);
-
         // Compression Step
-        topLevel.stream().forEach(f -> f.compress());
+        topLevel.forEach(PackageNode::compress);
 
+        // TODO: Ask Juan why this is commented out
         // Fix top level names. If a node is on the top level and a leaf due to compression
         // it's fullname is missing package information, this fixes it.
         /*
@@ -126,7 +125,7 @@ public class MainTabController {
         treeRoot.setValue(new ClassTreeNode("root", null));
         treeRoot.setExpanded(true);
 
-        topLevel.stream().forEach(f -> f.build(treeRoot));
+        topLevel.forEach(f -> f.build(treeRoot));
 
         classTree.setRoot(treeRoot);
 
@@ -182,14 +181,14 @@ public class MainTabController {
         return null;
     }
 
-    public void repaintAll() {
+    private void repaintAll() {
         System.out.println("Repainting all...");
         //bytecodeArea.setDescription();
         setVizRightText();
         searchResults.writeText(this);
     }
 
-    public void setVizRightText() {
+    private void setVizRightText() {
         StringBuilder text = new StringBuilder();
         for (StateVertex v : this.getVizHighlighted()) {
             text.append(v.getRightPanelContent() + "\n");
@@ -294,7 +293,7 @@ public class MainTabController {
         vizPanelController.endBatchMode();
     }
 
-    public String getSearchInput(SearchType search) {
+    private String getSearchInput(SearchType search) {
         String title = "";
         System.out.println("Search type: " + search);
         if (search == SearchType.ID || search == SearchType.ROOT_PATH) {
@@ -329,7 +328,7 @@ public class MainTabController {
         return input;
     }
 
-    public void searchByID(String input) {
+    private void searchByID(String input) {
         for (String token : input.split(", ")) {
             if (token.trim().equalsIgnoreCase("")) {
                 /* Do nothing */
@@ -396,11 +395,11 @@ public class MainTabController {
     {
         HashSet<StateVertex> keep = new HashSet<>();
 
-        this.vizHighlighted.stream().forEach(v -> keep.addAll(v.getAncestors()) );
-        this.vizHighlighted.stream().forEach(v -> keep.addAll(v.getDescendants()) );
+        this.vizHighlighted.forEach(v -> keep.addAll(v.getAncestors()) );
+        this.vizHighlighted.forEach(v -> keep.addAll(v.getDescendants()) );
 
         HashSet<StateVertex> toHide = new HashSet<>();
-        this.vizPanelController.getPanelRoot().getVisibleInnerGraph().getVertices().stream().forEach(v -> {
+        this.vizPanelController.getPanelRoot().getVisibleInnerGraph().getVertices().forEach(v -> {
             if (!keep.contains(v)) {
                 toHide.add(v);
             }
