@@ -1,47 +1,44 @@
 package org.ucombinator.jaam.visualizer.graph;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class Graph<T extends AbstractVertex>
 {
-    private ArrayList<T> vertices;
-    private HashMap<T, HashSet<T>> outEdges;
-    private HashMap<T, HashSet<T>> inEdges;
+    protected HashSet<T> vertices;
+    protected HashMap<T, HashSet<T>> outEdges;
+    protected HashMap<T, HashSet<T>> inEdges;
+    protected HashMap<Integer, T> vertexIndex;
     
     public Graph()
     {
-        this.vertices = new ArrayList<>();
+        this.vertices = new HashSet<>();
         this.outEdges = new HashMap<>();
         this.inEdges = new HashMap<>();
+        this.vertexIndex = new HashMap<>();
     }
 
-    public ArrayList<T> getVertices() {
+    public HashSet<T> getVertices() {
         return this.vertices;
+    }
+
+    public boolean isEmpty() {
+        return this.vertices.isEmpty();
     }
 
     public void addVertex(T vertex){
     	this.vertices.add(vertex);
+    	this.outEdges.put(vertex, new HashSet<>());
+    	this.inEdges.put(vertex, new HashSet<>());
+    	this.vertexIndex.put(vertex.getId(), vertex);
     }
 
     public void addEdge(int src, int dest)
     {
-        //System.out.println("Adding input edge: " + src + ", " + dest);
-        T vSrc, vDest;
-
-        vSrc = this.containsInputVertex(src);
-        vDest = this.containsInputVertex(dest);
-
-        assert vSrc != null;
-        assert vDest != null;
-
-        this.outEdges.putIfAbsent(vSrc, new HashSet<>());
-        this.outEdges.get(vSrc).add(vDest);
-
-        this.inEdges.putIfAbsent(vDest, new HashSet<>());
-        this.inEdges.get(vDest).add(vSrc);
-        System.out.println("Adding edge: " + vSrc.getLabel() + " --> " + vDest.getLabel());
+        T vSrc = this.containsInputVertex(src);
+        T vDest = this.containsInputVertex(dest);
+        this.addEdge(vSrc, vDest);
     }
 
     public void addEdge(T src, T dest) {
@@ -50,28 +47,19 @@ public class Graph<T extends AbstractVertex>
 
         this.outEdges.putIfAbsent(src, new HashSet<>());
         this.outEdges.get(src).add(dest);
-
         this.inEdges.putIfAbsent(dest, new HashSet<>());
         this.inEdges.get(dest).add(src);
     }
 
-    public HashSet<T> getOutNeighbors(T v) {
-        return this.outEdges.getOrDefault(v, new HashSet<>());
+    public Set<T> getOutNeighbors(T v) {
+        return this.outEdges.get(v);
     }
 
-    public HashSet<T> getInNeighbors(T v) {
-        return this.inEdges.getOrDefault(v, new HashSet<>());
+    public Set<T> getInNeighbors(T v) {
+        return this.inEdges.get(v);
     }
 
-    // TODO: inefficient
-    public T containsInputVertex(int id)
-    {
-        for(T v : this.vertices)
-        {
-            if(v.getId() == id)
-                return v;
-        }
-
-        return null;
+    public T containsInputVertex(int id) {
+        return this.vertexIndex.getOrDefault(id, null);
     }
 }

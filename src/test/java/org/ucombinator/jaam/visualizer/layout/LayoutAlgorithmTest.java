@@ -13,12 +13,11 @@ public class LayoutAlgorithmTest {
 
     @Test
     public void layoutIsCorrect() {
-        HierarchicalGraph<StateVertex> graph = new HierarchicalGraph<>();
+        LayoutRootVertex visibleRoot = new LayoutRootVertex();
+        VisibleHierarchicalGraph<StateVertex> graph = new VisibleHierarchicalGraph<>(visibleRoot);
         HashSet<StateVertex> vertices = new HashSet<>();
         for(int i = 1; i <= 5; i++) {
             vertices.add(new LayoutMethodVertex(i, "Method " + i, null));
         }
-
-        graph.setVertices(vertices);
     }
 }

@@ -77,7 +77,7 @@ public class LayoutMethodVertex extends StateVertex implements CodeEntity {
             mainTab.getVizHighlighted().add(this);
         }
 
-        for(StateVertex v : this.getInnerGraph().getVisibleVertices()) {
+        for(StateVertex v : this.getVisibleInnerGraph().getVertices()) {
             v.searchByMethod(query, mainTab);
         }
 

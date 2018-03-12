@@ -99,10 +99,10 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
 
     private void handleOnMouseEntered(MouseEvent event) {
         event.consume();
-        HierarchicalGraph<T> selfGraph = vertex.getSelfGraph();
+        VisibleHierarchicalGraph<T> selfGraph = vertex.getVisibleSelfGraph();
         if (selfGraph != null) {
-            for (LayoutEdge<T> e : selfGraph.getVisibleEdges()) {
-                if(e.getSource() == vertex || e.getDest() == vertex) {
+            for (LayoutEdge<T> e : selfGraph.getEdges()) {
+                if(e.getSrc() == vertex || e.getDest() == vertex) {
                     e.highlightEdgePath();
                 }
             }
@@ -112,10 +112,10 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
     private void handleOnMouseExited(MouseEvent event) {
         event.consume();
 
-        HierarchicalGraph<T> selfGraph = vertex.getSelfGraph();
+        VisibleHierarchicalGraph<T> selfGraph = vertex.getVisibleSelfGraph();
         if (selfGraph != null) {
-            for (LayoutEdge<T> e : selfGraph.getVisibleEdges()) {
-                if (e.getSource() == vertex || e.getDest() == vertex) {
+            for (LayoutEdge<T> e : selfGraph.getEdges()) {
+                if (e.getSrc() == vertex || e.getDest() == vertex) {
                     e.resetEdgePath();
                 }
             }
@@ -162,7 +162,7 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
 
         System.out.println("Double Click");
         T doubleClickedVertex = this.vertex;
-        HierarchicalGraph<T> innerGraph = doubleClickedVertex.getInnerGraph();
+        VisibleHierarchicalGraph<T> innerGraph = doubleClickedVertex.getVisibleInnerGraph();
         boolean isExpanded = doubleClickedVertex.isExpanded();
 
         double newOpacity = isExpanded ? 0.0 : 1.0;
@@ -171,11 +171,11 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
         // First we want the content of the clicked node to appear/disappear.
         System.out.println("Changing opacity of inner graph...");
 
-        for(T v: innerGraph.getVisibleVertices()) {
+        for(T v: innerGraph.getVertices()) {
             v.setOpacity(newOpacity);
         }
 
-        for(LayoutEdge<T> e: innerGraph.getVisibleEdges()){
+        for(LayoutEdge<T> e: innerGraph.getEdges()){
             e.setOpacity(newOpacity);
         }
 
@@ -186,11 +186,11 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
                 // to change its size.
                 doubleClickedVertex.setExpanded(!isExpanded);
 
-                for (T v: innerGraph.getVisibleVertices()) {
+                for (T v: innerGraph.getVertices()) {
                     v.setVisible(newVisible);
                 }
 
-                for (LayoutEdge<T> e: innerGraph.getVisibleEdges()) {
+                for (LayoutEdge<T> e: innerGraph.getEdges()) {
                     e.setVisible(newVisible);
                 }
 

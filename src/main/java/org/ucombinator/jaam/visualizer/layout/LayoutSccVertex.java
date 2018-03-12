@@ -1,7 +1,6 @@
 package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
-import org.ucombinator.jaam.serializer.State;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 
 import java.util.HashSet;
@@ -19,7 +18,7 @@ public class LayoutSccVertex extends StateVertex {
 
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = false;
-        for(StateVertex v : this.getInnerGraph().getVisibleVertices()) {
+        for(StateVertex v : this.getVisibleInnerGraph().getVertices()) {
             found = v.searchByMethod(query, mainTab) || found;
         }
 
@@ -42,7 +41,7 @@ public class LayoutSccVertex extends StateVertex {
 
     public HashSet<String> getClassNames() {
         HashSet<String> classNames = new HashSet<>();
-        for(StateVertex v : this.getInnerGraph().getVertices()) {
+        for(StateVertex v : this.getImmutableInnerGraph().getVertices()) {
             classNames.addAll(v.getClassNames());
         }
         return classNames;

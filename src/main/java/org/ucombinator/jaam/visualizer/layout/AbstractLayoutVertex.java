@@ -11,7 +11,8 @@ import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.GUINodeStatus;
 
-public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>> extends AbstractVertex
+public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
+        extends AbstractVertex
         implements Comparable<AbstractLayoutVertex<T>>, GraphEntity
 {
     // Types of layout vertices
@@ -19,9 +20,11 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>> ex
         INSTRUCTION, LOOP, METHOD, CLASS, ROOT, SHRINK, SCC, TAINT_ADDRESS, TAINT_STMT
     }
 
-    // Because layout vertices are also HierarchicalGraphs they have two associated graphs:
-    private HierarchicalGraph<T> selfGraph = null; // The graph to which this vertex belongs
-    private HierarchicalGraph<T> innerGraph = new HierarchicalGraph<>(); // The graph contained inside this vertex
+    // Because our layout is hierarchical, the layout vertices have associated hierarchical graphs:
+    private VisibleHierarchicalGraph<T> visibleSelfGraph; // The graph to which this vertex belongs
+    private VisibleHierarchicalGraph<T> visibleInnerGraph; // The graph contained inside this vertex
+    private ImmutableHierarchicalGraph<T> immutableSelfGraph; // The graph to which this vertex belongs
+    private ImmutableHierarchicalGraph<T> immutableInnerGraph; // The graph contained inside this vertex
     private VertexType vertexType;
 
     // Graphic related fields
@@ -32,9 +35,9 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>> ex
     public static final double DEFAULT_HEIGHT = 10.0;
 
     protected Color color;
-    public static final Color highlightColor = Color.ORANGE;
-    public static final DropShadow highlightShadow = new DropShadow(10, Color.BLUE);
-    public static final DropShadow classHighlightShadow = new DropShadow(BlurType.ONE_PASS_BOX, Color.GREEN, 20,
+    private static final Color highlightColor = Color.ORANGE;
+    private static final DropShadow highlightShadow = new DropShadow(10, Color.BLUE);
+    private static final DropShadow classHighlightShadow = new DropShadow(BlurType.ONE_PASS_BOX, Color.GREEN, 20,
             0.5, 0, 0);
 
     private boolean isExpanded = true;
@@ -44,13 +47,17 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>> ex
     private boolean drawEdges;
     private boolean isSelected = false;
 
-    // TODO we should probably replace this with only a id version
     public AbstractLayoutVertex(String label, VertexType type, boolean drawEdges) {
         super(label);
         this.drawEdges = drawEdges;
 
         this.vertexType = type;
         this.setVisible(false);
+
+        this.visibleInnerGraph = new VisibleHierarchicalGraph(this);
+        this.visibleSelfGraph = new VisibleHierarchicalGraph(this);
+        this.immutableInnerGraph = new ImmutableHierarchicalGraph(this);
+        this.immutableSelfGraph = new ImmutableHierarchicalGraph(this);
     }
 
     public AbstractLayoutVertex(int id, String label, VertexType type){
@@ -59,6 +66,11 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>> ex
 
         this.vertexType = type;
         this.setVisible(false);
+
+        this.visibleInnerGraph = new VisibleHierarchicalGraph(this);
+        this.visibleSelfGraph = new VisibleHierarchicalGraph(this);
+        this.immutableInnerGraph = new ImmutableHierarchicalGraph(this);
+        this.immutableSelfGraph = new ImmutableHierarchicalGraph(this);
     }
 
     public void setX(double x) {
@@ -130,9 +142,9 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>> ex
     }
 
     // Override in base case, LayoutInstructionVertex
-    public int getMinInstructionLine() {
+    private int getMinInstructionLine() {
         int minIndex = Integer.MAX_VALUE;
-        for(AbstractLayoutVertex<T> v : this.getInnerGraph().getVisibleVertices()) {
+        for(AbstractLayoutVertex<T> v : this.immutableInnerGraph.getVertices()) {
             minIndex = Math.min(minIndex, v.getMinInstructionLine());
         }
 
@@ -143,31 +155,38 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>> ex
         return this.drawEdges;
     }
 
-    public HierarchicalGraph<T> getInnerGraph() {
-        return innerGraph;
+    public VisibleHierarchicalGraph<T> getVisibleInnerGraph() {
+        return this.visibleInnerGraph;
     }
 
-    public HierarchicalGraph<T> getSelfGraph() {
-        return selfGraph;
+    public VisibleHierarchicalGraph<T> getVisibleSelfGraph() {
+        return this.visibleSelfGraph;
     }
 
-    public void setInnerGraph(HierarchicalGraph<T> innerGraph) {
-        this.innerGraph = innerGraph;
+    public ImmutableHierarchicalGraph<T> getImmutableInnerGraph() {
+        return this.immutableInnerGraph;
+    }
+
+    public ImmutableHierarchicalGraph<T> getImmutableSelfGraph() {
+        return this.immutableSelfGraph;
+    }
+
+    public void setVisibleInnerGraph(VisibleHierarchicalGraph<T> innerGraph) {
+        this.visibleInnerGraph = innerGraph;
+    }
+
+    public void setImmutableInnerGraph(ImmutableHierarchicalGraph<T> innerGraph) {
+        this.immutableInnerGraph = innerGraph;
     }
 
     public void setHidden() {
         this.isHidden = true;
         this.setVisible(false);
-        this.getSelfGraph().setHidden((T)this); // TODO: Can we avoid the need for this type cast?
     }
 
-    // Warning: Setting a single vertex in a graph to be unhidden must change the entire graph to be unhidden.
     public void setUnhidden() {
         this.isHidden = false;
         this.setVisible(true);
-        if(this.getSelfGraph() != null) {
-            this.getSelfGraph().setUnhidden((T) this, false); // TODO: Can we avoid the need for this typecast?
-        }
     }
 
     public boolean isHidden() {
@@ -188,7 +207,7 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>> ex
     public boolean addTreeNodes(TreeItem<T> parentNode, MainTabController mainTab) {
         boolean addedNodes = false;
         TreeItem<T> newNode = new TreeItem<>((T)this);
-        for (T v : this.getInnerGraph().getVisibleVertices()) {
+        for (T v : this.visibleInnerGraph.getVertices()) { // TODO: Is this the right one?
             addedNodes |= v.addTreeNodes(newNode, mainTab);
         }
 
@@ -201,11 +220,11 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>> ex
     }
 
     public void resetGraphics() {
-        for(T v : this.getInnerGraph().getVisibleVertices()) {
+        for(T v : this.visibleInnerGraph.getVertices()) {
             v.resetGraphics();
         }
 
-        for(LayoutEdge<T> e : this.getInnerGraph().getVisibleEdges()) {
+        for(LayoutEdge<T> e : this.visibleInnerGraph.getEdges()) {
             e.resetGraphics();
         }
 
@@ -229,8 +248,8 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>> ex
         }
     }
 
-    public void setSelfGraph(HierarchicalGraph<T> graph) {
-        this.selfGraph = graph;
+    public void setVisibleSelfGraph(VisibleHierarchicalGraph<T> graph) {
+        this.visibleSelfGraph = graph;
     }
 
     public boolean isExpanded() {
@@ -252,18 +271,18 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>> ex
         return isEdgeVisible;
     }
 
-    public void setEdgeVisible(boolean isEdgeVisible) {
+    private void setEdgeVisible(boolean isEdgeVisible) {
         this.isEdgeVisible = isEdgeVisible;
     }
 
     public void setEdgeVisibility(boolean isEdgeVisible)
     {
         this.setEdgeVisible(isEdgeVisible);
-        for (LayoutEdge<T> e : this.innerGraph.getVisibleEdges()) {
+        for (LayoutEdge<T> e : this.visibleInnerGraph.getEdges()) {
             e.setVisible(isEdgeVisible);
         }
 
-        for (T v : this.innerGraph.getVisibleVertices()) {
+        for (T v : this.visibleInnerGraph.getVertices()) {
             v.setEdgeVisibility(isEdgeVisible);
         }
     }
@@ -273,14 +292,14 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>> ex
         this.setLabelVisible(isLabelVisible);
         this.getGraphics().setLabelVisible(isLabelVisible);
 
-        for (T v : this.innerGraph.getVisibleVertices()) {
+        for (T v : this.visibleInnerGraph.getVertices()) {
             v.setLabelVisibility(isLabelVisible);
         }
     }
 
     public void resetStrokeWidth(double factor) {
         this.getGraphics().setStrokeWidth(factor);
-        for (T v : this.getInnerGraph().getVisibleVertices()) {
+        for (T v : this.visibleInnerGraph.getVertices()) {
             v.resetStrokeWidth(factor);
         }
     }
@@ -298,32 +317,31 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>> ex
             this.setExpanded(isExpanded);
         }
 
-        for (T v : this.getInnerGraph().getVisibleVertices()) {
+        for (T v : this.visibleInnerGraph.getVertices()) {
             v.toggleNodesOfType(type, isExpanded);
         }
     }
 
 
     public void toggleEdges(boolean isEdgeVisible) {
-        for (LayoutEdge<T> e : this.getInnerGraph().getVisibleEdges()) {
+        for (LayoutEdge<T> e : this.visibleInnerGraph.getEdges()) {
             if(e.getGraphics() != null) {
                 e.getGraphics().setVisible(!e.getGraphics().isVisible() && isEdgeVisible);
             }
         }
 
-        for (T v : this.getInnerGraph().getVisibleVertices()) {
+        for (T v : this.visibleInnerGraph.getVertices()) {
             v.toggleEdges(isEdgeVisible);
         }
     }
 
-    public boolean isInnerGraphEmpty() {
-        return innerGraph.isEmpty();
+    public boolean isVisibleInnerGraphEmpty() {
+        return visibleInnerGraph.getVertices().isEmpty();
     }
 
     public void setClassHighlight(boolean isHighlighted)
     {
-        if(!isSelected)
-        {
+        if(!isSelected) {
             this.getGraphics().getRect().setEffect(isHighlighted ? classHighlightShadow : null);
         }
     }

@@ -2,8 +2,6 @@ package org.ucombinator.jaam.visualizer.layout;
 
 import java.util.*;
 
-import org.ucombinator.jaam.interpreter.State;
-import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.taint.*;
@@ -20,8 +18,7 @@ public class LayerFactory
         ArrayList<ArrayList<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
         System.out.println("Strongly connected components: " + sccs.size());
 
-        HierarchicalGraph<StateVertex> sccGraph = new HierarchicalGraph<>();
-        root.setInnerGraph(sccGraph);
+        ImmutableHierarchicalGraph<StateVertex> sccGraph = new ImmutableHierarchicalGraph<>(root);
 
         // Need these two maps for the second pass to avoid having to look around for everything
         HashMap<StateVertex, StateVertex> inputToInner = new HashMap<>();
@@ -31,12 +28,11 @@ public class LayerFactory
         for (ArrayList<Integer> scc : sccs)
         {
             if(scc.size() > 1) {
-                int sccId = sccGraph.getVisibleVertices().size();
+                int sccId = sccGraph.getVertices().size();
                 LayoutSccVertex sccVertex = new LayoutSccVertex(sccId, "SCC-" + sccId);
                 sccGraph.addVertex(sccVertex);
 
-                HierarchicalGraph<StateVertex> sccInner = new HierarchicalGraph<>();
-                sccVertex.setInnerGraph(sccInner);
+                ImmutableHierarchicalGraph<StateVertex> sccInner = new ImmutableHierarchicalGraph<>(sccVertex);
 
                 for (Integer id : scc) {
                     StateVertex v = graph.containsInputVertex(id);
@@ -67,7 +63,7 @@ public class LayerFactory
             StateVertex vSCC = innerToSCC.get(v);
 
             // TODO probably should have a better way
-            if(vSCC.getInnerGraph().getVisibleVertices().size() > 0) // Am a SCC node
+            if(vSCC.getImmutableInnerGraph().getVertices().size() > 0) // Am a SCC node
             {
                 for(StateVertex inputN: graph.getOutNeighbors(inputV))
                 {
@@ -76,7 +72,7 @@ public class LayerFactory
 
                     if(vSCC == nSCC)
                     {
-                        HierarchicalGraph<StateVertex> inner = vSCC.getInnerGraph();
+                        ImmutableHierarchicalGraph<StateVertex> inner = vSCC.getImmutableInnerGraph();
                         inner.addEdge(new LayoutEdge<>(v,n, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
                     }
                     else
@@ -107,8 +103,7 @@ public class LayerFactory
         ArrayList<ArrayList<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
         System.out.println("Strongly connected components: " + sccs.size());
 
-        HierarchicalGraph<TaintVertex> sccGraph = new HierarchicalGraph<>();
-        root.setInnerGraph(sccGraph);
+        ImmutableHierarchicalGraph<TaintVertex> sccGraph = new ImmutableHierarchicalGraph(root);
 
         // Need these two maps for the second pass to avoid having to look around for everything
         HashMap<TaintVertex, TaintVertex> inputToInner = new HashMap<>();
@@ -118,12 +113,11 @@ public class LayerFactory
         for (ArrayList<Integer> scc : sccs)
         {
             if(scc.size() > 1) {
-                int sccId = sccGraph.getVisibleVertices().size();
+                int sccId = sccGraph.getVertices().size();
                 TaintSccVertex sccVertex = new TaintSccVertex(sccId, "SCC-" + sccId);
                 sccGraph.addVertex(sccVertex);
 
-                HierarchicalGraph<TaintVertex> sccInner = new HierarchicalGraph<>();
-                sccVertex.setInnerGraph(sccInner);
+                ImmutableHierarchicalGraph<TaintVertex> sccInner = new ImmutableHierarchicalGraph(sccVertex);
 
                 for (Integer id : scc) {
                     TaintVertex v = graph.containsInputVertex(id);
@@ -154,7 +148,7 @@ public class LayerFactory
             TaintVertex vSCC = innerToSCC.get(v);
 
             // TODO probably should have a better way
-            if(vSCC.getInnerGraph().getVisibleVertices().size() > 0) // Am a SCC node
+            if(vSCC.getImmutableInnerGraph().getVertices().size() > 0) // Am a SCC node
             {
                 for(TaintVertex inputN: graph.getOutNeighbors(inputV))
                 {
@@ -163,7 +157,7 @@ public class LayerFactory
 
                     if(vSCC == nSCC)
                     {
-                        HierarchicalGraph<TaintVertex> inner = vSCC.getInnerGraph();
+                        ImmutableHierarchicalGraph<TaintVertex> inner = vSCC.getImmutableInnerGraph();
                         inner.addEdge(new LayoutEdge<>(v,n, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
                     }
                     else
@@ -187,8 +181,7 @@ public class LayerFactory
 
     public static void getGraphByClass(Graph<StateVertex> graph, LayoutRootVertex root) {
         HashMap<String, ArrayList<StateVertex>> classGroups = GraphUtils.groupByClass(graph);
-        HierarchicalGraph<StateVertex> classGraph = new HierarchicalGraph<>();
-        root.setInnerGraph(classGraph);
+        ImmutableHierarchicalGraph<StateVertex> classGraph = new ImmutableHierarchicalGraph(root);
 
         // Need this map for the second pass in which we add edges
         HashMap<StateVertex, LayoutClassVertex> innerToClass   = new HashMap<>();
@@ -197,8 +190,7 @@ public class LayerFactory
             LayoutClassVertex classVertex = new LayoutClassVertex(className);
             classGraph.addVertex(classVertex);
 
-            HierarchicalGraph<StateVertex> classInnerGraph = new HierarchicalGraph<>();
-            classVertex.setInnerGraph(classInnerGraph);
+            ImmutableHierarchicalGraph<StateVertex> classInnerGraph = new ImmutableHierarchicalGraph(classVertex);
 
             for (StateVertex innerVertex : classGroups.get(className)) {
                 classInnerGraph.addVertex(innerVertex);
@@ -212,10 +204,11 @@ public class LayerFactory
                     LayoutClassVertex classVertexV = innerToClass.get(v);
                     LayoutClassVertex classVertexW = innerToClass.get(w);
                     if(classVertexV.equals(classVertexW)) {
-                        classVertexV.getInnerGraph().addEdge(new LayoutEdge(v, w, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                        classVertexV.getImmutableInnerGraph().addEdge(
+                                new LayoutEdge<>(v, w, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
                     } else {
-                        classGraph.addEdge(new LayoutEdge(classVertexV, classVertexW,
-                                LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                        classGraph.addEdge(
+                                new LayoutEdge<>(classVertexV, classVertexW, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
                     }
                 }
             }

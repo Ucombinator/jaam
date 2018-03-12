@@ -3,8 +3,7 @@ package org.ucombinator.jaam.visualizer.gui;
 import javafx.animation.*;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
-import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.HierarchicalGraph;
+import org.ucombinator.jaam.visualizer.layout.VisibleHierarchicalGraph;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.layout.StateVertex;
 
@@ -14,16 +13,16 @@ public class TransitionFactory {
 
     public static ParallelTransition buildRecursiveTransition(StateVertex v) {
         ParallelTransition pt = new ParallelTransition();
-        HierarchicalGraph<StateVertex> innerGraph = v.getInnerGraph();
+        VisibleHierarchicalGraph<StateVertex> innerGraph = v.getVisibleInnerGraph();
 
         // Add transitions for current node and the edges it contains.
         pt.getChildren().add(TransitionFactory.buildVertexTransition(v));
-        for(LayoutEdge<StateVertex> e : innerGraph.getVisibleEdges()) {
+        for(LayoutEdge<StateVertex> e : innerGraph.getEdges()) {
             pt.getChildren().add(TransitionFactory.buildEdgeTransition(e));
         }
 
         // Recurse for its children in our graph hierarchy.
-        for(StateVertex v2 : innerGraph.getVisibleVertices()) {
+        for(StateVertex v2 : innerGraph.getVertices()) {
             pt.getChildren().add(TransitionFactory.buildRecursiveTransition(v2));
         }
 

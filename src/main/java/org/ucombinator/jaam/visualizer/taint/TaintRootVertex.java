@@ -4,6 +4,7 @@ import javafx.scene.paint.Color;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Set;
 
 public class TaintRootVertex extends TaintVertex {
 
@@ -12,6 +13,12 @@ public class TaintRootVertex extends TaintVertex {
     public TaintRootVertex() {
         super("root", VertexType.ROOT, false);
         this.color = defaultColor;
+    }
+
+    public TaintVertex getVisibleRoot(Set<TaintVertex> verticesToDraw) {
+        return this.getImmutableInnerGraph()
+                .constructVisibleGraph((TaintVertex v) -> verticesToDraw.contains(v))
+                .getRoot();
     }
 
     public HashSet<String> getMethodNames() {
@@ -25,6 +32,7 @@ public class TaintRootVertex extends TaintVertex {
 
     @Override
     public void getFields(Collection<TaintAddress> store) {
-        this.getInnerGraph().getVertices().stream().forEach(v -> v.getFields(store));
+        // TODO: Is this the right graph?
+        this.getImmutableInnerGraph().getVertices().stream().forEach(v -> v.getFields(store));
     }
 }

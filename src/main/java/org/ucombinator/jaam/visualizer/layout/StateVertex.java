@@ -1,10 +1,8 @@
 package org.ucombinator.jaam.visualizer.layout;
 
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
-import org.ucombinator.jaam.visualizer.graph.Instruction;
 
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 
 public abstract class StateVertex extends AbstractLayoutVertex<StateVertex> {
 
@@ -29,7 +27,7 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex> {
             System.out.println("Search successful: " + this.getId());
         }
 
-        for(StateVertex v : this.getInnerGraph().getVisibleVertices())
+        for(StateVertex v : this.getVisibleInnerGraph().getVertices())
             v.searchByIDRange(id1, id2, mainTab);
     }
 
@@ -41,12 +39,14 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex> {
         return ancestors;
     }
 
-    public void getAncestors(HashSet<StateVertex> ancestors)
+    private void getAncestors(HashSet<StateVertex> ancestors)
     {
        if(this instanceof LayoutRootVertex)
            return;
+
        ancestors.add(this);
-       this.getSelfGraph().getVisibleInNeighbors(this).stream().forEach(v -> {
+       // TODO: Is this the right graph?
+       this.getVisibleSelfGraph().getInNeighbors(this).stream().forEach(v -> {
            if (!ancestors.contains(v)) {
                v.getAncestors(ancestors);
            }
@@ -61,12 +61,14 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex> {
         return ancestors;
     }
 
-    public void getDescendants(HashSet<StateVertex> ancestors)
+    private void getDescendants(HashSet<StateVertex> ancestors)
     {
         if(this instanceof LayoutRootVertex)
             return;
+
         ancestors.add(this);
-        this.getSelfGraph().getVisibleOutNeighbors(this).stream().forEach(v -> {
+        // TODO: Is this the right graph?
+        this.getVisibleSelfGraph().getOutNeighbors(this).stream().forEach(v -> {
             if (!ancestors.contains(v)) {
                 v.getDescendants(ancestors);
             }
@@ -94,6 +96,5 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex> {
     }
 
     public abstract HashSet<String> getClassNames();
-
 
 }
