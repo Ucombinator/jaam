@@ -109,11 +109,13 @@ public class MainTabController {
 
         // Fix top level names. If a node is on the top level and a leaf due to compression
         // it's fullname is missing package information, this fixes it.
+        /*
         for (ClassTreeNode f : topLevel) {
             if (f.isLeaf()) {
-                f.fullName = f.name;// name is correct due to compressions step
+                f.name = f.shortName;// shortName is correct due to compressions step
             }
         }
+        */
 
         // Add the vertices
         addVerticesToClassTree(topLevel, panelRoot);
@@ -133,9 +135,11 @@ public class MainTabController {
             public void changed(ObservableValue<? extends TreeItem<ClassTreeNode>> observableValue,
                                 TreeItem<ClassTreeNode> oldValue, TreeItem<ClassTreeNode> newValue) {
 
-                setClassHighlight(vizPanelController.getPanelRoot(),
-                        oldValue != null ? oldValue.getValue().fullName : null,
-                        newValue.getValue().fullName);
+                if (oldValue != null) {
+                    setClassHighlight(oldValue.getValue().getChildVertices(), false);
+                }
+
+                setClassHighlight(newValue.getValue().getChildVertices(), true);
             }
         });
 
@@ -143,9 +147,7 @@ public class MainTabController {
             if (m.getClickCount() == 2) {
                 final TreeItem<ClassTreeNode> item = classTree.getSelectionModel().getSelectedItem();
 
-                if (item.isLeaf()) {
-                    codeViewController.displayCodeTab(item.getValue().fullName, null);
-                }
+                item.getValue().handleDoubleClick(codeViewController);
             }
         });
 
@@ -173,7 +175,7 @@ public class MainTabController {
 
     private PackageNode getTopLevel(ArrayList<PackageNode> topLevel, String className) {
         for (PackageNode n : topLevel) {
-            if (className.startsWith(n.name))
+            if (className.startsWith(n.shortName))
                 return n;
         }
 
@@ -414,6 +416,15 @@ public class MainTabController {
     // TODO: This should be done using event and event handling using FieldSelectEvent
     public void selectFieldInTaintGraph(String fullClassName, String fieldName) {
         taintPanelController.showFieldTaintGraph(fullClassName, fieldName);
+    }
+
+    private void setClassHighlight(HashSet<StateVertex> vertices, boolean value) {
+
+        for (StateVertex v : vertices) {
+            if (!v.isHidden()) {
+                v.setClassHighlight(value);
+            }
+        }
     }
 
     private void setClassHighlight(StateVertex v, String prevPrefix, String currPrefix)

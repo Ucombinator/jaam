@@ -1,6 +1,9 @@
 package org.ucombinator.jaam.util
 
 case class RegEx[State, AtomType]() {
+  type Identifier = String
+  type Index = Int
+
   sealed trait Exp
 
   case class Cat(x: List[Exp]) extends Exp

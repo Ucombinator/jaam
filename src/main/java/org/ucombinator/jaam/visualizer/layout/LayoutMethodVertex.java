@@ -90,6 +90,9 @@ public class LayoutMethodVertex extends StateVertex implements CodeEntity {
         return result;
     }
 
+    public Color getColor() {
+        return this.color;
+    }
     public void setDefaultColor(){
         this.color = defaultColor;
     }
