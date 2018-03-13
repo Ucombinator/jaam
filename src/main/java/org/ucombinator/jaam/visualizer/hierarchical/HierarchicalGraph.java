@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.hierarchical;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class HierarchicalGraph<T extends HierarchicalGraph.Vertex<T>, S extends HierarchicalGraph.Edge<T>> {
@@ -12,8 +13,6 @@ public class HierarchicalGraph<T extends HierarchicalGraph.Vertex<T>, S extends 
     }
 
     public interface Vertex<T> extends Comparable<T> {
-        // TODO: remove once ImmutableHierarchicalGraph.constructVisibleGraph takes a predicate
-        AbstractLayoutVertex.VertexType getType();
         String getLabel();
     }
 
@@ -35,6 +34,7 @@ public class HierarchicalGraph<T extends HierarchicalGraph.Vertex<T>, S extends 
         return root;
     }
 
+    // TODO: Maybe we want to set the vertex's self graph here, instead of having it be the responsibility of the caller?
     public void addVertex(T vertex) {
         this.vertices.add(vertex);
     }
@@ -70,9 +70,7 @@ public class HierarchicalGraph<T extends HierarchicalGraph.Vertex<T>, S extends 
                 .collect(Collectors.toSet());
     }
 
-    // TODO: rename to getRoots
-    // TODO: explain "vertex root" versus "graph root".  Maybe rename to "sources"? (and rename `isRoot`)
-    public List<T> getVisibleRoots() {
+    public List<T> getSources() {
         // TODO: delete this code so we just return an empty list instead
         if(this.vertices.size() == 0) {
             System.out.println("Error: No vertices!");
@@ -80,7 +78,7 @@ public class HierarchicalGraph<T extends HierarchicalGraph.Vertex<T>, S extends 
         }
 
         List<T> roots = this.vertices.stream()
-                .filter(this::isRoot)
+                .filter(this::isSource)
                 .collect(Collectors.toList());
 
         // If there is no root (as for a strongly connected component), choose just the first vertex
@@ -92,40 +90,40 @@ public class HierarchicalGraph<T extends HierarchicalGraph.Vertex<T>, S extends 
             if (!this.vertices.isEmpty()) {
                 Collections.sort(vertices);
                 roots.add(vertices.get(0));
+                System.out.println("Choosing arbitary first vertex as source: " + vertices.get(0));
             }
         }
 
         return roots;
     }
 
-    // A node is a root if it has no incoming edges from anything other than itself
-    private boolean isRoot(T v) {
+    // A node is a source if it has no incoming edges from anything other than itself
+    private boolean isSource(T v) {
         Set<T> inNeighbors = this.getInNeighbors(v);
         return (inNeighbors.size() == 0
                 || (inNeighbors.size() == 1 && inNeighbors.contains(v)));
     }
 
     // DFS for list of pruned leaf vertices of the given type
-    // TODO: pass a predicate instead of a type?
-    public HashSet<T> getVerticesToPrune(AbstractLayoutVertex.VertexType type) {
+    public HashSet<T> getVerticesToPrune(Predicate<T> p) {
         HashSet<T> toPrune = new HashSet<>();
         HashSet<T> searched = new HashSet<>();
 
-        for (T v : this.getVisibleRoots()) {
-            this.getVerticesToPrune(v, toPrune, searched, type);
+        for (T v : this.getSources()) {
+            this.getVerticesToPrune(v, toPrune, searched, p);
         }
 
         return toPrune;
     }
 
-    private void getVerticesToPrune(T v, HashSet<T> toPrune, HashSet<T> searched, AbstractLayoutVertex.VertexType type) {
+    private void getVerticesToPrune(T v, HashSet<T> toPrune, HashSet<T> searched, Predicate<T> p) {
         if (!searched.contains(v)) {
             searched.add(v);
             for (T w : this.getOutNeighbors(v)) {
-                this.getVerticesToPrune(w, toPrune, searched, type);
+                this.getVerticesToPrune(w, toPrune, searched, p);
             }
 
-            if (v.getType() == type && this.getOutNeighbors(v).stream().allMatch(w -> toPrune.contains(w))) {
+            if (p.test(v) && this.getOutNeighbors(v).stream().allMatch(w -> toPrune.contains(w))) {
                 toPrune.add(v);
             }
         }

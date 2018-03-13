@@ -31,46 +31,44 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex> {
             v.searchByIDRange(id1, id2, mainTab);
     }
 
-    public HashSet<StateVertex> getAncestors()
+    public HashSet<StateVertex> getVisibleAncestors()
     {
         HashSet<StateVertex> ancestors = new HashSet<>();
-        this.getAncestors(ancestors);
+        this.getVisibleAncestors(ancestors);
 
         return ancestors;
     }
 
-    private void getAncestors(HashSet<StateVertex> ancestors)
+    private void getVisibleAncestors(HashSet<StateVertex> ancestors)
     {
        if(this instanceof LayoutRootVertex)
            return;
 
        ancestors.add(this);
-       // TODO: Is this the right graph?
        this.getVisibleSelfGraph().getInNeighbors(this).stream().forEach(v -> {
            if (!ancestors.contains(v)) {
-               v.getAncestors(ancestors);
+               v.getVisibleAncestors(ancestors);
            }
        });
     }
 
-    public HashSet<StateVertex> getDescendants()
+    public HashSet<StateVertex> getVisibleDescendants()
     {
-        HashSet<StateVertex> ancestors = new HashSet<>();
-        this.getDescendants(ancestors);
+        HashSet<StateVertex> descendants = new HashSet<>();
+        this.getVisibleDescendants(descendants);
 
-        return ancestors;
+        return descendants;
     }
 
-    private void getDescendants(HashSet<StateVertex> ancestors)
+    private void getVisibleDescendants(HashSet<StateVertex> descendants)
     {
         if(this instanceof LayoutRootVertex)
             return;
 
-        ancestors.add(this);
-        // TODO: Is this the right graph?
+        descendants.add(this);
         this.getVisibleSelfGraph().getOutNeighbors(this).stream().forEach(v -> {
-            if (!ancestors.contains(v)) {
-                v.getDescendants(ancestors);
+            if (!descendants.contains(v)) {
+                v.getVisibleDescendants(descendants);
             }
         });
     }

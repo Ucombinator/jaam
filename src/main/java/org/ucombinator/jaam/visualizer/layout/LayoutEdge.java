@@ -200,8 +200,7 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>>
 
     public static <T extends AbstractLayoutVertex<T>> void redrawEdges(T v, boolean recurse)
     {
-        if(v.getVisibleSelfGraph() != null)
-        {
+        if(v.getVisibleSelfGraph() != null) {
             HierarchicalGraph<T, LayoutEdge<T>> selfGraph = v.getVisibleSelfGraph();
             for (LayoutEdge<T> e : selfGraph.getEdges())
             {

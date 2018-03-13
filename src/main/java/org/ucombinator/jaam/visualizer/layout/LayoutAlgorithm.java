@@ -148,7 +148,7 @@ public class LayoutAlgorithm
         }
 
         HierarchicalGraph<T, LayoutEdge<T>> graph = parentVertex.getVisibleInnerGraph();
-        List<T> roots = graph.getVisibleRoots();
+        List<T> roots = graph.getSources();
         if(roots == null || roots.isEmpty()) {
             return;
         }
@@ -191,7 +191,7 @@ public class LayoutAlgorithm
         Queue<T> vertexQueue = new ArrayDeque<>();
         HashSet<T> seen = new HashSet<>();
 
-        List<T> roots = graph.getVisibleRoots();
+        List<T> roots = graph.getSources();
         if(roots == null || roots.isEmpty()) {
             return childrenMap; // No vertices!
         }

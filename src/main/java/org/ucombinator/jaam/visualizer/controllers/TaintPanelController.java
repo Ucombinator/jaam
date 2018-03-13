@@ -27,8 +27,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
     @FXML private final ScrollPane scrollPane = null; // Initialized by Controllers.loadFXML()
     @FXML private final Pane taintPanel = null; // Initialized by Controllers.loadFXML()
 
-    private TaintRootVertex immutableRoot;
-    private TaintVertex panelRoot;
+    private TaintRootVertex panelRoot;
     private Group graphContentGroup;
 
     private HashMap<String, TaintAddress> fieldVertices;
@@ -42,16 +41,14 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         this.taintPanel.getChildren().add(graphContentGroup);
         graphContentGroup.addEventFilter(SelectEvent.TAINT_VERTEX_SELECTED, this);
 
-        this.immutableRoot = new TaintRootVertex();
+        // Set up graph, but don't draw the entire thing yet.
         this.panelRoot = new TaintRootVertex();
-
-        // Set up graph, but avoid drawing the entire thing
-        LayerFactory.getLayeredGraph(graph, this.immutableRoot);
+        LayerFactory.getLayeredGraph(graph, this.panelRoot);
         fillFieldDictionary();
     }
 
     public void drawGraph(HashSet<TaintVertex> verticesToDraw) {
-        this.panelRoot = this.immutableRoot.getVisibleRoot(verticesToDraw);
+        this.panelRoot.constructVisibleGraph(verticesToDraw);
         LayoutAlgorithm.layout(panelRoot);
         panelRoot.setVisible(false);
         drawNodes(null, panelRoot);
@@ -166,7 +163,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
 
     private HashSet<TaintVertex> findAddressesByMethods(HashSet<String> methodNames) {
         HashSet<TaintVertex> results = new HashSet<>();
-        this.immutableRoot.searchByMethodNames(methodNames, results); // TODO: This step is a little inefficient.
+        this.panelRoot.searchByMethodNames(methodNames, results); // TODO: This step is a little inefficient.
         return results;
     }
 
@@ -267,7 +264,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
 
         ArrayList<TaintAddress> allFields = new ArrayList<>();
 
-        this.immutableRoot.getFields(allFields);
+        this.panelRoot.getFields(allFields);
 
         allFields.forEach(v -> {
             fieldVertices.put(v.getFieldId(), v);

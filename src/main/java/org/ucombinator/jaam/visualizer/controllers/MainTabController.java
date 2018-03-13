@@ -57,15 +57,15 @@ public class MainTabController {
     public MainTabController(File file, Graph<StateVertex> graph, List<CompilationUnit> compilationUnits, TaintGraph taintGraph, Set<SootClass> sootClasses) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
 
-        this.tab = new Tab(file.getName(), this.root);
-        this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));
-        Controllers.put(this.tab, this);
-
         this.vizPanelController = new VizPanelController(graph);
         this.vizPane.setCenter(this.vizPanelController.root);
 
         this.taintPanelController = new TaintPanelController(taintGraph);
         this.taintPane.setCenter(this.taintPanelController.root);
+
+        this.tab = new Tab(file.getName(), this.root);
+        this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));
+        Controllers.put(this.tab, this);
 
         this.codeViewController = new CodeViewController(compilationUnits, sootClasses);
         this.leftPane.getChildren().add(this.codeViewController.codeTabs);
@@ -82,25 +82,25 @@ public class MainTabController {
         this.hidden.addListener(this.vizPanelController);
     }
 
-    private void buildClassTree(HashSet<String> classNames, StateVertex panelRoot)
+    private void buildClassTree(HashSet<String> classNames, LayoutRootVertex panelRoot)
     {
         this.classTree.setCellFactory(CheckBoxTreeCell.forTreeView());
 
         PackageNode root = new PackageNode("root", null);
-        ArrayList<PackageNode> topLevel = new ArrayList<PackageNode>(root.subPackages);
 
-        for(String c : classNames)
-        {
+        for (String c : classNames) {
             String[] split = c.split("\\.");
 
             PackageNode current = root;
-            for (int i = 0; i < split.length-1; ++i) {
+            for (int i = 0; i < split.length - 1; i++) {
                 current = current.addPackageIfAbsent(split[i]);
             }
 
-            String className = split[split.length-1];
+            String className = split[split.length - 1];
             current.addClassIfAbsent(className);
         }
+
+        ArrayList<PackageNode> topLevel = new ArrayList<>(root.subPackages);
 
         // Compression Step
         topLevel.forEach(PackageNode::compress);
@@ -395,8 +395,8 @@ public class MainTabController {
     {
         HashSet<StateVertex> keep = new HashSet<>();
 
-        this.vizHighlighted.forEach(v -> keep.addAll(v.getAncestors()) );
-        this.vizHighlighted.forEach(v -> keep.addAll(v.getDescendants()) );
+        this.vizHighlighted.forEach(v -> keep.addAll(v.getVisibleAncestors()) );
+        this.vizHighlighted.forEach(v -> keep.addAll(v.getVisibleDescendants()) );
 
         HashSet<StateVertex> toHide = new HashSet<>();
         this.vizPanelController.getPanelRoot().getVisibleInnerGraph().getVertices().forEach(v -> {

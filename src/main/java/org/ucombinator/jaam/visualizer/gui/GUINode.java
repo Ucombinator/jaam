@@ -112,7 +112,6 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
 
     private void handleOnMouseExited(MouseEvent event) {
         event.consume();
-
         HierarchicalGraph<T, LayoutEdge<T>> selfGraph = vertex.getVisibleSelfGraph();
         if (selfGraph != null) {
             for (LayoutEdge<T> e : selfGraph.getEdges()) {
