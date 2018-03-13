@@ -17,6 +17,7 @@ import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 

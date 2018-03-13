@@ -3,7 +3,7 @@ package org.ucombinator.jaam.visualizer.gui;
 import javafx.animation.*;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
-import org.ucombinator.jaam.visualizer.layout.HierarchicalGraph;
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.layout.StateVertex;
 

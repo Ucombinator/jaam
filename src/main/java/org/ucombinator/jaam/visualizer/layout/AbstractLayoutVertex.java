@@ -10,6 +10,10 @@ import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.GUINodeStatus;
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalVertex;
+import org.ucombinator.jaam.visualizer.hierarchical.ImmutableHierarchicalGraph;
+import org.ucombinator.jaam.visualizer.hierarchical.VisibleHierarchicalGraph;
 
 public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         extends AbstractVertex

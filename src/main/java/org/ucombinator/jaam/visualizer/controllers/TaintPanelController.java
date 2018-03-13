@@ -10,6 +10,7 @@ import javafx.scene.layout.Pane;
 import org.ucombinator.jaam.tools.taint3.Address;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.taint.*;

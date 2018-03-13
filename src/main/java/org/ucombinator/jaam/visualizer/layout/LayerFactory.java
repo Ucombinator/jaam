@@ -4,6 +4,8 @@ import java.util.*;
 
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
+import org.ucombinator.jaam.visualizer.hierarchical.ImmutableHierarchicalGraph;
 import org.ucombinator.jaam.visualizer.taint.*;
 
 public class LayerFactory

@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.visualizer.layout;
+package org.ucombinator.jaam.visualizer.hierarchical;
 
 public interface HierarchicalEdge<T> {
     T getSrc();

@@ -1,7 +1,7 @@
 package org.ucombinator.jaam.visualizer.taint;
 
 import javafx.scene.paint.Color;
-import org.ucombinator.jaam.visualizer.layout.ImmutableHierarchicalGraph;
+import org.ucombinator.jaam.visualizer.hierarchical.ImmutableHierarchicalGraph;
 
 import java.util.Collection;
 import java.util.HashSet;

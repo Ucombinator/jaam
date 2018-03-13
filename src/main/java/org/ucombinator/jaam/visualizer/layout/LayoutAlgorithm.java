@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
 import org.ucombinator.jaam.visualizer.taint.TaintSccVertex;
 
 import java.util.*;

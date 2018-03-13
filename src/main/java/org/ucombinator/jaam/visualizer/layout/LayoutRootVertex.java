@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
+import org.ucombinator.jaam.visualizer.hierarchical.ImmutableHierarchicalGraph;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;

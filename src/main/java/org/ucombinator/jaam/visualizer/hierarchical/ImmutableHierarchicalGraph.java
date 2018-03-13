@@ -1,4 +1,8 @@
-package org.ucombinator.jaam.visualizer.layout;
+package org.ucombinator.jaam.visualizer.hierarchical;
+
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 
 import java.util.HashSet;
 import java.util.LinkedList;
