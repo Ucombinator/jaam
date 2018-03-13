@@ -5,11 +5,10 @@ import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
-import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalEdge;
 import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
 
 public class LayoutEdge<T extends AbstractLayoutVertex<T>>
-        implements HierarchicalEdge<T>, Comparable<LayoutEdge<T>>, GraphEntity
+        implements HierarchicalGraph.Edge<T>, Comparable<LayoutEdge<T>>, GraphEntity
 {
     private static final Color highlightColor = Color.ORANGERED;
     private static final Color downwardColor = Color.BLACK;

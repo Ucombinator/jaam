@@ -11,13 +11,12 @@ import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.GUINodeStatus;
 import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
-import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.hierarchical.ImmutableHierarchicalGraph;
 import org.ucombinator.jaam.visualizer.hierarchical.VisibleHierarchicalGraph;
 
 public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         extends AbstractVertex
-        implements HierarchicalVertex<T>, GraphEntity
+        implements HierarchicalGraph.Vertex<T>, GraphEntity
 {
     // Types of layout vertices
     public enum VertexType {
