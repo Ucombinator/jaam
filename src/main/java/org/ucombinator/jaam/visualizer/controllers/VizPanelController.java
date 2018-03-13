@@ -39,7 +39,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
     private Group graphContentGroup;
     private LayoutRootVertex immutableRoot;
     private StateVertex panelRoot;
-    private Graph loopGraph;
+    private Graph<StateVertex> loopGraph;
 
     private boolean inBatchMode = false;
     private boolean changedWhileInBatchMode = false;

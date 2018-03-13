@@ -99,6 +99,7 @@ public class Controllers {
 
     /** Class used to raise errors when the `FXMLLoader` is looking for a member but does not find it */
     private static class MemberHashMap<K, V> extends HashMap<K, V> {
+        private static final long serialVersionUID = -1369438506130293169L;
         @Override public V get(Object key) {
             V v = super.get(key);
             if (v != null) { return v; }

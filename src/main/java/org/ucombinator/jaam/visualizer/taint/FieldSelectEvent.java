@@ -3,11 +3,9 @@ package org.ucombinator.jaam.visualizer.taint;
 import javafx.event.Event;
 import javafx.event.EventTarget;
 import javafx.event.EventType;
-import org.ucombinator.jaam.visualizer.gui.GUINode;
-import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.StateVertex;
 
 public class FieldSelectEvent extends Event {
+    private static final long serialVersionUID = 3351716759550629777L;
 
     private String className;
     private String fieldName;

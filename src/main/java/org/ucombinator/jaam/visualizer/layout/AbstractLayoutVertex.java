@@ -54,10 +54,10 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         this.vertexType = type;
         this.setVisible(false);
 
-        this.visibleInnerGraph = new VisibleHierarchicalGraph(this);
-        this.visibleSelfGraph = new VisibleHierarchicalGraph(this);
-        this.immutableInnerGraph = new ImmutableHierarchicalGraph(this);
-        this.immutableSelfGraph = new ImmutableHierarchicalGraph(this);
+        this.visibleInnerGraph = new VisibleHierarchicalGraph<>((T)this);
+        this.visibleSelfGraph = new VisibleHierarchicalGraph<>((T)this);
+        this.immutableInnerGraph = new ImmutableHierarchicalGraph<>((T)this);
+        this.immutableSelfGraph = new ImmutableHierarchicalGraph<>((T)this);
     }
 
     public AbstractLayoutVertex(int id, String label, VertexType type){
@@ -67,10 +67,10 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         this.vertexType = type;
         this.setVisible(false);
 
-        this.visibleInnerGraph = new VisibleHierarchicalGraph(this);
-        this.visibleSelfGraph = new VisibleHierarchicalGraph(this);
-        this.immutableInnerGraph = new ImmutableHierarchicalGraph(this);
-        this.immutableSelfGraph = new ImmutableHierarchicalGraph(this);
+        this.visibleInnerGraph = new VisibleHierarchicalGraph<>((T)this);
+        this.visibleSelfGraph = new VisibleHierarchicalGraph<>((T)this);
+        this.immutableInnerGraph = new ImmutableHierarchicalGraph<>((T)this);
+        this.immutableSelfGraph = new ImmutableHierarchicalGraph<>((T)this);
     }
 
     public void setX(double x) {

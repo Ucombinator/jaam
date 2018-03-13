@@ -88,12 +88,12 @@ public class LayoutAlgorithm
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
 
-        doLayout(parentVertex, childrenMap, (Comparator<T>) classComp);
+        doLayout(parentVertex, childrenMap, new ClassComp<>());
     }
 
-    private static Comparator<AbstractLayoutVertex<?>> classComp = new Comparator<AbstractLayoutVertex<?>>() {
+    private static class ClassComp<T extends AbstractLayoutVertex<T>> implements Comparator<T> {
         @Override
-        public int compare(AbstractLayoutVertex<?> o1, AbstractLayoutVertex<?> o2) {
+        public int compare(T o1, T o2) {
             if(o1 instanceof LayoutSccVertex || o1 instanceof TaintSccVertex)
             {
                 if(o2 instanceof LayoutSccVertex || o2 instanceof TaintSccVertex)
@@ -128,7 +128,7 @@ public class LayoutAlgorithm
 
             return Integer.compare(o1.getId(), o2.getId());
         }
-    };
+    }
 
     private static <T extends AbstractLayoutVertex<T>> void doLayout(T parentVertex,
                                  HashMap<T, ArrayList<T>> childrenMap)
