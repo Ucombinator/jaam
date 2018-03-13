@@ -87,7 +87,7 @@ object Soot {
 
   def getBodyUnsafe(m: SootMethod): Body = {
     try { getBody(m) }
-    catch { case _ => null }
+    catch { case _: Throwable => null }
   }
 
   def getBodyGraph(m: SootMethod): (Stmt, Graph[Stmt, DefaultEdge]) = {

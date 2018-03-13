@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraphUtils;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -16,10 +17,8 @@ public class LayoutRootVertex extends StateVertex {
         this.color = defaultColor;
     }
 
-    public StateVertex getVisibleGraphExcept(Set<StateVertex> verticesToHide) {
-        return this.getImmutableInnerGraph()
-                .constructVisibleGraph((StateVertex v) -> !verticesToHide.contains(v))
-                .getRoot();
+    public void constructVisibleGraphExcept(Set<StateVertex> verticesToHide) {
+        HierarchicalGraphUtils.constructVisibleGraph(this, (StateVertex v) -> !verticesToHide.contains(v));
     }
 
     public String getRightPanelContent() {

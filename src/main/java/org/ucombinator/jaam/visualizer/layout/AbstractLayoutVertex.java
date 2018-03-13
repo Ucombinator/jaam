@@ -10,10 +10,11 @@ import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.graph.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.GUINodeStatus;
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
 
 public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         extends AbstractVertex
-        implements Comparable<AbstractLayoutVertex<T>>, GraphEntity
+        implements HierarchicalGraph.Vertex<T>, GraphEntity
 {
     // Types of layout vertices
     public enum VertexType {
@@ -21,10 +22,10 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
     }
 
     // Because our layout is hierarchical, the layout vertices have associated hierarchical graphs:
-    private VisibleHierarchicalGraph<T> visibleSelfGraph; // The graph to which this vertex belongs
-    private VisibleHierarchicalGraph<T> visibleInnerGraph; // The graph contained inside this vertex
-    private ImmutableHierarchicalGraph<T> immutableSelfGraph; // The graph to which this vertex belongs
-    private ImmutableHierarchicalGraph<T> immutableInnerGraph; // The graph contained inside this vertex
+    private HierarchicalGraph<T, LayoutEdge<T>> visibleSelfGraph; // The graph to which this vertex belongs
+    private HierarchicalGraph<T, LayoutEdge<T>> visibleInnerGraph; // The graph contained inside this vertex
+    private HierarchicalGraph<T, LayoutEdge<T>> immutableSelfGraph; // The graph to which this vertex belongs
+    private HierarchicalGraph<T, LayoutEdge<T>> immutableInnerGraph; // The graph contained inside this vertex
     private VertexType vertexType;
 
     // Graphic related fields
@@ -54,10 +55,10 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         this.vertexType = type;
         this.setVisible(false);
 
-        this.visibleInnerGraph = new VisibleHierarchicalGraph(this);
-        this.visibleSelfGraph = new VisibleHierarchicalGraph(this);
-        this.immutableInnerGraph = new ImmutableHierarchicalGraph(this);
-        this.immutableSelfGraph = new ImmutableHierarchicalGraph(this);
+        this.visibleInnerGraph = new HierarchicalGraph<>((T) this);
+        this.visibleSelfGraph = new HierarchicalGraph<>((T) this);
+        this.immutableInnerGraph = new HierarchicalGraph<>((T) this);
+        this.immutableSelfGraph = new HierarchicalGraph<>((T) this);
     }
 
     public AbstractLayoutVertex(int id, String label, VertexType type){
@@ -67,10 +68,10 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         this.vertexType = type;
         this.setVisible(false);
 
-        this.visibleInnerGraph = new VisibleHierarchicalGraph(this);
-        this.visibleSelfGraph = new VisibleHierarchicalGraph(this);
-        this.immutableInnerGraph = new ImmutableHierarchicalGraph(this);
-        this.immutableSelfGraph = new ImmutableHierarchicalGraph(this);
+        this.visibleInnerGraph = new HierarchicalGraph<>((T) this);
+        this.visibleSelfGraph = new HierarchicalGraph<>((T) this);
+        this.immutableInnerGraph = new HierarchicalGraph<>((T) this);
+        this.immutableSelfGraph = new HierarchicalGraph<>((T) this);
     }
 
     public void setX(double x) {
@@ -129,7 +130,7 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         this.graphics = graphics;
     }
 
-    public int compareTo(AbstractLayoutVertex<T> v) {
+    public int compareTo(T v) {
         return Integer.compare(this.getMinInstructionLine(), v.getMinInstructionLine());
     }
 
@@ -142,7 +143,7 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
     }
 
     // Override in base case, LayoutInstructionVertex
-    private int getMinInstructionLine() {
+    protected int getMinInstructionLine() {
         int minIndex = Integer.MAX_VALUE;
         for(AbstractLayoutVertex<T> v : this.immutableInnerGraph.getVertices()) {
             minIndex = Math.min(minIndex, v.getMinInstructionLine());
@@ -155,27 +156,35 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         return this.drawEdges;
     }
 
-    public VisibleHierarchicalGraph<T> getVisibleInnerGraph() {
+    public HierarchicalGraph<T, LayoutEdge<T>> getVisibleInnerGraph() {
         return this.visibleInnerGraph;
     }
 
-    public VisibleHierarchicalGraph<T> getVisibleSelfGraph() {
+    public HierarchicalGraph<T, LayoutEdge<T>> getVisibleSelfGraph() {
         return this.visibleSelfGraph;
     }
 
-    public ImmutableHierarchicalGraph<T> getImmutableInnerGraph() {
+    public HierarchicalGraph<T, LayoutEdge<T>> getImmutableInnerGraph() {
         return this.immutableInnerGraph;
     }
 
-    public ImmutableHierarchicalGraph<T> getImmutableSelfGraph() {
+    public HierarchicalGraph<T, LayoutEdge<T>> getImmutableSelfGraph() {
         return this.immutableSelfGraph;
     }
 
-    public void setVisibleInnerGraph(VisibleHierarchicalGraph<T> innerGraph) {
+    public void setVisibleSelfGraph(HierarchicalGraph<T, LayoutEdge<T>> graph) {
+        this.visibleSelfGraph = graph;
+    }
+
+    public void setVisibleInnerGraph(HierarchicalGraph<T, LayoutEdge<T>> innerGraph) {
         this.visibleInnerGraph = innerGraph;
     }
 
-    public void setImmutableInnerGraph(ImmutableHierarchicalGraph<T> innerGraph) {
+    public void setImmutableSelfGraph(HierarchicalGraph<T, LayoutEdge<T>> graph) {
+        this.immutableSelfGraph = graph;
+    }
+
+    public void setImmutableInnerGraph(HierarchicalGraph<T, LayoutEdge<T>> innerGraph) {
         this.immutableInnerGraph = innerGraph;
     }
 
@@ -246,10 +255,6 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         } else {
             this.getGraphics().getRect().setEffect(null);
         }
-    }
-
-    public void setVisibleSelfGraph(VisibleHierarchicalGraph<T> graph) {
-        this.visibleSelfGraph = graph;
     }
 
     public boolean isExpanded() {

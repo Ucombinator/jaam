@@ -159,6 +159,9 @@ public class MainPaneController {
         // We actually create the edges here
         for (LoopEdge edge : loopEdges) {
             graph.addEdge(edge.src().id(), edge.dst().id());
+            if(edge.src().id() == edge.dst().id()) {
+                System.out.println("Found self loop in input: " + edge.src());
+            }
         }
 
         // We actually create the edges here

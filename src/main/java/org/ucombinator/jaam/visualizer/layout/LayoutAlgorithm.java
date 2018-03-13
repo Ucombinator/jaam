@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
 import org.ucombinator.jaam.visualizer.taint.TaintSccVertex;
 
 import java.util.*;
@@ -22,16 +23,16 @@ public class LayoutAlgorithm
         parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
         parentVertex.setX(0);
         parentVertex.setY(0);
-        VisibleHierarchicalGraph<T> innerGraph = parentVertex.getVisibleInnerGraph();
+        HierarchicalGraph<T, LayoutEdge<T>> innerGraph = parentVertex.getVisibleInnerGraph();
         for (T v : innerGraph.getVertices()) {
             initializeSizes(v);
         }
     }
 
     private static <T extends AbstractLayoutVertex<T>> void expandSubGraphs(T parentVertex) {
-        VisibleHierarchicalGraph<T> parentInnerGraph = parentVertex.getVisibleInnerGraph();
+        HierarchicalGraph<T, LayoutEdge<T>> parentInnerGraph = parentVertex.getVisibleInnerGraph();
         for(T v: parentInnerGraph.getVertices()) {
-            VisibleHierarchicalGraph<T> childInnerGraph = v.getVisibleInnerGraph();
+            HierarchicalGraph<T, LayoutEdge<T>> childInnerGraph = v.getVisibleInnerGraph();
             if (childInnerGraph.getVertices().size() != 0)
             {
                 // Layout the inner graphs of each node and assign width W and height H to each node
@@ -46,7 +47,7 @@ public class LayoutAlgorithm
     }
 
     private static <T extends AbstractLayoutVertex<T>> void dfsLayout(T parentVertex) {
-        VisibleHierarchicalGraph<T> graph = parentVertex.getVisibleInnerGraph();
+        HierarchicalGraph<T, LayoutEdge<T>> graph = parentVertex.getVisibleInnerGraph();
 
         expandSubGraphs(parentVertex);
 
@@ -65,7 +66,7 @@ public class LayoutAlgorithm
     }
 
     private static <T extends AbstractLayoutVertex<T>> void bfsLayout(T parentVertex) {
-        VisibleHierarchicalGraph<T> graph = parentVertex.getVisibleInnerGraph();
+        HierarchicalGraph<T, LayoutEdge<T>> graph = parentVertex.getVisibleInnerGraph();
 
         // Interior graphs use the DFS Layout
         expandSubGraphs(parentVertex);
@@ -88,12 +89,12 @@ public class LayoutAlgorithm
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
 
-        doLayout(parentVertex, childrenMap, (Comparator<T>) classComp);
+        doLayout(parentVertex, childrenMap, new ClassComp<>());
     }
 
-    private static Comparator<AbstractLayoutVertex<?>> classComp = new Comparator<AbstractLayoutVertex<?>>() {
+    private static class ClassComp<T extends AbstractLayoutVertex<T>> implements Comparator<T> {
         @Override
-        public int compare(AbstractLayoutVertex<?> o1, AbstractLayoutVertex<?> o2) {
+        public int compare(T o1, T o2) {
             if(o1 instanceof LayoutSccVertex || o1 instanceof TaintSccVertex)
             {
                 if(o2 instanceof LayoutSccVertex || o2 instanceof TaintSccVertex)
@@ -128,7 +129,7 @@ public class LayoutAlgorithm
 
             return Integer.compare(o1.getId(), o2.getId());
         }
-    };
+    }
 
     private static <T extends AbstractLayoutVertex<T>> void doLayout(T parentVertex,
                                  HashMap<T, ArrayList<T>> childrenMap)
@@ -146,8 +147,8 @@ public class LayoutAlgorithm
             }
         }
 
-        VisibleHierarchicalGraph<T> graph = parentVertex.getVisibleInnerGraph();
-        List<T> roots = graph.getVisibleRoots();
+        HierarchicalGraph<T, LayoutEdge<T>> graph = parentVertex.getVisibleInnerGraph();
+        List<T> roots = graph.getSources();
         if(roots == null || roots.isEmpty()) {
             return;
         }
@@ -183,14 +184,14 @@ public class LayoutAlgorithm
      * Every node appears as a child as deep as possible in the tree (ties broken arbitrarily)
      */
     private static <T extends AbstractLayoutVertex<T>> HashMap<T, ArrayList<T>> maxDepthChildren(
-            HierarchicalGraph<T> graph)
+            HierarchicalGraph<T, LayoutEdge<T>> graph)
     {
         HashMap<T, ArrayList<T>> childrenMap = new HashMap<>();
         HashMap<T, Integer> vertexCounters = new HashMap<>();
         Queue<T> vertexQueue = new ArrayDeque<>();
         HashSet<T> seen = new HashSet<>();
 
-        List<T> roots = graph.getVisibleRoots();
+        List<T> roots = graph.getSources();
         if(roots == null || roots.isEmpty()) {
             return childrenMap; // No vertices!
         }

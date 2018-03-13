@@ -5,9 +5,10 @@ import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
 
 public class LayoutEdge<T extends AbstractLayoutVertex<T>>
-        implements Comparable<LayoutEdge<T>>, GraphEntity
+        implements HierarchicalGraph.Edge<T>, Comparable<LayoutEdge<T>>, GraphEntity
 {
     private static final Color highlightColor = Color.ORANGERED;
     private static final Color downwardColor = Color.BLACK;
@@ -199,9 +200,8 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>>
 
     public static <T extends AbstractLayoutVertex<T>> void redrawEdges(T v, boolean recurse)
     {
-        if(v.getVisibleSelfGraph() != null)
-        {
-            VisibleHierarchicalGraph<T> selfGraph = v.getVisibleSelfGraph();
+        if(v.getVisibleSelfGraph() != null) {
+            HierarchicalGraph<T, LayoutEdge<T>> selfGraph = v.getVisibleSelfGraph();
             for (LayoutEdge<T> e : selfGraph.getEdges())
             {
                 if (v.getId() == e.src.getId() || v.getId() == e.dest.getId())
@@ -216,7 +216,7 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>>
         }
 
         if (recurse) {
-            VisibleHierarchicalGraph<T> innerGraph = v.getVisibleInnerGraph();
+            HierarchicalGraph<T, LayoutEdge<T>> innerGraph = v.getVisibleInnerGraph();
             for (T w : innerGraph.getVertices()) {
                 redrawEdges(w, recurse);
             }

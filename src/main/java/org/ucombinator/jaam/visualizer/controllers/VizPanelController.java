@@ -17,6 +17,7 @@ import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 
@@ -37,9 +38,8 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
 
     // TODO: should this stuff be moved to a model class?
     private Group graphContentGroup;
-    private LayoutRootVertex immutableRoot;
-    private StateVertex panelRoot;
-    private Graph loopGraph;
+    private LayoutRootVertex panelRoot;
+    private Graph<StateVertex> loopGraph;
 
     private boolean inBatchMode = false;
     private boolean changedWhileInBatchMode = false;
@@ -62,10 +62,8 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
 
         this.scrollPane.addEventFilter(ScrollEvent.SCROLL, this::scrollAction);
         this.loopGraph = graph;
-        this.immutableRoot = new LayoutRootVertex();
-        LayerFactory.getLayeredGraph(this.loopGraph, this.immutableRoot);
-
         this.panelRoot = new LayoutRootVertex();
+        LayerFactory.getLayeredGraph(this.loopGraph, this.panelRoot);
         this.drawGraph();
     }
 
@@ -124,7 +122,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         }
     }
 
-    public StateVertex getPanelRoot() {
+    public LayoutRootVertex getPanelRoot() {
         return this.panelRoot;
     }
 
@@ -169,7 +167,11 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         // It would take extra work to be able to access the hidden set at this point. That's because the
         // tab that this is created inside of hasn't been added to the tabPane yet, so calling
         // Main.getSelectedMainTabController() returns null.
-        this.panelRoot = this.immutableRoot.getVisibleGraphExcept(new HashSet<>());
+        this.panelRoot.constructVisibleGraphExcept(new HashSet<>());
+        System.out.println("Inner vertices for immutable graph: " + this.panelRoot.getImmutableInnerGraph().getVertices().size());
+        System.out.println("Inner vertices for visible graph: " + this.panelRoot.getVisibleInnerGraph().getVertices().size());
+        System.out.println("Inner edges for immutable graph: " + this.panelRoot.getImmutableInnerGraph().getEdges().size());
+        System.out.println("Inner edges for visible graph: " + this.panelRoot.getVisibleInnerGraph().getEdges().size());
         LayoutAlgorithm.layout(this.panelRoot);
         drawNodes(null, panelRoot);
         drawEdges(panelRoot);
@@ -179,7 +181,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
 
     public void redrawGraph() {
         panelRoot.setVisible(false);
-        this.panelRoot = this.immutableRoot.getVisibleGraphExcept(
+        this.panelRoot.constructVisibleGraphExcept(
                 Main.getSelectedMainTabController().getHidden());
         LayoutAlgorithm.layout(this.panelRoot);
         drawNodes(null, panelRoot);
@@ -216,7 +218,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         double height = v.getHeight();
         node.setTranslateLocation(translateX, translateY, width, height);
 
-        VisibleHierarchicalGraph<StateVertex> innerGraph = v.getVisibleInnerGraph();
+        HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> innerGraph = v.getVisibleInnerGraph();
         for (StateVertex child : innerGraph.getVertices()) {
             if (v.isExpanded()) {
                 drawNodes(node, child);
@@ -227,7 +229,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
     private void drawEdges(StateVertex v)
     {
         if(v.isExpanded()) {
-            VisibleHierarchicalGraph<StateVertex> innerGraph = v.getVisibleInnerGraph();
+            HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> innerGraph = v.getVisibleInnerGraph();
             for (LayoutEdge<StateVertex> e : innerGraph.getEdges()) {
                 e.setVisible(v.isEdgeVisible());
                 e.draw();
@@ -240,7 +242,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
     }
 
     public HashSet<StateVertex> pruneVisibleGraph() {
-        return this.panelRoot.getVisibleInnerGraph().getVerticesToPrune(AbstractLayoutVertex.VertexType.METHOD);
+        return this.panelRoot.getVisibleInnerGraph().getVerticesToPrune(v -> v.getType() == AbstractLayoutVertex.VertexType.METHOD);
     }
 
     @Override
