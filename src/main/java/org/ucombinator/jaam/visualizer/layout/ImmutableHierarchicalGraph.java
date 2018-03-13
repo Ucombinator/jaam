@@ -6,14 +6,14 @@ import java.util.Queue;
 import java.util.function.Predicate;
 
 public class ImmutableHierarchicalGraph<T extends AbstractLayoutVertex<T>>
-        extends HierarchicalGraph<T> {
+        extends HierarchicalGraph<T, LayoutEdge<T>> {
 
     public ImmutableHierarchicalGraph(T root) {
         super(root);
         this.root.setImmutableInnerGraph(this);
     }
 
-    static public <T extends AbstractLayoutVertex<T>> VisibleHierarchicalGraph<T> constructVisibleGraph(HierarchicalGraph<T> self, Predicate<T> p) {
+    static public <T extends AbstractLayoutVertex<T>> VisibleHierarchicalGraph<T> constructVisibleGraph(HierarchicalGraph<T, LayoutEdge<T>> self, Predicate<T> p) {
         System.out.println("Constructing visible graph for vertex: " + self.getRoot());
         VisibleHierarchicalGraph<T> visibleGraph = new VisibleHierarchicalGraph(self.getRoot());
         for(T v : self.getVertices()) {
@@ -35,7 +35,7 @@ public class ImmutableHierarchicalGraph<T extends AbstractLayoutVertex<T>>
         return visibleGraph;
     }
 
-    static private <T extends AbstractLayoutVertex<T>> void findVisibleInEdges(HierarchicalGraph<T> self, T v, HierarchicalGraph<T> visibleGraph) {
+    static private <T extends AbstractLayoutVertex<T>> void findVisibleInEdges(HierarchicalGraph<T, LayoutEdge<T>> self, T v, HierarchicalGraph<T, LayoutEdge<T>> visibleGraph) {
         Queue<T> queue = new LinkedList<>();
         HashSet<T> found = new HashSet<>();
         queue.addAll(self.getInNeighbors(v));
@@ -57,7 +57,7 @@ public class ImmutableHierarchicalGraph<T extends AbstractLayoutVertex<T>>
         }
     }
 
-    static private <T extends AbstractLayoutVertex<T>> void findVisibleOutEdges(HierarchicalGraph<T> self, T v, HierarchicalGraph<T> visibleGraph) {
+    static private <T extends AbstractLayoutVertex<T>> void findVisibleOutEdges(HierarchicalGraph<T, LayoutEdge<T>> self, T v, HierarchicalGraph<T, LayoutEdge<T>> visibleGraph) {
         Queue<T> queue = new LinkedList<>();
         HashSet<T> found = new HashSet<>();
         found.add(v);

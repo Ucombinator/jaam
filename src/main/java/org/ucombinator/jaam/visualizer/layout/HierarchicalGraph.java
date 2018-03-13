@@ -3,13 +3,13 @@ package org.ucombinator.jaam.visualizer.layout;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public abstract class HierarchicalGraph<T extends AbstractLayoutVertex<T>> {
+public abstract class HierarchicalGraph<T extends HierarchicalVertex<T>, S extends HierarchicalEdge<T>> {
 
     protected T root; // Every hierarchical graph has a root node that contains it.
     protected HashSet<T> vertices;
-    protected HashSet<LayoutEdge<T>> edges;
-    protected HashMap<T, HashMap<T, LayoutEdge>> outEdges;
-    protected HashMap<T, HashMap<T, LayoutEdge>> inEdges;
+    protected HashSet<S> edges;
+    protected HashMap<T, HashMap<T, S>> outEdges;
+    protected HashMap<T, HashMap<T, S>> inEdges;
 
     public HierarchicalGraph(T root) {
         this.vertices = new HashSet<>();
@@ -27,7 +27,7 @@ public abstract class HierarchicalGraph<T extends AbstractLayoutVertex<T>> {
         this.vertices.add(vertex);
     }
 
-    public void addEdge(LayoutEdge<T> edge) {
+    public void addEdge(S edge) {
         this.edges.add(edge);
         this.outEdges.putIfAbsent(edge.getSrc(), new HashMap<>());
         this.outEdges.get(edge.getSrc()).put(edge.getDest(), edge);
@@ -40,7 +40,7 @@ public abstract class HierarchicalGraph<T extends AbstractLayoutVertex<T>> {
         return this.vertices;
     }
 
-    public Set<LayoutEdge<T>> getEdges() {
+    public Set<S> getEdges() {
         return this.edges;
     }
 
@@ -132,7 +132,7 @@ public abstract class HierarchicalGraph<T extends AbstractLayoutVertex<T>> {
         output.append("\n");
 
         output.append("Edges: ");
-        for (LayoutEdge<T> e : this.getEdges()) {
+        for (S e : this.getEdges()) {
             output.append("( " + e.getSrc().getLabel() + "->" + e.getDest().getLabel() + " ), ");
         }
         output.append("\n");

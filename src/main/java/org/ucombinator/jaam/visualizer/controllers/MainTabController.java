@@ -440,7 +440,7 @@ public class MainTabController {
             }
 
             if (!v.isVisibleInnerGraphEmpty()) {
-                HierarchicalGraph<StateVertex> innerGraph = v.getVisibleInnerGraph();
+                HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> innerGraph = v.getVisibleInnerGraph();
                 for (StateVertex i : innerGraph.getVertices()) {
                     setClassHighlight(i, prevPrefix, currPrefix);
                 }

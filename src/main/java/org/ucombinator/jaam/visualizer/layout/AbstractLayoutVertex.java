@@ -13,7 +13,7 @@ import org.ucombinator.jaam.visualizer.gui.GUINodeStatus;
 
 public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         extends AbstractVertex
-        implements Comparable<AbstractLayoutVertex<T>>, GraphEntity
+        implements HierarchicalVertex<T>, GraphEntity
 {
     // Types of layout vertices
     public enum VertexType {
@@ -129,7 +129,7 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         this.graphics = graphics;
     }
 
-    public int compareTo(AbstractLayoutVertex<T> v) {
+    public int compareTo(T v) {
         return Integer.compare(this.getMinInstructionLine(), v.getMinInstructionLine());
     }
 
@@ -142,7 +142,7 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
     }
 
     // Override in base case, LayoutInstructionVertex
-    private int getMinInstructionLine() {
+    protected int getMinInstructionLine() {
         int minIndex = Integer.MAX_VALUE;
         for(AbstractLayoutVertex<T> v : this.immutableInnerGraph.getVertices()) {
             minIndex = Math.min(minIndex, v.getMinInstructionLine());

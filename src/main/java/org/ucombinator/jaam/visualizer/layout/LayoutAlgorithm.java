@@ -183,7 +183,7 @@ public class LayoutAlgorithm
      * Every node appears as a child as deep as possible in the tree (ties broken arbitrarily)
      */
     private static <T extends AbstractLayoutVertex<T>> HashMap<T, ArrayList<T>> maxDepthChildren(
-            HierarchicalGraph<T> graph)
+            HierarchicalGraph<T, LayoutEdge<T>> graph)
     {
         HashMap<T, ArrayList<T>> childrenMap = new HashMap<>();
         HashMap<T, Integer> vertexCounters = new HashMap<>();
