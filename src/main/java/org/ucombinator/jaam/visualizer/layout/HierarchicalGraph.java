@@ -67,7 +67,6 @@ public abstract class HierarchicalGraph<T extends AbstractLayoutVertex<T>> {
             return null;
         }
 
-        // TODO: List<T> roots =
         List<T> roots = this.vertices.stream()
                 .filter(this::isRoot)
                 .collect(Collectors.toList());
