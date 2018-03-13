@@ -19,6 +19,12 @@ public abstract class HierarchicalGraph<T extends AbstractLayoutVertex<T>> {
         this.inEdges = new HashMap<>();
     }
 
+    public HierarchicalGraph(T root) {
+        this();
+        this.root = root;
+        //this.root.setVisibleInnerGraph(this);
+    }
+
     public T getRoot() {
         return root;
     }

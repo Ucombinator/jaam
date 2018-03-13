@@ -17,8 +17,8 @@ public class LayoutRootVertex extends StateVertex {
     }
 
     public StateVertex getVisibleGraphExcept(Set<StateVertex> verticesToHide) {
-        return this.getImmutableInnerGraph()
-                .constructVisibleGraph((StateVertex v) -> !verticesToHide.contains(v))
+        return ImmutableHierarchicalGraph.constructVisibleGraph(
+                this.getImmutableInnerGraph(),(StateVertex v) -> !verticesToHide.contains(v))
                 .getRoot();
     }
 
