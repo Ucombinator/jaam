@@ -27,7 +27,7 @@ public class LayoutClassVertex extends StateVertex {
 
     public HashSet<LayoutMethodVertex> getMethodVertices() {
         HashSet<LayoutMethodVertex> methodVertices = new HashSet<>();
-        for(StateVertex v : this.getInnerGraph().getVertices()) {
+        for(StateVertex v : this.getImmutableInnerGraph().getVertices()) {
             methodVertices.addAll(v.getMethodVertices());
         }
         return methodVertices;
@@ -35,7 +35,7 @@ public class LayoutClassVertex extends StateVertex {
 
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = false;
-        for(StateVertex v : this.getInnerGraph().getVisibleVertices()) {
+        for(StateVertex v : this.getImmutableInnerGraph().getVertices()) {
             found = v.searchByMethod(query, mainTab) || found;
         }
 

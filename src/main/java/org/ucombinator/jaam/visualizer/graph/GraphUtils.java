@@ -3,10 +3,7 @@ package org.ucombinator.jaam.visualizer.graph;
 import org.ucombinator.jaam.interpreter.State;
 import org.ucombinator.jaam.visualizer.layout.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Stack;
+import java.util.*;
 
 public class GraphUtils {
 
@@ -30,7 +27,7 @@ public class GraphUtils {
         public int lowlink; // minIndex of a vertex reachable from my subtree that is not already part of a SCC
     }
 
-    private static <T extends AbstractLayoutVertex<T>>
+    private static <T extends AbstractLayoutVertex<T>, E extends Edge<T>>
     void visit(Graph<T> g, T v, HashMap<Integer, SCCVertex> visitedVertices, Stack<Integer> stack,
                ArrayList<ArrayList<Integer>> components )
     {
@@ -42,7 +39,7 @@ public class GraphUtils {
 
         //System.out.println("TERE Visiting " + v.getId() + " == " + vSCC);
 
-        HashSet<T> neighbors = g.getOutNeighbors(v);
+        Set<T> neighbors = g.getOutNeighbors(v);
         for (T n : neighbors) {
             if (n.getId() == v.getId()) { // No self loops
                 continue;
@@ -77,14 +74,13 @@ public class GraphUtils {
         }
     }
 
-    public static <T extends AbstractLayoutVertex<T>> ArrayList<ArrayList<Integer>> StronglyConnectedComponents(final Graph<T> g)
-    {
+    public static <T extends AbstractLayoutVertex<T>> ArrayList<ArrayList<Integer>> StronglyConnectedComponents(final Graph<T> g) {
         ArrayList<ArrayList<Integer>> components = new ArrayList<>();
 
         Stack<Integer> stack = new Stack<>();
         HashMap<Integer, SCCVertex> visitedVertices = new HashMap<>();
 
-        ArrayList<T> vertices = g.getVertices();
+        HashSet<T> vertices = g.getVertices();
         System.out.println("Vertices: " + vertices.size());
 
         for(T v : vertices) {
@@ -103,10 +99,8 @@ public class GraphUtils {
     public static HashMap<String, ArrayList<StateVertex>> groupByClass(final Graph<StateVertex> graph) {
         HashMap<String, ArrayList<StateVertex>> visitedVertices = new HashMap<>();
 
-        Stack<StateVertex> stack = new Stack<StateVertex>();
-        for(StateVertex v : graph.getVertices()) {
-            stack.add(v);
-        }
+        Stack<StateVertex> stack = new Stack<>();
+        stack.addAll(graph.getVertices());
 
         while(stack.size() > 0) {
             StateVertex v = stack.pop();
@@ -124,7 +118,7 @@ public class GraphUtils {
         return visitedVertices;
     }
 
-    public static void addVertexToClassGroup(HashMap<String, ArrayList<StateVertex>> visitedVertices,
+    private static void addVertexToClassGroup(HashMap<String, ArrayList<StateVertex>> visitedVertices,
                                              String className, StateVertex vertex) {
 
         if(visitedVertices.containsKey(className)) {

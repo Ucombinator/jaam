@@ -8,20 +8,17 @@ public class Method
 {
     private final String methodName;
     private OurClass our_class;
-    //private final String functionName;
     private ArrayList<StateVertex> vertices;
     private ArrayList<Instruction> instructionList;
 
-    public Method()
-    {
+    public Method() {
         this.our_class = new OurClass();
         this.methodName = "Dummy_method";
         vertices = new ArrayList<>();
         instructionList = new ArrayList<>();
     }
 
-    public Method(Graph<StateVertex> graph, String methodName)
-    {
+    public Method(String methodName) {
         this.our_class = new OurClass();
         this.methodName = methodName;
         vertices = new ArrayList<>();

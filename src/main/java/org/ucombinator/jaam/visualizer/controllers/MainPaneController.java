@@ -85,17 +85,19 @@ public class MainPaneController {
 
         List<CompilationUnit> compilationUnits = new ArrayList<>();
         Set<SootClass> sootClasses = new HashSet<>();
-        Pair<Graph<StateVertex>,TaintGraph> s = parseLoopGraph(file, compilationUnits, sootClasses);
+        Pair<Graph<StateVertex>, TaintGraph> s = parseLoopGraph(file, compilationUnits, sootClasses);
 
         System.out.println("--> Create visualization: start...");
-        MainTabController tabController = new MainTabController(file, s.getLeft(),  compilationUnits, s.getRight(), sootClasses);
+        MainTabController tabController = new MainTabController(file, s.getLeft(),  compilationUnits,
+                s.getRight(), sootClasses);
         System.out.println("<-- Create visualization: Done!");
 
         tabPane.getTabs().add(tabController.tab);
         tabPane.getSelectionModel().select(tabController.tab);
     }
 
-    private static Pair<Graph<StateVertex>,TaintGraph> parseLoopGraph(File file, List<CompilationUnit> compilationUnits, Set<SootClass> sootClasses) {
+    private static Pair<Graph<StateVertex>, TaintGraph> parseLoopGraph(
+            File file, List<CompilationUnit> compilationUnits, Set<SootClass> sootClasses) {
         Graph<StateVertex> graph = new Graph<>();
         int loopPackets = 0;
         int methodPackets = 0;

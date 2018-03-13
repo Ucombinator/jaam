@@ -75,7 +75,7 @@ public class SearchResults extends BorderPane
         this.root.getChildren().clear();
         if(mainTab.getVizHighlighted().size() > 0) {
             // We don't want to include the panel root, so we start our check with its children
-            for (AbstractLayoutVertex v : mainTab.vizPanelController.getPanelRoot().getInnerGraph().getVisibleVertices()) {
+            for (AbstractLayoutVertex v : mainTab.vizPanelController.getPanelRoot().getVisibleInnerGraph().getVertices()) {
                 v.addTreeNodes(this.root, mainTab);
             }
 
@@ -84,83 +84,4 @@ public class SearchResults extends BorderPane
             //model.reload(this.root);
         }
     }
-    
-    /*public void fixCaretPosition()
-    {
-        Rectangle window = this.searchTree.getVisibleRect();
-        int first = this.searchTree.getClosestRowForLocation(window.x, window.y + SearchResults.nodeHeight);
-        int last  = this.searchTree.getClosestRowForLocation(window.x, window.y + window.height - SearchResults.nodeHeight);
-        
-        if(first < 0)
-            return;
-        
-        DefaultMutableTreeNode node;
-        AbstractLayoutVertex ver;
-        
-        for(int i = first; i <= last; i++)
-        {
-            node = (DefaultMutableTreeNode)(this.searchTree.getPathForRow(i).getLastPathComponent());
-            ver = (AbstractLayoutVertex) node.getUserObject();
-            if(ver.isSelected())
-                return;
-        }
-        
-        for(int i = first - 1, j = last + 1; i >= 0 || j < this.searchTree.getRowCount(); i--, j++)
-        {
-            if (i >= 0)
-            {
-                node = (DefaultMutableTreeNode)(this.searchTree.getPathForRow(i).getLastPathComponent());
-                ver = (AbstractLayoutVertex) node.getUserObject() ;
-                if (ver.isSelected())
-                {
-                    this.searchTree.scrollRowToVisible(i);
-                    return;
-                }
-            }
-            if (j < this.searchTree.getRowCount())
-            {
-                node = (DefaultMutableTreeNode)(this.searchTree.getPathForRow(j).getLastPathComponent());
-                ver = (AbstractLayoutVertex) node.getUserObject();
-                if (ver.isSelected())
-                {
-                    this.searchTree.scrollRowToVisible(j);
-                    return;
-                }
-            }
-        }
-    }*/
-    
-    /*private class SearchRenderer extends DefaultTreeCellRenderer
-    {
-        public Component getTreeCellRendererComponent(JTree tree, Object obj, boolean selected, boolean expanded,
-                                                      boolean leaf, int row, boolean hasFocus)
-        {
-            JLabel label = (JLabel) super.getTreeCellRendererComponent(tree, obj, selected, expanded, leaf, row, hasFocus);
-            DefaultMutableTreeNode node = (DefaultMutableTreeNode) obj;
-
-            if (node == root)
-                return label;
-            AbstractLayoutVertex ver = (AbstractLayoutVertex) node.getUserObject();
-
-            label.setText(ver.getShortDescription());
-            label.setFont(Parameters.font);
-            label.setOpaque(true);
-            /*if (ver.isSelected())
-            {
-                label.setBackground(Parameters.colorHighlight);
-                label.setForeground(Color.BLACK);
-            }
-            else if (ver.isHighlighted)
-            {
-                label.setBackground(Color.WHITE);
-                label.setForeground(Color.BLACK);
-            }
-            else
-            {
-                label.setBackground(Color.WHITE);
-                label.setForeground(Color.GRAY);
-            }
-            return label;
-        }
-    }*/
 }

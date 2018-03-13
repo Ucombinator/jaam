@@ -12,6 +12,7 @@ public class TaintGraph extends Graph<TaintVertex> {
         super();
     }
 
+    // TODO: Rewrite
     public TaintGraph groupByStatement() {
         TaintGraph newTaintGraph = new TaintGraph();
 

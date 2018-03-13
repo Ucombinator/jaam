@@ -6,35 +6,32 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 
-public class LayoutEdge<T extends AbstractLayoutVertex<T>> implements Comparable<LayoutEdge<T>>, GraphEntity
+public class LayoutEdge<T extends AbstractLayoutVertex<T>>
+        implements Comparable<LayoutEdge<T>>, GraphEntity
 {
     private static final Color highlightColor = Color.ORANGERED;
-
-    private Group graphics;
-    private Shape edgePath; // This will be either a line for most edges, or a path for self-edges
-    private Polygon arrowhead;
-
-    public enum EDGE_TYPE {EDGE_REGULAR, EDGE_DUMMY};
-    private final EDGE_TYPE type;
-
-    private final T source, dest;
+    private static final Color downwardColor = Color.BLACK;
+    private static final Color upwardColor = Color.DARKRED;
 
     private static final double defaultStrokeWidth = 0.5;
     private static final double highlightStrokeWidthMultiplier = 4;
     private static final double arrowheadAngleWidth = 0.15 * Math.PI;
     private static final double arrowLengthRatio = 0.5;
 
-    private static final Color downwardColor = Color.BLACK;
-    private static final Color upwardColor = Color.DARKRED;
+    T src, dest;
+    private Group graphics;
+    private Shape edgePath; // This will be either a line for most edges, or a path for self-edges
+    private Polygon arrowhead;
+
+    public enum EDGE_TYPE {EDGE_REGULAR, EDGE_DUMMY};
+    private EDGE_TYPE type;
     private Color color;
     private double opacity;
 
-    public LayoutEdge(T source, T dest, EDGE_TYPE edgeType)
-    {
-        this.type = edgeType;
-        this.source = source;
+    public LayoutEdge(T src, T dest, EDGE_TYPE edgeType) {
+        this.src = src;
         this.dest = dest;
-
+        this.type = edgeType;
         graphics = new Group();
         arrowhead = new Polygon();
         this.opacity = 1.0;
@@ -53,9 +50,9 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>> implements Comparable
     }
 
     public int compareTo(LayoutEdge<T> that) {
-        if (this.source.getId() < that.source.getId()) {
+        if (this.src.getId() < that.src.getId()) {
             return -1;
-        } else if (this.source.getId() > that.source.getId()) {
+        } else if (this.src.getId() > that.src.getId()) {
             return 1;
         } else {
             if (this.dest.getId() < that.dest.getId()) {
@@ -68,8 +65,8 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>> implements Comparable
         }
     }
 
-    public T getSource() {
-        return source;
+    public T getSrc() {
+        return src;
     }
 
     public T getDest() {
@@ -78,36 +75,35 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>> implements Comparable
 
     public void draw()
     {
-        // System.out.println("Drawing edge: " + this.source.getId() + " --- " + this.dest.getId());
-        if(!source.getDrawEdges() || !dest.getDrawEdges()) {
-            System.out.println("Draw source: " + source.getDrawEdges() + "\nDraw dest: " + dest.getDrawEdges());
+        if(!src.getDrawEdges() || !dest.getDrawEdges()) {
+            System.out.println("Draw source: " + src.getDrawEdges() + "\nDraw dest: " + dest.getDrawEdges());
             return;
         }
-        else if(this.getSourceParent() == null) {
+        else if(this.getSrcParent() == null) {
             System.out.println("Error! The parent for this edge does not exist.");
             return;
         }
-        else if (this.source == this.dest)
+        else if (this.src == this.dest)
         {
             drawLoop();
             return;
         }
-        else if (source.getX() == dest.getX() && source.getY() == dest.getY())
+        else if (src.getX() == dest.getX() && src.getY() == dest.getY())
         {
             System.out.println("Error in Edge.drawGraph(): The two vertices are at the same location.");
-            System.out.println(this.source.getId() + " --- " + this.dest.getId());
-            System.out.println(this.source.getLabel() + " --- " + this.dest.getLabel());
+            System.out.println(this.src.getId() + " --- " + this.dest.getId());
+            System.out.println(this.src.getLabel() + " --- " + this.dest.getLabel());
             System.out.println(this.getType());
             return;
         }
 
         //System.out.println("Passed checks for drawing edge: " + this.getID());
-        GUINode<T> sourceNode = source.getGraphics();
+        GUINode<T> srcNode = src.getGraphics();
         GUINode<T> destNode   = dest.getGraphics();
 
-        if (dest.getY() >= source.getY()) {
+        if (dest.getY() >= src.getY()) {
             this.color = downwardColor;
-            Line line = GUINode.getLine(sourceNode, destNode);
+            Line line = GUINode.getLine(srcNode, destNode);
             line.setStroke(this.color);
             line.setStrokeWidth(defaultStrokeWidth);
             this.edgePath = line;
@@ -125,7 +121,7 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>> implements Comparable
         }
         else {
             this.color = upwardColor;
-            QuadCurve curve = GUINode.getCurve(sourceNode, destNode);
+            QuadCurve curve = GUINode.getCurve(srcNode, destNode);
             curve.setStroke(this.color);
             curve.setFill(Color.TRANSPARENT);
             curve.setStrokeWidth(defaultStrokeWidth);
@@ -145,7 +141,7 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>> implements Comparable
         this.graphics.getChildren().add(edgePath);
         this.graphics.getChildren().add(arrowhead);
 
-        this.getSourceParent().getChildren().add(graphics);
+        this.getSrcParent().getChildren().add(graphics);
         graphics.setVisible(this.isDisplayed());
     }
 
@@ -163,7 +159,7 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>> implements Comparable
 
     private void drawLoop() {
         Path path = new Path();
-        Bounds bounds = source.getGraphics().getRectBoundsInParent();
+        Bounds bounds = src.getGraphics().getRectBoundsInParent();
         double padding = 2; // TODO: Adjust based on scale
 
         MoveTo moveTo = new MoveTo();
@@ -190,38 +186,38 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>> implements Comparable
         this.graphics.getChildren().removeAll(this.graphics.getChildren());
         this.graphics.getChildren().add(edgePath);
 
-        this.getSourceParent().getChildren().add(graphics);
+        this.getSrcParent().getChildren().add(graphics);
         this.graphics.setVisible(this.isDisplayed());
     }
 
     // Checks that an edge is currently showing on the screen.
     public boolean isDisplayed()
     {
-        return this.getSourceParent().getVertex().isExpanded() && this.source.isEdgeVisible()
+        return this.getSrcParent().getVertex().isExpanded() && this.src.isEdgeVisible()
                 && this.dest.isEdgeVisible() && this.isVisible();
     }
 
     public static <T extends AbstractLayoutVertex<T>> void redrawEdges(T v, boolean recurse)
     {
-        if(v.getSelfGraph() != null)
+        if(v.getVisibleSelfGraph() != null)
         {
-            HierarchicalGraph<T> selfGraph = v.getSelfGraph();
-            for (LayoutEdge<T> e : selfGraph.getVisibleEdges())
+            VisibleHierarchicalGraph<T> selfGraph = v.getVisibleSelfGraph();
+            for (LayoutEdge<T> e : selfGraph.getEdges())
             {
-                if (v.getId() == e.source.getId() || v.getId() == e.dest.getId())
+                if (v.getId() == e.src.getId() || v.getId() == e.dest.getId())
                 {
                     // Remove current graphics and redraw.
                     e.graphics.getChildren().remove(e.edgePath);
                     e.graphics.getChildren().remove(e.arrowhead);
-                    e.getSourceParent().getChildren().remove(e.graphics);
+                    e.getSrcParent().getChildren().remove(e.graphics);
                     e.draw();
                 }
             }
         }
 
         if (recurse) {
-            HierarchicalGraph<T> innerGraph = v.getInnerGraph();
-            for (T w : innerGraph.getVisibleVertices()) {
+            VisibleHierarchicalGraph<T> innerGraph = v.getVisibleInnerGraph();
+            for (T w : innerGraph.getVertices()) {
                 redrawEdges(w, recurse);
             }
         }
@@ -261,8 +257,8 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>> implements Comparable
         return this.graphics.isVisible();
     }
 
-    private GUINode<T> getSourceParent()
+    private GUINode<T> getSrcParent()
     {
-        return this.getSource().getGraphics().getParentNode();
+        return this.getSrc().getGraphics().getParentNode();
     }
 }

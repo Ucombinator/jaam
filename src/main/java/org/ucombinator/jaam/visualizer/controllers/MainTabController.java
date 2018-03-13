@@ -14,6 +14,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import org.ucombinator.jaam.visualizer.classTree.ClassTreeNode;
 import org.ucombinator.jaam.visualizer.classTree.PackageNode;
+import org.ucombinator.jaam.visualizer.graph.Edge;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.layout.*;
@@ -56,16 +57,15 @@ public class MainTabController {
     public MainTabController(File file, Graph<StateVertex> graph, List<CompilationUnit> compilationUnits, TaintGraph taintGraph, Set<SootClass> sootClasses) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
 
-        this.vizPanelController = new VizPanelController(graph);
-        this.vizPane.setCenter(this.vizPanelController.root);
-        this.vizPanelController.initFX();
-
-        this.taintPanelController = new TaintPanelController(taintGraph);
-        this.taintPane.setCenter(this.taintPanelController.root);
-
         this.tab = new Tab(file.getName(), this.root);
         this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));
         Controllers.put(this.tab, this);
+
+        this.vizPanelController = new VizPanelController(graph);
+        this.vizPane.setCenter(this.vizPanelController.root);
+
+        this.taintPanelController = new TaintPanelController(taintGraph);
+        this.taintPane.setCenter(this.taintPanelController.root);
 
         this.codeViewController = new CodeViewController(compilationUnits, sootClasses);
         this.leftPane.getChildren().add(this.codeViewController.codeTabs);
@@ -77,17 +77,17 @@ public class MainTabController {
 
         this.vizHighlighted = new LinkedHashSet<>();
         this.taintHighlighted = new LinkedHashSet<>();
-        this.hidden = new SimpleSetProperty<StateVertex>(FXCollections.observableSet());
+        this.hidden = new SimpleSetProperty<>(FXCollections.observableSet());
 
         this.hidden.addListener(this.vizPanelController);
     }
 
-    private void buildClassTree(HashSet<String> classNames, LayoutRootVertex panelRoot)
+    private void buildClassTree(HashSet<String> classNames, StateVertex panelRoot)
     {
         this.classTree.setCellFactory(CheckBoxTreeCell.forTreeView());
 
         PackageNode root = new PackageNode("root", null);
-        ArrayList<PackageNode> topLevel = new ArrayList<>();
+        ArrayList<PackageNode> topLevel = new ArrayList<PackageNode>(root.subPackages);
 
         for(String c : classNames)
         {
@@ -102,11 +102,10 @@ public class MainTabController {
             current.addClassIfAbsent(className);
         }
 
-        topLevel.addAll(root.subPackages);
-
         // Compression Step
-        topLevel.stream().forEach(f -> f.compress());
+        topLevel.forEach(PackageNode::compress);
 
+        // TODO: Ask Juan why this is commented out
         // Fix top level names. If a node is on the top level and a leaf due to compression
         // it's fullname is missing package information, this fixes it.
         /*
@@ -126,7 +125,7 @@ public class MainTabController {
         treeRoot.setValue(new ClassTreeNode("root", null));
         treeRoot.setExpanded(true);
 
-        topLevel.stream().forEach(f -> f.build(treeRoot));
+        topLevel.forEach(f -> f.build(treeRoot));
 
         classTree.setRoot(treeRoot);
 
@@ -167,7 +166,7 @@ public class MainTabController {
             }
         }
 
-       HierarchicalGraph<StateVertex> innerGraph = root.getInnerGraph();
+       ImmutableHierarchicalGraph<StateVertex> innerGraph = root.getImmutableInnerGraph(); // TODO: Is this the right one?
        for (StateVertex v : innerGraph.getVertices()) {
            addVerticesToClassTree(topLevel, v);
        }
@@ -182,14 +181,14 @@ public class MainTabController {
         return null;
     }
 
-    public void repaintAll() {
+    private void repaintAll() {
         System.out.println("Repainting all...");
         //bytecodeArea.setDescription();
         setVizRightText();
         searchResults.writeText(this);
     }
 
-    public void setVizRightText() {
+    private void setVizRightText() {
         StringBuilder text = new StringBuilder();
         for (StateVertex v : this.getVizHighlighted()) {
             text.append(v.getRightPanelContent() + "\n");
@@ -222,8 +221,8 @@ public class MainTabController {
     {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        HierarchicalGraph<StateVertex> innerGraph = v.getInnerGraph();
-        for (StateVertex i : innerGraph.getVisibleVertices()) {
+        VisibleHierarchicalGraph<StateVertex> innerGraph = v.getVisibleInnerGraph();
+        for (StateVertex i : innerGraph.getVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
         this.vizDescriptionArea.setText(text.toString());
@@ -236,8 +235,8 @@ public class MainTabController {
     public void setRightText(TaintSccVertex v) {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        HierarchicalGraph<TaintVertex> innerGraph = v.getInnerGraph();
-        for(AbstractLayoutVertex i : innerGraph.getVisibleVertices()) {
+        VisibleHierarchicalGraph<TaintVertex> innerGraph = v.getVisibleInnerGraph();
+        for(AbstractLayoutVertex i : innerGraph.getVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
         this.taintDescriptionArea.setText(text.toString());
@@ -277,22 +276,14 @@ public class MainTabController {
     }
 
     public void hideSelectedNodes() {
-        for(StateVertex v : this.getVizHighlighted()) {
-            this.hidden.add(v);
-        }
-
+        this.hidden.addAll(this.getVizHighlighted());
         this.vizHighlighted.clear();
-        this.vizPanelController.resetAndRedraw();
     }
 
     public void pruneVisibleGraph() {
-        ArrayList<StateVertex> prunedVertices = this.vizPanelController.pruneVisibleGraph();
-        for(StateVertex v : prunedVertices) {
-            this.hidden.add(v);
-            this.vizHighlighted.remove(v);
-        }
-
-        this.vizPanelController.resetAndRedraw();
+        HashSet<StateVertex> prunedVertices = this.vizPanelController.pruneVisibleGraph();
+        this.hidden.addAll(prunedVertices);
+        this.vizHighlighted.removeAll(prunedVertices);
     }
 
     public void showAllNodes() {
@@ -302,7 +293,7 @@ public class MainTabController {
         vizPanelController.endBatchMode();
     }
 
-    public String getSearchInput(SearchType search) {
+    private String getSearchInput(SearchType search) {
         String title = "";
         System.out.println("Search type: " + search);
         if (search == SearchType.ID || search == SearchType.ROOT_PATH) {
@@ -337,7 +328,7 @@ public class MainTabController {
         return input;
     }
 
-    public void searchByID(String input) {
+    private void searchByID(String input) {
         for (String token : input.split(", ")) {
             if (token.trim().equalsIgnoreCase("")) {
                 /* Do nothing */
@@ -404,11 +395,11 @@ public class MainTabController {
     {
         HashSet<StateVertex> keep = new HashSet<>();
 
-        this.vizHighlighted.stream().forEach(v -> keep.addAll(v.getAncestors()) );
-        this.vizHighlighted.stream().forEach(v -> keep.addAll(v.getDescendants()) );
+        this.vizHighlighted.forEach(v -> keep.addAll(v.getAncestors()) );
+        this.vizHighlighted.forEach(v -> keep.addAll(v.getDescendants()) );
 
         HashSet<StateVertex> toHide = new HashSet<>();
-        this.vizPanelController.getPanelRoot().getInnerGraph().getVertices().stream().forEach(v -> {
+        this.vizPanelController.getPanelRoot().getVisibleInnerGraph().getVertices().forEach(v -> {
             if (!keep.contains(v)) {
                 toHide.add(v);
             }
@@ -422,8 +413,7 @@ public class MainTabController {
     }
 
     // TODO: This should be done using event and event handling using FieldSelectEvent
-    public void selectFieldInTaintGraph(String fullClassName, String fieldName)
-    {
+    public void selectFieldInTaintGraph(String fullClassName, String fieldName) {
         taintPanelController.showFieldTaintGraph(fullClassName, fieldName);
     }
 
@@ -449,8 +439,8 @@ public class MainTabController {
                 }
             }
 
-            if (!v.isInnerGraphEmpty()) {
-                HierarchicalGraph<StateVertex> innerGraph = v.getInnerGraph();
+            if (!v.isVisibleInnerGraphEmpty()) {
+                HierarchicalGraph<StateVertex> innerGraph = v.getVisibleInnerGraph();
                 for (StateVertex i : innerGraph.getVertices()) {
                     setClassHighlight(i, prevPrefix, currPrefix);
                 }
