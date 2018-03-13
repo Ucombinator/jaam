@@ -21,10 +21,10 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
     }
 
     // Because our layout is hierarchical, the layout vertices have associated hierarchical graphs:
-    private VisibleHierarchicalGraph<T> visibleSelfGraph; // The graph to which this vertex belongs
-    private VisibleHierarchicalGraph<T> visibleInnerGraph; // The graph contained inside this vertex
-    private ImmutableHierarchicalGraph<T> immutableSelfGraph; // The graph to which this vertex belongs
-    private ImmutableHierarchicalGraph<T> immutableInnerGraph; // The graph contained inside this vertex
+    private HierarchicalGraph<T, LayoutEdge<T>> visibleSelfGraph; // The graph to which this vertex belongs
+    private HierarchicalGraph<T, LayoutEdge<T>> visibleInnerGraph; // The graph contained inside this vertex
+    private HierarchicalGraph<T, LayoutEdge<T>> immutableSelfGraph; // The graph to which this vertex belongs
+    private HierarchicalGraph<T, LayoutEdge<T>> immutableInnerGraph; // The graph contained inside this vertex
     private VertexType vertexType;
 
     // Graphic related fields
@@ -54,10 +54,10 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         this.vertexType = type;
         this.setVisible(false);
 
-        this.visibleInnerGraph = new VisibleHierarchicalGraph<>((T)this);
-        this.visibleSelfGraph = new VisibleHierarchicalGraph<>((T)this);
-        this.immutableInnerGraph = new ImmutableHierarchicalGraph<>((T)this);
-        this.immutableSelfGraph = new ImmutableHierarchicalGraph<>((T)this);
+        this.visibleInnerGraph = VisibleHierarchicalGraph.create((T)this);
+        this.visibleSelfGraph = VisibleHierarchicalGraph.create((T)this);
+        this.immutableInnerGraph = ImmutableHierarchicalGraph.create((T)this);
+        this.immutableSelfGraph = ImmutableHierarchicalGraph.create((T)this);
     }
 
     public AbstractLayoutVertex(int id, String label, VertexType type){
@@ -67,10 +67,10 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         this.vertexType = type;
         this.setVisible(false);
 
-        this.visibleInnerGraph = new VisibleHierarchicalGraph<>((T)this);
-        this.visibleSelfGraph = new VisibleHierarchicalGraph<>((T)this);
-        this.immutableInnerGraph = new ImmutableHierarchicalGraph<>((T)this);
-        this.immutableSelfGraph = new ImmutableHierarchicalGraph<>((T)this);
+        this.visibleInnerGraph = VisibleHierarchicalGraph.create((T)this);
+        this.visibleSelfGraph = VisibleHierarchicalGraph.create((T)this);
+        this.immutableInnerGraph = ImmutableHierarchicalGraph.create((T)this);
+        this.immutableSelfGraph = ImmutableHierarchicalGraph.create((T)this);
     }
 
     public void setX(double x) {
@@ -155,27 +155,27 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         return this.drawEdges;
     }
 
-    public VisibleHierarchicalGraph<T> getVisibleInnerGraph() {
+    public HierarchicalGraph<T, LayoutEdge<T>> getVisibleInnerGraph() {
         return this.visibleInnerGraph;
     }
 
-    public VisibleHierarchicalGraph<T> getVisibleSelfGraph() {
+    public HierarchicalGraph<T, LayoutEdge<T>> getVisibleSelfGraph() {
         return this.visibleSelfGraph;
     }
 
-    public ImmutableHierarchicalGraph<T> getImmutableInnerGraph() {
+    public HierarchicalGraph<T, LayoutEdge<T>> getImmutableInnerGraph() {
         return this.immutableInnerGraph;
     }
 
-    public ImmutableHierarchicalGraph<T> getImmutableSelfGraph() {
+    public HierarchicalGraph<T, LayoutEdge<T>> getImmutableSelfGraph() {
         return this.immutableSelfGraph;
     }
 
-    public void setVisibleInnerGraph(VisibleHierarchicalGraph<T> innerGraph) {
+    public void setVisibleInnerGraph(HierarchicalGraph<T, LayoutEdge<T>> innerGraph) {
         this.visibleInnerGraph = innerGraph;
     }
 
-    public void setImmutableInnerGraph(ImmutableHierarchicalGraph<T> innerGraph) {
+    public void setImmutableInnerGraph(HierarchicalGraph<T, LayoutEdge<T>> innerGraph) {
         this.immutableInnerGraph = innerGraph;
     }
 
@@ -248,7 +248,7 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         }
     }
 
-    public void setVisibleSelfGraph(VisibleHierarchicalGraph<T> graph) {
+    public void setVisibleSelfGraph(HierarchicalGraph<T, LayoutEdge<T>> graph) {
         this.visibleSelfGraph = graph;
     }
 

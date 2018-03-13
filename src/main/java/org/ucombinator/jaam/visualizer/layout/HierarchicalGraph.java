@@ -3,7 +3,7 @@ package org.ucombinator.jaam.visualizer.layout;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public abstract class HierarchicalGraph<T extends HierarchicalVertex<T>, S extends HierarchicalEdge<T>> {
+public class HierarchicalGraph<T extends HierarchicalVertex<T>, S extends HierarchicalEdge<T>> {
 
     protected T root; // Every hierarchical graph has a root node that contains it.
     protected HashSet<T> vertices;

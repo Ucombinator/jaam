@@ -216,7 +216,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         double height = v.getHeight();
         node.setTranslateLocation(translateX, translateY, width, height);
 
-        VisibleHierarchicalGraph<StateVertex> innerGraph = v.getVisibleInnerGraph();
+        HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> innerGraph = v.getVisibleInnerGraph();
         for (StateVertex child : innerGraph.getVertices()) {
             if (v.isExpanded()) {
                 drawNodes(node, child);
@@ -227,7 +227,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
     private void drawEdges(StateVertex v)
     {
         if(v.isExpanded()) {
-            VisibleHierarchicalGraph<StateVertex> innerGraph = v.getVisibleInnerGraph();
+            HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> innerGraph = v.getVisibleInnerGraph();
             for (LayoutEdge<StateVertex> e : innerGraph.getEdges()) {
                 e.setVisible(v.isEdgeVisible());
                 e.draw();

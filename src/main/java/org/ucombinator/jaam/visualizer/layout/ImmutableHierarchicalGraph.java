@@ -5,17 +5,17 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.function.Predicate;
 
-public class ImmutableHierarchicalGraph<T extends AbstractLayoutVertex<T>>
-        extends HierarchicalGraph<T, LayoutEdge<T>> {
+public class ImmutableHierarchicalGraph {
 
-    public ImmutableHierarchicalGraph(T root) {
-        super(root);
-        this.root.setImmutableInnerGraph(this);
+    public static <T extends AbstractLayoutVertex<T>> HierarchicalGraph<T, LayoutEdge<T>> create(T root) {
+        HierarchicalGraph<T, LayoutEdge<T>> graph = new HierarchicalGraph<>(root);
+        root.setImmutableInnerGraph(graph);
+        return graph;
     }
 
-    static public <T extends AbstractLayoutVertex<T>> VisibleHierarchicalGraph<T> constructVisibleGraph(HierarchicalGraph<T, LayoutEdge<T>> self, Predicate<T> p) {
+    static public <T extends AbstractLayoutVertex<T>> HierarchicalGraph<T, LayoutEdge<T>> constructVisibleGraph(HierarchicalGraph<T, LayoutEdge<T>> self, Predicate<T> p) {
         System.out.println("Constructing visible graph for vertex: " + self.getRoot());
-        VisibleHierarchicalGraph<T> visibleGraph = new VisibleHierarchicalGraph<>(self.getRoot());
+        HierarchicalGraph<T, LayoutEdge<T>> visibleGraph = new HierarchicalGraph<>(self.getRoot());
         for(T v : self.getVertices()) {
             if(p.test(v)) {
                 visibleGraph.addVertex(v);

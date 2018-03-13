@@ -99,7 +99,7 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
 
     private void handleOnMouseEntered(MouseEvent event) {
         event.consume();
-        VisibleHierarchicalGraph<T> selfGraph = vertex.getVisibleSelfGraph();
+        HierarchicalGraph<T, LayoutEdge<T>> selfGraph = vertex.getVisibleSelfGraph();
         if (selfGraph != null) {
             for (LayoutEdge<T> e : selfGraph.getEdges()) {
                 if(e.getSrc() == vertex || e.getDest() == vertex) {
@@ -112,7 +112,7 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
     private void handleOnMouseExited(MouseEvent event) {
         event.consume();
 
-        VisibleHierarchicalGraph<T> selfGraph = vertex.getVisibleSelfGraph();
+        HierarchicalGraph<T, LayoutEdge<T>> selfGraph = vertex.getVisibleSelfGraph();
         if (selfGraph != null) {
             for (LayoutEdge<T> e : selfGraph.getEdges()) {
                 if (e.getSrc() == vertex || e.getDest() == vertex) {
@@ -162,7 +162,7 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
 
         System.out.println("Double Click");
         T doubleClickedVertex = this.vertex;
-        VisibleHierarchicalGraph<T> innerGraph = doubleClickedVertex.getVisibleInnerGraph();
+        HierarchicalGraph<T, LayoutEdge<T>> innerGraph = doubleClickedVertex.getVisibleInnerGraph();
         boolean isExpanded = doubleClickedVertex.isExpanded();
 
         double newOpacity = isExpanded ? 0.0 : 1.0;

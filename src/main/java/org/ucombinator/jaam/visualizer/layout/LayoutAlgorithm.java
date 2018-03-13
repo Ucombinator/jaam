@@ -22,16 +22,16 @@ public class LayoutAlgorithm
         parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
         parentVertex.setX(0);
         parentVertex.setY(0);
-        VisibleHierarchicalGraph<T> innerGraph = parentVertex.getVisibleInnerGraph();
+        HierarchicalGraph<T, LayoutEdge<T>> innerGraph = parentVertex.getVisibleInnerGraph();
         for (T v : innerGraph.getVertices()) {
             initializeSizes(v);
         }
     }
 
     private static <T extends AbstractLayoutVertex<T>> void expandSubGraphs(T parentVertex) {
-        VisibleHierarchicalGraph<T> parentInnerGraph = parentVertex.getVisibleInnerGraph();
+        HierarchicalGraph<T, LayoutEdge<T>> parentInnerGraph = parentVertex.getVisibleInnerGraph();
         for(T v: parentInnerGraph.getVertices()) {
-            VisibleHierarchicalGraph<T> childInnerGraph = v.getVisibleInnerGraph();
+            HierarchicalGraph<T, LayoutEdge<T>> childInnerGraph = v.getVisibleInnerGraph();
             if (childInnerGraph.getVertices().size() != 0)
             {
                 // Layout the inner graphs of each node and assign width W and height H to each node
@@ -46,7 +46,7 @@ public class LayoutAlgorithm
     }
 
     private static <T extends AbstractLayoutVertex<T>> void dfsLayout(T parentVertex) {
-        VisibleHierarchicalGraph<T> graph = parentVertex.getVisibleInnerGraph();
+        HierarchicalGraph<T, LayoutEdge<T>> graph = parentVertex.getVisibleInnerGraph();
 
         expandSubGraphs(parentVertex);
 
@@ -65,7 +65,7 @@ public class LayoutAlgorithm
     }
 
     private static <T extends AbstractLayoutVertex<T>> void bfsLayout(T parentVertex) {
-        VisibleHierarchicalGraph<T> graph = parentVertex.getVisibleInnerGraph();
+        HierarchicalGraph<T, LayoutEdge<T>> graph = parentVertex.getVisibleInnerGraph();
 
         // Interior graphs use the DFS Layout
         expandSubGraphs(parentVertex);
@@ -146,7 +146,7 @@ public class LayoutAlgorithm
             }
         }
 
-        VisibleHierarchicalGraph<T> graph = parentVertex.getVisibleInnerGraph();
+        HierarchicalGraph<T, LayoutEdge<T>> graph = parentVertex.getVisibleInnerGraph();
         List<T> roots = graph.getVisibleRoots();
         if(roots == null || roots.isEmpty()) {
             return;

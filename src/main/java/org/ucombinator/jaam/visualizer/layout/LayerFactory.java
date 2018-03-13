@@ -18,7 +18,7 @@ public class LayerFactory
         ArrayList<ArrayList<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
         System.out.println("Strongly connected components: " + sccs.size());
 
-        ImmutableHierarchicalGraph<StateVertex> sccGraph = new ImmutableHierarchicalGraph<>(root);
+        HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> sccGraph = ImmutableHierarchicalGraph.create(root);
 
         // Need these two maps for the second pass to avoid having to look around for everything
         HashMap<StateVertex, StateVertex> inputToInner = new HashMap<>();
@@ -32,7 +32,7 @@ public class LayerFactory
                 LayoutSccVertex sccVertex = new LayoutSccVertex(sccId, "SCC-" + sccId);
                 sccGraph.addVertex(sccVertex);
 
-                ImmutableHierarchicalGraph<StateVertex> sccInner = new ImmutableHierarchicalGraph<>(sccVertex);
+                HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> sccInner = ImmutableHierarchicalGraph.create(sccVertex);
 
                 for (Integer id : scc) {
                     StateVertex v = graph.containsInputVertex(id);
@@ -72,7 +72,7 @@ public class LayerFactory
 
                     if(vSCC == nSCC)
                     {
-                        ImmutableHierarchicalGraph<StateVertex> inner = vSCC.getImmutableInnerGraph();
+                        HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> inner = vSCC.getImmutableInnerGraph();
                         inner.addEdge(new LayoutEdge<>(v,n, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
                     }
                     else
@@ -103,7 +103,7 @@ public class LayerFactory
         ArrayList<ArrayList<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
         System.out.println("Strongly connected components: " + sccs.size());
 
-        ImmutableHierarchicalGraph<TaintVertex> sccGraph = new ImmutableHierarchicalGraph<>(root);
+        HierarchicalGraph<TaintVertex, LayoutEdge<TaintVertex>> sccGraph = ImmutableHierarchicalGraph.create(root);
 
         // Need these two maps for the second pass to avoid having to look around for everything
         HashMap<TaintVertex, TaintVertex> inputToInner = new HashMap<>();
@@ -117,7 +117,7 @@ public class LayerFactory
                 TaintSccVertex sccVertex = new TaintSccVertex(sccId, "SCC-" + sccId);
                 sccGraph.addVertex(sccVertex);
 
-                ImmutableHierarchicalGraph<TaintVertex> sccInner = new ImmutableHierarchicalGraph<>(sccVertex);
+                HierarchicalGraph<TaintVertex, LayoutEdge<TaintVertex>> sccInner = ImmutableHierarchicalGraph.create(sccVertex);
 
                 for (Integer id : scc) {
                     TaintVertex v = graph.containsInputVertex(id);
@@ -157,7 +157,7 @@ public class LayerFactory
 
                     if(vSCC == nSCC)
                     {
-                        ImmutableHierarchicalGraph<TaintVertex> inner = vSCC.getImmutableInnerGraph();
+                        HierarchicalGraph<TaintVertex, LayoutEdge<TaintVertex>> inner = vSCC.getImmutableInnerGraph();
                         inner.addEdge(new LayoutEdge<>(v,n, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
                     }
                     else
@@ -181,7 +181,7 @@ public class LayerFactory
 
     public static void getGraphByClass(Graph<StateVertex> graph, LayoutRootVertex root) {
         HashMap<String, ArrayList<StateVertex>> classGroups = GraphUtils.groupByClass(graph);
-        ImmutableHierarchicalGraph<StateVertex> classGraph = new ImmutableHierarchicalGraph<>(root);
+        HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> classGraph = ImmutableHierarchicalGraph.create(root);
 
         // Need this map for the second pass in which we add edges
         HashMap<StateVertex, LayoutClassVertex> innerToClass   = new HashMap<>();
@@ -190,7 +190,7 @@ public class LayerFactory
             LayoutClassVertex classVertex = new LayoutClassVertex(className);
             classGraph.addVertex(classVertex);
 
-            ImmutableHierarchicalGraph<StateVertex> classInnerGraph = new ImmutableHierarchicalGraph<>(classVertex);
+            HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> classInnerGraph = ImmutableHierarchicalGraph.create(classVertex);
 
             for (StateVertex innerVertex : classGroups.get(className)) {
                 classInnerGraph.addVertex(innerVertex);

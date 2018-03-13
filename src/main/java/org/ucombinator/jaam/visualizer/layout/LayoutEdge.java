@@ -201,7 +201,7 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>>
     {
         if(v.getVisibleSelfGraph() != null)
         {
-            VisibleHierarchicalGraph<T> selfGraph = v.getVisibleSelfGraph();
+            HierarchicalGraph<T, LayoutEdge<T>> selfGraph = v.getVisibleSelfGraph();
             for (LayoutEdge<T> e : selfGraph.getEdges())
             {
                 if (v.getId() == e.src.getId() || v.getId() == e.dest.getId())
@@ -216,7 +216,7 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>>
         }
 
         if (recurse) {
-            VisibleHierarchicalGraph<T> innerGraph = v.getVisibleInnerGraph();
+            HierarchicalGraph<T, LayoutEdge<T>> innerGraph = v.getVisibleInnerGraph();
             for (T w : innerGraph.getVertices()) {
                 redrawEdges(w, recurse);
             }

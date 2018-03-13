@@ -14,7 +14,7 @@ public class LayoutAlgorithmTest {
     @Test
     public void layoutIsCorrect() {
         LayoutRootVertex visibleRoot = new LayoutRootVertex();
-        VisibleHierarchicalGraph<StateVertex> graph = new VisibleHierarchicalGraph<>(visibleRoot);
+        HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> graph = VisibleHierarchicalGraph.create(visibleRoot);
         HashSet<StateVertex> vertices = new HashSet<>();
         for(int i = 1; i <= 5; i++) {
             vertices.add(new LayoutMethodVertex(i, "Method " + i, null));

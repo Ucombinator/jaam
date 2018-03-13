@@ -75,7 +75,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         double height = v.getHeight();
         node.setTranslateLocation(translateX, translateY, width, height);
 
-        VisibleHierarchicalGraph<TaintVertex> innerGraph = v.getVisibleInnerGraph();
+        HierarchicalGraph<TaintVertex, LayoutEdge<TaintVertex>> innerGraph = v.getVisibleInnerGraph();
         for (TaintVertex child : innerGraph.getVertices()) {
             if (v.isExpanded()) {
                 drawNodes(node, child);
@@ -86,7 +86,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
     private void drawEdges(TaintVertex v)
     {
         if(v.isExpanded()) {
-            VisibleHierarchicalGraph<TaintVertex> innerGraph = v.getVisibleInnerGraph();
+            HierarchicalGraph<TaintVertex, LayoutEdge<TaintVertex>> innerGraph = v.getVisibleInnerGraph();
             for (LayoutEdge<TaintVertex> e : innerGraph.getEdges()) {
                 e.setVisible(v.isEdgeVisible());
                 e.draw();

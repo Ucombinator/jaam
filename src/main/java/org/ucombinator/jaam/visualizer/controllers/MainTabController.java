@@ -166,7 +166,7 @@ public class MainTabController {
             }
         }
 
-       ImmutableHierarchicalGraph<StateVertex> innerGraph = root.getImmutableInnerGraph(); // TODO: Is this the right one?
+       HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> innerGraph = root.getImmutableInnerGraph(); // TODO: Is this the right one?
        for (StateVertex v : innerGraph.getVertices()) {
            addVerticesToClassTree(topLevel, v);
        }
@@ -221,7 +221,7 @@ public class MainTabController {
     {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        VisibleHierarchicalGraph<StateVertex> innerGraph = v.getVisibleInnerGraph();
+        HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> innerGraph = v.getVisibleInnerGraph();
         for (StateVertex i : innerGraph.getVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
@@ -235,7 +235,7 @@ public class MainTabController {
     public void setRightText(TaintSccVertex v) {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        VisibleHierarchicalGraph<TaintVertex> innerGraph = v.getVisibleInnerGraph();
+        HierarchicalGraph<TaintVertex, LayoutEdge<TaintVertex>> innerGraph = v.getVisibleInnerGraph();
         for(AbstractLayoutVertex<TaintVertex> i : innerGraph.getVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
