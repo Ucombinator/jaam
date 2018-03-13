@@ -11,8 +11,4 @@ public class VisibleHierarchicalGraph<T extends AbstractLayoutVertex<T>>
         this.root = root;
         this.root.setVisibleInnerGraph(this);
     }
-
-    public HashSet<T> getVertices() {
-        return this.vertices;
-    }
 }
