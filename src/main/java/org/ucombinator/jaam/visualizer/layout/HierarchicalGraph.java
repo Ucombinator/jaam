@@ -1,7 +1,6 @@
 package org.ucombinator.jaam.visualizer.layout;
 
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public abstract class HierarchicalGraph<T extends AbstractLayoutVertex<T>> {
@@ -12,17 +11,12 @@ public abstract class HierarchicalGraph<T extends AbstractLayoutVertex<T>> {
     protected HashMap<T, HashMap<T, LayoutEdge>> outEdges;
     protected HashMap<T, HashMap<T, LayoutEdge>> inEdges;
 
-    public HierarchicalGraph() {
+    public HierarchicalGraph(T root) {
         this.vertices = new HashSet<>();
         this.edges = new HashSet<>();
         this.outEdges = new HashMap<>();
         this.inEdges = new HashMap<>();
-    }
-
-    public HierarchicalGraph(T root) {
-        this();
         this.root = root;
-        //this.root.setVisibleInnerGraph(this);
     }
 
     public T getRoot() {

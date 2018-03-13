@@ -9,8 +9,7 @@ public class ImmutableHierarchicalGraph<T extends AbstractLayoutVertex<T>>
         extends HierarchicalGraph<T> {
 
     public ImmutableHierarchicalGraph(T root) {
-        super();
-        this.root = root;
+        super(root);
         this.root.setImmutableInnerGraph(this);
     }
 
