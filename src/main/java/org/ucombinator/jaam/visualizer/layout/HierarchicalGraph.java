@@ -58,22 +58,27 @@ public abstract class HierarchicalGraph<T extends AbstractLayoutVertex<T>> {
                 .collect(Collectors.toSet());
     }
 
+    // TODO: rename to getRoots
+    // TODO: explain "vertex root" versus "graph root".  Maybe rename to "sources"? (and rename `isRoot`)
     public List<T> getVisibleRoots() {
+        // TODO: delete this code so we just return an empty list instead
         if(this.vertices.size() == 0) {
             System.out.println("Error: No vertices!");
             return null;
         }
 
+        // TODO: List<T> roots =
         List<T> roots = this.vertices.stream()
-                .filter(this::isVisibleRoot)
+                .filter(this::isRoot)
                 .collect(Collectors.toList());
 
         // If there is no root (as for a strongly connected component), choose just the first vertex
         // in our ordering. But this should never be necessary, since we bundle SCC's into their own
         // vertices.
-        if(roots.size() == 0) {
+        // TODO: could we do this instead: assert this.vertices.size() == 0 || roots.size() != 0;
+        if (roots.size() == 0) {
             ArrayList<T> vertices = new ArrayList<>(this.vertices);
-            if(!this.vertices.isEmpty()) {
+            if (!this.vertices.isEmpty()) {
                 Collections.sort(vertices);
                 roots.add(vertices.get(0));
             }
@@ -82,45 +87,36 @@ public abstract class HierarchicalGraph<T extends AbstractLayoutVertex<T>> {
         return roots;
     }
 
-    private boolean isVisibleRoot(T v) {
+    // A node is a root if it has no incoming edges from anything other than itself
+    private boolean isRoot(T v) {
         Set<T> inNeighbors = this.getInNeighbors(v);
         return (inNeighbors.size() == 0
                 || (inNeighbors.size() == 1 && inNeighbors.contains(v)));
     }
 
     // DFS for list of pruned leaf vertices of the given type
+    // TODO: pass a predicate instead of a type?
     public HashSet<T> getVerticesToPrune(AbstractLayoutVertex.VertexType type) {
         HashSet<T> toPrune = new HashSet<>();
         HashSet<T> searched = new HashSet<>();
 
-        Stack<T> toSearch = new Stack<>();
-        toSearch.addAll(this.getVisibleRoots());
-
-        while(toSearch.size() > 0) {
-            T v = toSearch.pop();
-            if(!searched.contains(v)) {
-                this.getVerticesToPrune(v, toPrune, searched, type);
-            }
+        for (T v : this.getVisibleRoots()) {
+            this.getVerticesToPrune(v, toPrune, searched, type);
         }
 
         return toPrune;
     }
 
     private void getVerticesToPrune(T v, HashSet<T> toPrune, HashSet<T> searched, AbstractLayoutVertex.VertexType type) {
-        searched.add(v);
-        boolean shouldPruneThis = (v.getType() == type);
-        for(T w : this.getOutNeighbors(v)) {
-            if(!searched.contains(w)) {
+        if (!searched.contains(v)) {
+            searched.add(v);
+            for (T w : this.getOutNeighbors(v)) {
                 this.getVerticesToPrune(w, toPrune, searched, type);
             }
 
-            if(!toPrune.contains(w)) {
-                shouldPruneThis = false;
+            if (v.getType() == type && this.getOutNeighbors(v).stream().allMatch(w -> toPrune.contains(w))) {
+                toPrune.add(v);
             }
-        }
-
-        if(shouldPruneThis) {
-            toPrune.add(v);
         }
     }
 
