@@ -64,7 +64,7 @@ object Main {
   // short-subcommand help
   def main(args : Array[String]) {
     _conf = new MainConf(args)
-    _conf.subcommand match {
+    _conf.subcommand.asInstanceOf[Option[Main]] match {
       case None => println("ERROR: No subcommand specified")
       case Some(m : Main) =>
         if (m.waitForUser()) {

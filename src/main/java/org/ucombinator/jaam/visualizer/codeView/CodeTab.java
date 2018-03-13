@@ -25,6 +25,7 @@ import soot.SootMethod;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 
@@ -85,7 +86,7 @@ public class CodeTab extends Tab{
                     viewToggle.setText( newValue ? "Java" : "Soot");
                 } );
 
-        stackPane.setAlignment(viewToggle, Pos.TOP_RIGHT);
+        StackPane.setAlignment(viewToggle, Pos.TOP_RIGHT);
 
         stackPane.getChildren().add(viewToggle);
 
@@ -240,13 +241,13 @@ public class CodeTab extends Tab{
 
     public IndexRange doHighlightMethod(CodeArea codeArea, IndexRange currentlySelected, IndexRange newRange)
     {
-        for (int i = currentlySelected.getStart(); i < currentlySelected.getEnd(); ++i)
-        {
-            codeArea.setParagraphStyle(i, Collections.EMPTY_LIST);
+        for (int i = currentlySelected.getStart(); i < currentlySelected.getEnd(); ++i) {
+            codeArea.setParagraphStyle(i, Collections.emptyList());
         }
 
-        if(newRange == null)
+        if (newRange == null) {
             return new IndexRange(0,0);
+        }
 
         codeArea.showParagraphAtTop(newRange.getStart() - 1);
 

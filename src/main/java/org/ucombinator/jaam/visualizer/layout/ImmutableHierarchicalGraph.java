@@ -15,7 +15,7 @@ public class ImmutableHierarchicalGraph<T extends AbstractLayoutVertex<T>>
 
     static public <T extends AbstractLayoutVertex<T>> VisibleHierarchicalGraph<T> constructVisibleGraph(HierarchicalGraph<T, LayoutEdge<T>> self, Predicate<T> p) {
         System.out.println("Constructing visible graph for vertex: " + self.getRoot());
-        VisibleHierarchicalGraph<T> visibleGraph = new VisibleHierarchicalGraph(self.getRoot());
+        VisibleHierarchicalGraph<T> visibleGraph = new VisibleHierarchicalGraph<>(self.getRoot());
         for(T v : self.getVertices()) {
             if(p.test(v)) {
                 visibleGraph.addVertex(v);

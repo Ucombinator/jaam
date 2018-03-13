@@ -236,7 +236,7 @@ public class MainTabController {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
         VisibleHierarchicalGraph<TaintVertex> innerGraph = v.getVisibleInnerGraph();
-        for(AbstractLayoutVertex i : innerGraph.getVertices()) {
+        for(AbstractLayoutVertex<TaintVertex> i : innerGraph.getVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
         this.taintDescriptionArea.setText(text.toString());
