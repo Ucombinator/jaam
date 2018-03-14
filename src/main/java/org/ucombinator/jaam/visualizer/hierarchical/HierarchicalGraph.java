@@ -1,20 +1,13 @@
 package org.ucombinator.jaam.visualizer.hierarchical;
 
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class HierarchicalGraph<T extends HierarchicalGraph.Vertex<T>, S extends HierarchicalGraph.Edge<T>> {
-    public interface Edge<T> {
-        T getSrc();
-        T getDest();
-    }
-
-    public interface Vertex<T> extends Comparable<T> {
-        String getLabel();
-    }
+public class HierarchicalGraph<T extends HierarchicalVertex<T, S>, S extends HierarchicalEdge<T>> {
 
     protected T root; // Every hierarchical graph has a root node that contains it.
     protected HashSet<T> vertices;
@@ -67,6 +60,20 @@ public class HierarchicalGraph<T extends HierarchicalGraph.Vertex<T>, S extends 
         return this.inEdges.getOrDefault(v, new HashMap<>()).entrySet()
                 .stream()
                 .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+    }
+
+    public Set<S> getOutEdges(T v) {
+        return this.outEdges.getOrDefault(v, new HashMap<>()).entrySet()
+                .stream()
+                .map(Map.Entry::getValue)
+                .collect(Collectors.toSet());
+    }
+
+    public Set<S> getInEdges(T v) {
+        return this.inEdges.getOrDefault(v, new HashMap<>()).entrySet()
+                .stream()
+                .map(Map.Entry::getValue)
                 .collect(Collectors.toSet());
     }
 

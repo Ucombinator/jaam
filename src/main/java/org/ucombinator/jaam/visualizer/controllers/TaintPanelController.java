@@ -48,17 +48,17 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
     }
 
     public void drawGraph(HashSet<TaintVertex> verticesToDraw) {
+        System.out.println("Drawing taint graph...");
+        panelRoot.setVisible(false);
         this.panelRoot.constructVisibleGraph(verticesToDraw);
         LayoutAlgorithm.layout(panelRoot);
-        panelRoot.setVisible(false);
         drawNodes(null, panelRoot);
         drawEdges(panelRoot);
         // this.resetStrokeWidth();
         panelRoot.setVisible(true);
     }
 
-    private void drawNodes(GUINode<TaintVertex> parent, TaintVertex v)
-    {
+    private void drawNodes(GUINode<TaintVertex> parent, TaintVertex v) {
         GUINode<TaintVertex> node = new GUINode<>(parent, v);
 
         if (parent == null) {
@@ -73,7 +73,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         double height = v.getHeight();
         node.setTranslateLocation(translateX, translateY, width, height);
 
-        HierarchicalGraph<TaintVertex, LayoutEdge<TaintVertex>> innerGraph = v.getVisibleInnerGraph();
+        HierarchicalGraph<TaintVertex, TaintEdge> innerGraph = v.getVisibleInnerGraph();
         for (TaintVertex child : innerGraph.getVertices()) {
             if (v.isExpanded()) {
                 drawNodes(node, child);
@@ -81,10 +81,10 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         }
     }
 
-    private void drawEdges(TaintVertex v)
-    {
+    private void drawEdges(TaintVertex v) {
+        System.out.println("Drawing edges for taint vertex: " + v);
         if(v.isExpanded()) {
-            HierarchicalGraph<TaintVertex, LayoutEdge<TaintVertex>> innerGraph = v.getVisibleInnerGraph();
+            HierarchicalGraph<TaintVertex, TaintEdge> innerGraph = v.getVisibleInnerGraph();
             for (LayoutEdge<TaintVertex> e : innerGraph.getEdges()) {
                 e.setVisible(v.isEdgeVisible());
                 e.draw();
@@ -177,7 +177,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             HashSet<TaintVertex> newSearch = new HashSet<>();
             for (TaintVertex v : toSearch) {
                 upResults.add(v);
-                HierarchicalGraph<TaintVertex, LayoutEdge<TaintVertex>> selfGraph = v.getImmutableSelfGraph();
+                HierarchicalGraph<TaintVertex, TaintEdge> selfGraph = v.getImmutableSelfGraph();
                 for (TaintVertex vIn : selfGraph.getInNeighbors(v)) {
                     if (!upResults.contains(vIn)) {
                         newSearch.add(vIn);
@@ -193,7 +193,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             HashSet<TaintVertex> newSearch = new HashSet<>();
             for (TaintVertex v : toSearch) {
                 downResults.add(v);
-                HierarchicalGraph<TaintVertex, LayoutEdge<TaintVertex>> selfGraph = v.getImmutableSelfGraph();
+                HierarchicalGraph<TaintVertex, TaintEdge> selfGraph = v.getImmutableSelfGraph();
                 for (TaintVertex vOut : selfGraph.getOutNeighbors(v)) {
                     if (!downResults.contains(vOut)) {
                         newSearch.add(vOut);

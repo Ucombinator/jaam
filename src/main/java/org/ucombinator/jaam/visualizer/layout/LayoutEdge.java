@@ -5,10 +5,8 @@ import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
-import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
 
-public class LayoutEdge<T extends AbstractLayoutVertex<T>>
-        implements HierarchicalGraph.Edge<T>, Comparable<LayoutEdge<T>>, GraphEntity
+public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements Comparable<LayoutEdge<T>>, GraphEntity
 {
     private static final Color highlightColor = Color.ORANGERED;
     private static final Color downwardColor = Color.BLACK;
@@ -19,7 +17,7 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>>
     private static final double arrowheadAngleWidth = 0.15 * Math.PI;
     private static final double arrowLengthRatio = 0.5;
 
-    T src, dest;
+    private T src, dest;
     private Group graphics;
     private Shape edgePath; // This will be either a line for most edges, or a path for self-edges
     private Polygon arrowhead;
@@ -98,7 +96,6 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>>
             return;
         }
 
-        //System.out.println("Passed checks for drawing edge: " + this.getID());
         GUINode<T> srcNode = src.getGraphics();
         GUINode<T> destNode   = dest.getGraphics();
 
@@ -144,18 +141,34 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>>
 
         this.getSrcParent().getChildren().add(graphics);
         graphics.setVisible(this.isDisplayed());
+        System.out.println("Finished drawing edge: " + this.src + " --> " + this.dest);
+        System.out.println("Edge path: " + this.edgePath);
     }
 
     public void highlightEdgePath()
     {
-        edgePath.setStroke(highlightColor);
-        edgePath.setStrokeWidth(defaultStrokeWidth * highlightStrokeWidthMultiplier);
+        System.out.println("Highlighting edge: " + this.src + " --> " + this.dest);
+        System.out.println("Edge path: " + edgePath);
+        if(edgePath != null) {
+            edgePath.setStroke(highlightColor);
+            edgePath.setStrokeWidth(defaultStrokeWidth * highlightStrokeWidthMultiplier);
+        }
+        else {
+            System.out.println("Error! Edge path is null.");
+        }
     }
 
     public void resetEdgePath()
     {
-        edgePath.setStroke(color);
-        edgePath.setStrokeWidth(defaultStrokeWidth);
+        System.out.println("Resetting edge: " + this.src + " --> " + this.dest);
+        System.out.println("Edge path: " + edgePath);
+        if(edgePath != null) {
+            edgePath.setStroke(color);
+            edgePath.setStrokeWidth(defaultStrokeWidth);
+        }
+        else {
+            System.out.println("Error! Edge path is null.");
+        }
     }
 
     private void drawLoop() {
@@ -189,6 +202,8 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>>
 
         this.getSrcParent().getChildren().add(graphics);
         this.graphics.setVisible(this.isDisplayed());
+        System.out.println("Finished drawing loop at vertex: " + this.src);
+        System.out.println("Edge path: " + this.edgePath);
     }
 
     // Checks that an edge is currently showing on the screen.
@@ -198,29 +213,13 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>>
                 && this.dest.isEdgeVisible() && this.isVisible();
     }
 
-    public static <T extends AbstractLayoutVertex<T>> void redrawEdges(T v, boolean recurse)
+    public void redrawEdge()
     {
-        if(v.getVisibleSelfGraph() != null) {
-            HierarchicalGraph<T, LayoutEdge<T>> selfGraph = v.getVisibleSelfGraph();
-            for (LayoutEdge<T> e : selfGraph.getEdges())
-            {
-                if (v.getId() == e.src.getId() || v.getId() == e.dest.getId())
-                {
-                    // Remove current graphics and redraw.
-                    e.graphics.getChildren().remove(e.edgePath);
-                    e.graphics.getChildren().remove(e.arrowhead);
-                    e.getSrcParent().getChildren().remove(e.graphics);
-                    e.draw();
-                }
-            }
-        }
-
-        if (recurse) {
-            HierarchicalGraph<T, LayoutEdge<T>> innerGraph = v.getVisibleInnerGraph();
-            for (T w : innerGraph.getVertices()) {
-                redrawEdges(w, recurse);
-            }
-        }
+        // Remove current graphics and redraw.
+        this.graphics.getChildren().remove(this.edgePath);
+        this.graphics.getChildren().remove(this.arrowhead);
+        this.getSrcParent().getChildren().remove(this.graphics);
+        this.draw();
     }
 
     public Shape getEdgePath()
@@ -246,8 +245,13 @@ public class LayoutEdge<T extends AbstractLayoutVertex<T>>
         this.setGraphics(null);
     }
 
-    public void setVisible(boolean isVisible)
+    public void setVisible(boolean isVisible) {
+        this.graphics.setVisible(isVisible);
+    }
+
+    public void redrawAndSetVisible(boolean isVisible)
     {
+        this.redrawEdge();
         this.graphics.setVisible(isVisible);
     }
 
