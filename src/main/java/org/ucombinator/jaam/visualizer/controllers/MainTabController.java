@@ -166,7 +166,7 @@ public class MainTabController {
             }
         }
 
-       HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> innerGraph = root.getImmutableInnerGraph(); // TODO: Is this the right one?
+       HierarchicalGraph<StateVertex, StateEdge> innerGraph = root.getImmutableInnerGraph(); // TODO: Is this the right one?
        for (StateVertex v : innerGraph.getVertices()) {
            addVerticesToClassTree(topLevel, v);
        }
@@ -221,7 +221,7 @@ public class MainTabController {
     {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> innerGraph = v.getVisibleInnerGraph();
+        HierarchicalGraph<StateVertex, StateEdge> innerGraph = v.getVisibleInnerGraph();
         for (StateVertex i : innerGraph.getVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
@@ -235,7 +235,7 @@ public class MainTabController {
     public void setRightText(TaintSccVertex v) {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        HierarchicalGraph<TaintVertex, LayoutEdge<TaintVertex>> innerGraph = v.getVisibleInnerGraph();
+        HierarchicalGraph<TaintVertex, TaintEdge> innerGraph = v.getVisibleInnerGraph();
         for(AbstractLayoutVertex<TaintVertex> i : innerGraph.getVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
@@ -409,7 +409,7 @@ public class MainTabController {
         this.hidden.addAll(toHide);
         this.vizPanelController.endBatchMode();
         this.vizHighlighted.clear();
-        this.vizPanelController.resetAndRedraw();
+        this.vizPanelController.redrawGraph(this.hidden);
     }
 
     // TODO: This should be done using event and event handling using FieldSelectEvent
@@ -440,7 +440,7 @@ public class MainTabController {
             }
 
             if (!v.isVisibleInnerGraphEmpty()) {
-                HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> innerGraph = v.getVisibleInnerGraph();
+                HierarchicalGraph<StateVertex, StateEdge> innerGraph = v.getVisibleInnerGraph();
                 for (StateVertex i : innerGraph.getVertices()) {
                     setClassHighlight(i, prevPrefix, currPrefix);
                 }

@@ -20,7 +20,7 @@ public class LayerFactory
         ArrayList<ArrayList<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
         System.out.println("Strongly connected components: " + sccs.size());
 
-        HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> sccGraph = HierarchicalGraphUtils.create(root, true);
+        HierarchicalGraph<StateVertex, StateEdge> sccGraph = HierarchicalGraphUtils.create(root, true);
 
         // Need these two maps for the second pass to avoid having to look around for everything
         HashMap<StateVertex, StateVertex> inputToInner = new HashMap<>();
@@ -35,7 +35,7 @@ public class LayerFactory
                 sccGraph.addVertex(sccVertex);
                 sccVertex.setImmutableSelfGraph(sccGraph);
 
-                HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> sccInner = HierarchicalGraphUtils.create(sccVertex, true);
+                HierarchicalGraph<StateVertex, StateEdge> sccInner = HierarchicalGraphUtils.create(sccVertex, true);
 
                 for (Integer id : scc) {
                     StateVertex v = graph.containsInputVertex(id);
@@ -77,12 +77,12 @@ public class LayerFactory
 
                     if(vSCC == nSCC)
                     {
-                        HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> inner = vSCC.getImmutableInnerGraph();
-                        inner.addEdge(new LayoutEdge<>(v,n, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                        HierarchicalGraph<StateVertex, StateEdge> inner = vSCC.getImmutableInnerGraph();
+                        inner.addEdge(new StateEdge(v, n));
                     }
                     else
                     {
-                        sccGraph.addEdge(new LayoutEdge<>(vSCC, nSCC, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                        sccGraph.addEdge(new StateEdge(vSCC, nSCC));
                     }
                 }
             }
@@ -93,7 +93,7 @@ public class LayerFactory
 
                     StateVertex nSCC = innerToSCC.get(n);
 
-                    sccGraph.addEdge(new LayoutEdge<>(vSCC, nSCC, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                    sccGraph.addEdge(new StateEdge(vSCC, nSCC));
                 }
             }
         }
@@ -108,7 +108,7 @@ public class LayerFactory
         ArrayList<ArrayList<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
         System.out.println("Strongly connected components: " + sccs.size());
 
-        HierarchicalGraph<TaintVertex, LayoutEdge<TaintVertex>> sccGraph = HierarchicalGraphUtils.create(root, true);
+        HierarchicalGraph<TaintVertex, TaintEdge> sccGraph = HierarchicalGraphUtils.create(root, true);
 
         // Need these two maps for the second pass to avoid having to look around for everything
         HashMap<TaintVertex, TaintVertex> inputToInner = new HashMap<>();
@@ -123,7 +123,7 @@ public class LayerFactory
                 sccGraph.addVertex(sccVertex);
                 sccVertex.setImmutableSelfGraph(sccGraph);
 
-                HierarchicalGraph<TaintVertex, LayoutEdge<TaintVertex>> sccInner = HierarchicalGraphUtils.create(sccVertex, true);
+                HierarchicalGraph<TaintVertex, TaintEdge> sccInner = HierarchicalGraphUtils.create(sccVertex, true);
 
                 for (Integer id : scc) {
                     TaintVertex v = graph.containsInputVertex(id);
@@ -165,12 +165,12 @@ public class LayerFactory
 
                     if(vSCC == nSCC)
                     {
-                        HierarchicalGraph<TaintVertex, LayoutEdge<TaintVertex>> inner = vSCC.getImmutableInnerGraph();
-                        inner.addEdge(new LayoutEdge<>(v,n, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                        HierarchicalGraph<TaintVertex, TaintEdge> inner = vSCC.getImmutableInnerGraph();
+                        inner.addEdge(new TaintEdge(v, n));
                     }
                     else
                     {
-                        sccGraph.addEdge(new LayoutEdge<>(vSCC, nSCC, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                        sccGraph.addEdge(new TaintEdge(vSCC, nSCC));
                     }
                 }
             }
@@ -181,7 +181,7 @@ public class LayerFactory
 
                     TaintVertex nSCC = innerToSCC.get(n);
 
-                    sccGraph.addEdge(new LayoutEdge<>(vSCC, nSCC, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                    sccGraph.addEdge(new TaintEdge(vSCC, nSCC));
                 }
             }
         }
@@ -189,7 +189,7 @@ public class LayerFactory
 
     public static void getGraphByClass(Graph<StateVertex> graph, LayoutRootVertex root) {
         HashMap<String, ArrayList<StateVertex>> classGroups = GraphUtils.groupByClass(graph);
-        HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> classGraph = HierarchicalGraphUtils.create(root, true);
+        HierarchicalGraph<StateVertex, StateEdge> classGraph = HierarchicalGraphUtils.create(root, true);
 
         // Need this map for the second pass in which we add edges
         HashMap<StateVertex, LayoutClassVertex> innerToClass   = new HashMap<>();
@@ -199,7 +199,7 @@ public class LayerFactory
             classGraph.addVertex(classVertex);
             classVertex.setImmutableSelfGraph(classGraph);
 
-            HierarchicalGraph<StateVertex, LayoutEdge<StateVertex>> classInnerGraph = HierarchicalGraphUtils.create(classVertex, true);
+            HierarchicalGraph<StateVertex, StateEdge> classInnerGraph = HierarchicalGraphUtils.create(classVertex, true);
 
             for (StateVertex innerVertex : classGroups.get(className)) {
                 classInnerGraph.addVertex(innerVertex);
@@ -215,10 +215,10 @@ public class LayerFactory
                     LayoutClassVertex classVertexW = innerToClass.get(w);
                     if(classVertexV.equals(classVertexW)) {
                         classVertexV.getImmutableInnerGraph().addEdge(
-                                new LayoutEdge<>(v, w, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                                new StateEdge(v, w));
                     } else {
                         classGraph.addEdge(
-                                new LayoutEdge<>(classVertexV, classVertexW, LayoutEdge.EDGE_TYPE.EDGE_REGULAR));
+                                new StateEdge(classVertexV, classVertexW));
                     }
                 }
             }

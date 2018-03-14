@@ -54,14 +54,11 @@ public class ClassTreeNode
                     Main.getSelectedMainTabController().getHidden().addAll(childVertices);
                 }
                 vizPanelController.endBatchMode();
-                vizPanelController.resetAndRedraw();
             }
         });
         parent.getChildren().add(item);
 
-
         item.getChildren().sort(Comparator.comparing(t->t.getValue().shortName));
-
         return item;
     }
 

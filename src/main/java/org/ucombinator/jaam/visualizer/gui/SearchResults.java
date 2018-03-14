@@ -4,12 +4,12 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.layout.BorderPane;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
-import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.layout.StateVertex;
 
 public class SearchResults extends BorderPane
 {
-    public TreeView<String> searchTree;
-    private TreeItem<String> root;
+    private TreeView<String> searchTree;
+    private TreeItem<String> root; // TODO: why isn't this TreeItem<StateVertex> like it should be?
     
     public SearchResults()
     {
@@ -72,16 +72,16 @@ public class SearchResults extends BorderPane
     //Set the text for the area
     public void writeText(MainTabController mainTab)
     {
-        this.root.getChildren().clear();
+        /*this.root.getChildren().clear();
         if(mainTab.getVizHighlighted().size() > 0) {
             // We don't want to include the panel root, so we start our check with its children
-            for (AbstractLayoutVertex v : mainTab.vizPanelController.getPanelRoot().getVisibleInnerGraph().getVertices()) {
+            for (StateVertex v : mainTab.vizPanelController.getPanelRoot().getVisibleInnerGraph().getVertices()) {
                 v.addTreeNodes(this.root, mainTab);
             }
 
             // TODO: Auto-expand nodes?
             //DefaultTreeModel model = (DefaultTreeModel)this.searchTree.getModel();
             //model.reload(this.root);
-        }
+        }*/
     }
 }

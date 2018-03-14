@@ -1,12 +1,16 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalEdge;
 import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraphUtils;
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalVertex;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class LayoutRootVertex extends StateVertex {
 
@@ -17,8 +21,12 @@ public class LayoutRootVertex extends StateVertex {
         this.color = defaultColor;
     }
 
+    @Override
+    public void onMouseClick(MouseEvent event) {}
+
     public void constructVisibleGraphExcept(Set<StateVertex> verticesToHide) {
-        HierarchicalGraphUtils.constructVisibleGraph(this, (StateVertex v) -> !verticesToHide.contains(v));
+        System.out.println("Constructing new visible graph...");
+        HierarchicalGraphUtils.constructVisibleGraph(this, (StateVertex v) -> !verticesToHide.contains(v), StateEdge::new);
     }
 
     public String getRightPanelContent() {

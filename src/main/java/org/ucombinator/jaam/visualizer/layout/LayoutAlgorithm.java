@@ -1,10 +1,13 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalEdge;
 import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
+import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.taint.TaintSccVertex;
 
 import java.util.*;
 
+// The vertices in this layout must extend both AbstractLayoutVertex and HierarchicalVertex
 public class LayoutAlgorithm
 {
     // This works on a graph whose vertices have been assigned a bounding box
@@ -12,27 +15,30 @@ public class LayoutAlgorithm
     private static final double NODES_PADDING = 10;
     private static final double ROOT_V_OFFSET = 10;
 
-    public static <T extends AbstractLayoutVertex<T>> void layout(T parentVertex) {
+    public static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends HierarchicalEdge<T>>
+    void layout(T parentVertex) {
         initializeSizes(parentVertex);
         bfsLayout(parentVertex);
         parentVertex.setY(parentVertex.getY() + ROOT_V_OFFSET);
     }
 
-    private static <T extends AbstractLayoutVertex<T>> void initializeSizes(T parentVertex) {
+    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends HierarchicalEdge<T>>
+    void initializeSizes(T parentVertex) {
         parentVertex.setWidth(AbstractLayoutVertex.DEFAULT_WIDTH);
         parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
         parentVertex.setX(0);
         parentVertex.setY(0);
-        HierarchicalGraph<T, LayoutEdge<T>> innerGraph = parentVertex.getVisibleInnerGraph();
+        HierarchicalGraph<T, S> innerGraph = parentVertex.getVisibleInnerGraph();
         for (T v : innerGraph.getVertices()) {
             initializeSizes(v);
         }
     }
 
-    private static <T extends AbstractLayoutVertex<T>> void expandSubGraphs(T parentVertex) {
-        HierarchicalGraph<T, LayoutEdge<T>> parentInnerGraph = parentVertex.getVisibleInnerGraph();
+    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends HierarchicalEdge<T>>
+    void expandSubGraphs(T parentVertex) {
+        HierarchicalGraph<T, S> parentInnerGraph = parentVertex.getVisibleInnerGraph();
         for(T v: parentInnerGraph.getVertices()) {
-            HierarchicalGraph<T, LayoutEdge<T>> childInnerGraph = v.getVisibleInnerGraph();
+            HierarchicalGraph<T, S> childInnerGraph = v.getVisibleInnerGraph();
             if (childInnerGraph.getVertices().size() != 0)
             {
                 // Layout the inner graphs of each node and assign width W and height H to each node
@@ -46,8 +52,9 @@ public class LayoutAlgorithm
         }
     }
 
-    private static <T extends AbstractLayoutVertex<T>> void dfsLayout(T parentVertex) {
-        HierarchicalGraph<T, LayoutEdge<T>> graph = parentVertex.getVisibleInnerGraph();
+    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends HierarchicalEdge<T>>
+    void dfsLayout(T parentVertex) {
+        HierarchicalGraph<T, S> graph = parentVertex.getVisibleInnerGraph();
 
         expandSubGraphs(parentVertex);
 
@@ -65,8 +72,9 @@ public class LayoutAlgorithm
         doLayout(parentVertex, childrenMap);
     }
 
-    private static <T extends AbstractLayoutVertex<T>> void bfsLayout(T parentVertex) {
-        HierarchicalGraph<T, LayoutEdge<T>> graph = parentVertex.getVisibleInnerGraph();
+    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends HierarchicalEdge<T>>
+    void bfsLayout(T parentVertex) {
+        HierarchicalGraph<T, S> graph = parentVertex.getVisibleInnerGraph();
 
         // Interior graphs use the DFS Layout
         expandSubGraphs(parentVertex);
@@ -131,15 +139,14 @@ public class LayoutAlgorithm
         }
     }
 
-    private static <T extends AbstractLayoutVertex<T>> void doLayout(T parentVertex,
-                                 HashMap<T, ArrayList<T>> childrenMap)
+    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends HierarchicalEdge<T>>
+    void doLayout(T parentVertex, HashMap<T, ArrayList<T>> childrenMap)
     {
         doLayout(parentVertex, childrenMap, null);
     }
 
-    private static <T extends AbstractLayoutVertex<T>> void doLayout(T parentVertex,
-                                 HashMap<T, ArrayList<T>> childrenMap,
-                                 Comparator<T> childrenSortOrder)
+    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends HierarchicalEdge<T>>
+    void doLayout(T parentVertex, HashMap<T, ArrayList<T>> childrenMap, Comparator<T> childrenSortOrder)
     {
         if(childrenSortOrder != null) {
             for (ArrayList<T> l : childrenMap.values()) {
@@ -147,7 +154,7 @@ public class LayoutAlgorithm
             }
         }
 
-        HierarchicalGraph<T, LayoutEdge<T>> graph = parentVertex.getVisibleInnerGraph();
+        HierarchicalGraph<T, S> graph = parentVertex.getVisibleInnerGraph();
         List<T> roots = graph.getSources();
         if(roots == null || roots.isEmpty()) {
             return;
@@ -183,8 +190,8 @@ public class LayoutAlgorithm
      * cannot be hidden.
      * Every node appears as a child as deep as possible in the tree (ties broken arbitrarily)
      */
-    private static <T extends AbstractLayoutVertex<T>> HashMap<T, ArrayList<T>> maxDepthChildren(
-            HierarchicalGraph<T, LayoutEdge<T>> graph)
+    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends HierarchicalEdge<T>>
+    HashMap<T, ArrayList<T>> maxDepthChildren(HierarchicalGraph<T, S> graph)
     {
         HashMap<T, ArrayList<T>> childrenMap = new HashMap<>();
         HashMap<T, Integer> vertexCounters = new HashMap<>();
