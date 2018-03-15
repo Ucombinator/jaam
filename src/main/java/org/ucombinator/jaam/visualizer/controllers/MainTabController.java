@@ -53,7 +53,7 @@ public class MainTabController {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
     }
 
-    public MainTabController(File file, org.ucombinator.jaam.visualizer.graph.Graph graph, List<CompilationUnit> compilationUnits, TaintGraph taintGraph, Set<SootClass> sootClasses) throws IOException {
+    public MainTabController(File file, Graph<StateVertex, StateEdge> graph, List<CompilationUnit> compilationUnits, TaintGraph taintGraph, Set<SootClass> sootClasses) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
 
         this.vizPanelController = new VizPanelController(graph);
@@ -72,7 +72,8 @@ public class MainTabController {
         this.codeViewController.addSelectHandler(vizPane);
         this.taintPanelController.addSelectHandler(vizPane);
 
-        buildClassTree(this.codeViewController.getClassNames(), this.vizPanelController.getVisibleRoot());
+        // I left it with the extra parameter, because I think we will probably want to move it somewhere else
+        buildClassTree(this.codeViewController, this.vizPanelController.getImmutableRoot());
 
         this.vizHighlighted = new LinkedHashSet<>();
         this.taintHighlighted = new LinkedHashSet<>();
@@ -81,13 +82,13 @@ public class MainTabController {
         this.hidden.addListener(this.vizPanelController);
     }
 
-    private void buildClassTree(HashSet<String> classNames, LayoutRootVertex immutableRoot)
+    private void buildClassTree(CodeViewController codeViewController, LayoutRootVertex immutableRoot)
     {
         this.classTree.setCellFactory(CheckBoxTreeCell.forTreeView());
 
         PackageNode root = new PackageNode("root", null);
 
-        for (String c : classNames) {
+        for (String c : codeViewController.getClassNames()) {
             String[] split = c.split("\\.");
 
             PackageNode current = root;
@@ -117,6 +118,7 @@ public class MainTabController {
 
         // Add the vertices
         addVerticesToClassTree(topLevel, immutableRoot);
+        addFieldsToClassTree(topLevel, codeViewController);
 
         // Build the Tree
         CheckBoxTreeItem<ClassTreeNode> treeRoot = new CheckBoxTreeItem<>();
@@ -149,6 +151,12 @@ public class MainTabController {
             }
         });
 
+    }
+
+    private void addFieldsToClassTree(ArrayList<PackageNode> topLevel, CodeViewController codeViewController) {
+        for (PackageNode n : topLevel) {
+            n.addFields(codeViewController);
+        }
     }
 
     private void addVerticesToClassTree(ArrayList<PackageNode> topLevel, StateVertex root) {
