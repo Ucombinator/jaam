@@ -214,7 +214,7 @@ public class LayerFactory
         }
     }
 
-    // Takes an input vertex (a AbstractVertex which is actually a Loop or Method AbstractVertex) and returns a new
+    // Takes an input vertex (a Vertex which is actually a Loop or Method Vertex) and returns a new
     // vertex of the correct type
     // TODO: Can we rewrite our algorithm to make this upgrading unnecessary?
     private static StateVertex upgradeStateVertex(StateVertex v)

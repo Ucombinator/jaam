@@ -30,7 +30,7 @@ public class SearchResults extends BorderPane
                     TreePath path = searchTree.getPathForLocation(e.getX(), e.getY());
                     //System.out.println("TreePath = " + path);
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode)(path.getLastPathComponent());
-                    org.ucombinator.jaam.visualizer.graph.AbstractVertex ver = (org.ucombinator.jaam.visualizer.graph.AbstractVertex)(node.getUserObject());
+                    org.ucombinator.jaam.visualizer.graph.Vertex ver = (org.ucombinator.jaam.visualizer.graph.Vertex)(node.getUserObject());
                     
                     if(!ver.isVisible)
                         return;

@@ -2,7 +2,7 @@ package org.ucombinator.jaam.visualizer.graph;
 
 import java.util.function.*;
 
-public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extends Edge<T>> extends AbstractVertex, Comparable<T> {
+public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extends Edge<T>> extends Vertex, Comparable<T> {
 
     Graph<T, S> getParentGraph();
     Graph<T, S> getChildGraph();

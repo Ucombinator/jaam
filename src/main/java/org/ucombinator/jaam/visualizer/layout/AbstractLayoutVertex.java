@@ -13,7 +13,7 @@ import org.ucombinator.jaam.visualizer.gui.GUINodeStatus;
 import java.util.Set;
 
 public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
-        implements AbstractVertex, GraphEntity
+        implements Vertex, GraphEntity
 {
     // Types of layout vertices
     public enum VertexType {

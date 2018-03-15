@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class Graph<T extends AbstractVertex, S extends Edge<T>> {
+public class Graph<T extends Vertex, S extends Edge<T>> {
 
     protected HashSet<T> vertices;
     protected HashSet<S> edges;
@@ -48,28 +48,28 @@ public class Graph<T extends AbstractVertex, S extends Edge<T>> {
         return this.idToVertexMap.get(id);
     }
 
-    public Set<T> getOutNeighbors(AbstractVertex v) {
+    public Set<T> getOutNeighbors(T v) {
         return this.outEdges.getOrDefault(v, new HashMap<>()).entrySet()
                 .stream()
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
     }
 
-    public Set<T> getInNeighbors(AbstractVertex v) {
+    public Set<T> getInNeighbors(T v) {
         return this.inEdges.getOrDefault(v, new HashMap<>()).entrySet()
                 .stream()
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
     }
 
-    public Set<S> getOutEdges(AbstractVertex v) {
+    public Set<S> getOutEdges(T v) {
         return this.outEdges.getOrDefault(v, new HashMap<>()).entrySet()
                 .stream()
                 .map(Map.Entry::getValue)
                 .collect(Collectors.toSet());
     }
 
-    public Set<S> getInEdges(AbstractVertex v) {
+    public Set<S> getInEdges(T v) {
         return this.inEdges.getOrDefault(v, new HashMap<>()).entrySet()
                 .stream()
                 .map(Map.Entry::getValue)

@@ -7,7 +7,7 @@ import org.ucombinator.jaam.visualizer.taint.TaintSccVertex;
 
 import java.util.*;
 
-// The vertices in this layout must extend both AbstractLayoutVertex and AbstractVertex
+// The vertices in this layout must extend both AbstractLayoutVertex and Vertex
 public class LayoutAlgorithm
 {
     // This works on a graph whose vertices have been assigned a bounding box

@@ -1,6 +1,6 @@
 package org.ucombinator.jaam.visualizer.graph;
 
-public interface AbstractVertex
+public interface Vertex
 {
     String getLabel();
     int getId();
