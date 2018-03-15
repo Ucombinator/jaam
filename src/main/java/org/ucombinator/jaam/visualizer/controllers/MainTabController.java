@@ -14,7 +14,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import org.ucombinator.jaam.visualizer.classTree.ClassTreeNode;
 import org.ucombinator.jaam.visualizer.classTree.PackageNode;
-import org.ucombinator.jaam.visualizer.classTree.RootNode;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.*;
@@ -89,7 +88,7 @@ public class MainTabController {
     {
         this.classTree.setCellFactory(CheckBoxTreeCell.forTreeView());
 
-        PackageNode root = new PackageNode("root", null);
+        PackageNode root = new PackageNode("", "");
 
         for (String c : codeViewController.getClassNames()) {
             String[] split = c.split("\\.");
@@ -126,7 +125,7 @@ public class MainTabController {
         // Build the Tree
         CheckBoxTreeItem<ClassTreeNode> treeRoot = new CheckBoxTreeItem<>();
         treeRoot.setSelected(true);
-        treeRoot.setValue(new RootNode("root", null));
+        treeRoot.setValue(root);
         treeRoot.setExpanded(true);
 
         topLevel.forEach(f -> f.build(treeRoot));
