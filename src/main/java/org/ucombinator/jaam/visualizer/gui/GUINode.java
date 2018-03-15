@@ -39,7 +39,7 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
         this.rectLabel = new Text(v.getId() + "");
         this.rectLabel.setVisible(v.isLabelVisible());
 
-        if (v instanceof LayoutRootVertex || v instanceof TaintRootVertex) {
+        if (v instanceof StateRootVertex || v instanceof TaintRootVertex) {
             this.getChildren().add(this.rect);
         } else {
             this.getChildren().addAll(this.rect, this.rectLabel);

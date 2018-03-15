@@ -5,18 +5,18 @@ import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 
 import java.util.HashSet;
 
-public class LayoutClassVertex extends StateVertex {
+public class StateClassVertex extends StateVertex {
 
     String className;
     private Color defaultColor = Color.DARKGREY;
 
-    public LayoutClassVertex(String className) {
+    public StateClassVertex(String className) {
         super("className", VertexType.CLASS, true);
         this.className = className;
     }
 
-    public LayoutClassVertex copy() {
-        return new LayoutClassVertex("className");
+    public StateClassVertex copy() {
+        return new StateClassVertex("className");
     }
 
     public String getRightPanelContent() {
@@ -29,8 +29,8 @@ public class LayoutClassVertex extends StateVertex {
         return set;
     }
 
-    public HashSet<LayoutMethodVertex> getMethodVertices() {
-        HashSet<LayoutMethodVertex> methodVertices = new HashSet<>();
+    public HashSet<StateMethodVertex> getMethodVertices() {
+        HashSet<StateMethodVertex> methodVertices = new HashSet<>();
         for(StateVertex v : this.getChildGraph().getVertices()) {
             methodVertices.addAll(v.getMethodVertices());
         }

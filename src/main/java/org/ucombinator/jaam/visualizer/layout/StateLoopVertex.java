@@ -2,26 +2,31 @@ package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
-import org.ucombinator.jaam.serializer.LoopMethodNode;
+import org.ucombinator.jaam.serializer.LoopLoopNode;
 import soot.SootClass;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
-public class LayoutMethodVertex extends StateVertex implements CodeEntity {
+public class StateLoopVertex extends StateVertex implements Cloneable, CodeEntity {
 
-    private static final Color defaultColor = Color.DEEPSKYBLUE;
+    private static final Color defaultColor = Color.LIGHTYELLOW;
 
-    private LoopMethodNode compilationUnit;
+    private int statementIndex;
 
-    public LayoutMethodVertex(int id, String label, LoopMethodNode compilationUnit){
-    	super(id, label, VertexType.METHOD);
+    private LoopLoopNode compilationUnit;
+
+    public StateLoopVertex(int id, String label, int statementIndex, LoopLoopNode compilationUnit){
+    	super(id, label, VertexType.LOOP);
     	this.setDefaultColor();
+
+    	this.statementIndex = statementIndex;
+
     	this.compilationUnit = compilationUnit;
     }
 
-    public LayoutMethodVertex copy() {
-        return new LayoutMethodVertex(this.getId(), this.getLabel(), this.compilationUnit);
+    public StateLoopVertex copy() {
+        return new StateLoopVertex(this.getId(), this.getLabel(), this.statementIndex, this.compilationUnit);
     }
 
     public String getClassName() {
@@ -39,72 +44,76 @@ public class LayoutMethodVertex extends StateVertex implements CodeEntity {
         return set;
     }
 
+    public String getMethodName() {
+        return this.compilationUnit.method().getName();
+    }
+
     public String getClassDeclaration() {
         StringBuilder classDecl = new StringBuilder("class");
+
+        this.compilationUnit.method().getDeclaringClass();
 
         SootClass declaringClass = this.compilationUnit.method().getDeclaringClass();
 
         classDecl.append(" " + declaringClass.getShortName());
 
-        if(declaringClass.hasSuperclass() && declaringClass.getSuperclass().getShortName().compareTo("Object") != 0)
+        if(declaringClass.hasSuperclass())
         {
             classDecl.append(" extends " + declaringClass.getSuperclass().getShortName());
         }
         if(declaringClass.getInterfaceCount() > 0)
         {
             classDecl.append(" implements ");
-            declaringClass.getInterfaces().stream().forEach(i -> classDecl.append(i.getShortName() + ", "));
+            declaringClass.getInterfaces().stream().forEach(i -> classDecl.append(i.getName() + ", "));
         }
 
         return classDecl.toString();
     }
 
-    public String getMethodName() {
-        return this.compilationUnit.method().getName();
-    }
 
-    public LoopMethodNode getCompilationUnit() {
+    public LoopLoopNode getCompilationUnit() {
         return compilationUnit;
     }
 
     public String getRightPanelContent() {
-        return "Method vertex: " + this.getId();
+        return "Loop vertex: " + this.getMethodName();
     }
 
     @Override
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = this.getMethodName().toLowerCase().contains(query);
-        System.out.println(this.getMethodName() + " Method Checking:");
+        System.out.println(this.getMethodName() + " Loop Checking:");
         if(found) {
-            System.out.println("Found " + this);
+            System.out.println("\t\t\tFound " + this);
             this.setHighlighted(found);
             mainTab.getVizHighlighted().add(this);
-        }
-
-        for(StateVertex v : this.getChildGraph().getVertices()) {
-            v.searchByMethod(query, mainTab);
         }
 
         return found;
     }
 
-    public LinkedHashSet<LayoutMethodVertex> getMethodVertices() {
-        LinkedHashSet<LayoutMethodVertex> result = new LinkedHashSet<LayoutMethodVertex>();
-        result.add(this);
-        return result;
-    }
-
-    public Color getColor() {
-        return this.color;
-    }
-
-    private void setDefaultColor(){
-        this.color = defaultColor;
+    public HashSet<StateMethodVertex> getMethodVertices() {
+        HashSet<StateMethodVertex> methods = new LinkedHashSet<StateMethodVertex>();
+        return methods;
     }
 
     @Override
+    public HashSet<String> getMethodNames() {
+        HashSet<String> methodNames = new HashSet<>();
+        methodNames.add(this.getMethodName());
+        return methodNames;
+    }
+
+    public void setDefaultColor(){
+        this.color = defaultColor;
+    }
+
     public String toString()
     {
-        return "Method " + this.getClassName() + ":" + getMethodName();
+        return "Loop " + getClassName() + ":" + getMethodName();
     }
+
+    public int getStatementIndex() {
+		return statementIndex;
+	}
 }

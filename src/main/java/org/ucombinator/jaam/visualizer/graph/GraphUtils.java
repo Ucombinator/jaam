@@ -107,11 +107,11 @@ public class GraphUtils {
 
         while(stack.size() > 0) {
             StateVertex v = stack.pop();
-            if (v instanceof LayoutMethodVertex) {
-                String className = ((LayoutMethodVertex) v).getClassName();
+            if (v instanceof StateMethodVertex) {
+                String className = ((StateMethodVertex) v).getClassName();
                 addVertexToClassGroup(visitedVertices, className, v);
-            } else if (v instanceof LayoutLoopVertex) {
-                String className = ((LayoutLoopVertex) v).getClassName();
+            } else if (v instanceof StateLoopVertex) {
+                String className = ((StateLoopVertex) v).getClassName();
                 addVertexToClassGroup(visitedVertices, className, v);
             } else {
                 System.out.println("Error! Unhandled vertex type in GraphUtils.groupByClass.");

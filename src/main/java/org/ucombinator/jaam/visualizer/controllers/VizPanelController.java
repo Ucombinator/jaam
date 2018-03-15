@@ -39,7 +39,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
 
     // TODO: should this stuff be moved to a model class?
     private Group graphContentGroup;
-    private LayoutRootVertex visibleRoot, immutableRoot;
+    private StateRootVertex visibleRoot, immutableRoot;
 
     private boolean inBatchMode = false;
     private boolean changedWhileInBatchMode = false;
@@ -61,8 +61,8 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         graphContentGroup.addEventFilter(SelectEvent.STATE_VERTEX_SELECTED, this);
 
         this.scrollPane.addEventFilter(ScrollEvent.SCROLL, this::scrollAction);
-        this.visibleRoot = new LayoutRootVertex();
-        this.immutableRoot = new LayoutRootVertex();
+        this.visibleRoot = new StateRootVertex();
+        this.immutableRoot = new StateRootVertex();
         LayerFactory.getLayeredGraph(graph, this.immutableRoot);
         this.drawGraph(new HashSet<>());
     }
@@ -126,11 +126,11 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         }
     }
 
-    public LayoutRootVertex getVisibleRoot() {
+    public StateRootVertex getVisibleRoot() {
         return this.visibleRoot;
     }
 
-    public LayoutRootVertex getImmutableRoot() {
+    public StateRootVertex getImmutableRoot() {
         return this.immutableRoot;
     }
 
@@ -147,12 +147,12 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         System.out.println("Received event from vertex " + vertex.toString());
 
         MainTabController currentFrame = Main.getSelectedMainTabController();
-        if(vertex instanceof LayoutLoopVertex) {
-            currentFrame.setRightText((LayoutLoopVertex) vertex);
-        } else if(vertex instanceof LayoutMethodVertex) {
-            currentFrame.setRightText((LayoutMethodVertex) vertex);
-        } else if(vertex instanceof LayoutSccVertex) {
-            currentFrame.setRightText((LayoutSccVertex) vertex);
+        if(vertex instanceof StateLoopVertex) {
+            currentFrame.setRightText((StateLoopVertex) vertex);
+        } else if(vertex instanceof StateMethodVertex) {
+            currentFrame.setRightText((StateMethodVertex) vertex);
+        } else if(vertex instanceof StateSccVertex) {
+            currentFrame.setRightText((StateSccVertex) vertex);
         }
         else {
             currentFrame.setVizRightText("Text");

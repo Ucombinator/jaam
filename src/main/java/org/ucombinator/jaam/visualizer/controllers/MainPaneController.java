@@ -85,7 +85,7 @@ public class MainPaneController {
 
         List<CompilationUnit> compilationUnits = new ArrayList<>();
         Set<SootClass> sootClasses = new HashSet<>();
-        Pair<LayoutRootVertex, TaintRootVertex> s = parseLoopGraph(file, compilationUnits, sootClasses);
+        Pair<StateRootVertex, TaintRootVertex> s = parseLoopGraph(file, compilationUnits, sootClasses);
 
         System.out.println("--> Create visualization: start...");
         MainTabController tabController = new MainTabController(file, s.getLeft().getChildGraph(),  compilationUnits,
@@ -96,9 +96,9 @@ public class MainPaneController {
         tabPane.getSelectionModel().select(tabController.tab);
     }
 
-    private static Pair<LayoutRootVertex, TaintRootVertex> parseLoopGraph(
+    private static Pair<StateRootVertex, TaintRootVertex> parseLoopGraph(
             File file, List<CompilationUnit> compilationUnits, Set<SootClass> sootClasses) {
-        LayoutRootVertex loopGraphRoot = new LayoutRootVertex();
+        StateRootVertex loopGraphRoot = new StateRootVertex();
         Graph<StateVertex, StateEdge> loopGraph = loopGraphRoot.getChildGraph();
         HashMap<Integer, StateVertex> stateVertexIndex = new HashMap<>();
         int loopPackets = 0;
@@ -118,7 +118,7 @@ public class MainPaneController {
                 loopPackets++;
                 LoopLoopNode node = (LoopLoopNode) packet;
 
-                LayoutLoopVertex v = new LayoutLoopVertex(node.id().id(),
+                StateLoopVertex v = new StateLoopVertex(node.id().id(),
                         node.method().getSignature(),
                         node.statementIndex(), node);
                 loopGraph.addVertex(v);
@@ -130,7 +130,7 @@ public class MainPaneController {
                 methodPackets++;
                 LoopMethodNode node = (LoopMethodNode) packet;
 
-                LayoutMethodVertex v = new LayoutMethodVertex(node.id().id(),
+                StateMethodVertex v = new StateMethodVertex(node.id().id(),
                         node.method().getSignature(), node);
                 loopGraph.addVertex(v);
                 stateVertexIndex.put(node.id().id(), v);

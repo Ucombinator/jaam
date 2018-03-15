@@ -9,24 +9,24 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-public class LayoutRootVertex extends StateVertex {
+public class StateRootVertex extends StateVertex {
 
     private static final Color defaultColor = Color.WHITE;
 
-    public LayoutRootVertex() {
+    public StateRootVertex() {
         super("root", AbstractLayoutVertex.VertexType.ROOT, false);
         this.color = defaultColor;
     }
 
-    public LayoutRootVertex copy() {
-        return new LayoutRootVertex();
+    public StateRootVertex copy() {
+        return new StateRootVertex();
     }
 
     @Override
     public void onMouseClick(MouseEvent event) {}
 
-    public LayoutRootVertex constructVisibleGraphExcept(Set<StateVertex> verticesToHide) {
-        return (LayoutRootVertex) GraphUtils.constructVisibleGraph(this, (StateVertex v) -> !verticesToHide.contains(v), StateEdge::new);
+    public StateRootVertex constructVisibleGraphExcept(Set<StateVertex> verticesToHide) {
+        return (StateRootVertex) GraphUtils.constructVisibleGraph(this, (StateVertex v) -> !verticesToHide.contains(v), StateEdge::new);
     }
 
     public String getRightPanelContent() {
@@ -47,12 +47,12 @@ public class LayoutRootVertex extends StateVertex {
         return found;
     }
 
-    public HashSet<LayoutMethodVertex> getMethodVertices()
+    public HashSet<StateMethodVertex> getMethodVertices()
     {
-        HashSet<LayoutMethodVertex> methodVertices = new LinkedHashSet<LayoutMethodVertex>();
+        HashSet<StateMethodVertex> methodVertices = new LinkedHashSet<StateMethodVertex>();
         for(StateVertex v : this.getChildGraph().getVertices()) {
-            if(v instanceof LayoutMethodVertex)
-                methodVertices.add((LayoutMethodVertex) v);
+            if(v instanceof StateMethodVertex)
+                methodVertices.add((StateMethodVertex) v);
             else
                 methodVertices.addAll(v.getMethodVertices());
         }

@@ -66,7 +66,7 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
     }
 
     private void handleDoubleClick(MouseEvent event){
-        LayoutRootVertex root = Main.getSelectedVizPanelController().getVisibleRoot();
+        StateRootVertex root = Main.getSelectedVizPanelController().getVisibleRoot();
         Graph<StateVertex, StateEdge> childGraph = this.getChildGraph();
         boolean isExpanded = this.isExpanded();
 
@@ -146,7 +146,7 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
 
     private void getAncestors(HashSet<StateVertex> ancestors)
     {
-       if(this instanceof LayoutRootVertex)
+       if(this instanceof StateRootVertex)
            return;
 
        ancestors.add(this);
@@ -167,7 +167,7 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
 
     private void getDescendants(HashSet<StateVertex> descendants)
     {
-        if(this instanceof LayoutRootVertex)
+        if(this instanceof StateRootVertex)
             return;
 
         descendants.add(this);
@@ -186,9 +186,9 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
     }
 
     public HashSet<String> getMethodNames() {
-        HashSet<LayoutMethodVertex> methodVertices = this.getMethodVertices();
+        HashSet<StateMethodVertex> methodVertices = this.getMethodVertices();
         HashSet<String> methodNames = new HashSet<>();
-        for(LayoutMethodVertex v : methodVertices) {
+        for(StateMethodVertex v : methodVertices) {
             methodNames.add(v.getMethodName());
         }
 
@@ -203,7 +203,7 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
     public abstract boolean searchByMethod(String query, MainTabController mainTab);
 
     // This is needed so that we can show the code for the methods that correspond to selected vertices
-    public abstract HashSet<LayoutMethodVertex> getMethodVertices();
+    public abstract HashSet<StateMethodVertex> getMethodVertices();
 
     public abstract HashSet<String> getClassNames();
 }

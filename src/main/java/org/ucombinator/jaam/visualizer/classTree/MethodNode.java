@@ -4,8 +4,8 @@ import javafx.scene.control.CheckBoxTreeItem;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.ucombinator.jaam.visualizer.controllers.CodeViewController;
 import org.ucombinator.jaam.visualizer.layout.CodeEntity;
-import org.ucombinator.jaam.visualizer.layout.LayoutLoopVertex;
-import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
+import org.ucombinator.jaam.visualizer.layout.StateLoopVertex;
+import org.ucombinator.jaam.visualizer.layout.StateMethodVertex;
 import org.ucombinator.jaam.visualizer.layout.StateVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 
@@ -13,8 +13,8 @@ import java.util.HashSet;
 
 public class MethodNode extends ClassTreeNode implements Comparable<MethodNode> {
 
-    private LayoutMethodVertex methodVertex;
-    private HashSet<LayoutLoopVertex> loopVertices;
+    private StateMethodVertex methodVertex;
+    private HashSet<StateLoopVertex> loopVertices;
 
     private String className;
     private String methodName;
@@ -32,19 +32,19 @@ public class MethodNode extends ClassTreeNode implements Comparable<MethodNode> 
     }
 
     public void addVertex(StateVertex v) {
-        if (v instanceof LayoutMethodVertex) {
-            addVertex((LayoutMethodVertex)v);
+        if (v instanceof StateMethodVertex) {
+            addVertex((StateMethodVertex)v);
         }
-        else if (v instanceof LayoutLoopVertex) {
-            addVertex((LayoutLoopVertex)v);
+        else if (v instanceof StateLoopVertex) {
+            addVertex((StateLoopVertex)v);
         }
     }
 
-    public void addVertex(LayoutLoopVertex v) {
+    public void addVertex(StateLoopVertex v) {
         loopVertices.add(v);
     }
 
-    public void addVertex(LayoutMethodVertex v) {
+    public void addVertex(StateMethodVertex v) {
         assert methodVertex == null;
         methodVertex = v;
     }

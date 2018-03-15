@@ -83,7 +83,7 @@ public class MainTabController {
         this.hidden.addListener(this.vizPanelController);
     }
 
-    private void buildClassTree(CodeViewController codeViewController, LayoutRootVertex immutableRoot)
+    private void buildClassTree(CodeViewController codeViewController, StateRootVertex immutableRoot)
     {
         this.classTree.setCellFactory(CheckBoxTreeCell.forTreeView());
 
@@ -209,7 +209,7 @@ public class MainTabController {
         }
     }
 
-    public void setRightText(LayoutLoopVertex v)
+    public void setRightText(StateLoopVertex v)
     {
         this.vizDescriptionArea.setText("Loop:\n  Class: "
                 + v.getClassDeclaration() + "\n  Method: "
@@ -218,14 +218,14 @@ public class MainTabController {
     }
 
 
-    public void setRightText(LayoutMethodVertex v)
+    public void setRightText(StateMethodVertex v)
     {
         this.vizDescriptionArea.setText("Method:\n  Class: "
                 + v.getClassDeclaration() + "\n  Method: "
                 + v.getMethodName()       + "\n  Signature: " + v.getLabel());
     }
 
-    public void setRightText(LayoutSccVertex v)
+    public void setRightText(StateSccVertex v)
     {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;

@@ -6,18 +6,18 @@ import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
-public class LayoutSccVertex extends StateVertex {
+public class StateSccVertex extends StateVertex {
 
     private Color defaultColor = Color.DARKGREY;
 
-    public LayoutSccVertex(int id, String label)
+    public StateSccVertex(int id, String label)
     {
         super(id, label, VertexType.SCC);
         this.color = defaultColor;
     }
 
-    public LayoutSccVertex copy() {
-        return new LayoutSccVertex(this.getId(), this.getLabel());
+    public StateSccVertex copy() {
+        return new StateSccVertex(this.getId(), this.getLabel());
     }
 
     public boolean searchByMethod(String query, MainTabController mainTab) {
@@ -38,8 +38,8 @@ public class LayoutSccVertex extends StateVertex {
         return "SCC vertex: " + this.getId();
     }
 
-    public HashSet<LayoutMethodVertex> getMethodVertices() {
-        HashSet<LayoutMethodVertex> methods = new LinkedHashSet<LayoutMethodVertex>();
+    public HashSet<StateMethodVertex> getMethodVertices() {
+        HashSet<StateMethodVertex> methods = new LinkedHashSet<StateMethodVertex>();
         return methods;
     }
 

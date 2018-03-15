@@ -103,14 +103,14 @@ public class LayoutAlgorithm
     private static class ClassComp<T extends AbstractLayoutVertex<T>> implements Comparator<T> {
         @Override
         public int compare(T o1, T o2) {
-            if(o1 instanceof LayoutSccVertex || o1 instanceof TaintSccVertex)
+            if(o1 instanceof StateSccVertex || o1 instanceof TaintSccVertex)
             {
-                if(o2 instanceof LayoutSccVertex || o2 instanceof TaintSccVertex)
+                if(o2 instanceof StateSccVertex || o2 instanceof TaintSccVertex)
                     return Integer.compare(o1.getId(), o2.getId());
                 else
                     return -1;
             }
-            else if(o2 instanceof LayoutSccVertex || o2 instanceof TaintSccVertex)
+            else if(o2 instanceof StateSccVertex || o2 instanceof TaintSccVertex)
             {
                 return 1;
             }

@@ -9,11 +9,11 @@ import org.ucombinator.jaam.visualizer.taint.*;
 public class LayerFactory
 {
     // TODO: Template these functions instead of copying them.
-    public static void getLayeredGraph(Graph<StateVertex, StateEdge> graph, LayoutRootVertex root) {
+    public static void getLayeredGraph(Graph<StateVertex, StateEdge> graph, StateRootVertex root) {
         getStronglyConnectedComponentsGraph(graph, root);
     }
 
-    private static void getStronglyConnectedComponentsGraph(Graph<StateVertex, StateEdge> graph, LayoutRootVertex root)
+    private static void getStronglyConnectedComponentsGraph(Graph<StateVertex, StateEdge> graph, StateRootVertex root)
     {
         List<List<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
         System.out.println("Strongly connected components: " + sccs.size());
@@ -29,7 +29,7 @@ public class LayerFactory
         {
             if(scc.size() > 1) {
                 int sccId = sccGraph.getVertices().size();
-                LayoutSccVertex sccVertex = new LayoutSccVertex(sccId, "SCC-" + sccId);
+                StateSccVertex sccVertex = new StateSccVertex(sccId, "SCC-" + sccId);
                 sccGraph.addVertex(sccVertex);
                 sccVertex.setParentGraph(sccGraph);
 
@@ -176,15 +176,15 @@ public class LayerFactory
         }
     }
 
-    public static void getGraphByClass(Graph<StateVertex, StateEdge> graph, LayoutRootVertex root) {
+    public static void getGraphByClass(Graph<StateVertex, StateEdge> graph, StateRootVertex root) {
         HashMap<String, ArrayList<StateVertex>> classGroups = GraphUtils.groupByClass(graph);
         Graph<StateVertex, StateEdge> classGraph = root.getChildGraph();
 
         // Need this map for the second pass in which we add edges
-        HashMap<StateVertex, LayoutClassVertex> innerToClass   = new HashMap<>();
+        HashMap<StateVertex, StateClassVertex> innerToClass   = new HashMap<>();
 
         for (String className : classGroups.keySet()) {
-            LayoutClassVertex classVertex = new LayoutClassVertex(className);
+            StateClassVertex classVertex = new StateClassVertex(className);
             classGraph.addVertex(classVertex);
             classVertex.setParentGraph(classGraph);
 
@@ -200,8 +200,8 @@ public class LayerFactory
         for (String className : classGroups.keySet()) {
             for (StateVertex v : classGroups.get(className)) {
                 for (StateVertex w : graph.getOutNeighbors(v)) {
-                    LayoutClassVertex classVertexV = innerToClass.get(v);
-                    LayoutClassVertex classVertexW = innerToClass.get(w);
+                    StateClassVertex classVertexV = innerToClass.get(v);
+                    StateClassVertex classVertexW = innerToClass.get(w);
                     if(classVertexV.equals(classVertexW)) {
                         classVertexV.getChildGraph().addEdge(
                                 new StateEdge(v, w));
@@ -221,15 +221,15 @@ public class LayerFactory
     {
         StateVertex newVertex;
 
-        if(v instanceof LayoutLoopVertex) {
-            LayoutLoopVertex l = (LayoutLoopVertex) v;
-            newVertex = new LayoutLoopVertex(l.getId(), l.getLabel(), l.getStatementIndex(),
+        if(v instanceof StateLoopVertex) {
+            StateLoopVertex l = (StateLoopVertex) v;
+            newVertex = new StateLoopVertex(l.getId(), l.getLabel(), l.getStatementIndex(),
                     l.getCompilationUnit());
-            //newVertex = new LayoutLoopVertex(v.getId(), v.getLabel(), 0);
+            //newVertex = new StateLoopVertex(v.getId(), v.getLabel(), 0);
         }
-        else if(v instanceof  LayoutMethodVertex) {
-            LayoutMethodVertex l = (LayoutMethodVertex) v;
-            newVertex = new LayoutMethodVertex(l.getId(), l.getLabel(), l.getCompilationUnit());
+        else if(v instanceof StateMethodVertex) {
+            StateMethodVertex l = (StateMethodVertex) v;
+            newVertex = new StateMethodVertex(l.getId(), l.getLabel(), l.getCompilationUnit());
         }
         else {
             newVertex = null;
