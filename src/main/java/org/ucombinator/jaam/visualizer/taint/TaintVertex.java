@@ -25,26 +25,26 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
     public static Color constColor = Color.BEIGE;
     public static Color sccColor = Color.GRAY;
 
-    private Graph<TaintVertex, TaintEdge> selfGraph;
-    private Graph<TaintVertex, TaintEdge> innerGraph;
+    private Graph<TaintVertex, TaintEdge> parentGraph;
+    private Graph<TaintVertex, TaintEdge> childGraph;
 
     // TODO: How do we initialize the self graphs?
     public TaintVertex(String label, VertexType type, boolean drawEdges) {
         super(label, type, drawEdges);
-        this.selfGraph = new Graph<>();
-        this.innerGraph = new Graph<>();
+        this.parentGraph = new Graph<>();
+        this.childGraph = new Graph<>();
     }
 
     public Graph<TaintVertex, TaintEdge> getParentGraph() {
-        return this.selfGraph;
+        return this.parentGraph;
     }
 
     public Graph<TaintVertex, TaintEdge> getChildGraph() {
-        return this.innerGraph;
+        return this.childGraph;
     }
 
     public void setParentGraph(Graph<TaintVertex, TaintEdge> graph) {
-        this.selfGraph = graph;
+        this.parentGraph = graph;
     }
 
     public TaintVertex groupByStatement() {

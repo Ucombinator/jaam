@@ -75,7 +75,7 @@ public class SearchResults extends BorderPane
         /*this.root.getChildren().clear();
         if(mainTab.getVizHighlighted().size() > 0) {
             // We don't want to include the panel root, so we start our check with its children
-            for (StateVertex v : mainTab.vizPanelController.getVisibleRoot().getVisibleInnerGraph().getVertices()) {
+            for (StateVertex v : mainTab.vizPanelController.getVisibleRoot().getVisibleChildGraph().getVertices()) {
                 v.addTreeNodes(this.root, mainTab);
             }
 

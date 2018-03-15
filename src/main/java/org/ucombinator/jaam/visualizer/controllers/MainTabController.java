@@ -174,8 +174,8 @@ public class MainTabController {
             }
         }
 
-       Graph<StateVertex, StateEdge> innerGraph = root.getChildGraph(); // TODO: Is this the right one?
-       for (StateVertex v : innerGraph.getVertices()) {
+       Graph<StateVertex, StateEdge> childGraph = root.getChildGraph(); // TODO: Is this the right one?
+       for (StateVertex v : childGraph.getVertices()) {
            addVerticesToClassTree(topLevel, v);
        }
     }
@@ -229,8 +229,8 @@ public class MainTabController {
     {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        Graph<StateVertex, StateEdge> innerGraph = v.getChildGraph();
-        for (StateVertex i : innerGraph.getVertices()) {
+        Graph<StateVertex, StateEdge> childGraph = v.getChildGraph();
+        for (StateVertex i : childGraph.getVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
         this.vizDescriptionArea.setText(text.toString());
@@ -243,8 +243,8 @@ public class MainTabController {
     public void setRightText(TaintSccVertex v) {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        Graph<TaintVertex, TaintEdge> innerGraph = v.getChildGraph();
-        for(AbstractLayoutVertex<TaintVertex> i : innerGraph.getVertices()) {
+        Graph<TaintVertex, TaintEdge> childGraph = v.getChildGraph();
+        for(AbstractLayoutVertex<TaintVertex> i : childGraph.getVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
         this.taintDescriptionArea.setText(text.toString());
@@ -448,8 +448,8 @@ public class MainTabController {
             }
 
             if (v.getChildGraph().getVertices().size() > 0) {
-                Graph<StateVertex, StateEdge> innerGraph = v.getChildGraph();
-                for (StateVertex i : innerGraph.getVertices()) {
+                Graph<StateVertex, StateEdge> childGraph = v.getChildGraph();
+                for (StateVertex i : childGraph.getVertices()) {
                     setClassHighlight(i, prevPrefix, currPrefix);
                 }
             }

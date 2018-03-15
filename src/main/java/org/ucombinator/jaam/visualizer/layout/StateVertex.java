@@ -17,32 +17,32 @@ import java.util.function.Consumer;
 public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
         implements HierarchicalVertex<StateVertex, StateEdge> {
 
-    private Graph<StateVertex, StateEdge> selfGraph;
-    private Graph<StateVertex, StateEdge> innerGraph;
+    private Graph<StateVertex, StateEdge> parentGraph;
+    private Graph<StateVertex, StateEdge> childGraph;
 
     // TODO: How do we initialize the self graphs?
     public StateVertex(String label, VertexType type, boolean drawEdges) {
         super(label, type, drawEdges);
-        this.innerGraph = new Graph<>();
-        this.selfGraph = new Graph<>();
+        this.childGraph = new Graph<>();
+        this.parentGraph = new Graph<>();
     }
 
     public StateVertex(int id, String label, VertexType type) {
         super(id, label, type);
-        this.innerGraph = new Graph<>();
-        this.selfGraph = new Graph<>();
+        this.childGraph = new Graph<>();
+        this.parentGraph = new Graph<>();
     }
 
     public Graph<StateVertex, StateEdge> getParentGraph() {
-        return this.selfGraph;
+        return this.parentGraph;
     }
 
     public Graph<StateVertex, StateEdge> getChildGraph() {
-        return this.innerGraph;
+        return this.childGraph;
     }
 
     public void setParentGraph(Graph<StateVertex, StateEdge> graph) {
-        this.selfGraph = graph;
+        this.parentGraph = graph;
     }
 
     public void onMouseClick(MouseEvent event) {
@@ -67,20 +67,20 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
 
     private void handleDoubleClick(MouseEvent event){
         LayoutRootVertex root = Main.getSelectedVizPanelController().getVisibleRoot();
-        Graph<StateVertex, StateEdge> innerGraph = this.getChildGraph();
+        Graph<StateVertex, StateEdge> childGraph = this.getChildGraph();
         boolean isExpanded = this.isExpanded();
 
         double newOpacity = isExpanded ? 0.0 : 1.0;
         boolean newVisible = !isExpanded;
 
         // First we want the content of the clicked node to appear/disappear.
-        System.out.println("Changing opacity of inner graph...");
+        System.out.println("Changing opacity of child graph...");
 
-        for(StateVertex v: innerGraph.getVertices()) {
+        for(StateVertex v: childGraph.getVertices()) {
             v.setOpacity(newOpacity);
         }
 
-        for(StateEdge e: innerGraph.getEdges()){
+        for(StateEdge e: childGraph.getEdges()){
             e.setOpacity(newOpacity);
         }
 
@@ -91,11 +91,11 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
                 // to change its size.
                 this.setExpanded(!isExpanded);
 
-                for (StateVertex v: innerGraph.getVertices()) {
+                for (StateVertex v: childGraph.getVertices()) {
                     v.setVisible(newVisible);
                 }
 
-                for (StateEdge e: innerGraph.getEdges()) {
+                for (StateEdge e: childGraph.getEdges()) {
                     e.redrawAndSetVisible(newVisible);
                 }
 

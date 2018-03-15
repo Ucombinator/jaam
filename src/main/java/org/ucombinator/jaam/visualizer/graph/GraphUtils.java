@@ -184,7 +184,7 @@ public class GraphUtils {
 
         // We assume that only vertices within the same level can be combined.
     public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>> T constructCompressedGraph(T self, Function<T, String> hash, BiFunction<String, Set<T>, T> componentVertexBuilder, BiFunction<T, T, S> edgeBuilder) {
-        // If we have no inner vertices, just copy ourselves.
+        // If we have no child vertices, just copy ourselves.
         if (self.getChildGraph().getVertices().size() == 0) {
             return self.copy();
         }
@@ -217,7 +217,7 @@ public class GraphUtils {
         }
 
         T newRoot = self.copy();
-        Graph<T, S> newInnerGraph = newRoot.getChildGraph();
+        Graph<T, S> newChildGraph = newRoot.getChildGraph();
         HashMap<String, T> mapStringToVertex = new HashMap<>();
         for(Map.Entry<String, Set<T>> componentEntry : components.entrySet()) {
             Set<T> component = componentEntry.getValue();
@@ -254,7 +254,7 @@ public class GraphUtils {
                 }
             }
 
-            newInnerGraph.addVertex(componentVertex);
+            newChildGraph.addVertex(componentVertex);
             mapStringToVertex.put(componentEntry.getKey(), componentVertex);
         }
 
@@ -269,7 +269,7 @@ public class GraphUtils {
                 // Add edges if the new vertices are different, or if we already had a self-loop before.
                 // This way, we don't add any new self-loops.
                 if((currVertexNew != nextVertexNew) || (currVertexOld == nextVertexOld)) {
-                    newInnerGraph.addEdge(edgeBuilder.apply(currVertexNew, nextVertexNew));
+                    newChildGraph.addEdge(edgeBuilder.apply(currVertexNew, nextVertexNew));
                 }
             }
         }

@@ -28,20 +28,20 @@ public class LayoutAlgorithm
         parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
         parentVertex.setX(0);
         parentVertex.setY(0);
-        Graph<T, S> innerGraph = parentVertex.getChildGraph();
-        for (T v : innerGraph.getVertices()) {
+        Graph<T, S> childGraph = parentVertex.getChildGraph();
+        for (T v : childGraph.getVertices()) {
             initializeSizes(v);
         }
     }
 
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
     void expandSubGraphs(T parentVertex) {
-        Graph<T, S> parentInnerGraph = parentVertex.getChildGraph();
-        for(T v: parentInnerGraph.getVertices()) {
-            Graph<T, S> childInnerGraph = v.getChildGraph();
-            if (childInnerGraph.getVertices().size() != 0)
+        Graph<T, S> parentChildGraph = parentVertex.getChildGraph();
+        for(T v: parentChildGraph.getVertices()) {
+            Graph<T, S> childChildGraph = v.getChildGraph();
+            if (childChildGraph.getVertices().size() != 0)
             {
-                // Layout the inner graphs of each node and assign width W and height H to each node
+                // Layout the child graphs of each node and assign width W and height H to each node
                 // X and Y coordinates are RELATIVE to the parent
                 if (v.isExpanded()) {
                     dfsLayout(v);
@@ -172,7 +172,7 @@ public class LayoutAlgorithm
                 v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
             }
 
-            assignInnerCoordinates(root, currentWidth, MARGIN_PADDING, childrenMap);
+            assignChildCoordinates(root, currentWidth, MARGIN_PADDING, childrenMap);
             currentWidth += root.getBboxWidth() + MARGIN_PADDING;
 
             parentWidth += root.getBboxWidth();
@@ -279,9 +279,9 @@ public class LayoutAlgorithm
     }
 
     /**
-     * Preconditions: Height and Width of the inner nodes of the graph is (recursively known)
+     * Preconditions: Height and Width of the child nodes of the graph is (recursively known)
      * input: graph and left/top offset
-     * Changes of Status: assigns X and Y to the inner vertices of the graph
+     * Changes of Status: assigns X and Y to the child vertices of the graph
      * Output: returns the W and H to be assign to the parent node
      * */
     private static <T extends AbstractLayoutVertex<T>> void storeBBoxWidthAndHeight(
@@ -321,11 +321,11 @@ public class LayoutAlgorithm
     }
 
     /**
-     * Preconditions: Height and width of the inner nodes of the graph is known (recursively)
+     * Preconditions: Height and width of the child nodes of the graph is known (recursively)
      * Input: graph and left/top offset
-     * State changes: assigns X and Y coordinates to the inner vertices of the graph
+     * State changes: assigns X and Y coordinates to the child vertices of the graph
      * */
-    private static <T extends AbstractLayoutVertex<T>> void assignInnerCoordinates (T root, double left, double top,
+    private static <T extends AbstractLayoutVertex<T>> void assignChildCoordinates (T root, double left, double top,
             HashMap<T, ArrayList<T>> childrenMap)
     {
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
@@ -356,7 +356,7 @@ public class LayoutAlgorithm
 
         currentWidth = 0;
         for (T curVer: grayChildren) {
-            assignInnerCoordinates(curVer,currentWidth + left + rootOverlap,
+            assignChildCoordinates(curVer,currentWidth + left + rootOverlap,
                     NODES_PADDING + top + root.getHeight(), childrenMap);
             currentWidth += curVer.getBboxWidth() + NODES_PADDING;
             currentHeight = Math.max(currentHeight, curVer.getBboxHeight());

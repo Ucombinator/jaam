@@ -14,16 +14,16 @@ public class TransitionFactory {
 
     public static ParallelTransition buildRecursiveTransition(StateVertex v) {
         ParallelTransition pt = new ParallelTransition();
-        Graph<StateVertex, StateEdge> innerGraph = v.getChildGraph();
+        Graph<StateVertex, StateEdge> childGraph = v.getChildGraph();
 
         // Add transitions for current node and the edges it contains.
         pt.getChildren().add(TransitionFactory.buildVertexTransition(v));
-        for(StateEdge e : innerGraph.getEdges()) {
+        for(StateEdge e : childGraph.getEdges()) {
             pt.getChildren().add(TransitionFactory.buildEdgeTransition(e));
         }
 
         // Recurse for its children in our graph hierarchy.
-        for(StateVertex v2 : innerGraph.getVertices()) {
+        for(StateVertex v2 : childGraph.getVertices()) {
             pt.getChildren().add(TransitionFactory.buildRecursiveTransition(v2));
         }
 

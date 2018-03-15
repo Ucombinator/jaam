@@ -74,8 +74,8 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         double height = v.getHeight();
         node.setTranslateLocation(translateX, translateY, width, height);
 
-        Graph<TaintVertex, TaintEdge> innerGraph = v.getChildGraph();
-        for (TaintVertex child : innerGraph.getVertices()) {
+        Graph<TaintVertex, TaintEdge> childGraph = v.getChildGraph();
+        for (TaintVertex child : childGraph.getVertices()) {
             if (v.isExpanded()) {
                 drawNodes(node, child);
             }
@@ -85,13 +85,13 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
     private void drawEdges(TaintVertex v) {
         System.out.println("Drawing edges for taint vertex: " + v);
         if(v.isExpanded()) {
-            Graph<TaintVertex, TaintEdge> innerGraph = v.getChildGraph();
-            for (LayoutEdge<TaintVertex> e : innerGraph.getEdges()) {
+            Graph<TaintVertex, TaintEdge> childGraph = v.getChildGraph();
+            for (LayoutEdge<TaintVertex> e : childGraph.getEdges()) {
                 e.setVisible(v.isEdgeVisible());
                 e.draw();
             }
 
-            for (TaintVertex child : innerGraph.getVertices()) {
+            for (TaintVertex child : childGraph.getVertices()) {
                 drawEdges(child);
             }
         }
@@ -174,8 +174,8 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             HashSet<TaintVertex> newSearch = new HashSet<>();
             for (TaintVertex v : toSearch) {
                 upResults.add(v);
-                Graph<TaintVertex, TaintEdge> selfGraph = v.getParentGraph();
-                for (TaintVertex vIn : selfGraph.getInNeighbors(v)) {
+                Graph<TaintVertex, TaintEdge> parentGraph = v.getParentGraph();
+                for (TaintVertex vIn : parentGraph.getInNeighbors(v)) {
                     if (!upResults.contains(vIn)) {
                         newSearch.add(vIn);
                     }
@@ -190,8 +190,8 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             HashSet<TaintVertex> newSearch = new HashSet<>();
             for (TaintVertex v : toSearch) {
                 downResults.add(v);
-                Graph<TaintVertex, TaintEdge> selfGraph = v.getParentGraph();
-                for (TaintVertex vOut : selfGraph.getOutNeighbors(v)) {
+                Graph<TaintVertex, TaintEdge> parentGraph = v.getParentGraph();
+                for (TaintVertex vOut : parentGraph.getOutNeighbors(v)) {
                     if (!downResults.contains(vOut)) {
                         newSearch.add(vOut);
                     }

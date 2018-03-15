@@ -202,8 +202,8 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         double height = v.getHeight();
         node.setTranslateLocation(translateX, translateY, width, height);
 
-        Graph<StateVertex, StateEdge> innerGraph = v.getChildGraph();
-        for (StateVertex child : innerGraph.getVertices()) {
+        Graph<StateVertex, StateEdge> childGraph = v.getChildGraph();
+        for (StateVertex child : childGraph.getVertices()) {
             if (v.isExpanded()) {
                 drawNodes(node, child);
             }
@@ -212,13 +212,13 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
 
     private void drawEdges(StateVertex v) {
         if(v.isExpanded()) {
-            Graph<StateVertex, StateEdge> innerGraph = v.getChildGraph();
-            for (LayoutEdge<StateVertex> e : innerGraph.getEdges()) {
+            Graph<StateVertex, StateEdge> childGraph = v.getChildGraph();
+            for (LayoutEdge<StateVertex> e : childGraph.getEdges()) {
                 e.setVisible(v.isEdgeVisible());
                 e.draw();
             }
 
-            for (StateVertex child : innerGraph.getVertices()) {
+            for (StateVertex child : childGraph.getVertices()) {
                 drawEdges(child);
             }
         }
