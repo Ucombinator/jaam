@@ -6,7 +6,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 
-public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements Comparable<LayoutEdge<T>>, GraphEntity
+public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements Comparable<LayoutEdge<T>>
 {
     private static final Color highlightColor = Color.ORANGERED;
     private static final Color downwardColor = Color.BLACK;
