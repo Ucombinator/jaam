@@ -9,29 +9,7 @@ public class GUINodeStatus
     public double bboxWidth, bboxHeight;
     public double opacity;
 
-    // Default constructor
     public GUINodeStatus()
-    {
-        this.setDefaultStatus();
-    }
-
-    // Copy constructor
-    public GUINodeStatus(GUINodeStatus other)
-    {
-        this.left = other.left;
-        this.right = other.right;
-        this.top = other.top;
-        this.bottom = other.bottom;
-
-        this.x = other.x;
-        this.y = other.y;
-        this.width = other.width;
-        this.height = other.height;
-
-        this.opacity = other.opacity;
-    }
-
-    public void setDefaultStatus()
     {
         this.width = 1;
         this.height = 1;
