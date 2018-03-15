@@ -6,7 +6,7 @@ import javafx.scene.control.CheckBoxTreeItem;
 import javafx.scene.control.TreeItem;
 import org.ucombinator.jaam.visualizer.controllers.CodeViewController;
 import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
-import org.ucombinator.jaam.visualizer.layout.StateVertex;
+import org.ucombinator.jaam.visualizer.state.StateVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 
 import java.util.Comparator;

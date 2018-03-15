@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.layout;
 import org.ucombinator.jaam.visualizer.graph.Edge;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
+import org.ucombinator.jaam.visualizer.state.StateSccVertex;
 import org.ucombinator.jaam.visualizer.taint.TaintSccVertex;
 
 import java.util.*;

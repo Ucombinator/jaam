@@ -13,6 +13,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.layout.*;
+import org.ucombinator.jaam.visualizer.state.StateRootVertex;
 import org.ucombinator.jaam.visualizer.taint.TaintRootVertex;
 
 public class GUINode<T extends AbstractLayoutVertex<T>> extends Group

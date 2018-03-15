@@ -9,6 +9,7 @@ import javafx.scene.layout.BorderPane;
 import org.ucombinator.jaam.visualizer.codeView.CodeTab;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.layout.*;
+import org.ucombinator.jaam.visualizer.state.StateVertex;
 import soot.SootClass;
 
 import java.io.IOException;

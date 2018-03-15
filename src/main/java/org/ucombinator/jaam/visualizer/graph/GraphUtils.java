@@ -1,6 +1,10 @@
 package org.ucombinator.jaam.visualizer.graph;
 
 import org.ucombinator.jaam.visualizer.layout.*;
+import org.ucombinator.jaam.visualizer.state.StateEdge;
+import org.ucombinator.jaam.visualizer.state.StateLoopVertex;
+import org.ucombinator.jaam.visualizer.state.StateMethodVertex;
+import org.ucombinator.jaam.visualizer.state.StateVertex;
 
 import java.util.*;
 import java.util.function.BiFunction;

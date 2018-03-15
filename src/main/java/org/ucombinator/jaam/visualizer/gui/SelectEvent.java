@@ -2,7 +2,7 @@ package org.ucombinator.jaam.visualizer.gui;
 
 import javafx.event.*;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.StateVertex;
+import org.ucombinator.jaam.visualizer.state.StateVertex;
 import org.ucombinator.jaam.visualizer.taint.TaintVertex;
 
 public class SelectEvent<T extends AbstractLayoutVertex<T>> extends javafx.event.Event {

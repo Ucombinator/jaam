@@ -1,9 +1,10 @@
-package org.ucombinator.jaam.visualizer.layout;
+package org.ucombinator.jaam.visualizer.state;
 
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;

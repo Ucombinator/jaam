@@ -1,7 +1,8 @@
-package org.ucombinator.jaam.visualizer.layout;
+package org.ucombinator.jaam.visualizer.state;
 
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 
 import java.util.HashSet;
 
@@ -11,7 +12,7 @@ public class StateClassVertex extends StateVertex {
     private Color defaultColor = Color.DARKGREY;
 
     public StateClassVertex(String className) {
-        super("className", VertexType.CLASS, true);
+        super("className", AbstractLayoutVertex.VertexType.CLASS, true);
         this.className = className;
     }
 

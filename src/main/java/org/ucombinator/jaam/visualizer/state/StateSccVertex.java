@@ -1,7 +1,8 @@
-package org.ucombinator.jaam.visualizer.layout;
+package org.ucombinator.jaam.visualizer.state;
 
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -12,7 +13,7 @@ public class StateSccVertex extends StateVertex {
 
     public StateSccVertex(int id, String label)
     {
-        super(id, label, VertexType.SCC);
+        super(id, label, AbstractLayoutVertex.VertexType.SCC);
         this.color = defaultColor;
     }
 

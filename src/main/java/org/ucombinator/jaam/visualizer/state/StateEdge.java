@@ -1,6 +1,7 @@
-package org.ucombinator.jaam.visualizer.layout;
+package org.ucombinator.jaam.visualizer.state;
 
 import org.ucombinator.jaam.visualizer.graph.Edge;
+import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 
 public class StateEdge extends LayoutEdge<StateVertex> implements Edge<StateVertex> {
 

@@ -5,8 +5,8 @@ import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
-import org.ucombinator.jaam.visualizer.layout.StateEdge;
-import org.ucombinator.jaam.visualizer.layout.StateVertex;
+import org.ucombinator.jaam.visualizer.state.StateEdge;
+import org.ucombinator.jaam.visualizer.state.StateVertex;
 
 public class TransitionFactory {
 

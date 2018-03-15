@@ -1,8 +1,10 @@
-package org.ucombinator.jaam.visualizer.layout;
+package org.ucombinator.jaam.visualizer.state;
 
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.serializer.LoopLoopNode;
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.layout.CodeEntity;
 import soot.SootClass;
 
 import java.util.HashSet;
@@ -17,7 +19,7 @@ public class StateLoopVertex extends StateVertex implements Cloneable, CodeEntit
     private LoopLoopNode compilationUnit;
 
     public StateLoopVertex(int id, String label, int statementIndex, LoopLoopNode compilationUnit){
-    	super(id, label, VertexType.LOOP);
+    	super(id, label, AbstractLayoutVertex.VertexType.LOOP);
     	this.setDefaultColor();
 
     	this.statementIndex = statementIndex;

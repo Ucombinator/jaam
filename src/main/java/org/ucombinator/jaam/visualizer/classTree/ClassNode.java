@@ -1,13 +1,12 @@
 package org.ucombinator.jaam.visualizer.classTree;
 
-import com.sun.org.apache.bcel.internal.classfile.Code;
 import javafx.scene.control.CheckBoxTreeItem;
 import javafx.scene.control.TreeItem;
 import javafx.scene.paint.Color;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.ucombinator.jaam.visualizer.controllers.CodeViewController;
 import org.ucombinator.jaam.visualizer.layout.CodeEntity;
-import org.ucombinator.jaam.visualizer.layout.StateVertex;
+import org.ucombinator.jaam.visualizer.state.StateVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 
 import java.util.HashMap;

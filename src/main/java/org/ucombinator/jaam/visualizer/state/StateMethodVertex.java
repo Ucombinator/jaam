@@ -1,8 +1,10 @@
-package org.ucombinator.jaam.visualizer.layout;
+package org.ucombinator.jaam.visualizer.state;
 
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.serializer.LoopMethodNode;
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.layout.CodeEntity;
 import soot.SootClass;
 
 import java.util.HashSet;
@@ -15,7 +17,7 @@ public class StateMethodVertex extends StateVertex implements CodeEntity {
     private LoopMethodNode compilationUnit;
 
     public StateMethodVertex(int id, String label, LoopMethodNode compilationUnit){
-    	super(id, label, VertexType.METHOD);
+    	super(id, label, AbstractLayoutVertex.VertexType.METHOD);
     	this.setDefaultColor();
     	this.compilationUnit = compilationUnit;
     }
