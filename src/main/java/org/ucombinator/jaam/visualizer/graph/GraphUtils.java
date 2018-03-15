@@ -27,24 +27,26 @@ public class GraphUtils {
     }
 
     private static <T extends AbstractLayoutVertex<T>, S extends Edge<T>> void visit(
-            Graph<T, S> g, T v, HashMap<Integer, SCCVertex> visitedVertices, Stack<Integer> stack, List<List<Integer>> components )
+            Graph<T, S> graph, T v, HashMap<Integer, SCCVertex> visitedVertices, Stack<Integer> stack,
+            List<List<Integer>> components)
     {
         SCCVertex vSCC = new SCCVertex(v.getId(), visitedVertices.size());
         visitedVertices.put(v.getId(), vSCC);
         stack.push(v.getId());
         vSCC.lowlink = vSCC.index;
 
-        //System.out.println("TERE Visiting " + v.getId() + " == " + vSCC);
+        System.out.println("Visiting vertex in SCC construction: " + v);
 
-        Set<T> neighbors = g.getOutNeighbors(v);
+        Set<T> neighbors = graph.getOutNeighbors(v);
         for (T n : neighbors) {
+            System.out.println("Neighbor: " + n);
             if (n.getId() == v.getId()) { // No self loops
                 continue;
             }
             //System.out.print("\tTERE Neighbor " + n.getId());
             if (!visitedVertices.containsKey(n.getId())) {
                 //System.out.println(" Hadn't been visited");
-                visit(g, n, visitedVertices, stack, components);
+                visit(graph, n, visitedVertices, stack, components);
                 vSCC.lowlink = Math.min(vSCC.lowlink, visitedVertices.get(n.getId()).lowlink);
             } else if (stack.contains(n.getId())) { // Should be fast because the stack is small
                 //System.out.println(" Still On Stack" + stack );

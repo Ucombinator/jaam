@@ -49,6 +49,13 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
         this.selfGraph = graph;
     }
 
+    public TaintVertex groupByStatement() {
+        return this.constructCompressedGraph(
+                TaintVertex::getStmtString,
+                TaintStmtVertex::new,
+                TaintEdge::new);
+    }
+
     public void onMouseClick(MouseEvent event) {
         if (event.isShiftDown()) {
             System.out.println("Shift is down!\n");
@@ -88,4 +95,6 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
 
     // This should probably less specific
     public abstract void getFields(Collection<TaintAddress> store);
+
+    public abstract String getStmtString();
 }

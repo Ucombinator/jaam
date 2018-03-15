@@ -42,4 +42,8 @@ public class TaintSccVertex extends TaintVertex {
         this.getInnerGraph().getVertices().forEach(v -> v.getFields(store));
     }
 
+    @Override
+    public String getStmtString() {
+        return null;
+    }
 }

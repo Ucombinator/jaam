@@ -70,5 +70,12 @@ public class TaintAddress extends TaintVertex {
             store.add(this);
     }
 
-
+    @Override
+    public String getStmtString() {
+        if(this.address.stmt() != null) {
+            return this.address.stmt().toString();
+        } else {
+            return null;
+        }
+    }
 }

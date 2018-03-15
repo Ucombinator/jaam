@@ -41,4 +41,9 @@ public class TaintRootVertex extends TaintVertex {
         // TODO: Is this the right graph?
         this.getInnerGraph().getVertices().forEach(v -> v.getFields(store));
     }
+
+    @Override
+    public String getStmtString() {
+        return null;
+    }
 }

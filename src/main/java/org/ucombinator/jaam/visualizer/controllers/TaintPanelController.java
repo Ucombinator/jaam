@@ -32,7 +32,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
 
     private HashMap<String, TaintAddress> fieldVertices;
 
-    public TaintPanelController(TaintGraph graph) throws IOException {
+    public TaintPanelController(Graph<TaintVertex, TaintEdge> graph) throws IOException {
         Controllers.loadFXML("/TaintPanel.fxml", this);
 
         this.graphContentGroup = new Group();
@@ -211,8 +211,8 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
                 TaintAddress vAddr = (TaintAddress) v;
                 Address addr = vAddr.getAddress();
                 if (addr instanceof Address.Value) {
-                    Value val = (Value) vAddr.getAddress();
-                    if (val instanceof Constant) { // TODO: Why is this marked in IntelliJ as always false? Did I pick the wrong class?
+                    Value value = ((Address.Value) addr).sootValue();
+                    if(value instanceof Constant) {
                         v.setColor(TaintVertex.constColor);
                     }
                 }
