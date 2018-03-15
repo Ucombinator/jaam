@@ -79,6 +79,9 @@ public class PackageNode extends ClassTreeNode {
     }
 
     @Override
+    public void handleDoubleClick(CodeViewController codeView) { /* do nothing */ }
+
+    @Override
     public HashSet<StateVertex> getChildVertices()
     {
         HashSet<StateVertex> all = new HashSet<>();

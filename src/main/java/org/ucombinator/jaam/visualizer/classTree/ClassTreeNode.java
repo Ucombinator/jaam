@@ -12,7 +12,7 @@ import org.ucombinator.jaam.visualizer.main.Main;
 import java.util.Comparator;
 import java.util.HashSet;
 
-public class ClassTreeNode
+public abstract class ClassTreeNode
 {
     public String shortName;
     public String name;
@@ -62,12 +62,7 @@ public class ClassTreeNode
         return item;
     }
 
-    public void handleDoubleClick(CodeViewController codeView) {
-        // Do Nothing
-    }
+    public abstract void handleDoubleClick(CodeViewController codeView);
 
-    public HashSet<StateVertex> getChildVertices() {
-        return new HashSet<>();
-    }
-
-} // End of class TreeNode
+    public abstract HashSet<StateVertex> getChildVertices();
+}
