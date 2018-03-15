@@ -4,6 +4,7 @@ import javafx.scene.control.CheckBoxTreeItem;
 import javafx.scene.control.TreeItem;
 import javafx.scene.paint.Color;
 import org.controlsfx.glyphfont.FontAwesome;
+import org.ucombinator.jaam.visualizer.controllers.CodeViewController;
 import org.ucombinator.jaam.visualizer.layout.CodeEntity;
 import org.ucombinator.jaam.visualizer.layout.StateVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
@@ -108,6 +109,16 @@ public class PackageNode extends ClassTreeNode {
             }
         }
         return false;
+    }
+
+    public void addFields(CodeViewController codeViewController) {
+        for (PackageNode p : subPackages) {
+            p.addFields(codeViewController);
+        }
+
+        for (ClassNode c : classNodes) {
+            c.addFields(codeViewController);
+        }
     }
 
 }

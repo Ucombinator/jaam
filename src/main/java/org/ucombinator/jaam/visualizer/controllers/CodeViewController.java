@@ -12,10 +12,7 @@ import org.ucombinator.jaam.visualizer.layout.*;
 import soot.SootClass;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class CodeViewController {
 
@@ -29,7 +26,7 @@ public class CodeViewController {
     public CodeViewController(List<CompilationUnit> compilationUnits, Set<SootClass> sootClasses) throws IOException {
         Controllers.loadFXML("/CodeView.fxml", this);
 
-        this.codeMap    = new HashMap<>();
+        this.codeMap    = new HashMap<String, ClassCode>();
         this.tabMap     = new HashMap<>();
         this.classNames = new HashSet<>();
 
@@ -130,7 +127,18 @@ public class CodeViewController {
             t.highlightMethod(highlightMethod);
     }
 
-    boolean isDisplayed(CodeTab t)
+    public ArrayList<String> getFields(String className) {
+
+        ClassCode c = codeMap.get(className);
+
+        if (c == null) {
+            System.out.println("GET_FIELDS didn't find class " + className);
+        }
+
+        return c.getFields();
+    }
+
+    private boolean isDisplayed(CodeTab t)
     {
         return codeTabs.getTabs().stream().filter(
                 c-> ((CodeTab)c).fullClassName.equals(t.fullClassName)).findFirst().orElse(null)
@@ -151,13 +159,20 @@ public class CodeViewController {
         public String className;
         public String fullClassName;
 
-
-
         ClassCode(CompilationUnit u, SootClass s, String className, String fullClassName) {
             compilationUnit = u;
             sootClass = s;
             this.className = className;
             this.fullClassName = fullClassName;
+        }
+
+        public ArrayList<String> getFields() {
+
+            ArrayList<String> result = new ArrayList<>();
+
+            sootClass.getFields().stream().forEach(f -> result.add(f.getName()) );
+
+            return result;
         }
 
     }

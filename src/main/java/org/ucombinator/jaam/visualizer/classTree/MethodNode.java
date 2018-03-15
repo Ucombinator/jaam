@@ -11,7 +11,7 @@ import org.ucombinator.jaam.visualizer.main.Main;
 
 import java.util.HashSet;
 
-public class MethodNode extends ClassTreeNode {
+public class MethodNode extends ClassTreeNode implements Comparable<MethodNode> {
 
     private LayoutMethodVertex methodVertex;
     private HashSet<LayoutLoopVertex> loopVertices;
@@ -32,7 +32,7 @@ public class MethodNode extends ClassTreeNode {
     }
 
     public void addVertex(StateVertex v) {
-        if(v instanceof LayoutMethodVertex) {
+        if (v instanceof LayoutMethodVertex) {
             addVertex((LayoutMethodVertex)v);
         }
         else if (v instanceof LayoutLoopVertex) {
@@ -89,5 +89,10 @@ public class MethodNode extends ClassTreeNode {
         }
 
         item.setGraphic(Main.getIconFont().create(FontAwesome.Glyph.SQUARE).color(methodVertex.getColor()));
+    }
+
+    @Override
+    public int compareTo(MethodNode o) {
+        return methodName.compareTo(o.methodName);
     }
 }

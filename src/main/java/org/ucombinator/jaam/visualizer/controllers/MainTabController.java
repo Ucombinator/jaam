@@ -73,7 +73,8 @@ public class MainTabController {
         this.codeViewController.addSelectHandler(vizPane);
         this.taintPanelController.addSelectHandler(vizPane);
 
-        buildClassTree(this.codeViewController.getClassNames(), this.vizPanelController.getPanelRoot());
+        // I left it with the extra parameter, because I think we will probably want to move it somewhere else
+        buildClassTree(this.codeViewController, this.vizPanelController.getPanelRoot());
 
         this.vizHighlighted = new LinkedHashSet<>();
         this.taintHighlighted = new LinkedHashSet<>();
@@ -82,13 +83,13 @@ public class MainTabController {
         this.hidden.addListener(this.vizPanelController);
     }
 
-    private void buildClassTree(HashSet<String> classNames, LayoutRootVertex panelRoot)
+    private void buildClassTree(CodeViewController codeViewController, LayoutRootVertex panelRoot)
     {
         this.classTree.setCellFactory(CheckBoxTreeCell.forTreeView());
 
         PackageNode root = new PackageNode("root", null);
 
-        for (String c : classNames) {
+        for (String c : codeViewController.getClassNames()) {
             String[] split = c.split("\\.");
 
             PackageNode current = root;
@@ -105,19 +106,9 @@ public class MainTabController {
         // Compression Step
         topLevel.forEach(PackageNode::compress);
 
-        // TODO: Ask Juan why this is commented out
-        // Fix top level names. If a node is on the top level and a leaf due to compression
-        // it's fullname is missing package information, this fixes it.
-        /*
-        for (ClassTreeNode f : topLevel) {
-            if (f.isLeaf()) {
-                f.name = f.shortName;// shortName is correct due to compressions step
-            }
-        }
-        */
-
-        // Add the vertices
         addVerticesToClassTree(topLevel, panelRoot);
+
+        addFieldsToClassTree(topLevel, codeViewController);
 
         // Build the Tree
         CheckBoxTreeItem<ClassTreeNode> treeRoot = new CheckBoxTreeItem<>();
@@ -150,6 +141,12 @@ public class MainTabController {
             }
         });
 
+    }
+
+    private void addFieldsToClassTree(ArrayList<PackageNode> topLevel, CodeViewController codeViewController) {
+        for (PackageNode n : topLevel) {
+            n.addFields(codeViewController);
+        }
     }
 
     private void addVerticesToClassTree(ArrayList<PackageNode> topLevel, StateVertex root) {

@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.classTree;
 
+import com.sun.org.apache.bcel.internal.classfile.Code;
 import javafx.scene.control.CheckBoxTreeItem;
 import javafx.scene.control.TreeItem;
 import javafx.scene.paint.Color;
@@ -15,11 +16,13 @@ import java.util.HashSet;
 public class ClassNode extends ClassTreeNode {
 
     HashMap<String, MethodNode> methods;
+    HashSet<FieldNode> fields;
 
     ClassNode(String name, String prefix) {
         super(name,prefix);
 
         methods = new HashMap<>();
+        fields = new HashSet<>();
     }
 
     @Override
@@ -60,15 +63,23 @@ public class ClassNode extends ClassTreeNode {
         return true;
     }
 
+    public void addFields(CodeViewController codeViewController) {
+
+        codeViewController.getFields(this.getName()).forEach( f -> System.out.println());
+
+        codeViewController.getFields(this.getName()).forEach(
+                fieldName -> fields.add(new FieldNode(fieldName, this.getName()) )
+        );
+
+    }
+
     public void build(TreeItem<ClassTreeNode> parent) {
         CheckBoxTreeItem<ClassTreeNode> item = buildTreeItem(parent);
 
         item.setGraphic(Main.getIconFont().create(FontAwesome.Glyph.COPYRIGHT).color(Color.ORANGE));
 
-        for (MethodNode m : methods.values()) {
-            m.build(item);
-        }
-
+        methods.values().stream().sorted().forEach(m -> m.build(item));
+        fields.stream().sorted().forEach(f -> f.build(item));
     }
 
 
