@@ -27,7 +27,7 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         BLACK
     }
 
-    protected static int idCounter = 0;
+    private static int idCounter = 0;
     private String label;
     private int id;
 
