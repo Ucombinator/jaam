@@ -1,43 +1,24 @@
 package org.ucombinator.jaam.visualizer.graph;
 
-public abstract class AbstractVertex
+public interface AbstractVertex
 {
-    private static int idCounter = 0; // Used to assign unique id numbers to each vertex
-    private String label;
-    private int id;
+    String getLabel();
+    int getId();
 
-    public enum VertexStatus
-    {
-        WHITE,
-        GRAY,
-        BLACK
-    }
-    private VertexStatus vertexStatus;
+    /*
+    default boolean addTreeNodes(TreeItem<T> parentNode, MainTabController mainTab) {
+        boolean addedNodes = false;
+        TreeItem<T> newNode = new TreeItem<>((T)this);
+        for (T v : this.getVisibleInnerGraph().getVertices()) { // TODO: Is this the right one?
+            addedNodes |= v.addTreeNodes(newNode, mainTab);
+        }
 
-    public AbstractVertex(String label) {
-        this.label = label;
-        this.id = idCounter++;
-        this.vertexStatus = VertexStatus.WHITE;
+        if(mainTab.getVizHighlighted().contains(this) || addedNodes) {
+            parentNode.getChildren().add(newNode);
+            return true;
+        } else {
+            return false;
+        }
     }
-    
-    public AbstractVertex(int id, String label) {
-    	this(label);
-        this.id = id;
-    }
-    
-    public String getLabel() {
-        return this.label;
-    }
-
-    public int getId() {
-        return this.id;
-    }
-
-    public VertexStatus getVertexStatus() {
-        return this.vertexStatus;
-    }
-
-    public void setVertexStatus(VertexStatus vertexStatus) {
-        this.vertexStatus = vertexStatus;
-    }
+    */
 }

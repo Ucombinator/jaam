@@ -2,11 +2,6 @@ package org.ucombinator.jaam.visualizer.codeView;
 
 import com.strobel.decompiler.languages.EntityType;
 import com.strobel.decompiler.languages.java.ast.*;
-import com.sun.org.apache.bcel.internal.classfile.Code;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.event.EventHandler;
-import javafx.event.EventTarget;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.IndexRange;
@@ -18,13 +13,11 @@ import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.LineNumberFactory;
 import org.ucombinator.jaam.util.Soot;
 import org.ucombinator.jaam.visualizer.main.Main;
-import org.ucombinator.jaam.visualizer.taint.FieldSelectEvent;
 import soot.Body;
+import soot.Modifier;
 import soot.SootClass;
 import soot.SootMethod;
 
-import java.awt.*;
-import java.awt.event.MouseEvent;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -194,7 +187,7 @@ public class CodeTab extends Tab{
 
         soot.getFields().stream().forEach(f -> {
             int currentParagraph = codeArea.getCurrentParagraph();
-            codeArea.appendText(f.toString() + "\n");
+            codeArea.appendText("\u24D5 " + Modifier.toString(f.getModifiers()) + " " + f.getSubSignature() + "\n");
             sootParagraphField.put(currentParagraph, f.getName());
         });
 
@@ -256,5 +249,10 @@ public class CodeTab extends Tab{
         }
 
         return newRange;
+    }
+
+    public Collection<String> getFields() {
+
+        return sootParagraphField.values();
     }
 }

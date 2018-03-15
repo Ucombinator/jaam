@@ -2,7 +2,6 @@ package org.ucombinator.jaam.visualizer.taint;
 
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
-import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraphUtils;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -17,11 +16,15 @@ public class TaintRootVertex extends TaintVertex {
         this.color = defaultColor;
     }
 
+    public TaintRootVertex copy() {
+        return new TaintRootVertex();
+    }
+
     @Override
     public void onMouseClick(MouseEvent event) {}
 
-    public void constructVisibleGraph(Set<TaintVertex> verticesToDraw) {
-        HierarchicalGraphUtils.constructVisibleGraph(this, verticesToDraw::contains, TaintEdge::new);
+    public TaintRootVertex constructVisibleGraph(Set<TaintVertex> verticesToDraw) {
+        return (TaintRootVertex) this.constructVisibleGraph(verticesToDraw::contains, TaintEdge::new);
     }
 
     public HashSet<String> getMethodNames() {
@@ -36,6 +39,11 @@ public class TaintRootVertex extends TaintVertex {
     @Override
     public void getFields(Collection<TaintAddress> store) {
         // TODO: Is this the right graph?
-        this.getImmutableInnerGraph().getVertices().forEach(v -> v.getFields(store));
+        this.getInnerGraph().getVertices().forEach(v -> v.getFields(store));
+    }
+
+    @Override
+    public String getStmtString() {
+        return null;
     }
 }

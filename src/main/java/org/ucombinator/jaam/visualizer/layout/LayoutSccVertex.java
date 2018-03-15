@@ -16,9 +16,13 @@ public class LayoutSccVertex extends StateVertex {
         this.color = defaultColor;
     }
 
+    public LayoutSccVertex copy() {
+        return new LayoutSccVertex(this.getId(), this.getLabel());
+    }
+
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = false;
-        for(StateVertex v : this.getVisibleInnerGraph().getVertices()) {
+        for(StateVertex v : this.getInnerGraph().getVertices()) {
             found = v.searchByMethod(query, mainTab) || found;
         }
 
@@ -41,7 +45,7 @@ public class LayoutSccVertex extends StateVertex {
 
     public HashSet<String> getClassNames() {
         HashSet<String> classNames = new HashSet<>();
-        for(StateVertex v : this.getImmutableInnerGraph().getVertices()) {
+        for(StateVertex v : this.getInnerGraph().getVertices()) {
             classNames.addAll(v.getClassNames());
         }
         return classNames;

@@ -14,9 +14,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import org.ucombinator.jaam.visualizer.classTree.ClassTreeNode;
 import org.ucombinator.jaam.visualizer.classTree.PackageNode;
-import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.gui.*;
-import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
+import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.*;
 import com.strobel.decompiler.languages.java.ast.CompilationUnit;
 import org.ucombinator.jaam.visualizer.taint.*;
@@ -54,7 +53,8 @@ public class MainTabController {
         ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
     }
 
-    public MainTabController(File file, Graph<StateVertex> graph, List<CompilationUnit> compilationUnits, TaintGraph taintGraph, Set<SootClass> sootClasses) throws IOException {
+    public MainTabController(File file, Graph<StateVertex, StateEdge> graph, List<CompilationUnit> compilationUnits,
+                             Graph<TaintVertex, TaintEdge> taintGraph, Set<SootClass> sootClasses) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
 
         this.vizPanelController = new VizPanelController(graph);
@@ -73,7 +73,8 @@ public class MainTabController {
         this.codeViewController.addSelectHandler(vizPane);
         this.taintPanelController.addSelectHandler(vizPane);
 
-        buildClassTree(this.codeViewController.getClassNames(), this.vizPanelController.getPanelRoot());
+        // I left it with the extra parameter, because I think we will probably want to move it somewhere else
+        buildClassTree(this.codeViewController, this.vizPanelController.getImmutableRoot());
 
         this.vizHighlighted = new LinkedHashSet<>();
         this.taintHighlighted = new LinkedHashSet<>();
@@ -82,13 +83,13 @@ public class MainTabController {
         this.hidden.addListener(this.vizPanelController);
     }
 
-    private void buildClassTree(HashSet<String> classNames, LayoutRootVertex panelRoot)
+    private void buildClassTree(CodeViewController codeViewController, LayoutRootVertex immutableRoot)
     {
         this.classTree.setCellFactory(CheckBoxTreeCell.forTreeView());
 
         PackageNode root = new PackageNode("root", null);
 
-        for (String c : classNames) {
+        for (String c : codeViewController.getClassNames()) {
             String[] split = c.split("\\.");
 
             PackageNode current = root;
@@ -117,7 +118,8 @@ public class MainTabController {
         */
 
         // Add the vertices
-        addVerticesToClassTree(topLevel, panelRoot);
+        addVerticesToClassTree(topLevel, immutableRoot);
+        addFieldsToClassTree(topLevel, codeViewController);
 
         // Build the Tree
         CheckBoxTreeItem<ClassTreeNode> treeRoot = new CheckBoxTreeItem<>();
@@ -152,6 +154,12 @@ public class MainTabController {
 
     }
 
+    private void addFieldsToClassTree(ArrayList<PackageNode> topLevel, CodeViewController codeViewController) {
+        for (PackageNode n : topLevel) {
+            n.addFields(codeViewController);
+        }
+    }
+
     private void addVerticesToClassTree(ArrayList<PackageNode> topLevel, StateVertex root) {
 
         if(root instanceof CodeEntity) {
@@ -166,7 +174,7 @@ public class MainTabController {
             }
         }
 
-       HierarchicalGraph<StateVertex, StateEdge> innerGraph = root.getImmutableInnerGraph(); // TODO: Is this the right one?
+       Graph<StateVertex, StateEdge> innerGraph = root.getInnerGraph(); // TODO: Is this the right one?
        for (StateVertex v : innerGraph.getVertices()) {
            addVerticesToClassTree(topLevel, v);
        }
@@ -221,7 +229,7 @@ public class MainTabController {
     {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        HierarchicalGraph<StateVertex, StateEdge> innerGraph = v.getVisibleInnerGraph();
+        Graph<StateVertex, StateEdge> innerGraph = v.getInnerGraph();
         for (StateVertex i : innerGraph.getVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
@@ -235,7 +243,7 @@ public class MainTabController {
     public void setRightText(TaintSccVertex v) {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        HierarchicalGraph<TaintVertex, TaintEdge> innerGraph = v.getVisibleInnerGraph();
+        Graph<TaintVertex, TaintEdge> innerGraph = v.getInnerGraph();
         for(AbstractLayoutVertex<TaintVertex> i : innerGraph.getVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
@@ -265,7 +273,7 @@ public class MainTabController {
         if (search == SearchType.ID) {
             searchByID(query); // TODO: Fix inconsistency with panel root
         } else if (search == SearchType.METHOD) {
-            this.vizPanelController.getPanelRoot().searchByMethod(query.toLowerCase(), this);
+            this.vizPanelController.getVisibleRoot().searchByMethod(query.toLowerCase(), this);
         }
 
         this.repaintAll();
@@ -334,11 +342,11 @@ public class MainTabController {
                 /* Do nothing */
             } else if (token.indexOf('-') == -1) {
                 int id1 = Integer.parseInt(token.trim());
-                this.vizPanelController.getPanelRoot().searchByID(id1, this);
+                this.vizPanelController.getVisibleRoot().searchByID(id1, this);
             } else {
                 int id1 = Integer.parseInt(token.substring(0, token.indexOf('-')).trim());
                 int id2 = Integer.parseInt(token.substring(token.lastIndexOf('-') + 1).trim());
-                this.vizPanelController.getPanelRoot().searchByIDRange(id1, id2, this);
+                this.vizPanelController.getVisibleRoot().searchByIDRange(id1, id2, this);
             }
         }
     }
@@ -395,11 +403,11 @@ public class MainTabController {
     {
         HashSet<StateVertex> keep = new HashSet<>();
 
-        this.vizHighlighted.forEach(v -> keep.addAll(v.getVisibleAncestors()) );
-        this.vizHighlighted.forEach(v -> keep.addAll(v.getVisibleDescendants()) );
+        this.vizHighlighted.forEach(v -> keep.addAll(v.getAncestors()) );
+        this.vizHighlighted.forEach(v -> keep.addAll(v.getDescendants()) );
 
         HashSet<StateVertex> toHide = new HashSet<>();
-        this.vizPanelController.getPanelRoot().getVisibleInnerGraph().getVertices().forEach(v -> {
+        this.vizPanelController.getVisibleRoot().getInnerGraph().getVertices().forEach(v -> {
             if (!keep.contains(v)) {
                 toHide.add(v);
             }
@@ -439,8 +447,8 @@ public class MainTabController {
                 }
             }
 
-            if (!v.isVisibleInnerGraphEmpty()) {
-                HierarchicalGraph<StateVertex, StateEdge> innerGraph = v.getVisibleInnerGraph();
+            if (v.getInnerGraph().getVertices().size() > 0) {
+                Graph<StateVertex, StateEdge> innerGraph = v.getInnerGraph();
                 for (StateVertex i : innerGraph.getVertices()) {
                     setClassHighlight(i, prevPrefix, currPrefix);
                 }

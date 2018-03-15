@@ -20,6 +20,10 @@ public class LayoutMethodVertex extends StateVertex implements CodeEntity {
     	this.compilationUnit = compilationUnit;
     }
 
+    public LayoutMethodVertex copy() {
+        return new LayoutMethodVertex(this.getId(), this.getLabel(), this.compilationUnit);
+    }
+
     public String getClassName() {
         return this.compilationUnit.method().getDeclaringClass().getName();
     }
@@ -77,7 +81,7 @@ public class LayoutMethodVertex extends StateVertex implements CodeEntity {
             mainTab.getVizHighlighted().add(this);
         }
 
-        for(StateVertex v : this.getVisibleInnerGraph().getVertices()) {
+        for(StateVertex v : this.getInnerGraph().getVertices()) {
             v.searchByMethod(query, mainTab);
         }
 

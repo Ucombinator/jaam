@@ -1,6 +1,5 @@
 package org.ucombinator.jaam.visualizer.graph;
 
-import org.ucombinator.jaam.interpreter.State;
 import org.ucombinator.jaam.visualizer.layout.*;
 
 import java.util.*;
@@ -27,27 +26,27 @@ public class GraphUtils {
         public int lowlink; // minIndex of a vertex reachable from my subtree that is not already part of a SCC
     }
 
-    private static <T extends AbstractLayoutVertex<T>, E extends Edge<T>>
-    void visit(Graph<T> g, T v, HashMap<Integer, SCCVertex> visitedVertices, Stack<Integer> stack,
-               ArrayList<ArrayList<Integer>> components )
+    private static <T extends AbstractLayoutVertex<T>, S extends Edge<T>> void visit(
+            Graph<T, S> graph, T v, HashMap<Integer, SCCVertex> visitedVertices, Stack<Integer> stack,
+            List<List<Integer>> components)
     {
-
         SCCVertex vSCC = new SCCVertex(v.getId(), visitedVertices.size());
         visitedVertices.put(v.getId(), vSCC);
         stack.push(v.getId());
         vSCC.lowlink = vSCC.index;
 
-        //System.out.println("TERE Visiting " + v.getId() + " == " + vSCC);
+        System.out.println("Visiting vertex in SCC construction: " + v);
 
-        Set<T> neighbors = g.getOutNeighbors(v);
+        Set<T> neighbors = graph.getOutNeighbors(v);
         for (T n : neighbors) {
+            System.out.println("Neighbor: " + n);
             if (n.getId() == v.getId()) { // No self loops
                 continue;
             }
             //System.out.print("\tTERE Neighbor " + n.getId());
             if (!visitedVertices.containsKey(n.getId())) {
                 //System.out.println(" Hadn't been visited");
-                visit(g, n, visitedVertices, stack, components);
+                visit(graph, n, visitedVertices, stack, components);
                 vSCC.lowlink = Math.min(vSCC.lowlink, visitedVertices.get(n.getId()).lowlink);
             } else if (stack.contains(n.getId())) { // Should be fast because the stack is small
                 //System.out.println(" Still On Stack" + stack );
@@ -74,13 +73,14 @@ public class GraphUtils {
         }
     }
 
-    public static <T extends AbstractLayoutVertex<T>> ArrayList<ArrayList<Integer>> StronglyConnectedComponents(final Graph<T> g) {
-        ArrayList<ArrayList<Integer>> components = new ArrayList<>();
+    public static <T extends AbstractLayoutVertex<T>, S extends Edge<T>> List<List<Integer>>
+    StronglyConnectedComponents(final Graph<T, S> graph) {
+        List<List<Integer>> components = new ArrayList<>();
 
         Stack<Integer> stack = new Stack<>();
         HashMap<Integer, SCCVertex> visitedVertices = new HashMap<>();
 
-        HashSet<T> vertices = g.getVertices();
+        Set<T> vertices = graph.getVertices();
         System.out.println("Vertices: " + vertices.size());
 
         for(T v : vertices) {
@@ -89,14 +89,14 @@ public class GraphUtils {
             }
 
             if(!visitedVertices.containsKey(v.getId())) {
-                visit(g, v, visitedVertices, stack, components);
+                visit(graph, v, visitedVertices, stack, components);
             }
         }
 
         return components;
     }
 
-    public static HashMap<String, ArrayList<StateVertex>> groupByClass(final Graph<StateVertex> graph) {
+    public static HashMap<String, ArrayList<StateVertex>> groupByClass(final Graph<StateVertex, StateEdge> graph) {
         HashMap<String, ArrayList<StateVertex>> visitedVertices = new HashMap<>();
 
         Stack<StateVertex> stack = new Stack<>();

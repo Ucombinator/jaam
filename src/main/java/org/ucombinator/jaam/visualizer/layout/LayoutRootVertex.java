@@ -3,14 +3,10 @@ package org.ucombinator.jaam.visualizer.layout;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
-import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalEdge;
-import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraphUtils;
-import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalVertex;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.function.Consumer;
 
 public class LayoutRootVertex extends StateVertex {
 
@@ -21,12 +17,15 @@ public class LayoutRootVertex extends StateVertex {
         this.color = defaultColor;
     }
 
+    public LayoutRootVertex copy() {
+        return new LayoutRootVertex();
+    }
+
     @Override
     public void onMouseClick(MouseEvent event) {}
 
-    public void constructVisibleGraphExcept(Set<StateVertex> verticesToHide) {
-        System.out.println("Constructing new visible graph...");
-        HierarchicalGraphUtils.constructVisibleGraph(this, (StateVertex v) -> !verticesToHide.contains(v), StateEdge::new);
+    public LayoutRootVertex constructVisibleGraphExcept(Set<StateVertex> verticesToHide) {
+        return (LayoutRootVertex) this.constructVisibleGraph((StateVertex v) -> !verticesToHide.contains(v), StateEdge::new);
     }
 
     public String getRightPanelContent() {
@@ -35,7 +34,7 @@ public class LayoutRootVertex extends StateVertex {
 
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = false;
-        for(StateVertex v : this.getVisibleInnerGraph().getVertices()) {
+        for(StateVertex v : this.getInnerGraph().getVertices()) {
             found = v.searchByMethod(query, mainTab) || found;
         }
 
@@ -50,7 +49,7 @@ public class LayoutRootVertex extends StateVertex {
     public HashSet<LayoutMethodVertex> getMethodVertices()
     {
         HashSet<LayoutMethodVertex> methodVertices = new LinkedHashSet<LayoutMethodVertex>();
-        for(StateVertex v : this.getVisibleInnerGraph().getVertices()) {
+        for(StateVertex v : this.getInnerGraph().getVertices()) {
             if(v instanceof LayoutMethodVertex)
                 methodVertices.add((LayoutMethodVertex) v);
             else
@@ -62,7 +61,7 @@ public class LayoutRootVertex extends StateVertex {
 
     public HashSet<String> getClassNames() {
         HashSet<String> classNames = new HashSet<>();
-        for(StateVertex v : this.getImmutableInnerGraph().getVertices()) {
+        for(StateVertex v : this.getInnerGraph().getVertices()) {
             classNames.addAll(v.getClassNames());
         }
         return classNames;

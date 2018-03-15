@@ -12,9 +12,6 @@ import org.ucombinator.jaam.visualizer.main.Main;
 import java.util.Comparator;
 import java.util.HashSet;
 
-// ClassTree Code -------------------------------------
-// Has a double function, either a folder (inner node) in which case it has no vertex;
-// Or a leaf node in which case it is associated to a one or more methods
 public class ClassTreeNode
 {
     public String shortName;
@@ -37,8 +34,6 @@ public class ClassTreeNode
     }
 
     public String getName() { return name; }
-
-    public boolean hasCode() {return false;}
 
     protected CheckBoxTreeItem<ClassTreeNode> buildTreeItem(TreeItem<ClassTreeNode> parent) {
         CheckBoxTreeItem<ClassTreeNode> item = new CheckBoxTreeItem<>();

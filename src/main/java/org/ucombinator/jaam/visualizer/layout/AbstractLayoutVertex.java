@@ -13,15 +13,26 @@ import org.ucombinator.jaam.visualizer.gui.GUINodeStatus;
 import java.util.Set;
 
 public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
-        extends AbstractVertex
-        implements GraphEntity
+        implements AbstractVertex, GraphEntity
 {
     // Types of layout vertices
     public enum VertexType {
         INSTRUCTION, LOOP, METHOD, CLASS, ROOT, SHRINK, SCC, TAINT_ADDRESS, TAINT_STMT
     }
 
+    enum VertexStatus
+    {
+        WHITE,
+        GRAY,
+        BLACK
+    }
+
+    protected static int idCounter = 0;
+    private String label;
+    private int id;
+
     private VertexType vertexType;
+    private VertexStatus vertexStatus;
 
     // Graphic related fields
     private GUINode<T> graphics;
@@ -43,20 +54,38 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
     private boolean drawEdges;
     private boolean isSelected = false;
 
+    // Used for building taint graph
     public AbstractLayoutVertex(String label, VertexType type, boolean drawEdges) {
-        super(label);
+        this.id = idCounter++;
+        this.label = label;
         this.drawEdges = drawEdges;
-
         this.vertexType = type;
         this.setVisible(false);
     }
 
+    // Used for building loop graph
     public AbstractLayoutVertex(int id, String label, VertexType type){
-    	super(id, label);
+    	this.id = id;
+    	this.label = label;
         this.drawEdges = true;
-
         this.vertexType = type;
         this.setVisible(false);
+    }
+
+    public int getId() {
+        return this.id;
+    }
+
+    public String getLabel() {
+        return this.label;
+    }
+
+    public VertexStatus getVertexStatus() {
+        return vertexStatus;
+    }
+
+    public void setVertexStatus(VertexStatus status) {
+        this.vertexStatus = status;
     }
 
     public void setX(double x) {
@@ -210,13 +239,13 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
 
     public void onMouseEnter() {
         System.out.println("Entering vertex: " + this);
-        this.getVisibleIncidentEdges().forEach(LayoutEdge::highlightEdgePath);
+        this.getIncidentEdges().forEach(LayoutEdge::highlightEdgePath);
     }
 
     public void onMouseExit() {
-        this.getVisibleIncidentEdges().forEach(LayoutEdge::resetEdgePath);
+        this.getIncidentEdges().forEach(LayoutEdge::resetEdgePath);
     }
 
-    public abstract Set<LayoutEdge<T>> getVisibleIncidentEdges();
+    public abstract Set<? extends LayoutEdge<T>> getIncidentEdges();
     public abstract void onMouseClick(MouseEvent event);
 }

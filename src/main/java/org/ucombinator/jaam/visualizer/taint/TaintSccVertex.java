@@ -15,9 +15,13 @@ public class TaintSccVertex extends TaintVertex {
         this.color = defaultColor;
     }
 
+    public TaintSccVertex copy() {
+        return new TaintSccVertex(this.getId(), this.getLabel());
+    }
+
     public HashSet<String> getMethodNames() {
         HashSet<String> methodNames = new HashSet<>();
-        for (TaintVertex v : this.getImmutableInnerGraph().getVertices()) {
+        for (TaintVertex v : this.getInnerGraph().getVertices()) {
             methodNames.addAll(v.getMethodNames());
         }
         return methodNames;
@@ -25,7 +29,7 @@ public class TaintSccVertex extends TaintVertex {
 
     @Override
     public boolean hasField() {
-        for (TaintVertex v : this.getImmutableInnerGraph().getVertices()) {
+        for (TaintVertex v : this.getInnerGraph().getVertices()) {
             if (v.hasField()) {
                 return true;
             }
@@ -35,8 +39,11 @@ public class TaintSccVertex extends TaintVertex {
 
     @Override
     public void getFields(Collection<TaintAddress> store) {
-        this.getImmutableInnerGraph().getVertices().stream().forEach(v -> v.getFields(store));
-
+        this.getInnerGraph().getVertices().forEach(v -> v.getFields(store));
     }
 
+    @Override
+    public String getStmtString() {
+        return null;
+    }
 }

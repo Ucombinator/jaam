@@ -37,6 +37,10 @@ public class TaintAddress extends TaintVertex {
         }
     }
 
+    public TaintAddress copy() {
+        return new TaintAddress(this.address);
+    }
+
     public HashSet<String> getMethodNames() {
         if(address.sootMethod() != null) {
             HashSet<String> result = new HashSet<>();
@@ -66,5 +70,12 @@ public class TaintAddress extends TaintVertex {
             store.add(this);
     }
 
-
+    @Override
+    public String getStmtString() {
+        if(this.address.stmt() != null) {
+            return this.address.stmt().toString();
+        } else {
+            return null;
+        }
+    }
 }

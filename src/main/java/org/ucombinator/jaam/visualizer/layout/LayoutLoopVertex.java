@@ -24,6 +24,11 @@ public class LayoutLoopVertex extends StateVertex implements Cloneable, CodeEnti
 
     	this.compilationUnit = compilationUnit;
     }
+
+    public LayoutLoopVertex copy() {
+        return new LayoutLoopVertex(this.getId(), this.getLabel(), this.statementIndex, this.compilationUnit);
+    }
+
     public String getClassName() {
         return this.compilationUnit.method().getDeclaringClass().getName();
     }
