@@ -12,7 +12,7 @@ import java.util.HashSet;
 
 public class FieldNode extends ClassTreeNode implements Comparable<FieldNode>{
 
-    FieldNode(String name, String className) {
+    public FieldNode(String name, String className) {
        super(name, className);
     }
 

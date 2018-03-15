@@ -14,10 +14,10 @@ import java.util.HashSet;
 
 public class ClassNode extends ClassTreeNode {
 
-    HashMap<String, MethodNode> methods;
-    HashSet<FieldNode> fields;
+    private HashMap<String, MethodNode> methods;
+    private HashSet<FieldNode> fields;
 
-    ClassNode(String name, String prefix) {
+    public ClassNode(String name, String prefix) {
         super(name,prefix);
 
         methods = new HashMap<>();

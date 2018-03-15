@@ -17,7 +17,7 @@ public abstract class ClassTreeNode
     public String shortName;
     public String name;
 
-    public ClassTreeNode(String shortName, String prefix)
+    protected ClassTreeNode(String shortName, String prefix)
     {
         this.shortName = shortName;
         if(prefix == null)
