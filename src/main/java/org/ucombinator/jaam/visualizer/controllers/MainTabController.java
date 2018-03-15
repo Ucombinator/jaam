@@ -174,7 +174,7 @@ public class MainTabController {
             }
         }
 
-       Graph<StateVertex, StateEdge> innerGraph = root.getInnerGraph(); // TODO: Is this the right one?
+       Graph<StateVertex, StateEdge> innerGraph = root.getChildGraph(); // TODO: Is this the right one?
        for (StateVertex v : innerGraph.getVertices()) {
            addVerticesToClassTree(topLevel, v);
        }
@@ -229,7 +229,7 @@ public class MainTabController {
     {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        Graph<StateVertex, StateEdge> innerGraph = v.getInnerGraph();
+        Graph<StateVertex, StateEdge> innerGraph = v.getChildGraph();
         for (StateVertex i : innerGraph.getVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
@@ -243,7 +243,7 @@ public class MainTabController {
     public void setRightText(TaintSccVertex v) {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        Graph<TaintVertex, TaintEdge> innerGraph = v.getInnerGraph();
+        Graph<TaintVertex, TaintEdge> innerGraph = v.getChildGraph();
         for(AbstractLayoutVertex<TaintVertex> i : innerGraph.getVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
@@ -407,7 +407,7 @@ public class MainTabController {
         this.vizHighlighted.forEach(v -> keep.addAll(v.getDescendants()) );
 
         HashSet<StateVertex> toHide = new HashSet<>();
-        this.vizPanelController.getVisibleRoot().getInnerGraph().getVertices().forEach(v -> {
+        this.vizPanelController.getVisibleRoot().getChildGraph().getVertices().forEach(v -> {
             if (!keep.contains(v)) {
                 toHide.add(v);
             }
@@ -447,8 +447,8 @@ public class MainTabController {
                 }
             }
 
-            if (v.getInnerGraph().getVertices().size() > 0) {
-                Graph<StateVertex, StateEdge> innerGraph = v.getInnerGraph();
+            if (v.getChildGraph().getVertices().size() > 0) {
+                Graph<StateVertex, StateEdge> innerGraph = v.getChildGraph();
                 for (StateVertex i : innerGraph.getVertices()) {
                     setClassHighlight(i, prevPrefix, currPrefix);
                 }

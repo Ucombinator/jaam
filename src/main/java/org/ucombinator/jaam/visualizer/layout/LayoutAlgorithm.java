@@ -1,6 +1,5 @@
 package org.ucombinator.jaam.visualizer.layout;
 
-import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 import org.ucombinator.jaam.visualizer.graph.Edge;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
@@ -29,7 +28,7 @@ public class LayoutAlgorithm
         parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
         parentVertex.setX(0);
         parentVertex.setY(0);
-        Graph<T, S> innerGraph = parentVertex.getInnerGraph();
+        Graph<T, S> innerGraph = parentVertex.getChildGraph();
         for (T v : innerGraph.getVertices()) {
             initializeSizes(v);
         }
@@ -37,9 +36,9 @@ public class LayoutAlgorithm
 
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
     void expandSubGraphs(T parentVertex) {
-        Graph<T, S> parentInnerGraph = parentVertex.getInnerGraph();
+        Graph<T, S> parentInnerGraph = parentVertex.getChildGraph();
         for(T v: parentInnerGraph.getVertices()) {
-            Graph<T, S> childInnerGraph = v.getInnerGraph();
+            Graph<T, S> childInnerGraph = v.getChildGraph();
             if (childInnerGraph.getVertices().size() != 0)
             {
                 // Layout the inner graphs of each node and assign width W and height H to each node
@@ -55,7 +54,7 @@ public class LayoutAlgorithm
 
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
     void dfsLayout(T parentVertex) {
-        Graph<T, S> graph = parentVertex.getInnerGraph();
+        Graph<T, S> graph = parentVertex.getChildGraph();
 
         expandSubGraphs(parentVertex);
 
@@ -75,7 +74,7 @@ public class LayoutAlgorithm
 
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
     void bfsLayout(T parentVertex) {
-        Graph<T, S> graph = parentVertex.getInnerGraph();
+        Graph<T, S> graph = parentVertex.getChildGraph();
 
         // Interior graphs use the DFS Layout
         expandSubGraphs(parentVertex);
@@ -155,7 +154,7 @@ public class LayoutAlgorithm
             }
         }
 
-        Graph<T, S> graph = parentVertex.getInnerGraph();
+        Graph<T, S> graph = parentVertex.getChildGraph();
         List<T> roots = graph.getSources();
         if(roots == null || roots.isEmpty()) {
             return;

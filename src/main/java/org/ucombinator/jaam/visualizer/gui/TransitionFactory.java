@@ -14,7 +14,7 @@ public class TransitionFactory {
 
     public static ParallelTransition buildRecursiveTransition(StateVertex v) {
         ParallelTransition pt = new ParallelTransition();
-        Graph<StateVertex, StateEdge> innerGraph = v.getInnerGraph();
+        Graph<StateVertex, StateEdge> innerGraph = v.getChildGraph();
 
         // Add transitions for current node and the edges it contains.
         pt.getChildren().add(TransitionFactory.buildVertexTransition(v));

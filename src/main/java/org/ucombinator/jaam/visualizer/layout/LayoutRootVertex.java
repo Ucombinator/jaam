@@ -35,7 +35,7 @@ public class LayoutRootVertex extends StateVertex {
 
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = false;
-        for(StateVertex v : this.getInnerGraph().getVertices()) {
+        for(StateVertex v : this.getChildGraph().getVertices()) {
             found = v.searchByMethod(query, mainTab) || found;
         }
 
@@ -50,7 +50,7 @@ public class LayoutRootVertex extends StateVertex {
     public HashSet<LayoutMethodVertex> getMethodVertices()
     {
         HashSet<LayoutMethodVertex> methodVertices = new LinkedHashSet<LayoutMethodVertex>();
-        for(StateVertex v : this.getInnerGraph().getVertices()) {
+        for(StateVertex v : this.getChildGraph().getVertices()) {
             if(v instanceof LayoutMethodVertex)
                 methodVertices.add((LayoutMethodVertex) v);
             else
@@ -62,7 +62,7 @@ public class LayoutRootVertex extends StateVertex {
 
     public HashSet<String> getClassNames() {
         HashSet<String> classNames = new HashSet<>();
-        for(StateVertex v : this.getInnerGraph().getVertices()) {
+        for(StateVertex v : this.getChildGraph().getVertices()) {
             classNames.addAll(v.getClassNames());
         }
         return classNames;

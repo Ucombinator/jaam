@@ -74,7 +74,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         double height = v.getHeight();
         node.setTranslateLocation(translateX, translateY, width, height);
 
-        Graph<TaintVertex, TaintEdge> innerGraph = v.getInnerGraph();
+        Graph<TaintVertex, TaintEdge> innerGraph = v.getChildGraph();
         for (TaintVertex child : innerGraph.getVertices()) {
             if (v.isExpanded()) {
                 drawNodes(node, child);
@@ -85,7 +85,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
     private void drawEdges(TaintVertex v) {
         System.out.println("Drawing edges for taint vertex: " + v);
         if(v.isExpanded()) {
-            Graph<TaintVertex, TaintEdge> innerGraph = v.getInnerGraph();
+            Graph<TaintVertex, TaintEdge> innerGraph = v.getChildGraph();
             for (LayoutEdge<TaintVertex> e : innerGraph.getEdges()) {
                 e.setVisible(v.isEdgeVisible());
                 e.draw();
@@ -174,7 +174,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             HashSet<TaintVertex> newSearch = new HashSet<>();
             for (TaintVertex v : toSearch) {
                 upResults.add(v);
-                Graph<TaintVertex, TaintEdge> selfGraph = v.getSelfGraph();
+                Graph<TaintVertex, TaintEdge> selfGraph = v.getParentGraph();
                 for (TaintVertex vIn : selfGraph.getInNeighbors(v)) {
                     if (!upResults.contains(vIn)) {
                         newSearch.add(vIn);
@@ -190,7 +190,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             HashSet<TaintVertex> newSearch = new HashSet<>();
             for (TaintVertex v : toSearch) {
                 downResults.add(v);
-                Graph<TaintVertex, TaintEdge> selfGraph = v.getSelfGraph();
+                Graph<TaintVertex, TaintEdge> selfGraph = v.getParentGraph();
                 for (TaintVertex vOut : selfGraph.getOutNeighbors(v)) {
                     if (!downResults.contains(vOut)) {
                         newSearch.add(vOut);

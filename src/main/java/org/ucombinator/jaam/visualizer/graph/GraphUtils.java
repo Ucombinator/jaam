@@ -138,15 +138,15 @@ public class GraphUtils {
     // matching our predicate.
     public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>> T constructVisibleGraph(T self, Predicate<T> isVisible, BiFunction<T, T, S> edgeBuilder) {
         System.out.println("Constructing visible graph for HierarchicalVertex: " + self);
-        Graph<T, S> immutableGraph = self.getInnerGraph();
+        Graph<T, S> immutableGraph = self.getChildGraph();
         T visibleRoot = self.copy();
-        Graph<T, S> visibleGraph = visibleRoot.getInnerGraph();
+        Graph<T, S> visibleGraph = visibleRoot.getChildGraph();
 
         // Add all visible vertices
         for(T v : immutableGraph.getVertices()) {
             if(isVisible.test(v)) {
                 visibleGraph.addVertex(v);
-                v.setSelfGraph(visibleGraph);
+                v.setParentGraph(visibleGraph);
                 GraphUtils.constructVisibleGraph(v, isVisible, edgeBuilder);
             }
         }
@@ -165,7 +165,7 @@ public class GraphUtils {
     private static <T extends HierarchicalVertex<T, S>, S extends Edge<T>> void findVisibleEdges(T self, T v, Graph<T, S> visibleGraph, BiFunction<T, T, S> edgeBuilder) {
         Queue<T> queue = new LinkedList<>();
         HashSet<T> found = new HashSet<>();
-        Graph<T, S> immutableGraph = self.getInnerGraph();
+        Graph<T, S> immutableGraph = self.getChildGraph();
         queue.addAll(immutableGraph.getInNeighbors(v));
 
         while (queue.size() > 0) {
@@ -185,7 +185,7 @@ public class GraphUtils {
         // We assume that only vertices within the same level can be combined.
     public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>> T constructCompressedGraph(T self, Function<T, String> hash, BiFunction<String, Set<T>, T> componentVertexBuilder, BiFunction<T, T, S> edgeBuilder) {
         // If we have no inner vertices, just copy ourselves.
-        if (self.getInnerGraph().getVertices().size() == 0) {
+        if (self.getChildGraph().getVertices().size() == 0) {
             return self.copy();
         }
 
@@ -193,7 +193,7 @@ public class GraphUtils {
         int nullCounter = 0;
         HashMap<T, String> hashStrings = new HashMap<>();
         HashMap<String, Set<T>> components = new HashMap<>();
-        for(T v : self.getInnerGraph().getVertices()) {
+        for(T v : self.getChildGraph().getVertices()) {
             String newHash = hash.apply(v);
             if(newHash == null) {
                 // Create a unique key for each null hash value
@@ -217,7 +217,7 @@ public class GraphUtils {
         }
 
         T newRoot = self.copy();
-        Graph<T, S> newInnerGraph = newRoot.getInnerGraph();
+        Graph<T, S> newInnerGraph = newRoot.getChildGraph();
         HashMap<String, T> mapStringToVertex = new HashMap<>();
         for(Map.Entry<String, Set<T>> componentEntry : components.entrySet()) {
             Set<T> component = componentEntry.getValue();
@@ -245,11 +245,11 @@ public class GraphUtils {
                 // We go from a compressed vertex inside our component, to its corresponding vertex in the original graph,
                 // to each neighbor of that original vertex, and then to the compressed vertices corresponding to those neighbors.
                 componentVertex = componentVertexBuilder.apply(componentEntry.getKey(), compressedComponent);
-                for(T compressedVertex : componentVertex.getInnerGraph().getVertices()) {
+                for(T compressedVertex : componentVertex.getChildGraph().getVertices()) {
                     T origVertex = mapCompressedToOriginal.get(compressedVertex);
-                    for(T adjOriginalVertex : self.getInnerGraph().getOutNeighbors(origVertex)) {
+                    for(T adjOriginalVertex : self.getChildGraph().getOutNeighbors(origVertex)) {
                         T adjCompressedVertex = mapOriginalToCompressed.get(adjOriginalVertex);
-                        componentVertex.getInnerGraph().addEdge(edgeBuilder.apply(compressedVertex, adjCompressedVertex));
+                        componentVertex.getChildGraph().addEdge(edgeBuilder.apply(compressedVertex, adjCompressedVertex));
                     }
                 }
             }
@@ -261,9 +261,9 @@ public class GraphUtils {
         // Add edges between component vertices.
         // From an old vertex, we get the hash string from one map, then pass it to a different map
         // to get the new vertex.
-        for(T currVertexOld: self.getInnerGraph().getVertices()) {
+        for(T currVertexOld: self.getChildGraph().getVertices()) {
             T currVertexNew = mapStringToVertex.get(hashStrings.get(currVertexOld));
-            for(T nextVertexOld : self.getInnerGraph().getOutNeighbors(currVertexOld)) {
+            for(T nextVertexOld : self.getChildGraph().getOutNeighbors(currVertexOld)) {
                 T nextVertexNew = mapStringToVertex.get(hashStrings.get(nextVertexOld));
 
                 // Add edges if the new vertices are different, or if we already had a self-loop before.

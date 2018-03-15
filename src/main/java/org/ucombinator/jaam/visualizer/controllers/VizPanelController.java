@@ -18,7 +18,6 @@ import javafx.stage.FileChooser;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
-import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 
@@ -203,7 +202,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         double height = v.getHeight();
         node.setTranslateLocation(translateX, translateY, width, height);
 
-        Graph<StateVertex, StateEdge> innerGraph = v.getInnerGraph();
+        Graph<StateVertex, StateEdge> innerGraph = v.getChildGraph();
         for (StateVertex child : innerGraph.getVertices()) {
             if (v.isExpanded()) {
                 drawNodes(node, child);
@@ -213,7 +212,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
 
     private void drawEdges(StateVertex v) {
         if(v.isExpanded()) {
-            Graph<StateVertex, StateEdge> innerGraph = v.getInnerGraph();
+            Graph<StateVertex, StateEdge> innerGraph = v.getChildGraph();
             for (LayoutEdge<StateVertex> e : innerGraph.getEdges()) {
                 e.setVisible(v.isEdgeVisible());
                 e.draw();
@@ -226,7 +225,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
     }
 
     public HashSet<StateVertex> pruneVisibleGraph() {
-        return this.visibleRoot.getInnerGraph().getVerticesToPrune(v -> (v.getType() == AbstractLayoutVertex.VertexType.METHOD));
+        return this.visibleRoot.getChildGraph().getVerticesToPrune(v -> (v.getType() == AbstractLayoutVertex.VertexType.METHOD));
     }
 
     @Override

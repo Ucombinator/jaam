@@ -4,29 +4,29 @@ import java.util.function.*;
 
 public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extends Edge<T>> extends AbstractVertex, Comparable<T> {
 
-    Graph<T, S> getSelfGraph();
-    Graph<T, S> getInnerGraph();
-    void setSelfGraph(Graph<T, S> graph);
+    Graph<T, S> getParentGraph();
+    Graph<T, S> getChildGraph();
+    void setParentGraph(Graph<T, S> graph);
     T copy(); // Copy constructor, used to construct new vertices in visible graph.
 
     default void applyToVerticesRecursive(Consumer<HierarchicalVertex<T, S>> f) {
         f.accept(this);
-        this.getInnerGraph().getVertices().forEach(w -> w.applyToVerticesRecursive(f));
+        this.getChildGraph().getVertices().forEach(w -> w.applyToVerticesRecursive(f));
     }
 
     default void applyToEdgesRecursive(Consumer<HierarchicalVertex<T, S>> vertexFunc, Consumer<S> edgeFunc) {
         vertexFunc.accept(this);
-        for(S edge: this.getInnerGraph().getEdges()) {
+        for(S edge: this.getChildGraph().getEdges()) {
             edgeFunc.accept(edge);
         }
 
-        this.getInnerGraph().getVertices().forEach(w -> w.applyToEdgesRecursive(vertexFunc, edgeFunc));
+        this.getChildGraph().getVertices().forEach(w -> w.applyToEdgesRecursive(vertexFunc, edgeFunc));
     }
 
     // Overridden in base case, LayoutInstructionVertex
     default int getMinInstructionLine() {
         int minIndex = Integer.MAX_VALUE;
-        for(HierarchicalVertex<T, S> v : this.getInnerGraph().getVertices()) {
+        for(HierarchicalVertex<T, S> v : this.getChildGraph().getVertices()) {
             minIndex = Math.min(minIndex, v.getMinInstructionLine());
         }
 

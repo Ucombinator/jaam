@@ -22,7 +22,7 @@ public class LayoutSccVertex extends StateVertex {
 
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = false;
-        for(StateVertex v : this.getInnerGraph().getVertices()) {
+        for(StateVertex v : this.getChildGraph().getVertices()) {
             found = v.searchByMethod(query, mainTab) || found;
         }
 
@@ -45,7 +45,7 @@ public class LayoutSccVertex extends StateVertex {
 
     public HashSet<String> getClassNames() {
         HashSet<String> classNames = new HashSet<>();
-        for(StateVertex v : this.getInnerGraph().getVertices()) {
+        for(StateVertex v : this.getChildGraph().getVertices()) {
             classNames.addAll(v.getClassNames());
         }
         return classNames;

@@ -33,15 +33,15 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
         this.selfGraph = new Graph<>();
     }
 
-    public Graph<StateVertex, StateEdge> getSelfGraph() {
+    public Graph<StateVertex, StateEdge> getParentGraph() {
         return this.selfGraph;
     }
 
-    public Graph<StateVertex, StateEdge> getInnerGraph() {
+    public Graph<StateVertex, StateEdge> getChildGraph() {
         return this.innerGraph;
     }
 
-    public void setSelfGraph(Graph<StateVertex, StateEdge> graph) {
+    public void setParentGraph(Graph<StateVertex, StateEdge> graph) {
         this.selfGraph = graph;
     }
 
@@ -67,7 +67,7 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
 
     private void handleDoubleClick(MouseEvent event){
         LayoutRootVertex root = Main.getSelectedVizPanelController().getVisibleRoot();
-        Graph<StateVertex, StateEdge> innerGraph = this.getInnerGraph();
+        Graph<StateVertex, StateEdge> innerGraph = this.getChildGraph();
         boolean isExpanded = this.isExpanded();
 
         double newOpacity = isExpanded ? 0.0 : 1.0;
@@ -132,7 +132,7 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
             System.out.println("Search successful: " + this.getId());
         }
 
-        for(StateVertex v : this.getInnerGraph().getVertices())
+        for(StateVertex v : this.getChildGraph().getVertices())
             v.searchByIDRange(id1, id2, mainTab);
     }
 
@@ -150,7 +150,7 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
            return;
 
        ancestors.add(this);
-       this.getSelfGraph().getInNeighbors(this).stream().forEach(v -> {
+       this.getParentGraph().getInNeighbors(this).stream().forEach(v -> {
            if (!ancestors.contains(v)) {
                v.getAncestors(ancestors);
            }
@@ -171,7 +171,7 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
             return;
 
         descendants.add(this);
-        this.getSelfGraph().getOutNeighbors(this).stream().forEach(v -> {
+        this.getParentGraph().getOutNeighbors(this).stream().forEach(v -> {
             if (!descendants.contains(v)) {
                 v.getDescendants(descendants);
             }
@@ -180,8 +180,8 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
 
     public Set<StateEdge> getIncidentEdges() {
         Set<StateEdge> incidentEdges = new HashSet<>();
-        incidentEdges.addAll(this.getSelfGraph().getInEdges(this));
-        incidentEdges.addAll(this.getSelfGraph().getOutEdges(this));
+        incidentEdges.addAll(this.getParentGraph().getInEdges(this));
+        incidentEdges.addAll(this.getParentGraph().getOutEdges(this));
         return incidentEdges;
     }
 

@@ -7,10 +7,7 @@ import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.graph.Graph;
-import org.ucombinator.jaam.visualizer.graph.AbstractVertex;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
-import org.ucombinator.jaam.visualizer.layout.StateEdge;
 import org.ucombinator.jaam.visualizer.main.Main;
 
 import java.util.Collection;
@@ -38,15 +35,15 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
         this.innerGraph = new Graph<>();
     }
 
-    public Graph<TaintVertex, TaintEdge> getSelfGraph() {
+    public Graph<TaintVertex, TaintEdge> getParentGraph() {
         return this.selfGraph;
     }
 
-    public Graph<TaintVertex, TaintEdge> getInnerGraph() {
+    public Graph<TaintVertex, TaintEdge> getChildGraph() {
         return this.innerGraph;
     }
 
-    public void setSelfGraph(Graph<TaintVertex, TaintEdge> graph) {
+    public void setParentGraph(Graph<TaintVertex, TaintEdge> graph) {
         this.selfGraph = graph;
     }
 
@@ -70,7 +67,7 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
 
     public void searchByMethodNames(HashSet<String> searchMethodNames, HashSet<TaintVertex> results) {
         System.out.println("Searching for methods: " + String.join(" ", searchMethodNames));
-        for(TaintVertex v : this.getInnerGraph().getVertices()) {
+        for(TaintVertex v : this.getChildGraph().getVertices()) {
             HashSet<String> currMethodNames = v.getMethodNames();
             System.out.println("Vertex: " + v);
             System.out.println("Vertex methods: " + String.join(" ", currMethodNames));
@@ -86,8 +83,8 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
 
     public Set<TaintEdge> getIncidentEdges() {
         Set<TaintEdge> incidentEdges = new HashSet<>();
-        incidentEdges.addAll(this.getSelfGraph().getInEdges(this));
-        incidentEdges.addAll(this.getSelfGraph().getOutEdges(this));
+        incidentEdges.addAll(this.getParentGraph().getInEdges(this));
+        incidentEdges.addAll(this.getParentGraph().getOutEdges(this));
         return incidentEdges;
     }
 

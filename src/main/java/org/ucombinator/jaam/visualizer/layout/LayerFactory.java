@@ -18,7 +18,7 @@ public class LayerFactory
         List<List<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
         System.out.println("Strongly connected components: " + sccs.size());
 
-        Graph<StateVertex, StateEdge> sccGraph = root.getInnerGraph();
+        Graph<StateVertex, StateEdge> sccGraph = root.getChildGraph();
 
         // Need these two maps for the second pass to avoid having to look around for everything
         HashMap<StateVertex, StateVertex> inputToInner = new HashMap<>();
@@ -31,15 +31,15 @@ public class LayerFactory
                 int sccId = sccGraph.getVertices().size();
                 LayoutSccVertex sccVertex = new LayoutSccVertex(sccId, "SCC-" + sccId);
                 sccGraph.addVertex(sccVertex);
-                sccVertex.setSelfGraph(sccGraph);
+                sccVertex.setParentGraph(sccGraph);
 
-                Graph<StateVertex, StateEdge> sccInner = sccVertex.getInnerGraph();
+                Graph<StateVertex, StateEdge> sccInner = sccVertex.getChildGraph();
 
                 for (Integer id : scc) {
                     StateVertex v = graph.getVertexById(id);
                     StateVertex innerVertex = upgradeStateVertex(v);
                     sccInner.addVertex(innerVertex);
-                    innerVertex.setSelfGraph(sccInner);
+                    innerVertex.setParentGraph(sccInner);
 
                     // Add to hash tables for next pass
                     inputToInner.put(v, innerVertex);
@@ -51,7 +51,7 @@ public class LayerFactory
                 StateVertex v = graph.getVertexById(id);
                 StateVertex newVertex = upgradeStateVertex(v);
                 sccGraph.addVertex(newVertex);
-                newVertex.setSelfGraph(sccGraph);
+                newVertex.setParentGraph(sccGraph);
 
                 // Add to hash tables for next pass
                 inputToInner.put(v, newVertex);
@@ -66,14 +66,14 @@ public class LayerFactory
             StateVertex vSCC = innerToSCC.get(v);
 
             // TODO probably should have a better way
-            if (vSCC.getInnerGraph().getVertices().size() > 0) // Am a SCC node
+            if (vSCC.getChildGraph().getVertices().size() > 0) // Am a SCC node
             {
                 for (StateVertex inputN: graph.getOutNeighbors(inputV)) {
                     StateVertex n = inputToInner.get(inputN);
                     StateVertex nSCC = innerToSCC.get(n);
 
                     if(vSCC == nSCC) {
-                        Graph<StateVertex, StateEdge> inner = vSCC.getInnerGraph();
+                        Graph<StateVertex, StateEdge> inner = vSCC.getChildGraph();
                         inner.addEdge(new StateEdge(v, n));
                     } else {
                         sccGraph.addEdge(new StateEdge(vSCC, nSCC));
@@ -102,7 +102,7 @@ public class LayerFactory
         List<List<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
         System.out.println("Strongly connected components: " + sccs.size());
 
-        Graph<TaintVertex, TaintEdge> sccGraph = root.getInnerGraph();
+        Graph<TaintVertex, TaintEdge> sccGraph = root.getChildGraph();
 
         // Need these two maps for the second pass to avoid having to look around for everything
         HashMap<TaintVertex, TaintVertex> inputToInner = new HashMap<>();
@@ -115,15 +115,15 @@ public class LayerFactory
                 int sccId = sccGraph.getVertices().size();
                 TaintSccVertex sccVertex = new TaintSccVertex(sccId, "SCC-" + sccId);
                 sccGraph.addVertex(sccVertex);
-                sccVertex.setSelfGraph(sccGraph);
+                sccVertex.setParentGraph(sccGraph);
 
-                Graph<TaintVertex, TaintEdge> sccInner = sccVertex.getInnerGraph();
+                Graph<TaintVertex, TaintEdge> sccInner = sccVertex.getChildGraph();
 
                 for (Integer id : scc) {
                     TaintVertex v = graph.getVertexById(id);
                     TaintVertex innerVertex = upgradeTaintVertex(v);
                     sccInner.addVertex(innerVertex);
-                    innerVertex.setSelfGraph(sccInner);
+                    innerVertex.setParentGraph(sccInner);
 
                     // Add to hash tables for next pass
                     inputToInner.put(v, innerVertex);
@@ -134,7 +134,7 @@ public class LayerFactory
                 TaintVertex v = graph.getVertexById(scc.get(0));
                 TaintVertex newVertex = upgradeTaintVertex(v);
                 sccGraph.addVertex(newVertex);
-                newVertex.setSelfGraph(sccGraph);
+                newVertex.setParentGraph(sccGraph);
 
                 // Add to hash tables for next pass
                 inputToInner.put(v, newVertex);
@@ -149,14 +149,14 @@ public class LayerFactory
             TaintVertex vSCC = innerToSCC.get(v);
 
             // TODO probably should have a better way
-            if (vSCC.getInnerGraph().getVertices().size() > 0) // Am a SCC node
+            if (vSCC.getChildGraph().getVertices().size() > 0) // Am a SCC node
             {
                 for (TaintVertex inputN: graph.getOutNeighbors(inputV)) {
                     TaintVertex n = inputToInner.get(inputN);
                     TaintVertex nSCC = innerToSCC.get(n);
 
                     if (vSCC == nSCC) {
-                        Graph<TaintVertex, TaintEdge> inner = vSCC.getInnerGraph();
+                        Graph<TaintVertex, TaintEdge> inner = vSCC.getChildGraph();
                         inner.addEdge(new TaintEdge(v, n));
                     } else {
                         sccGraph.addEdge(new TaintEdge(vSCC, nSCC));
@@ -178,7 +178,7 @@ public class LayerFactory
 
     public static void getGraphByClass(Graph<StateVertex, StateEdge> graph, LayoutRootVertex root) {
         HashMap<String, ArrayList<StateVertex>> classGroups = GraphUtils.groupByClass(graph);
-        Graph<StateVertex, StateEdge> classGraph = root.getInnerGraph();
+        Graph<StateVertex, StateEdge> classGraph = root.getChildGraph();
 
         // Need this map for the second pass in which we add edges
         HashMap<StateVertex, LayoutClassVertex> innerToClass   = new HashMap<>();
@@ -186,13 +186,13 @@ public class LayerFactory
         for (String className : classGroups.keySet()) {
             LayoutClassVertex classVertex = new LayoutClassVertex(className);
             classGraph.addVertex(classVertex);
-            classVertex.setSelfGraph(classGraph);
+            classVertex.setParentGraph(classGraph);
 
-            Graph<StateVertex, StateEdge> classInnerGraph = classVertex.getInnerGraph();
+            Graph<StateVertex, StateEdge> classInnerGraph = classVertex.getChildGraph();
 
             for (StateVertex innerVertex : classGroups.get(className)) {
                 classInnerGraph.addVertex(innerVertex);
-                innerVertex.setSelfGraph(classInnerGraph);
+                innerVertex.setParentGraph(classInnerGraph);
                 innerToClass.put(innerVertex, classVertex);
             }
         }
@@ -203,7 +203,7 @@ public class LayerFactory
                     LayoutClassVertex classVertexV = innerToClass.get(v);
                     LayoutClassVertex classVertexW = innerToClass.get(w);
                     if(classVertexV.equals(classVertexW)) {
-                        classVertexV.getInnerGraph().addEdge(
+                        classVertexV.getChildGraph().addEdge(
                                 new StateEdge(v, w));
                     } else {
                         classGraph.addEdge(
