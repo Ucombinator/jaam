@@ -17,14 +17,9 @@ public class PackageNode extends ClassTreeNode {
     public HashSet<ClassNode>   classNodes; // Leaf nodes store their associated methods
 
     public PackageNode(String name, String prefix) {
-        super(name,prefix);
+        super(name, prefix);
         this.subPackages = new HashSet<>();
         this.classNodes  = new HashSet<>();
-    }
-
-    @Override
-    public String toString() {
-        return super.toString();
     }
 
     public PackageNode addPackageIfAbsent(String name) {

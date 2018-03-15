@@ -25,11 +25,6 @@ public class ClassNode extends ClassTreeNode {
     }
 
     @Override
-    public String toString() {
-        return super.toString();
-    }
-
-    @Override
     public HashSet<StateVertex> getChildVertices() {
 
         HashSet<StateVertex> all = new HashSet<>();

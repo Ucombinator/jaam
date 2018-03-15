@@ -28,11 +28,6 @@ public abstract class ClassTreeNode
             name = prefix + "." + shortName;
     }
 
-    @Override
-    public String toString() {
-        return shortName;
-    }
-
     public String getName() { return name; }
 
     protected CheckBoxTreeItem<ClassTreeNode> buildTreeItem(TreeItem<ClassTreeNode> parent) {

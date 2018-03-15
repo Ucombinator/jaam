@@ -49,13 +49,6 @@ public class MethodNode extends ClassTreeNode implements Comparable<MethodNode> 
         methodVertex = v;
     }
 
-
-
-    @Override
-    public String toString() {
-        return super.toString();
-    }
-
     @Override
     public HashSet<StateVertex> getChildVertices() {
         HashSet<StateVertex> result = new HashSet<>();
