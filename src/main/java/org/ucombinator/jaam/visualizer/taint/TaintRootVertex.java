@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.taint;
 
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -24,7 +25,7 @@ public class TaintRootVertex extends TaintVertex {
     public void onMouseClick(MouseEvent event) {}
 
     public TaintRootVertex constructVisibleGraph(Set<TaintVertex> verticesToDraw) {
-        return (TaintRootVertex) this.constructVisibleGraph(verticesToDraw::contains, TaintEdge::new);
+        return (TaintRootVertex) GraphUtils.constructVisibleGraph(this, verticesToDraw::contains, TaintEdge::new);
     }
 
     public HashSet<String> getMethodNames() {

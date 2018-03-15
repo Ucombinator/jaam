@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.taint;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -50,7 +51,8 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
     }
 
     public TaintVertex groupByStatement() {
-        return this.constructCompressedGraph(
+        return GraphUtils.constructCompressedGraph(
+                this,
                 TaintVertex::getStmtString,
                 TaintStmtVertex::new,
                 TaintEdge::new);

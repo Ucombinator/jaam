@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.layout;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
+import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -25,7 +26,7 @@ public class LayoutRootVertex extends StateVertex {
     public void onMouseClick(MouseEvent event) {}
 
     public LayoutRootVertex constructVisibleGraphExcept(Set<StateVertex> verticesToHide) {
-        return (LayoutRootVertex) this.constructVisibleGraph((StateVertex v) -> !verticesToHide.contains(v), StateEdge::new);
+        return (LayoutRootVertex) GraphUtils.constructVisibleGraph(this, (StateVertex v) -> !verticesToHide.contains(v), StateEdge::new);
     }
 
     public String getRightPanelContent() {
