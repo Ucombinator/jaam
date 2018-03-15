@@ -90,7 +90,7 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
         this.vertex.setX(newX);
         this.vertex.setY(newY);
 
-        this.vertex.getVisibleIncidentEdges().forEach(LayoutEdge::redrawEdge);
+        this.vertex.getIncidentEdges().forEach(LayoutEdge::redrawEdge);
     }
 
     private void handleOnMouseEntered(MouseEvent event) {

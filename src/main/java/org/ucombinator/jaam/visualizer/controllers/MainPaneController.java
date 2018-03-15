@@ -14,9 +14,11 @@ import org.ucombinator.jaam.tools.taint3.Edge;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.LayoutLoopVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutMethodVertex;
+import org.ucombinator.jaam.visualizer.layout.StateEdge;
 import org.ucombinator.jaam.visualizer.layout.StateVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.taint.TaintAddress;
+import org.ucombinator.jaam.visualizer.taint.TaintEdge;
 import org.ucombinator.jaam.visualizer.taint.TaintGraph;
 import soot.SootClass;
 
@@ -85,7 +87,7 @@ public class MainPaneController {
 
         List<CompilationUnit> compilationUnits = new ArrayList<>();
         Set<SootClass> sootClasses = new HashSet<>();
-        Pair<Graph<StateVertex>, TaintGraph> s = parseLoopGraph(file, compilationUnits, sootClasses);
+        Pair<Graph<StateVertex, StateEdge>, TaintGraph> s = parseLoopGraph(file, compilationUnits, sootClasses);
 
         System.out.println("--> Create visualization: start...");
         MainTabController tabController = new MainTabController(file, s.getLeft(),  compilationUnits,
@@ -96,9 +98,10 @@ public class MainPaneController {
         tabPane.getSelectionModel().select(tabController.tab);
     }
 
-    private static Pair<Graph<StateVertex>, TaintGraph> parseLoopGraph(
+    private static Pair<Graph<StateVertex, StateEdge>, TaintGraph> parseLoopGraph(
             File file, List<CompilationUnit> compilationUnits, Set<SootClass> sootClasses) {
-        Graph<StateVertex> graph = new Graph<>();
+        Graph<StateVertex, StateEdge> graph = new Graph<>();
+        HashMap<Integer, StateVertex> stateVertexIndex = new HashMap<>();
         int loopPackets = 0;
         int methodPackets = 0;
         int loopEdgePackets = 0;
@@ -115,17 +118,22 @@ public class MainPaneController {
                 loopPackets++;
                 LoopLoopNode node = (LoopLoopNode) packet;
 
-                graph.addVertex(new LayoutLoopVertex(node.id().id(),
+                LayoutLoopVertex v = new LayoutLoopVertex(node.id().id(),
                         node.method().getSignature(),
-                        node.statementIndex(), node));
+                        node.statementIndex(), node);
+                graph.addVertex(v);
+                stateVertexIndex.put(node.id().id(), v);
 
                 sootClasses.add(node.method().getDeclaringClass());
 
             } else if (packet instanceof LoopMethodNode) {
                 methodPackets++;
                 LoopMethodNode node = (LoopMethodNode) packet;
-                graph.addVertex(new LayoutMethodVertex(node.id().id(),
-                        node.method().getSignature(), node));
+
+                LayoutMethodVertex v = new LayoutMethodVertex(node.id().id(),
+                        node.method().getSignature(), node);
+                graph.addVertex(v);
+                stateVertexIndex.put(node.id().id(), v);
 
                 sootClasses.add(node.method().getDeclaringClass());
 
@@ -158,7 +166,7 @@ public class MainPaneController {
 
         // We actually create the edges here
         for (LoopEdge edge : loopEdges) {
-            graph.addEdge(edge.src().id(), edge.dst().id());
+            graph.addEdge(new StateEdge(stateVertexIndex.get(edge.src().id()), stateVertexIndex.get(edge.dst().id())));
             if(edge.src().id() == edge.dst().id()) {
                 System.out.println("Found self loop in input: " + edge.src());
             }
@@ -168,7 +176,7 @@ public class MainPaneController {
         int ignoredEdges = 0;
         for (Edge edge : taintEdges) {
             if(addressIndex.containsKey(edge.source()) && addressIndex.containsKey(edge.target())) {
-                taintGraph.addEdge(addressIndex.get(edge.source()), addressIndex.get(edge.target()));
+                taintGraph.addEdge(new TaintEdge(addressIndex.get(edge.source()), addressIndex.get(edge.target())));
             }
             else {
                 System.out.println("Ignoring edge: " + edge.source() + " --> " + edge.target());

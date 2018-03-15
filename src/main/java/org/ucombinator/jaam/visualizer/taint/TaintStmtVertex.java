@@ -20,6 +20,10 @@ public class TaintStmtVertex extends TaintVertex {
         this.color = defaultColor;
     }
 
+    public TaintStmtVertex copy() {
+        return new TaintStmtVertex(new ArrayList<>(taintAddresses));
+    }
+
     @Override
     public HashSet<String> getMethodNames() {
         return this.taintAddresses.get(0).getMethodNames();

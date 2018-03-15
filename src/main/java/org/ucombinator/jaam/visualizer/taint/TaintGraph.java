@@ -6,7 +6,7 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class TaintGraph extends Graph<TaintVertex> {
+public class TaintGraph extends Graph<TaintVertex, TaintEdge> {
 
     public TaintGraph() {
         super();
@@ -70,7 +70,7 @@ public class TaintGraph extends Graph<TaintVertex> {
                         String wString = indexStrings.get(wAddress);
                         TaintVertex nextVertex = newVertexIndex.get(wString);
                         if(currVertex != nextVertex) {
-                            newTaintGraph.addEdge(currVertex, nextVertex);
+                            newTaintGraph.addEdge(new TaintEdge(currVertex, nextVertex));
                         }
                     }
                 }

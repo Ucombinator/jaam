@@ -15,6 +15,10 @@ public class LayoutClassVertex extends StateVertex {
         this.className = className;
     }
 
+    public LayoutClassVertex copy() {
+        return new LayoutClassVertex("className");
+    }
+
     public String getRightPanelContent() {
         return "Class: " + className;
     }
@@ -27,7 +31,7 @@ public class LayoutClassVertex extends StateVertex {
 
     public HashSet<LayoutMethodVertex> getMethodVertices() {
         HashSet<LayoutMethodVertex> methodVertices = new HashSet<>();
-        for(StateVertex v : this.getImmutableInnerGraph().getVertices()) {
+        for(StateVertex v : this.getInnerGraph().getVertices()) {
             methodVertices.addAll(v.getMethodVertices());
         }
         return methodVertices;
@@ -35,7 +39,7 @@ public class LayoutClassVertex extends StateVertex {
 
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = false;
-        for(StateVertex v : this.getImmutableInnerGraph().getVertices()) {
+        for(StateVertex v : this.getInnerGraph().getVertices()) {
             found = v.searchByMethod(query, mainTab) || found;
         }
 

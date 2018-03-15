@@ -10,7 +10,7 @@ import javafx.scene.layout.Pane;
 import org.ucombinator.jaam.tools.taint3.Address;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
-import org.ucombinator.jaam.visualizer.hierarchical.HierarchicalGraph;
+import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.taint.*;
@@ -27,7 +27,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
     @FXML private final ScrollPane scrollPane = null; // Initialized by Controllers.loadFXML()
     @FXML private final Pane taintPanel = null; // Initialized by Controllers.loadFXML()
 
-    private TaintRootVertex panelRoot;
+    private TaintRootVertex visibleRoot, immutableRoot;
     private Group graphContentGroup;
 
     private HashMap<String, TaintAddress> fieldVertices;
@@ -42,20 +42,21 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         graphContentGroup.addEventFilter(SelectEvent.TAINT_VERTEX_SELECTED, this);
 
         // Set up graph, but don't draw the entire thing yet.
-        this.panelRoot = new TaintRootVertex();
-        LayerFactory.getLayeredGraph(graph, this.panelRoot);
+        this.visibleRoot = new TaintRootVertex();
+        this.immutableRoot = new TaintRootVertex();
+        LayerFactory.getLayeredGraph(graph, this.immutableRoot);
         fillFieldDictionary();
     }
 
     public void drawGraph(HashSet<TaintVertex> verticesToDraw) {
         System.out.println("Drawing taint graph...");
-        panelRoot.setVisible(false);
-        this.panelRoot.constructVisibleGraph(verticesToDraw);
-        LayoutAlgorithm.layout(panelRoot);
-        drawNodes(null, panelRoot);
-        drawEdges(panelRoot);
+        visibleRoot.setVisible(false);
+        this.visibleRoot = this.immutableRoot.constructVisibleGraph(verticesToDraw);
+        LayoutAlgorithm.layout(visibleRoot);
+        drawNodes(null, visibleRoot);
+        drawEdges(visibleRoot);
         // this.resetStrokeWidth();
-        panelRoot.setVisible(true);
+        visibleRoot.setVisible(true);
     }
 
     private void drawNodes(GUINode<TaintVertex> parent, TaintVertex v) {
@@ -73,7 +74,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         double height = v.getHeight();
         node.setTranslateLocation(translateX, translateY, width, height);
 
-        HierarchicalGraph<TaintVertex, TaintEdge> innerGraph = v.getVisibleInnerGraph();
+        Graph<TaintVertex, TaintEdge> innerGraph = v.getInnerGraph();
         for (TaintVertex child : innerGraph.getVertices()) {
             if (v.isExpanded()) {
                 drawNodes(node, child);
@@ -84,7 +85,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
     private void drawEdges(TaintVertex v) {
         System.out.println("Drawing edges for taint vertex: " + v);
         if(v.isExpanded()) {
-            HierarchicalGraph<TaintVertex, TaintEdge> innerGraph = v.getVisibleInnerGraph();
+            Graph<TaintVertex, TaintEdge> innerGraph = v.getInnerGraph();
             for (LayoutEdge<TaintVertex> e : innerGraph.getEdges()) {
                 e.setVisible(v.isEdgeVisible());
                 e.draw();
@@ -138,10 +139,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
 
             StateVertex v = selectEvent.getVertex();
             HashSet<TaintVertex> methodAddresses = findAddressesByMethods(v.getMethodNames());
-            HashSet<TaintVertex> verticesToDraw = findConnectedAddresses(methodAddresses);
-            verticesToDraw.add(panelRoot);
             System.out.println("Taint vertices in method: " + methodAddresses.size());
-            System.out.println("Taint vertices to draw: " + verticesToDraw.size());
             drawConnectedVertices(methodAddresses);
         }
     };
@@ -149,7 +147,6 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
     private void drawConnectedVertices(HashSet<TaintVertex> addresses) {
         long time1 = System.nanoTime();
         HashSet<TaintVertex> verticesToDraw = findConnectedAddresses(addresses);
-        verticesToDraw.add(panelRoot);
         System.out.println("Taint vertices to draw: " + verticesToDraw.size());
 
         long time2 = System.nanoTime();
@@ -163,7 +160,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
 
     private HashSet<TaintVertex> findAddressesByMethods(HashSet<String> methodNames) {
         HashSet<TaintVertex> results = new HashSet<>();
-        this.panelRoot.searchByMethodNames(methodNames, results); // TODO: This step is a little inefficient.
+        this.immutableRoot.searchByMethodNames(methodNames, results); // TODO: This step is a little inefficient.
         return results;
     }
 
@@ -177,7 +174,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             HashSet<TaintVertex> newSearch = new HashSet<>();
             for (TaintVertex v : toSearch) {
                 upResults.add(v);
-                HierarchicalGraph<TaintVertex, TaintEdge> selfGraph = v.getImmutableSelfGraph();
+                Graph<TaintVertex, TaintEdge> selfGraph = v.getSelfGraph();
                 for (TaintVertex vIn : selfGraph.getInNeighbors(v)) {
                     if (!upResults.contains(vIn)) {
                         newSearch.add(vIn);
@@ -193,7 +190,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             HashSet<TaintVertex> newSearch = new HashSet<>();
             for (TaintVertex v : toSearch) {
                 downResults.add(v);
-                HierarchicalGraph<TaintVertex, TaintEdge> selfGraph = v.getImmutableSelfGraph();
+                Graph<TaintVertex, TaintEdge> selfGraph = v.getSelfGraph();
                 for (TaintVertex vOut : selfGraph.getOutNeighbors(v)) {
                     if (!downResults.contains(vOut)) {
                         newSearch.add(vOut);
@@ -264,7 +261,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
 
         ArrayList<TaintAddress> allFields = new ArrayList<>();
 
-        this.panelRoot.getFields(allFields);
+        this.visibleRoot.getFields(allFields);
 
         allFields.forEach(v -> {
             fieldVertices.put(v.getFieldId(), v);

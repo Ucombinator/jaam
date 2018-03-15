@@ -141,14 +141,10 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
 
         this.getSrcParent().getChildren().add(graphics);
         graphics.setVisible(this.isDisplayed());
-        System.out.println("Finished drawing edge: " + this.src + " --> " + this.dest);
-        System.out.println("Edge path: " + this.edgePath);
     }
 
     public void highlightEdgePath()
     {
-        System.out.println("Highlighting edge: " + this.src + " --> " + this.dest);
-        System.out.println("Edge path: " + edgePath);
         if(edgePath != null) {
             edgePath.setStroke(highlightColor);
             edgePath.setStrokeWidth(defaultStrokeWidth * highlightStrokeWidthMultiplier);
@@ -160,8 +156,6 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
 
     public void resetEdgePath()
     {
-        System.out.println("Resetting edge: " + this.src + " --> " + this.dest);
-        System.out.println("Edge path: " + edgePath);
         if(edgePath != null) {
             edgePath.setStroke(color);
             edgePath.setStrokeWidth(defaultStrokeWidth);
@@ -202,8 +196,6 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
 
         this.getSrcParent().getChildren().add(graphics);
         this.graphics.setVisible(this.isDisplayed());
-        System.out.println("Finished drawing loop at vertex: " + this.src);
-        System.out.println("Edge path: " + this.edgePath);
     }
 
     // Checks that an edge is currently showing on the screen.

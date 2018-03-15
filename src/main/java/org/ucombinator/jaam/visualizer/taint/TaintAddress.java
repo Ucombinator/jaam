@@ -37,6 +37,10 @@ public class TaintAddress extends TaintVertex {
         }
     }
 
+    public TaintAddress copy() {
+        return new TaintAddress(this.address);
+    }
+
     public HashSet<String> getMethodNames() {
         if(address.sootMethod() != null) {
             HashSet<String> result = new HashSet<>();
