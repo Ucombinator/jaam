@@ -41,12 +41,11 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
     // TODO: should this stuff be moved to a model class?
     private Group graphContentGroup;
     private LayoutRootVertex visibleRoot, immutableRoot;
-    private org.ucombinator.jaam.visualizer.graph.Graph loopGraph;
 
     private boolean inBatchMode = false;
     private boolean changedWhileInBatchMode = false;
 
-    public VizPanelController(org.ucombinator.jaam.visualizer.graph.Graph graph) throws IOException {
+    public VizPanelController(Graph<StateVertex, StateEdge> graph) throws IOException {
         Controllers.loadFXML("/VizPanel.fxml", this);
 
         this.zoomSpinner.setValueFactory(new ZoomSpinnerValueFactory(1.0, 1.2));
@@ -63,10 +62,9 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         graphContentGroup.addEventFilter(SelectEvent.STATE_VERTEX_SELECTED, this);
 
         this.scrollPane.addEventFilter(ScrollEvent.SCROLL, this::scrollAction);
-        this.loopGraph = graph;
         this.visibleRoot = new LayoutRootVertex();
         this.immutableRoot = new LayoutRootVertex();
-        LayerFactory.getLayeredGraph(this.loopGraph, this.immutableRoot);
+        LayerFactory.getLayeredGraph(graph, this.immutableRoot);
         this.drawGraph(new HashSet<>());
     }
 
