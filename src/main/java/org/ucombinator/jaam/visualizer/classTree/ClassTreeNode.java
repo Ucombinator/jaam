@@ -20,11 +20,17 @@ public abstract class ClassTreeNode
     protected ClassTreeNode(String shortName, String prefix)
     {
         this.shortName = shortName;
-        if (prefix.equals("")) {
+        if(prefix == null)
+            name = new String("");
+        else if(prefix.compareTo("") == 0)
             name = shortName;
-        } else {
+        else
             name = prefix + "." + shortName;
-        }
+    }
+
+    @Override
+    public String toString() {
+        return shortName;
     }
 
     public String getName() { return name; }
