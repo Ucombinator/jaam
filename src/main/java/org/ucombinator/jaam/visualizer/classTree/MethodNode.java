@@ -13,11 +13,11 @@ import java.util.HashSet;
 
 public class MethodNode extends ClassTreeNode implements Comparable<MethodNode> {
 
-    private StateMethodVertex methodVertex;
-    private HashSet<StateLoopVertex> loopVertices;
-
     private String className;
     private String methodName;
+
+    private StateMethodVertex methodVertex;
+    private HashSet<StateLoopVertex> loopVertices;
 
     public MethodNode(StateVertex v) {
         this.className = ((CodeEntity) v).getClassName();
