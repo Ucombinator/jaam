@@ -12,7 +12,7 @@ import org.ucombinator.jaam.visualizer.main.Main;
 import java.util.HashMap;
 import java.util.HashSet;
 
-public class ClassNode extends ClassTreeNode {
+public class ClassNode extends ClassTreeNode implements Comparable<ClassNode>{
 
     private String packageName;
     private String className;
@@ -86,4 +86,8 @@ public class ClassNode extends ClassTreeNode {
         return packageName + "." + className;
     }
 
+    @Override
+    public int compareTo(ClassNode c) {
+        return this.className.compareTo(c.className);
+    }
 }

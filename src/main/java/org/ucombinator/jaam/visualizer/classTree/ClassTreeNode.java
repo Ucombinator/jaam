@@ -9,7 +9,6 @@ import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import org.ucombinator.jaam.visualizer.state.StateVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 
-import java.util.Comparator;
 import java.util.HashSet;
 
 public abstract class ClassTreeNode
@@ -37,7 +36,6 @@ public abstract class ClassTreeNode
         });
         parent.getChildren().add(item);
 
-        //item.getChildren().sort(Comparator.comparing(t->t.getValue().shortName));
         return item;
     }
 

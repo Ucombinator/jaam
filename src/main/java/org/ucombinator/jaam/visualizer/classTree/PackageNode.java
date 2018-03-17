@@ -11,17 +11,17 @@ import org.ucombinator.jaam.visualizer.main.Main;
 
 import java.util.HashSet;
 
-public class PackageNode extends ClassTreeNode {
+public class PackageNode extends ClassTreeNode implements Comparable<PackageNode>{
 
     private String path;
-    private String packageName;
+    private String shortName;
 
     public HashSet<PackageNode> subPackages;
     public HashSet<ClassNode>   classNodes; // Leaf nodes store their associated methods11
 
     public PackageNode(String name, String prefix) {
         this.path = prefix;
-        this.packageName = name;
+        this.shortName = name;
 
         this.subPackages = new HashSet<>();
         this.classNodes  = new HashSet<>();
@@ -29,13 +29,13 @@ public class PackageNode extends ClassTreeNode {
 
     @Override
     public String toString() {
-        return packageName;
+        return shortName;
     }
 
     public PackageNode addPackageIfAbsent(String name) {
         PackageNode subDir = null;
         for (PackageNode f : subPackages) {
-            if (f.packageName.compareTo(name) == 0) {
+            if (f.shortName.compareTo(name) == 0) {
                 subDir = f;
                 break;
             }
@@ -50,15 +50,15 @@ public class PackageNode extends ClassTreeNode {
 
     private String getName() {
         if(path.compareTo("") == 0) {
-            return packageName;
+            return shortName;
         }
         else {
-            return path + "." + packageName;
+            return path + "." + shortName;
         }
     }
 
     public String getShortName() {
-        return packageName;
+        return shortName;
     }
 
     public void addClassIfAbsent(String name) {
@@ -70,7 +70,7 @@ public class PackageNode extends ClassTreeNode {
         while(subPackages.size() == 1 && classNodes.isEmpty())
         {
             PackageNode onlyElement = subPackages.iterator().next();
-            packageName = packageName.concat("." + onlyElement.packageName);
+            shortName = shortName.concat("." + onlyElement.shortName);
             subPackages = onlyElement.subPackages;
             classNodes.addAll(onlyElement.classNodes);
         }
@@ -84,13 +84,9 @@ public class PackageNode extends ClassTreeNode {
 
         item.setGraphic(Main.getIconFont().create(FontAwesome.Glyph.FOLDER).color(Color.DARKGRAY));
 
-        for (PackageNode p: subPackages) {
-            p.build(item);
-        }
+        subPackages.stream().sorted().forEach(p -> p.build(item));
 
-        for (ClassNode c: classNodes) {
-            c.build(item);
-        }
+        classNodes.stream().sorted().forEach(c -> c.build(item));
     }
 
     @Override
@@ -138,4 +134,8 @@ public class PackageNode extends ClassTreeNode {
         }
     }
 
+    @Override
+    public int compareTo(PackageNode packageNode) {
+        return this.getShortName().compareTo(packageNode.getShortName());
+    }
 }
