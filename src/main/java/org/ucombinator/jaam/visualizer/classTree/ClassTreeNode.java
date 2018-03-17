@@ -14,26 +14,6 @@ import java.util.HashSet;
 
 public abstract class ClassTreeNode
 {
-    public String shortName;
-    public String name;
-
-    protected ClassTreeNode(String shortName, String prefix)
-    {
-        this.shortName = shortName;
-
-        if (prefix.compareTo("") == 0) {
-            this.name = shortName;
-        }
-        else {
-            this.name = prefix + "." + shortName;
-        }
-    }
-
-    @Override
-    public String toString() {
-        return shortName;
-    }
-
     protected CheckBoxTreeItem<ClassTreeNode> buildTreeItem(TreeItem<ClassTreeNode> parent) {
         CheckBoxTreeItem<ClassTreeNode> item = new CheckBoxTreeItem<>();
         item.setSelected(true);

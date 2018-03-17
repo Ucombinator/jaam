@@ -12,14 +12,27 @@ import java.util.HashSet;
 
 public class FieldNode extends ClassTreeNode implements Comparable<FieldNode>{
 
+    private String className;
+    private String fieldName;
+
     public FieldNode(String name, String className) {
-       super(name, className);
+       this.className = className;
+       this.fieldName = name;
     }
 
     public void build(TreeItem<ClassTreeNode> parent) {
         CheckBoxTreeItem<ClassTreeNode> item = buildTreeItem(parent);
 
         item.setGraphic(Main.getIconFont().create(FontAwesome.Glyph.FACEBOOK_F).color(Color.DARKGRAY));
+    }
+
+    public String getName() {
+        return className + "." + fieldName;
+    }
+
+    @Override
+    public String toString() {
+        return fieldName;
     }
 
     @Override
@@ -30,6 +43,8 @@ public class FieldNode extends ClassTreeNode implements Comparable<FieldNode>{
 
     @Override
     public int compareTo(FieldNode o) {
-        return name.compareTo(o.name);
+        return fieldName.compareTo(o.fieldName);
     }
+
+
 }

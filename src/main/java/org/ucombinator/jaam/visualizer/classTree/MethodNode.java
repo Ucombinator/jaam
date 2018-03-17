@@ -20,8 +20,6 @@ public class MethodNode extends ClassTreeNode implements Comparable<MethodNode> 
     private String methodName;
 
     public MethodNode(StateVertex v) {
-        super(((CodeEntity)v).getMethodName(), ((CodeEntity)v).getClassName());
-
         this.className = ((CodeEntity) v).getClassName();
         this.methodName = ((CodeEntity) v).getMethodName();
 
@@ -49,11 +47,13 @@ public class MethodNode extends ClassTreeNode implements Comparable<MethodNode> 
         methodVertex = v;
     }
 
-
+    public String getName() {
+        return className + "." + methodName;
+    }
 
     @Override
     public String toString() {
-        return super.toString();
+        return getMethodName();
     }
 
     @Override
@@ -69,7 +69,6 @@ public class MethodNode extends ClassTreeNode implements Comparable<MethodNode> 
     @Override
     public void handleDoubleClick(CodeViewController codeView) {
         codeView.displayCodeTab(this.getClassName(), this.getMethodName());
-
     }
 
     public String getMethodName() {
@@ -84,7 +83,7 @@ public class MethodNode extends ClassTreeNode implements Comparable<MethodNode> 
         CheckBoxTreeItem<ClassTreeNode> item = buildTreeItem(parent);
 
         if (methodVertex == null) {
-            System.out.println("Warning: Method vertex was null " + this.name);
+            System.out.println("Warning: Method vertex was null " + this.getName());
             return;
         }
 

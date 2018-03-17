@@ -21,8 +21,6 @@ public class ClassNode extends ClassTreeNode {
     private HashSet<FieldNode> fields;
 
     public ClassNode(String fullPackage, String shortClassName) {
-        super(shortClassName,fullPackage);
-
         this.packageName = fullPackage;
         this.className = shortClassName;
 

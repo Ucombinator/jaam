@@ -183,10 +183,9 @@ public class MainTabController {
 
     private PackageNode getTopLevel(ArrayList<PackageNode> topLevel, String className) {
         for (PackageNode n : topLevel) {
-            if (className.startsWith(n.shortName))
+            if (className.startsWith(n.getShortName()))
                 return n;
         }
-
         return null;
     }
 

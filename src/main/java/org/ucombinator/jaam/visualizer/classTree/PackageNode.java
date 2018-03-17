@@ -20,8 +20,6 @@ public class PackageNode extends ClassTreeNode {
     public HashSet<ClassNode>   classNodes; // Leaf nodes store their associated methods11
 
     public PackageNode(String name, String prefix) {
-        super(name,prefix);
-
         this.path = prefix;
         this.packageName = name;
 
@@ -57,6 +55,10 @@ public class PackageNode extends ClassTreeNode {
         else {
             return path + "." + packageName;
         }
+    }
+
+    public String getShortName() {
+        return packageName;
     }
 
     public void addClassIfAbsent(String name) {
