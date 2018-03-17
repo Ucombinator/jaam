@@ -20,20 +20,19 @@ public abstract class ClassTreeNode
     protected ClassTreeNode(String shortName, String prefix)
     {
         this.shortName = shortName;
-        if(prefix == null)
-            name = new String("");
-        else if(prefix.compareTo("") == 0)
-            name = shortName;
-        else
-            name = prefix + "." + shortName;
+
+        if (prefix.compareTo("") == 0) {
+            this.name = shortName;
+        }
+        else {
+            this.name = prefix + "." + shortName;
+        }
     }
 
     @Override
     public String toString() {
         return shortName;
     }
-
-    public String getName() { return name; }
 
     protected CheckBoxTreeItem<ClassTreeNode> buildTreeItem(TreeItem<ClassTreeNode> parent) {
         CheckBoxTreeItem<ClassTreeNode> item = new CheckBoxTreeItem<>();
@@ -58,7 +57,7 @@ public abstract class ClassTreeNode
         });
         parent.getChildren().add(item);
 
-        item.getChildren().sort(Comparator.comparing(t->t.getValue().shortName));
+        //item.getChildren().sort(Comparator.comparing(t->t.getValue().shortName));
         return item;
     }
 

@@ -90,11 +90,22 @@ public class MainTabController {
 
         PackageNode root = new PackageNode("", "");
 
+        HashMap<String, PackageNode> rootLevel = new HashMap<>();
+
         for (String c : codeViewController.getClassNames()) {
             String[] split = c.split("\\.");
 
-            PackageNode current = root;
-            for (int i = 0; i < split.length - 1; i++) {
+            PackageNode current;
+            String rootPackageName = split[0];
+            if (rootLevel.containsKey(rootPackageName)) {
+                current = rootLevel.get(rootPackageName);
+            }
+            else {
+                current = new PackageNode(rootPackageName, "");
+                rootLevel.put(rootPackageName, current);
+            }
+
+            for (int i = 1; i < split.length - 1; i++) {
                 current = current.addPackageIfAbsent(split[i]);
             }
 
@@ -102,21 +113,10 @@ public class MainTabController {
             current.addClassIfAbsent(className);
         }
 
-        ArrayList<PackageNode> topLevel = new ArrayList<>(root.subPackages);
+        ArrayList<PackageNode> topLevel = new ArrayList<>(rootLevel.values());
 
         // Compression Step
         topLevel.forEach(PackageNode::compress);
-
-        // TODO: Ask Juan why this is commented out
-        // Fix top level names. If a node is on the top level and a leaf due to compression
-        // it's fullname is missing package information, this fixes it.
-        /*
-        for (ClassTreeNode f : topLevel) {
-            if (f.isLeaf()) {
-                f.name = f.shortName;// shortName is correct due to compressions step
-            }
-        }
-        */
 
         // Add the vertices
         addVerticesToClassTree(topLevel, immutableRoot);

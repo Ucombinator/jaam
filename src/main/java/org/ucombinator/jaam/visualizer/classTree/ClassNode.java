@@ -14,11 +14,17 @@ import java.util.HashSet;
 
 public class ClassNode extends ClassTreeNode {
 
+    private String packageName;
+    private String className;
+
     private HashMap<String, MethodNode> methods;
     private HashSet<FieldNode> fields;
 
-    public ClassNode(String name, String prefix) {
-        super(name,prefix);
+    public ClassNode(String fullPackage, String shortClassName) {
+        super(shortClassName,fullPackage);
+
+        this.packageName = fullPackage;
+        this.className = shortClassName;
 
         methods = new HashMap<>();
         fields = new HashSet<>();
@@ -26,7 +32,7 @@ public class ClassNode extends ClassTreeNode {
 
     @Override
     public String toString() {
-        return super.toString();
+        return className;
     }
 
     @Override
@@ -40,7 +46,7 @@ public class ClassNode extends ClassTreeNode {
 
     @Override
     public void handleDoubleClick(CodeViewController codeView) {
-        codeView.displayCodeTab(this.name);
+        codeView.displayCodeTab(getName());
     }
 
     public boolean addVertex(StateVertex vertex) {
@@ -63,9 +69,6 @@ public class ClassNode extends ClassTreeNode {
     }
 
     public void addFields(CodeViewController codeViewController) {
-
-        codeViewController.getFields(this.getName()).forEach( f -> System.out.println());
-
         codeViewController.getFields(this.getName()).forEach(
                 fieldName -> fields.add(new FieldNode(fieldName, this.getName()) )
         );
@@ -81,5 +84,8 @@ public class ClassNode extends ClassTreeNode {
         fields.stream().sorted().forEach(f -> f.build(item));
     }
 
+    public String getName() {
+        return packageName + "." + className;
+    }
 
 }
