@@ -35,7 +35,7 @@ sealed trait StmtPattern extends ((State, Stmt) => List[State]) {
   override def apply(state: State, stmt: Stmt): List[State]
 }
 
-case class AnyStmtPattern() extends StmtPattern {
+case object AnyStmtPattern extends StmtPattern {
   override def apply(state: State, stmt: Stmt): List[State] = {
     List(state)
   }
@@ -81,7 +81,7 @@ sealed trait ExpPattern extends ((State, Value) => List[State]) {
   override def apply(state: State, value: Value): List[State]
 }
 
-case class AnyExpPattern() extends ExpPattern {
+case object AnyExpPattern extends ExpPattern {
   override def apply(state: State, value: Value): List[State] = {
     List(state)
   }
@@ -194,7 +194,7 @@ sealed trait LabelPattern extends ((State, Index) => List[State]) {
   override def apply(state: State, index: Index): List[State]
 }
 
-case class AnyLabelPattern() extends LabelPattern {
+case object AnyLabelPattern extends LabelPattern {
   override def apply(state: State, index: Index): List[State] = {
     List(state)
   }
@@ -222,7 +222,7 @@ sealed trait MethodPattern extends ((State, SootMethod) => List[State]) {
   override def apply(state: State, sootMethod: SootMethod): List[State]
 }
 
-case class AnyMethodPattern() extends MethodPattern {
+case object AnyMethodPattern extends MethodPattern {
   override def apply(state: State, sootMethod: SootMethod): List[State] = {
     List(state)
   }
