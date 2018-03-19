@@ -9,15 +9,6 @@ import soot.util.Switch
 
 import scala.collection.JavaConverters._
 
-// TODO: State will have two maps: Strings -> Indexes (Ints), Strings -> Identifier (local var; the thing that a VariableExpPattern matches)
-
-// TODO: move to own file (not regex either)
-case class StmtPatternToRegEx(pattern: LabeledStmtPattern) extends ((State, Stmt) => (List[State], List[(Exp, State)])) {
-  override def apply(state: State, stmt: Stmt): (List[State], List[(Exp, State)]) = {
-    (List(), pattern(state, stmt).map((Cat(List()), _)))
-  }
-}
-
 object UnusedInvokeResult extends Value {
   override def getUseBoxes: java.util.List[ValueBox] = new java.util.ArrayList[ValueBox]()
   override def getType: Type = UnknownType.v()
