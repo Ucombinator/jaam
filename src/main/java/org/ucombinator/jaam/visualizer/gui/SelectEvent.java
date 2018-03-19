@@ -16,7 +16,6 @@ public class SelectEvent<T extends AbstractLayoutVertex<T>> extends javafx.event
     public static final EventType<SelectEvent<TaintVertex>> TAINT_VERTEX_SELECTED =
             new EventType<>(Event.ANY, "TAINT_VERTEX_SELECTED");
 
-    // TODO: Modify constructors to use the type parameter
     public SelectEvent(Object source, EventTarget target, StateVertex vertex) {
         super(source, target, STATE_VERTEX_SELECTED);
         this.vertex = ((GUINode<T>) target).getVertex(); // Actually equals vertex parameter

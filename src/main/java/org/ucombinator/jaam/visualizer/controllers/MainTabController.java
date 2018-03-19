@@ -175,7 +175,7 @@ public class MainTabController {
             }
         }
 
-       Graph<StateVertex, StateEdge> childGraph = root.getChildGraph(); // TODO: Is this the right one?
+       Graph<StateVertex, StateEdge> childGraph = root.getChildGraph();
        for (StateVertex v : childGraph.getVertices()) {
            addVerticesToClassTree(topLevel, v);
        }

@@ -95,7 +95,7 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
     }
 
     public HashSet<StateMethodVertex> getMethodVertices() {
-        HashSet<StateMethodVertex> methods = new LinkedHashSet<StateMethodVertex>();
+        HashSet<StateMethodVertex> methods = new LinkedHashSet<>();
         return methods;
     }
 

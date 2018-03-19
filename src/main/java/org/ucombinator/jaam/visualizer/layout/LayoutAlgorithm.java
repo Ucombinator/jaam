@@ -156,7 +156,7 @@ public class LayoutAlgorithm
 
         Graph<T, S> graph = parentVertex.getChildGraph();
         List<T> roots = graph.getSources();
-        if(roots == null || roots.isEmpty()) {
+        if(roots.isEmpty()) {
             return;
         }
 
@@ -199,7 +199,7 @@ public class LayoutAlgorithm
         HashSet<T> seen = new HashSet<>();
 
         List<T> roots = graph.getSources();
-        if(roots == null || roots.isEmpty()) {
+        if(roots.isEmpty()) {
             System.out.println("Error! Could not build children map.");
             return childrenMap; // No vertices!
         }

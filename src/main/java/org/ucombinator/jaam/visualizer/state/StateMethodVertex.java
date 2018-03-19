@@ -91,7 +91,7 @@ public class StateMethodVertex extends StateVertex implements MethodEntity {
     }
 
     public LinkedHashSet<StateMethodVertex> getMethodVertices() {
-        LinkedHashSet<StateMethodVertex> result = new LinkedHashSet<StateMethodVertex>();
+        LinkedHashSet<StateMethodVertex> result = new LinkedHashSet<>();
         result.add(this);
         return result;
     }

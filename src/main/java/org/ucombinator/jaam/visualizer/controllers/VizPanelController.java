@@ -38,7 +38,6 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
     @FXML private final ScrollPane scrollPane = null; // Initialized by Controllers.loadFXML()
     @FXML private final Pane vizPanel = null; // Initialized by Controllers.loadFXML()
 
-    // TODO: should this stuff be moved to a model class?
     private Group graphContentGroup;
     private StateRootVertex visibleRoot, immutableRoot;
 

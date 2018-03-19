@@ -11,8 +11,6 @@ public class StateSccVertex extends StateVertex {
 
     private Color defaultColor = Color.DARKGREY;
 
-
-
     public StateSccVertex(int id, String label)
     {
         super(id, label, AbstractLayoutVertex.VertexType.SCC);
@@ -25,13 +23,13 @@ public class StateSccVertex extends StateVertex {
 
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = false;
-        for(StateVertex v : this.getChildGraph().getVertices()) {
+        for (StateVertex v : this.getChildGraph().getVertices()) {
             found = v.searchByMethod(query, mainTab) || found;
         }
 
-        if(found) {
-            //this.setHighlighted(found);
-            //mainTab.getHighlighted().add(this);
+        if (found) {
+            this.setHighlighted(found);
+            mainTab.getVizHighlighted().add(this);
         }
 
         return found;
@@ -42,13 +40,14 @@ public class StateSccVertex extends StateVertex {
     }
 
     public HashSet<StateMethodVertex> getMethodVertices() {
-        HashSet<StateMethodVertex> methods = new LinkedHashSet<StateMethodVertex>();
+        HashSet<StateMethodVertex> methods = new LinkedHashSet<>();
+        this.getChildGraph().getVertices().forEach(v -> methods.addAll(v.getMethodVertices()));
         return methods;
     }
 
     public HashSet<String> getClassNames() {
         HashSet<String> classNames = new HashSet<>();
-        for(StateVertex v : this.getChildGraph().getVertices()) {
+        for (StateVertex v : this.getChildGraph().getVertices()) {
             classNames.addAll(v.getClassNames());
         }
         return classNames;
