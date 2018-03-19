@@ -28,7 +28,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class VizPanelController implements EventHandler<SelectEvent<StateVertex>>, SetChangeListener<StateVertex> {
+public class VizPanelController implements EventHandler<SelectEvent<StateVertex>>, SetChangeListener<StateVertex>,
+        GraphPanelController<StateVertex, StateEdge> {
     @FXML public final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML public final Spinner<Double> zoomSpinner = null; // Initialized by Controllers.loadFXML()
 
@@ -64,6 +65,10 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         this.visibleRoot = new StateRootVertex();
         this.immutableRoot = LayerFactory.getLayeredGraph(graph);
         this.drawGraph(new HashSet<>());
+    }
+
+    public Group getGraphContentGroup() {
+        return this.graphContentGroup;
     }
 
     // TODO: Can we avoid the redraw and just set our edges to be visible again here?
@@ -174,43 +179,6 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         this.visibleRoot.applyToVerticesRecursive(
                 (HierarchicalVertex<StateVertex, StateEdge> w) -> ((AbstractLayoutVertex<StateVertex>) w)
                         .resetStrokeWidth(1.0 / this.zoomSpinner.getValue()));
-    }
-
-    private void drawNodes(GUINode<StateVertex> parent, StateVertex v) {
-        GUINode<StateVertex> node = new GUINode<>(parent, v);
-
-        if (parent == null) {
-            graphContentGroup.getChildren().add(node);
-        } else {
-            parent.getChildren().add(node);
-        }
-
-        double translateX = v.getX();
-        double translateY = v.getY();
-        double width = v.getWidth();
-        double height = v.getHeight();
-        node.setTranslateLocation(translateX, translateY, width, height);
-
-        Graph<StateVertex, StateEdge> childGraph = v.getChildGraph();
-        for (StateVertex child : childGraph.getVertices()) {
-            if (v.isExpanded()) {
-                drawNodes(node, child);
-            }
-        }
-    }
-
-    private void drawEdges(StateVertex v) {
-        if(v.isExpanded()) {
-            Graph<StateVertex, StateEdge> childGraph = v.getChildGraph();
-            for (LayoutEdge<StateVertex> e : childGraph.getEdges()) {
-                e.setVisible(v.isEdgeVisible());
-                e.draw();
-            }
-
-            for (StateVertex child : childGraph.getVertices()) {
-                drawEdges(child);
-            }
-        }
     }
 
     public HashSet<StateVertex> pruneVisibleGraph() {

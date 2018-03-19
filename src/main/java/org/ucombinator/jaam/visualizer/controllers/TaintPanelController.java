@@ -8,7 +8,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import org.ucombinator.jaam.tools.taint3.Address;
-import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.*;
@@ -23,7 +22,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-public class TaintPanelController implements EventHandler<SelectEvent<TaintVertex>> {
+public class TaintPanelController implements EventHandler<SelectEvent<TaintVertex>>,
+        GraphPanelController<TaintVertex, TaintEdge> {
     @FXML public final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML private final ScrollPane scrollPane = null; // Initialized by Controllers.loadFXML()
     @FXML private final Pane taintPanel = null; // Initialized by Controllers.loadFXML()
@@ -49,6 +49,18 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         fillFieldDictionary();
     }
 
+    public Group getGraphContentGroup() {
+        return this.graphContentGroup;
+    }
+
+    public TaintRootVertex getVisibleRoot() {
+        return this.visibleRoot;
+    }
+
+    public TaintRootVertex getImmutableRoot() {
+        return this.immutableRoot;
+    }
+
     public void drawGraph(HashSet<TaintVertex> verticesToDraw) {
         System.out.println("Drawing taint graph...");
         visibleRoot.setVisible(false);
@@ -56,45 +68,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         LayoutAlgorithm.layout(visibleRoot);
         drawNodes(null, visibleRoot);
         drawEdges(visibleRoot);
-        // this.resetStrokeWidth();
         visibleRoot.setVisible(true);
-    }
-
-    private void drawNodes(GUINode<TaintVertex> parent, TaintVertex v) {
-        GUINode<TaintVertex> node = new GUINode<>(parent, v);
-
-        if (parent == null) {
-            graphContentGroup.getChildren().add(node);
-        } else {
-            parent.getChildren().add(node);
-        }
-
-        double translateX = v.getX();
-        double translateY = v.getY();
-        double width = v.getWidth();
-        double height = v.getHeight();
-        node.setTranslateLocation(translateX, translateY, width, height);
-
-        Graph<TaintVertex, TaintEdge> childGraph = v.getChildGraph();
-        for (TaintVertex child : childGraph.getVertices()) {
-            if (v.isExpanded()) {
-                drawNodes(node, child);
-            }
-        }
-    }
-
-    private void drawEdges(TaintVertex v) {
-        if(v.isExpanded()) {
-            Graph<TaintVertex, TaintEdge> childGraph = v.getChildGraph();
-            for (LayoutEdge<TaintVertex> e : childGraph.getEdges()) {
-                e.setVisible(v.isEdgeVisible());
-                e.draw();
-            }
-
-            for (TaintVertex child : childGraph.getVertices()) {
-                drawEdges(child);
-            }
-        }
     }
 
     public void addSelectHandler(BorderPane centerPane) {
