@@ -30,12 +30,23 @@ object Main {
           val stmts = units.map(u => Stmt(Soot.unitToStmt(u), method))
 
           val wildcard = Fun(StmtPatternToRegEx(LabeledStmtPattern(AnyLabelPattern, AnyStmtPattern)), _ => List())
-          val rule = Rep(wildcard)
+          val baseRule = Rep(wildcard)
 
-          val states = deriveAll(rule, State(Map(), Map()), List())
+          val labelGrabber = Fun(StmtPatternToRegEx(LabeledStmtPattern(NamedLabelPattern("weDontCare"), AnyStmtPattern)), _ => List())
+          val labelRule = Cat(List(baseRule, labelGrabber, baseRule))
 
-          println()
-          println("STATES: " + states)
+          val rules = List(baseRule, labelRule)
+
+          for (rule <- rules) {
+            println("RULE: " + rule)
+            for (inputs <- List(List(), List(stmts.head), stmts)) {
+              val states = deriveAll(rule, State(Map(), Map()), inputs)
+              println()
+              println("STATES: " + states)
+              println()
+            }
+            println("--------------------")
+          }
         }
       }
     }
