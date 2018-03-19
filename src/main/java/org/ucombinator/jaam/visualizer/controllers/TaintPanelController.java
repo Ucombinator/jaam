@@ -84,7 +84,6 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
     }
 
     private void drawEdges(TaintVertex v) {
-        System.out.println("Drawing edges for taint vertex: " + v);
         if(v.isExpanded()) {
             Graph<TaintVertex, TaintEdge> childGraph = v.getChildGraph();
             for (LayoutEdge<TaintVertex> e : childGraph.getEdges()) {

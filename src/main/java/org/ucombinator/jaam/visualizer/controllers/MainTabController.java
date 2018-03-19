@@ -163,15 +163,15 @@ public class MainTabController {
 
     private void addVerticesToClassTree(ArrayList<PackageNode> topLevel, StateVertex root) {
 
-        if(root instanceof CodeEntity) {
-            PackageNode topLevelNode = getTopLevel(topLevel, ((CodeEntity) root).getClassName());
+        if(root instanceof MethodEntity) {
+            PackageNode topLevelNode = getTopLevel(topLevel, ((MethodEntity) root).getClassName());
             boolean success = false;
             if (topLevelNode != null) {
                 success = topLevelNode.addVertex(root);
             }
 
             if (!success) {
-                System.out.println("Warning didn't find package for: " + ((CodeEntity) root).getClassName());
+                System.out.println("Warning didn't find package for: " + ((MethodEntity) root).getClassName());
             }
         }
 
@@ -438,8 +438,8 @@ public class MainTabController {
     private void setClassHighlight(StateVertex v, String prevPrefix, String currPrefix)
     {
         if(!v.isHidden()) {
-            if(v instanceof CodeEntity) {
-                CodeEntity cv = (CodeEntity) v;
+            if(v instanceof MethodEntity) {
+                MethodEntity cv = (MethodEntity) v;
                 if (cv.getClassName().startsWith(currPrefix)) {
                     //System.out.println("Highlight " + cv.getClassName() + " --> " + cv.getMethodName() + " --> " + v.getId());
                     v.setClassHighlight(true);

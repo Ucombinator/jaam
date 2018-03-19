@@ -20,7 +20,11 @@ public class Graph<T extends Vertex, S extends Edge<T>> {
         this.idToVertexMap = new HashMap<>();
     }
 
-    public void addVertex(T vertex){
+    public void addVertex(T vertex) {
+        if(vertex == null) {
+            System.out.println("Error! Adding null vertex...");
+        }
+
         this.vertices.add(vertex);
         this.outEdges.put(vertex, new HashMap<>());
         this.inEdges.put(vertex, new HashMap<>());
@@ -28,6 +32,12 @@ public class Graph<T extends Vertex, S extends Edge<T>> {
     }
 
     public void addEdge(S edge) {
+        if (edge.getSrc() == null) {
+            System.out.println("Error! Adding edge with null source.");
+        }
+        else if (edge.getDest() == null) {
+            System.out.println("Error! Adding edge with null dest.");
+        }
         this.edges.add(edge);
         this.outEdges.putIfAbsent(edge.getSrc(), new HashMap<>());
         this.outEdges.get(edge.getSrc()).put(edge.getDest(), edge);

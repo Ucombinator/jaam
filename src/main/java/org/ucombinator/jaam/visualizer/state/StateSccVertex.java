@@ -11,6 +11,8 @@ public class StateSccVertex extends StateVertex {
 
     private Color defaultColor = Color.DARKGREY;
 
+
+
     public StateSccVertex(int id, String label)
     {
         super(id, label, AbstractLayoutVertex.VertexType.SCC);

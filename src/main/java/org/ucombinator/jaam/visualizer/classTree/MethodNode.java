@@ -3,7 +3,7 @@ package org.ucombinator.jaam.visualizer.classTree;
 import javafx.scene.control.CheckBoxTreeItem;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.ucombinator.jaam.visualizer.controllers.CodeViewController;
-import org.ucombinator.jaam.visualizer.layout.CodeEntity;
+import org.ucombinator.jaam.visualizer.layout.MethodEntity;
 import org.ucombinator.jaam.visualizer.state.StateLoopVertex;
 import org.ucombinator.jaam.visualizer.state.StateMethodVertex;
 import org.ucombinator.jaam.visualizer.state.StateVertex;
@@ -20,10 +20,10 @@ public class MethodNode extends ClassTreeNode implements Comparable<MethodNode> 
     private String methodName;
 
     public MethodNode(StateVertex v) {
-        super(((CodeEntity)v).getMethodName(), ((CodeEntity)v).getClassName());
+        super(((MethodEntity)v).getMethodName(), ((MethodEntity)v).getClassName());
 
-        this.className = ((CodeEntity) v).getClassName();
-        this.methodName = ((CodeEntity) v).getMethodName();
+        this.className = ((MethodEntity) v).getClassName();
+        this.methodName = ((MethodEntity) v).getMethodName();
 
         methodVertex = null;
         this.loopVertices = new HashSet<>();

@@ -39,8 +39,8 @@ public class LayoutAlgorithm
     void expandSubGraphs(T parentVertex) {
         Graph<T, S> parentChildGraph = parentVertex.getChildGraph();
         for(T v: parentChildGraph.getVertices()) {
-            Graph<T, S> childChildGraph = v.getChildGraph();
-            if (childChildGraph.getVertices().size() != 0)
+            Graph<T, S> childGraph = v.getChildGraph();
+            if (childGraph.getVertices().size() != 0)
             {
                 // Layout the child graphs of each node and assign width W and height H to each node
                 // X and Y coordinates are RELATIVE to the parent
@@ -115,10 +115,10 @@ public class LayoutAlgorithm
             {
                 return 1;
             }
-            if(o1 instanceof CodeEntity && o2 instanceof CodeEntity)
+            if(o1 instanceof MethodEntity && o2 instanceof MethodEntity)
             {
-                CodeEntity c1 = (CodeEntity)o1;
-                CodeEntity c2 = (CodeEntity)o2;
+                MethodEntity c1 = (MethodEntity)o1;
+                MethodEntity c2 = (MethodEntity)o2;
 
                 int shortClassComp = c1.getShortClassName().compareTo(c2.getShortClassName());
 
@@ -141,8 +141,7 @@ public class LayoutAlgorithm
     }
 
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
-    void doLayout(T parentVertex, HashMap<T, ArrayList<T>> childrenMap)
-    {
+    void doLayout(T parentVertex, HashMap<T, ArrayList<T>> childrenMap) {
         doLayout(parentVertex, childrenMap, null);
     }
 
@@ -201,6 +200,7 @@ public class LayoutAlgorithm
 
         List<T> roots = graph.getSources();
         if(roots == null || roots.isEmpty()) {
+            System.out.println("Error! Could not build children map.");
             return childrenMap; // No vertices!
         }
 
@@ -213,9 +213,14 @@ public class LayoutAlgorithm
         {
            T v = vertexQueue.remove();
            childrenMap.put(v, new ArrayList<>());
+            System.out.println("Building children map for: " + v);
 
            for(T child : graph.getOutNeighbors(v))
            {
+               if(child == null) {
+                   System.out.println("Error! Null child found.");
+               }
+
                if(child.equals(v)) {
                    continue; // Skip recursive edge
                }
@@ -291,7 +296,9 @@ public class LayoutAlgorithm
     {
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
         ArrayList<T> grayChildren = new ArrayList<>();
+        System.out.println("Root vertex: " + root);
         for(T child: childrenMap.get(root)) {
+            System.out.println("Child vertex: " + child);
             if (child.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
                 child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
                 grayChildren.add(child);
@@ -331,10 +338,8 @@ public class LayoutAlgorithm
     {
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
         ArrayList<T> grayChildren = new ArrayList<>();
-        for(T child: childrenMap.get(root))
-        {
-            if (child.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE)
-            {
+        for (T child: childrenMap.get(root)) {
+            if (child.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
                 child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
                 grayChildren.add(child);
             }

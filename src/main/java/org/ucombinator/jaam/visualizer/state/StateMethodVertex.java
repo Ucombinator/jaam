@@ -4,13 +4,13 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.serializer.LoopMethodNode;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.CodeEntity;
+import org.ucombinator.jaam.visualizer.layout.MethodEntity;
 import soot.SootClass;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
-public class StateMethodVertex extends StateVertex implements CodeEntity {
+public class StateMethodVertex extends StateVertex implements MethodEntity {
 
     private static final Color defaultColor = Color.DEEPSKYBLUE;
 

@@ -91,9 +91,9 @@ public class CodeViewController {
 
             StateVertex av = selectEvent.getVertex();
 
-            if(av instanceof CodeEntity)
+            if(av instanceof MethodEntity)
             {
-                CodeEntity v = (CodeEntity)av;
+                MethodEntity v = (MethodEntity)av;
 
                 displayCodeTab(v.getClassName(), v.getMethodName());
             }

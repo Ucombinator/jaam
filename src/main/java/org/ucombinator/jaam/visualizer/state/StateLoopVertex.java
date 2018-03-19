@@ -4,13 +4,13 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.serializer.LoopLoopNode;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.CodeEntity;
+import org.ucombinator.jaam.visualizer.layout.MethodEntity;
 import soot.SootClass;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
-public class StateLoopVertex extends StateVertex implements Cloneable, CodeEntity {
+public class StateLoopVertex extends StateVertex implements Cloneable, MethodEntity {
 
     private static final Color defaultColor = Color.LIGHTYELLOW;
 

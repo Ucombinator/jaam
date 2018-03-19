@@ -5,7 +5,7 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.paint.Color;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.ucombinator.jaam.visualizer.controllers.CodeViewController;
-import org.ucombinator.jaam.visualizer.layout.CodeEntity;
+import org.ucombinator.jaam.visualizer.layout.MethodEntity;
 import org.ucombinator.jaam.visualizer.state.StateVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 
@@ -45,10 +45,10 @@ public class ClassNode extends ClassTreeNode {
 
     public boolean addVertex(StateVertex vertex) {
 
-        assert vertex instanceof CodeEntity;
-        assert ((CodeEntity) vertex).getClassName().startsWith(this.getName()); //Maybe should be fullCompare...
+        assert vertex instanceof MethodEntity;
+        assert ((MethodEntity) vertex).getClassName().startsWith(this.getName()); //Maybe should be fullCompare...
 
-        CodeEntity c = (CodeEntity)vertex;
+        MethodEntity c = (MethodEntity)vertex;
 
         MethodNode node = methods.get(c.getMethodName());
 

@@ -165,6 +165,7 @@ public class MainPaneController {
         }
 
         // We actually create the edges here
+        System.out.println("Adding loop edges...");
         for (LoopEdge edge : loopEdges) {
             loopGraph.addEdge(new StateEdge(stateVertexIndex.get(edge.src().id()), stateVertexIndex.get(edge.dst().id())));
             if(edge.src().id() == edge.dst().id()) {
@@ -173,6 +174,7 @@ public class MainPaneController {
         }
 
         // We actually create the edges here
+        System.out.println("Adding taint edges...");
         int ignoredEdges = 0;
         for (Edge edge : taintEdges) {
             if(addressIndex.containsKey(edge.source()) && addressIndex.containsKey(edge.target())) {

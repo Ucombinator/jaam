@@ -1,10 +1,6 @@
 package org.ucombinator.jaam.visualizer.graph;
 
 import org.ucombinator.jaam.visualizer.layout.*;
-import org.ucombinator.jaam.visualizer.state.StateEdge;
-import org.ucombinator.jaam.visualizer.state.StateLoopVertex;
-import org.ucombinator.jaam.visualizer.state.StateMethodVertex;
-import org.ucombinator.jaam.visualizer.state.StateVertex;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -59,8 +55,6 @@ public class GraphUtils {
                 //System.out.println(" Still On Stack" + stack );
 
                 vSCC.lowlink = Math.min(vSCC.lowlink, visitedVertices.get(n.getId()).index);
-            } else {
-                //System.out.println(" Already processed and popped " + stack + visitedVertices);
             }
         }
 
@@ -82,6 +76,7 @@ public class GraphUtils {
 
     public static <T extends AbstractLayoutVertex<T>, S extends Edge<T>> List<List<Integer>>
     StronglyConnectedComponents(final Graph<T, S> graph) {
+        System.out.println("Finding strongly connected components...");
         List<List<Integer>> components = new ArrayList<>();
 
         Stack<Integer> stack = new Stack<>();
@@ -103,45 +98,9 @@ public class GraphUtils {
         return components;
     }
 
-    public static HashMap<String, ArrayList<StateVertex>> groupByClass(final Graph<StateVertex, StateEdge> graph) {
-        HashMap<String, ArrayList<StateVertex>> visitedVertices = new HashMap<>();
-
-        Stack<StateVertex> stack = new Stack<>();
-        stack.addAll(graph.getVertices());
-
-        while(stack.size() > 0) {
-            StateVertex v = stack.pop();
-            if (v instanceof StateMethodVertex) {
-                String className = ((StateMethodVertex) v).getClassName();
-                addVertexToClassGroup(visitedVertices, className, v);
-            } else if (v instanceof StateLoopVertex) {
-                String className = ((StateLoopVertex) v).getClassName();
-                addVertexToClassGroup(visitedVertices, className, v);
-            } else {
-                System.out.println("Error! Unhandled vertex type in GraphUtils.groupByClass.");
-            }
-        }
-
-        return visitedVertices;
-    }
-
-    private static void addVertexToClassGroup(HashMap<String, ArrayList<StateVertex>> visitedVertices,
-                                             String className, StateVertex vertex) {
-
-        if(visitedVertices.containsKey(className)) {
-            visitedVertices.get(className).add(vertex);
-        }
-        else {
-            ArrayList<StateVertex> list = new ArrayList<>();
-            list.add(vertex);
-            visitedVertices.put(className, list);
-        }
-    }
-
     // The immutable graph for our root has already been set, so now we construct its visible graph of vertices
     // matching our predicate.
     public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>> T constructVisibleGraph(T self, Predicate<T> isVisible, BiFunction<T, T, S> edgeBuilder) {
-        System.out.println("Constructing visible graph for HierarchicalVertex: " + self);
         Graph<T, S> immutableGraph = self.getChildGraph();
         T visibleRoot = self.copy();
         Graph<T, S> visibleGraph = visibleRoot.getChildGraph();
@@ -177,7 +136,6 @@ public class GraphUtils {
             if (!found.contains(w)) {
                 found.add(w);
                 if (visibleGraph.getVertices().contains(w)) {
-                    System.out.println("Adding edge to visible graph: " + w + " --> " + v);
                     visibleGraph.addEdge(edgeBuilder.apply(w, v));
                 } else {
                     queue.addAll(immutableGraph.getInNeighbors(w));
@@ -187,17 +145,17 @@ public class GraphUtils {
     }
 
         // We assume that only vertices within the same level can be combined.
-    public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>> T constructCompressedGraph(T self, Function<T, String> hash, BiFunction<String, Set<T>, T> componentVertexBuilder, BiFunction<T, T, S> edgeBuilder) {
+    public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>> T constructCompressedGraph(T root, Function<T, String> hash, BiFunction<String, Set<T>, T> componentVertexBuilder, BiFunction<T, T, S> edgeBuilder) {
         // If we have no child vertices, just copy ourselves.
-        if (self.getChildGraph().getVertices().size() == 0) {
-            return self.copy();
+        if (root.getChildGraph().getVertices().size() == 0) {
+            return root.copy();
         }
 
         // Otherwise, build a map of components based on matching hash values.
         int nullCounter = 0;
         HashMap<T, String> hashStrings = new HashMap<>();
         HashMap<String, Set<T>> components = new HashMap<>();
-        for(T v : self.getChildGraph().getVertices()) {
+        for(T v : root.getChildGraph().getVertices()) {
             String newHash = hash.apply(v);
             if(newHash == null) {
                 // Create a unique key for each null hash value
@@ -220,7 +178,7 @@ public class GraphUtils {
             }
         }
 
-        T newRoot = self.copy();
+        T newRoot = root.copy();
         Graph<T, S> newChildGraph = newRoot.getChildGraph();
         HashMap<String, T> mapStringToVertex = new HashMap<>();
         for(Map.Entry<String, Set<T>> componentEntry : components.entrySet()) {
@@ -249,11 +207,15 @@ public class GraphUtils {
                 // We go from a compressed vertex inside our component, to its corresponding vertex in the original graph,
                 // to each neighbor of that original vertex, and then to the compressed vertices corresponding to those neighbors.
                 componentVertex = componentVertexBuilder.apply(componentEntry.getKey(), compressedComponent);
-                for(T compressedVertex : componentVertex.getChildGraph().getVertices()) {
+                for(T compressedVertex : compressedComponent) {
                     T origVertex = mapCompressedToOriginal.get(compressedVertex);
-                    for(T adjOriginalVertex : self.getChildGraph().getOutNeighbors(origVertex)) {
+                    for(T adjOriginalVertex : root.getChildGraph().getOutNeighbors(origVertex)) {
                         T adjCompressedVertex = mapOriginalToCompressed.get(adjOriginalVertex);
-                        componentVertex.getChildGraph().addEdge(edgeBuilder.apply(compressedVertex, adjCompressedVertex));
+                        // This will be null if it is outside our current component.
+                        // That's okay, becuase it will be handled below when we add edges between component vertices.
+                        if (adjCompressedVertex != null) {
+                            componentVertex.getChildGraph().addEdge(edgeBuilder.apply(compressedVertex, adjCompressedVertex));
+                        }
                     }
                 }
             }
@@ -265,9 +227,9 @@ public class GraphUtils {
         // Add edges between component vertices.
         // From an old vertex, we get the hash string from one map, then pass it to a different map
         // to get the new vertex.
-        for(T currVertexOld: self.getChildGraph().getVertices()) {
+        for(T currVertexOld: root.getChildGraph().getVertices()) {
             T currVertexNew = mapStringToVertex.get(hashStrings.get(currVertexOld));
-            for(T nextVertexOld : self.getChildGraph().getOutNeighbors(currVertexOld)) {
+            for(T nextVertexOld : root.getChildGraph().getOutNeighbors(currVertexOld)) {
                 T nextVertexNew = mapStringToVertex.get(hashStrings.get(nextVertexOld));
 
                 // Add edges if the new vertices are different, or if we already had a self-loop before.

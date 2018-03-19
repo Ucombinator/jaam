@@ -15,6 +15,7 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
+import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -27,6 +28,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class VizPanelController implements EventHandler<SelectEvent<StateVertex>>, SetChangeListener<StateVertex> {
     @FXML public final Node root = null; // Initialized by Controllers.loadFXML()
@@ -63,8 +66,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
 
         this.scrollPane.addEventFilter(ScrollEvent.SCROLL, this::scrollAction);
         this.visibleRoot = new StateRootVertex();
-        this.immutableRoot = new StateRootVertex();
-        LayerFactory.getLayeredGraph(graph, this.immutableRoot);
+        this.immutableRoot = LayerFactory.getLayeredGraph(graph);
         this.drawGraph(new HashSet<>());
     }
 
@@ -86,8 +88,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
     }
 
     @FXML private void groupByClassAction(ActionEvent event) {
-        /*this.groupedByClass = groupByClass.isSelected();
-        this.resetGraphGrouping();*/
+        this.redrawGraph(Main.getSelectedMainTabController().getHidden());
     }
 
     @FXML private void exportImageAction(ActionEvent event) throws IOException {
@@ -160,8 +161,6 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         }
     }
 
-    @FXML public void resetGraphGrouping() {}
-
     public void drawGraph(Set<StateVertex> hidden) {
         visibleRoot.setVisible(false);
         // TODO: Right now we're not hiding anything at the start, so we just pass an empty set.
@@ -169,6 +168,31 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         // tab that this is created inside of hasn't been added to the tabPane yet, so calling
         // Main.getSelectedMainTabController() returns null.
         this.visibleRoot = this.immutableRoot.constructVisibleGraphExcept(hidden);
+        /*if (groupByClass.isSelected()) {
+            this.visibleRoot = (StateRootVertex) GraphUtils.constructCompressedGraph(this.immutableRoot,
+                    new Function<StateVertex, String>() {
+                        @Override
+                        public String apply(StateVertex v) {
+                            if (v instanceof ClassEntity) {
+                                return ((ClassEntity) v).getClassName();
+                            } else {
+                                return null;
+                            }
+                        }
+                    },
+                    new BiFunction<String, Set<StateVertex>, StateVertex>() {
+                        @Override
+                        public StateClassVertex apply(String className, Set<StateVertex> classVertices) {
+                            StateClassVertex classVertex = new StateClassVertex(className);
+                            for (StateVertex v : classVertices) {
+                                classVertex.getChildGraph().addVertex(v);
+                            }
+                            return classVertex;
+                        }
+                    },
+                    StateEdge::new);
+        }*/
+
         LayoutAlgorithm.layout(this.visibleRoot);
         drawNodes(null, visibleRoot);
         drawEdges(visibleRoot);

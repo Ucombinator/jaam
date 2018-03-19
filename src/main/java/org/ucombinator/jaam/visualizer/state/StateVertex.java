@@ -47,6 +47,10 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
         this.parentGraph = graph;
     }
 
+    public void setChildGraph(Graph<StateVertex, StateEdge> graph) {
+        this.childGraph = graph;
+    }
+
     public void onMouseClick(MouseEvent event) {
         switch (event.getClickCount()) {
             case 1:
