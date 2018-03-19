@@ -139,45 +139,19 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
     }
 
     private HashSet<TaintVertex> findConnectedAddresses(HashSet<TaintVertex> startVertices) {
-        HashSet<TaintVertex> upResults = new HashSet<>();
-        HashSet<TaintVertex> downResults = new HashSet<>();
+        HashSet<TaintVertex> ancestors = new HashSet<>();
+        HashSet<TaintVertex> descendants = new HashSet<>();
 
-        // Search upwards
-        HashSet<TaintVertex> toSearch = (HashSet<TaintVertex>) (startVertices.clone());
-        while (toSearch.size() > 0) {
-            HashSet<TaintVertex> newSearch = new HashSet<>();
-            for (TaintVertex v : toSearch) {
-                upResults.add(v);
-                Graph<TaintVertex, TaintEdge> parentGraph = v.getParentGraph();
-                for (TaintVertex vIn : parentGraph.getInNeighbors(v)) {
-                    if (!upResults.contains(vIn)) {
-                        newSearch.add(vIn);
-                    }
-                }
-            }
-            toSearch = newSearch;
-        }
-
-        // Search downwards
-        toSearch = (HashSet<TaintVertex>) (startVertices.clone());
-        while (toSearch.size() > 0) {
-            HashSet<TaintVertex> newSearch = new HashSet<>();
-            for (TaintVertex v : toSearch) {
-                downResults.add(v);
-                Graph<TaintVertex, TaintEdge> parentGraph = v.getParentGraph();
-                for (TaintVertex vOut : parentGraph.getOutNeighbors(v)) {
-                    if (!downResults.contains(vOut)) {
-                        newSearch.add(vOut);
-                    }
-                }
-            }
-            toSearch = newSearch;
+        // TODO: This code is cleaner, but could it be a little redundant?
+        for (TaintVertex v : startVertices) {
+            ancestors.addAll(v.getAncestors());
+            descendants.addAll(v.getDescendants());
         }
 
         HashSet<TaintVertex> allResults = new HashSet<>();
         allResults.addAll(startVertices);
-        allResults.addAll(upResults);
-        allResults.addAll(downResults);
+        allResults.addAll(ancestors);
+        allResults.addAll(descendants);
 
         for (TaintVertex v : allResults) {
             v.setColor(TaintVertex.defaultColor);
@@ -196,15 +170,15 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
             }
             else if (startVertices.contains(v)) {
                 v.setColor(TaintVertex.currMethodColor);
-            } else if (upResults.contains(v)) {
-                if (downResults.contains(v)) {
+            } else if (ancestors.contains(v)) {
+                if (descendants.contains(v)) {
                     v.setColor(TaintVertex.bothColor);
                 }
                 else {
                     v.setColor(TaintVertex.upColor);
                 }
             }
-            else if (downResults.contains(v)) {
+            else if (descendants.contains(v)) {
                 v.setColor(TaintVertex.downColor);
             }
         }

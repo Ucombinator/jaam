@@ -1,5 +1,10 @@
 package org.ucombinator.jaam.visualizer.graph;
 
+import org.ucombinator.jaam.main.Taint;
+import org.ucombinator.jaam.visualizer.state.StateRootVertex;
+import org.ucombinator.jaam.visualizer.state.StateVertex;
+import org.ucombinator.jaam.visualizer.taint.TaintRootVertex;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -140,5 +145,47 @@ public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extend
         }
 
         return newRoot;
+    }
+
+    default HashSet<T> getAncestors()
+    {
+        HashSet<T> ancestors = new HashSet<>();
+        this.getAncestors(ancestors);
+
+        return ancestors;
+    }
+
+    default void getAncestors(HashSet<T> ancestors)
+    {
+        if(this instanceof StateRootVertex || this instanceof TaintRootVertex)
+            return;
+
+        ancestors.add((T) this);
+        this.getParentGraph().getInNeighbors((T) this).forEach(v -> {
+            if (!ancestors.contains(v)) {
+                v.getAncestors(ancestors);
+            }
+        });
+    }
+
+    default HashSet<T> getDescendants()
+    {
+        HashSet<T> descendants = new HashSet<>();
+        this.getDescendants(descendants);
+
+        return descendants;
+    }
+
+    default void getDescendants(HashSet<T> descendants)
+    {
+        if(this instanceof StateRootVertex || this instanceof TaintRootVertex)
+            return;
+
+        descendants.add((T) this);
+        this.getParentGraph().getOutNeighbors((T) this).forEach(v -> {
+            if (!descendants.contains(v)) {
+                v.getDescendants(descendants);
+            }
+        });
     }
 }

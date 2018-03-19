@@ -142,48 +142,6 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
             v.searchByIDRange(id1, id2, mainTab);
     }
 
-    public HashSet<StateVertex> getAncestors()
-    {
-        HashSet<StateVertex> ancestors = new HashSet<>();
-        this.getAncestors(ancestors);
-
-        return ancestors;
-    }
-
-    private void getAncestors(HashSet<StateVertex> ancestors)
-    {
-       if(this instanceof StateRootVertex)
-           return;
-
-       ancestors.add(this);
-       this.getParentGraph().getInNeighbors(this).stream().forEach(v -> {
-           if (!ancestors.contains(v)) {
-               v.getAncestors(ancestors);
-           }
-       });
-    }
-
-    public HashSet<StateVertex> getDescendants()
-    {
-        HashSet<StateVertex> descendants = new HashSet<>();
-        this.getDescendants(descendants);
-
-        return descendants;
-    }
-
-    private void getDescendants(HashSet<StateVertex> descendants)
-    {
-        if(this instanceof StateRootVertex)
-            return;
-
-        descendants.add(this);
-        this.getParentGraph().getOutNeighbors(this).stream().forEach(v -> {
-            if (!descendants.contains(v)) {
-                v.getDescendants(descendants);
-            }
-        });
-    }
-
     public Set<StateEdge> getIncidentEdges() {
         Set<StateEdge> incidentEdges = new HashSet<>();
         incidentEdges.addAll(this.getParentGraph().getInEdges(this));
