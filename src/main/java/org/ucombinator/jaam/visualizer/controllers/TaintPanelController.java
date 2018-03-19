@@ -261,7 +261,7 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
 
         ArrayList<TaintAddress> allFields = new ArrayList<>();
 
-        this.visibleRoot.getFields(allFields);
+        this.immutableRoot.getFields(allFields);
 
         allFields.forEach(v -> {
             fieldVertices.put(v.getFieldId(), v);

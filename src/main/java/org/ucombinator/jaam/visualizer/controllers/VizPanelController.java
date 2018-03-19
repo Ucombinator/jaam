@@ -201,7 +201,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
     }
 
     public void redrawGraph(Set<StateVertex> hidden) {
-        System.out.println("Redrawing graph...");
+        System.out.println("Redrawing loop graph...");
         this.graphContentGroup.getChildren().remove(this.visibleRoot.getGraphics());
         this.drawGraph(hidden);
     }
@@ -266,22 +266,29 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         }
 
         if(!inBatchMode) {
+            System.out.println("Immediately redrawing...");
             this.redrawGraph(Main.getSelectedMainTabController().getHidden());
         } else {
+            System.out.println("Waiting to redraw batch...");
             changedWhileInBatchMode = true;
         }
     }
 
-    public void startBatchMode()
-    {
+    public void startBatchMode() {
+        System.out.println("Starting batch mode for loop graph.");
         inBatchMode = true;
         changedWhileInBatchMode = false;
     }
 
     public void endBatchMode() {
+        System.out.println("Ending batch mode for loop graph.");
         inBatchMode = false;
         if(changedWhileInBatchMode) {
             this.redrawGraph(Main.getSelectedMainTabController().getHidden());
         }
+    }
+
+    public boolean isInBatchMode() {
+        return inBatchMode;
     }
 }

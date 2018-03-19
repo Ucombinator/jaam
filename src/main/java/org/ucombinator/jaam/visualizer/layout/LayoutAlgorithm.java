@@ -213,7 +213,6 @@ public class LayoutAlgorithm
         {
            T v = vertexQueue.remove();
            childrenMap.put(v, new ArrayList<>());
-            System.out.println("Building children map for: " + v);
 
            for(T child : graph.getOutNeighbors(v))
            {
@@ -296,9 +295,7 @@ public class LayoutAlgorithm
     {
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
         ArrayList<T> grayChildren = new ArrayList<>();
-        System.out.println("Root vertex: " + root);
         for(T child: childrenMap.get(root)) {
-            System.out.println("Child vertex: " + child);
             if (child.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
                 child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
                 grayChildren.add(child);

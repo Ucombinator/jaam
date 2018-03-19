@@ -27,21 +27,13 @@ public class CodeViewController {
     public CodeViewController(List<CompilationUnit> compilationUnits, Set<SootClass> sootClasses) throws IOException {
         Controllers.loadFXML("/CodeView.fxml", this);
 
-        this.codeMap    = new HashMap<String, ClassCode>();
+        this.codeMap    = new HashMap<>();
         this.tabMap     = new HashMap<>();
         this.classNames = new HashSet<>();
-
-        /*
-        for (SootClass s : sootClasses)
-        {
-            System.out.println(s.getName());
-        }
-        */
 
         HashMap<String,SootClass> lookup = new HashMap<String,SootClass>();
 
         sootClasses.stream().forEach(s -> lookup.put(s.getName(), s));
-
 
         for (CompilationUnit u : compilationUnits) {
             String fullClassName = getFullClassName(u);
@@ -53,7 +45,6 @@ public class CodeViewController {
             } else {
                 System.out.println("Warning: Didn't find soot class matching " + fullClassName);
             }
-
         }
     }
 
@@ -130,6 +121,8 @@ public class CodeViewController {
 
     public ArrayList<String> getFields(String className) {
 
+        System.out.println("JUAN: Get field " + className);
+
         ClassCode c = codeMap.get(className);
 
         if (c == null) {
@@ -175,6 +168,5 @@ public class CodeViewController {
 
             return result;
         }
-
     }
 }

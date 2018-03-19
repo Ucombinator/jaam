@@ -90,11 +90,22 @@ public class MainTabController {
 
         PackageNode root = new PackageNode("", "");
 
+        HashMap<String, PackageNode> rootLevel = new HashMap<>();
+
         for (String c : codeViewController.getClassNames()) {
             String[] split = c.split("\\.");
 
-            PackageNode current = root;
-            for (int i = 0; i < split.length - 1; i++) {
+            PackageNode current;
+            String rootPackageName = split[0];
+            if (rootLevel.containsKey(rootPackageName)) {
+                current = rootLevel.get(rootPackageName);
+            }
+            else {
+                current = new PackageNode(rootPackageName, "");
+                rootLevel.put(rootPackageName, current);
+            }
+
+            for (int i = 1; i < split.length - 1; i++) {
                 current = current.addPackageIfAbsent(split[i]);
             }
 
@@ -102,21 +113,10 @@ public class MainTabController {
             current.addClassIfAbsent(className);
         }
 
-        ArrayList<PackageNode> topLevel = new ArrayList<>(root.subPackages);
+        ArrayList<PackageNode> topLevel = new ArrayList<>(rootLevel.values());
 
         // Compression Step
         topLevel.forEach(PackageNode::compress);
-
-        // TODO: Ask Juan why this is commented out
-        // Fix top level names. If a node is on the top level and a leaf due to compression
-        // it's fullname is missing package information, this fixes it.
-        /*
-        for (ClassTreeNode f : topLevel) {
-            if (f.isLeaf()) {
-                f.name = f.shortName;// shortName is correct due to compressions step
-            }
-        }
-        */
 
         // Add the vertices
         addVerticesToClassTree(topLevel, immutableRoot);
@@ -183,10 +183,9 @@ public class MainTabController {
 
     private PackageNode getTopLevel(ArrayList<PackageNode> topLevel, String className) {
         for (PackageNode n : topLevel) {
-            if (className.startsWith(n.shortName))
+            if (className.startsWith(n.getShortName()))
                 return n;
         }
-
         return null;
     }
 
@@ -404,8 +403,8 @@ public class MainTabController {
     {
         HashSet<StateVertex> keep = new HashSet<>();
 
-        this.vizHighlighted.forEach(v -> keep.addAll(v.getAncestors()) );
-        this.vizHighlighted.forEach(v -> keep.addAll(v.getDescendants()) );
+        this.vizHighlighted.forEach(v -> keep.addAll(v.getAncestors()));
+        this.vizHighlighted.forEach(v -> keep.addAll(v.getDescendants()));
 
         HashSet<StateVertex> toHide = new HashSet<>();
         this.vizPanelController.getVisibleRoot().getChildGraph().getVertices().forEach(v -> {
@@ -414,11 +413,11 @@ public class MainTabController {
             }
         });
 
+        // The redraw will be triggered only once when we end batch mode.
         this.vizPanelController.startBatchMode();
         this.hidden.addAll(toHide);
         this.vizPanelController.endBatchMode();
         this.vizHighlighted.clear();
-        this.vizPanelController.redrawGraph(this.hidden);
     }
 
     // TODO: This should be done using event and event handling using FieldSelectEvent

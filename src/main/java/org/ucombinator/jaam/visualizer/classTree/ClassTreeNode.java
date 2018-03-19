@@ -9,37 +9,18 @@ import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import org.ucombinator.jaam.visualizer.state.StateVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 
-import java.util.Comparator;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import java.util.HashSet;
 
 public abstract class ClassTreeNode
 {
-    public String shortName;
-    public String name;
-
-    protected ClassTreeNode(String shortName, String prefix)
-    {
-        this.shortName = shortName;
-        if(prefix == null)
-            name = new String("");
-        else if(prefix.compareTo("") == 0)
-            name = shortName;
-        else
-            name = prefix + "." + shortName;
-    }
-
-    @Override
-    public String toString() {
-        return shortName;
-    }
-
-    public String getName() { return name; }
-
     protected CheckBoxTreeItem<ClassTreeNode> buildTreeItem(TreeItem<ClassTreeNode> parent) {
         CheckBoxTreeItem<ClassTreeNode> item = new CheckBoxTreeItem<>();
         item.setSelected(true);
         item.setValue(this);
         item.setIndependent(false);
+
         item.selectedProperty().addListener(new ChangeListener<Boolean>() {
             @Override
             public void changed(ObservableValue<? extends Boolean> observableValue, Boolean prevVal, Boolean currVal) {
@@ -47,8 +28,10 @@ public abstract class ClassTreeNode
                 HashSet<StateVertex> childVertices = item.getValue().getChildVertices();
                 VizPanelController vizPanelController = Main.getSelectedVizPanelController();
 
+                // TODO: Somehow wrap this so that when we uncheck a parent checkbox,
+                // we ignore these events for its children.
                 vizPanelController.startBatchMode();
-                if(currVal) {
+                if (currVal) {
                     Main.getSelectedMainTabController().getHidden().removeAll(childVertices);
                 } else {
                     Main.getSelectedMainTabController().getHidden().addAll(childVertices);
@@ -58,7 +41,6 @@ public abstract class ClassTreeNode
         });
         parent.getChildren().add(item);
 
-        item.getChildren().sort(Comparator.comparing(t->t.getValue().shortName));
         return item;
     }
 

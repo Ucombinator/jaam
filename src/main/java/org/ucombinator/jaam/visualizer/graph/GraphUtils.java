@@ -38,11 +38,8 @@ public class GraphUtils {
         stack.push(v.getId());
         vSCC.lowlink = vSCC.index;
 
-        System.out.println("Visiting vertex in SCC construction: " + v);
-
         Set<T> neighbors = graph.getOutNeighbors(v);
         for (T n : neighbors) {
-            System.out.println("Neighbor: " + n);
             if (n.getId() == v.getId()) { // No self loops
                 continue;
             }

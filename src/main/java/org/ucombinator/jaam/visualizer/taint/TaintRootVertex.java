@@ -39,7 +39,6 @@ public class TaintRootVertex extends TaintVertex {
 
     @Override
     public void getFields(Collection<TaintAddress> store) {
-        // TODO: Is this the right graph?
         this.getChildGraph().getVertices().forEach(v -> v.getFields(store));
     }
 

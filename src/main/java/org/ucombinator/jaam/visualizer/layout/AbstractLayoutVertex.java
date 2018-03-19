@@ -238,7 +238,6 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
     }
 
     public void onMouseEnter() {
-        System.out.println("Entering vertex: " + this);
         this.getIncidentEdges().forEach(LayoutEdge::highlightEdgePath);
     }
 
