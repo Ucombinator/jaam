@@ -15,7 +15,6 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
-import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -28,8 +27,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 public class VizPanelController implements EventHandler<SelectEvent<StateVertex>>, SetChangeListener<StateVertex> {
     @FXML public final Node root = null; // Initialized by Controllers.loadFXML()
@@ -37,7 +34,6 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
 
     @FXML private final CheckBox showEdges = null; // Initialized by Controllers.loadFXML()
     @FXML private final CheckBox showLabels = null; // Initialized by Controllers.loadFXML()
-    @FXML private final CheckBox groupByClass = null; // Initialized by Controllers.loadFXML()
     @FXML private final ScrollPane scrollPane = null; // Initialized by Controllers.loadFXML()
     @FXML private final Pane vizPanel = null; // Initialized by Controllers.loadFXML()
 
@@ -45,7 +41,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
     private Group graphContentGroup;
     private StateRootVertex visibleRoot, immutableRoot;
 
-    private boolean inBatchMode = false;
+    private int batchModeCount = 0;
     private boolean changedWhileInBatchMode = false;
 
     public VizPanelController(Graph<StateVertex, StateEdge> graph) throws IOException {
@@ -87,12 +83,8 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
         this.getVisibleRoot().setVisible(true);
     }
 
-    @FXML private void groupByClassAction(ActionEvent event) {
-        this.redrawGraph(Main.getSelectedMainTabController().getHidden());
-    }
-
     @FXML private void exportImageAction(ActionEvent event) throws IOException {
-        event.consume(); // TODO: Is this necessary?
+        event.consume();
         String extension = "png";
         FileChooser fileChooser = new FileChooser();
 
@@ -163,35 +155,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
 
     public void drawGraph(Set<StateVertex> hidden) {
         visibleRoot.setVisible(false);
-        // TODO: Right now we're not hiding anything at the start, so we just pass an empty set.
-        // It would take extra work to be able to access the hidden set at this point. That's because the
-        // tab that this is created inside of hasn't been added to the tabPane yet, so calling
-        // Main.getSelectedMainTabController() returns null.
         this.visibleRoot = this.immutableRoot.constructVisibleGraphExcept(hidden);
-        /*if (groupByClass.isSelected()) {
-            this.visibleRoot = (StateRootVertex) GraphUtils.constructCompressedGraph(this.immutableRoot,
-                    new Function<StateVertex, String>() {
-                        @Override
-                        public String apply(StateVertex v) {
-                            if (v instanceof ClassEntity) {
-                                return ((ClassEntity) v).getClassName();
-                            } else {
-                                return null;
-                            }
-                        }
-                    },
-                    new BiFunction<String, Set<StateVertex>, StateVertex>() {
-                        @Override
-                        public StateClassVertex apply(String className, Set<StateVertex> classVertices) {
-                            StateClassVertex classVertex = new StateClassVertex(className);
-                            for (StateVertex v : classVertices) {
-                                classVertex.getChildGraph().addVertex(v);
-                            }
-                            return classVertex;
-                        }
-                    },
-                    StateEdge::new);
-        }*/
 
         LayoutAlgorithm.layout(this.visibleRoot);
         drawNodes(null, visibleRoot);
@@ -256,7 +220,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
     @Override
     public void onChanged(Change<? extends StateVertex> change) {
         System.out.println("JUAN: Hidden changed: " + change);
-        if(change.wasAdded()) {
+        if (change.wasAdded()) {
             StateVertex v = change.getElementAdded();
             v.setHighlighted(false);
             v.setHidden();
@@ -265,8 +229,7 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
             v.setUnhidden();
         }
 
-        if(!inBatchMode) {
-            System.out.println("Immediately redrawing...");
+        if (!inBatchMode()) {
             this.redrawGraph(Main.getSelectedMainTabController().getHidden());
         } else {
             System.out.println("Waiting to redraw batch...");
@@ -275,20 +238,23 @@ public class VizPanelController implements EventHandler<SelectEvent<StateVertex>
     }
 
     public void startBatchMode() {
-        System.out.println("Starting batch mode for loop graph.");
-        inBatchMode = true;
+        ++batchModeCount;
         changedWhileInBatchMode = false;
     }
 
     public void endBatchMode() {
-        System.out.println("Ending batch mode for loop graph.");
-        inBatchMode = false;
-        if(changedWhileInBatchMode) {
+        if (!inBatchMode()) {
+            System.out.println("ERROR: Not in batch mode, but tried to leave anyway");
+        }
+        else {
+            --batchModeCount;
+        }
+        if (!inBatchMode() && changedWhileInBatchMode) {
             this.redrawGraph(Main.getSelectedMainTabController().getHidden());
         }
     }
 
-    public boolean isInBatchMode() {
-        return inBatchMode;
+    private boolean inBatchMode() {
+        return batchModeCount > 0;
     }
 }
