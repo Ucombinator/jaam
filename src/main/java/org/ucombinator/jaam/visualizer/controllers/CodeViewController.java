@@ -121,8 +121,6 @@ public class CodeViewController {
 
     public ArrayList<String> getFields(String className) {
 
-        System.out.println("JUAN: Get field " + className);
-
         ClassCode c = codeMap.get(className);
 
         if (c == null) {

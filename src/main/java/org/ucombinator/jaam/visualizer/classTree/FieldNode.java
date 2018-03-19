@@ -36,7 +36,9 @@ public class FieldNode extends ClassTreeNode implements Comparable<FieldNode>{
     }
 
     @Override
-    public void handleDoubleClick(CodeViewController codeView) { /* do nothing */ }
+    public void handleDoubleClick(CodeViewController codeView) {
+        Main.getSelectedMainTabController().selectFieldInTaintGraph(className, fieldName);
+    }
 
     @Override
     public HashSet<StateVertex> getChildVertices() { return new HashSet<>(); }
