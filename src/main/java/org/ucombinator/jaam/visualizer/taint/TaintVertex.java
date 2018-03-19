@@ -48,8 +48,7 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
     }
 
     public TaintVertex groupByStatement() {
-        return GraphUtils.constructCompressedGraph(
-                this,
+        return this.constructCompressedGraph(
                 TaintVertex::getStmtString,
                 TaintStmtVertex::new,
                 TaintEdge::new);
@@ -69,8 +68,6 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
         System.out.println("Searching for methods: " + String.join(" ", searchMethodNames));
         for(TaintVertex v : this.getChildGraph().getVertices()) {
             HashSet<String> currMethodNames = v.getMethodNames();
-            System.out.println("Vertex: " + v);
-            System.out.println("Vertex methods: " + String.join(" ", currMethodNames));
             HashSet<String> intersection = (HashSet<String>) searchMethodNames.clone();
             intersection.retainAll(currMethodNames);
 

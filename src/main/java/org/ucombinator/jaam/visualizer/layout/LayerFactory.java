@@ -30,7 +30,7 @@ public class LayerFactory
         StateRootVertex graphRoot = new StateRootVertex();
         graphRoot.setChildGraph(graph);
 
-        return (StateRootVertex) GraphUtils.constructCompressedGraph(graphRoot,
+        return (StateRootVertex) graphRoot.constructCompressedGraph(
                 (StateVertex v) -> "Id-" + Integer.toString(vertexToComponentIndex.get(v.getId())),
                 new BiFunction<String, Set<StateVertex>, StateVertex>() {
                     @Override
