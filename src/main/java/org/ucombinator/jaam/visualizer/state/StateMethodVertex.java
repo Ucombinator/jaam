@@ -9,12 +9,13 @@ import soot.SootClass;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class StateMethodVertex extends StateVertex implements MethodEntity {
 
     private static final Color defaultColor = Color.DEEPSKYBLUE;
 
-    private LoopMethodNode compilationUnit;
+    private final LoopMethodNode compilationUnit;
 
     public StateMethodVertex(int id, String label, LoopMethodNode compilationUnit){
     	super(id, label, AbstractLayoutVertex.VertexType.METHOD);
@@ -34,10 +35,9 @@ public class StateMethodVertex extends StateVertex implements MethodEntity {
         return this.compilationUnit.method().getDeclaringClass().getShortName();
     }
 
-    public HashSet<String> getClassNames() {
-        String className = this.getClassName();
+    public Set<String> getClassNames() {
         HashSet<String> set = new HashSet<>();
-        set.add(className);
+        set.add(this.getClassName());
         return set;
     }
 
@@ -48,12 +48,11 @@ public class StateMethodVertex extends StateVertex implements MethodEntity {
 
         classDecl.append(" " + declaringClass.getShortName());
 
-        if(declaringClass.hasSuperclass() && declaringClass.getSuperclass().getShortName().compareTo("Object") != 0)
-        {
+        if(declaringClass.hasSuperclass() && declaringClass.getSuperclass().getShortName().compareTo("Object") != 0) {
             classDecl.append(" extends " + declaringClass.getSuperclass().getShortName());
         }
-        if(declaringClass.getInterfaceCount() > 0)
-        {
+
+        if(declaringClass.getInterfaceCount() > 0) {
             classDecl.append(" implements ");
             declaringClass.getInterfaces().stream().forEach(i -> classDecl.append(i.getShortName() + ", "));
         }
@@ -90,8 +89,8 @@ public class StateMethodVertex extends StateVertex implements MethodEntity {
         return found;
     }
 
-    public LinkedHashSet<StateMethodVertex> getMethodVertices() {
-        LinkedHashSet<StateMethodVertex> result = new LinkedHashSet<>();
+    public Set<StateMethodVertex> getMethodVertices() {
+        HashSet<StateMethodVertex> result = new HashSet<>();
         result.add(this);
         return result;
     }

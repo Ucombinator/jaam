@@ -3,7 +3,6 @@ package org.ucombinator.jaam.visualizer.taint;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
-import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -64,11 +63,11 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
         this.getGraphics().fireEvent(new SelectEvent<TaintVertex>(MouseButton.PRIMARY, this.getGraphics(), this));
     }
 
-    public void searchByMethodNames(HashSet<String> searchMethodNames, HashSet<TaintVertex> results) {
+    public void searchByMethodNames(Set<String> searchMethodNames, Set<TaintVertex> results) {
         System.out.println("Searching for methods: " + String.join(" ", searchMethodNames));
         for(TaintVertex v : this.getChildGraph().getVertices()) {
             HashSet<String> currMethodNames = v.getMethodNames();
-            HashSet<String> intersection = (HashSet<String>) searchMethodNames.clone();
+            HashSet<String> intersection = new HashSet<>(searchMethodNames);
             intersection.retainAll(currMethodNames);
 
             if (intersection.size() > 0) {

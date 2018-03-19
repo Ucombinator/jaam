@@ -4,9 +4,6 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-
 public class StateSccVertex extends StateVertex {
 
     private Color defaultColor = Color.DARKGREY;
@@ -28,7 +25,7 @@ public class StateSccVertex extends StateVertex {
         }
 
         if (found) {
-            this.setHighlighted(found);
+            this.setHighlighted(true);
             mainTab.getVizHighlighted().add(this);
         }
 
@@ -37,19 +34,5 @@ public class StateSccVertex extends StateVertex {
 
     public String getRightPanelContent() {
         return "SCC vertex: " + this.getId();
-    }
-
-    public HashSet<StateMethodVertex> getMethodVertices() {
-        HashSet<StateMethodVertex> methods = new LinkedHashSet<>();
-        this.getChildGraph().getVertices().forEach(v -> methods.addAll(v.getMethodVertices()));
-        return methods;
-    }
-
-    public HashSet<String> getClassNames() {
-        HashSet<String> classNames = new HashSet<>();
-        for (StateVertex v : this.getChildGraph().getVertices()) {
-            classNames.addAll(v.getClassNames());
-        }
-        return classNames;
     }
 }

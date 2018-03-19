@@ -10,7 +10,7 @@ public class Graph<T extends Vertex, S extends Edge<T>> {
     protected HashSet<S> edges;
     protected HashMap<T, HashMap<T, S>> outEdges;
     protected HashMap<T, HashMap<T, S>> inEdges;
-    protected HashMap<Integer, T> idToVertexMap;
+    private HashMap<Integer, T> idToVertexMap;
 
     public Graph() {
         this.vertices = new HashSet<>();
@@ -24,26 +24,27 @@ public class Graph<T extends Vertex, S extends Edge<T>> {
         if(vertex == null) {
             System.out.println("Error! Adding null vertex...");
         }
-
-        this.vertices.add(vertex);
-        this.outEdges.put(vertex, new HashMap<>());
-        this.inEdges.put(vertex, new HashMap<>());
-        this.idToVertexMap.put(vertex.getId(), vertex);
+        else {
+            this.vertices.add(vertex);
+            this.outEdges.put(vertex, new HashMap<>());
+            this.inEdges.put(vertex, new HashMap<>());
+            this.idToVertexMap.put(vertex.getId(), vertex);
+        }
     }
 
     public void addEdge(S edge) {
         if (edge.getSrc() == null) {
             System.out.println("Error! Adding edge with null source.");
-        }
-        else if (edge.getDest() == null) {
+        } else if (edge.getDest() == null) {
             System.out.println("Error! Adding edge with null dest.");
-        }
-        this.edges.add(edge);
-        this.outEdges.putIfAbsent(edge.getSrc(), new HashMap<>());
-        this.outEdges.get(edge.getSrc()).put(edge.getDest(), edge);
+        } else {
+            this.edges.add(edge);
+            this.outEdges.putIfAbsent(edge.getSrc(), new HashMap<>());
+            this.outEdges.get(edge.getSrc()).put(edge.getDest(), edge);
 
-        this.inEdges.putIfAbsent(edge.getDest(), new HashMap<>());
-        this.inEdges.get(edge.getDest()).put(edge.getSrc(), edge);
+            this.inEdges.putIfAbsent(edge.getDest(), new HashMap<>());
+            this.inEdges.get(edge.getDest()).put(edge.getSrc(), edge);
+        }
     }
 
     public Set<T> getVertices() {

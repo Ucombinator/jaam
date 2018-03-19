@@ -41,31 +41,10 @@ public class StateRootVertex extends StateVertex {
         }
 
         if(found) {
-            //this.setHighlighted(found);
-            //mainTab.getVizHighlighted().add(this);
+            this.setHighlighted(true);
+            mainTab.getVizHighlighted().add(this);
         }
 
         return found;
-    }
-
-    public HashSet<StateMethodVertex> getMethodVertices()
-    {
-        HashSet<StateMethodVertex> methodVertices = new LinkedHashSet<StateMethodVertex>();
-        for(StateVertex v : this.getChildGraph().getVertices()) {
-            if(v instanceof StateMethodVertex)
-                methodVertices.add((StateMethodVertex) v);
-            else
-                methodVertices.addAll(v.getMethodVertices());
-        }
-
-        return methodVertices;
-    }
-
-    public HashSet<String> getClassNames() {
-        HashSet<String> classNames = new HashSet<>();
-        for(StateVertex v : this.getChildGraph().getVertices()) {
-            classNames.addAll(v.getClassNames());
-        }
-        return classNames;
     }
 }

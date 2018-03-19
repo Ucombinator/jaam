@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 
 public class TaintPanelController implements EventHandler<SelectEvent<TaintVertex>>,
         GraphPanelController<TaintVertex, TaintEdge> {
@@ -112,13 +113,13 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         public void handle(SelectEvent<StateVertex> selectEvent) {
 
             StateVertex v = selectEvent.getVertex();
-            HashSet<TaintVertex> methodAddresses = findAddressesByMethods(v.getMethodNames());
+            Set<TaintVertex> methodAddresses = findAddressesByMethods(v.getMethodNames());
             System.out.println("Taint vertices in method: " + methodAddresses.size());
             drawConnectedVertices(methodAddresses);
         }
     };
 
-    private void drawConnectedVertices(HashSet<TaintVertex> addresses) {
+    private void drawConnectedVertices(Set<TaintVertex> addresses) {
         long time1 = System.nanoTime();
         HashSet<TaintVertex> verticesToDraw = findConnectedAddresses(addresses);
         System.out.println("Taint vertices to draw: " + verticesToDraw.size());
@@ -132,17 +133,17 @@ public class TaintPanelController implements EventHandler<SelectEvent<TaintVerte
         System.out.println("Time to draw graph: " + (time3 - time2) / 1000000000.0);
     }
 
-    private HashSet<TaintVertex> findAddressesByMethods(HashSet<String> methodNames) {
+    private HashSet<TaintVertex> findAddressesByMethods(Set<String> methodNames) {
         HashSet<TaintVertex> results = new HashSet<>();
         this.immutableRoot.searchByMethodNames(methodNames, results); // TODO: This step is a little inefficient.
         return results;
     }
 
-    private HashSet<TaintVertex> findConnectedAddresses(HashSet<TaintVertex> startVertices) {
+    private HashSet<TaintVertex> findConnectedAddresses(Set<TaintVertex> startVertices) {
         HashSet<TaintVertex> ancestors = new HashSet<>();
         HashSet<TaintVertex> descendants = new HashSet<>();
 
-        // TODO: This code is cleaner, but could it be a little redundant?
+        // TODO: This code is cleaner, but might take longer?
         for (TaintVertex v : startVertices) {
             ancestors.addAll(v.getAncestors());
             descendants.addAll(v.getDescendants());

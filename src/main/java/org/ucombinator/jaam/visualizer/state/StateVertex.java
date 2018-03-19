@@ -149,9 +149,9 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
         return incidentEdges;
     }
 
-    public HashSet<String> getMethodNames() {
-        HashSet<StateMethodVertex> methodVertices = this.getMethodVertices();
-        HashSet<String> methodNames = new HashSet<>();
+    public Set<String> getMethodNames() {
+        Set<StateMethodVertex> methodVertices = this.getMethodVertices();
+        Set<String> methodNames = new HashSet<>();
         for(StateMethodVertex v : methodVertices) {
             methodNames.add(v.getMethodName());
         }
@@ -167,7 +167,23 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
     public abstract boolean searchByMethod(String query, MainTabController mainTab);
 
     // This is needed so that we can show the code for the methods that correspond to selected vertices
-    public abstract HashSet<StateMethodVertex> getMethodVertices();
+    public Set<StateMethodVertex> getMethodVertices() {
+        return this.getChildGraph().getVertices()
+                .stream()
+                .map(StateVertex::getMethodVertices)
+                .reduce(new HashSet<>(), (x, y) -> {
+                    x.addAll(y);
+                    return x;
+                });
+    }
 
-    public abstract HashSet<String> getClassNames();
+    public Set<String> getClassNames() {
+        return this.getChildGraph().getVertices()
+                .stream()
+                .map(StateVertex::getClassNames)
+                .reduce(new HashSet<>(), (x, y) -> {
+                    x.addAll(y);
+                    return x;
+                });
+    }
 }
