@@ -6,10 +6,10 @@ case class RegEx[State, AtomType]() {
 
   sealed trait Exp
 
-  case class Cat(x: List[Exp]) extends Exp
-  case class Alt(x: List[Exp]) extends Exp
-  case class Rep(x: Exp) extends Exp
-  case class Fun(x: (State, AtomType) => (List[State], List[(Exp, State)])) extends Exp
+  case class Cat(es: List[Exp]) extends Exp
+  case class Alt(es: List[Exp]) extends Exp
+  case class Rep(e: Exp) extends Exp
+  case class Fun(derive: (State, AtomType) => (List[State], List[(Exp, State)]), parseNull: (State) => (List[State])) extends Exp
 
   def flatMap2[A, B, C](aList: List[A], fun: A => (List[B], List[C])): (List[B], List[C]) = {
     aList match {
@@ -34,15 +34,26 @@ case class RegEx[State, AtomType]() {
       case Rep(x) =>
         val (bs, cs) = derive(x, state, atom)
         (state :: bs, cs)
-      case Fun(x) => x(state, atom)
+      case Fun(fd, _) => fd(state, atom)
+    }
+  }
+
+  def parseNull(exp: Exp, state: State): List[State] = {
+    exp match {
+      case Cat(es) => es.foldLeft(List(state))((s, e) => s.flatMap(parseNull(e, _)))
+      case Alt(es) => es.flatMap(parseNull(_, state))
+      case Rep(e) => List(state)
+      case Fun(_, fpn) => fpn(state)
     }
   }
 
   def deriveAll(exp: Exp, state: State, atoms: Seq[AtomType]): List[State] = {
     def step(oldTup: (List[State], List[(Exp, State)]), atom: AtomType): (List[State], List[(Exp, State)]) = {
+      println("deriveAll: step: " + oldTup)
       flatMap2[(Exp, State), State, (Exp, State)](oldTup._2, { case (e, s) => derive(e, s, atom) })
     }
 
-    atoms.foldLeft((List[State](), List((exp, state))))(step)._1
+    val result = atoms.foldLeft((List[State](), List((exp, state))))(step)
+    result._1 ++ result._2.flatMap(es => { parseNull(es._1, es._2) })
   }
 }
