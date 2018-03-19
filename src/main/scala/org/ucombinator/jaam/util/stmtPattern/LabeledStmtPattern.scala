@@ -9,15 +9,6 @@ import soot.util.Switch
 
 import scala.collection.JavaConverters._
 
-// TODO: State will have two maps: Strings -> Indexes (Ints), Strings -> Identifier (local var; the thing that a VariableExpPattern matches)
-
-// TODO: move to own file (not regex either)
-case class StmtPatternToRegEx(pattern: LabeledStmtPattern) extends ((State, Stmt) => (List[State], List[(Exp, State)])) {
-  override def apply(state: State, stmt: Stmt): (List[State], List[(Exp, State)]) = {
-    (List(), pattern(state, stmt).map((Cat(List()), _)))
-  }
-}
-
 object UnusedInvokeResult extends Value {
   override def getUseBoxes: java.util.List[ValueBox] = new java.util.ArrayList[ValueBox]()
   override def getType: Type = UnknownType.v()
@@ -27,7 +18,7 @@ object UnusedInvokeResult extends Value {
   override def apply(aSwitch: Switch): Unit = ???
 }
 
-case class State(indexes: Map[String, Int], identifiers: Map[String, Identifier])
+case class State(indexes: Map[String, Index], identifiers: Map[String, Identifier])
 
 case class LabeledStmtPattern(label: LabelPattern, stmtPattern: StmtPattern) extends ((State, Stmt) => List[State]) {
   override def apply(state: State, stmt: Stmt): List[State] = {
@@ -36,11 +27,15 @@ case class LabeledStmtPattern(label: LabelPattern, stmtPattern: StmtPattern) ext
   }
 }
 
+/*
+ * STATEMENT PATTERNS
+ */
+
 sealed trait StmtPattern extends ((State, Stmt) => List[State]) {
   override def apply(state: State, stmt: Stmt): List[State]
 }
 
-case class AnyStmtPattern() extends StmtPattern {
+case object AnyStmtPattern extends StmtPattern {
   override def apply(state: State, stmt: Stmt): List[State] = {
     List(state)
   }
@@ -78,12 +73,15 @@ case class AssignStmtPattern(lhs: ExpPattern, rhs: ExpPattern) extends StmtPatte
   }
 }
 
+/*
+ * EXPRESSION PATTERNS
+ */
 
 sealed trait ExpPattern extends ((State, Value) => List[State]) {
   override def apply(state: State, value: Value): List[State]
 }
 
-case class AnyExpPattern() extends ExpPattern {
+case object AnyExpPattern extends ExpPattern {
   override def apply(state: State, value: Value): List[State] = {
     List(state)
   }
@@ -188,12 +186,15 @@ case class CastExpPattern(castType: Type, operand: ExpPattern) extends ExpPatter
   }
 }
 
+/*
+ * LABEL PATTERNS
+ */
 
 sealed trait LabelPattern extends ((State, Index) => List[State]) {
   override def apply(state: State, index: Index): List[State]
 }
 
-case class AnyLabelPattern() extends LabelPattern {
+case object AnyLabelPattern extends LabelPattern {
   override def apply(state: State, index: Index): List[State] = {
     List(state)
   }
@@ -213,12 +214,15 @@ case class NamedLabelPattern(name: Identifier) extends LabelPattern {
   }
 }
 
+/*
+ * METHOD PATTERNS
+ */
 
 sealed trait MethodPattern extends ((State, SootMethod) => List[State]) {
   override def apply(state: State, sootMethod: SootMethod): List[State]
 }
 
-case class AnyMethodPattern() extends MethodPattern {
+case object AnyMethodPattern extends MethodPattern {
   override def apply(state: State, sootMethod: SootMethod): List[State] = {
     List(state)
   }
@@ -272,9 +276,3 @@ iterableLoop:
      label2:
         ...
  */
-
-private object Blah {
-//  val iteratorLoopPattern: RegEx[State, Stmt] = r.Cat([
-//      r.Fun()
-//    ])
-}
