@@ -27,7 +27,7 @@ object UnusedInvokeResult extends Value {
   override def apply(aSwitch: Switch): Unit = ???
 }
 
-case class State(indexes: Map[String, Int], identifiers: Map[String, Identifier])
+case class State(indexes: Map[String, Index], identifiers: Map[String, Identifier])
 
 case class LabeledStmtPattern(label: LabelPattern, stmtPattern: StmtPattern) extends ((State, Stmt) => List[State]) {
   override def apply(state: State, stmt: Stmt): List[State] = {
@@ -35,6 +35,10 @@ case class LabeledStmtPattern(label: LabelPattern, stmtPattern: StmtPattern) ext
     states.flatMap(stmtPattern(_, stmt))
   }
 }
+
+/*
+ * STATEMENT PATTERNS
+ */
 
 sealed trait StmtPattern extends ((State, Stmt) => List[State]) {
   override def apply(state: State, stmt: Stmt): List[State]
@@ -78,6 +82,9 @@ case class AssignStmtPattern(lhs: ExpPattern, rhs: ExpPattern) extends StmtPatte
   }
 }
 
+/*
+ * EXPRESSION PATTERNS
+ */
 
 sealed trait ExpPattern extends ((State, Value) => List[State]) {
   override def apply(state: State, value: Value): List[State]
@@ -188,6 +195,9 @@ case class CastExpPattern(castType: Type, operand: ExpPattern) extends ExpPatter
   }
 }
 
+/*
+ * LABEL PATTERNS
+ */
 
 sealed trait LabelPattern extends ((State, Index) => List[State]) {
   override def apply(state: State, index: Index): List[State]
@@ -213,6 +223,9 @@ case class NamedLabelPattern(name: Identifier) extends LabelPattern {
   }
 }
 
+/*
+ * METHOD PATTERNS
+ */
 
 sealed trait MethodPattern extends ((State, SootMethod) => List[State]) {
   override def apply(state: State, sootMethod: SootMethod): List[State]
@@ -272,9 +285,3 @@ iterableLoop:
      label2:
         ...
  */
-
-private object Blah {
-//  val iteratorLoopPattern: RegEx[State, Stmt] = r.Cat([
-//      r.Fun()
-//    ])
-}
