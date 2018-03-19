@@ -27,6 +27,7 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamCon
   addSubcommand(Loop3)
   addSubcommand(Loop4)
   addSubcommand(LoopIdentifier)
+  addSubcommand(RegExDriver)
   addSubcommand(MissingReturns)
   addSubcommand(Print)
   addSubcommand(Taint)
@@ -456,6 +457,16 @@ object LoopIdentifier extends Main("loopident") {
 
   def run(): Unit = {
     org.ucombinator.jaam.tools.loopidentifier.Main.main(input(), printBodies(), printStatements(), skipExceptions())
+  }
+}
+
+object RegExDriver extends Main("driver") {
+  val input = inputOpt()
+  val className = opt[String](descr = "")
+  val methodName = opt[String](descr = "")
+
+  def run(): Unit = {
+    org.ucombinator.jaam.tools.regex_driver.Main.main(input(), className(), methodName())
   }
 }
 
