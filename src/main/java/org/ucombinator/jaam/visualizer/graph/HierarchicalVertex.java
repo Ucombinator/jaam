@@ -48,6 +48,8 @@ public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extend
     }
 
     // We assume that only vertices within the same level can be combined.
+    // TODO: Change hash to output a new type parameter.
+    // TODO: Move back to GraphUtils and make static.
     default T constructCompressedGraph(Function<T, String> hash, BiFunction<String, Set<T>, T> componentVertexBuilder, BiFunction<T, T, S> edgeBuilder) {
         // If we have no child vertices, just copy ourselves.
         if (this.getChildGraph().getVertices().size() == 0) {
@@ -55,10 +57,11 @@ public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extend
         }
 
         // Otherwise, build a map of components based on matching hash values.
+        // TODO: Build these with streams
         int nullCounter = 0;
         HashMap<T, String> hashStrings = new HashMap<>();
         HashMap<String, Set<T>> components = new HashMap<>();
-        for(T v : this.getChildGraph().getVertices()) {
+        for (T v : this.getChildGraph().getVertices()) {
             String newHash = hash.apply(v);
             if(newHash == null) {
                 // Create a unique key for each null hash value
@@ -92,11 +95,10 @@ public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extend
             T componentVertex;
             if(component.size() == 1) {
                 componentVertex =
-                        component.iterator().next()
-                                .constructCompressedGraph(hash, componentVertexBuilder, edgeBuilder);
+                        component.stream().findFirst().get().constructCompressedGraph(hash, componentVertexBuilder, edgeBuilder);
             } else {
                 // We need these maps so we can add edges inside our component vertex.
-                // TODO: There has to be a cleaner way to do this...
+                // TODO: There has to be a cleaner way to do this... Try using BiMap from Guava?
                 HashMap<T, T> mapCompressedToOriginal = new HashMap<>();
                 HashMap<T, T> mapOriginalToCompressed = new HashMap<>();
                 Set<T> compressedComponent = new HashSet<>();
@@ -147,7 +149,8 @@ public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extend
         return newRoot;
     }
 
-    default HashSet<T> getAncestors()
+    // TODO: These functions only look at vertices on the same level.
+    default Set<T> getAncestors()
     {
         HashSet<T> ancestors = new HashSet<>();
         this.getAncestors(ancestors);
@@ -160,15 +163,15 @@ public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extend
         if(this instanceof StateRootVertex || this instanceof TaintRootVertex)
             return;
 
-        ancestors.add((T) this);
-        this.getParentGraph().getInNeighbors((T) this).forEach(v -> {
-            if (!ancestors.contains(v)) {
+        if (!ancestors.contains((T) this)) {
+            ancestors.add((T) this);
+            this.getParentGraph().getInNeighbors((T) this).forEach(v -> {
                 v.getAncestors(ancestors);
-            }
-        });
+            });
+        }
     }
 
-    default HashSet<T> getDescendants()
+    default Set<T> getDescendants()
     {
         HashSet<T> descendants = new HashSet<>();
         this.getDescendants(descendants);
@@ -181,11 +184,11 @@ public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extend
         if(this instanceof StateRootVertex || this instanceof TaintRootVertex)
             return;
 
-        descendants.add((T) this);
-        this.getParentGraph().getOutNeighbors((T) this).forEach(v -> {
-            if (!descendants.contains(v)) {
+        if (!descendants.contains((T) this)) {
+            descendants.add((T) this);
+            this.getParentGraph().getOutNeighbors((T) this).forEach(v -> {
                 v.getDescendants(descendants);
-            }
-        });
+            });
+        }
     }
 }
