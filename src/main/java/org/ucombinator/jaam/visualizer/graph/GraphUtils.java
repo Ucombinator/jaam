@@ -199,8 +199,9 @@ public class GraphUtils {
                 if ((currVertexOld == nextVertexOld) || (currComponentVertex != nextComponentVertex)) {
                     newGraph.addEdge(edgeBuilder.apply(currComponentVertex, nextComponentVertex));
                 }
-                else {
-                    // Add edge between two different vertices if they are inside the same component.
+
+                // Add edge between two different vertices if they are inside the same component.
+                if (currComponentVertex == nextComponentVertex) {
                     T currInnerVertex = mapVertexToCopy.get(currVertexOld);
                     T nextInnerVertex = mapVertexToCopy.get(nextVertexOld);
                     currComponentVertex.getChildGraph().addEdge(edgeBuilder.apply(currInnerVertex, nextInnerVertex));
