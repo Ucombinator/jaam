@@ -9,14 +9,14 @@ public class TaintSccVertex extends TaintVertex {
 
     private Color defaultColor = Color.DARKGREY;
 
-    public TaintSccVertex(int id, String label)
+    public TaintSccVertex(String label)
     {
         super(label, VertexType.SCC, true);
         this.color = defaultColor;
     }
 
     public TaintSccVertex copy() {
-        return new TaintSccVertex(this.getId(), this.getLabel());
+        return new TaintSccVertex(this.getLabel());
     }
 
     public HashSet<String> getMethodNames() {

@@ -147,9 +147,8 @@ public class GraphUtils {
     }
 
     // We assume that only vertices within the same level can be combined.
-    // TODO: Convert hash to output type parameter
-    public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>>
-    T constructCompressedGraph(T root, Function<T, String> hash, Function<List<T>, T> componentVertexBuilder,
+    public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>, U>
+    T constructCompressedGraph(T root, Function<T, U> hash, Function<List<T>, T> componentVertexBuilder,
                                BiFunction<T, T, S> edgeBuilder) {
         // If we have no child vertices, just copy ourselves.
         if (root.getChildGraph().getVertices().size() == 0) {
@@ -161,18 +160,18 @@ public class GraphUtils {
                 .collect(Collectors.toMap(v -> v, HierarchicalVertex::copy));
 
         // Then build a map of components based on matching hash values.
-        Map<T, String> hashValues = root.getChildGraph().getVertices().stream()
+        Map<T, U> hashValues = root.getChildGraph().getVertices().stream()
                 .collect(Collectors.toMap(v -> v, hash));
 
-        Map<String, List<T>> components = root.getChildGraph().getVertices().stream()
+        Map<U, List<T>> components = root.getChildGraph().getVertices().stream()
                 .collect(Collectors.groupingBy(hashValues::get));
 
 
         // Preserve the singleton vertices, but build component vertices for larger components.
-        Map<String, T> mapHashToComponentVertex = components.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, new Function<Map.Entry<String, List<T>>, T>() {
+        Map<U, T> mapHashToComponentVertex = components.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, new Function<Map.Entry<U, List<T>>, T>() {
                     @Override
-                    public T apply(Map.Entry<String, List<T>> entry) {
+                    public T apply(Map.Entry<U, List<T>> entry) {
                         List<T> component = entry.getValue();
                         if(component.size() == 1) {
                             return mapVertexToCopy.get(component.get(0));

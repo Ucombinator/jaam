@@ -8,14 +8,14 @@ public class StateSccVertex extends StateVertex {
 
     private Color defaultColor = Color.DARKGREY;
 
-    public StateSccVertex(int id, String label)
+    public StateSccVertex(String label)
     {
-        super(id, label, AbstractLayoutVertex.VertexType.SCC);
+        super(label, AbstractLayoutVertex.VertexType.SCC, true);
         this.color = defaultColor;
     }
 
     public StateSccVertex copy() {
-        return new StateSccVertex(this.getId(), this.getLabel());
+        return new StateSccVertex(this.getLabel());
     }
 
     public boolean searchByMethod(String query, MainTabController mainTab) {
