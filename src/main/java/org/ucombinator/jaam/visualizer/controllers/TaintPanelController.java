@@ -4,7 +4,9 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Spinner;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import org.ucombinator.jaam.tools.taint3.Address;
@@ -23,49 +25,30 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-public class TaintPanelController implements EventHandler<SelectEvent<TaintVertex>>,
-        GraphPanelController<TaintVertex, TaintEdge> {
-    @FXML public final Node root = null; // Initialized by Controllers.loadFXML()
-    @FXML private final ScrollPane scrollPane = null; // Initialized by Controllers.loadFXML()
-    @FXML private final Pane taintPanel = null; // Initialized by Controllers.loadFXML()
-
-    private TaintRootVertex visibleRoot, immutableRoot;
-    private Group graphContentGroup;
+public class TaintPanelController extends GraphPanelController<TaintVertex, TaintEdge>
+        implements EventHandler<SelectEvent<TaintVertex>> {
 
     private HashMap<String, TaintAddress> fieldVertices;
 
     public TaintPanelController(Graph<TaintVertex, TaintEdge> graph) throws IOException {
-        Controllers.loadFXML("/TaintPanel.fxml", this);
-
-        this.graphContentGroup = new Group();
-        this.graphContentGroup.setVisible(true);
-        this.taintPanel.setVisible(true);
-        this.taintPanel.getChildren().add(graphContentGroup);
-        graphContentGroup.addEventFilter(SelectEvent.TAINT_VERTEX_SELECTED, this);
-
-        // Set up graph, but don't draw the entire thing yet.
-        this.visibleRoot = new TaintRootVertex();
-        this.immutableRoot = new TaintRootVertex();
-        LayerFactory.getLayeredGraph(graph, this.immutableRoot);
+        super(TaintRootVertex::new);
         fillFieldDictionary();
-    }
-
-    public Group getGraphContentGroup() {
-        return this.graphContentGroup;
+        graphContentGroup.addEventFilter(SelectEvent.TAINT_VERTEX_SELECTED, this);
+        LayerFactory.getLayeredGraph(graph, (TaintRootVertex) this.immutableRoot);
     }
 
     public TaintRootVertex getVisibleRoot() {
-        return this.visibleRoot;
+        return (TaintRootVertex) this.visibleRoot;
     }
 
     public TaintRootVertex getImmutableRoot() {
-        return this.immutableRoot;
+        return (TaintRootVertex) this.immutableRoot;
     }
 
     public void drawGraph(HashSet<TaintVertex> verticesToDraw) {
         System.out.println("Drawing taint graph...");
         visibleRoot.setVisible(false);
-        this.visibleRoot = this.immutableRoot.constructVisibleGraph(verticesToDraw);
+        this.visibleRoot = ((TaintRootVertex) this.immutableRoot).constructVisibleGraph(verticesToDraw);
         LayoutAlgorithm.layout(visibleRoot);
         drawNodes(null, visibleRoot);
         drawEdges(visibleRoot);

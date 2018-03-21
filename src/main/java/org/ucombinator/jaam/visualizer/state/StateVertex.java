@@ -66,13 +66,13 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
                 handleDoubleClick(event);
                 break;
             default:
-                    // Do nothing
-                    break;
-            }
+                // Do nothing
+                break;
+        }
     }
 
-    private void handleDoubleClick(MouseEvent event){
-        StateRootVertex root = Main.getSelectedVizPanelController().getVisibleRoot();
+    private void handleDoubleClick(MouseEvent event) {
+        StateRootVertex root = (StateRootVertex) Main.getSelectedVizPanelController().getVisibleRoot();
         Graph<StateVertex, StateEdge> childGraph = this.getChildGraph();
         boolean isExpanded = this.isExpanded();
 
