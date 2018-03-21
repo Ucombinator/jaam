@@ -156,9 +156,9 @@ public class GraphUtils {
             return root.copy();
         }
 
-        // Otherwise, apply our compression recursively on each vertex.
-        Map<T, T> mapVertexToCompressedVertex = root.getChildGraph().getVertices().stream()
-                .collect(Collectors.toMap(v -> v, v -> GraphUtils.constructCompressedGraph(v, hash, componentVertexBuilder, edgeBuilder)));
+        // Otherwise, copy all of the inner vertices.
+        Map<T, T> mapVertexToCopy = root.getChildGraph().getVertices().stream()
+                .collect(Collectors.toMap(v -> v, HierarchicalVertex::copy));
 
         // Then build a map of components based on matching hash values.
         Map<T, String> hashValues = root.getChildGraph().getVertices().stream()
@@ -167,6 +167,7 @@ public class GraphUtils {
         Map<String, List<T>> components = root.getChildGraph().getVertices().stream()
                 .collect(Collectors.groupingBy(hashValues::get));
 
+
         // Preserve the singleton vertices, but build component vertices for larger components.
         Map<String, T> mapHashToComponentVertex = components.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, new Function<Map.Entry<String, List<T>>, T>() {
@@ -174,10 +175,10 @@ public class GraphUtils {
                     public T apply(Map.Entry<String, List<T>> entry) {
                         List<T> component = entry.getValue();
                         if(component.size() == 1) {
-                            return mapVertexToCompressedVertex.get(component.get(0));
+                            return mapVertexToCopy.get(component.get(0));
                         } else {
-                            return componentVertexBuilder.apply(component.stream().map(mapVertexToCompressedVertex::get)
-                                            .collect(Collectors.toList()));
+                            return componentVertexBuilder.apply(component.stream().map(mapVertexToCopy::get)
+                                    .collect(Collectors.toList()));
                         }
                     }
                 }));
@@ -200,9 +201,9 @@ public class GraphUtils {
                 }
                 else {
                     // Add edge between two different vertices if they are inside the same component.
-                    T currCompressedVertex = mapVertexToCompressedVertex.get(currVertexOld);
-                    T nextCompressedVertex = mapVertexToCompressedVertex.get(nextVertexOld);
-                    currComponentVertex.getChildGraph().addEdge(edgeBuilder.apply(currCompressedVertex, nextCompressedVertex));
+                    T currInnerVertex = mapVertexToCopy.get(currVertexOld);
+                    T nextInnerVertex = mapVertexToCopy.get(nextVertexOld);
+                    currComponentVertex.getChildGraph().addEdge(edgeBuilder.apply(currInnerVertex, nextInnerVertex));
                 }
             }
         }

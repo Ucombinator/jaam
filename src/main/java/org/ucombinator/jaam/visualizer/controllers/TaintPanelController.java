@@ -32,9 +32,13 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
     public TaintPanelController(Graph<TaintVertex, TaintEdge> graph) throws IOException {
         super(TaintRootVertex::new);
-        fillFieldDictionary();
+
+        // Custom event handlers
         graphContentGroup.addEventFilter(SelectEvent.TAINT_VERTEX_SELECTED, this);
-        LayerFactory.getLayeredGraph(graph, (TaintRootVertex) this.immutableRoot);
+
+        this.visibleRoot = new TaintRootVertex();
+        this.immutableRoot = LayerFactory.getLayeredTaintGraph(graph);
+        fillFieldDictionary();
     }
 
     public TaintRootVertex getVisibleRoot() {
@@ -187,8 +191,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         }
     }
 
-    private void fillFieldDictionary()
-    {
+    private void fillFieldDictionary() {
         fieldVertices = new HashMap<>();
 
         ArrayList<TaintAddress> allFields = new ArrayList<>();

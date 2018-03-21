@@ -2,14 +2,6 @@ package org.ucombinator.jaam.visualizer.controllers;
 
 import javafx.collections.SetChangeListener;
 import javafx.event.EventHandler;
-import javafx.fxml.FXML;
-import javafx.scene.Group;
-import javafx.scene.Node;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Spinner;
-import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.Pane;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -32,12 +24,11 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
     public VizPanelController(Graph<StateVertex, StateEdge> graph) throws IOException {
         super(StateRootVertex::new);
 
-        //Custom event handlers
+        // Custom event handlers
         this.graphContentGroup.addEventFilter(SelectEvent.STATE_VERTEX_SELECTED, this);
 
-
         this.visibleRoot = new StateRootVertex();
-        this.immutableRoot = LayerFactory.getLayeredGraph(graph);
+        this.immutableRoot = LayerFactory.getLayeredLoopGraph(graph);
         this.drawGraph(new HashSet<>());
     }
 

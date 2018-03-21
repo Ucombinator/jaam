@@ -46,6 +46,10 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
         this.parentGraph = graph;
     }
 
+    public void setChildGraph(Graph<TaintVertex, TaintEdge> graph) {
+        this.childGraph = graph;
+    }
+
     public TaintVertex groupByStatement() {
         return GraphUtils.constructCompressedGraph(this,
                 new Function<TaintVertex, String>() {
@@ -85,7 +89,6 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
     }
 
     public void searchByMethodNames(Set<String> searchMethodNames, Set<TaintVertex> results) {
-        System.out.println("Searching for methods: " + String.join(" ", searchMethodNames));
         for(TaintVertex v : this.getChildGraph().getVertices()) {
             HashSet<String> currMethodNames = v.getMethodNames();
             HashSet<String> intersection = new HashSet<>(searchMethodNames);
