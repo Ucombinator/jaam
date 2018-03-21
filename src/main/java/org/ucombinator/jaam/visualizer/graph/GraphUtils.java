@@ -1,11 +1,16 @@
 package org.ucombinator.jaam.visualizer.graph;
 
+import com.google.common.base.Functions;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import org.ucombinator.jaam.visualizer.layout.*;
 
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public class GraphUtils {
 
@@ -139,5 +144,69 @@ public class GraphUtils {
                 }
             }
         }
+    }
+
+    // We assume that only vertices within the same level can be combined.
+    // TODO: Convert hash to output type parameter
+    public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>>
+    T constructCompressedGraph(T root, Function<T, String> hash, Function<List<T>, T> componentVertexBuilder,
+                               BiFunction<T, T, S> edgeBuilder) {
+        // If we have no child vertices, just copy ourselves.
+        if (root.getChildGraph().getVertices().size() == 0) {
+            return root.copy();
+        }
+
+        // Otherwise, apply our compression recursively on each vertex.
+        Map<T, T> mapVertexToCompressedVertex = root.getChildGraph().getVertices().stream()
+                .collect(Collectors.toMap(v -> v, v -> GraphUtils.constructCompressedGraph(v, hash, componentVertexBuilder, edgeBuilder)));
+
+        // Then build a map of components based on matching hash values.
+        Map<T, String> hashValues = root.getChildGraph().getVertices().stream()
+                .collect(Collectors.toMap(v -> v, hash));
+
+        Map<String, List<T>> components = root.getChildGraph().getVertices().stream()
+                .collect(Collectors.groupingBy(hashValues::get));
+
+        // Preserve the singleton vertices, but build component vertices for larger components.
+        Map<String, T> mapHashToComponentVertex = components.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, new Function<Map.Entry<String, List<T>>, T>() {
+                    @Override
+                    public T apply(Map.Entry<String, List<T>> entry) {
+                        List<T> component = entry.getValue();
+                        if(component.size() == 1) {
+                            return mapVertexToCompressedVertex.get(component.get(0));
+                        } else {
+                            return componentVertexBuilder.apply(component.stream().map(mapVertexToCompressedVertex::get)
+                                            .collect(Collectors.toList()));
+                        }
+                    }
+                }));
+
+        // Next, make new graph and add component vertices.
+        T newRoot = root.copy();
+        Graph<T, S> newGraph = newRoot.getChildGraph();
+        mapHashToComponentVertex.entrySet().forEach(entry -> newGraph.addVertex(entry.getValue()));
+
+        // Lastly, add edges between the new vertices.
+        for (T currVertexOld: root.getChildGraph().getVertices()) {
+            T currComponentVertex = mapHashToComponentVertex.get(hashValues.get(currVertexOld));
+            for (T nextVertexOld : root.getChildGraph().getOutNeighbors(currVertexOld)) {
+                T nextComponentVertex = mapHashToComponentVertex.get(hashValues.get(nextVertexOld));
+
+                // Add edge at the top level of the new graph if it's a self-loop, or if the two vertices are
+                // now in different components.
+                if ((currVertexOld == nextVertexOld) || (currComponentVertex != nextComponentVertex)) {
+                    newGraph.addEdge(edgeBuilder.apply(currComponentVertex, nextComponentVertex));
+                }
+                else {
+                    // Add edge between two different vertices if they are inside the same component.
+                    T currCompressedVertex = mapVertexToCompressedVertex.get(currVertexOld);
+                    T nextCompressedVertex = mapVertexToCompressedVertex.get(nextVertexOld);
+                    currComponentVertex.getChildGraph().addEdge(edgeBuilder.apply(currCompressedVertex, nextCompressedVertex));
+                }
+            }
+        }
+
+        return newRoot;
     }
 }

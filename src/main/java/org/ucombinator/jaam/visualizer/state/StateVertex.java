@@ -22,7 +22,6 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
     private Graph<StateVertex, StateEdge> parentGraph;
     private Graph<StateVertex, StateEdge> childGraph;
 
-    // TODO: How do we initialize the self graphs?
     public StateVertex(String label, VertexType type, boolean drawEdges) {
         super(label, type, drawEdges);
         this.childGraph = new Graph<>();

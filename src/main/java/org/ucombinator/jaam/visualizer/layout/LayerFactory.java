@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.layout;
 
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -30,15 +31,13 @@ public class LayerFactory
         StateRootVertex graphRoot = new StateRootVertex();
         graphRoot.setChildGraph(graph);
 
-        return (StateRootVertex) graphRoot.constructCompressedGraph(
+        return (StateRootVertex) GraphUtils.constructCompressedGraph(graphRoot,
                 (StateVertex v) -> "Id-" + Integer.toString(vertexToComponentIndex.get(v.getId())),
-                new BiFunction<String, Set<StateVertex>, StateVertex>() {
+                new Function<List<StateVertex>, StateVertex>() {
                     @Override
-                    public StateVertex apply(String s, Set<StateVertex> stateVertices) {
+                    public StateVertex apply(List<StateVertex> stateVertices) {
                         StateSccVertex sccVertex = new StateSccVertex(0, "SCC-0"); // TODO: This ID isn't unique...
-                        for (StateVertex v : stateVertices) {
-                            sccVertex.getChildGraph().addVertex(v);
-                        }
+                        stateVertices.forEach(v -> sccVertex.getChildGraph().addVertex(v));
                         return sccVertex;
                     }
                 },
@@ -126,30 +125,6 @@ public class LayerFactory
                 }
             }
         }
-    }
-
-    // Takes an input vertex (a Vertex which is actually a Loop or Method Vertex) and returns a new
-    // vertex of the correct type
-    // TODO: Can we rewrite our algorithm to make this upgrading unnecessary?
-    private static StateVertex upgradeStateVertex(StateVertex v)
-    {
-        StateVertex newVertex;
-
-        if(v instanceof StateLoopVertex) {
-            StateLoopVertex l = (StateLoopVertex) v;
-            newVertex = new StateLoopVertex(l.getId(), l.getLabel(), l.getStatementIndex(),
-                    l.getCompilationUnit());
-            //newVertex = new StateLoopVertex(v.getId(), v.getLabel(), 0);
-        }
-        else if(v instanceof StateMethodVertex) {
-            StateMethodVertex l = (StateMethodVertex) v;
-            newVertex = new StateMethodVertex(l.getId(), l.getLabel(), l.getCompilationUnit());
-        }
-        else {
-            newVertex = null;
-        }
-
-        return newVertex;
     }
 
     // Takes an input vertex and upgrades it to a TaintAddress

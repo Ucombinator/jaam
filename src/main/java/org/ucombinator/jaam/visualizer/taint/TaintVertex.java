@@ -3,15 +3,16 @@ package org.ucombinator.jaam.visualizer.taint;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
         implements HierarchicalVertex<TaintVertex, TaintEdge> {
@@ -27,7 +28,6 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
     private Graph<TaintVertex, TaintEdge> parentGraph;
     private Graph<TaintVertex, TaintEdge> childGraph;
 
-    // TODO: How do we initialize the self graphs?
     public TaintVertex(String label, VertexType type, boolean drawEdges) {
         super(label, type, drawEdges);
         this.parentGraph = new Graph<>();
@@ -47,10 +47,31 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
     }
 
     public TaintVertex groupByStatement() {
-        return this.constructCompressedGraph(
-                TaintVertex::getStmtString,
-                TaintStmtVertex::new,
-                TaintEdge::new);
+        return GraphUtils.constructCompressedGraph(this,
+                new Function<TaintVertex, String>() {
+                    @Override
+                    public String apply(TaintVertex v) {
+                        if(v.getStmtString() == null) {
+                            Random r = new Random();
+                            return Long.toString(r.nextLong()); // These will almost certainly be unique
+                        }
+                        else {
+                            return v.getStmtString();
+                        }
+                    }
+                },
+                new Function<List<TaintVertex>, TaintVertex>() {
+                    @Override
+                    public TaintVertex apply(List<TaintVertex> list) {
+                        return new TaintStmtVertex(list);
+                    }
+                },
+                new BiFunction<TaintVertex, TaintVertex, TaintEdge>() {
+                    @Override
+                    public TaintEdge apply(TaintVertex v1, TaintVertex v2) {
+                        return new TaintEdge(v1, v2);
+                    }
+        });
     }
 
     public void onMouseClick(MouseEvent event) {
