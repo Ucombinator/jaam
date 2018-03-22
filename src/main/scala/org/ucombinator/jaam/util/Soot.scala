@@ -213,7 +213,11 @@ object Soot {
     val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
     if (curr_m == null) {
       Log.debug("root_m: " + root_m.toString)
-      overrides(curr.getSuperclass, root_m)
+      if (curr == Soot.classes.Object) {
+        List()
+      } else {
+        overrides(curr.getSuperclass, root_m)
+      }
     }
     else if (root_m.getDeclaringClass.isInterface || AccessManager.isAccessLegal(curr_m, root_m)) { List(curr_m) }
     else {
