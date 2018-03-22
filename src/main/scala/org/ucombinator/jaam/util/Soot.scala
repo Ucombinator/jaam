@@ -11,6 +11,7 @@ import org.objectweb.asm.tree.ClassNode
 import org.ucombinator.jaam.serializer
 import org.ucombinator.jaam.tools.app.{App, Origin, PathElement}
 import soot.coffi.Util
+import soot.jimple.toolkits.invoke.AccessManager
 import soot.{Unit => SootUnit, _}
 import soot.jimple.{ClassConstant, DynamicInvokeExpr, Expr, IntConstant, Stmt => SootStmt}
 import soot.options.Options
@@ -197,6 +198,28 @@ object Soot {
             case lub => !lub.equals(a)
           }
       }
+  }
+
+  // This function finds all methods that could override root_m.
+  // These methods are returned with the root-most at the end of
+  // the list and the leaf-most at the head.  Thus the caller
+  // should use the head of the returned list.  The reason a list
+  // is returned is so this function can recursively compute the
+  // transitivity rule in Java's method override definition.
+  //
+  // Note that Hierarchy.resolveConcreteDispath should be able to do this, but seems to be implemented wrong
+  def overrides(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
+    Log.debug("curr: " + curr.toString)
+    val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
+    if (curr_m == null) {
+      Log.debug("root_m: " + root_m.toString)
+      overrides(curr.getSuperclass, root_m)
+    }
+    else if (root_m.getDeclaringClass.isInterface || AccessManager.isAccessLegal(curr_m, root_m)) { List(curr_m) }
+    else {
+      val o = overrides(curr.getSuperclass, root_m)
+      (if (o.exists(m => AccessManager.isAccessLegal(curr_m, m))) List(curr_m) else List.empty) ++ o
+    }
   }
 
   private lazy val metafactory = classes.LambdaMetafactory.getMethodByName("metafactory")
