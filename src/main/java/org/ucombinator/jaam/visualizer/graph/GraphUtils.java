@@ -1,11 +1,16 @@
 package org.ucombinator.jaam.visualizer.graph;
 
+import com.google.common.base.Functions;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import org.ucombinator.jaam.visualizer.layout.*;
 
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public class GraphUtils {
 
@@ -141,98 +146,64 @@ public class GraphUtils {
         }
     }
 
-        // We assume that only vertices within the same level can be combined.
-    public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>> T constructCompressedGraph(T root, Function<T, String> hash, BiFunction<String, Set<T>, T> componentVertexBuilder, BiFunction<T, T, S> edgeBuilder) {
+    // We assume that only vertices within the same level can be combined.
+    public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>, U>
+    T constructCompressedGraph(T root, Function<T, U> hash, Function<List<T>, T> componentVertexBuilder,
+                               BiFunction<T, T, S> edgeBuilder) {
         // If we have no child vertices, just copy ourselves.
         if (root.getChildGraph().getVertices().size() == 0) {
             return root.copy();
         }
 
-        // Otherwise, build a map of components based on matching hash values.
-        int nullCounter = 0;
-        HashMap<T, String> hashStrings = new HashMap<>();
-        HashMap<String, Set<T>> components = new HashMap<>();
-        for(T v : root.getChildGraph().getVertices()) {
-            String newHash = hash.apply(v);
-            if(newHash == null) {
-                // Create a unique key for each null hash value
-                String nullKey = Integer.toString(nullCounter++);
-                hashStrings.put(v, nullKey);
+        // Otherwise, copy all of the inner vertices.
+        Map<T, T> mapVertexToCopy = root.getChildGraph().getVertices().stream()
+                .collect(Collectors.toMap(v -> v, HierarchicalVertex::copy));
 
-                HashSet<T> newSet = new HashSet<T>();
-                newSet.add(v);
-                components.put(nullKey, newSet);
-            } else {
-                hashStrings.put(v, newHash);
-                if(components.containsKey(newHash)) {
-                    components.get(newHash).add(v);
+        // Then build a map of components based on matching hash values.
+        Map<T, U> hashValues = root.getChildGraph().getVertices().stream()
+                .collect(Collectors.toMap(v -> v, hash));
 
-                } else {
-                    HashSet<T> newSet = new HashSet<T>();
-                    newSet.add(v);
-                    components.put(newHash, newSet);
-                }
-            }
-        }
+        Map<U, List<T>> components = root.getChildGraph().getVertices().stream()
+                .collect(Collectors.groupingBy(hashValues::get));
 
-        T newRoot = root.copy();
-        Graph<T, S> newChildGraph = newRoot.getChildGraph();
-        HashMap<String, T> mapStringToVertex = new HashMap<>();
-        for(Map.Entry<String, Set<T>> componentEntry : components.entrySet()) {
-            Set<T> component = componentEntry.getValue();
 
-            // Preserve the singleton vertices, but build component vertices for larger components.
-            // Note that we apply our compression recursively on each vertex before it is added.
-            T componentVertex;
-            if(component.size() == 1) {
-                componentVertex =
-                        GraphUtils.constructCompressedGraph(component.iterator().next(), hash, componentVertexBuilder, edgeBuilder);
-            } else {
-                // We need these maps so we can add edges inside our component vertex.
-                // TODO: There has to be a cleaner way to do this...
-                HashMap<T, T> mapCompressedToOriginal = new HashMap<>();
-                HashMap<T, T> mapOriginalToCompressed = new HashMap<>();
-                Set<T> compressedComponent = new HashSet<>();
-                for(T vertex : component) {
-                    T compressedVertex = GraphUtils.constructCompressedGraph(vertex, hash, componentVertexBuilder, edgeBuilder);
-                    compressedComponent.add(compressedVertex);
-                    mapCompressedToOriginal.put(compressedVertex, vertex);
-                    mapOriginalToCompressed.put(vertex, compressedVertex);
-                }
-
-                // Build component of compressed vertices, and add edges.
-                // We go from a compressed vertex inside our component, to its corresponding vertex in the original graph,
-                // to each neighbor of that original vertex, and then to the compressed vertices corresponding to those neighbors.
-                componentVertex = componentVertexBuilder.apply(componentEntry.getKey(), compressedComponent);
-                for(T compressedVertex : compressedComponent) {
-                    T origVertex = mapCompressedToOriginal.get(compressedVertex);
-                    for(T adjOriginalVertex : root.getChildGraph().getOutNeighbors(origVertex)) {
-                        T adjCompressedVertex = mapOriginalToCompressed.get(adjOriginalVertex);
-                        // This will be null if it is outside our current component.
-                        // That's okay, becuase it will be handled below when we add edges between component vertices.
-                        if (adjCompressedVertex != null) {
-                            componentVertex.getChildGraph().addEdge(edgeBuilder.apply(compressedVertex, adjCompressedVertex));
+        // Preserve the singleton vertices, but build component vertices for larger components.
+        Map<U, T> mapHashToComponentVertex = components.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, new Function<Map.Entry<U, List<T>>, T>() {
+                    @Override
+                    public T apply(Map.Entry<U, List<T>> entry) {
+                        List<T> component = entry.getValue();
+                        if(component.size() == 1) {
+                            return mapVertexToCopy.get(component.get(0));
+                        } else {
+                            return componentVertexBuilder.apply(component.stream().map(mapVertexToCopy::get)
+                                    .collect(Collectors.toList()));
                         }
                     }
+                }));
+
+        // Next, make new graph and add component vertices.
+        T newRoot = root.copy();
+        Graph<T, S> newGraph = newRoot.getChildGraph();
+        mapHashToComponentVertex.entrySet().forEach(entry -> newGraph.addVertex(entry.getValue()));
+
+        // Lastly, add edges between the new vertices.
+        for (T currVertexOld: root.getChildGraph().getVertices()) {
+            T currComponentVertex = mapHashToComponentVertex.get(hashValues.get(currVertexOld));
+            for (T nextVertexOld : root.getChildGraph().getOutNeighbors(currVertexOld)) {
+                T nextComponentVertex = mapHashToComponentVertex.get(hashValues.get(nextVertexOld));
+
+                // Add edge at the top level of the new graph if it's a self-loop, or if the two vertices are
+                // now in different components.
+                if ((currVertexOld == nextVertexOld) || (currComponentVertex != nextComponentVertex)) {
+                    newGraph.addEdge(edgeBuilder.apply(currComponentVertex, nextComponentVertex));
                 }
-            }
 
-            newChildGraph.addVertex(componentVertex);
-            mapStringToVertex.put(componentEntry.getKey(), componentVertex);
-        }
-
-        // Add edges between component vertices.
-        // From an old vertex, we get the hash string from one map, then pass it to a different map
-        // to get the new vertex.
-        for(T currVertexOld: root.getChildGraph().getVertices()) {
-            T currVertexNew = mapStringToVertex.get(hashStrings.get(currVertexOld));
-            for(T nextVertexOld : root.getChildGraph().getOutNeighbors(currVertexOld)) {
-                T nextVertexNew = mapStringToVertex.get(hashStrings.get(nextVertexOld));
-
-                // Add edges if the new vertices are different, or if we already had a self-loop before.
-                // This way, we don't add any new self-loops.
-                if((currVertexNew != nextVertexNew) || (currVertexOld == nextVertexOld)) {
-                    newChildGraph.addEdge(edgeBuilder.apply(currVertexNew, nextVertexNew));
+                // Add edge between two different vertices if they are inside the same component.
+                if (currComponentVertex == nextComponentVertex) {
+                    T currInnerVertex = mapVertexToCopy.get(currVertexOld);
+                    T nextInnerVertex = mapVertexToCopy.get(nextVertexOld);
+                    currComponentVertex.getChildGraph().addEdge(edgeBuilder.apply(currInnerVertex, nextInnerVertex));
                 }
             }
         }

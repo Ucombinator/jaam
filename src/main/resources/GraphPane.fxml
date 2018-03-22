@@ -16,7 +16,7 @@
          <content>
             <Group>
                <children>
-                  <Pane fx:id="vizPanel" />
+                  <Pane fx:id="pane" />
                </children>
             </Group>
          </content>

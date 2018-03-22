@@ -30,6 +30,7 @@ public abstract class ClassTreeNode
 
                 // TODO: Somehow wrap this so that when we uncheck a parent checkbox,
                 // we ignore these events for its children.
+                // Maybe try using the TreeModificationEvent instead?
                 vizPanelController.startBatchMode();
                 if (currVal) {
                     Main.getSelectedMainTabController().getHidden().removeAll(childVertices);

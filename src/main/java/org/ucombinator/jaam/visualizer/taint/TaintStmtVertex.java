@@ -2,10 +2,7 @@ package org.ucombinator.jaam.visualizer.taint;
 
 import javafx.scene.paint.Color;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class TaintStmtVertex extends TaintVertex {
 
@@ -14,21 +11,12 @@ public class TaintStmtVertex extends TaintVertex {
     ArrayList<TaintAddress> taintAddresses;
     String stmt;
 
-    public TaintStmtVertex(ArrayList<TaintAddress> taintAddresses) {
+    public TaintStmtVertex(List<? extends TaintVertex> taintAddresses) {
         super(taintAddresses.toString(), VertexType.TAINT_STMT, true);
         taintAddresses.forEach(this.getChildGraph()::addVertex);
         this.taintAddresses = new ArrayList<>();
-        this.taintAddresses.addAll(taintAddresses);
+        taintAddresses.forEach(address -> this.taintAddresses.add((TaintAddress) address));
         stmt = this.taintAddresses.get(0).getAddress().stmt().toString();
-        this.color = defaultColor;
-    }
-
-    public TaintStmtVertex(String stmt, Set<TaintVertex> taintVertices) {
-        super(taintVertices.toString(), VertexType.TAINT_STMT, true);
-        taintVertices.forEach(this.getChildGraph()::addVertex);
-        this.taintAddresses = new ArrayList<>();
-        taintVertices.forEach(v -> this.taintAddresses.add((TaintAddress) v));
-        this.stmt = stmt;
         this.color = defaultColor;
     }
 
@@ -41,7 +29,7 @@ public class TaintStmtVertex extends TaintVertex {
         return this.taintAddresses.get(0).getMethodNames();
     }
 
-    public ArrayList<TaintAddress> getAddresses() {
+    public List<TaintAddress> getAddresses() {
         return this.taintAddresses;
     }
 
