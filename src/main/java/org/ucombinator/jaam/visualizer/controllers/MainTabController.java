@@ -75,7 +75,7 @@ public class MainTabController {
         this.taintPanelController.addSelectHandler(vizPane);
 
         // I left it with the extra parameter, because I think we will probably want to move it somewhere else
-        buildClassTree(this.codeViewController, this.vizPanelController.getImmutableRoot());
+        buildClassTree(this.codeViewController, (StateRootVertex) this.vizPanelController.getImmutableRoot());
 
         this.vizHighlighted = new LinkedHashSet<>();
         this.taintHighlighted = new LinkedHashSet<>();
@@ -175,7 +175,7 @@ public class MainTabController {
             }
         }
 
-       Graph<StateVertex, StateEdge> childGraph = root.getChildGraph(); // TODO: Is this the right one?
+       Graph<StateVertex, StateEdge> childGraph = root.getChildGraph();
        for (StateVertex v : childGraph.getVertices()) {
            addVerticesToClassTree(topLevel, v);
        }

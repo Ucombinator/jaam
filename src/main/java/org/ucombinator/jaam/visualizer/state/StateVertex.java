@@ -22,7 +22,6 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
     private Graph<StateVertex, StateEdge> parentGraph;
     private Graph<StateVertex, StateEdge> childGraph;
 
-    // TODO: How do we initialize the self graphs?
     public StateVertex(String label, VertexType type, boolean drawEdges) {
         super(label, type, drawEdges);
         this.childGraph = new Graph<>();
@@ -66,13 +65,13 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
                 handleDoubleClick(event);
                 break;
             default:
-                    // Do nothing
-                    break;
-            }
+                // Do nothing
+                break;
+        }
     }
 
-    private void handleDoubleClick(MouseEvent event){
-        StateRootVertex root = Main.getSelectedVizPanelController().getVisibleRoot();
+    private void handleDoubleClick(MouseEvent event) {
+        StateRootVertex root = (StateRootVertex) Main.getSelectedVizPanelController().getVisibleRoot();
         Graph<StateVertex, StateEdge> childGraph = this.getChildGraph();
         boolean isExpanded = this.isExpanded();
 
@@ -142,48 +141,6 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
             v.searchByIDRange(id1, id2, mainTab);
     }
 
-    public HashSet<StateVertex> getAncestors()
-    {
-        HashSet<StateVertex> ancestors = new HashSet<>();
-        this.getAncestors(ancestors);
-
-        return ancestors;
-    }
-
-    private void getAncestors(HashSet<StateVertex> ancestors)
-    {
-       if(this instanceof StateRootVertex)
-           return;
-
-       ancestors.add(this);
-       this.getParentGraph().getInNeighbors(this).stream().forEach(v -> {
-           if (!ancestors.contains(v)) {
-               v.getAncestors(ancestors);
-           }
-       });
-    }
-
-    public HashSet<StateVertex> getDescendants()
-    {
-        HashSet<StateVertex> descendants = new HashSet<>();
-        this.getDescendants(descendants);
-
-        return descendants;
-    }
-
-    private void getDescendants(HashSet<StateVertex> descendants)
-    {
-        if(this instanceof StateRootVertex)
-            return;
-
-        descendants.add(this);
-        this.getParentGraph().getOutNeighbors(this).stream().forEach(v -> {
-            if (!descendants.contains(v)) {
-                v.getDescendants(descendants);
-            }
-        });
-    }
-
     public Set<StateEdge> getIncidentEdges() {
         Set<StateEdge> incidentEdges = new HashSet<>();
         incidentEdges.addAll(this.getParentGraph().getInEdges(this));
@@ -191,9 +148,9 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
         return incidentEdges;
     }
 
-    public HashSet<String> getMethodNames() {
-        HashSet<StateMethodVertex> methodVertices = this.getMethodVertices();
-        HashSet<String> methodNames = new HashSet<>();
+    public Set<String> getMethodNames() {
+        Set<StateMethodVertex> methodVertices = this.getMethodVertices();
+        Set<String> methodNames = new HashSet<>();
         for(StateMethodVertex v : methodVertices) {
             methodNames.add(v.getMethodName());
         }
@@ -209,7 +166,23 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
     public abstract boolean searchByMethod(String query, MainTabController mainTab);
 
     // This is needed so that we can show the code for the methods that correspond to selected vertices
-    public abstract HashSet<StateMethodVertex> getMethodVertices();
+    public Set<StateMethodVertex> getMethodVertices() {
+        return this.getChildGraph().getVertices()
+                .stream()
+                .map(StateVertex::getMethodVertices)
+                .reduce(new HashSet<>(), (x, y) -> {
+                    x.addAll(y);
+                    return x;
+                });
+    }
 
-    public abstract HashSet<String> getClassNames();
+    public Set<String> getClassNames() {
+        return this.getChildGraph().getVertices()
+                .stream()
+                .map(StateVertex::getClassNames)
+                .reduce(new HashSet<>(), (x, y) -> {
+                    x.addAll(y);
+                    return x;
+                });
+    }
 }

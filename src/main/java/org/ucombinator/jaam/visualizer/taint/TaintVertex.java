@@ -10,9 +10,9 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
         implements HierarchicalVertex<TaintVertex, TaintEdge> {
@@ -28,7 +28,6 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
     private Graph<TaintVertex, TaintEdge> parentGraph;
     private Graph<TaintVertex, TaintEdge> childGraph;
 
-    // TODO: How do we initialize the self graphs?
     public TaintVertex(String label, VertexType type, boolean drawEdges) {
         super(label, type, drawEdges);
         this.parentGraph = new Graph<>();
@@ -47,12 +46,36 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
         this.parentGraph = graph;
     }
 
+    public void setChildGraph(Graph<TaintVertex, TaintEdge> graph) {
+        this.childGraph = graph;
+    }
+
     public TaintVertex groupByStatement() {
-        return GraphUtils.constructCompressedGraph(
-                this,
-                TaintVertex::getStmtString,
-                TaintStmtVertex::new,
-                TaintEdge::new);
+        return GraphUtils.constructCompressedGraph(this,
+                new Function<TaintVertex, String>() {
+                    @Override
+                    public String apply(TaintVertex v) {
+                        if(v.getStmtString() == null) {
+                            Random r = new Random();
+                            return Long.toString(r.nextLong()); // These will almost certainly be unique
+                        }
+                        else {
+                            return v.getStmtString();
+                        }
+                    }
+                },
+                new Function<List<TaintVertex>, TaintVertex>() {
+                    @Override
+                    public TaintVertex apply(List<TaintVertex> list) {
+                        return new TaintStmtVertex(list);
+                    }
+                },
+                new BiFunction<TaintVertex, TaintVertex, TaintEdge>() {
+                    @Override
+                    public TaintEdge apply(TaintVertex v1, TaintVertex v2) {
+                        return new TaintEdge(v1, v2);
+                    }
+        });
     }
 
     public void onMouseClick(MouseEvent event) {
@@ -65,13 +88,10 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
         this.getGraphics().fireEvent(new SelectEvent<TaintVertex>(MouseButton.PRIMARY, this.getGraphics(), this));
     }
 
-    public void searchByMethodNames(HashSet<String> searchMethodNames, HashSet<TaintVertex> results) {
-        System.out.println("Searching for methods: " + String.join(" ", searchMethodNames));
+    public void searchByMethodNames(Set<String> searchMethodNames, Set<TaintVertex> results) {
         for(TaintVertex v : this.getChildGraph().getVertices()) {
             HashSet<String> currMethodNames = v.getMethodNames();
-            System.out.println("Vertex: " + v);
-            System.out.println("Vertex methods: " + String.join(" ", currMethodNames));
-            HashSet<String> intersection = (HashSet<String>) searchMethodNames.clone();
+            HashSet<String> intersection = new HashSet<>(searchMethodNames);
             intersection.retainAll(currMethodNames);
 
             if (intersection.size() > 0) {

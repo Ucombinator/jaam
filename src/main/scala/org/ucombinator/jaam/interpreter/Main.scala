@@ -697,28 +697,6 @@ case class State(stmt : Stmt,
                     destAddr : Option[Set[Addr]],
     // TODO: use `Option` for nextStmt
                     nextStmt : Stmt = stmt.nextSyntactic) : Set[AbstractState] = {
-    // This function finds all methods that could override root_m.
-    // These methods are returned with the root-most at the end of
-    // the list and the leaf-most at the head.  Thus the caller
-    // should use the head of the returned list.  The reason a list
-    // is returned is so this function can recursively compute the
-    // transitivity rule in Java's method override definition.
-    //
-    // Note that Hierarchy.resolveConcreteDispath should be able to do this, but seems to be implemented wrong
-    def overrides(curr : SootClass, root_m : SootMethod) : List[SootMethod] = {
-      Log.debug("curr: " + curr.toString)
-      val curr_m = curr.getMethodUnsafe(root_m.getName, root_m.getParameterTypes, root_m.getReturnType)
-      if (curr_m == null) {
-        Log.debug("root_m: " + root_m.toString)
-        overrides(curr.getSuperclass, root_m)
-      }
-      else if (root_m.getDeclaringClass.isInterface || AccessManager.isAccessLegal(curr_m, root_m)) { List(curr_m) }
-      else {
-        val o = overrides(curr.getSuperclass, root_m)
-        (if (o.exists(m => AccessManager.isAccessLegal(curr_m, m))) List(curr_m) else List.empty) ++ o
-      }
-    }
-
     // o.f(3);
     // In this case, c is the type of o. m is f. receivers is the result of eval(o).
     // TODO/dragons. Here they be.
@@ -757,7 +735,7 @@ case class State(stmt : Stmt,
             case ObjectValue(_, bp) if bp.isInstanceOf[AbstractSnowflakeBasePointer] =>
               dispatch(Some(v), method)
             case ObjectValue(sootClass, _) if Soot.canStoreClass(sootClass, method.getDeclaringClass) =>
-              val meth = if (isSpecial) method else overrides(sootClass, method).head
+              val meth = if (isSpecial) method else Soot.overrides(sootClass, method).head
               dispatch(Some(v), meth)
             case ArrayValue(_, _) =>
               dispatch(Some(v), method)

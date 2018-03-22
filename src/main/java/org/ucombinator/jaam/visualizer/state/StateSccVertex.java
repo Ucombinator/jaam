@@ -4,34 +4,29 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-
 public class StateSccVertex extends StateVertex {
 
     private Color defaultColor = Color.DARKGREY;
 
-
-
-    public StateSccVertex(int id, String label)
+    public StateSccVertex(String label)
     {
-        super(id, label, AbstractLayoutVertex.VertexType.SCC);
+        super(label, AbstractLayoutVertex.VertexType.SCC, true);
         this.color = defaultColor;
     }
 
     public StateSccVertex copy() {
-        return new StateSccVertex(this.getId(), this.getLabel());
+        return new StateSccVertex(this.getLabel());
     }
 
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = false;
-        for(StateVertex v : this.getChildGraph().getVertices()) {
+        for (StateVertex v : this.getChildGraph().getVertices()) {
             found = v.searchByMethod(query, mainTab) || found;
         }
 
-        if(found) {
-            //this.setHighlighted(found);
-            //mainTab.getHighlighted().add(this);
+        if (found) {
+            this.setHighlighted(true);
+            mainTab.getVizHighlighted().add(this);
         }
 
         return found;
@@ -39,18 +34,5 @@ public class StateSccVertex extends StateVertex {
 
     public String getRightPanelContent() {
         return "SCC vertex: " + this.getId();
-    }
-
-    public HashSet<StateMethodVertex> getMethodVertices() {
-        HashSet<StateMethodVertex> methods = new LinkedHashSet<StateMethodVertex>();
-        return methods;
-    }
-
-    public HashSet<String> getClassNames() {
-        HashSet<String> classNames = new HashSet<>();
-        for(StateVertex v : this.getChildGraph().getVertices()) {
-            classNames.addAll(v.getClassNames());
-        }
-        return classNames;
     }
 }

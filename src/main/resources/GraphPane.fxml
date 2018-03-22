@@ -16,7 +16,7 @@
          <content>
             <Group>
                <children>
-                  <Pane fx:id="vizPanel" />
+                  <Pane fx:id="pane" />
                </children>
             </Group>
          </content>
@@ -27,7 +27,6 @@
          <children>
             <CheckBox fx:id="showEdges" onAction="#showEdgesAction" selected="true" text="Edges" />
             <CheckBox fx:id="showLabels" onAction="#showLabelsAction" text="Labels" />
-            <CheckBox fx:id="groupByClass" onAction="#groupByClassAction" selected="true" text="Group by class" />
             <Button onAction="#exportImageAction" text="Export PNG" />
             <Label text="Zoom:" />
             <Spinner fx:id="zoomSpinner" editable="true" prefWidth="100.0" />

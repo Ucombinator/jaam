@@ -4,12 +4,21 @@ case class RegEx[State, AtomType]() {
   type Identifier = String
   type Index = Int
 
-  sealed trait Exp
+  sealed trait RegExp
 
-  case class Cat(x: List[Exp]) extends Exp
-  case class Alt(x: List[Exp]) extends Exp
-  case class Rep(x: Exp) extends Exp
-  case class Fun(x: (State, AtomType) => (List[State], List[(Exp, State)])) extends Exp
+  abstract case class Cat(es: List[RegExp]) extends RegExp
+  case class Alt(es: List[RegExp]) extends RegExp
+  case class Rep(e: RegExp) extends RegExp
+  case class Fun(derive: (State, AtomType) => (List[State], List[(RegExp, State)]), parseNull: (State) => (List[State])) extends RegExp
+
+  object Cat {
+    def apply(es: List[RegExp]): RegExp = {
+      es match {
+        case List(e) => e
+        case _ => new Cat(es) {}
+      }
+    }
+  }
 
   def flatMap2[A, B, C](aList: List[A], fun: A => (List[B], List[C])): (List[B], List[C]) = {
     aList match {
@@ -21,28 +30,55 @@ case class RegEx[State, AtomType]() {
     }
   }
 
-  def derive(exp: Exp, state: State, atom: AtomType): (List[State], List[(Exp, State)]) = {
+  def derive(exp: RegExp, state: State, atom: AtomType): (List[State], List[(RegExp, State)]) = {
+    /*
+     * List[State]:
+     *   atom is not consumed
+     *
+     * List[(Exp, State)]:
+     *   atom is consumed
+     */
     exp match {
-      case Cat(List()) => (List(), List())
+      case Cat(List()) => (List(state), List())
       case Cat(x::xs) =>
         val (bs, cs) = derive(x, state, atom)
         val derivedBs = flatMap2(bs, derive(Cat(xs), _: State, atom))
         val derivedCs = cs.map({ case (e, s) => (Cat(e::xs), s) })
         (derivedBs._1, derivedBs._2 ++ derivedCs)
       case Alt(List()) => (List(), List())
-      case Alt(xs) => flatMap2(xs, derive(_: Exp, state, atom))
+      case Alt(xs) => flatMap2(xs, derive(_: RegExp, state, atom))
       case Rep(x) =>
-        val (bs, cs) = derive(x, state, atom)
-        (state :: bs, cs)
-      case Fun(x) => x(state, atom)
+        val (_, cs) = derive(x, state, atom)
+        (List(state), cs.map({ case (e, s) => (Cat(List(e, exp)), s)} ))
+      case Fun(fd, _) => fd(state, atom)
     }
   }
 
-  def deriveAll(exp: Exp, state: State, atoms: Seq[AtomType]): List[State] = {
-    def step(oldTup: (List[State], List[(Exp, State)]), atom: AtomType): (List[State], List[(Exp, State)]) = {
-      flatMap2[(Exp, State), State, (Exp, State)](oldTup._2, { case (e, s) => derive(e, s, atom) })
+  def parseNull(exp: RegExp, state: State): List[State] = {
+    println("parseNull: (" + exp + ", " + state + ")")
+    exp match {
+      case Cat(es) => es.foldLeft(List(state))((s, e) => s.flatMap(parseNull(e, _)))
+      case Alt(es) => es.flatMap(parseNull(_, state))
+      case Rep(e) => List(state)
+      case Fun(_, fpn) => fpn(state)
+    }
+  }
+
+  def deriveAll(exp: RegExp, state: State, atoms: Seq[AtomType]): List[State] = {
+    println("deriveAll:")
+    println("  exp:   " + exp)
+    println("  state: " + state)
+    println("  atoms: " + atoms)
+    def step(oldTup: (List[State], List[(RegExp, State)]), atom: AtomType): (List[State], List[(RegExp, State)]) = {
+      println("  step: oldTup: " + oldTup)
+      println("        atom:   " + atom)
+      flatMap2[(RegExp, State), State, (RegExp, State)](oldTup._2, { case (e, s) => derive(e, s, atom) })
     }
 
-    atoms.foldLeft((List[State](), List((exp, state))))(step)._1
+    val result1 = atoms.foldLeft((List[State](), List((exp, state))))(step)
+    val result2 = result1._2.flatMap({ case (e, s) => parseNull(e, s) })
+    println("  result1: " + result1)
+    println("  result2: " + result2)
+    result1._1 ++ result2
   }
 }

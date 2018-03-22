@@ -10,7 +10,7 @@ public class Graph<T extends Vertex, S extends Edge<T>> {
     protected HashSet<S> edges;
     protected HashMap<T, HashMap<T, S>> outEdges;
     protected HashMap<T, HashMap<T, S>> inEdges;
-    protected HashMap<Integer, T> idToVertexMap;
+    private HashMap<Integer, T> idToVertexMap;
 
     public Graph() {
         this.vertices = new HashSet<>();
@@ -24,26 +24,27 @@ public class Graph<T extends Vertex, S extends Edge<T>> {
         if(vertex == null) {
             System.out.println("Error! Adding null vertex...");
         }
-
-        this.vertices.add(vertex);
-        this.outEdges.put(vertex, new HashMap<>());
-        this.inEdges.put(vertex, new HashMap<>());
-        this.idToVertexMap.put(vertex.getId(), vertex);
+        else {
+            this.vertices.add(vertex);
+            this.outEdges.put(vertex, new HashMap<>());
+            this.inEdges.put(vertex, new HashMap<>());
+            this.idToVertexMap.put(vertex.getId(), vertex);
+        }
     }
 
     public void addEdge(S edge) {
         if (edge.getSrc() == null) {
             System.out.println("Error! Adding edge with null source.");
-        }
-        else if (edge.getDest() == null) {
+        } else if (edge.getDest() == null) {
             System.out.println("Error! Adding edge with null dest.");
-        }
-        this.edges.add(edge);
-        this.outEdges.putIfAbsent(edge.getSrc(), new HashMap<>());
-        this.outEdges.get(edge.getSrc()).put(edge.getDest(), edge);
+        } else {
+            this.edges.add(edge);
+            this.outEdges.putIfAbsent(edge.getSrc(), new HashMap<>());
+            this.outEdges.get(edge.getSrc()).put(edge.getDest(), edge);
 
-        this.inEdges.putIfAbsent(edge.getDest(), new HashMap<>());
-        this.inEdges.get(edge.getDest()).put(edge.getSrc(), edge);
+            this.inEdges.putIfAbsent(edge.getDest(), new HashMap<>());
+            this.inEdges.get(edge.getDest()).put(edge.getSrc(), edge);
+        }
     }
 
     public Set<T> getVertices() {
@@ -87,32 +88,23 @@ public class Graph<T extends Vertex, S extends Edge<T>> {
     }
 
     public List<T> getSources() {
-        // TODO: delete this code so we just return an empty list instead
-        if(this.vertices.size() == 0) {
-            System.out.println("Error: No vertices!");
-            return null;
-        }
-
         List<T> roots = this.vertices.stream()
                 .filter(this::isSource)
                 .collect(Collectors.toList());
 
-        // If there is no root (as for a strongly connected component), choose just the first vertex
-        // in our ordering. But this should never be necessary, since we bundle SCC's into their own
-        // vertices.
-        // TODO: could we do this instead: assert this.vertices.size() == 0 || roots.size() != 0;
-        if (roots.size() == 0) {
+        // If there is no source (because we are inside a strongly connected component),
+        // choose just the first vertex in our ordering.
+        if (roots.size() == 0 && ! this.vertices.isEmpty()) {
             ArrayList<T> vertices = new ArrayList<>(this.vertices);
-            if (!this.vertices.isEmpty()) {
-                Collections.sort(vertices, new Comparator<T>() {
-                    @Override
-                    public int compare(T o1, T o2) {
-                        return Integer.compare(o1.getId(), o2.getId());
-                    }
-                });
-                roots.add(vertices.get(0));
-                System.out.println("Choosing arbitary first vertex as source: " + vertices.get(0));
-            }
+            Collections.sort(vertices, new Comparator<T>() {
+                @Override
+                public int compare(T o1, T o2) {
+                    return Integer.compare(o1.getId(), o2.getId());
+                }
+            });
+
+            roots.add(vertices.get(0));
+            System.out.println("Choosing arbitrary first vertex as source: " + vertices.get(0));
         }
 
         return roots;

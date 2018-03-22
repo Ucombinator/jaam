@@ -14,16 +14,15 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
 
     private static final Color defaultColor = Color.LIGHTYELLOW;
 
-    private int statementIndex;
+    private final int statementIndex;
 
-    private LoopLoopNode compilationUnit;
+    private final LoopLoopNode compilationUnit;
 
     public StateLoopVertex(int id, String label, int statementIndex, LoopLoopNode compilationUnit){
     	super(id, label, AbstractLayoutVertex.VertexType.LOOP);
     	this.setDefaultColor();
 
     	this.statementIndex = statementIndex;
-
     	this.compilationUnit = compilationUnit;
     }
 
@@ -40,9 +39,8 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
     }
 
     public HashSet<String> getClassNames() {
-        String className = this.getClassName();
         HashSet<String> set = new HashSet<>();
-        set.add(className);
+        set.add(this.getClassName());
         return set;
     }
 
@@ -59,12 +57,11 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
 
         classDecl.append(" " + declaringClass.getShortName());
 
-        if(declaringClass.hasSuperclass())
-        {
+        if(declaringClass.hasSuperclass()) {
             classDecl.append(" extends " + declaringClass.getSuperclass().getShortName());
         }
-        if(declaringClass.getInterfaceCount() > 0)
-        {
+
+        if(declaringClass.getInterfaceCount() > 0) {
             classDecl.append(" implements ");
             declaringClass.getInterfaces().stream().forEach(i -> classDecl.append(i.getName() + ", "));
         }
@@ -95,7 +92,7 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
     }
 
     public HashSet<StateMethodVertex> getMethodVertices() {
-        HashSet<StateMethodVertex> methods = new LinkedHashSet<StateMethodVertex>();
+        HashSet<StateMethodVertex> methods = new LinkedHashSet<>();
         return methods;
     }
 
