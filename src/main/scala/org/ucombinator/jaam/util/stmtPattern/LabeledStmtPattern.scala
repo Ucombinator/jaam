@@ -86,18 +86,14 @@ case object AnyExpPattern extends ExpPattern {
     List(state)
   }
 }
-case class InstanceInvokeExpPattern(base: ExpPattern, method: MethodPattern, args: List[ExpPattern]) extends ExpPattern {
+case class InstanceInvokeExpPattern(base: ExpPattern, method: MethodPattern, args: ArgPattern) extends ExpPattern {
   override def apply(state: State, value: Value): List[State] = {
     value match {
       case value: InstanceInvokeExpr =>
         val states = base(state, value.getBase)
         val states2 = states.flatMap(method(_, value.getMethod))
-        val exprArgs = value.getArgs.asScala
-        if (args.lengthCompare(exprArgs.length) != 0) {
-          List()
-        } else {
-          args.zip(exprArgs).foldLeft(states2)({ case (prevStates, (e, v)) => prevStates.flatMap(e(_, v)) })
-        }
+        val exprArgs = value.getArgs.asScala.toList
+        states2.flatMap(args(_, exprArgs))
       case _ => List()
 
        /*
@@ -110,17 +106,13 @@ case class InstanceInvokeExpPattern(base: ExpPattern, method: MethodPattern, arg
     }
   }
 }
-case class StaticInvokeExpPattern(method: MethodPattern, args: List[ExpPattern]) extends ExpPattern {
+case class StaticInvokeExpPattern(method: MethodPattern, args: ArgPattern) extends ExpPattern {
   override def apply(state: State, value: Value): List[State] = {
     value match {
       case value: StaticInvokeExpr =>
         val states = method(state, value.getMethod)
-        val exprArgs = value.getArgs.asScala
-        if (args.lengthCompare(exprArgs.length) != 0) {
-          List()
-        } else {
-          args.zip(exprArgs).foldLeft(states)({ case (prevStates, (e, v)) => prevStates.flatMap(e(_, v)) })
-        }
+        val exprArgs = value.getArgs.asScala.toList
+        states.flatMap(args(_, exprArgs))
       case _ => List()
     }
   }
@@ -172,6 +164,15 @@ case class VariableExpPattern(name: Identifier) extends ExpPattern {
     }
   }
 }
+case object UnusedAssignDestExpPattern extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    if (value == UnusedInvokeResult) {
+      List(state)
+    } else {
+      List()
+    }
+  }
+}
 case class CastExpPattern(castType: Type, operand: ExpPattern) extends ExpPattern {
   override def apply(state: State, value: Value): List[State] = {
     value match {
@@ -181,6 +182,16 @@ case class CastExpPattern(castType: Type, operand: ExpPattern) extends ExpPatter
         } else {
           List()
         }
+      case _ => List()
+    }
+  }
+}
+case class AddExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case value: AddExpr =>
+        val lhsStates = lhs(state, value.getOp1)
+        lhsStates.flatMap(rhs(_, value.getOp2))
       case _ => List()
     }
   }
@@ -233,6 +244,29 @@ case class ConstantMethodPattern(method: SootMethod) extends MethodPattern {
       List(state)
     } else {
       List()
+    }
+  }
+}
+
+/*
+ * ARGUMENT PATTERNS
+ */
+
+sealed trait ArgPattern extends ((State, List[Value]) => List[State]) {
+  override def apply(state: State, args: List[Value]): List[State]
+}
+
+case object AnyArgPattern extends ArgPattern {
+  override def apply(state: State, args: List[Value]): List[State] = {
+    List(state)
+  }
+}
+case class ListArgPattern(expPatterns: List[ExpPattern]) extends ArgPattern {
+  override def apply(state: State, args: List[Value]): List[State] = {
+    if (args.lengthCompare(expPatterns.length) != 0) {
+      List()
+    } else {
+      expPatterns.zip(args).foldLeft(List(state))({ case (prevStates, (e, v)) => prevStates.flatMap(e(_, v)) })
     }
   }
 }
