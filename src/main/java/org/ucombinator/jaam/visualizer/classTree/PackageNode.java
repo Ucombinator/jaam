@@ -48,7 +48,8 @@ public class PackageNode extends ClassTreeNode implements Comparable<PackageNode
         return subDir;
     }
 
-    private String getName() {
+    @Override
+    public String getName() {
         if(path.compareTo("") == 0) {
             return shortName;
         }

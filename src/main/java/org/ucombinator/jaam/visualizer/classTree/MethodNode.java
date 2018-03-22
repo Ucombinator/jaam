@@ -46,6 +46,7 @@ public class MethodNode extends ClassTreeNode implements Comparable<MethodNode> 
         methodVertex = v;
     }
 
+    @Override
     public String getName() {
         return className + "." + methodName;
     }

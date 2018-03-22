@@ -26,6 +26,7 @@ public class FieldNode extends ClassTreeNode implements Comparable<FieldNode>{
         item.setGraphic(Main.getIconFont().create(FontAwesome.Glyph.FACEBOOK_F).color(Color.DARKGRAY));
     }
 
+    @Override
     public String getName() {
         return className + "." + fieldName;
     }

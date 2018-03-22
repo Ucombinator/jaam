@@ -47,4 +47,6 @@ public abstract class ClassTreeNode
     public abstract void handleDoubleClick(CodeViewController codeView);
 
     public abstract HashSet<StateVertex> getChildVertices();
+
+    public abstract String getName();
 }

@@ -82,6 +82,7 @@ public class ClassNode extends ClassTreeNode implements Comparable<ClassNode>{
         fields.stream().sorted().forEach(f -> f.build(item));
     }
 
+    @Override
     public String getName() {
         return packageName + "." + className;
     }
