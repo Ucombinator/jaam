@@ -4,6 +4,7 @@ import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
+import javafx.scene.effect.Effect;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Line;
@@ -78,8 +79,9 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
 
         // Clamp the offset to confine our box to its parent.
         if (this.getParentNode() != null) {
-            Bounds thisBounds = this.rect.getBoundsInLocal();
-            Bounds parentBounds = this.getParentNode().rect.getBoundsInLocal();
+
+            Bounds thisBounds = this.getRectBoundsInLocal();
+            Bounds parentBounds = this.getParentNode().getRectBoundsInLocal();
 
             newX = Math.min(Math.max(newX, 0), parentBounds.getWidth() - thisBounds.getWidth());
             newY = Math.min(Math.max(newY, 0), parentBounds.getHeight() - thisBounds.getHeight());
@@ -144,7 +146,7 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
     public Bounds getRectBoundsInParent() {
         Bounds nodeBounds = this.getBoundsInParent();
         Bounds nodeBoundsLocal = this.getBoundsInLocal();
-        Bounds rectBounds = this.rect.getBoundsInParent();
+        Bounds rectBounds = this.getUnaffectedRectBoundsInParent();
         return new BoundingBox(nodeBounds.getMinX() + rectBounds.getMinX() - nodeBoundsLocal.getMinX(),
                 nodeBounds.getMinY() + rectBounds.getMinY() - nodeBoundsLocal.getMinY(),
                 rectBounds.getWidth(), rectBounds.getHeight());
@@ -267,5 +269,31 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
 
     public Rectangle getRect() {
         return this.rect;
+    }
+
+    public Bounds getRectBoundsInLocal() {
+        if (this.rect.getEffect() == null) {
+            return this.rect.getBoundsInLocal();
+        }
+        else {
+            final Effect effect = this.rect.getEffect();
+            this.rect.setEffect(null);
+            Bounds result = this.rect.getBoundsInLocal();
+            this.rect.setEffect(effect);
+            return result;
+        }
+    }
+
+    public Bounds getUnaffectedRectBoundsInParent() {
+        if(this.rect.getEffect() == null) {
+            return this.rect.getBoundsInParent();
+        }
+        else {
+            final Effect effect = this.rect.getEffect();
+            this.rect.setEffect(null);
+            Bounds result = this.rect.getBoundsInParent();
+            this.rect.setEffect(effect);
+            return result;
+        }
     }
 }
