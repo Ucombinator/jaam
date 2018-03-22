@@ -20,7 +20,7 @@ object LoopPatterns {
   private val wildcard = mkPatRegExp(AnyLabelPattern, AnyStmtPattern)
   private val wildcardRep = Rep(wildcard)
 
-  private val arrayListIteratorMethod = getMethod("java.util.ArrayList", "iterator")
+  private val arrayListIteratorMethod = getMethod("java.lang.Iterable", "iterator")
   private val arrayListAddMethod = getMethod("java.util.ArrayList", "add", Some(List(Soot.getSootType("java.lang.Object"))))
 
   // TODO: This isn't detecting the iterator() virtualinvoke for some reason.
@@ -30,8 +30,8 @@ object LoopPatterns {
       VariableExpPattern("assignee"),
       InstanceInvokeExpPattern(
         VariableExpPattern("base"),
-        ConstantMethodPattern(arrayListIteratorMethod),
-        AnyArgPattern
+        OverriddenMethodPattern(arrayListIteratorMethod),
+        ListArgPattern(List())
       )
     )
   )

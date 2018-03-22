@@ -247,6 +247,17 @@ case class ConstantMethodPattern(method: SootMethod) extends MethodPattern {
     }
   }
 }
+case class OverriddenMethodPattern(method: SootMethod) extends MethodPattern {
+  override def apply(state: State, sootMethod: SootMethod): List[State] = {
+    val methodClass = sootMethod.getDeclaringClass
+    val overridingMethods = Soot.overrides(methodClass, method)
+    if (overridingMethods.contains(sootMethod)) {
+      List(state)
+    } else {
+      List()
+    }
+  }
+}
 
 /*
  * ARGUMENT PATTERNS
