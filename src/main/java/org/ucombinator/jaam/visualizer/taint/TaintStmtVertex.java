@@ -1,6 +1,8 @@
 package org.ucombinator.jaam.visualizer.taint;
 
 import javafx.scene.paint.Color;
+import soot.SootClass;
+import soot.SootMethod;
 
 import java.util.*;
 
@@ -11,13 +13,38 @@ public class TaintStmtVertex extends TaintVertex {
     ArrayList<TaintAddress> taintAddresses;
     String stmt;
 
+    SootClass sootClass;
+    SootMethod sootMethod;
+
     public TaintStmtVertex(List<? extends TaintVertex> taintAddresses) {
         super(taintAddresses.toString(), VertexType.TAINT_STMT, true);
         taintAddresses.forEach(this.getChildGraph()::addVertex);
         this.taintAddresses = new ArrayList<>();
         taintAddresses.forEach(address -> this.taintAddresses.add((TaintAddress) address));
-        stmt = this.taintAddresses.get(0).getAddress().stmt().toString();
+        this.stmt = this.taintAddresses.get(0).getAddress().stmt().toString();
         this.color = defaultColor;
+
+        this.sootClass = null;
+        this.sootMethod = null;
+
+        this.taintAddresses.forEach(a -> {
+            if (a.getSootClass() != null) {
+                if (this.sootClass == null) {
+                    this.sootClass = a.getSootClass();
+                }
+                assert this.sootClass == a.getSootClass();
+            }
+
+            if (a.getSootMethod() != null) {
+                if (this.sootMethod == null) {
+                    this.sootMethod = a.getSootMethod();
+                }
+                assert this.sootMethod == a.getSootMethod();
+            }
+        });
+
+        assert this.sootClass != null;
+        assert this.sootMethod != null;
     }
 
     public TaintStmtVertex copy() {

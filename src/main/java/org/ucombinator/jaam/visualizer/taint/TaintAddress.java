@@ -4,7 +4,9 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.tools.taint3.Address;
 import org.ucombinator.jaam.tools.taint3.Address.StaticField;
 import org.ucombinator.jaam.tools.taint3.Address.InstanceField;
+import soot.SootClass;
 import soot.SootField;
+import soot.SootMethod;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -16,6 +18,8 @@ public class TaintAddress extends TaintVertex {
     private Address address;
     private final boolean isField;
     private final String fieldId;
+    private final SootClass sootClass;
+    private final SootMethod sootMethod;
 
     public TaintAddress(Address address) {
         super(address.toString(), VertexType.TAINT_ADDRESS, true);
@@ -35,6 +39,9 @@ public class TaintAddress extends TaintVertex {
         else {
            fieldId = null;
         }
+
+        sootClass = address.sootClass(); // Might be null
+        sootMethod = address.sootMethod();
     }
 
     public TaintAddress copy() {
@@ -55,6 +62,14 @@ public class TaintAddress extends TaintVertex {
     public Address getAddress() { return this.address; }
 
     public String getFieldId() { return fieldId; }
+
+    public SootClass getSootClass() {
+        return sootClass;
+    }
+
+    public SootMethod getSootMethod() {
+        return sootMethod;
+    }
 
     @Override
     public String toString() {
