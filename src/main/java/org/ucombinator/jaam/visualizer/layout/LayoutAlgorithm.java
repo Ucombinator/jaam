@@ -7,6 +7,7 @@ import org.ucombinator.jaam.visualizer.state.StateSccVertex;
 import org.ucombinator.jaam.visualizer.taint.TaintSccVertex;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 // The vertices in this layout must extend both AbstractLayoutVertex and Vertex
 public class LayoutAlgorithm
@@ -101,6 +102,106 @@ public class LayoutAlgorithm
         doLayout(parentVertex, childrenMap, new ClassComp<>());
     }
 
+    /**
+     * Preconditions: Graph has no Cycles
+     * We generate the children map for the layout, where every node is added to the map twice, once as a key
+     * and once in the children list of some other node. The root doesn't appear in any children list, and
+     * cannot be hidden.
+     * Every node appears as a child as deep as possible in the tree (ties broken arbitrarily)
+     */
+    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
+    HashMap<T, ArrayList<T>> maxDepthChildren(Graph<T, S> graph)
+    {
+        HashMap<T, ArrayList<T>> childrenMap = new HashMap<>();
+        HashMap<T, Integer> vertexCounters = new HashMap<>();
+        Queue<T> vertexQueue = new ArrayDeque<>();
+        HashSet<T> seen = new HashSet<>();
+
+        List<T> roots = graph.getSources();
+        if(roots.isEmpty()) {
+            System.out.println("Error! Could not build children map.");
+            return childrenMap; // No vertices!
+        }
+
+        for(T root : roots) {
+            vertexQueue.add(root);
+            seen.add(root);
+        }
+
+        while(!vertexQueue.isEmpty())
+        {
+            T v = vertexQueue.remove();
+            childrenMap.put(v, new ArrayList<>());
+
+            for(T child : graph.getOutNeighbors(v))
+            {
+                if(child == null) {
+                    System.out.println("Error! Null child found.");
+                }
+
+                if(child.equals(v)) {
+                    continue; // Skip recursive edge
+                }
+
+                if (!seen.contains(child)) {
+                    seen.add(child);
+                    child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
+
+                    // Subtract v's incoming edge (v --> child)
+                    int numberOfIncomingEdges = graph.getInNeighbors(child).size() - 1;
+                    if (graph.getInNeighbors(child).contains(child)) {
+                        numberOfIncomingEdges -= 1; // Ignore recursive call in edge count
+                    }
+
+                    if (numberOfIncomingEdges > 0) {
+                        vertexCounters.put(child, numberOfIncomingEdges);
+                    } else if (numberOfIncomingEdges == 0) {
+                        childrenMap.get(v).add(child);
+                        vertexQueue.add(child);
+                    }
+                    else {
+                        for(T inNeighbor : graph.getInNeighbors(child)) {
+                            System.out.print(inNeighbor.getId() + " ");
+                        }
+                        System.out.println();
+                    }
+                } else if (child.getVertexStatus() == AbstractLayoutVertex.VertexStatus.GRAY) {
+                    Integer numberOfIncomingEdges = vertexCounters.get(child);
+
+                    if (numberOfIncomingEdges == null) {
+                        System.out.println("Error Map\n\t " + vertexCounters);
+                    }
+                    else {
+                        numberOfIncomingEdges -= 1;  // v --> child
+                        vertexCounters.put(child, numberOfIncomingEdges);
+
+                        if (numberOfIncomingEdges == 0) {
+                            childrenMap.get(v).add(child);
+                            vertexQueue.add(child);
+                            vertexCounters.remove(child);
+                        }
+                    }
+                }
+            }
+            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
+        }
+
+        if(vertexCounters.size() > 0) {
+            System.out.println("BFS uncounted vertices, what happened to the incoming?!!! " + vertexCounters);
+            for (Map.Entry<T, Integer> entry : vertexCounters.entrySet()) {
+
+                System.out.println("\t\t" + entry + " --> " + entry.getKey().getId() + " "
+                        + entry.getKey().getVertexStatus() /*+ " " +  entry.getKey().getMethodVertices()*/);
+                for(T n : graph.getInNeighbors(entry.getKey()))
+                {
+                    System.out.println("\t\t\t" + n + " --> " + n.getId() + " " + n.getVertexStatus());
+                }
+            }
+        }
+
+        return childrenMap;
+    }
+
     private static class ClassComp<T extends AbstractLayoutVertex<T>> implements Comparator<T> {
         @Override
         public int compare(T o1, T o2) {
@@ -183,105 +284,6 @@ public class LayoutAlgorithm
         parentVertex.setHeight(parentHeight);
     }
 
-    /**
-     * Preconditions: Graph has no Cycles
-     * We generate the children map for the layout, where every node is added to the map twice, once as a key
-     * and once in the children list of some other node. The root doesn't appear in any children list, and
-     * cannot be hidden.
-     * Every node appears as a child as deep as possible in the tree (ties broken arbitrarily)
-     */
-    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
-    HashMap<T, ArrayList<T>> maxDepthChildren(Graph<T, S> graph)
-    {
-        HashMap<T, ArrayList<T>> childrenMap = new HashMap<>();
-        HashMap<T, Integer> vertexCounters = new HashMap<>();
-        Queue<T> vertexQueue = new ArrayDeque<>();
-        HashSet<T> seen = new HashSet<>();
-
-        List<T> roots = graph.getSources();
-        if(roots.isEmpty()) {
-            System.out.println("Error! Could not build children map.");
-            return childrenMap; // No vertices!
-        }
-
-        for(T root : roots) {
-            vertexQueue.add(root);
-            seen.add(root);
-        }
-
-        while(!vertexQueue.isEmpty())
-        {
-           T v = vertexQueue.remove();
-           childrenMap.put(v, new ArrayList<>());
-
-           for(T child : graph.getOutNeighbors(v))
-           {
-               if(child == null) {
-                   System.out.println("Error! Null child found.");
-               }
-
-               if(child.equals(v)) {
-                   continue; // Skip recursive edge
-               }
-
-               if (!seen.contains(child)) {
-                   seen.add(child);
-                   child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-
-                   // Subtract v's incoming edge (v --> child)
-                   int numberOfIncomingEdges = graph.getInNeighbors(child).size() - 1;
-                   if (graph.getInNeighbors(child).contains(child)) {
-                       numberOfIncomingEdges -= 1; // Ignore recursive call in edge count
-                   }
-
-                   if (numberOfIncomingEdges > 0) {
-                       vertexCounters.put(child, numberOfIncomingEdges);
-                   } else if (numberOfIncomingEdges == 0) {
-                       childrenMap.get(v).add(child);
-                       vertexQueue.add(child);
-                   }
-                   else {
-                       for(T inNeighbor : graph.getInNeighbors(child)) {
-                           System.out.print(inNeighbor.getId() + " ");
-                       }
-                       System.out.println();
-                   }
-               } else if (child.getVertexStatus() == AbstractLayoutVertex.VertexStatus.GRAY) {
-                   Integer numberOfIncomingEdges = vertexCounters.get(child);
-
-                   if (numberOfIncomingEdges == null) {
-                       System.out.println("Error Map\n\t " + vertexCounters);
-                   }
-                   else {
-                       numberOfIncomingEdges -= 1;  // v --> child
-                       vertexCounters.put(child, numberOfIncomingEdges);
-
-                       if (numberOfIncomingEdges == 0) {
-                           childrenMap.get(v).add(child);
-                           vertexQueue.add(child);
-                           vertexCounters.remove(child);
-                       }
-                   }
-               }
-           }
-           v.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
-        }
-
-        if(vertexCounters.size() > 0) {
-            System.out.println("BFS uncounted vertices, what happened to the incoming?!!! " + vertexCounters);
-            for (Map.Entry<T, Integer> entry : vertexCounters.entrySet()) {
-
-                System.out.println("\t\t" + entry + " --> " + entry.getKey().getId() + " "
-                        + entry.getKey().getVertexStatus() /*+ " " +  entry.getKey().getMethodVertices()*/);
-                for(T n : graph.getInNeighbors(entry.getKey()))
-                {
-                    System.out.println("\t\t\t" + n + " --> " + n.getId() + " " + n.getVertexStatus());
-                }
-            }
-        }
-
-        return childrenMap;
-    }
 
     /**
      * Preconditions: Height and Width of the child nodes of the graph is (recursively known)
@@ -302,27 +304,14 @@ public class LayoutAlgorithm
             }
         }
 
-        double currentWidth = 0;
-        double currentHeight = 0;
-        for (T curVer: grayChildren) {
-            storeBBoxWidthAndHeight(curVer, childrenMap);
-            currentWidth += curVer.getBboxWidth();
-            currentHeight = Math.max(currentHeight, curVer.getBboxHeight());
-        }
-        currentWidth += (grayChildren.size() - 1) * NODES_PADDING;
+        grayChildren.forEach(c -> storeBBoxWidthAndHeight(c, childrenMap));
+        double subtreeWidth = grayChildren.stream().mapToDouble(T::getBboxWidth).sum() + (grayChildren.size() - 1) * NODES_PADDING;
+        double subtreeHeight = grayChildren.stream().mapToDouble(T::getBboxHeight).max().orElse(0);
 
-        double currBboxWidth, currBboxHeight;
-        currBboxWidth = Math.max(root.getWidth(), currentWidth);
-        if(grayChildren.size() == 0) {
-            currBboxHeight = root.getHeight();
-        }
-        else {
-            currBboxHeight = NODES_PADDING + root.getHeight() + currentHeight;
-        }
+        root.setBboxWidth(Math.max(root.getWidth(), subtreeWidth));
+        root.setBboxHeight(root.getHeight() + (grayChildren.isEmpty() ? 0 : (NODES_PADDING + subtreeHeight)) );
 
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
-        root.setBboxWidth(currBboxWidth);
-        root.setBboxHeight(currBboxHeight);
     }
 
     /**
