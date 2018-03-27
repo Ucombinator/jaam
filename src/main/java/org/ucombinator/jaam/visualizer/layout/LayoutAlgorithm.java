@@ -7,7 +7,6 @@ import org.ucombinator.jaam.visualizer.state.StateSccVertex;
 import org.ucombinator.jaam.visualizer.taint.TaintSccVertex;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 // The vertices in this layout must extend both AbstractLayoutVertex and Vertex
 public class LayoutAlgorithm
@@ -71,7 +70,7 @@ public class LayoutAlgorithm
             childrenMap.get(v).addAll(graph.getOutNeighbors(v));
         }
 
-        doLayout(parentVertex, childrenMap);
+        treeLayout(parentVertex, childrenMap);
     }
 
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
@@ -99,7 +98,7 @@ public class LayoutAlgorithm
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
 
-        doLayout(parentVertex, childrenMap, new ClassComp<>());
+        treeLayout(parentVertex, childrenMap, new ClassComp<>());
     }
 
     /**
@@ -241,13 +240,18 @@ public class LayoutAlgorithm
         }
     }
 
+    /**
+     * Does a tree layout of the child graph of the parent vertex and set the size of the parent accordingly
+     * Preconditions: Nodes of the child graph appear in at most one value array list of children, if they
+     * are a root of the graph they don't appear in child list. Evry node appears once in the child map as a key
+     * */
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
-    void doLayout(T parentVertex, HashMap<T, ArrayList<T>> childrenMap) {
-        doLayout(parentVertex, childrenMap, null);
+    void treeLayout(T parentVertex, HashMap<T, ArrayList<T>> childrenMap) {
+        treeLayout(parentVertex, childrenMap, null);
     }
 
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
-    void doLayout(T parentVertex, HashMap<T, ArrayList<T>> childrenMap, Comparator<T> childrenSortOrder)
+    void treeLayout(T parentVertex, HashMap<T, ArrayList<T>> childrenMap, Comparator<T> childrenSortOrder)
     {
         if(childrenSortOrder != null) {
             for (ArrayList<T> l : childrenMap.values()) {
