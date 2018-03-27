@@ -65,7 +65,7 @@ public class LayoutAlgorithm
 
         Pair<List<T>, HashMap<T, ArrayList<T>> > rootsAndchildrenMap = getDFSChildMap(graph);
 
-        Point2D dimensions = treeLayout(parentVertex.getChildGraph(), rootsAndchildrenMap.getKey(), rootsAndchildrenMap.getValue());
+        Point2D dimensions = treeLayout(rootsAndchildrenMap.getKey(), rootsAndchildrenMap.getValue());
         parentVertex.setWidth(dimensions.getX());
         parentVertex.setHeight(dimensions.getY());
     }
@@ -139,7 +139,7 @@ public class LayoutAlgorithm
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
 
-        Point2D dimensions = treeLayout(parentVertex.getChildGraph(), parentVertex.getChildGraph().getSources(), childrenMap, new ClassComp<>());
+        Point2D dimensions = treeLayout(parentVertex.getChildGraph().getSources(), childrenMap, new ClassComp<>());
         parentVertex.setWidth(dimensions.getX());
         parentVertex.setHeight(dimensions.getY());
     }
@@ -291,35 +291,26 @@ public class LayoutAlgorithm
      * Note that if a childrenSort order is provided the roots and child lists will be sorted
      * */
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
-    Point2D treeLayout(Graph<T,S> graph, List<T> roots, HashMap<T, ArrayList<T>> childrenMap) {
-        return treeLayout(graph, roots, childrenMap, null);
+    Point2D treeLayout(List<T> roots, HashMap<T, ArrayList<T>> childrenMap) {
+        return treeLayout(roots, childrenMap, null);
     }
 
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
-    Point2D treeLayout(Graph<T,S> graph, List<T> roots, HashMap<T, ArrayList<T>> childrenMap, Comparator<T> childrenSortOrder)
+    Point2D treeLayout(List<T> roots, HashMap<T, ArrayList<T>> childrenMap, Comparator<T> childrenSortOrder)
     {
         if(childrenSortOrder != null) {
             roots.sort(childrenSortOrder);
-            for (List<T> l : childrenMap.values()) {
-                l.sort(childrenSortOrder);
-            }
+            childrenMap.values().forEach(l -> l.sort(childrenSortOrder));
         }
 
-        if(roots.isEmpty()) {
-            return new Point2D(0,0);
-        }
+        assert !roots.isEmpty();
 
-        double parentWidth = AbstractLayoutVertex.DEFAULT_WIDTH;
-        double parentHeight = AbstractLayoutVertex.DEFAULT_HEIGHT;
-        parentWidth += (roots.size() + 1) * MARGIN_PADDING;
-        parentHeight += 2 * MARGIN_PADDING;
+        double parentWidth = AbstractLayoutVertex.DEFAULT_WIDTH + (roots.size() + 1) * MARGIN_PADDING;
+        double parentHeight = AbstractLayoutVertex.DEFAULT_HEIGHT + 2 * MARGIN_PADDING;
 
         double currentWidth = MARGIN_PADDING;
         for(T root : roots) {
             storeBBoxWidthAndHeight(root, childrenMap);
-            for (T v : graph.getVertices()) {
-                v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
-            }
 
             assignChildCoordinates(root, currentWidth, MARGIN_PADDING, childrenMap);
             currentWidth += root.getBboxWidth() + MARGIN_PADDING;
@@ -339,31 +330,16 @@ public class LayoutAlgorithm
      * Output: returns the W and H to be assign to the parent node
      * */
     private static <T extends AbstractLayoutVertex<T>> void storeBBoxWidthAndHeight(
-            T root,
-            HashMap<T, ArrayList<T>> childrenMap)
-    {
-        root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-        ArrayList<T> grayChildren = new ArrayList<>();
+            T root, HashMap<T, ArrayList<T>> childrenMap) {
 
-        System.out.println("SWA: " + root + " --> " + childrenMap + " --> " + childrenMap.get(root));
+        ArrayList<T> children = childrenMap.get(root);
+        children.forEach(c -> storeBBoxWidthAndHeight(c, childrenMap));
 
-        for(T child: childrenMap.get(root)) {
-            if (child.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
-                child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-                grayChildren.add(child);
-            }
-        }
-
-        System.out.println("JUAN: grey" + grayChildren + " --> " + grayChildren.size());
-
-        grayChildren.forEach(c -> storeBBoxWidthAndHeight(c, childrenMap));
-        double subtreeWidth = grayChildren.stream().mapToDouble(T::getBboxWidth).sum() + (grayChildren.size() - 1) * NODES_PADDING;
-        double subtreeHeight = grayChildren.stream().mapToDouble(T::getBboxHeight).max().orElse(0);
+        double subtreeWidth = children.stream().mapToDouble(T::getBboxWidth).sum() + (children.size() - 1) * NODES_PADDING;
+        double subtreeHeight = children.stream().mapToDouble(T::getBboxHeight).max().orElse(0);
 
         root.setBboxWidth(Math.max(root.getWidth(), subtreeWidth));
-        root.setBboxHeight(root.getHeight() + (grayChildren.isEmpty() ? 0 : (NODES_PADDING + subtreeHeight)) );
-
-        root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
+        root.setBboxHeight(root.getHeight() + (children.isEmpty() ? 0 : (NODES_PADDING + subtreeHeight)) );
     }
 
     /**
