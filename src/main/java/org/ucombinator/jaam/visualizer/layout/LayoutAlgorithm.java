@@ -284,7 +284,8 @@ public class LayoutAlgorithm
     }
 
     /**
-     * Does a tree layout of the graph and returns the size of bounding box of the whole graph
+     * Does a tree layout of the graph (defined by the roots and the childmap)
+     * Returns: the size of bounding box of the whole graph
      * ChildMap/Roots condition: Every node appears twice:
      *     once as a key in the childrenMap, and
      *     either as a root or in the child list of a different node
@@ -350,40 +351,26 @@ public class LayoutAlgorithm
     private static <T extends AbstractLayoutVertex<T>> void assignChildCoordinates (T root, double left, double top,
             HashMap<T, ArrayList<T>> childrenMap)
     {
-        root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-        ArrayList<T> grayChildren = new ArrayList<>();
-        for (T child: childrenMap.get(root)) {
-            if (child.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
-                child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-                grayChildren.add(child);
-            }
-        }
-
-        double currentWidth = 0;
-        double currentHeight = 0;
-        for (T curVer: grayChildren) {
-            currentWidth += curVer.getBboxWidth();
-        }
-        currentWidth += NODES_PADDING * (grayChildren.size() - 1);
+        ArrayList<T> children = childrenMap.get(root);
 
         // Check if the root is wider than the total width of its children.
+        double totalChildWidth = children.stream().mapToDouble(T::getBboxWidth).sum()
+                + (NODES_PADDING * (children.size()-1) );
         double rootOverlap;
-        if (root.getWidth() >= currentWidth) {
-            rootOverlap = (root.getWidth() - currentWidth)/2;
+        if (root.getWidth() >= totalChildWidth) {
+            rootOverlap = (root.getWidth() - totalChildWidth)/2;
         } else {
             rootOverlap = 0;
         }
 
-        currentWidth = 0;
-        for (T curVer: grayChildren) {
-            assignChildCoordinates(curVer,currentWidth + left + rootOverlap,
-                    NODES_PADDING + top + root.getHeight(), childrenMap);
-            currentWidth += curVer.getBboxWidth() + NODES_PADDING;
-            currentHeight = Math.max(currentHeight, curVer.getBboxHeight());
+        double currentLeft = left + rootOverlap;
+        final double childTop = top + root.getHeight() + NODES_PADDING;
+        for (T curVer: children) {
+            assignChildCoordinates(curVer, currentLeft, childTop, childrenMap);
+            currentLeft += curVer.getBboxWidth() + NODES_PADDING;
         }
 
         root.setX(left + ((root.getBboxWidth() - root.getWidth()) / 2.0));  //left-most corner x
         root.setY(top);                                                    //top-most corner y
-        root.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
     }
 }
