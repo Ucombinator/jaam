@@ -353,24 +353,29 @@ public class LayoutAlgorithm
     {
         ArrayList<T> children = childrenMap.get(root);
 
-        // Check if the root is wider than the total width of its children.
+        // We want the root to be centered on top of its subtree, if the subtree is wider. Or the subtree
+        // centered on the root if the root is wider
         double totalChildWidth = children.stream().mapToDouble(T::getBboxWidth).sum()
                 + (NODES_PADDING * (children.size()-1) );
-        double rootOverlap;
-        if (root.getWidth() >= totalChildWidth) {
-            rootOverlap = (root.getWidth() - totalChildWidth)/2;
-        } else {
-            rootOverlap = 0;
+
+        double leftOffset = Math.abs(totalChildWidth - root.getWidth()) / 2;
+
+
+        double currentChildLeft = left;
+        if (root.getWidth() > totalChildWidth) {
+           currentChildLeft += leftOffset; // Offset the children to center
+           root.setX(left);
+        }
+        else {
+            root.setX(left + leftOffset); // Offset the root to center
         }
 
-        double currentLeft = left + rootOverlap;
         final double childTop = top + root.getHeight() + NODES_PADDING;
         for (T curVer: children) {
-            assignChildCoordinates(curVer, currentLeft, childTop, childrenMap);
-            currentLeft += curVer.getBboxWidth() + NODES_PADDING;
+            assignChildCoordinates(curVer, currentChildLeft, childTop, childrenMap);
+            currentChildLeft += curVer.getBboxWidth() + NODES_PADDING;
         }
 
-        root.setX(left + ((root.getBboxWidth() - root.getWidth()) / 2.0));  //left-most corner x
-        root.setY(top);                                                    //top-most corner y
+        root.setY(top); //top-most corner y
     }
 }
