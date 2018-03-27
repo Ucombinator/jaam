@@ -1,5 +1,7 @@
 package org.ucombinator.jaam.visualizer.layout;
 
+import javafx.geometry.Point2D;
+import javafx.util.Pair;
 import org.ucombinator.jaam.visualizer.graph.Edge;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
@@ -59,18 +61,57 @@ public class LayoutAlgorithm
 
         expandSubGraphs(parentVertex);
 
-        for (T v : graph.getVertices()) {
+        graph.getVertices().forEach(v -> v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE));
+
+        Pair<List<T>, HashMap<T, ArrayList<T>> > rootsAndchildrenMap = getDFSChildMap(graph);
+
+        Point2D dimensions = treeLayout(parentVertex.getChildGraph(), rootsAndchildrenMap.getKey(), rootsAndchildrenMap.getValue());
+        parentVertex.setWidth(dimensions.getX());
+        parentVertex.setHeight(dimensions.getY());
+    }
+
+    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
+    Pair<List<T>, HashMap<T, ArrayList<T>>> getDFSChildMap(Graph<T,S> graph) {
+        graph.getVertices().forEach(v -> v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE));
+
+        HashMap<T, ArrayList<T>> childMap = new HashMap<>();
+
+        List<T> roots = graph.getSources();
+
+        roots.forEach(s -> {
+            ArrayList<T> subVertices = new ArrayList<>();
+            ArrayList<T> oldKey = childMap.put(s, subVertices);
+            assert oldKey == null; // Don't add twice
+            s.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
+
+            addDescendants(s, graph, childMap);
+        });
+
+        graph.getVertices().forEach(v -> {
+            if (v.getVertexStatus() != AbstractLayoutVertex.VertexStatus.BLACK) {
+                System.out.println("ERROR in DFS Pass. ");
+                System.out.println("\tDFS ERROR Didn't process " + v.toString());
+            }
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
-        }
+        });
 
-        HashMap<T, ArrayList<T>> childrenMap = new HashMap<>();
+        return new Pair<>(roots, childMap);
+    }
 
-        for (T v : graph.getVertices()) {
-            childrenMap.put(v, new ArrayList<>());
-            childrenMap.get(v).addAll(graph.getOutNeighbors(v));
-        }
+    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
+    void addDescendants(T v, Graph<T, S> graph, HashMap<T, ArrayList<T>> childMap) {
 
-        treeLayout(parentVertex, childrenMap);
+        ArrayList<T> subVertices = new ArrayList<>();
+        ArrayList<T> oldKey = childMap.put(v, subVertices);
+        assert oldKey == null; // Don't add twice
+
+        graph.getOutNeighbors(v).stream().filter(n -> n.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE).forEach(n -> {
+            subVertices.add(n);
+            n.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
+            addDescendants(n, graph, childMap);
+        });
+
+        v.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
     }
 
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
@@ -98,7 +139,9 @@ public class LayoutAlgorithm
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
 
-        treeLayout(parentVertex, childrenMap, new ClassComp<>());
+        Point2D dimensions = treeLayout(parentVertex.getChildGraph(), parentVertex.getChildGraph().getSources(), childrenMap, new ClassComp<>());
+        parentVertex.setWidth(dimensions.getX());
+        parentVertex.setHeight(dimensions.getY());
     }
 
     /**
@@ -241,28 +284,29 @@ public class LayoutAlgorithm
     }
 
     /**
-     * Does a tree layout of the child graph of the parent vertex and set the size of the parent accordingly
-     * Preconditions: Nodes of the child graph appear in at most one value array list of children, if they
-     * are a root of the graph they don't appear in child list. Evry node appears once in the child map as a key
+     * Does a tree layout of the graph and returns the size of bounding box of the whole graph
+     * ChildMap/Roots condition: Every node appears twice:
+     *     once as a key in the childrenMap, and
+     *     either as a root or in the child list of a different node
+     * Note that if a childrenSort order is provided the roots and child lists will be sorted
      * */
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
-    void treeLayout(T parentVertex, HashMap<T, ArrayList<T>> childrenMap) {
-        treeLayout(parentVertex, childrenMap, null);
+    Point2D treeLayout(Graph<T,S> graph, List<T> roots, HashMap<T, ArrayList<T>> childrenMap) {
+        return treeLayout(graph, roots, childrenMap, null);
     }
 
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
-    void treeLayout(T parentVertex, HashMap<T, ArrayList<T>> childrenMap, Comparator<T> childrenSortOrder)
+    Point2D treeLayout(Graph<T,S> graph, List<T> roots, HashMap<T, ArrayList<T>> childrenMap, Comparator<T> childrenSortOrder)
     {
         if(childrenSortOrder != null) {
-            for (ArrayList<T> l : childrenMap.values()) {
+            roots.sort(childrenSortOrder);
+            for (List<T> l : childrenMap.values()) {
                 l.sort(childrenSortOrder);
             }
         }
 
-        Graph<T, S> graph = parentVertex.getChildGraph();
-        List<T> roots = graph.getSources();
         if(roots.isEmpty()) {
-            return;
+            return new Point2D(0,0);
         }
 
         double parentWidth = AbstractLayoutVertex.DEFAULT_WIDTH;
@@ -284,8 +328,7 @@ public class LayoutAlgorithm
             parentHeight  = Math.max(parentHeight, root.getBboxHeight() + 2 * MARGIN_PADDING);
         }
 
-        parentVertex.setWidth(parentWidth);
-        parentVertex.setHeight(parentHeight);
+        return new Point2D(parentWidth, parentHeight);
     }
 
 
@@ -301,12 +344,17 @@ public class LayoutAlgorithm
     {
         root.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
         ArrayList<T> grayChildren = new ArrayList<>();
+
+        System.out.println("SWA: " + root + " --> " + childrenMap + " --> " + childrenMap.get(root));
+
         for(T child: childrenMap.get(root)) {
             if (child.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
                 child.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
                 grayChildren.add(child);
             }
         }
+
+        System.out.println("JUAN: grey" + grayChildren + " --> " + grayChildren.size());
 
         grayChildren.forEach(c -> storeBBoxWidthAndHeight(c, childrenMap));
         double subtreeWidth = grayChildren.stream().mapToDouble(T::getBboxWidth).sum() + (grayChildren.size() - 1) * NODES_PADDING;
