@@ -75,6 +75,7 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
         GUINode<T> node = new GUINode<>(parent, v);
 
         if (parent == null) {
+            this.graphContentGroup.getChildren().clear();
             this.graphContentGroup.getChildren().add(node);
         } else {
             parent.getChildren().add(node);
