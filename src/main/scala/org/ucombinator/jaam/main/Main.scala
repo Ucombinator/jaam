@@ -22,7 +22,7 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamCon
   addSubcommand(FindMain)
   addSubcommand(Info)
   addSubcommand(ListItems)
-  addSubcommand(Loop)
+  //addSubcommand(Loop)
   addSubcommand(Loop2)
   addSubcommand(Loop3)
   addSubcommand(LoopConditions)
@@ -333,7 +333,7 @@ object ListItems extends Main("list") {
   }
 }
 
-
+/*
 object Loop extends Main("loop") {
   banner("Analyze the number of depth of each loop in the application code")
   footer("")
@@ -357,7 +357,7 @@ object Loop extends Main("loop") {
                           org.ucombinator.jaam.tools.loop.PrintOption(all, loop(), rec(), alloc(), color, remove_duplicates(), graph()))
   }
 }
-
+*/
 
 object Loop2 extends Main("loop2") {
   banner("Analyze the depth of each loop in the application code")

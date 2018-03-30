@@ -1,25 +1,12 @@
 package org.ucombinator.jaam.tools.loop
 
-import java.util.zip.ZipInputStream
-import java.io.{BufferedOutputStream, FileInputStream, FileOutputStream}
-
-import scala.language.implicitConversions
-import scala.collection.JavaConversions._
-import scala.collection.mutable.HashMap
-import soot.options.Options
-import soot.tagkit.{GenericAttribute, SourceFileTag}
-import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
-import soot.jimple.{Stmt => SootStmt, _}
-import soot.jimple.toolkits.callgraph._
-import soot.jimple.Jimple
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
-import soot.toolkits.graph.Block
-import soot.toolkits.graph.BlockGraph
-import soot.toolkits.graph.ExceptionalBlockGraph
-import soot.toolkits.graph.LoopNestTree
+import soot.jimple.{Stmt => SootStmt, _}
+import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 
-import Console._
-import collection.mutable.ListBuffer
+//import scala.language.implicitConversions
+import scala.collection.JavaConverters._
+
 
 
 // TODO duplicate
@@ -40,6 +27,7 @@ Failed to apply jb to <org.apache.commons.math3.util.BigReal: org.apache.commons
 
 // TODO: merge with jaam.interpreter.Soot
 object Soot {
+/*
   def initSoot(mainClassName: String, sootClassPath: String) {
     Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
@@ -94,6 +82,7 @@ object Soot {
   }
 
   def getSootClass(s: String) = Scene.v().loadClass(s, SootClass.SIGNATURES)
+  */
 
   def getBody(m: SootMethod): Body = {
     if (m.isNative || m.isAbstract)
@@ -106,6 +95,7 @@ object Soot {
     m.getActiveBody
   }
 
+/*
   implicit def unitToStmt(unit : SootUnit) : SootStmt = {
     assert(unit ne null, "unit is null")
     assert(unit.isInstanceOf[SootStmt], "unit not instance of Stmt. Unit is of class: " + unit.getClass)
@@ -120,11 +110,13 @@ object Soot {
   }
 
   def methodFullName(m: SootMethod): String = m.getDeclaringClass.getName + "." + m.getName
+  */
 }
 
-case class PrintOption(all: Boolean, loop: Boolean, rec: Boolean, alloc: Boolean, color: Boolean, rmDup: Boolean, graph: Boolean)
+//case class PrintOption(all: Boolean, loop: Boolean, rec: Boolean, alloc: Boolean, color: Boolean, rmDup: Boolean, graph: Boolean)
 
 object LoopDepthCounter {
+/*
   var opt: PrintOption = null
 
   case class Loop(method: SootMethod, start: SootStmt, end: SootStmt, depth: Int, parent: Option[Loop], offset: Int = 0) {
@@ -286,12 +278,16 @@ object LoopDepthCounter {
       case Nil => res
     }
   }
+  */
 
+/*
   // Using set to remove equivalent items
   var loopResults: ListBuffer[LoopResult] = ListBuffer()
   val recResults: ListBuffer[RecResult] = ListBuffer()
   val allocResults: ListBuffer[AllocResult] = ListBuffer()
+  */
 
+/*
   def main(mainClassName: String, mainMethodName: String, classPaths: Seq[String], runOpt: PrintOption) {
     opt = runOpt
     val sootClassPath = classPaths.toList.mkString(":")
@@ -330,7 +326,9 @@ object LoopDepthCounter {
     if (opt.all || opt.rec)   { println(s"  number of recursions: ${recResults.size}") }
     if (opt.all || opt.alloc) { println(s"  number of object allocations: ${allocResults.size}") }
   }
+  */
 
+/*
   /***
     * Produce list of loops with duplicates removed
     * @param loops
@@ -341,7 +339,9 @@ object LoopDepthCounter {
     for (x <- reduced) { loopResults += x.asInstanceOf[LoopResult] }
     loops
   }
+*/
 
+/*
   /***
     * Write a GraphViz file from the loops.
     * @param loops
@@ -379,6 +379,7 @@ object LoopDepthCounter {
       }
     out.write("}\n".getBytes()) // end outer graph
   }
+  */
 
   def getDispatchedMethods(invokeExpr: InvokeExpr): List[SootMethod] = {
     val hierarchy = Scene.v().getOrMakeFastHierarchy()
@@ -393,7 +394,7 @@ object LoopDepthCounter {
           case rt: RefType =>
             val baseClass = insInvoke.getBase.getType.asInstanceOf[RefType].getSootClass
             //println(s"baseClass: ${baseClass}")
-            hierarchy.resolveAbstractDispatch(baseClass, targetMethod).toList
+            hierarchy.resolveAbstractDispatch(baseClass, targetMethod).asScala.toList
           case _ => List() // invocation on array/primitive type
         }
     }
@@ -401,6 +402,7 @@ object LoopDepthCounter {
     realTargetMethods
   }
 
+/*
   def getDispatchedMethodsCHA(stmt: SootStmt): List[SootMethod] = {
     val cg = Scene.v().getCallGraph()
     val edges = cg.edgesOutOf(stmt).toList
@@ -408,7 +410,9 @@ object LoopDepthCounter {
     //println(s"dispatched methods according to CHA: ${methods}")
     methods
   }
+  */
 
+/*
   def handleInvoke(stmt: SootStmt, invokeExpr: InvokeExpr, currentLoop: Option[Loop], stack: CallStack) {
     val realTargetMethods = getDispatchedMethods(invokeExpr)
     val realTargetMethodsCHA = getDispatchedMethodsCHA(stmt)
@@ -485,4 +489,5 @@ object LoopDepthCounter {
       }
     }
   }
+  */
 }
