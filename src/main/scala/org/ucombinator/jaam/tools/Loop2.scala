@@ -156,59 +156,17 @@ object LoopAnalyzer {
     def apply(loop: SootLoop, method: SootMethod): LoopTree = new LoopTree(loop, method, Set.empty)
   }
 
-  def encode(s: String): String = s.replace("\"", "\\\"")
-  def quote(s: String): String = "\"" + encode(s) + "\""
-
   abstract sealed class Node extends CachedHashCode {
     val tag: String
   }
   case class LoopNode(m: SootMethod, loop: SootLoop) extends Node {
     override val tag: String = m.getSignature + "\ninstruction #" + Stmt(loop.getHead, m).index
     val index: Int = Stmt(loop.getHead, m).index
-    override def toString = "  " + quote(tag) + " [shape=diamond];\n"
   }
   // TODO we might have uniqueness problems with SootMethod objects.
   // For now, SootMethod.getSignature will do.
   case class MethodNode(method: SootMethod) extends Node {
     override val tag: String = method.getSignature
-    override def toString = tag
-  }
-
-  private var loopForests = Map.empty[SootMethod, Set[LoopTree]]
-  def getLoopForest(m: SootMethod): Set[LoopTree] = {
-    loopForests.get(m) match {
-      case None =>
-        val loops =
-          if (m.isConcrete) { Loop.getLoopInfoSet(m).map(_.loop) }
-          else { Set() }
-        var forest = Set.empty[LoopTree]
-        if (loops.nonEmpty) {
-          forest = Set(LoopTree(loops.head, m))
-          for {
-            loop <- loops.tail
-          } {
-            val leaf = LoopTree(loop, m)
-            val parents = forest.filter { (tree: LoopTree) =>
-              tree.isParent(leaf)
-            }
-            if (parents.isEmpty) {
-              val children = forest.filter { (tree: LoopTree) =>
-                leaf.isParent(tree)
-              }
-              // This is correct even if children is empty
-              val tree = LoopTree(loop, m, children)
-              forest = (forest -- children) + tree
-            } else {
-              assert(parents.size <= 1, "multiple parents")
-              val parent = parents.head
-              forest = (forest - parent) + parent.insert(leaf)
-            }
-          }
-          loopForests = loopForests + (m -> forest)
-        }
-        forest
-      case Some(forest) => forest
-    }
   }
 }
 
@@ -346,6 +304,7 @@ case class LoopGraph(m: SootMethod, private val g: Map[Node, Set[Node]],
     LoopGraph(m, newGraph, recursionEdges)
   }
 
+/*
   override def toString: String = {
     val builder = new StringBuilder
     var seen = Set.empty[Node]
@@ -373,6 +332,7 @@ case class LoopGraph(m: SootMethod, private val g: Map[Node, Set[Node]],
     inner(mNode)
     builder.toString
   }
+  */
 
   def toJaam(s: serializer.PacketOutput,
              roots: Set[SootMethod] = Set()) {
@@ -428,17 +388,4 @@ case class LoopGraph(m: SootMethod, private val g: Map[Node, Set[Node]],
     }
     inner(mNode)
   }
-}
-object LoopGraph {
-    def add(g: Map[Node, Set[Node]], from: Node, to: Node):
-        Map[Node, Set[Node]] = {
-      g + (from -> (g.getOrElse(from, Set.empty) + to))
-    }
-    def addForest(g: Map[Node, Set[Node]], node: Node,
-        forest: Set[LoopTree], m: SootMethod): Map[Node, Set[Node]] = {
-      forest.foldLeft(g)({ (g: Map[Node, Set[Node]], tree: LoopTree) =>
-        val treeNode = LoopNode(m, tree.loop)
-        addForest(add(g, node, treeNode), treeNode, tree.children, m)
-      })
-    }
 }

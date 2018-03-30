@@ -5,21 +5,21 @@ import java.io.FileInputStream
 import java.io.PrintStream
 import java.util.jar.JarEntry
 import java.util.jar.JarInputStream
+
 import org.ucombinator.jaam.tools
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 import soot.options.Options
 import soot.jimple.{Stmt => SootStmt, _}
-import org.ucombinator.jaam.util.Stmt
-import org.ucombinator.jaam.util.Soot
-import org.ucombinator.jaam.tools.app.{Origin, App}
+import org.ucombinator.jaam.util.{Loop, Soot, Stmt}
 import org.ucombinator.jaam.tools.coverage2.Coverage2
 import org.ucombinator.jaam.serializer.Serializer
+import org.ucombinator.jaam.tools.LoopAnalyzer.{LoopNode, LoopTree, Node}
 
 import scala.collection.immutable
-
 import scala.collection.JavaConverters._
 import org.ucombinator.jaam.util.Soot
 import org.ucombinator.jaam.tools._
+import org.ucombinator.jaam.tools.app._
 
 object Main {
   def main(input: List[String], jaam: String, prune: Boolean, shrink: Boolean, prettyPrint: Boolean) {
@@ -302,16 +302,67 @@ object Main {
     println("number of roots: " + roots.size)
     println("set of roots: " + roots)
 
+/*
     Console.withOut(graphStream) {
       println("digraph loops {")
       println("ranksep=\"10\";")
       print(shrunk)
       println("}")
     }
+    */
 
     //    Console.withOut(coverageStream) {
     //      tools.LoopAnalyzer.computeCoverage(classpath, graph)
     //    }
+  }
+
+  def add(g: Map[Node, Set[Node]], from: Node, to: Node):
+      Map[Node, Set[Node]] = {
+    g + (from -> (g.getOrElse(from, Set.empty) + to))
+  }
+  def addForest(g: Map[Node, Set[Node]], node: Node,
+      forest: Set[LoopTree], m: SootMethod): Map[Node, Set[Node]] = {
+    forest.foldLeft(g)({ (g: Map[Node, Set[Node]], tree: LoopTree) =>
+      val treeNode = LoopNode(m, tree.loop)
+      addForest(add(g, node, treeNode), treeNode, tree.children, m)
+    })
+  }
+
+  private var loopForests = Map.empty[SootMethod, Set[LoopTree]]
+  def getLoopForest(m: SootMethod): Set[LoopTree] = {
+    loopForests.get(m) match {
+      case None =>
+        val loops =
+          if (m.isConcrete) { Loop.getLoopInfoSet(m).map(_.loop) }
+          else { Set() }
+        var forest = Set.empty[LoopTree]
+        if (loops.nonEmpty) {
+          forest = Set(LoopTree(loops.head, m))
+          for {
+            loop <- loops.tail
+          } {
+            val leaf = LoopTree(loop, m)
+            val parents = forest.filter { (tree: LoopTree) =>
+              tree.isParent(leaf)
+            }
+            if (parents.isEmpty) {
+              val children = forest.filter { (tree: LoopTree) =>
+                leaf.isParent(tree)
+              }
+              // This is correct even if children is empty
+              val tree = LoopTree(loop, m, children)
+              forest = (forest -- children) + tree
+            } else {
+              assert(parents.size <= 1, "multiple parents")
+              val parent = parents.head
+              forest = (forest - parent) + parent.insert(leaf)
+            }
+          }
+          loopForests = loopForests + (m -> forest)
+        }
+        forest
+      case Some(forest) => forest
+    }
   }
 
   def makeLoopGraph(m: SootMethod,
