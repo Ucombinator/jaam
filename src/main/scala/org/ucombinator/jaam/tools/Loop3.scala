@@ -19,6 +19,7 @@ import scala.collection.immutable
 
 import scala.collection.JavaConverters._
 import org.ucombinator.jaam.util.Soot
+import org.ucombinator.jaam.tools._
 
 object Main {
   def main(input: List[String], jaam: String, prune: Boolean, shrink: Boolean, prettyPrint: Boolean) {
@@ -267,7 +268,6 @@ object Main {
 
   }
 
-  // Copied from Loop2.main
   def computeLoopGraph(mainClass: String,
                        mainMethod: String, /*classpath: String,*/
                        graphStream: PrintStream,
@@ -314,12 +314,11 @@ object Main {
     //    }
   }
 
-  // Copied from Loop2.LoopGraph.apply
   def makeLoopGraph(m: SootMethod,
                     cg: Map[SootMethod,Map[Stmt, Set[SootMethod]]],
-                    prettyPrint: Boolean): tools.LoopAnalyzer.LoopGraph = {
+                    prettyPrint: Boolean): LoopGraph = {
     import tools.LoopAnalyzer._
-    import tools.LoopAnalyzer.LoopGraph._
+    import tools.LoopGraph._
 
     // TODO if things get slow, this should be easy to optimize
     def build(m: SootMethod, g: Map[Node, Set[Node]]):
