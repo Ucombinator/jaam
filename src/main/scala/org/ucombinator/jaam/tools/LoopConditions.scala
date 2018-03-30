@@ -1,27 +1,18 @@
-package org.ucombinator.jaam.tools.loop4
+package org.ucombinator.jaam.tools.loopConditions
 
-import java.io.FileOutputStream
-import java.io.FileInputStream
-import java.io.PrintStream
-import java.util.jar.JarEntry
-import java.util.jar.JarInputStream
+import java.io.{FileOutputStream, PrintStream}
+
 import org.jgrapht.Graphs
-import org.ucombinator.jaam.tools
-import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
-import soot.options.Options
-import soot.jimple.{Stmt => SootStmt, _}
-import org.ucombinator.jaam.util.JGraphT
-import org.ucombinator.jaam.util.Stmt
-import org.ucombinator.jaam.util.Soot
-import org.ucombinator.jaam.tools.app.{Origin, App}
-import org.ucombinator.jaam.tools.coverage2.Coverage2
 import org.ucombinator.jaam.serializer.Serializer
-
-import scala.collection.immutable
-import scala.collection.mutable
+import org.ucombinator.jaam.tools
+import org.ucombinator.jaam.tools.app.{App, Origin}
+import org.ucombinator.jaam.util.{JGraphT, Soot, Stmt}
+import soot.jimple.{Stmt => SootStmt, _}
+import soot.options.Options
+import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 
 import scala.collection.JavaConverters._
-import org.ucombinator.jaam.util.Soot
+import scala.collection.immutable
 
 object Main {
   def main(input: List[String], jaam: String, prune: Boolean, shrink: Boolean, prettyPrint: Boolean) {
@@ -382,8 +373,8 @@ object Main {
   def makeLoopGraph(m: SootMethod,
                     cg: Map[SootMethod,Map[Stmt, Set[SootMethod]]],
                     prettyPrint: Boolean): tools.LoopAnalyzer.LoopGraph = {
-    import tools.LoopAnalyzer._
     import tools.LoopAnalyzer.LoopGraph._
+    import tools.LoopAnalyzer._
 
     // TODO if things get slow, this should be easy to optimize
     def build(m: SootMethod, g: Map[Node, Set[Node]]):

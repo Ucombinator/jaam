@@ -25,7 +25,7 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamCon
   addSubcommand(Loop)
   addSubcommand(Loop2)
   addSubcommand(Loop3)
-  addSubcommand(Loop4)
+  addSubcommand(LoopConditions)
   addSubcommand(LoopIdentifier)
   addSubcommand(RegExDriver)
   addSubcommand(MissingReturns)
@@ -353,7 +353,7 @@ object Loop extends Main("loop") {
   def run() {
     val all = !(loop() || rec() || alloc())
     var color = !nocolor()
-    org.ucombinator.jaam.tools.loop.LoopDepthCounter.main(mainClass(), mainMethod(), jars().split(":"), 
+    org.ucombinator.jaam.tools.loop.LoopDepthCounter.main(mainClass(), mainMethod(), jars().split(":"),
                           org.ucombinator.jaam.tools.loop.PrintOption(all, loop(), rec(), alloc(), color, remove_duplicates(), graph()))
   }
 }
@@ -417,7 +417,7 @@ object Loop3 extends Main("loop3") {
 }
 
 
-object Loop4 extends Main("loop4") {
+object LoopConditions extends Main("loop-conditions") {
   //val classpath = opt[List[String]](descr = "TODO")
   val input = inputOpt()
   val output = outputOpt()
@@ -432,7 +432,7 @@ object Loop4 extends Main("loop4") {
 
   def run() {
     //Main.main(classpath.getOrElse(List()))
-    org.ucombinator.jaam.tools.loop4.Main.main(input(), output(), prune(), shrink(), prettyPrint())
+    org.ucombinator.jaam.tools.loopConditions.Main.main(input(), output(), prune(), shrink(), prettyPrint())
   }
 }
 
