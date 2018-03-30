@@ -23,7 +23,7 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamCon
   addSubcommand(Info)
   addSubcommand(ListItems)
   //addSubcommand(Loop)
-  addSubcommand(Loop2)
+  //addSubcommand(Loop2)
   addSubcommand(Loop3)
   addSubcommand(LoopConditions)
   addSubcommand(LoopIdentifier)
@@ -359,6 +359,7 @@ object Loop extends Main("loop") {
 }
 */
 
+/*
 object Loop2 extends Main("loop2") {
   banner("Analyze the depth of each loop in the application code")
   footer("")
@@ -395,7 +396,7 @@ object Loop2 extends Main("loop2") {
         prune(), shrink(), prettyPrint())
   }
 }
-
+*/
 
 object Loop3 extends Main("loop3") {
   //val classpath = opt[List[String]](descr = "TODO")

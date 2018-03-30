@@ -7,32 +7,19 @@ package org.ucombinator.jaam.tools
 // TODO: Compound graphs so loops live inside methods?
 // TODO: test coverage
 
-import java.io.FileOutputStream
-import java.io.FileInputStream
-import java.io.PrintStream
-import java.util.jar.JarEntry
-import java.util.jar.JarInputStream
+import org.jgrapht.{Graph, Graphs}
+import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
+import org.ucombinator.jaam.util.{CachedHashCode, Loop, Stmt}
+import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
+import soot.jimple.toolkits.callgraph.CallGraph
+import soot.jimple.{IfStmt, Stmt => SootStmt}
+import soot.tagkit.GenericAttribute
+import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
 
 import scala.collection.JavaConversions._
 import scala.collection.immutable
 import scala.collection.mutable
-
-import org.jgrapht._
-import org.jgrapht.io.DOTExporter
-import org.jgrapht.graph._
-
-import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
-import soot.jimple.{IfStmt, Stmt => SootStmt}
-import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
-import soot.jimple.toolkits.callgraph.{CHATransformer, CallGraph, Edge}
-import soot.options.Options
-import soot.tagkit.GenericAttribute
-import soot.toolkits.graph.LoopNestTree
-
 import org.ucombinator.jaam.serializer
-import org.ucombinator.jaam.serializer.TaintAddress
-import org.ucombinator.jaam.util.CachedHashCode
-import org.ucombinator.jaam.util.{Stmt, Loop}
 
 object LoopAnalyzer {
   case class LoopTree(loop: SootLoop, method: SootMethod, children: Set[LoopTree]) {
@@ -179,8 +166,8 @@ object LoopAnalyzer {
     val tag: String
   }
   case class LoopNode(m: SootMethod, loop: SootLoop) extends Node {
-    override val tag: String = m.getSignature + "\ninstruction #" + Statement(loop.getHead, m).index
-    val index: Int = Statement(loop.getHead, m).index
+    override val tag: String = m.getSignature + "\ninstruction #" + Stmt(loop.getHead, m).index
+    val index: Int = Stmt(loop.getHead, m).index
     override def toString = "  " + quote(tag) + " [shape=diamond];\n"
   }
   // TODO we might have uniqueness problems with SootMethod objects.
@@ -377,7 +364,7 @@ object LoopAnalyzer {
                 case sootStmt: IfStmt => Taint.addrsOf(sootStmt.getCondition, m)
                 case _ =>
                   println("TODO: investigate why the loop guard is not an IfStmt (" + stmt + ")")
-                  Set.empty[TaintAddress]
+                  Set.empty[serializer.TaintAddress]
               }
               serializer.LoopLoopNode(id, m, addrs, n.index)
           }
@@ -500,6 +487,7 @@ object LoopAnalyzer {
     }
   }
 
+/*
   def computeCoverage(classPath: String, graph: LoopGraph): Unit = {
     def add(map0: Map[String, Int], string: String): Map[String, Int] = {
       var map = map0
@@ -598,8 +586,10 @@ object LoopAnalyzer {
       computeCoverage(classpath, graph)
     }
   }
+  */
 }
 
+/*
 case class Statement(stmt: SootStmt, m: SootMethod) {
   assert(stmt != null, "trying to create a Statement with a null object")
   val index: Int = if (stmt.hasTag(Statement.indexTag)) {
@@ -615,7 +605,10 @@ case class Statement(stmt: SootStmt, m: SootMethod) {
     BigInt(stmt.getTag(Statement.indexTag).getValue).intValue
   }
 }
+*/
 
+/*
 object Statement {
   val indexTag = "org.ucombinator.jaam.Statement.indexTag"
 }
+*/

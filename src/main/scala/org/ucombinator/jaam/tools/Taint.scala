@@ -7,6 +7,7 @@ import java.io.PrintStream
 import java.util.zip.ZipInputStream
 
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.immutable
 import scala.collection.mutable
 
@@ -116,6 +117,27 @@ object Taint {
       }
     }
 
+  def getDispatchedMethods(invokeExpr: InvokeExpr): List[SootMethod] = {
+    val hierarchy = Scene.v().getOrMakeFastHierarchy()
+    val targetMethod = invokeExpr.getMethod
+    val realTargetMethods: List[SootMethod] = invokeExpr match {
+      case dynInvoke: DynamicInvokeExpr => throw new Exception(s"Unexpected DynamicInvokeExpr: $dynInvoke")
+      case staticInvoke: StaticInvokeExpr => List(targetMethod)
+      case specInvoke: SpecialInvokeExpr => List(hierarchy.resolveSpecialDispatch(specInvoke, targetMethod))
+      case insInvoke: InstanceInvokeExpr =>
+        assert(insInvoke.getBase.getType.isInstanceOf[RefLikeType], "Base is not a RefLikeType")
+        insInvoke.getBase.getType match {
+          case rt: RefType =>
+            val baseClass = insInvoke.getBase.getType.asInstanceOf[RefType].getSootClass
+            //println(s"baseClass: ${baseClass}")
+            hierarchy.resolveAbstractDispatch(baseClass, targetMethod).asScala.toList
+          case _ => List() // invocation on array/primitive type
+        }
+    }
+    //println(s"dispatched methods for ${targetMethod.getName}: ${realTargetMethods}")
+    realTargetMethods
+  }
+
     def getInvokeExprs(stmt: SootStmt): Set[InvokeExpr] = {
       stmt match {
         case sootStmt : DefinitionStmt =>
@@ -170,7 +192,7 @@ object Taint {
             val iExprs = getInvokeExprs(stmt)
             for {
               iExpr <- iExprs
-              called <- loop.LoopDepthCounter.getDispatchedMethods(iExpr) map coverage2.Coverage2.freshenMethod
+              called <- getDispatchedMethods(iExpr) map coverage2.Coverage2.freshenMethod
             } {
               // track propagation of arguments from invocation
               for {
