@@ -30,7 +30,7 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamCon
   addSubcommand(RegExDriver)
   addSubcommand(MissingReturns)
   addSubcommand(Print)
-  addSubcommand(Taint)
+  //addSubcommand(Taint)
   addSubcommand(Validate)
   addSubcommand(DecompileToFile)
   addSubcommand(Taint2)
@@ -499,7 +499,7 @@ object Print extends Main("print") {
   }
 }
 
-
+/*
 object Taint extends Main("taint") {
   banner("Identify explicit intra-procedural information flows in a method")
   footer("")
@@ -529,7 +529,7 @@ object Taint extends Main("taint") {
     org.ucombinator.jaam.tools.Taint.run(className(), method(), instruction(), implicitFlows(), cp, ps)
   }
 }
-
+*/
 
 object Validate extends Main("validate") {
   banner("Amend an aborted JAAM serialization to allow reading.")

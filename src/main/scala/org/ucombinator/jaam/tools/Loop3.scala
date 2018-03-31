@@ -14,7 +14,7 @@ import soot.options.Options
 import soot.jimple.{Stmt => SootStmt, _}
 import org.ucombinator.jaam.util.{CachedHashCode, Loop, Soot, Stmt}
 import org.ucombinator.jaam.tools.coverage2.Coverage2
-import org.ucombinator.jaam.serializer.Serializer
+import org.ucombinator.jaam.serializer._
 //import org.ucombinator.jaam.tools.LoopAnalyzer.{LoopNode, LoopTree, Node}
 
 import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
@@ -740,6 +740,46 @@ case class LoopGraph(m: SootMethod, private val g: Map[Node, Set[Node]],
   }
   */
 
+  def getByIndex(sootMethod : SootMethod, index: Int) : SootStmt = {
+    assert(index >= 0, "index must be nonnegative")
+    val units = sootMethod.retrieveActiveBody.getUnits.toList
+    assert(index < units.length, "index must not overflow the list of units")
+    val unit = units(index)
+    assert(unit.isInstanceOf[SootStmt], "the index specifies a Soot Unit that is not a Stmt. It is a " + unit.getClass)
+    unit.asInstanceOf[SootStmt]
+  }
+
+  // TODO petey/michael: is InvokeExpr the only expr with side effects?
+  def addrsOf(expr: SootValue, m: SootMethod): Set[TaintAddress] = {
+    expr match {
+      case l : Local => Set(LocalTaintAddress(m, l))
+      // TODO this could throw an exception
+      case pr: ParameterRef => Set(ParameterTaintAddress(m, pr.getIndex))
+      case t: ThisRef => Set(ThisRefTaintAddress(m))
+      case r : Ref => Set(RefTaintAddress(m, r))
+      // case _ : Constant => Set(ConstantTaintAddress(m))
+      case c : Constant => Set(ConstantTaintAddress(m, c))
+      case unop : UnopExpr => addrsOf(unop.getOp, m)
+      case binop : BinopExpr =>
+        // TODO in the case of division, this could throw an exception
+        addrsOf(binop.getOp1, m) ++
+          addrsOf(binop.getOp2, m)
+      case io : InstanceOfExpr => addrsOf(io.getOp, m)
+        // TODO this could throw an exception
+      case cast : CastExpr => addrsOf(cast.getOp, m)
+      case invoke : InvokeExpr => Set(InvokeTaintAddress(m, invoke))
+      case na : NewArrayExpr =>
+        addrsOf(na.getSize, m)
+      case _ : NewExpr => Set.empty
+      case nma : NewMultiArrayExpr =>
+        nma.getSizes.toSet flatMap { (exp: SootValue) => addrsOf(exp, m) }
+      case _ =>
+        println(expr)
+        ???
+    }
+  }
+
+
   def toJaam(s: serializer.PacketOutput,
              roots: Set[SootMethod] = Set()) {
     var seen = Set.empty[Node]
@@ -762,9 +802,9 @@ case class LoopGraph(m: SootMethod, private val g: Map[Node, Set[Node]],
             println(f"Serializing method: $m")
             serializer.LoopMethodNode(id, m)
           case n@LoopNode(m, _) =>
-            val stmt = Taint.getByIndex(m, n.index+1) // add one because the loop node is apparently the instruction before...?
+            val stmt = getByIndex(m, n.index+1) // add one because the loop node is apparently the instruction before...?
             val addrs = stmt match {
-              case sootStmt: IfStmt => Taint.addrsOf(sootStmt.getCondition, m)
+              case sootStmt: IfStmt => addrsOf(sootStmt.getCondition, m)
               case _ =>
                 println("TODO: investigate why the loop guard is not an IfStmt (" + stmt + ")")
                 Set.empty[serializer.TaintAddress]
