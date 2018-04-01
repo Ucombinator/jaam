@@ -22,18 +22,14 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamCon
   addSubcommand(FindMain)
   addSubcommand(Info)
   addSubcommand(ListItems)
-  //addSubcommand(Loop)
-  //addSubcommand(Loop2)
   addSubcommand(Loop3)
   addSubcommand(LoopConditions)
   addSubcommand(LoopIdentifier)
   addSubcommand(RegExDriver)
   addSubcommand(MissingReturns)
   addSubcommand(Print)
-  //addSubcommand(Taint)
   addSubcommand(Validate)
   addSubcommand(DecompileToFile)
-  addSubcommand(Taint2)
   addSubcommand(Taint3)
   addSubcommand(SystemProperties)
 
@@ -333,71 +329,6 @@ object ListItems extends Main("list") {
   }
 }
 
-/*
-object Loop extends Main("loop") {
-  banner("Analyze the number of depth of each loop in the application code")
-  footer("")
-
-  val graph = opt[Boolean](descr = "Print loops to GraphViz file")
-  val loop = opt[Boolean](descr = "Run loop detection")
-  val rec = opt[Boolean](descr = "Run recursion detection")
-  val alloc = opt[Boolean](descr = "Run allocation detection")
-  val nocolor = opt[Boolean](descr = "No coloring option if you want to redirect the output to some file or text editor",
-                             default = Some(false))
-  var remove_duplicates = opt[Boolean](name = "remove-duplicates", descr = "Only output deepest loop, may lose suspicious loops", default = Some(false))
-
-  val mainClass = trailArg[String](descr = "The name of the main class")
-  val mainMethod = trailArg[String](descr = "The name of entrance method")
-  val jars = trailArg[String](descr = "Colon separated list of application's JAR files, not includes library")
-
-  def run() {
-    val all = !(loop() || rec() || alloc())
-    var color = !nocolor()
-    org.ucombinator.jaam.tools.loop.LoopDepthCounter.main(mainClass(), mainMethod(), jars().split(":"),
-                          org.ucombinator.jaam.tools.loop.PrintOption(all, loop(), rec(), alloc(), color, remove_duplicates(), graph()))
-  }
-}
-*/
-
-/*
-object Loop2 extends Main("loop2") {
-  banner("Analyze the depth of each loop in the application code")
-  footer("")
-
-  // val graph = opt[Boolean](descr = "Print loops to GraphViz dot file")
-  // val rec = opt[Boolean](descr = "Run recursion detection")
-  // TODO name this
-  val prune = toggle(
-      descrYes = "Remove methods without outgoing edges from graph",
-      descrNo = "Do not remove methods without outgoing edges from graph",
-      default = Some(true))
-  val shrink = toggle(descrYes = "Skip methods without loops",
-      descrNo = "Include methods without loops", default = Some(true))
-  val prettyPrint = toggle(descrYes = "Pretty print found loops", default = Some(false))
-
-  val mainClass = trailArg[String](descr = "The name of the main class")
-  val mainMethod = trailArg[String](descr = "The name of the main method")
-  val classpath = trailArg[String](descr =
-      "Colon-separated list of JAR files and directories")
-  val output = opt[String](descr = "An output file for the dot output")
-  val coverage = opt[String](descr = "An output file for the coverage output")
-  val jaam = opt[String](short = 'j', descr = "the output file for the serialized data")
-
-  def run(): Unit = {
-    val outStream: PrintStream = output.toOption match {
-      case None => System.out
-      case Some(f) => new PrintStream(new FileOutputStream(f))
-    }
-    val coverageStream: PrintStream = coverage.toOption match {
-      case None => System.out
-      case Some(f) => new PrintStream(new FileOutputStream(f))
-    }
-    org.ucombinator.jaam.tools.LoopAnalyzer.main(mainClass(), mainMethod(), classpath(), outStream, coverageStream, jaam.toOption,
-        prune(), shrink(), prettyPrint())
-  }
-}
-*/
-
 object Loop3 extends Main("loop3") {
   //val classpath = opt[List[String]](descr = "TODO")
   val input = inputOpt()
@@ -416,7 +347,6 @@ object Loop3 extends Main("loop3") {
     org.ucombinator.jaam.tools.loop3.Main.main(input(), output(), prune(), shrink(), prettyPrint())
   }
 }
-
 
 object LoopConditions extends Main("loop-conditions") {
   //val classpath = opt[List[String]](descr = "TODO")
@@ -499,38 +429,6 @@ object Print extends Main("print") {
   }
 }
 
-/*
-object Taint extends Main("taint") {
-  banner("Identify explicit intra-procedural information flows in a method")
-  footer("")
-
-  // TODO: specify required options
-  val className = opt[String](descr = "FQN (package and class) of the class being analyzed")
-  val method = opt[String](descr = "signature of the method being analyzed; e.g., \"void main(java.lang.String[])\"")
-  val instruction = opt[Int](descr = "index into the Unit Chain that identifies the instruction", validate = { _ >= 0 })
-  val implicitFlows = opt[Boolean](descr = "TODO:implement")
-  val output = opt[java.io.File](descr = "a .dot file to be printed")
-  // really, this just gets used as the class path
-  val path = opt[String](descr = "java classpath (including jar files), colon-separated")
-  // val rtJar = opt[String](descr = "The RT.jar file to use for analysis",
-      // default = Some("resources/rt.jar"), required = true)
-
-  def run() {
-    val cp = path.toOption match {
-      case Some(str) => str
-      case None => ""
-    }
-
-    val ps = output.toOption match {
-      case Some(file) => new PrintStream(new FileOutputStream(file))
-      case None => System.out
-    }
-
-    org.ucombinator.jaam.tools.Taint.run(className(), method(), instruction(), implicitFlows(), cp, ps)
-  }
-}
-*/
-
 object Validate extends Main("validate") {
   banner("Amend an aborted JAAM serialization to allow reading.")
   footer("")
@@ -560,18 +458,6 @@ object DecompileToFile extends Main("decompile-to-file") {
 
   def run() {
     org.ucombinator.jaam.tools.decompileToFile.DecompileToFile.main(
-      input = input(), output = output())
-  }
-}
-
-object Taint2 extends Main("taint2") {
-  banner("TODO")
-
-  val input = inputOpt()
-  val output = outputOpt()
-
-  def run() {
-    org.ucombinator.jaam.tools.taint2.Taint2.main(
       input = input(), output = output())
   }
 }
