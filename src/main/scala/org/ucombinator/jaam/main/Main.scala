@@ -5,7 +5,7 @@ import java.io._
 import scala.collection.JavaConverters._
 import org.ucombinator.jaam.util.Log
 
-class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamConf {
+class Main(args : Seq[String]) extends ScallopConf(args = args) with JaamConf {
   shortSubcommandsHelp(true)
   // TODO: version: jvm version? Jaam-file header hash?
 
@@ -19,7 +19,7 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamCon
   addSubcommand(Coverage)
   addSubcommand(Coverage2)
   addSubcommand(Decompile)
-  addSubcommand(FindMain)
+  addSubcommand(FindSubcommand$)
   addSubcommand(Info)
   addSubcommand(ListItems)
   addSubcommand(Loop3)
@@ -36,7 +36,25 @@ class MainConf(args : Seq[String]) extends ScallopConf(args = args) with JaamCon
   verify()
 }
 
-abstract class Main(name: String /* TODO: = Main.SubcommandName(getClass())*/) extends Subcommand(name) with JaamConf {
+object Main extends App {
+  def conf: Main = new Main(this.args)
+
+  conf.subcommand.asInstanceOf[Option[Subcommand]] match {
+    case None => println("ERROR: No subcommand specified")
+    case Some(m : Subcommand) =>
+      if (m.waitForUser()) {
+        print("Press enter to start.")
+        scala.io.StdIn.readLine()
+      }
+
+      Log.setLogging(m.logLevel())
+      Log.color = m.color()
+
+      m.run()
+    }
+}
+
+abstract class Subcommand(name: String) extends org.rogach.scallop.Subcommand(name) with JaamConf {
   // TODO: describe()
   def run(): Unit
 
@@ -54,40 +72,11 @@ abstract class Main(name: String /* TODO: = Main.SubcommandName(getClass())*/) e
     elems = scala.collection.immutable.ListMap(Log.levels.map(l => l.name -> l) :_*))
 }
 
-object Main {
-  def conf: MainConf  = _conf
-  private var _conf: MainConf = _
-
-  // short-subcommand help
-  def main(args : Array[String]) {
-    _conf = new MainConf(args)
-    _conf.subcommand.asInstanceOf[Option[Main]] match {
-      case None => println("ERROR: No subcommand specified")
-      case Some(m : Main) =>
-        if (m.waitForUser()) {
-          print("Press enter to start.")
-          scala.io.StdIn.readLine()
-        }
-
-        Log.setLogging(m.logLevel())
-        Log.color = m.color()
-
-        m.run()
-    }
-  }
-
-  // From CamelCase / camelCase to camel-case
-  def SubcommandName(o: Class[_]): String = o.
-      getName.
-      flatMap(c => if (c.isUpper) Seq('-', c.toLower) else Seq(c)).
-      stripPrefix("-")
-}
-
 /****************
  * Subcommands  *
  ****************/
 
-object Visualizer extends Main("visualizer") {
+object Visualizer extends Subcommand("visualizer") {
   val input = inputOpt(required = false)
 
   def run() {
@@ -97,7 +86,7 @@ object Visualizer extends Main("visualizer") {
   }
 }
 
-object Interpreter extends Main("interpreter") {
+object Interpreter extends Subcommand("interpreter") {
   // TODO: banner("")
   // TODO: how do we turn off sorting of options by name?
   import org.ucombinator.jaam.interpreter.AbstractState
@@ -169,7 +158,7 @@ object Interpreter extends Main("interpreter") {
   }
 }
 
-object Agent extends Main("agent") {
+object Agent extends Subcommand("agent") {
   val arguments = trailArg[List[String]](default = Some(List()))
 
   def run() {
@@ -193,7 +182,7 @@ object Agent extends Main("agent") {
   }
 }
 
-object Cat extends Main("cat") {
+object Cat extends Subcommand("cat") {
   banner("Combine multile JAAM files into a single, cohesive file.")
   footer("")
 
@@ -205,7 +194,7 @@ object Cat extends Main("cat") {
   }
 }
 
-object App extends Main("app") {
+object App extends Subcommand("app") {
   banner("TODO")
   footer("")
 
@@ -229,7 +218,7 @@ object App extends Main("app") {
 }
 
 
-object Coverage extends Main("coverage") {
+object Coverage extends Subcommand("coverage") {
   banner("Analyze a JAAM file against target JAR files to find JAAM coverage.")
   footer("")
 
@@ -242,7 +231,7 @@ object Coverage extends Main("coverage") {
   }
 }
 
-object Coverage2 extends Main("coverage2") {
+object Coverage2 extends Subcommand("coverage2") {
   banner("Analyze a JAAM file against target JAR files to find JAAM coverage.")
   footer("")
 
@@ -258,7 +247,7 @@ object Coverage2 extends Main("coverage2") {
 }
 
 
-object Decompile extends Main("decompile") {
+object Decompile extends Subcommand("decompile") {
   banner("TODO")
   footer("")
 
@@ -286,7 +275,7 @@ object Decompile extends Main("decompile") {
 }
 
 
-object FindMain extends Main("find-main") {
+object FindSubcommand$ extends Subcommand("find-main") {
   banner("Attempt to find the Main class from which to run the JAR file")
   footer("")
 
@@ -303,7 +292,7 @@ object FindMain extends Main("find-main") {
 }
 
 
-object Info extends Main("info") {
+object Info extends Subcommand("info") {
   banner("Get simple information about a JAAM interpretation.")
   footer("")
 
@@ -315,7 +304,7 @@ object Info extends Main("info") {
 }
 
 
-object ListItems extends Main("list") {
+object ListItems extends Subcommand("list") {
   banner("List all classes and methods in the JAR file")
   footer("")
 
@@ -329,7 +318,7 @@ object ListItems extends Main("list") {
   }
 }
 
-object Loop3 extends Main("loop3") {
+object Loop3 extends Subcommand("loop3") {
   //val classpath = opt[List[String]](descr = "TODO")
   val input = inputOpt()
   val output = outputOpt()
@@ -348,7 +337,7 @@ object Loop3 extends Main("loop3") {
   }
 }
 
-object LoopConditions extends Main("loop-conditions") {
+object LoopConditions extends Subcommand("loop-conditions") {
   //val classpath = opt[List[String]](descr = "TODO")
   val input = inputOpt()
   val output = outputOpt()
@@ -368,7 +357,7 @@ object LoopConditions extends Main("loop-conditions") {
 }
 
 
-object LoopIdentifier extends Main("loopident") {
+object LoopIdentifier extends Subcommand("loopident") {
   val input = inputOpt()
   val printBodies = toggle(
     descrYes = "Print out the bodies of methods which contain loops",
@@ -391,7 +380,7 @@ object LoopIdentifier extends Main("loopident") {
   }
 }
 
-object RegExDriver extends Main("driver") {
+object RegExDriver extends Subcommand("driver") {
   val input = inputOpt()
   val className = opt[String](descr = "")
   val methodName = opt[String](descr = "")
@@ -402,7 +391,7 @@ object RegExDriver extends Main("driver") {
 }
 
 
-object MissingReturns extends Main("missing-returns") {
+object MissingReturns extends Subcommand("missing-returns") {
   banner("Find calls with no matching return")
   footer("")
 
@@ -414,7 +403,7 @@ object MissingReturns extends Main("missing-returns") {
 }
 
 
-object Print extends Main("print") {
+object Print extends Subcommand("print") {
   banner("Print a JAAM file in human-readable format")
   footer("")
 
@@ -429,7 +418,7 @@ object Print extends Main("print") {
   }
 }
 
-object Validate extends Main("validate") {
+object Validate extends Subcommand("validate") {
   banner("Amend an aborted JAAM serialization to allow reading.")
   footer("")
 
@@ -449,7 +438,7 @@ object Validate extends Main("validate") {
   }
 }
 
-object DecompileToFile extends Main("decompile-to-file") {
+object DecompileToFile extends Subcommand("decompile-to-file") {
   banner("TODO")
   footer("")
 
@@ -462,7 +451,7 @@ object DecompileToFile extends Main("decompile-to-file") {
   }
 }
 
-object Taint3 extends Main("taint3") {
+object Taint3 extends Subcommand("taint3") {
   banner("TODO")
 
   val input = inputOpt()
@@ -474,7 +463,7 @@ object Taint3 extends Main("taint3") {
   }
 }
 
-object SystemProperties extends Main("system-properties") {
+object SystemProperties extends Subcommand("system-properties") {
   def run() {
     for ((k, v) <- java.lang.System.getProperties.asScala.toList.sorted) {
       println(f"$k: $v")

@@ -10,7 +10,6 @@ object JaamConf {
   }
 }
 
-// Rename to JaamConf
 trait JaamConf extends ScallopConf {
   appendDefaultToDescription = true
   // TODO: input/output? (as functions like toggle)
