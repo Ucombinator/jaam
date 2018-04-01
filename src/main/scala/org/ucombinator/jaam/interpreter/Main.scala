@@ -27,10 +27,10 @@ import scala.collection.immutable.::
 import scala.collection.mutable
 import scala.io.Source
 import scala.reflect.ClassTag
-
-import java.io.{File, FileOutputStream, BufferedReader, FileReader}
+import java.io.{BufferedReader, File, FileOutputStream, FileReader}
 
 import org.rogach.scallop._
+import org.ucombinator.jaam.util.CachedHashCode
 
 // We expect every Unit we use to be a soot.jimple.Stmt, but the APIs
 // are built around using Unit so we stick with that.  (We may want to
@@ -57,9 +57,6 @@ import org.ucombinator.jaam.interpreter.snowflakes._
 TODO: use FastSet to enforce use of CachedHashCode
 class FastSet[T <: CachedHashCode] extends Set[T]
  */
-trait CachedHashCode extends Product {
-  override lazy val hashCode = scala.runtime.ScalaRunTime._hashCode(this)
-}
 
 // Possibly thrown during transition between states.
 case class UninitializedClassException(sootClass : SootClass) extends RuntimeException
