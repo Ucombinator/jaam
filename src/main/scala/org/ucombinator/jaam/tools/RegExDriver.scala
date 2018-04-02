@@ -4,8 +4,8 @@ import org.ucombinator.jaam.serializer.Serializer
 import org.ucombinator.jaam.tools.app.{App, Origin}
 import org.ucombinator.jaam.patterns.stmtPattern._
 import org.ucombinator.jaam.patterns.stmtPattern.regEx._
-import org.ucombinator.jaam.patterns.StmtPatternToRegEx
-import org.ucombinator.jaam.util.{LoopPatterns, Soot, Stmt}
+import org.ucombinator.jaam.patterns.{LoopPatterns, StmtPatternToRegEx}
+import org.ucombinator.jaam.util.{Soot, Stmt}
 import soot.{PackManager, Scene}
 import soot.options.Options
 import soot.toolkits.graph.LoopNestTree
