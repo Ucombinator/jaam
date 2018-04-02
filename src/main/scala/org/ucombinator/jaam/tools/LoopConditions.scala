@@ -120,7 +120,8 @@ object Main {
       println(f"  pseudoHeader: ${pseudoHeader == k}: $pseudoHeader")
 //      println(f"  clone: ${k == k.asInstanceOf[AbstractUnit].clone}")
       graph.addVertex(pseudoHeader)
-      for (backedge_node <- headers(k)) {
+      val backEdges = headers(k)
+      for (backedge_node <- backEdges) {
         println(f"  backedge_node: $backedge_node")
         graph.removeEdge(backedge_node, k)
         graph.addEdge(backedge_node, pseudoHeader)
@@ -133,6 +134,18 @@ object Main {
       val dom_start = loopDom(pseudoHeader)
       println(f"  dom_start: $dom_start")
 //      dom(s)
+
+      // Types of loops: infinite, pre-condition, post-condition
+      if (vs.forall(v => v.nextSemantic.exists(vs.contains))) {
+        // infinite = no jumps out of loop
+        println(f"  loop type = infinite")
+      } else if (backEdges.forall(b => b.nextSemantic.forall(vs.contains))) {
+        // pre-condition = jumps out of loop and back jump statements go only into the loop
+        println(f"  loop type = pre-condition")
+      } else {
+        // post-condition = some back jump statements go out of loop
+        println(f"  loop type = post-condition")
+      }
     }
 
   }
