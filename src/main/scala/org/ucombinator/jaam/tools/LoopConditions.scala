@@ -15,7 +15,7 @@ import scala.collection.JavaConverters._
 import scala.collection.immutable
 
 object Main {
-  def main(input: List[String], jaam: String, prune: Boolean, shrink: Boolean, prettyPrint: Boolean) {
+  def main(input: List[String], output: String, prune: Boolean, shrink: Boolean, prettyPrint: Boolean) {
     Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
     Options.v().set_keep_line_number(true)
@@ -135,8 +135,13 @@ object Main {
       println(f"  dom_start: $dom_start")
 //      dom(s)
 
-      // Types of loops: infinite, pre-condition, post-condition
-      if (vs.forall(v => v.nextSemantic.exists(vs.contains))) {
+      println(f"  k: $k")
+      // Types of loops: exception, infinite, pre-condition, post-condition
+      if (k match { case k: IdentityStmt => k.getRightOp.isInstanceOf[CaughtExceptionRef] case _ => false }) {
+        println(f"  loop type = exception (by identity)")
+      } else if (k match { case k: DefinitionStmt => k.getRightOp.isInstanceOf[CaughtExceptionRef] case _ => false }) {
+        println(f"  loop type = exception (by definition)")
+      } else if (vs.forall(v => v.nextSemantic.exists(vs.contains))) {
         // infinite = no jumps out of loop
         println(f"  loop type = infinite")
       } else if (backEdges.forall(b => b.nextSemantic.forall(vs.contains))) {
@@ -145,9 +150,15 @@ object Main {
       } else {
         // post-condition = some back jump statements go out of loop
         println(f"  loop type = post-condition")
+        for (v <- vs) {
+          println(f"  v: $v")
+        }
+        for (b <- backEdges) {
+          println(f"  backedge: $b")
+          println(f"  nextSemantic: ${b.nextSemantic}")
+        }
       }
     }
-
   }
 }
 
