@@ -1,4 +1,4 @@
-package org.ucombinator.jaam.util
+package org.ucombinator.jaam.patterns
 
 case class RegEx[State, AtomType]() {
   type Identifier = String
