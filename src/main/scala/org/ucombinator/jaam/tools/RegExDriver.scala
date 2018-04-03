@@ -2,8 +2,7 @@ package org.ucombinator.jaam.tools.regex_driver
 
 import org.ucombinator.jaam.serializer.Serializer
 import org.ucombinator.jaam.tools.app.{App, Origin}
-import org.ucombinator.jaam.patterns.stmtPattern._
-import org.ucombinator.jaam.patterns.stmtPattern.regEx._
+import org.ucombinator.jaam.patterns.stmt._
 import org.ucombinator.jaam.patterns.{LoopPatterns, StmtPatternToRegEx}
 import org.ucombinator.jaam.util.{Soot, Stmt}
 import soot.{PackManager, Scene}

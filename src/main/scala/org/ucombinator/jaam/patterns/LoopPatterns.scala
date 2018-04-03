@@ -1,7 +1,6 @@
 package org.ucombinator.jaam.patterns
 
-import org.ucombinator.jaam.patterns.stmtPattern._
-import org.ucombinator.jaam.patterns.stmtPattern.regEx._
+import org.ucombinator.jaam.patterns.stmt._
 import org.ucombinator.jaam.util.{Soot, Stmt}
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
 import soot.{Type => SootType}
