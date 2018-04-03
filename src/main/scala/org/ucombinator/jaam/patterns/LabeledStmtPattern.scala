@@ -1,11 +1,10 @@
-package org.ucombinator.jaam.patterns.stmtPattern
+package org.ucombinator.jaam.patterns
 
 import org.ucombinator.jaam.patterns.stmtPattern.regEx._
-import org.ucombinator.jaam.util.Stmt
-import org.ucombinator.jaam.util.Soot
-import soot.{Local, SootMethod, Type, UnitPrinter, UnknownType, Value, ValueBox}
+import org.ucombinator.jaam.util.{Soot, Stmt}
 import soot.jimple._
 import soot.util.Switch
+import soot.{Local, SootMethod, Type, UnitPrinter, UnknownType, Value, ValueBox}
 
 import scala.collection.JavaConverters._
 
