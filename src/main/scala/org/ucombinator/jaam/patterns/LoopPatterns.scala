@@ -1,9 +1,9 @@
-package org.ucombinator.jaam.util
+package org.ucombinator.jaam.patterns
 
-import org.ucombinator.jaam.util.stmtPattern._
-import org.ucombinator.jaam.util.stmtPattern.regEx._
-import soot.{Type => SootType}
+import org.ucombinator.jaam.patterns.stmt._
+import org.ucombinator.jaam.util.{Soot, Stmt}
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
+import soot.{Type => SootType}
 
 import scala.collection.JavaConverters._
 
@@ -47,6 +47,9 @@ object LoopPatterns {
       )
     )
   )
+
+  // TODO: Try pattern: .*(getLabel)
+  // should see two outputs: one with capture, one without
 
   private val iteratorInvokeMatch = Cat(List(wildcardRep, iteratorInvoke, wildcardRep))
   //  private val iteratorLoop = Cat(List(wildcardRep, iteratorInvoke, wildcardRep))

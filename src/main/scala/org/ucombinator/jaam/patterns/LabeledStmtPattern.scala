@@ -1,11 +1,10 @@
-package org.ucombinator.jaam.util.stmtPattern
+package org.ucombinator.jaam.patterns
 
-import org.ucombinator.jaam.util.stmtPattern.regEx._
-import org.ucombinator.jaam.util.Stmt
-import org.ucombinator.jaam.util.Soot
-import soot.{Local, SootMethod, Type, UnitPrinter, UnknownType, Value, ValueBox}
+import org.ucombinator.jaam.patterns.stmt._
+import org.ucombinator.jaam.util.{Soot, Stmt}
 import soot.jimple._
 import soot.util.Switch
+import soot.{Local, SootMethod, Type, UnitPrinter, UnknownType, Value, ValueBox}
 
 import scala.collection.JavaConverters._
 
@@ -96,13 +95,13 @@ case class InstanceInvokeExpPattern(base: ExpPattern, method: MethodPattern, arg
         states2.flatMap(args(_, exprArgs))
       case _ => List()
 
-       /*
-        do
-          base(expr.getBase)
-          method(expr.getMethod)
-          zipWithM_ ($) args expr.getArgs
-          return ()
-    */
+      /*
+       do
+         base(expr.getBase)
+         method(expr.getMethod)
+         zipWithM_ ($) args expr.getArgs
+         return ()
+   */
     }
   }
 }

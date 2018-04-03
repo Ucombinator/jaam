@@ -2,9 +2,9 @@ package org.ucombinator.jaam.tools.regex_driver
 
 import org.ucombinator.jaam.serializer.Serializer
 import org.ucombinator.jaam.tools.app.{App, Origin}
-import org.ucombinator.jaam.util.stmtPattern._
-import org.ucombinator.jaam.util.{LoopPatterns, Soot, Stmt, StmtPatternToRegEx}
-import org.ucombinator.jaam.util.stmtPattern.regEx._
+import org.ucombinator.jaam.patterns.stmt._
+import org.ucombinator.jaam.patterns.{LoopPatterns, StmtPatternToRegEx}
+import org.ucombinator.jaam.util.{Soot, Stmt}
 import soot.{PackManager, Scene}
 import soot.options.Options
 import soot.toolkits.graph.LoopNestTree
