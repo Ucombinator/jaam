@@ -35,6 +35,7 @@ case class App() extends serializer.Packet {
     var className: Option[String] = None
     var methodName: Option[String] = None
   }
+  var appPackages: Array[String] = Array.empty
 //  object java {
 //    var opts = null: String
 //  }
@@ -107,6 +108,7 @@ object Main {
            app: List[String],
            lib: List[String],
            jvm: List[String],
+           appPackages: List[String],
            defaultJvm: Boolean,
            detectMain: Boolean,
            mainClass: Option[String],
@@ -120,6 +122,8 @@ object Main {
     appConfig.classpath ++= readList(app, Some(Origin.APP))
     appConfig.classpath ++= readList(lib, Some(Origin.LIB))
     appConfig.classpath ++= readList(jvm, Some(Origin.JVM))
+
+    appConfig.appPackages = appPackages.toArray
 
     if (defaultJvm) {
       val JVM_JARS = "java-1.8.0-openjdk-headless-1.8.0.65-2.b17.el7_1.x86_64.zip"

@@ -39,27 +39,27 @@ object Soot {
 
   var loadedClasses: Map[String, ClassData] = Map.empty
 
-  private def load(p: PathElement) {
-    //println(f"p ${p.path} and ${p.root}")
-    for (d <- p.classData()) {
-      //println(f"d ${d.length}")
-      val cr = new ClassReader(new ByteArrayInputStream(d))
-      val cn = new ClassNode
-      cr.accept(cn, 0)
+  def addClasses(app: App): Unit = {
+    for (p <- app.classpath) {
+      //println(f"p ${p.path} and ${p.root}")
+      for (d <- p.classData()) {
+        //println(f"d ${d.length}")
+        val cr = new ClassReader(new ByteArrayInputStream(d))
+        val cn = new ClassNode
+        cr.accept(cn, 0)
 
-      // TODO: temporary hack
-      val appPackages = List("com/ainfosec/", "com/bbn/", "com/stac/", "com/cyberpointllc/")
-      val isAppPackage = appPackages.exists(prefix => cn.name.startsWith(prefix))
-      val newOrigin = p.origin match {
-        case Origin.APP => if (isAppPackage) Origin.APP else Origin.LIB
-        case otherwise => otherwise
+        // TODO: temporary hack
+        //val appPackages = List("com/ainfosec/", "com/bbn/", "com/stac/", "com/cyberpointllc/")
+        val isAppPackage = app.appPackages.exists(prefix => cn.name.startsWith(prefix))
+        val newOrigin = p.origin match {
+          case Origin.APP => if (isAppPackage) Origin.APP else Origin.LIB
+          case otherwise => otherwise
+        }
+        //println(f"cn.name: ${cn.name} ${p.origin} $newOrigin")
+        loadedClasses += cn.name.replace('/', '.') -> ClassData("TODO:JaamClassProvider", newOrigin, d)
       }
-      //println(f"cn.name: ${cn.name} ${p.origin} $newOrigin")
-      loadedClasses += cn.name.replace('/', '.') -> ClassData("TODO:JaamClassProvider", newOrigin, d)
     }
   }
-
-  def addClasses(app: App): Unit = { app.classpath.foreach(load) }
 
   // TODO: optional flags to load only some parts?
   def addJaamClasses(file: String): Unit = {
