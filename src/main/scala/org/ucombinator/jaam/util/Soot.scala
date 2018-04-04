@@ -50,7 +50,9 @@ object Soot {
 
         // TODO: temporary hack
         //val appPackages = List("com/ainfosec/", "com/bbn/", "com/stac/", "com/cyberpointllc/")
-        val isAppPackage = app.appPackages.exists(prefix => cn.name.startsWith(prefix))
+        //val isAppPackage = appPackages.exists(prefix => cn.name.startsWith(prefix))
+        val isAppPackage =
+          app.appPackages.isEmpty || app.appPackages.exists(prefix => cn.name.startsWith(prefix))
         val newOrigin = p.origin match {
           case Origin.APP => if (isAppPackage) Origin.APP else Origin.LIB
           case otherwise => otherwise
