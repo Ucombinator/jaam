@@ -30,7 +30,10 @@ public class LayerFactory
                     @Override
                     public StateVertex apply(List<StateVertex> stateVertices) {
                         StateSccVertex sccVertex = new StateSccVertex("SCC");
-                        stateVertices.forEach(v -> sccVertex.getChildGraph().addVertex(v));
+                        stateVertices.forEach(v -> {
+                            sccVertex.getChildGraph().addVertex(v);
+                            v.setParentGraph(sccVertex.getChildGraph());
+                        });
                         return sccVertex;
                     }
                 },
@@ -56,7 +59,10 @@ public class LayerFactory
                     @Override
                     public TaintVertex apply(List<TaintVertex> stateVertices) {
                         TaintSccVertex sccVertex = new TaintSccVertex("SCC");
-                        stateVertices.forEach(v -> sccVertex.getChildGraph().addVertex(v));
+                        stateVertices.forEach(v -> {
+                            sccVertex.getChildGraph().addVertex(v);
+                            v.setParentGraph(sccVertex.getChildGraph());
+                        });
                         return sccVertex;
                     }
                 },

@@ -185,7 +185,10 @@ public class GraphUtils {
         // Next, make new graph and add component vertices.
         T newRoot = root.copy();
         Graph<T, S> newGraph = newRoot.getChildGraph();
-        mapHashToComponentVertex.entrySet().forEach(entry -> newGraph.addVertex(entry.getValue()));
+        mapHashToComponentVertex.entrySet().forEach(entry -> {
+            newGraph.addVertex(entry.getValue());
+            entry.getValue().setParentGraph(newGraph);
+        });
 
         // Lastly, add edges between the new vertices.
         for (T currVertexOld: root.getChildGraph().getVertices()) {
