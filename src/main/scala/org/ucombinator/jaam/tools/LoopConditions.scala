@@ -63,9 +63,9 @@ object Main {
 
     println(f"start: ${start.index}: $start\n")
     println(f"graph:\n")
-    for (v <- graph.vertexSet.asScala) {
+    for (v <- graph.vertexSet.asScala.toList.sortBy(_.index)) {
       println(f"  vertex: ${v.index}: $v")
-      for (p <- Graphs.successorListOf(graph, v).asScala) {
+      for (p <- Graphs.successorListOf(graph, v).asScala.toList.sortBy(_.index)) {
         println(f"    ${p.index}: $p")
       }
     }
@@ -74,9 +74,9 @@ object Main {
     val dom = JGraphT.dominators(graph, start)
 
     println(f"dom:\n")
-    for ((k, vs) <- dom) {
+    for ((k, vs) <- dom.toList.sortBy(_._1.index)) {
       println(f"  key: ${k.index}: $k")
-      for (v <- vs) {
+      for (v <- vs.toList.sortBy(_.index)) {
         println(f"    ${v.index}: $v")
       }
     }
@@ -86,9 +86,9 @@ object Main {
     val headers = JGraphT.loopHeads(graph, start)
 
     println(f"headers:\n")
-    for ((k, vs) <- headers) {
+    for ((k, vs) <- headers.toList.sortBy(_._1.index)) {
       println(f"  key: $k")
-      for (v <- vs) {
+      for (v <- vs.toList.sortBy(_.index)) {
         println(f"    $v")
       }
     }
@@ -97,15 +97,15 @@ object Main {
     val loops = JGraphT.loopNodes(graph, start)
 
     println(f"loops:\n")
-    for ((k, vs) <- loops) {
+    for ((k, vs) <- loops.toList.sortBy(_._1.index)) {
       println(f"  key: $k")
-      for (v <- vs) {
+      for (v <- vs.toList.sortBy(_.index)) {
         println(f"    $v")
       }
     }
     println()
 
-    for ((k, vs) <- loops) {
+    for ((k, vs) <- loops.toList.sortBy(_._1.index)) {
       println(f"loop at $k")
 
       // Nodes one past the end
