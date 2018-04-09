@@ -75,10 +75,10 @@ case class RegEx[State, AtomType]() {
       flatMap2[(RegExp, State), State, (RegExp, State)](oldTup._2, { case (e, s) => derive(e, s, atom) })
     }
 
-    val result1 = atoms.foldLeft((List[State](), List((exp, state))))(step)
-    val result2 = result1._2.flatMap({ case (e, s) => parseNull(e, s) })
+    val (_, result1) = atoms.foldLeft((List[State](), List((exp, state))))(step)
+    val result2 = result1.flatMap({ case (e, s) => parseNull(e, s) })
     println("  result1: " + result1)
     println("  result2: " + result2)
-    result1._1 ++ result2
+    result2
   }
 }
