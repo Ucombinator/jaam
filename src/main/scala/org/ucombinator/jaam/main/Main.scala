@@ -341,21 +341,11 @@ object Loop3 extends Subcommand("loop3") {
 }
 
 object LoopConditions extends Subcommand("loop-conditions") {
-  //val classpath = opt[List[String]](descr = "TODO")
   val input = inputOpt()
-  val output = outputOpt()
-
-  val prune = toggle(
-      descrYes = "Remove methods without outgoing edges from graph",
-      descrNo = "Do not remove methods without outgoing edges from graph",
-      default = Some(true))
-  val shrink = toggle(descrYes = "Skip methods without loops",
-      descrNo = "Include methods without loops", default = Some(true))
-  val prettyPrint = toggle(descrYes = "Pretty print found loops", default = Some(false))
+  val `class` = opt[String](required = true)
 
   def run() {
-    //Main.main(classpath.getOrElse(List()))
-    org.ucombinator.jaam.tools.loopConditions.Main.main(input(), output(), prune(), shrink(), prettyPrint())
+    org.ucombinator.jaam.tools.loopConditions.Main.main(input(), `class`())
   }
 }
 

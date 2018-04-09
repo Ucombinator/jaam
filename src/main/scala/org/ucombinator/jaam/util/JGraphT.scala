@@ -76,7 +76,7 @@ object JGraphT {
   // nodes that are part of that loop
   def loopNodes[V,E](graph: Graph[V,E], head: V, backJumpNodes: immutable.Set[V]):
   immutable.Set[V] = {
-    var loop: immutable.Set[V] = Set.empty
+    var loop: immutable.Set[V] = Set(head)
 
     // Iteration until work list is empty
     var work = backJumpNodes.toList

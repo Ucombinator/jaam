@@ -15,7 +15,7 @@ import scala.collection.JavaConverters._
 import scala.collection.immutable
 
 object Main {
-  def main(input: List[String], output: String, prune: Boolean, shrink: Boolean, prettyPrint: Boolean) {
+  def main(input: List[String], className: String) {
     Options.v().set_verbose(false)
     Options.v().set_output_format(Options.output_format_jimple)
     Options.v().set_keep_line_number(true)
@@ -43,17 +43,21 @@ object Main {
 
     for (a <- inputPackets) { Soot.addClasses(a.asInstanceOf[App]) }
 
+/*
     val mainClasses = for (a <- inputPackets) yield { a.asInstanceOf[App].main.className }
     val mainMethods = for (a <- inputPackets) yield { a.asInstanceOf[App].main.methodName }
     val mainClass = mainClasses.head.get // TODO: fix
     val mainMethod = mainMethods.head.get // TODO: fix
+    */
 
     Scene.v.loadBasicClasses()
     PackManager.v.runPacks()
 
-    val m = Soot.getSootClass(mainClass).getMethodByName(mainMethod) //Coverage2.freshenMethod(Soot.getSootClass(mainClass).getMethodByName(mainMethod))
-
-    myLoops(m)
+    for (m <- Soot.getSootClass(className).getMethods.asScala) {
+//    .getMethodByName(mainMethod) //Coverage2.freshenMethod(Soot.getSootClass(mainClass).getMethodByName(mainMethod))
+      println(f"\n\n!!!!!!!!\nMethod: ${m.getName}\n!!!!!!!!\n\n")
+      myLoops(m)
+    }
   }
 
   // TEST CMD: (cd ../..; sbt assembly) && jaam loop4 --input DoWhileLoop.app.jaam --output /dev/null
@@ -62,6 +66,7 @@ object Main {
     val (start, graph) = Soot.getBodyGraph(m)
 
     println(f"start: ${start.index}: $start\n")
+    if (false) {
     println(f"graph:\n")
     for (v <- graph.vertexSet.asScala.toList.sortBy(_.index)) {
       println(f"  vertex: ${v.index}: $v")
@@ -70,9 +75,11 @@ object Main {
       }
     }
     println()
+    }
 
     val dom = JGraphT.dominators(graph, start, true)
 
+if (false) {
     println(f"dom:\n")
     for ((k, vs) <- dom.toList.sortBy(_._1.index)) {
       println(f"  key: ${k.index}: $k")
@@ -81,6 +88,7 @@ object Main {
       }
     }
     println()
+}
 
     // Maps header nodes to sets of backjump nodes
     val headers = JGraphT.loopHeads(graph, start)
@@ -141,7 +149,7 @@ object Main {
         println(f"  loop type = exception (by identity)")
       } else if (k match { case k: DefinitionStmt => k.getRightOp.isInstanceOf[CaughtExceptionRef] case _ => false }) {
         println(f"  loop type = exception (by definition)")
-      } else if (vs.forall(v => v.nextSemantic.exists(vs.contains))) {
+      } else if (vs.forall(v => v.nextSemantic.forall(vs.contains))) {
         // infinite = no jumps out of loop
         println(f"  loop type = infinite")
       } else if (backEdges.forall(b => b.nextSemantic.forall(vs.contains))) {
