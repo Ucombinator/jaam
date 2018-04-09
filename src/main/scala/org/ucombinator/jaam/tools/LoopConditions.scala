@@ -71,7 +71,7 @@ object Main {
     }
     println()
 
-    val dom = JGraphT.dominators(graph, start)
+    val dom = JGraphT.dominators(graph, start, true)
 
     println(f"dom:\n")
     for ((k, vs) <- dom.toList.sortBy(_._1.index)) {
@@ -127,7 +127,7 @@ object Main {
         graph.addEdge(backedge_node, pseudoHeader)
       }
 
-      val loopDom = JGraphT.dominators(graph, k)
+      val loopDom = JGraphT.dominators(graph, k, true)
 
       val dom_ends = ends.map(e => loopDom(e))
       println(f"  dom_end: $dom_ends")

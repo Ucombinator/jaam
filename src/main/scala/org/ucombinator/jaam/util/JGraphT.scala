@@ -8,10 +8,28 @@ import scala.collection.mutable
 import org.jgrapht._
 
 object JGraphT {
+  // Returns the set of edges reachable from `start`
+  def reachable[V, E](graph: Graph[V,E], start: V): Set[V] = {
+    var reachable = Set[V]()
+    var pending = List(start)
+
+    while (pending.nonEmpty) {
+      val vertex = pending.head
+      pending = pending.tail
+      val newVertexes = Graphs.successorListOf(graph, vertex).asScala.toList.filterNot(reachable)
+      pending = newVertexes ++ pending
+      reachable ++= newVertexes
+    }
+
+    reachable
+  }
+
   // Returns a mapping from nodes to the set of nodes that dominate them
-  def dominators[V,E](graph: Graph[V,E], start: V):
+  def dominators[V,E](graph: Graph[V,E], start: V, onlyReachable: Boolean = false):
   immutable.Map[V, immutable.Set[V]] = {
-    val vs = graph.vertexSet.asScala.toSet
+    val vs =
+      if (onlyReachable) { reachable(graph, start) }
+      else { graph.vertexSet.asScala.toSet }
     var dom: immutable.Map[V, immutable.Set[V]]  = Map.empty
 
     // Initial assignment
@@ -29,7 +47,7 @@ object JGraphT {
           (v -> (
             immutable.Set(v) ++
               Graphs.predecessorListOf(graph, v).
-                asScala.map(dom).
+                asScala.filter(dom.contains).map(dom).
                 fold(vs)(_ & _)))
       }
     } while (old_dom != dom)
@@ -41,10 +59,10 @@ object JGraphT {
   def loopHeads[V,E](graph: Graph[V,E], start: V):
   immutable.Map[V, immutable.Set[V]] = {
 
-    val dom = JGraphT.dominators(graph, start)
+    val dom = JGraphT.dominators(graph, start, true)
     val heads = new mutable.HashMap[V, mutable.Set[V]] with mutable.MultiMap[V, V]
 
-    for (v <- graph.vertexSet.asScala) {
+    for (v <- dom.keys) {
       for (s <- Graphs.successorListOf(graph, v).asScala if dom(v).contains(s)) {
         heads.addBinding(s, v)
       }
