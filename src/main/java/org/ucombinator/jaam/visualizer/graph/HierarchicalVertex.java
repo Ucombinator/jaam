@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.graph;
 
+import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 import org.ucombinator.jaam.visualizer.state.StateRootVertex;
 import org.ucombinator.jaam.visualizer.taint.TaintRootVertex;
 
@@ -11,6 +12,7 @@ public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extend
 
     Graph<T, S> getParentGraph();
     Graph<T, S> getChildGraph();
+    LayoutAlgorithm.LAYOUT_ALGORITHM preferredLayout = LayoutAlgorithm.LAYOUT_ALGORITHM.DFS;
     void setParentGraph(Graph<T, S> graph);
     T copy(); // Copy constructor, used to construct new vertices in visible graph.
 
@@ -84,5 +86,9 @@ public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extend
                 v.getDescendants(descendants);
             });
         }
+    }
+
+    default LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
+        return preferredLayout;
     }
 }

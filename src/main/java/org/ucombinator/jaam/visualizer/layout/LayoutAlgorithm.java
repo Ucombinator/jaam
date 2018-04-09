@@ -18,10 +18,14 @@ public class LayoutAlgorithm
     private static final double NODES_PADDING = 10;
     private static final double ROOT_V_OFFSET = 10;
 
+    public enum LAYOUT_ALGORITHM {
+        DFS, BFS
+    }
+
     public static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
     void layout(T parentVertex) {
         initializeSizes(parentVertex);
-        bfsLayout(parentVertex);
+        doLayout(LAYOUT_ALGORITHM.BFS, parentVertex);
         parentVertex.setY(parentVertex.getY() + ROOT_V_OFFSET);
     }
 
@@ -47,11 +51,21 @@ public class LayoutAlgorithm
                 // Layout the child graphs of each node and assign width W and height H to each node
                 // X and Y coordinates are RELATIVE to the parent
                 if (v.isExpanded()) {
-                    dfsLayout(v);
+                    doLayout(v.getPreferredLayout(), v);
                 } else {
                     System.out.println("Collapsed node: " + v.getId());
                 }
             }
+        }
+    }
+
+    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
+    void doLayout(LAYOUT_ALGORITHM alg, T parentVertex) {
+        if (alg == LAYOUT_ALGORITHM.DFS) {
+            dfsLayout(parentVertex);
+        }
+        else {
+            bfsLayout(parentVertex);
         }
     }
 
