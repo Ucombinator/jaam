@@ -203,7 +203,7 @@ object App extends Subcommand("app") {
   val lib = opt[List[String]](short = 'l', descr = "library jars, class files, or directories", default = Some(List()))
   val jvm = opt[List[String]](short = 'r', descr = "Java runtime jars, class files, or directories", default = Some(List()))
 
-  val appPackages = opt[List[String]](short = 'p', descr = "package prefixes contain application code (the empty list allows all)", default = Some(List()))
+  val appPackage = opt[List[String]](short = 'p', descr = "package prefixes contain application code (the empty list allows all)", default = Some(List()))
 
   val defaultJvm = toggle(prefix = "no-", default = Some(true))
 
@@ -216,7 +216,7 @@ object App extends Subcommand("app") {
   // TODO: val java-8-rt (in resource?)
 
   def run() {
-    org.ucombinator.jaam.tools.app.Main.main(input(), app(), lib(), jvm(), appPackages(), defaultJvm(), detectMain(), mainClass.toOption, mainMethod.toOption, output())
+    org.ucombinator.jaam.tools.app.Main.main(input(), app(), lib(), jvm(), appPackage(), defaultJvm(), detectMain(), mainClass.toOption, mainMethod.toOption, output())
   }
 }
 
