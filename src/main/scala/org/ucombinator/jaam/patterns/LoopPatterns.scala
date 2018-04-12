@@ -116,6 +116,8 @@ object LoopPatterns {
     )
   }
 
+  // TODO: Realistically, the `wildcardRep` should be able to exclude certain variables.
+  // This would allow us to filter out loops where induction variables are manipulated.
   private val iteratorLoop = Cat(List(
     wildcardRep,
     iteratorInvoke("iteratorInvoke", "iter", "arr"),
