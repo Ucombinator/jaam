@@ -23,7 +23,7 @@ object Main {
     }
   }
 
-  def main(input: List[String], className: String, methodName: String): Unit = {
+  def main(input: List[String], className: String, methodName: Option[String]): Unit = {
     prepFromInput(input)
 
     val classNames = Soot.loadedClasses.keys
@@ -31,7 +31,7 @@ object Main {
     for (c <- classes) {
       if (Soot.loadedClasses(c.getName).origin == Origin.APP) {
         // Search through only concrete methods.
-        for (method <- c.getMethods.asScala.filter(m => m.isConcrete && m.getName == methodName)) {
+        for (method <- c.getMethods.asScala.filter(m => m.isConcrete && (methodName match { case None => true; case Some(mn) => m.getName == mn}))) {
           val units = Soot.getBody(method).getUnits.asScala.toList
           val stmts = units.map(u => Stmt(Soot.unitToStmt(u), method))
 

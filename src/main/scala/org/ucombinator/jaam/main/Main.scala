@@ -389,7 +389,7 @@ object RegExDriver extends Subcommand("driver") {
   val methodName = opt[String](descr = "")
 
   def run(): Unit = {
-    org.ucombinator.jaam.tools.regex_driver.Main.main(input(), className(), methodName())
+    org.ucombinator.jaam.tools.regex_driver.Main.main(input(), className(), methodName.toOption)
   }
 }
 
