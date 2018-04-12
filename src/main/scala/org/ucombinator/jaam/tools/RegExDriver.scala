@@ -23,7 +23,7 @@ object Main {
     }
   }
 
-  def main(input: List[String], className: String, methodName: Option[String]): Unit = {
+  def main(input: List[String], className: String, methodName: Option[String], showStmts: Boolean): Unit = {
     prepFromInput(input)
 
     val classNames = Soot.loadedClasses.keys
@@ -35,7 +35,9 @@ object Main {
           val units = Soot.getBody(method).getUnits.asScala.toList
           val stmts = units.map(u => Stmt(Soot.unitToStmt(u), method))
 
-          printStmts(stmts)
+          if (showStmts) {
+            printStmts(stmts)
+          }
 
           LoopPatterns.findLoops(stmts)
 
