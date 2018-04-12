@@ -9,7 +9,19 @@ import scala.collection.JavaConverters._
 
 object LoopPatterns {
   def findLoops(stmts: List[Stmt]): Unit = {
-    val states = deriveAll(iteratorInvokeMatch, State(Map(), Map()), stmts)
+    runRule(iteratorInvokeMatch, stmts)
+  }
+
+  def findEndingLabels(stmts: List[Stmt]): Unit = {
+    runRule(wildLabel, stmts)
+  }
+
+  def findAddInvokes(stmts: List[Stmt]): Unit = {
+    runRule(addInvokes, stmts)
+  }
+
+  private def runRule(rule: RegExp, stmts: List[Stmt]): Unit = {
+    val states = deriveAll(rule, State(Map(), Map()), stmts)
     println()
     println("STATES: " + states)
     println()
@@ -48,12 +60,15 @@ object LoopPatterns {
     )
   )
 
-  // TODO: Try pattern: .*(getLabel)
-  // should see two outputs: one with capture, one without
+  private val getLabel = mkPatRegExp(
+    NamedLabelPattern("getLabel"),
+    AnyStmtPattern
+  )
 
   private val iteratorInvokeMatch = Cat(List(wildcardRep, iteratorInvoke, wildcardRep))
   //  private val iteratorLoop = Cat(List(wildcardRep, iteratorInvoke, wildcardRep))
   private val addInvokes = Cat(List(wildcardRep, addInvoke, wildcardRep))
+  private val wildLabel = Cat(List(wildcardRep, getLabel))
 
   private def mkPatRegExp(labelPattern: LabelPattern, stmtPattern: StmtPattern): RegExp = {
     Fun(StmtPatternToRegEx(LabeledStmtPattern(labelPattern, stmtPattern)), _ => List())
