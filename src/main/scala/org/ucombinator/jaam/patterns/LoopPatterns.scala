@@ -9,11 +9,7 @@ import scala.collection.JavaConverters._
 
 object LoopPatterns {
   def findLoops(stmts: List[Stmt]): Unit = {
-    runRule(iteratorInvokeMatch, stmts)
-  }
-
-  def findEndingLabels(stmts: List[Stmt]): Unit = {
-    runRule(wildLabel, stmts)
+    runRule(iteratorLoop, stmts)
   }
 
   def findAddInvokes(stmts: List[Stmt]): Unit = {
@@ -22,8 +18,8 @@ object LoopPatterns {
 
   private def runRule(rule: RegExp, stmts: List[Stmt]): Unit = {
     val states = deriveAll(rule, State(Map(), Map()), stmts)
-    println()
-    println("STATES: " + states)
+    println("  " + rule)
+    println("  STATES: " + states)
     println()
   }
 
@@ -33,42 +29,105 @@ object LoopPatterns {
   private val wildcardRep = Rep(wildcard)
 
   private val arrayListIteratorMethod = getMethod("java.lang.Iterable", "iterator")
+  private val iteratorHasNextMethod = getMethod("java.util.Iterator", "hasNext")
+  private val iteratorNextMethod = getMethod("java.util.Iterator", "next")
+
   private val arrayListAddMethod = getMethod("java.util.ArrayList", "add", Some(List(Soot.getSootType("java.lang.Object"))))
 
-  // TODO: This isn't detecting the iterator() virtualinvoke for some reason.
-  private val iteratorInvoke = mkPatRegExp(
-    NamedLabelPattern("iteratorInvoke"),
-    AssignStmtPattern(
-      VariableExpPattern("assignee"),
-      InstanceInvokeExpPattern(
-        VariableExpPattern("base"),
-        OverriddenMethodPattern(arrayListIteratorMethod),
-        ListArgPattern(List())
+  private def iteratorInvoke(label: String, dest: String, base: String): RegExp = {
+    mkPatRegExp(
+      NamedLabelPattern(label),
+      AssignStmtPattern(
+        VariableExpPattern(dest),
+        InstanceInvokeExpPattern(
+          VariableExpPattern(base),
+          OverriddenMethodPattern(arrayListIteratorMethod),
+          ListArgPattern(List())
+        )
       )
     )
-  )
+  }
 
-  private val addInvoke = mkPatRegExp(
-    NamedLabelPattern("addInvoke"),
-    AssignStmtPattern(
-      UnusedAssignDestExpPattern,
-      InstanceInvokeExpPattern(
-        VariableExpPattern("base"),
-        ConstantMethodPattern(arrayListAddMethod),
-        ListArgPattern(List(AnyExpPattern))
+  private def iteratorHasNext(label: String, dest: String, base: String): RegExp = {
+    mkPatRegExp(
+      NamedLabelPattern(label),
+      AssignStmtPattern(
+        VariableExpPattern(dest),
+        InstanceInvokeExpPattern(
+          VariableExpPattern(base),
+          OverriddenMethodPattern(iteratorHasNextMethod),
+          ListArgPattern(List())
+        )
       )
     )
-  )
+  }
 
-  private val getLabel = mkPatRegExp(
-    NamedLabelPattern("getLabel"),
-    AnyStmtPattern
-  )
+  private def ifZeroGoto(label: String, lhs: String, destLabel: String): RegExp = {
+    mkPatRegExp(
+      NamedLabelPattern(label),
+      IfStmtPattern(
+        EqualsExpPattern(
+          VariableExpPattern(lhs), IntegralConstantExpPattern(0)
+        ),
+        NamedLabelPattern(destLabel)
+      )
+    )
+  }
 
-  private val iteratorInvokeMatch = Cat(List(wildcardRep, iteratorInvoke, wildcardRep))
-  //  private val iteratorLoop = Cat(List(wildcardRep, iteratorInvoke, wildcardRep))
-  private val addInvokes = Cat(List(wildcardRep, addInvoke, wildcardRep))
-  private val wildLabel = Cat(List(wildcardRep, getLabel))
+  private def iteratorNext(label: String, dest: String, base: String): RegExp = {
+    mkPatRegExp(
+      NamedLabelPattern(label),
+      AssignStmtPattern(
+        VariableExpPattern(dest),
+        InstanceInvokeExpPattern(
+          VariableExpPattern(base),
+          OverriddenMethodPattern(iteratorNextMethod),
+          ListArgPattern(List())
+        )
+      )
+    )
+  }
+
+  private def goto(label: String, destLabel: String): RegExp = {
+    mkPatRegExp(
+      NamedLabelPattern(label),
+      GotoStmtPattern(NamedLabelPattern(destLabel))
+    )
+  }
+
+  private def matchLabel(label: String): RegExp = {
+    mkPatRegExp(
+      NamedLabelPattern(label),
+      AnyStmtPattern
+    )
+  }
+
+  private def addInvoke(label: String, base: String): RegExp = {
+    mkPatRegExp(
+      NamedLabelPattern(label),
+      AssignStmtPattern(
+        UnusedAssignDestExpPattern,
+        InstanceInvokeExpPattern(
+          VariableExpPattern(base),
+          ConstantMethodPattern(arrayListAddMethod),
+          ListArgPattern(List(AnyExpPattern))
+        )
+      )
+    )
+  }
+
+  private val iteratorLoop = Cat(List(
+    wildcardRep,
+    iteratorInvoke("iteratorInvoke", "iter", "arr"),
+    iteratorHasNext("iteratorHasNext", "hasNext", "iter"),
+    ifZeroGoto("test", "hasNext", "loopEnd"),
+    iteratorNext("iteratorNext", "next", "iter"),
+    wildcardRep,
+    goto("goto", "iteratorHasNext"),
+    matchLabel("loopEnd"),
+    wildcardRep
+  ))
+  private val addInvokes = Cat(List(wildcardRep, addInvoke("addInvoke", "arr"), wildcardRep))
 
   private def mkPatRegExp(labelPattern: LabelPattern, stmtPattern: StmtPattern): RegExp = {
     Fun(StmtPatternToRegEx(LabeledStmtPattern(labelPattern, stmtPattern)), _ => List())
