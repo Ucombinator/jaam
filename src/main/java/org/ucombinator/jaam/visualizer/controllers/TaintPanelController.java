@@ -37,7 +37,9 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         graphContentGroup.addEventFilter(SelectEvent.TAINT_VERTEX_SELECTED, this);
 
         this.visibleRoot = new TaintRootVertex();
-        this.immutableRoot = LayerFactory.getLayeredTaintGraph(graph);
+        //this.immutableRoot = LayerFactory.getLayeredTaintGraph(graph);
+        this.immutableRoot = new TaintRootVertex();
+        this.immutableRoot.setChildGraph(graph);
         fillFieldDictionary();
     }
 
@@ -52,7 +54,16 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     public void drawGraph(HashSet<TaintVertex> verticesToDraw) {
         System.out.println("Drawing taint graph...");
         visibleRoot.setVisible(false);
-        this.visibleRoot = ((TaintRootVertex) this.immutableRoot).constructVisibleGraph(verticesToDraw);
+        //this.visibleRoot = ((TaintRootVertex) this.immutableRoot).constructVisibleGraph(verticesToDraw);
+
+
+
+        TaintRootVertex tempRoot = ((TaintRootVertex) this.immutableRoot).constructVisibleGraph(verticesToDraw);
+
+        System.out.println("JUAN: There are " + tempRoot.getChildGraph().getVertices().size());
+
+        this.visibleRoot = LayerFactory.getLayeredTaintGraph(tempRoot.getChildGraph());
+
         LayoutAlgorithm.layout(visibleRoot);
         drawNodes(null, visibleRoot);
         drawEdges(visibleRoot);
