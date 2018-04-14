@@ -23,6 +23,7 @@ public class TaintStmtVertex extends TaintVertex {
         taintAddresses.forEach(address -> this.taintAddresses.add((TaintAddress) address));
         this.stmt = this.taintAddresses.get(0).getAddress().stmt().toString();
         this.color = defaultColor;
+        this.setExpanded(false);
 
         this.sootClass = null;
         this.sootMethod = null;
@@ -42,6 +43,7 @@ public class TaintStmtVertex extends TaintVertex {
                 assert this.sootMethod == a.getSootMethod();
             }
         });
+
 
         assert this.sootClass != null;
         assert this.sootMethod != null;
