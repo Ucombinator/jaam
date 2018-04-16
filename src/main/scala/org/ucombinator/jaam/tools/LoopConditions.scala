@@ -3,6 +3,8 @@ package org.ucombinator.jaam.tools.loopConditions
 import java.io.{FileOutputStream, PrintStream}
 
 import org.jgrapht.Graphs
+import org.jgrapht.graph.{AsSubgraph, DefaultEdge}
+import org.jgrapht.traverse.TopologicalOrderIterator
 import org.ucombinator.jaam.serializer.Serializer
 import org.ucombinator.jaam.tools
 import org.ucombinator.jaam.tools.app.{App, Origin}
@@ -65,6 +67,8 @@ object Main {
 // TODO: replace set with ordered set?
     val (start, graph) = Soot.getBodyGraph(m)
 
+
+
     println(f"start: ${start.index}: $start\n")
     if (false) {
     println(f"graph:\n")
@@ -114,6 +118,7 @@ if (false) {
     println()
 
     for ((k, vs) <- loops.toList.sortBy(_._1.index)) {
+      val loopGraph = new AsSubgraph[Stmt, DefaultEdge](graph, vs.asJava)
       println(f"loop at $k")
 
       // Nodes one past the end
@@ -144,17 +149,82 @@ if (false) {
 //      dom(s)
 
       println(f"  k: $k")
+
+      // c = start of condition
+      val c: Stmt = k
+      // s = start of body
+      // t = end of body
+
       // Types of loops: exception, infinite, pre-condition, post-condition
       if (k match { case k: IdentityStmt => k.getRightOp.isInstanceOf[CaughtExceptionRef] case _ => false }) {
         println(f"  loop type = exception (by identity)")
       } else if (k match { case k: DefinitionStmt => k.getRightOp.isInstanceOf[CaughtExceptionRef] case _ => false }) {
         println(f"  loop type = exception (by definition)")
-      } else if (vs.forall(v => v.nextSemantic.forall(vs.contains))) {
+      } else if (vs.forall(v => v.nextSemantic.forall(vs))) {
         // infinite = no jumps out of loop
         println(f"  loop type = infinite")
-      } else if (backEdges.forall(b => b.nextSemantic.forall(vs.contains))) {
+      } else if (backEdges.forall(b => b.nextSemantic.forall(vs))) {
         // pre-condition = jumps out of loop and back jump statements go only into the loop
         println(f"  loop type = pre-condition")
+
+        // e = first statement after loop
+
+        // Note, there may be multiple `ends` due to a "return" inside the loop.
+        // However, the "real" e is the one that has a set of predecessors that all have paths to the predecessors of all the other members of `ends`.
+        // Thus we can partially order the predecessors of the members of `ends` and take the first one.
+        // This may not be totally ordered but the set of initial statements in the partial order all go to the same e.
+
+        // Remove edges going to c
+        Graphs.predecessorListOf(loopGraph, c).asScala.foreach(loopGraph.removeEdge(_, c))
+
+        // Create a topological traversal
+        val i = new TopologicalOrderIterator[Stmt, DefaultEdge](loopGraph)
+
+        // Filter i to contain only those that have some successor that is not in the loop
+        val filtered = i.asScala.filter(v => Graphs.successorListOf(graph, v).asScala.exists(!vs(_)))
+
+        // Take the first one
+        val p = filtered.next
+
+        // The member of `ends` that is preceeded by `p` is the "real" `e`
+        val es = Graphs.successorListOf(graph, p).asScala.filter(!vs(_))
+        assert(es.size == 1) // There should be only one
+        val e = es.toList.head
+        assert(ends(e))
+
+        // Condition = nodes between c and s
+        // (1a) Condition = everything reachable backwards from e but not through edge t->s
+        // (1b) Condition = everything between c and e but not through edge t->s
+        // Note: 1a is the same as 1b
+        // (2) s = first choke point after e
+        // (3) s = statement after last edge to e
+        // (4) s = first node that is post-dominated by t (relative to e)
+        // Note: 1 is the same as 4
+
+        println(f"  c = $c")
+        println(f"  e = $e")
+
+        { // Compute 1a
+          val init = Graphs.predecessorListOf(graph, e).asScala.filter(vs)
+          var cond = init.toSet
+          var todo = init.toList
+          while (todo.nonEmpty) {
+            val v = todo.head
+            todo = todo.tail
+            if (v != c) {
+              println(f"  v = $v")
+              val predecessor = Graphs.predecessorListOf(graph, v).asScala.filterNot(cond)
+              println(f"  pred = $predecessor")
+              todo ++= predecessor
+              cond ++= predecessor
+            }
+          }
+
+          println(f"  (1) condition = ")
+          for (s <- cond.toList.sortBy(_.index)) {
+            println(f"    $s")
+          }
+        }
       } else {
         // post-condition = some back jump statements go out of loop
         println(f"  loop type = post-condition")
