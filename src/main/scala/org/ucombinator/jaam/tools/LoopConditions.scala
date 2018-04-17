@@ -70,7 +70,7 @@ object Main {
 
 
     println(f"start: ${start.index}: $start\n")
-    if (false) {
+    if (true) {
     println(f"graph:\n")
     for (v <- graph.vertexSet.asScala.toList.sortBy(_.index)) {
       println(f"  vertex: ${v.index}: $v")
@@ -123,32 +123,8 @@ if (false) {
 
       // Nodes one past the end
       val ends = vs.flatMap(v => Graphs.successorListOf(graph, v).asScala.filter(s => !vs.contains(s)))
-      println(f"  loop.end $ends")
-
-      println(f"  body.start: $k")
-//      val dom = JGraphT.dominators(graph, k)
-
-      // TODO: can't use `start` in general.  this is just a hack to allow us to test things
-      val pseudoHeader: Stmt = start //null //new PseudoStmt(k)
-      println(f"  pseudoHeader: ${pseudoHeader == k}: $pseudoHeader")
-//      println(f"  clone: ${k == k.asInstanceOf[AbstractUnit].clone}")
-      graph.addVertex(pseudoHeader)
+      println(f"  ends $ends")
       val backEdges = headers(k)
-      for (backedge_node <- backEdges) {
-        println(f"  backedge_node: $backedge_node")
-        graph.removeEdge(backedge_node, k)
-        graph.addEdge(backedge_node, pseudoHeader)
-      }
-
-      val loopDom = JGraphT.dominators(graph, k, true)
-
-      val dom_ends = ends.map(e => loopDom(e))
-      println(f"  dom_end: $dom_ends")
-      val dom_start = loopDom(pseudoHeader)
-      println(f"  dom_start: $dom_start")
-//      dom(s)
-
-      println(f"  k: $k")
 
       // c = start of condition
       val c: Stmt = k
@@ -174,6 +150,7 @@ if (false) {
         // Thus we can partially order the predecessors of the members of `ends` and take the first one.
         // This may not be totally ordered but the set of initial statements in the partial order all go to the same e.
 
+        println(f"  ends.size > 1")
         // Remove edges going to c
         Graphs.predecessorListOf(loopGraph, c).asScala.foreach(loopGraph.removeEdge(_, c))
 
@@ -183,10 +160,13 @@ if (false) {
         // Filter i to contain only those that have some successor that is not in the loop
         val filtered = i.asScala.filter(v => Graphs.successorListOf(graph, v).asScala.exists(!vs(_)))
 
-        // Take the first one
+        // Take the first one.  This jumps to the "real" `e`
         val p = filtered.next
+        println(f"  p = $p")
+        println(f"  ends = $ends")
+        println(f"  p.succ = ${Graphs.successorListOf(graph, p).asScala}")
 
-        // The member of `ends` that is preceeded by `p` is the "real" `e`
+        // The member of `ends` that is preceded by `p` is the "real" `e`
         val es = Graphs.successorListOf(graph, p).asScala.filter(!vs(_))
         assert(es.size == 1) // There should be only one
         val e = es.toList.head
