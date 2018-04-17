@@ -12,7 +12,6 @@ public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extend
 
     Graph<T, S> getParentGraph();
     Graph<T, S> getChildGraph();
-    LayoutAlgorithm.LAYOUT_ALGORITHM preferredLayout = LayoutAlgorithm.LAYOUT_ALGORITHM.DFS;
     void setParentGraph(Graph<T, S> graph);
     T copy(); // Copy constructor, used to construct new vertices in visible graph.
 
@@ -89,6 +88,6 @@ public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extend
     }
 
     default LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
-        return preferredLayout;
+        return LayoutAlgorithm.LAYOUT_ALGORITHM.DFS;
     }
 }

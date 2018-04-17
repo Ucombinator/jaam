@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.layout;
 import java.util.*;
 import java.util.function.Function;
 
+import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.state.*;
@@ -41,7 +42,8 @@ public class LayerFactory
     }
 
     public static TaintRootVertex getLayeredTaintGraph(Graph<TaintVertex, TaintEdge> graph) {
-        return getStronglyConnectedComponentsTaintGraph(graph);
+        System.out.println("JUAN: Found " + graph.getVertices().size() + " vertices");
+        return getSuperTaintGraph(graph);
     }
 
     private static TaintRootVertex getStronglyConnectedComponentsTaintGraph(Graph<TaintVertex, TaintEdge> graph)
@@ -78,4 +80,116 @@ public class LayerFactory
         }
         return vertexToComponentIndex;
     }
+
+    private static TaintRootVertex getSuperTaintGraph(Graph<TaintVertex, TaintEdge> graph) {
+
+        System.out.println("JUAN: Start there are " + calcSize(graph));
+        TaintRootVertex classGraphRoot = getClassGroupingGraph(graph);
+
+        System.out.println("JUAN After " + calcSize(classGraphRoot.getChildGraph()));
+
+        classGraphRoot.getChildGraph().getVertices().forEach(classVertex -> {
+            if (classVertex.getChildGraph().getVertices().size() > 1) {
+                TaintRootVertex methodRootVertex = getMethodGroupingGraph(classVertex.getChildGraph());
+                Graph<TaintVertex, TaintEdge> groupedMethodGraph = methodRootVertex.getChildGraph();
+                classVertex.setChildGraph(groupedMethodGraph);
+            }
+        });
+        return classGraphRoot;
+    }
+
+    private static int calcSize(Graph<TaintVertex, TaintEdge> graph) {
+        int total = 0;
+
+        for(TaintVertex v : graph.getVertices())
+        {
+            if (v.getChildGraph().getVertices().size() > 1) total += calcSize(v.getChildGraph());
+            else total++;
+        }
+
+        return total;
+    }
+
+    public static long longHash(String string) {
+        long h = 98764321261L;
+        int l = string.length();
+        char[] chars = string.toCharArray();
+
+        for (int i = 0; i < l; i++) {
+            h = 31*h + chars[i];
+        }
+        return h;
+    }
+
+    private static TaintRootVertex getClassGroupingGraph(Graph<TaintVertex, TaintEdge> graph)
+    {
+        TaintRootVertex graphRoot = new TaintRootVertex();
+        graphRoot.setChildGraph(graph);
+
+        return (TaintRootVertex) GraphUtils.constructCompressedGraph(graphRoot,
+                v -> {
+                    String className = v.getClassName();
+
+                    if (className == null) { className = v.toString(); }
+
+                    System.out.println("JUAN: Called hash function on class" + className );
+
+                    return longHash((className));
+                },
+                new Function<List<TaintVertex>, TaintVertex>() {
+                    @Override
+                    public TaintVertex apply(List<TaintVertex> stateVertices) {
+
+                        String className = stateVertices.stream().findFirst().get().getClassName();
+
+                        assert  className != null;
+
+                        TaintSccVertex classVertex = new TaintSccVertex(className, LayoutAlgorithm.LAYOUT_ALGORITHM.DFS);
+                        classVertex.setColor(Color.ORANGE);
+                        stateVertices.forEach(v -> {
+                            classVertex.getChildGraph().addVertex(v);
+                            v.setParentGraph(classVertex.getChildGraph());
+                        });
+
+                        System.out.println("Creating class vertex " + className);
+
+
+                        return classVertex;
+                    }
+                },
+                TaintEdge::new);
+    }
+
+    private static TaintRootVertex getMethodGroupingGraph(Graph<TaintVertex, TaintEdge> graph)
+    {
+        TaintRootVertex graphRoot = new TaintRootVertex();
+        graphRoot.setChildGraph(graph);
+
+        return (TaintRootVertex) GraphUtils.constructCompressedGraph(graphRoot,
+                v -> {
+                    String methodName = v.getMethodName();
+                    if (methodName == null) {
+                        methodName = v.toString() + v.getLabel(); // Should be unique
+                    }
+                    return longHash(methodName);
+                },
+                new Function<List<TaintVertex>, TaintVertex>() {
+                    @Override
+                    public TaintVertex apply(List<TaintVertex> stateVertices) {
+
+                        String methodName = stateVertices.stream().findFirst().get().getMethodName();
+                        assert methodName != null;
+
+                        TaintSccVertex methodVertex = new TaintSccVertex(methodName, LayoutAlgorithm.LAYOUT_ALGORITHM.DFS);
+                        methodVertex.setColor(Color.HOTPINK);
+                        stateVertices.forEach(v -> {
+                            methodVertex.getChildGraph().addVertex(v);
+                            v.setParentGraph(methodVertex.getChildGraph());
+                        });
+                        return methodVertex;
+                    }
+                },
+                TaintEdge::new);
+    }
+
 }

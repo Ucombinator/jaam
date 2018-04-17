@@ -84,4 +84,16 @@ public class TaintStmtVertex extends TaintVertex {
     public String getStmtString() {
         return this.stmt;
     }
+
+    @Override
+    public String getClassName() {
+        System.out.println("JUAN: TainStmt getClassName " + sootClass.getName());
+        return sootClass.getName();
+    }
+
+    @Override
+    public String getMethodName() {
+        System.out.println("JUAN: TainStmt getMethodName " + sootMethod.getName());
+        return sootMethod.getName();
+    }
 }

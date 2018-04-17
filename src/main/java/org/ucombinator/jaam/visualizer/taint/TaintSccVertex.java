@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.taint;
 
 import javafx.scene.paint.Color;
+import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -8,11 +9,18 @@ import java.util.HashSet;
 public class TaintSccVertex extends TaintVertex {
 
     private Color defaultColor = Color.DARKGREY;
+    private LayoutAlgorithm.LAYOUT_ALGORITHM innerLayout = LayoutAlgorithm.LAYOUT_ALGORITHM.DFS;
 
     public TaintSccVertex(String label)
     {
         super(label, VertexType.SCC, true);
         this.color = defaultColor;
+    }
+
+    public TaintSccVertex(String label, LayoutAlgorithm.LAYOUT_ALGORITHM preferredLayout) {
+        this(label);
+
+        innerLayout = preferredLayout;
     }
 
     public TaintSccVertex copy() {
@@ -45,5 +53,10 @@ public class TaintSccVertex extends TaintVertex {
     @Override
     public String getStmtString() {
         return null;
+    }
+
+    @Override
+    public LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
+        return innerLayout;
     }
 }

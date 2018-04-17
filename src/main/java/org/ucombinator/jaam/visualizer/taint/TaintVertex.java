@@ -116,4 +116,13 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
     public abstract void getFields(Collection<TaintAddress> store);
 
     public abstract String getStmtString();
+
+    public String getClassName() {
+        return null;
+    }
+
+    public String getMethodName() {
+        return null;
+    }
+
 }
