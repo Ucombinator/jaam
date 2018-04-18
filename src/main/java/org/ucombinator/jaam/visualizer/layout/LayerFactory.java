@@ -25,7 +25,7 @@ public class LayerFactory
         StateRootVertex graphRoot = new StateRootVertex();
         graphRoot.setChildGraph(graph);
 
-        return (StateRootVertex) GraphUtils.constructCompressedGraph(graphRoot,
+        return (StateRootVertex) GraphUtils.compressGraph(graphRoot,
                 v -> Integer.toString(vertexToComponentIndex.get(v.getId())),
                 new Function<List<StateVertex>, StateVertex>() {
                     @Override
@@ -55,7 +55,7 @@ public class LayerFactory
         TaintRootVertex graphRoot = new TaintRootVertex();
         graphRoot.setChildGraph(graph);
 
-        return (TaintRootVertex) GraphUtils.constructCompressedGraph(graphRoot,
+        return (TaintRootVertex) GraphUtils.compressGraph(graphRoot,
                 v -> Integer.toString(vertexToComponentIndex.get(v.getId())),
                 new Function<List<TaintVertex>, TaintVertex>() {
                     @Override
@@ -126,7 +126,7 @@ public class LayerFactory
         TaintRootVertex graphRoot = new TaintRootVertex();
         graphRoot.setChildGraph(graph);
 
-        return (TaintRootVertex) GraphUtils.constructCompressedGraph(graphRoot,
+        return (TaintRootVertex) GraphUtils.compressGraph(graphRoot,
                 v -> {
                     String className = v.getClassName();
 
@@ -165,7 +165,7 @@ public class LayerFactory
         TaintRootVertex graphRoot = new TaintRootVertex();
         graphRoot.setChildGraph(graph);
 
-        return (TaintRootVertex) GraphUtils.constructCompressedGraph(graphRoot,
+        return (TaintRootVertex) GraphUtils.compressGraph(graphRoot,
                 v -> {
                     String methodName = v.getMethodName();
                     if (methodName == null) {

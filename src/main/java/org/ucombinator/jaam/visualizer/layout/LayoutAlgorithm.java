@@ -25,7 +25,7 @@ public class LayoutAlgorithm
     public static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
     void layout(T parentVertex) {
         initializeSizes(parentVertex);
-        doLayout(LAYOUT_ALGORITHM.DFS, parentVertex);
+        doLayout(parentVertex.getPreferredLayout(), parentVertex);
         parentVertex.setY(parentVertex.getY() + ROOT_V_OFFSET);
     }
 

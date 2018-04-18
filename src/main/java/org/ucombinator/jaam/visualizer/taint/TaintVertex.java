@@ -51,7 +51,7 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
     }
 
     public TaintVertex groupByStatement() {
-        return GraphUtils.constructCompressedGraph(this,
+        return GraphUtils.compressGraph(this,
                 new Function<TaintVertex, String>() {
                     @Override
                     public String apply(TaintVertex v) {
