@@ -1,14 +1,7 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
 import javafx.event.EventHandler;
-import javafx.fxml.FXML;
-import javafx.scene.Group;
-import javafx.scene.Node;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Spinner;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
 import org.ucombinator.jaam.tools.taint3.Address;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.graph.Graph;

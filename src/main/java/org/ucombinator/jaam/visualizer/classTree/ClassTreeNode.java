@@ -9,8 +9,6 @@ import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
 import org.ucombinator.jaam.visualizer.state.StateVertex;
 import org.ucombinator.jaam.visualizer.main.Main;
 
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
 import java.util.HashSet;
 
 public abstract class ClassTreeNode

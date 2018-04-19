@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
+import com.strobel.decompiler.languages.java.ast.CompilationUnit;
 import javafx.beans.property.SetProperty;
 import javafx.beans.property.SimpleSetProperty;
 import javafx.beans.value.ChangeListener;
@@ -11,13 +12,13 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTreeCell;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import org.ucombinator.jaam.visualizer.classTree.ClassTreeNode;
 import org.ucombinator.jaam.visualizer.classTree.PackageNode;
-import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
-import org.ucombinator.jaam.visualizer.layout.*;
-import com.strobel.decompiler.languages.java.ast.CompilationUnit;
+import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.layout.MethodEntity;
 import org.ucombinator.jaam.visualizer.state.*;
 import org.ucombinator.jaam.visualizer.taint.*;
 import soot.SootClass;
@@ -31,6 +32,7 @@ public class MainTabController {
     public final VizPanelController vizPanelController;
     public final TaintPanelController taintPanelController;
     public final CodeViewController codeViewController;
+    public final SearchResultsController searchResultsController;
 
     // Left Side Components
     @FXML private final VBox leftPane = null; // Initialized by Controllers.loadFXML()
@@ -44,15 +46,11 @@ public class MainTabController {
     @FXML private final TextArea vizDescriptionArea = null; // Initialized by Controllers.loadFXML()
     @FXML private final TextArea taintDescriptionArea = null; // Initialized by Controllers.loadFXML()
     @FXML private final TreeView<ClassTreeNode> classTree = null; // Initialized by Controllers.loadFXML()
-    @FXML private final SearchResults searchResults = null; // Initialized by Controllers.loadFXML()
+    @FXML private final BorderPane searchPane = null; // Initialized by Controllers.loadFXML()
 
     private HashSet<StateVertex> vizHighlighted; // TODO: Make this an observable set
     private HashSet<TaintVertex> taintHighlighted;
     private SetProperty<StateVertex> hidden;
-
-    public enum SearchType {
-        ID, TAG, INSTRUCTION, METHOD, ALL_LEAVES, ALL_SOURCES, OUT_OPEN, OUT_CLOSED, IN_OPEN, IN_CLOSED, ROOT_PATH
-    }
 
     public MainTabController(File file, Graph<StateVertex, StateEdge> graph, List<CompilationUnit> compilationUnits,
                              Graph<TaintVertex, TaintEdge> taintGraph, Set<SootClass> sootClasses) throws IOException {
@@ -63,6 +61,9 @@ public class MainTabController {
 
         this.taintPanelController = new TaintPanelController(taintGraph);
         this.taintPane.setCenter(this.taintPanelController.root);
+
+        this.searchResultsController = new SearchResultsController();
+        this.searchPane.setCenter(this.searchResultsController.root);
 
         this.tab = new Tab(file.getName(), this.root);
         this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));
@@ -190,10 +191,7 @@ public class MainTabController {
     }
 
     private void repaintAll() {
-        System.out.println("Repainting all...");
-        //bytecodeArea.setDescription();
         setVizRightText();
-        searchResults.writeText(this);
     }
 
     private void setVizRightText() {
@@ -256,27 +254,12 @@ public class MainTabController {
         this.taintDescriptionArea.setText(text.toString());
     }
 
-    public void setVizRightText(String text)
-    {
+    public void setVizRightText(String text) {
         this.vizDescriptionArea.setText(text);
     }
 
     public void setTaintRightText(String text) {
         this.taintDescriptionArea.setText(text);
-    }
-
-    public void initSearch(SearchType search) {
-        // Clean up info from previous searches
-        this.resetVizHighlighted();
-        String query = getSearchInput(search);
-
-        if (search == SearchType.ID) {
-            searchByID(query); // TODO: Fix inconsistency with panel root
-        } else if (search == SearchType.METHOD) {
-            this.vizPanelController.getVisibleRoot().searchByMethod(query.toLowerCase(), this);
-        }
-
-        this.repaintAll();
     }
 
     public ObservableSet<StateVertex> getHidden() {
@@ -301,56 +284,6 @@ public class MainTabController {
         vizPanelController.endBatchMode();
     }
 
-    private String getSearchInput(SearchType search) {
-        String title = "";
-        System.out.println("Search type: " + search);
-        if (search == SearchType.ID || search == SearchType.ROOT_PATH) {
-            title = "Enter node ID(s)";
-        } else if (search == SearchType.INSTRUCTION) {
-            title = "Instruction contains ...";
-        } else if (search == SearchType.METHOD) {
-            title = "Method name contains ...";
-        } else if (search == SearchType.OUT_OPEN || search == SearchType.OUT_CLOSED || search == SearchType.IN_OPEN
-                || search == SearchType.IN_CLOSED) {
-            title = "Enter node ID";
-        }
-
-        String input = "";
-        if (search != SearchType.ALL_LEAVES && search != SearchType.ALL_SOURCES && search != SearchType.TAG) {
-            System.out.println("Showing dialog...");
-            TextInputDialog dialog = new TextInputDialog();
-            dialog.setHeaderText(title);
-            dialog.showAndWait();
-            input = dialog.getResult();
-            if (input == null) {
-                return "";
-            } else {
-                input = input.trim();
-            }
-
-            if (input.equals("")) {
-                return "";
-            }
-        }
-
-        return input;
-    }
-
-    private void searchByID(String input) {
-        for (String token : input.split(", ")) {
-            if (token.trim().equalsIgnoreCase("")) {
-                /* Do nothing */
-            } else if (token.indexOf('-') == -1) {
-                int id1 = Integer.parseInt(token.trim());
-                this.vizPanelController.getVisibleRoot().searchByID(id1, this);
-            } else {
-                int id1 = Integer.parseInt(token.substring(0, token.indexOf('-')).trim());
-                int id2 = Integer.parseInt(token.substring(token.lastIndexOf('-') + 1).trim());
-                this.vizPanelController.getVisibleRoot().searchByIDRange(id1, id2, this);
-            }
-        }
-    }
-
     public HashSet<StateVertex> getVizHighlighted() {
         return this.vizHighlighted;
     }
@@ -359,8 +292,7 @@ public class MainTabController {
         return this.taintHighlighted;
     }
 
-    public void addToHighlighted(StateVertex v)
-    {
+    public void addToHighlighted(StateVertex v) {
         if(v != null) {
             vizHighlighted.add(v);
             v.setHighlighted(true);
@@ -374,8 +306,7 @@ public class MainTabController {
         vizHighlighted.clear();
     }
 
-    public void resetHighlighted(StateVertex newHighlighted)
-    {
+    public void resetHighlighted(StateVertex newHighlighted) {
         resetVizHighlighted();
         addToHighlighted(newHighlighted);
     }
@@ -399,8 +330,7 @@ public class MainTabController {
         addToHighlighted(newHighlighted);
     }
 
-    public void hideUnrelatedToHighlighted()
-    {
+    public void hideUnrelatedToHighlighted() {
         HashSet<StateVertex> keep = new HashSet<>();
 
         this.vizHighlighted.forEach(v -> keep.addAll(v.getAncestors()));
@@ -430,28 +360,6 @@ public class MainTabController {
         for (StateVertex v : vertices) {
             if (!v.isHidden()) {
                 v.setClassHighlight(value);
-            }
-        }
-    }
-
-    private void setClassHighlight(StateVertex v, String prevPrefix, String currPrefix)
-    {
-        if(!v.isHidden()) {
-            if(v instanceof MethodEntity) {
-                MethodEntity cv = (MethodEntity) v;
-                if (cv.getClassName().startsWith(currPrefix)) {
-                    //System.out.println("Highlight " + cv.getClassName() + " --> " + cv.getMethodName() + " --> " + v.getId());
-                    v.setClassHighlight(true);
-                } else if (prevPrefix != null && cv.getClassName().startsWith(prevPrefix)) {
-                    v.setClassHighlight(false);
-                }
-            }
-
-            if (v.getChildGraph().getVertices().size() > 0) {
-                Graph<StateVertex, StateEdge> childGraph = v.getChildGraph();
-                for (StateVertex i : childGraph.getVertices()) {
-                    setClassHighlight(i, prevPrefix, currPrefix);
-                }
             }
         }
     }

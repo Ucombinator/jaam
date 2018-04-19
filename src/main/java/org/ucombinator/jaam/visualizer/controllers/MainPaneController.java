@@ -37,18 +37,6 @@ public class MainPaneController {
     @FXML private void zoomInAction(ActionEvent event) { Main.getSelectedVizPanelController().zoomSpinner.increment(); }
     @FXML private void zoomOutAction(ActionEvent event) { Main.getSelectedVizPanelController().zoomSpinner.decrement(); }
 
-    @FXML private void searchByID(ActionEvent event) {
-        Main.getSelectedMainTabController().initSearch(MainTabController.SearchType.ID);
-    }
-
-    @FXML private void searchByStatement(ActionEvent event) {
-        Main.getSelectedMainTabController().initSearch(MainTabController.SearchType.INSTRUCTION);
-    }
-
-    @FXML private void searchByMethod(ActionEvent event) {
-        Main.getSelectedMainTabController().initSearch(MainTabController.SearchType.METHOD);
-    }
-
     @FXML private void hideSelectedNodes(ActionEvent event) {
         Main.getSelectedMainTabController().hideSelectedNodes();
     }
