@@ -203,7 +203,7 @@ object App extends Subcommand("app") {
   val lib = opt[List[String]](short = 'l', descr = "library jars, class files, or directories", default = Some(List()))
   val jvm = opt[List[String]](short = 'r', descr = "Java runtime jars, class files, or directories", default = Some(List()))
 
-  val appPackages = opt[List[String]](short = 'p', descr = "package prefixes contain application code (the empty list allows all)", default = Some(List()))
+  val appPackage = opt[List[String]](short = 'p', descr = "package prefixes contain application code (the empty list allows all)", default = Some(List()))
 
   val defaultJvm = toggle(prefix = "no-", default = Some(true))
 
@@ -216,7 +216,7 @@ object App extends Subcommand("app") {
   // TODO: val java-8-rt (in resource?)
 
   def run() {
-    org.ucombinator.jaam.tools.app.Main.main(input(), app(), lib(), jvm(), appPackages(), defaultJvm(), detectMain(), mainClass.toOption, mainMethod.toOption, output())
+    org.ucombinator.jaam.tools.app.Main.main(input(), app(), lib(), jvm(), appPackage(), defaultJvm(), detectMain(), mainClass.toOption, mainMethod.toOption, output())
   }
 }
 
@@ -341,21 +341,11 @@ object Loop3 extends Subcommand("loop3") {
 }
 
 object LoopConditions extends Subcommand("loop-conditions") {
-  //val classpath = opt[List[String]](descr = "TODO")
   val input = inputOpt()
-  val output = outputOpt()
-
-  val prune = toggle(
-      descrYes = "Remove methods without outgoing edges from graph",
-      descrNo = "Do not remove methods without outgoing edges from graph",
-      default = Some(true))
-  val shrink = toggle(descrYes = "Skip methods without loops",
-      descrNo = "Include methods without loops", default = Some(true))
-  val prettyPrint = toggle(descrYes = "Pretty print found loops", default = Some(false))
+  val `class` = opt[String](required = true)
 
   def run() {
-    //Main.main(classpath.getOrElse(List()))
-    org.ucombinator.jaam.tools.loopConditions.Main.main(input(), output(), prune(), shrink(), prettyPrint())
+    org.ucombinator.jaam.tools.loopConditions.Main.main(input(), `class`())
   }
 }
 

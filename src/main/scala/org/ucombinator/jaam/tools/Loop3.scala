@@ -255,18 +255,6 @@ object Main {
 
     println(f"appEdges: ${appEdges.size}")
 
-    def encode(s: String): String = s.replace("\"", "\\\"")
-    def quote(s: String): String = "\"" + encode(s) + "\""
-
-    //    println("digraph loops {")
-    //    println("ranksep=\"10\";");
-    //    for ((s, ds) <- appEdges) {
-    //      for (d <- ds) {
-    //        println(f"  ${quote(s.sootMethod.toString)} -> ${quote(d.toString)};")
-    //      }
-    //    }
-    //    println("}")
-
     val m = Soot.getSootClass(mainClass).getMethodByName(mainMethod) //Coverage2.freshenMethod(Soot.getSootClass(mainClass).getMethodByName(mainMethod))
     // The next three lines add edges from the main method to any method that has no incoming edges.
     val s = Stmt(Soot.getBody(m).getUnits.asScala.toList.head.asInstanceOf[SootStmt], m)

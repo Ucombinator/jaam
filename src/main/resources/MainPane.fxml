@@ -25,21 +25,6 @@
                   </MenuItem>
             </items>
           </Menu>
-          <Menu text="_Search">
-            <items>
-              <MenuItem onAction="#searchByID" text="By _ID..." />
-                  <MenuItem onAction="#searchByStatement" text="By _Statement..." />
-                  <MenuItem onAction="#searchByMethod" text="By _Method..." />
-            </items>
-          </Menu>
-            <Menu mnemonicParsing="false" text="Hide/Show">
-              <items>
-                  <MenuItem onAction="#hideSelectedNodes" text="Hide_Selected" />
-                  <MenuItem onAction="#hideUnrelatedNodes" text="Hide_Unrelated" />
-                  <MenuItem mnemonicParsing="false" onAction="#pruneVisibleGraph" text="Prune current graph" />
-                  <MenuItem onAction="#showAllNodes" text="Unhide_All" />
-              </items>
-            </Menu>
             <Menu mnemonicParsing="false" text="_View">
               <items>
                 <MenuItem onAction="#zoomInAction" text="Zoom _In">
