@@ -9,16 +9,10 @@ import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
 
 object Loop {
-  private var loopInfoSets = Map.empty[SootMethod, Set[LoopInfo]]
-  def getLoopInfoSet(method: SootMethod, skipExceptionLoops: Boolean = true): Set[LoopInfo] = {
-    loopInfoSets.get(method) match {
-      case Some(ls) => ls
-      case None =>
-        val lnt = new LoopNestTree(Soot.getBody(method))
-        val infoSet = lnt.toSet[SootLoop].map(loop => identifyLoop(loop, method)).filterNot(skipExceptionLoops && _.isInstanceOf[ExceptionLoop])
-        loopInfoSets = loopInfoSets + (method -> infoSet)
-        infoSet
-    }
+  def getLoopSet(method: SootMethod, skipExceptionLoops: Boolean = true): Set[SootLoop] = {
+    val lnt = new LoopNestTree(Soot.getBody(method))
+    val infoSet = lnt.toSet[SootLoop].map(loop => identifyLoop(loop, method)).filterNot(skipExceptionLoops && _.isInstanceOf[ExceptionLoop])
+    infoSet.map(_.loop)
   }
 
   def identifyLoop(loop: SootLoop, method: SootMethod): LoopInfo = {
