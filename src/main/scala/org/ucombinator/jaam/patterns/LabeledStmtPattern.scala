@@ -17,7 +17,7 @@ object UnusedInvokeResult extends Value {
   override def apply(aSwitch: Switch): Unit = ???
 }
 
-case class State(indexes: Map[String, Index], identifiers: Map[String, Identifier])
+case class State(indexes: Map[String, Index], locals: Map[String, Local])
 
 case class LabeledStmtPattern(label: LabelPattern, stmtPattern: StmtPattern) extends ((State, Stmt) => List[State]) {
   override def apply(state: State, stmt: Stmt): List[State] = {
@@ -149,15 +149,15 @@ case class VariableExpPattern(name: Identifier) extends ExpPattern {
   override def apply(state: State, value: Value): List[State] = {
     value match {
       case value: Local =>
-        state.identifiers.get(name) match {
+        state.locals.get(name) match {
           case Some(id) =>
-            if (id == value.getName) {
+            if (id == value) {
               List(state)
             } else {
               List()
             }
           case None =>
-            List(state.copy(identifiers = state.identifiers + (name -> value.getName)))
+            List(state.copy(locals = state.locals + (name -> value)))
         }
       case _ => List()
     }
