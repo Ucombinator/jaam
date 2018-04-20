@@ -205,6 +205,39 @@ if (false) {
             println(f"    $s")
           }
         }
+
+        { // Compute 2
+          // Create a topological traversal
+          val i = new TopologicalOrderIterator[Stmt, DefaultEdge](loopGraph)
+
+          var seen = Set[Stmt]() // Stmts that we have seen jumps to
+          var visited = Set[Stmt]() // Stmts that the topological traversal has visited
+          val ps = loopGraph.vertexSet().asScala.filter(_.nextSemantic.contains(e)) // all states that jump to e
+
+          println(f"  ps = $ps")
+
+          var v: Stmt = i.next
+          visited += v
+          println(f"  v.init = $v")
+          while (!ps.subsetOf(visited) // not after all jumps to e
+            || !seen.subsetOf(visited)) { // not at choke point
+            //seen += v
+            seen ++= Graphs.successorListOf(loopGraph, v).asScala
+
+            v = i.next
+            visited += v
+            println(f"  v = $v")
+            println(f"  seen = $seen")
+            println(f"  visited = $visited")
+          }
+
+          if (!v.nextSemantic.contains(e)) { visited -= v }
+
+          println(f"  (2) condition = ")
+          for (s <- visited.toList.sortBy(_.index)) {
+            println(f"    $s")
+          }
+        }
       } else {
         // post-condition = some back jump statements go out of loop
         println(f"  loop type = post-condition")
