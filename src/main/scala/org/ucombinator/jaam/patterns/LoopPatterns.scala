@@ -24,6 +24,47 @@ object LoopPatterns {
     println()
   }
 
+  /**
+    * TODO: From 2018-04-12
+    *
+    * Write method:
+    *   - takes SootMethod and SootLoop
+    *   - grab statements from method
+    *   - identify loop header/exit with labels
+    *   - attempt to identify the loop contained within the method matching those labels
+    *   - produce LoopInfo object
+    *
+    * Produce more loop-matching patterns
+    */
+
+
+  /**
+    * TODO: From 2018-04-20
+    *
+    * Modify every creation of LoopNode in Loop3 to take a LoopInfo.
+    * Modify serializer.LoopLoopNode to take a LoopInfo.
+    * Pass LoopInfo to LoopLoopNode creation in Loop3.toJaam.
+    * Serialization is automagic at this point.
+    *
+    * -> Don't use any Collection classes in LoopInfo object because serialization problems.
+    */
+
+  def makeLoopInfo(method: SootMethod, loop: SootLoop): Unit = {
+    val units = Soot.getBody(method).getUnits.asScala.toList
+    val stmts = units.map(u => Stmt(Soot.unitToStmt(u), method))
+    for (loopPattern <- List(iteratorLoop)) {
+      val headIndex = Stmt.getIndex(loop.getHead, method)
+      val initialState = State(Map("iteratorHasNext" -> headIndex), Map())
+      val states = deriveAll(loopPattern, initialState, stmts)
+      states match {
+        case List(s) =>
+          val x = s.locals.get("arr")
+        case _ => ()
+      }
+      println("  STATES: " + states)
+    }
+  }
+
   abstract case class LoopPattern() extends (SootLoop => LoopPattern)
 
   private val wildcard = mkPatRegExp(AnyLabelPattern, AnyStmtPattern)
