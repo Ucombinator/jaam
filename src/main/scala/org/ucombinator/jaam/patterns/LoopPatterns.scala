@@ -1,9 +1,10 @@
 package org.ucombinator.jaam.patterns
 
 import org.ucombinator.jaam.patterns.stmt._
+import org.ucombinator.jaam.util.Loop.LoopInfo
 import org.ucombinator.jaam.util.{Soot, Stmt}
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
-import soot.{Type => SootType}
+import soot.{SootMethod, Type => SootType}
 
 import scala.collection.JavaConverters._
 
@@ -118,7 +119,7 @@ object LoopPatterns {
 
   // TODO: Realistically, the `wildcardRep` should be able to exclude certain variables.
   // This would allow us to filter out loops where induction variables are manipulated.
-  private val iteratorLoop = Cat(List(
+  val iteratorLoop = Cat(List(
     wildcardRep,
     iteratorInvoke("iteratorInvoke", "iter", "arr"),
     iteratorHasNext("iteratorHasNext", "hasNext", "iter"),
