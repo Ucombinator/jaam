@@ -37,33 +37,34 @@ object Main {
       if (Soot.loadedClasses(c.getName).origin == Origin.APP) {
         // Search through only concrete methods.
         for (method <- c.getMethods.asScala.filter(_.isConcrete)) {
-          val infoSet = Loop.getLoopInfoSet(method, skipExceptionLoops)
-          if (infoSet.nonEmpty && printBodies) {
-            println("Statements in method: " + method)
-            method.getActiveBody.getUnits.asScala.foreach(u => println("  " + u))
-          }
-          for (info <- infoSet) {
-            val s = loops.getOrElse(info.getClass, mutable.Set[Loop.LoopInfo]())
-            s.add(info)
-            loops(info.getClass) = s
-          }
+          print(Soot.getBody(method))
+//          val infoSet = Loop.getLoopInfoSet(method, skipExceptionLoops)
+//          if (infoSet.nonEmpty && printBodies) {
+//            println("Statements in method: " + method)
+//            method.getActiveBody.getUnits.asScala.foreach(u => println("  " + u))
+//          }
+//          for (info <- infoSet) {
+//            val s = loops.getOrElse(info.getClass, mutable.Set[Loop.LoopInfo]())
+//            s.add(info)
+//            loops(info.getClass) = s
+//          }
         }
       }
     }
 
-    for ((cls, idents) <- loops) {
-      println(cls.getSimpleName + ": " + idents.size)
-      idents.foreach(ident => {
-        println("  " + ident.head.sourceFile + ", line " + ident.head.line + " in " + ident.method.getName)
-        println("    prehead: " + ident.prehead.sootStmt)
-        println("    head:    " + ident.head.sootStmt)
-        if (printStatements) {
-          println("    statements:")
-          ident.loop.getLoopStatements.asScala.foreach(s => println("      " + s))
-        }
-      })
-      println()
-    }
+//    for ((cls, idents) <- loops) {
+//      println(cls.getSimpleName + ": " + idents.size)
+//      idents.foreach(ident => {
+//        println("  " + ident.head.sourceFile + ", line " + ident.head.line + " in " + ident.method.getName)
+//        println("    prehead: " + ident.prehead.sootStmt)
+//        println("    head:    " + ident.head.sootStmt)
+//        if (printStatements) {
+//          println("    statements:")
+//          ident.loop.getLoopStatements.asScala.foreach(s => println("      " + s))
+//        }
+//      })
+//      println()
+//    }
   }
 
   def prepFromInput(input: List[String]): Unit = {
