@@ -1,6 +1,8 @@
 package org.ucombinator.jaam.util
 
-import soot.{SootMethod, Value}
+import org.ucombinator.jaam.patterns.stmt._
+import org.ucombinator.jaam.patterns.{LoopPatterns, State}
+import soot.{Local, SootMethod, Value}
 import soot.jimple.{Stmt => SootStmt, _}
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
 import soot.toolkits.graph.LoopNestTree
@@ -26,20 +28,26 @@ object Loop {
     statements.asScala.toSet.filter(s => s.isInstanceOf[AssignStmt]).map(s => s.asInstanceOf[AssignStmt].getLeftOp)
   }
 
-  abstract class LoopInfo(val loop: SootLoop, val method: SootMethod) {
-    val assignees: Set[Value] = Loop.getAssignees(loop.getLoopStatements)
-  }
-  case class UnidentifiedLoop(override val loop: SootLoop, override val method: SootMethod) extends LoopInfo(loop, method)
-  case class SimpleInfiniteLoop(override val loop: SootLoop, override val method: SootMethod) extends LoopInfo(loop, method)
-  case class ExitlessLoop(override val loop: SootLoop, override val method: SootMethod) extends LoopInfo(loop, method)
-  case class RegularLoop(override val loop: SootLoop, override val method: SootMethod) extends LoopInfo(loop, method) {
-    val cond: ConditionExpr = loop.getHead.asInstanceOf[IfStmt].getCondition.asInstanceOf[ConditionExpr]
-    val op1: Value = cond.getOp1
-    val op2: Value = cond.getOp2
-  }
-  case class IteratorLoop(override val loop: SootLoop, override val method: SootMethod) extends LoopInfo(loop, method)
-  case class UnclassifiedAssignmentLoop(override val loop: SootLoop, override val method: SootMethod) extends LoopInfo(loop, method)
-  case class InterfaceInvokeLoop(override val loop: SootLoop, override val method: SootMethod) extends LoopInfo(loop, method)
-  case class ExceptionLoop(override val loop: SootLoop, override val method: SootMethod) extends LoopInfo(loop, method)
+  def identifyLoop(method: SootMethod, loop: SootLoop): LoopInfo = {
+    val units = Soot.getBody(method).getUnits.asScala.toList
+    val stmts = units.map(u => Stmt(Soot.unitToStmt(u), method))
 
+    val headIndex = Stmt.getIndex(loop.getHead, method)
+    val initialState = State(Map("iteratorHasNext" -> headIndex), Map())
+
+    def runPattern(loopPattern: RegExp): Option[State] = {
+      deriveAll(loopPattern, initialState, stmts) match {
+        case List(s) => Some(s)
+        case _ => None
+      }
+    }
+
+    runPattern(LoopPatterns.iteratorLoop).foreach(s => return IteratorLoop(s.locals("arr")))
+
+    UnidentifiedLoop()
+  }
+
+  sealed trait LoopInfo
+  case class UnidentifiedLoop() extends LoopInfo
+  case class IteratorLoop(iterable: Local) extends LoopInfo
 }
