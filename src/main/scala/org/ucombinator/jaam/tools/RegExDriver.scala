@@ -2,8 +2,7 @@ package org.ucombinator.jaam.tools.regex_driver
 
 import org.ucombinator.jaam.serializer.Serializer
 import org.ucombinator.jaam.tools.app.{App, Origin}
-import org.ucombinator.jaam.patterns.LoopPatterns
-import org.ucombinator.jaam.util.{Soot, Stmt}
+import org.ucombinator.jaam.util.{Soot, Stmt, Loop}
 import soot.{PackManager, Scene}
 import soot.options.Options
 import soot.toolkits.graph.LoopNestTree
@@ -34,7 +33,8 @@ object Main {
           println("Looking in method " + c.getName + "." + method.getName + ":")
           val lnt = new LoopNestTree(Soot.getBody(method))
           for (loop <- lnt.asScala.toSet[SootLoop]) {
-            LoopPatterns.makeLoopInfo(method, loop)
+            val info = Loop.identifyLoop(method, loop)
+            println(info)
           }
         }
       }
