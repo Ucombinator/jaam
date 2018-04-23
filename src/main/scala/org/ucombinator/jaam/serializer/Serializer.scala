@@ -23,6 +23,7 @@ import com.twitter.chill.{AllScalaRegistrar, KryoBase}
 import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer
 import org.objectweb.asm.tree.{AbstractInsnNode, InsnList}
 import org.objenesis.strategy.StdInstantiatorStrategy
+import org.ucombinator.jaam.util.Loop.LoopInfo
 import soot.{Local, SootMethod}
 import soot.jimple.{Constant, InvokeExpr, Ref, Stmt => SootStmt}
 import soot.util.Chain
@@ -176,7 +177,7 @@ case class AllocationTag(sootType : soot.Type) extends Tag
 case class ChainTag() extends Tag
 
 abstract class LoopNode extends Packet
-case class LoopLoopNode(id: Id[LoopNode], method: SootMethod, depends: Set[TaintAddress], statementIndex: Int) extends LoopNode
+case class LoopLoopNode(id: Id[LoopNode], method: SootMethod, depends: Set[TaintAddress], statementIndex: Int, loopInfo: LoopInfo) extends LoopNode
 case class LoopMethodNode(id: Id[LoopNode], method: SootMethod) extends LoopNode
 case class LoopEdge(src: Id[LoopNode], dst: Id[LoopNode], isRecursion: Boolean) extends Packet
 

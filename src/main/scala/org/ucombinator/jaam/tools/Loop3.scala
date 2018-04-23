@@ -15,6 +15,7 @@ import soot.jimple.{Stmt => SootStmt, _}
 import org.ucombinator.jaam.util.{CachedHashCode, Loop, Soot, Stmt}
 import org.ucombinator.jaam.tools.coverage2.Coverage2
 import org.ucombinator.jaam.serializer._
+import org.ucombinator.jaam.util.Loop.LoopInfo
 //import org.ucombinator.jaam.tools.LoopAnalyzer.{LoopNode, LoopTree, Node}
 
 import org.jgrapht.graph.{DefaultDirectedGraph, DefaultEdge}
@@ -323,7 +324,8 @@ object Main {
   def addForest(g: Map[Node, Set[Node]], node: Node,
       forest: Set[LoopTree], m: SootMethod): Map[Node, Set[Node]] = {
     forest.foldLeft(g)({ (g: Map[Node, Set[Node]], tree: LoopTree) =>
-      val treeNode = LoopNode(m, tree.loop)
+      val info = Loop.identifyLoop(m, tree.loop)
+      val treeNode = LoopNode(m, tree.loop, info)
       addForest(add(g, node, treeNode), treeNode, tree.children, m)
     })
   }
@@ -402,7 +404,9 @@ object Main {
                 newGraph = add(newGraph, mNode, destNode)
               } else {
                 assert(parents.size == 1, "multiple parents")
-                val parent = LoopNode(m, parents.head.parent(sootStmt).loop)
+                val loop = parents.head.parent(sootStmt).loop
+                val info = Loop.identifyLoop(m, loop)
+                val parent = LoopNode(m, loop, info)
                 newGraph = add(newGraph, parent, destNode)
               }
               newGraph = build(dest, newGraph)
@@ -556,7 +560,7 @@ object LoopTree {
 abstract sealed class Node extends CachedHashCode {
   val tag: String
 }
-case class LoopNode(m: SootMethod, loop: SootLoop) extends Node {
+case class LoopNode(m: SootMethod, loop: SootLoop, loopInfo: LoopInfo) extends Node {
   override val tag: String = m.getSignature + "\ninstruction #" + Stmt(loop.getHead, m).index
   val index: Int = Stmt(loop.getHead, m).index
 }
@@ -789,7 +793,7 @@ case class LoopGraph(m: SootMethod, private val g: Map[Node, Set[Node]],
           case MethodNode(m) =>
             println(f"Serializing method: $m")
             serializer.LoopMethodNode(id, m)
-          case n@LoopNode(m, _) =>
+          case n@LoopNode(m, _, i) =>
             val stmt = getByIndex(m, n.index+1) // add one because the loop node is apparently the instruction before...?
             val addrs = stmt match {
               case sootStmt: IfStmt => addrsOf(sootStmt.getCondition, m)
@@ -797,7 +801,7 @@ case class LoopGraph(m: SootMethod, private val g: Map[Node, Set[Node]],
                 println("TODO: investigate why the loop guard is not an IfStmt (" + stmt + ")")
                 Set.empty[serializer.TaintAddress]
             }
-            serializer.LoopLoopNode(id, m, addrs, n.index)
+            serializer.LoopLoopNode(id, m, addrs, n.index, i)
         }
 
         // println("Writing: " + packet)
