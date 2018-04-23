@@ -2,8 +2,7 @@ package org.ucombinator.jaam.tools.regex_driver
 
 import org.ucombinator.jaam.serializer.Serializer
 import org.ucombinator.jaam.tools.app.{App, Origin}
-import org.ucombinator.jaam.patterns.stmt._
-import org.ucombinator.jaam.patterns.{LoopPatterns, StmtPatternToRegEx}
+import org.ucombinator.jaam.patterns.LoopPatterns
 import org.ucombinator.jaam.util.{Soot, Stmt}
 import soot.{PackManager, Scene}
 import soot.options.Options
@@ -23,7 +22,7 @@ object Main {
     }
   }
 
-  def main(input: List[String], className: String, methodName: String): Unit = {
+  def main(input: List[String], className: String, methodName: Option[String], showStmts: Boolean): Unit = {
     prepFromInput(input)
 
     val classNames = Soot.loadedClasses.keys
@@ -31,47 +30,12 @@ object Main {
     for (c <- classes) {
       if (Soot.loadedClasses(c.getName).origin == Origin.APP) {
         // Search through only concrete methods.
-        for (method <- c.getMethods.asScala.filter(m => m.isConcrete && m.getName == methodName)) {
-          val units = Soot.getBody(method).getUnits.asScala.toList
-          val stmts = units.map(u => Stmt(Soot.unitToStmt(u), method))
-
-          printStmts(stmts)
-
-          LoopPatterns.findLoops(stmts)
-
-//          val lnt = new LoopNestTree(Soot.getBody(method))
-//          for (loop <- lnt.asScala.toSet[SootLoop]) {
-//            val exits = loop.getLoopExits.asScala.toSet
-//            val externalStmts = exits.flatMap(Stmt(_, method).nextSemantic).diff(loop.getLoopStatements.asScala.map(Stmt(_, method)).toSet)
-//            print("externalStmts: " + externalStmts)
-//            val head = loop.getHead
-//            val exit = externalStmts.toList match {
-//              case List(x) => x
-//              case allExits => throw new Exception("loop does not have exactly one exit: " + allExits)
-//            }
-//            val headIndex = Stmt.getIndex(head, method)
-//            val exitIndex = exit.index
-//
-//            // TODO: separate common patterns into new Util package
-//            // TODO: incorporate other binop matches
-//            // TODO: incorporate 'not' match (exclusion)
-//
-//            val initialState = State(Map("entry" -> headIndex, "exit" -> exitIndex), Map())
-//
-//            // .*<entry>.*<exit>.*
-//
-//            val wildcard = Fun(StmtPatternToRegEx(LabeledStmtPattern(AnyLabelPattern, AnyStmtPattern)), _ => List())
-//            val wildcardRep = Rep(wildcard)
-//            val entryRule = Fun(StmtPatternToRegEx(LabeledStmtPattern(NamedLabelPattern("entry"), AnyStmtPattern)), _ => List())
-//            val exitRule = Fun(StmtPatternToRegEx(LabeledStmtPattern(NamedLabelPattern("exit"), AnyStmtPattern)), _ => List())
-//
-//            val rule = Cat(List(wildcardRep, entryRule, wildcardRep, exitRule, wildcardRep))
-//
-//            val states = deriveAll(rule, initialState, stmts)
-//            println()
-//            println("STATES: " + states)
-//            println()
-//          }
+        for (method <- c.getMethods.asScala.filter(m => m.isConcrete && (methodName match { case None => true; case Some(mn) => m.getName == mn}))) {
+          println("Looking in method " + c.getName + "." + method.getName + ":")
+          val lnt = new LoopNestTree(Soot.getBody(method))
+          for (loop <- lnt.asScala.toSet[SootLoop]) {
+            LoopPatterns.makeLoopInfo(method, loop)
+          }
         }
       }
     }

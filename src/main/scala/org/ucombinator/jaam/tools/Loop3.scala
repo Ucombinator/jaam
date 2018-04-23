@@ -333,7 +333,7 @@ object Main {
     loopForests.get(m) match {
       case None =>
         val loops =
-          if (m.isConcrete) { Loop.getLoopInfoSet(m).map(_.loop) }
+          if (m.isConcrete) { Loop.getLoopSet(m) }
           else { Set() }
         var forest = Set.empty[LoopTree]
         if (loops.nonEmpty) {

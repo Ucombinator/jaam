@@ -16,8 +16,6 @@ import java.util.Set;
 public class VizPanelController extends GraphPanelController<StateVertex, StateEdge>
         implements EventHandler<SelectEvent<StateVertex>>, SetChangeListener<StateVertex> {
 
-
-
     private int batchModeCount = 0;
     private boolean changedWhileInBatchMode = false;
 
