@@ -52,8 +52,6 @@ public class LayoutAlgorithm
                 // X and Y coordinates are RELATIVE to the parent
                 if (v.isExpanded()) {
                     doLayout(v.getPreferredLayout(), v);
-                } else {
-                    System.out.println("Collapsed node: " + v.getId());
                 }
             }
         }

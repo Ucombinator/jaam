@@ -97,11 +97,9 @@ public class TaintAddress extends TaintVertex {
     @Override
     public String getClassName() {
         if (sootClass == null) {
-            System.out.println("JUAN: TainAddr getClassName " + null);
             return null;
         }
         else {
-            System.out.println("JUAN: TainAddr getClassName " + sootClass.getName());
             return sootClass.getName();
         }
 
@@ -110,11 +108,9 @@ public class TaintAddress extends TaintVertex {
     @Override
     public String getMethodName() {
         if (sootMethod != null) {
-            System.out.println("JUAN: TainAddr getMethodName " + sootMethod.getName());
             return sootMethod.getName();
         }
         else {
-            System.out.println("JUAN: TainAddr getMethodName " + null);
             return null;
         }
     }
