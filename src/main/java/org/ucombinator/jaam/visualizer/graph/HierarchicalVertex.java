@@ -10,29 +10,29 @@ import java.util.function.*;
 
 public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extends Edge<T>> extends Vertex, Comparable<T> {
 
-    Graph<T, S> getParentGraph();
-    Graph<T, S> getChildGraph();
-    void setParentGraph(Graph<T, S> graph);
+    Graph<T, S> getOuterGraph(); // Go up the hierarchy (The graph I am part of)
+    Graph<T, S> getInnerGraph(); // Go down the the hierarchy (The graph inside of me)
+    void setOuterGraph(Graph<T, S> graph);
     T copy(); // Copy constructor, used to construct new vertices in visible graph.
 
     default void applyToVerticesRecursive(Consumer<HierarchicalVertex<T, S>> f) {
         f.accept(this);
-        this.getChildGraph().getVertices().forEach(w -> w.applyToVerticesRecursive(f));
+        this.getInnerGraph().getVertices().forEach(w -> w.applyToVerticesRecursive(f));
     }
 
     default void applyToEdgesRecursive(Consumer<HierarchicalVertex<T, S>> vertexFunc, Consumer<S> edgeFunc) {
         vertexFunc.accept(this);
-        for(S edge: this.getChildGraph().getEdges()) {
+        for(S edge: this.getInnerGraph().getEdges()) {
             edgeFunc.accept(edge);
         }
 
-        this.getChildGraph().getVertices().forEach(w -> w.applyToEdgesRecursive(vertexFunc, edgeFunc));
+        this.getInnerGraph().getVertices().forEach(w -> w.applyToEdgesRecursive(vertexFunc, edgeFunc));
     }
 
     // Overridden in base case, LayoutInstructionVertex
     default int getMinInstructionLine() {
         int minIndex = Integer.MAX_VALUE;
-        for(HierarchicalVertex<T, S> v : this.getChildGraph().getVertices()) {
+        for(HierarchicalVertex<T, S> v : this.getInnerGraph().getVertices()) {
             minIndex = Math.min(minIndex, v.getMinInstructionLine());
         }
 
@@ -60,7 +60,7 @@ public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extend
 
         if (!ancestors.contains((T) this)) {
             ancestors.add((T) this);
-            this.getParentGraph().getInNeighbors((T) this).forEach(v -> {
+            this.getOuterGraph().getInNeighbors((T) this).forEach(v -> {
                 v.getAncestors(ancestors);
             });
         }
@@ -81,7 +81,7 @@ public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extend
 
         if (!descendants.contains((T) this)) {
             descendants.add((T) this);
-            this.getParentGraph().getOutNeighbors((T) this).forEach(v -> {
+            this.getOuterGraph().getOutNeighbors((T) this).forEach(v -> {
                 v.getDescendants(descendants);
             });
         }

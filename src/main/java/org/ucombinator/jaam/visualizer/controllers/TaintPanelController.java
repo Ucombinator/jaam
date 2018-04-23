@@ -1,14 +1,7 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
 import javafx.event.EventHandler;
-import javafx.fxml.FXML;
-import javafx.scene.Group;
-import javafx.scene.Node;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Spinner;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
 import org.ucombinator.jaam.tools.taint3.Address;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -39,7 +32,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         this.visibleRoot = new TaintRootVertex();
         //this.immutableRoot = LayerFactory.getLayeredTaintGraph(graph);
         this.immutableRoot = new TaintRootVertex();
-        this.immutableRoot.setChildGraph(graph);
+        this.immutableRoot.setInnerGraph(graph);
         fillFieldDictionary();
     }
 
@@ -60,9 +53,9 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         TaintRootVertex tempRoot = ((TaintRootVertex) this.immutableRoot).constructVisibleGraph(verticesToDraw);
 
-        System.out.println("JUAN: There are " + tempRoot.getChildGraph().getVertices().size());
+        System.out.println("JUAN: There are " + tempRoot.getInnerGraph().getVertices().size());
 
-        this.visibleRoot = LayerFactory.getLayeredTaintGraph(tempRoot.getChildGraph());
+        this.visibleRoot = LayerFactory.getLayeredTaintGraph(tempRoot.getInnerGraph());
 
         LayoutAlgorithm.layout(visibleRoot);
         drawNodes(null, visibleRoot);

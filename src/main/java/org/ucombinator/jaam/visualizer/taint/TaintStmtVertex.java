@@ -18,7 +18,7 @@ public class TaintStmtVertex extends TaintVertex {
 
     public TaintStmtVertex(List<? extends TaintVertex> taintAddresses) {
         super(taintAddresses.toString(), VertexType.TAINT_STMT, true);
-        taintAddresses.forEach(this.getChildGraph()::addVertex);
+        taintAddresses.forEach(this.getInnerGraph()::addVertex);
         this.taintAddresses = new ArrayList<>();
         taintAddresses.forEach(address -> this.taintAddresses.add((TaintAddress) address));
         this.stmt = this.taintAddresses.get(0).getAddress().stmt().toString();

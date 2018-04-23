@@ -19,35 +19,35 @@ import java.util.function.Consumer;
 public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
         implements HierarchicalVertex<StateVertex, StateEdge> {
 
-    private Graph<StateVertex, StateEdge> parentGraph;
-    private Graph<StateVertex, StateEdge> childGraph;
+    private Graph<StateVertex, StateEdge> outerGraph;
+    private Graph<StateVertex, StateEdge> innerGraph;
 
     public StateVertex(String label, VertexType type, boolean drawEdges) {
         super(label, type, drawEdges);
-        this.childGraph = new Graph<>();
-        this.parentGraph = new Graph<>();
+        this.innerGraph = new Graph<>();
+        this.outerGraph = new Graph<>();
     }
 
     public StateVertex(int id, String label, VertexType type) {
         super(id, label, type);
-        this.childGraph = new Graph<>();
-        this.parentGraph = new Graph<>();
+        this.innerGraph = new Graph<>();
+        this.outerGraph = new Graph<>();
     }
 
-    public Graph<StateVertex, StateEdge> getParentGraph() {
-        return this.parentGraph;
+    public Graph<StateVertex, StateEdge> getOuterGraph() {
+        return this.outerGraph;
     }
 
-    public Graph<StateVertex, StateEdge> getChildGraph() {
-        return this.childGraph;
+    public Graph<StateVertex, StateEdge> getInnerGraph() {
+        return this.innerGraph;
     }
 
-    public void setParentGraph(Graph<StateVertex, StateEdge> graph) {
-        this.parentGraph = graph;
+    public void setOuterGraph(Graph<StateVertex, StateEdge> graph) {
+        this.outerGraph = graph;
     }
 
-    public void setChildGraph(Graph<StateVertex, StateEdge> graph) {
-        this.childGraph = graph;
+    public void setInnerGraph(Graph<StateVertex, StateEdge> graph) {
+        this.innerGraph = graph;
     }
 
     public void onMouseClick(MouseEvent event) {
@@ -72,7 +72,7 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
 
     private void handleDoubleClick(MouseEvent event) {
         StateRootVertex root = (StateRootVertex) Main.getSelectedVizPanelController().getVisibleRoot();
-        Graph<StateVertex, StateEdge> childGraph = this.getChildGraph();
+        Graph<StateVertex, StateEdge> innerGraph = this.getInnerGraph();
         boolean isExpanded = this.isExpanded();
 
         double newOpacity = isExpanded ? 0.0 : 1.0;
@@ -81,11 +81,11 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
         // First we want the content of the clicked node to appear/disappear.
         System.out.println("Changing opacity of child graph...");
 
-        for(StateVertex v: childGraph.getVertices()) {
+        for(StateVertex v: innerGraph.getVertices()) {
             v.setOpacity(newOpacity);
         }
 
-        for(StateEdge e: childGraph.getEdges()){
+        for(StateEdge e: innerGraph.getEdges()){
             e.setOpacity(newOpacity);
         }
 
@@ -96,11 +96,11 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
                 // to change its size.
                 this.setExpanded(!isExpanded);
 
-                for (StateVertex v: childGraph.getVertices()) {
+                for (StateVertex v: innerGraph.getVertices()) {
                     v.setVisible(newVisible);
                 }
 
-                for (StateEdge e: childGraph.getEdges()) {
+                for (StateEdge e: innerGraph.getEdges()) {
                     e.redrawAndSetVisible(newVisible);
                 }
 
@@ -120,7 +120,6 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
             }
         );
 
-        System.out.println("Simultaneous transitions: " + pt.getChildren().size());
         pt.play();
     }
 
@@ -137,14 +136,14 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
             System.out.println("Search successful: " + this.getId());
         }
 
-        for(StateVertex v : this.getChildGraph().getVertices())
+        for(StateVertex v : this.getInnerGraph().getVertices())
             v.searchByIDRange(id1, id2, mainTab);
     }
 
     public Set<StateEdge> getIncidentEdges() {
         Set<StateEdge> incidentEdges = new HashSet<>();
-        incidentEdges.addAll(this.getParentGraph().getInEdges(this));
-        incidentEdges.addAll(this.getParentGraph().getOutEdges(this));
+        incidentEdges.addAll(this.getOuterGraph().getInEdges(this));
+        incidentEdges.addAll(this.getOuterGraph().getOutEdges(this));
         return incidentEdges;
     }
 
@@ -167,7 +166,7 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
 
     // This is needed so that we can show the code for the methods that correspond to selected vertices
     public Set<StateMethodVertex> getMethodVertices() {
-        return this.getChildGraph().getVertices()
+        return this.getInnerGraph().getVertices()
                 .stream()
                 .map(StateVertex::getMethodVertices)
                 .reduce(new HashSet<>(), (x, y) -> {
@@ -177,7 +176,7 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
     }
 
     public Set<String> getClassNames() {
-        return this.getChildGraph().getVertices()
+        return this.getInnerGraph().getVertices()
                 .stream()
                 .map(StateVertex::getClassNames)
                 .reduce(new HashSet<>(), (x, y) -> {

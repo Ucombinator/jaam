@@ -23,7 +23,7 @@ public class LayerFactory
         System.out.println("Strongly connected components in loop graph: " + sccs.size());
 
         StateRootVertex graphRoot = new StateRootVertex();
-        graphRoot.setChildGraph(graph);
+        graphRoot.setInnerGraph(graph);
 
         return (StateRootVertex) GraphUtils.compressGraph(graphRoot,
                 v -> Integer.toString(vertexToComponentIndex.get(v.getId())),
@@ -32,8 +32,8 @@ public class LayerFactory
                     public StateVertex apply(List<StateVertex> stateVertices) {
                         StateSccVertex sccVertex = new StateSccVertex("SCC");
                         stateVertices.forEach(v -> {
-                            sccVertex.getChildGraph().addVertex(v);
-                            v.setParentGraph(sccVertex.getChildGraph());
+                            sccVertex.getInnerGraph().addVertex(v);
+                            v.setOuterGraph(sccVertex.getInnerGraph());
                         });
                         return sccVertex;
                     }
@@ -53,7 +53,7 @@ public class LayerFactory
         System.out.println("Strongly connected components in taint graph: " + sccs.size());
 
         TaintRootVertex graphRoot = new TaintRootVertex();
-        graphRoot.setChildGraph(graph);
+        graphRoot.setInnerGraph(graph);
 
         return (TaintRootVertex) GraphUtils.compressGraph(graphRoot,
                 v -> Integer.toString(vertexToComponentIndex.get(v.getId())),
@@ -62,8 +62,8 @@ public class LayerFactory
                     public TaintVertex apply(List<TaintVertex> stateVertices) {
                         TaintSccVertex sccVertex = new TaintSccVertex("SCC");
                         stateVertices.forEach(v -> {
-                            sccVertex.getChildGraph().addVertex(v);
-                            v.setParentGraph(sccVertex.getChildGraph());
+                            sccVertex.getInnerGraph().addVertex(v);
+                            v.setOuterGraph(sccVertex.getInnerGraph());
                         });
                         return sccVertex;
                     }
@@ -86,13 +86,13 @@ public class LayerFactory
         System.out.println("JUAN: Start there are " + calcSize(graph));
         TaintRootVertex classGraphRoot = getClassGroupingGraph(graph);
 
-        System.out.println("JUAN After " + calcSize(classGraphRoot.getChildGraph()));
+        System.out.println("JUAN After " + calcSize(classGraphRoot.getInnerGraph()));
 
-        classGraphRoot.getChildGraph().getVertices().forEach(classVertex -> {
-            if (classVertex.getChildGraph().getVertices().size() > 1) {
-                TaintRootVertex methodRootVertex = getMethodGroupingGraph(classVertex.getChildGraph());
-                Graph<TaintVertex, TaintEdge> groupedMethodGraph = methodRootVertex.getChildGraph();
-                classVertex.setChildGraph(groupedMethodGraph);
+        classGraphRoot.getInnerGraph().getVertices().forEach(classVertex -> {
+            if (classVertex.getInnerGraph().getVertices().size() > 1) {
+                TaintRootVertex methodRootVertex = getMethodGroupingGraph(classVertex.getInnerGraph());
+                Graph<TaintVertex, TaintEdge> groupedMethodGraph = methodRootVertex.getInnerGraph();
+                classVertex.setInnerGraph(groupedMethodGraph);
             }
         });
         return classGraphRoot;
@@ -103,7 +103,7 @@ public class LayerFactory
 
         for(TaintVertex v : graph.getVertices())
         {
-            if (v.getChildGraph().getVertices().size() > 1) total += calcSize(v.getChildGraph());
+            if (v.getInnerGraph().getVertices().size() > 1) total += calcSize(v.getInnerGraph());
             else total++;
         }
 
@@ -124,7 +124,7 @@ public class LayerFactory
     private static TaintRootVertex getClassGroupingGraph(Graph<TaintVertex, TaintEdge> graph)
     {
         TaintRootVertex graphRoot = new TaintRootVertex();
-        graphRoot.setChildGraph(graph);
+        graphRoot.setInnerGraph(graph);
 
         return (TaintRootVertex) GraphUtils.compressGraph(graphRoot,
                 v -> {
@@ -147,8 +147,8 @@ public class LayerFactory
                         TaintSccVertex classVertex = new TaintSccVertex(className, LayoutAlgorithm.LAYOUT_ALGORITHM.DFS);
                         classVertex.setColor(Color.ORANGE);
                         stateVertices.forEach(v -> {
-                            classVertex.getChildGraph().addVertex(v);
-                            v.setParentGraph(classVertex.getChildGraph());
+                            classVertex.getInnerGraph().addVertex(v);
+                            v.setOuterGraph(classVertex.getInnerGraph());
                         });
 
                         System.out.println("Creating class vertex " + className);
@@ -163,7 +163,7 @@ public class LayerFactory
     private static TaintRootVertex getMethodGroupingGraph(Graph<TaintVertex, TaintEdge> graph)
     {
         TaintRootVertex graphRoot = new TaintRootVertex();
-        graphRoot.setChildGraph(graph);
+        graphRoot.setInnerGraph(graph);
 
         return (TaintRootVertex) GraphUtils.compressGraph(graphRoot,
                 v -> {
@@ -183,8 +183,8 @@ public class LayerFactory
                         TaintSccVertex methodVertex = new TaintSccVertex(methodName, LayoutAlgorithm.LAYOUT_ALGORITHM.DFS);
                         methodVertex.setColor(Color.HOTPINK);
                         stateVertices.forEach(v -> {
-                            methodVertex.getChildGraph().addVertex(v);
-                            v.setParentGraph(methodVertex.getChildGraph());
+                            methodVertex.getInnerGraph().addVertex(v);
+                            v.setOuterGraph(methodVertex.getInnerGraph());
                         });
                         return methodVertex;
                     }

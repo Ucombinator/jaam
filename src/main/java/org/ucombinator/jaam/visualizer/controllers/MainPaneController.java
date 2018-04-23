@@ -88,8 +88,8 @@ public class MainPaneController {
         Pair<StateRootVertex, TaintRootVertex> s = parseLoopGraph(file, compilationUnits, sootClasses);
 
         System.out.println("--> Create visualization: start...");
-        MainTabController tabController = new MainTabController(file, s.getLeft().getChildGraph(),  compilationUnits,
-                s.getRight().getChildGraph(), sootClasses);
+        MainTabController tabController = new MainTabController(file, s.getLeft().getInnerGraph(),  compilationUnits,
+                s.getRight().getInnerGraph(), sootClasses);
         System.out.println("<-- Create visualization: Done!");
 
         tabPane.getTabs().add(tabController.tab);
@@ -99,7 +99,7 @@ public class MainPaneController {
     private static Pair<StateRootVertex, TaintRootVertex> parseLoopGraph(
             File file, List<CompilationUnit> compilationUnits, Set<SootClass> sootClasses) {
         StateRootVertex loopGraphRoot = new StateRootVertex();
-        Graph<StateVertex, StateEdge> loopGraph = loopGraphRoot.getChildGraph();
+        Graph<StateVertex, StateEdge> loopGraph = loopGraphRoot.getInnerGraph();
         HashMap<Integer, StateVertex> stateVertexIndex = new HashMap<>();
         int loopPackets = 0;
         int methodPackets = 0;
@@ -107,7 +107,7 @@ public class MainPaneController {
         ArrayList<LoopEdge> loopEdges = new ArrayList<>();
 
         TaintRootVertex taintRoot = new TaintRootVertex();
-        Graph<TaintVertex, TaintEdge> taintGraph = taintRoot.getChildGraph();
+        Graph<TaintVertex, TaintEdge> taintGraph = taintRoot.getInnerGraph();
         HashMap<Address, TaintAddress> addressIndex = new HashMap<>();
         int addressPackets = 0;
         int taintEdgePackets = 0;

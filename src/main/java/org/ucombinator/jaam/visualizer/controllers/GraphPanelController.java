@@ -17,15 +17,11 @@ import org.ucombinator.jaam.visualizer.graph.Edge;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
-import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.gui.TimelineProperty;
 import org.ucombinator.jaam.visualizer.gui.ZoomSpinnerValueFactory;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.LayerFactory;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.main.Main;
-import org.ucombinator.jaam.visualizer.state.StateRootVertex;
-import org.ucombinator.jaam.visualizer.taint.TaintRootVertex;
 
 import javax.imageio.ImageIO;
 import java.io.File;
@@ -87,7 +83,7 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
         double height = v.getHeight();
         node.setTranslateLocation(translateX, translateY, width, height);
 
-        Graph<T, S> childGraph = v.getChildGraph();
+        Graph<T, S> childGraph = v.getInnerGraph();
         for (T child : childGraph.getVertices()) {
             if (v.isExpanded()) {
                 drawNodes(node, child);
@@ -97,7 +93,7 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
 
     protected void drawEdges(T v) {
         if (v.isExpanded()) {
-            Graph<T, S> childGraph = v.getChildGraph();
+            Graph<T, S> childGraph = v.getInnerGraph();
             for (S e : childGraph.getEdges()) {
                 e.setVisible(v.isEdgeVisible());
                 e.draw();

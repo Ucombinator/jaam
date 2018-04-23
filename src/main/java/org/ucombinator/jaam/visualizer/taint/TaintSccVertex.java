@@ -29,7 +29,7 @@ public class TaintSccVertex extends TaintVertex {
 
     public HashSet<String> getMethodNames() {
         HashSet<String> methodNames = new HashSet<>();
-        for (TaintVertex v : this.getChildGraph().getVertices()) {
+        for (TaintVertex v : this.getInnerGraph().getVertices()) {
             methodNames.addAll(v.getMethodNames());
         }
         return methodNames;
@@ -37,7 +37,7 @@ public class TaintSccVertex extends TaintVertex {
 
     @Override
     public boolean hasField() {
-        for (TaintVertex v : this.getChildGraph().getVertices()) {
+        for (TaintVertex v : this.getInnerGraph().getVertices()) {
             if (v.hasField()) {
                 return true;
             }
@@ -47,7 +47,7 @@ public class TaintSccVertex extends TaintVertex {
 
     @Override
     public void getFields(Collection<TaintAddress> store) {
-        this.getChildGraph().getVertices().forEach(v -> v.getFields(store));
+        this.getInnerGraph().getVertices().forEach(v -> v.getFields(store));
     }
 
     @Override

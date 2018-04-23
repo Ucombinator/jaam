@@ -35,7 +35,7 @@ public class LayoutAlgorithm
         parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
         parentVertex.setX(0);
         parentVertex.setY(0);
-        Graph<T, S> childGraph = parentVertex.getChildGraph();
+        Graph<T, S> childGraph = parentVertex.getInnerGraph();
         for (T v : childGraph.getVertices()) {
             initializeSizes(v);
         }
@@ -43,9 +43,9 @@ public class LayoutAlgorithm
 
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
     void expandSubGraphs(T parentVertex) {
-        Graph<T, S> parentChildGraph = parentVertex.getChildGraph();
+        Graph<T, S> parentChildGraph = parentVertex.getInnerGraph();
         for(T v: parentChildGraph.getVertices()) {
-            Graph<T, S> childGraph = v.getChildGraph();
+            Graph<T, S> childGraph = v.getInnerGraph();
             if (childGraph.getVertices().size() != 0)
             {
                 // Layout the child graphs of each node and assign width W and height H to each node
@@ -69,7 +69,7 @@ public class LayoutAlgorithm
 
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
     void dfsLayout(T parentVertex) {
-        Graph<T, S> graph = parentVertex.getChildGraph();
+        Graph<T, S> graph = parentVertex.getInnerGraph();
 
         expandSubGraphs(parentVertex);
 
@@ -128,7 +128,7 @@ public class LayoutAlgorithm
 
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
     void bfsLayout(T parentVertex) {
-        Graph<T, S> graph = parentVertex.getChildGraph();
+        Graph<T, S> graph = parentVertex.getInnerGraph();
 
         // Interior graphs use the DFS Layout
         expandSubGraphs(parentVertex);
@@ -151,7 +151,7 @@ public class LayoutAlgorithm
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
 
-        Point2D dimensions = treeLayout(parentVertex.getChildGraph().getSources(), childrenMap, new ClassComp<>());
+        Point2D dimensions = treeLayout(parentVertex.getInnerGraph().getSources(), childrenMap, new ClassComp<>());
         parentVertex.setWidth(dimensions.getX());
         parentVertex.setHeight(dimensions.getY());
     }
