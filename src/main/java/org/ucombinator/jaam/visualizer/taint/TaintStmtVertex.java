@@ -18,11 +18,12 @@ public class TaintStmtVertex extends TaintVertex {
 
     public TaintStmtVertex(List<? extends TaintVertex> taintAddresses) {
         super(taintAddresses.toString(), VertexType.TAINT_STMT, true);
-        taintAddresses.forEach(this.getChildGraph()::addVertex);
+        taintAddresses.forEach(this.getInnerGraph()::addVertex);
         this.taintAddresses = new ArrayList<>();
         taintAddresses.forEach(address -> this.taintAddresses.add((TaintAddress) address));
         this.stmt = this.taintAddresses.get(0).getAddress().stmt().toString();
         this.color = defaultColor;
+        this.setExpanded(false);
 
         this.sootClass = null;
         this.sootMethod = null;
@@ -42,6 +43,7 @@ public class TaintStmtVertex extends TaintVertex {
                 assert this.sootMethod == a.getSootMethod();
             }
         });
+
 
         assert this.sootClass != null;
         assert this.sootMethod != null;
@@ -81,5 +83,15 @@ public class TaintStmtVertex extends TaintVertex {
     @Override
     public String getStmtString() {
         return this.stmt;
+    }
+
+    @Override
+    public String getClassName() {
+        return sootClass.getName();
+    }
+
+    @Override
+    public String getMethodName() {
+        return sootMethod.getName();
     }
 }

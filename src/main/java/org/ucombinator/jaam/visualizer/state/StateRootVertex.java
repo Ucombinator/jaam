@@ -5,9 +5,8 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class StateRootVertex extends StateVertex {
@@ -36,7 +35,7 @@ public class StateRootVertex extends StateVertex {
 
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = false;
-        for(StateVertex v : this.getChildGraph().getVertices()) {
+        for(StateVertex v : this.getInnerGraph().getVertices()) {
             found = v.searchByMethod(query, mainTab) || found;
         }
 
@@ -46,5 +45,10 @@ public class StateRootVertex extends StateVertex {
         }
 
         return found;
+    }
+
+    @Override
+    public LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
+        return LayoutAlgorithm.LAYOUT_ALGORITHM.BFS;
     }
 }

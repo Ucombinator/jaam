@@ -176,7 +176,7 @@ public class MainTabController {
             }
         }
 
-       Graph<StateVertex, StateEdge> childGraph = root.getChildGraph();
+       Graph<StateVertex, StateEdge> childGraph = root.getInnerGraph();
        for (StateVertex v : childGraph.getVertices()) {
            addVerticesToClassTree(topLevel, v);
        }
@@ -227,7 +227,7 @@ public class MainTabController {
     {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        Graph<StateVertex, StateEdge> childGraph = v.getChildGraph();
+        Graph<StateVertex, StateEdge> childGraph = v.getInnerGraph();
         for (StateVertex i : childGraph.getVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
@@ -241,7 +241,7 @@ public class MainTabController {
     public void setRightText(TaintSccVertex v) {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        Graph<TaintVertex, TaintEdge> childGraph = v.getChildGraph();
+        Graph<TaintVertex, TaintEdge> childGraph = v.getInnerGraph();
         for(AbstractLayoutVertex<TaintVertex> i : childGraph.getVertices()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
@@ -337,7 +337,7 @@ public class MainTabController {
         this.vizHighlighted.forEach(v -> keep.addAll(v.getDescendants()));
 
         HashSet<StateVertex> toHide = new HashSet<>();
-        this.vizPanelController.getVisibleRoot().getChildGraph().getVertices().forEach(v -> {
+        this.vizPanelController.getVisibleRoot().getInnerGraph().getVertices().forEach(v -> {
             if (!keep.contains(v)) {
                 toHide.add(v);
             }
@@ -363,4 +363,27 @@ public class MainTabController {
             }
         }
     }
+
+    private void setClassHighlight(StateVertex v, String prevPrefix, String currPrefix)
+    {
+        if(!v.isHidden()) {
+            if(v instanceof MethodEntity) {
+                MethodEntity cv = (MethodEntity) v;
+                if (cv.getClassName().startsWith(currPrefix)) {
+                    //System.out.println("Highlight " + cv.getClassName() + " --> " + cv.getMethodName() + " --> " + v.getId());
+                    v.setClassHighlight(true);
+                } else if (prevPrefix != null && cv.getClassName().startsWith(prevPrefix)) {
+                    v.setClassHighlight(false);
+                }
+            }
+
+            if (v.getInnerGraph().getVertices().size() > 0) {
+                Graph<StateVertex, StateEdge> childGraph = v.getInnerGraph();
+                for (StateVertex i : childGraph.getVertices()) {
+                    setClassHighlight(i, prevPrefix, currPrefix);
+                }
+            }
+        }
+    }
+
 }

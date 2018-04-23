@@ -20,7 +20,7 @@ public class StateSccVertex extends StateVertex {
 
     public boolean searchByMethod(String query, MainTabController mainTab) {
         boolean found = false;
-        for (StateVertex v : this.getChildGraph().getVertices()) {
+        for (StateVertex v : this.getInnerGraph().getVertices()) {
             found = v.searchByMethod(query, mainTab) || found;
         }
 

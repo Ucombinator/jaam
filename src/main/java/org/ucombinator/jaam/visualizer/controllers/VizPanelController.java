@@ -79,7 +79,7 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
     }
 
     public HashSet<StateVertex> pruneVisibleGraph() {
-        return this.visibleRoot.getChildGraph().getVerticesToPrune(v -> (v.getType() == AbstractLayoutVertex.VertexType.METHOD));
+        return this.visibleRoot.getInnerGraph().getVerticesToPrune(v -> (v.getType() == AbstractLayoutVertex.VertexType.METHOD));
     }
 
     @Override

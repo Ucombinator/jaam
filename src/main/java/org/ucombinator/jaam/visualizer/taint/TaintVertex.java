@@ -25,33 +25,33 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
     public static Color constColor = Color.BEIGE;
     public static Color sccColor = Color.GRAY;
 
-    private Graph<TaintVertex, TaintEdge> parentGraph;
-    private Graph<TaintVertex, TaintEdge> childGraph;
+    private Graph<TaintVertex, TaintEdge> outerGraph;
+    private Graph<TaintVertex, TaintEdge> innerGraph;
 
     public TaintVertex(String label, VertexType type, boolean drawEdges) {
         super(label, type, drawEdges);
-        this.parentGraph = new Graph<>();
-        this.childGraph = new Graph<>();
+        this.outerGraph = new Graph<>();
+        this.innerGraph = new Graph<>();
     }
 
-    public Graph<TaintVertex, TaintEdge> getParentGraph() {
-        return this.parentGraph;
+    public Graph<TaintVertex, TaintEdge> getOuterGraph() {
+        return this.outerGraph;
     }
 
-    public Graph<TaintVertex, TaintEdge> getChildGraph() {
-        return this.childGraph;
+    public Graph<TaintVertex, TaintEdge> getInnerGraph() {
+        return this.innerGraph;
     }
 
-    public void setParentGraph(Graph<TaintVertex, TaintEdge> graph) {
-        this.parentGraph = graph;
+    public void setOuterGraph(Graph<TaintVertex, TaintEdge> graph) {
+        this.outerGraph = graph;
     }
 
-    public void setChildGraph(Graph<TaintVertex, TaintEdge> graph) {
-        this.childGraph = graph;
+    public void setInnerGraph(Graph<TaintVertex, TaintEdge> graph) {
+        this.innerGraph = graph;
     }
 
     public TaintVertex groupByStatement() {
-        return GraphUtils.constructCompressedGraph(this,
+        return GraphUtils.compressGraph(this,
                 new Function<TaintVertex, String>() {
                     @Override
                     public String apply(TaintVertex v) {
@@ -89,7 +89,7 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
     }
 
     public void searchByMethodNames(Set<String> searchMethodNames, Set<TaintVertex> results) {
-        for(TaintVertex v : this.getChildGraph().getVertices()) {
+        for(TaintVertex v : this.getInnerGraph().getVertices()) {
             HashSet<String> currMethodNames = v.getMethodNames();
             HashSet<String> intersection = new HashSet<>(searchMethodNames);
             intersection.retainAll(currMethodNames);
@@ -103,8 +103,8 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
 
     public Set<TaintEdge> getIncidentEdges() {
         Set<TaintEdge> incidentEdges = new HashSet<>();
-        incidentEdges.addAll(this.getParentGraph().getInEdges(this));
-        incidentEdges.addAll(this.getParentGraph().getOutEdges(this));
+        incidentEdges.addAll(this.getOuterGraph().getInEdges(this));
+        incidentEdges.addAll(this.getOuterGraph().getOutEdges(this));
         return incidentEdges;
     }
 
@@ -116,4 +116,13 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
     public abstract void getFields(Collection<TaintAddress> store);
 
     public abstract String getStmtString();
+
+    public String getClassName() {
+        return null;
+    }
+
+    public String getMethodName() {
+        return null;
+    }
+
 }
