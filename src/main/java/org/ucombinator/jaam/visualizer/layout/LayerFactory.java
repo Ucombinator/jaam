@@ -147,9 +147,6 @@ public class LayerFactory
                             v.setOuterGraph(classVertex.getInnerGraph());
                         });
 
-                        System.out.println("Creating class vertex " + className);
-
-
                         return classVertex;
                     }
                 },
