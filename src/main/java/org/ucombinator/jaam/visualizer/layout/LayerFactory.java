@@ -42,8 +42,7 @@ public class LayerFactory
     }
 
     public static TaintRootVertex getLayeredTaintGraph(Graph<TaintVertex, TaintEdge> graph) {
-        System.out.println("JUAN: Found " + graph.getVertices().size() + " vertices");
-        return getSuperTaintGraph(graph);
+        return getStronglyConnectedComponentsTaintGraph(graph);
     }
 
     private static TaintRootVertex getStronglyConnectedComponentsTaintGraph(Graph<TaintVertex, TaintEdge> graph)
@@ -81,12 +80,9 @@ public class LayerFactory
         return vertexToComponentIndex;
     }
 
-    private static TaintRootVertex getSuperTaintGraph(Graph<TaintVertex, TaintEdge> graph) {
+    private static TaintRootVertex getClassClusteredTaintGraph(Graph<TaintVertex, TaintEdge> graph) {
 
-        System.out.println("JUAN: Start there are " + calcSize(graph));
         TaintRootVertex classGraphRoot = getClassGroupingGraph(graph);
-
-        System.out.println("JUAN After " + calcSize(classGraphRoot.getInnerGraph()));
 
         classGraphRoot.getInnerGraph().getVertices().forEach(classVertex -> {
             if (classVertex.getInnerGraph().getVertices().size() > 1) {
