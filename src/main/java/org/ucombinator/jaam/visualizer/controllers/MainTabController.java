@@ -85,6 +85,10 @@ public class MainTabController {
         this.hidden.addListener(this.vizPanelController);
     }
 
+    public TreeView<ClassTreeNode> getClassTree() {
+        return this.classTree;
+    }
+
     private void buildClassTree(CodeViewController codeViewController, StateRootVertex immutableRoot)
     {
         this.classTree.setCellFactory(CheckBoxTreeCell.forTreeView());
