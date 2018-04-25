@@ -83,23 +83,6 @@ public class MainTabController {
         return this.classTree;
     }
 
-    private void repaintAll() {
-        setVizRightText();
-    }
-
-    private void setVizRightText() {
-        StringBuilder text = new StringBuilder();
-        for (StateVertex v : this.getVizHighlighted()) {
-            text.append(v.getRightPanelContent() + "\n");
-        }
-
-        this.vizDescriptionArea.setText(text.toString());
-
-        for(TaintVertex v : this.getTaintHighlighted()) {
-
-        }
-    }
-
     public void setRightText(StateLoopVertex v)
     {
         this.vizDescriptionArea.setText("Loop:\n  Class: "
