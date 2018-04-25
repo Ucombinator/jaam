@@ -44,6 +44,9 @@ public class SearchResultsController {
             }
         }
 
+        // Compress package nodes?
+        // loopGraphRoot.getChildren().forEach(item -> ((PackageNode) item.getValue()).compress());
+
         // Expand results.
         this.searchTree.getRoot().setExpanded(true);
         loopGraphRoot.setExpanded(true);

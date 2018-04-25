@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.classTree;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.scene.Node;
 import javafx.scene.control.CheckBoxTreeItem;
 import javafx.scene.control.TreeItem;
 import org.ucombinator.jaam.visualizer.controllers.CodeViewController;
@@ -48,4 +49,6 @@ public abstract class ClassTreeNode
     public abstract HashSet<StateVertex> getChildVertices();
 
     public abstract String getName();
+
+    public abstract Node getGraphic();
 }

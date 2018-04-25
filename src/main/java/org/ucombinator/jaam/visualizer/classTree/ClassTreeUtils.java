@@ -7,6 +7,7 @@ public class ClassTreeUtils {
     public static TreeItem<ClassTreeNode> buildFilteredTree(TreeItem<ClassTreeNode> treeItem, String query) {
         TreeItem<ClassTreeNode> itemCopy = new TreeItem<>();
         itemCopy.setValue(treeItem.getValue());
+        itemCopy.setGraphic(itemCopy.getValue().getGraphic());
 
         // DFS our tree to find matching descendant items.
         for (TreeItem<ClassTreeNode> child : treeItem.getChildren()) {

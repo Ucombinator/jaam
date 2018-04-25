@@ -12,7 +12,6 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTreeCell;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import org.ucombinator.jaam.visualizer.classTree.ClassTreeNode;
 import org.ucombinator.jaam.visualizer.classTree.PackageNode;
@@ -367,27 +366,4 @@ public class MainTabController {
             }
         }
     }
-
-    private void setClassHighlight(StateVertex v, String prevPrefix, String currPrefix)
-    {
-        if(!v.isHidden()) {
-            if(v instanceof MethodEntity) {
-                MethodEntity cv = (MethodEntity) v;
-                if (cv.getClassName().startsWith(currPrefix)) {
-                    //System.out.println("Highlight " + cv.getClassName() + " --> " + cv.getMethodName() + " --> " + v.getId());
-                    v.setClassHighlight(true);
-                } else if (prevPrefix != null && cv.getClassName().startsWith(prevPrefix)) {
-                    v.setClassHighlight(false);
-                }
-            }
-
-            if (v.getInnerGraph().getVertices().size() > 0) {
-                Graph<StateVertex, StateEdge> childGraph = v.getInnerGraph();
-                for (StateVertex i : childGraph.getVertices()) {
-                    setClassHighlight(i, prevPrefix, currPrefix);
-                }
-            }
-        }
-    }
-
 }
