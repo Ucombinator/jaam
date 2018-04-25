@@ -25,6 +25,7 @@ public class SearchResultsController {
         TreeItem<ClassTreeNode> rootItem = new TreeItem<>(new PackageNode("Search results:", ""));
         this.searchTree.setRoot(rootItem);
         this.searchTree.setVisible(true);
+        ClassTreeUtils.setEventHandlers(this.searchTree);
     }
 
     // Called when the user clicks enter inside the search field.
@@ -49,28 +50,5 @@ public class SearchResultsController {
         // Expand results.
         this.searchTree.getRoot().setExpanded(true);
         loopGraphRoot.setExpanded(true);
-
-        this.searchTree.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<TreeItem<ClassTreeNode>>() {
-            @Override
-            public void changed(ObservableValue<? extends TreeItem<ClassTreeNode>> observableValue,
-                                TreeItem<ClassTreeNode> oldValue, TreeItem<ClassTreeNode> newValue) {
-
-                if (oldValue != null) {
-                    Main.getSelectedMainTabController().setClassHighlight(oldValue.getValue().getChildVertices(), false);
-                }
-
-                if (newValue != null) {
-                    Main.getSelectedMainTabController().setClassHighlight(newValue.getValue().getChildVertices(), true);
-                }
-            }
-        });
-
-        this.searchTree.setOnMouseClicked(m -> {
-            if (m.getClickCount() == 2) {
-                final TreeItem<ClassTreeNode> item = this.searchTree.getSelectionModel().getSelectedItem();
-
-                item.getValue().handleDoubleClick(Main.getSelectedMainTabController().codeViewController);
-            }
-        });
     }
 }
