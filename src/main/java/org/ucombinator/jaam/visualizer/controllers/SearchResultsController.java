@@ -1,5 +1,7 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
@@ -50,5 +52,28 @@ public class SearchResultsController {
         // Expand results.
         this.searchTree.getRoot().setExpanded(true);
         loopGraphRoot.setExpanded(true);
+
+        this.searchTree.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<TreeItem<ClassTreeNode>>() {
+            @Override
+            public void changed(ObservableValue<? extends TreeItem<ClassTreeNode>> observableValue,
+                                TreeItem<ClassTreeNode> oldValue, TreeItem<ClassTreeNode> newValue) {
+
+                if (oldValue != null) {
+                    Main.getSelectedMainTabController().setClassHighlight(oldValue.getValue().getChildVertices(), false);
+                }
+
+                if (newValue != null) {
+                    Main.getSelectedMainTabController().setClassHighlight(newValue.getValue().getChildVertices(), true);
+                }
+            }
+        });
+
+        this.searchTree.setOnMouseClicked(m -> {
+            if (m.getClickCount() == 2) {
+                final TreeItem<ClassTreeNode> item = this.searchTree.getSelectionModel().getSelectedItem();
+
+                item.getValue().handleDoubleClick(Main.getSelectedMainTabController().codeViewController);
+            }
+        });
     }
 }

@@ -156,7 +156,6 @@ public class MainTabController {
                 item.getValue().handleDoubleClick(codeViewController);
             }
         });
-
     }
 
     private void addFieldsToClassTree(ArrayList<PackageNode> topLevel, CodeViewController codeViewController) {
@@ -358,7 +357,7 @@ public class MainTabController {
         taintPanelController.showFieldTaintGraph(fullClassName, fieldName);
     }
 
-    private void setClassHighlight(HashSet<StateVertex> vertices, boolean value) {
+    public void setClassHighlight(HashSet<StateVertex> vertices, boolean value) {
 
         for (StateVertex v : vertices) {
             if (!v.isHidden()) {
