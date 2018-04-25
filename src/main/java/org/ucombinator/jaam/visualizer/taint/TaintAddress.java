@@ -93,4 +93,25 @@ public class TaintAddress extends TaintVertex {
             return null;
         }
     }
+
+    @Override
+    public String getClassName() {
+        if (sootClass == null) {
+            return null;
+        }
+        else {
+            return sootClass.getName();
+        }
+
+    }
+
+    @Override
+    public String getMethodName() {
+        if (sootMethod != null) {
+            return sootMethod.getName();
+        }
+        else {
+            return null;
+        }
+    }
 }

@@ -1,15 +1,11 @@
 package org.ucombinator.jaam.visualizer.graph;
 
-import com.google.common.base.Functions;
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import org.ucombinator.jaam.visualizer.layout.*;
 
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class GraphUtils {
@@ -103,15 +99,15 @@ public class GraphUtils {
     // The immutable graph for our root has already been set, so now we construct its visible graph of vertices
     // matching our predicate.
     public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>> T constructVisibleGraph(T self, Predicate<T> isVisible, BiFunction<T, T, S> edgeBuilder) {
-        Graph<T, S> immutableGraph = self.getChildGraph();
+        Graph<T, S> immutableGraph = self.getInnerGraph();
         T visibleRoot = self.copy();
-        Graph<T, S> visibleGraph = visibleRoot.getChildGraph();
+        Graph<T, S> visibleGraph = visibleRoot.getInnerGraph();
 
         // Add all visible vertices
         for(T v : immutableGraph.getVertices()) {
             if(isVisible.test(v)) {
                 visibleGraph.addVertex(v);
-                v.setParentGraph(visibleGraph);
+                v.setOuterGraph(visibleGraph);
                 GraphUtils.constructVisibleGraph(v, isVisible, edgeBuilder);
             }
         }
@@ -130,7 +126,7 @@ public class GraphUtils {
     private static <T extends HierarchicalVertex<T, S>, S extends Edge<T>> void findVisibleEdges(T self, T v, Graph<T, S> visibleGraph, BiFunction<T, T, S> edgeBuilder) {
         Queue<T> queue = new LinkedList<>();
         HashSet<T> found = new HashSet<>();
-        Graph<T, S> immutableGraph = self.getChildGraph();
+        Graph<T, S> immutableGraph = self.getInnerGraph();
         queue.addAll(immutableGraph.getInNeighbors(v));
 
         while (queue.size() > 0) {
@@ -148,22 +144,22 @@ public class GraphUtils {
 
     // We assume that only vertices within the same level can be combined.
     public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>, U>
-    T constructCompressedGraph(T root, Function<T, U> hash, Function<List<T>, T> componentVertexBuilder,
-                               BiFunction<T, T, S> edgeBuilder) {
+    T copyAndCompressGraph(T root, Function<T, U> hash, Function<List<T>, T> componentVertexBuilder,
+                           BiFunction<T, T, S> edgeBuilder) {
         // If we have no child vertices, just copy ourselves.
-        if (root.getChildGraph().getVertices().size() == 0) {
+        if (root.getInnerGraph().getVertices().size() == 0) {
             return root.copy();
         }
 
         // Otherwise, copy all of the inner vertices.
-        Map<T, T> mapVertexToCopy = root.getChildGraph().getVertices().stream()
+        Map<T, T> mapVertexToCopy = root.getInnerGraph().getVertices().stream()
                 .collect(Collectors.toMap(v -> v, HierarchicalVertex::copy));
 
         // Then build a map of components based on matching hash values.
-        Map<T, U> hashValues = root.getChildGraph().getVertices().stream()
+        Map<T, U> hashValues = root.getInnerGraph().getVertices().stream()
                 .collect(Collectors.toMap(v -> v, hash));
 
-        Map<U, List<T>> components = root.getChildGraph().getVertices().stream()
+        Map<U, List<T>> components = root.getInnerGraph().getVertices().stream()
                 .collect(Collectors.groupingBy(hashValues::get));
 
 
@@ -184,16 +180,16 @@ public class GraphUtils {
 
         // Next, make new graph and add component vertices.
         T newRoot = root.copy();
-        Graph<T, S> newGraph = newRoot.getChildGraph();
+        Graph<T, S> newGraph = newRoot.getInnerGraph();
         mapHashToComponentVertex.entrySet().forEach(entry -> {
             newGraph.addVertex(entry.getValue());
-            entry.getValue().setParentGraph(newGraph);
+            entry.getValue().setOuterGraph(newGraph);
         });
 
         // Lastly, add edges between the new vertices.
-        for (T currVertexOld: root.getChildGraph().getVertices()) {
+        for (T currVertexOld: root.getInnerGraph().getVertices()) {
             T currComponentVertex = mapHashToComponentVertex.get(hashValues.get(currVertexOld));
-            for (T nextVertexOld : root.getChildGraph().getOutNeighbors(currVertexOld)) {
+            for (T nextVertexOld : root.getInnerGraph().getOutNeighbors(currVertexOld)) {
                 T nextComponentVertex = mapHashToComponentVertex.get(hashValues.get(nextVertexOld));
 
                 // Add edge at the top level of the new graph if it's a self-loop, or if the two vertices are
@@ -206,11 +202,76 @@ public class GraphUtils {
                 if (currComponentVertex == nextComponentVertex) {
                     T currInnerVertex = mapVertexToCopy.get(currVertexOld);
                     T nextInnerVertex = mapVertexToCopy.get(nextVertexOld);
-                    currComponentVertex.getChildGraph().addEdge(edgeBuilder.apply(currInnerVertex, nextInnerVertex));
+                    currComponentVertex.getInnerGraph().addEdge(edgeBuilder.apply(currInnerVertex, nextInnerVertex));
                 }
             }
         }
 
         return newRoot;
     }
+
+    // We assume that only vertices within the same level can be combined.
+    public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>, U>
+    T compressGraph(T root, Function<T, U> hash, Function<List<T>, T> componentVertexBuilder,
+                               BiFunction<T, T, S> edgeBuilder) {
+
+        Graph<T, S> flatGraph = root.getInnerGraph();
+
+        // If we have no child vertices, just copy ourselves.
+        if (flatGraph.getVertices().size() == 0) {
+            return root.copy();
+        }
+
+        // Then build a map of components based on matching hash values.
+        Map<T, U> hashValues = flatGraph.getVertices().stream()
+                .collect(Collectors.toMap(v -> v, hash));
+
+        Map<U, List<T>> components = flatGraph.getVertices().stream()
+                .collect(Collectors.groupingBy(hashValues::get));
+
+
+        // Preserve the singleton vertices, but build component vertices for larger components.
+        Map<U, T> mapHashToComponentVertex = components.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, new Function<Map.Entry<U, List<T>>, T>() {
+                    @Override
+                    public T apply(Map.Entry<U, List<T>> entry) {
+                        List<T> component = entry.getValue();
+                        if(component.size() == 1) {
+                            return component.get(0);
+                        } else {
+                            return componentVertexBuilder.apply(component.stream().collect(Collectors.toList()));
+                        }
+                    }
+                }));
+
+        // Next, make new graph and add component vertices.
+        T newRoot = root.copy();
+        Graph<T, S> newGraph = newRoot.getInnerGraph();
+        mapHashToComponentVertex.entrySet().forEach(entry -> {
+            newGraph.addVertex(entry.getValue());
+            entry.getValue().setOuterGraph(newGraph);
+        });
+
+        // Lastly, add edges between the new vertices.
+        for (T currVertexOld: flatGraph.getVertices()) {
+            T currComponentVertex = mapHashToComponentVertex.get(hashValues.get(currVertexOld));
+            for (T nextVertexOld : flatGraph.getOutNeighbors(currVertexOld)) {
+                T nextComponentVertex = mapHashToComponentVertex.get(hashValues.get(nextVertexOld));
+
+                // Add edge at the top level of the new graph if it's a self-loop, or if the two vertices are
+                // now in different components.
+                if ((currVertexOld == nextVertexOld) || (currComponentVertex != nextComponentVertex)) {
+                    newGraph.addEdge(edgeBuilder.apply(currComponentVertex, nextComponentVertex));
+                }
+
+                // Add edge between two different vertices if they are inside the same component.
+                if (currComponentVertex == nextComponentVertex) {
+                    currComponentVertex.getInnerGraph().addEdge(edgeBuilder.apply(currVertexOld, nextVertexOld));
+                }
+            }
+        }
+
+        return newRoot;
+    }
+
 }

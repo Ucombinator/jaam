@@ -8,7 +8,6 @@ import org.ucombinator.jaam.visualizer.layout.MethodEntity;
 import soot.SootClass;
 
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class StateMethodVertex extends StateVertex implements MethodEntity {
@@ -82,7 +81,7 @@ public class StateMethodVertex extends StateVertex implements MethodEntity {
             mainTab.getVizHighlighted().add(this);
         }
 
-        for(StateVertex v : this.getChildGraph().getVertices()) {
+        for(StateVertex v : this.getInnerGraph().getVertices()) {
             v.searchByMethod(query, mainTab);
         }
 
