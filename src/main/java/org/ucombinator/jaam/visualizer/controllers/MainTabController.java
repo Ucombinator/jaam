@@ -3,22 +3,17 @@ package org.ucombinator.jaam.visualizer.controllers;
 import com.strobel.decompiler.languages.java.ast.CompilationUnit;
 import javafx.beans.property.SetProperty;
 import javafx.beans.property.SimpleSetProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.CheckBoxTreeCell;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import org.ucombinator.jaam.visualizer.classTree.ClassTreeNode;
-import org.ucombinator.jaam.visualizer.classTree.PackageNode;
+import org.ucombinator.jaam.visualizer.classTree.ClassTreeUtils;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.MethodEntity;
 import org.ucombinator.jaam.visualizer.state.*;
 import org.ucombinator.jaam.visualizer.taint.*;
 import soot.SootClass;
@@ -42,10 +37,10 @@ public class MainTabController {
     @FXML private final BorderPane vizPane = null; // Initialized by Controllers.loadFXML()
     @FXML private final BorderPane taintPane = null; // Initialized by Controllers.loadFXML()
 
-    //Right Side Components
+    // Right Side Components
     @FXML private final TextArea vizDescriptionArea = null; // Initialized by Controllers.loadFXML()
     @FXML private final TextArea taintDescriptionArea = null; // Initialized by Controllers.loadFXML()
-    @FXML private final TreeView<ClassTreeNode> classTree = null; // Initialized by Controllers.loadFXML()
+    @FXML private TreeView<ClassTreeNode> classTree = null; // Initialized by Controllers.loadFXML()
     @FXML private final BorderPane searchPane = null; // Initialized by Controllers.loadFXML()
 
     private HashSet<StateVertex> vizHighlighted; // TODO: Make this an observable set
@@ -75,8 +70,7 @@ public class MainTabController {
         this.codeViewController.addSelectHandler(vizPane);
         this.taintPanelController.addSelectHandler(vizPane);
 
-        // I left it with the extra parameter, because I think we will probably want to move it somewhere else
-        buildClassTree(this.codeViewController, (StateRootVertex) this.vizPanelController.getImmutableRoot());
+        ClassTreeUtils.buildClassTree(this.classTree, this.codeViewController, (StateRootVertex) this.vizPanelController.getImmutableRoot());
 
         this.vizHighlighted = new LinkedHashSet<>();
         this.taintHighlighted = new LinkedHashSet<>();
@@ -85,126 +79,8 @@ public class MainTabController {
         this.hidden.addListener(this.vizPanelController);
     }
 
-    private void buildClassTree(CodeViewController codeViewController, StateRootVertex immutableRoot)
-    {
-        this.classTree.setCellFactory(CheckBoxTreeCell.forTreeView());
-
-        PackageNode root = new PackageNode("", "");
-
-        HashMap<String, PackageNode> rootLevel = new HashMap<>();
-
-        for (String c : codeViewController.getClassNames()) {
-            String[] split = c.split("\\.");
-
-            PackageNode current;
-            String rootPackageName = split[0];
-            if (rootLevel.containsKey(rootPackageName)) {
-                current = rootLevel.get(rootPackageName);
-            }
-            else {
-                current = new PackageNode(rootPackageName, "");
-                rootLevel.put(rootPackageName, current);
-            }
-
-            for (int i = 1; i < split.length - 1; i++) {
-                current = current.addPackageIfAbsent(split[i]);
-            }
-
-            String className = split[split.length - 1];
-            current.addClassIfAbsent(className);
-        }
-
-        ArrayList<PackageNode> topLevel = new ArrayList<>(rootLevel.values());
-
-        // Compression Step
-        topLevel.forEach(PackageNode::compress);
-
-        // Add the vertices
-        addVerticesToClassTree(topLevel, immutableRoot);
-        addFieldsToClassTree(topLevel, codeViewController);
-
-        // Build the Tree
-        CheckBoxTreeItem<ClassTreeNode> treeRoot = new CheckBoxTreeItem<>();
-        treeRoot.setSelected(true);
-        treeRoot.setValue(root);
-        treeRoot.setExpanded(true);
-
-        topLevel.forEach(f -> f.build(treeRoot));
-
-        classTree.setRoot(treeRoot);
-
-        classTree.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<TreeItem<ClassTreeNode>>() {
-            @Override
-            public void changed(ObservableValue<? extends TreeItem<ClassTreeNode>> observableValue,
-                                TreeItem<ClassTreeNode> oldValue, TreeItem<ClassTreeNode> newValue) {
-
-                if (oldValue != null) {
-                    setClassHighlight(oldValue.getValue().getChildVertices(), false);
-                }
-
-                setClassHighlight(newValue.getValue().getChildVertices(), true);
-            }
-        });
-
-        classTree.setOnMouseClicked(m -> {
-            if (m.getClickCount() == 2) {
-                final TreeItem<ClassTreeNode> item = classTree.getSelectionModel().getSelectedItem();
-
-                item.getValue().handleDoubleClick(codeViewController);
-            }
-        });
-
-    }
-
-    private void addFieldsToClassTree(ArrayList<PackageNode> topLevel, CodeViewController codeViewController) {
-        for (PackageNode n : topLevel) {
-            n.addFields(codeViewController);
-        }
-    }
-
-    private void addVerticesToClassTree(ArrayList<PackageNode> topLevel, StateVertex root) {
-
-        if(root instanceof MethodEntity) {
-            PackageNode topLevelNode = getTopLevel(topLevel, ((MethodEntity) root).getClassName());
-            boolean success = false;
-            if (topLevelNode != null) {
-                success = topLevelNode.addVertex(root);
-            }
-
-            if (!success) {
-                System.out.println("Warning didn't find package for: " + ((MethodEntity) root).getClassName());
-            }
-        }
-
-       Graph<StateVertex, StateEdge> childGraph = root.getInnerGraph();
-       for (StateVertex v : childGraph.getVertices()) {
-           addVerticesToClassTree(topLevel, v);
-       }
-    }
-
-    private PackageNode getTopLevel(ArrayList<PackageNode> topLevel, String className) {
-        for (PackageNode n : topLevel) {
-            if (className.startsWith(n.getShortName()))
-                return n;
-        }
-        return null;
-    }
-
-    private void repaintAll() {
-        setVizRightText();
-    }
-
-    private void setVizRightText() {
-        StringBuilder text = new StringBuilder();
-        for (StateVertex v : this.getVizHighlighted()) {
-            text.append(v.getRightPanelContent() + "\n");
-        }
-
-        this.vizDescriptionArea.setText(text.toString());
-
-        for(TaintVertex v : this.getTaintHighlighted()) {
-
-        }
+    public TreeView<ClassTreeNode> getClassTree() {
+        return this.classTree;
     }
 
     public void setRightText(StateLoopVertex v)
@@ -355,7 +231,7 @@ public class MainTabController {
         taintPanelController.showFieldTaintGraph(fullClassName, fieldName);
     }
 
-    private void setClassHighlight(HashSet<StateVertex> vertices, boolean value) {
+    public void setClassHighlight(HashSet<StateVertex> vertices, boolean value) {
 
         for (StateVertex v : vertices) {
             if (!v.isHidden()) {
@@ -363,27 +239,4 @@ public class MainTabController {
             }
         }
     }
-
-    private void setClassHighlight(StateVertex v, String prevPrefix, String currPrefix)
-    {
-        if(!v.isHidden()) {
-            if(v instanceof MethodEntity) {
-                MethodEntity cv = (MethodEntity) v;
-                if (cv.getClassName().startsWith(currPrefix)) {
-                    //System.out.println("Highlight " + cv.getClassName() + " --> " + cv.getMethodName() + " --> " + v.getId());
-                    v.setClassHighlight(true);
-                } else if (prevPrefix != null && cv.getClassName().startsWith(prevPrefix)) {
-                    v.setClassHighlight(false);
-                }
-            }
-
-            if (v.getInnerGraph().getVertices().size() > 0) {
-                Graph<StateVertex, StateEdge> childGraph = v.getInnerGraph();
-                for (StateVertex i : childGraph.getVertices()) {
-                    setClassHighlight(i, prevPrefix, currPrefix);
-                }
-            }
-        }
-    }
-
 }

@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.classTree;
 
+import javafx.scene.Node;
 import javafx.scene.control.CheckBoxTreeItem;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.ucombinator.jaam.visualizer.controllers.CodeViewController;
@@ -87,11 +88,16 @@ public class MethodNode extends ClassTreeNode implements Comparable<MethodNode> 
             return;
         }
 
-        item.setGraphic(Main.getIconFont().create(FontAwesome.Glyph.SQUARE).color(methodVertex.getColor()));
+        item.setGraphic(this.getGraphic());
     }
 
     @Override
     public int compareTo(MethodNode o) {
         return methodName.compareTo(o.methodName);
+    }
+
+    @Override
+    public Node getGraphic() {
+        return Main.getIconFont().create(FontAwesome.Glyph.SQUARE).color(methodVertex.getColor());
     }
 }

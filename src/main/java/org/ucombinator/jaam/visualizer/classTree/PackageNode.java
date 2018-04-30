@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.classTree;
 
+import javafx.scene.Node;
 import javafx.scene.control.CheckBoxTreeItem;
 import javafx.scene.control.TreeItem;
 import javafx.scene.paint.Color;
@@ -83,7 +84,7 @@ public class PackageNode extends ClassTreeNode implements Comparable<PackageNode
     public void build(TreeItem<ClassTreeNode> parent) {
         CheckBoxTreeItem<ClassTreeNode> item = buildTreeItem(parent);
 
-        item.setGraphic(Main.getIconFont().create(FontAwesome.Glyph.FOLDER).color(Color.DARKGRAY));
+        item.setGraphic(this.getGraphic());
 
         subPackages.stream().sorted().forEach(p -> p.build(item));
 
@@ -138,5 +139,10 @@ public class PackageNode extends ClassTreeNode implements Comparable<PackageNode
     @Override
     public int compareTo(PackageNode packageNode) {
         return this.getShortName().compareTo(packageNode.getShortName());
+    }
+
+    @Override
+    public Node getGraphic() {
+        return Main.getIconFont().create(FontAwesome.Glyph.FOLDER).color(Color.DARKGRAY);
     }
 }
