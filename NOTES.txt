@@ -1,0 +1,38 @@
+$ find challenge_program -name \*.class|xargs javap -p -s|perl -ne '$class = $1 if /class ([^ ]*)/; print "$class.$1\n" if /([^ ]+)\(/ and $1 ne $class' |sort |uniq >rsa_commander.javap
+$ diff -u rsa_commander.javap <(cat rsa_commander.methods | sort|uniq)
+
+
+
+jaam-tools loop2 --output linear_algebra_platform.loop com.example.linalg.Main main ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/linear_algebra_platform/challenge_program/gson-2.4.jar:../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/linear_algebra_platform/challenge_program/linalgservice.jar:../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/linear_algebra_platform/challenge_program/nanohttpd-2.2.0.jar
+
+
+  // TODO: nodes for loops (allows us to group methods that are in the same loop)
+  // TODO: vertical separation
+  // TODO: how confident are we in the coverage of rsa_commander?
+  // TODO: headlabel
+  // TODO: Compound graphs so loops live inside methods?
+  // TODO: test coverage
+
+
+    for (m <- graphed) {
+      println(Taint.fqn(m))
+    }
+
+
+
+
+$ jaam-tools jar --rt resources/rt.jar --app ../../engagements/en3/stac_engagement_3_release_v1.1/challenge_programs/info_trader/challenge_program/InfoTrader.jar --output infoTrader.jar.jaam
+Reading ../../engagements/en3/stac_engagement_3_release_v1.1/challenge_programs/info_trader/challenge_program/InfoTrader.jar and ../../engagements/en3/stac_engagement_3_release_v1.1/challenge_programs/info_trader/challenge_program/InfoTrader.jar
+Reading resources/rt.jar and resources/rt.jar
+$ jaam-tools decompile --input infoTrader.jar.jaam --output infoTrader.decompiled.jaam
+$ jaam-tools cat infoTrader.cat.jaam infoTrader.decompiled.jaam infoTrader.jar.jaam 
+
+$ sbt assembly && echo jarring && jaam-tools jar --rt resources/rt.jar --app ../../engagements/en3/stac_engagement_3_release_v1.1/challenge_programs/info_trader/challenge_program/InfoTrader.jar --output infoTrader.jar.jaam && echo decompiling && jaam-tools decompile --input infoTrader.jar.jaam --output infoTrader.decompiled.jaam && echo Deserializing && jaam-tools cat infoTrader.cat.jaam infoTrader.decompiled.jaam
+
+
+(cd examples/; javac LoopTree.java) && sbt assembly && jaam-tools loop2 --coverage /dev/null --output /dev/null --pretty-print LoopTree main examples/
+
+
+$ sbt assembly && echo creating app && jaam-tools app --rt resources/rt.jar --app ../../engagements/en3/stac_engagement_3_release_v1.1/challenge_programs/info_trader/challenge_program/InfoTrader.jar --output infoTrader.jar.jaam && echo decompiling && jaam-tools decompile --input infoTrader.jar.jaam --output infoTrader.decompiled.jaam && echo Deserializing && jaam-tools cat infoTrader.cat.jaam infoTrader.decompiled.jaam
+
+$ sbt assembly && echo creating app && jaam-tools app --rt resources/rt.jar --lib ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/collab/challenge_program/lib/netty-all-4.0.36.Final.jar --app ../../engagements/en4/article/stac_engagement_4_release_v1.1/challenge_programs/collab/challenge_program/Collab.jar --output collab.app.jaam && echo decompiling && jaam-tools decompile --input collab.app.jaam --output collab.decompiled.jaam && echo Deserializing && jaam-tools cat collab.cat.jaam collab.decompiled.jaam

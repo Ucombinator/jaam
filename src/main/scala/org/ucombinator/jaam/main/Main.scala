@@ -342,9 +342,10 @@ object Loop3 extends Subcommand("loop3") {
 
 object LoopConditions extends Subcommand("loop-conditions") {
   val input = inputOpt()
+  val `class` = opt[String]()
 
   def run() {
-    org.ucombinator.jaam.tools.loopConditions.Main.main(input())
+    org.ucombinator.jaam.tools.loopConditions.Main.main(input(), `class`.toOption)
   }
 }
 
