@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.state;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
+import org.ucombinator.jaam.visualizer.graph.GraphTransform;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
@@ -18,6 +19,7 @@ public class StateRootVertex extends StateVertex {
         this.color = defaultColor;
     }
 
+    @Override
     public StateRootVertex copy() {
         return new StateRootVertex();
     }
@@ -25,8 +27,8 @@ public class StateRootVertex extends StateVertex {
     @Override
     public void onMouseClick(MouseEvent event) {}
 
-    public StateRootVertex constructVisibleGraphExcept(Set<StateVertex> verticesToHide) {
-        return (StateRootVertex) GraphUtils.constructVisibleGraph(this, (StateVertex v) -> !verticesToHide.contains(v), StateEdge::new);
+    public GraphTransform<StateRootVertex, StateVertex> constructVisibleGraphExcept(Set<StateVertex> verticesToHide) {
+        return GraphUtils.constructVisibleGraph(this, (StateVertex v) -> !verticesToHide.contains(v), StateEdge::new);
     }
 
     public String getRightPanelContent() {

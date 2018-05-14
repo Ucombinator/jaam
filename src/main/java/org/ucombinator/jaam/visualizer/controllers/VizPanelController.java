@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.controllers;
 import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import org.ucombinator.jaam.visualizer.graph.GraphTransform;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -16,6 +17,8 @@ import java.util.Set;
 
 public class VizPanelController extends GraphPanelController<StateVertex, StateEdge>
         implements EventHandler<SelectEvent<StateVertex>>, SetChangeListener<StateVertex> {
+
+    GraphTransform<StateRootVertex, StateVertex> immToVis;
 
     public VizPanelController(Graph<StateVertex, StateEdge> graph) throws IOException {
         super(StateRootVertex::new);
@@ -66,7 +69,11 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
 
     public void drawGraph(Set<StateVertex> hidden) {
         visibleRoot.setVisible(false);
-        this.visibleRoot = ((StateRootVertex) this.immutableRoot).constructVisibleGraphExcept(hidden);
+
+
+        immToVis = ((StateRootVertex) this.immutableRoot).constructVisibleGraphExcept(hidden);
+
+        this.visibleRoot = immToVis.newRoot;
 
         LayoutAlgorithm.layout(this.visibleRoot);
         drawNodes(null, visibleRoot);
@@ -91,6 +98,7 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         return this.visibleRoot.getInnerGraph().getVerticesToPrune(v -> (v.getType() == AbstractLayoutVertex.VertexType.METHOD));
     }
 
+    // Changes to the hidden set
     @Override
     public void onChanged(Change<? extends StateVertex> change) {
         if (change.wasAdded()) {

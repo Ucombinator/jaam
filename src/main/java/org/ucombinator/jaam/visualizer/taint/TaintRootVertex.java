@@ -17,6 +17,7 @@ public class TaintRootVertex extends TaintVertex {
         this.color = defaultColor;
     }
 
+    @Override
     public TaintRootVertex copy() {
         return new TaintRootVertex();
     }
@@ -25,7 +26,7 @@ public class TaintRootVertex extends TaintVertex {
     public void onMouseClick(MouseEvent event) {}
 
     public TaintRootVertex constructVisibleGraph(Set<TaintVertex> verticesToDraw) {
-        return (TaintRootVertex) GraphUtils.constructVisibleGraph(this, verticesToDraw::contains, TaintEdge::new);
+        return GraphUtils.constructVisibleGraph(this, verticesToDraw::contains, TaintEdge::new).newRoot;
     }
 
     public HashSet<String> getMethodNames() {

@@ -147,12 +147,14 @@ public class MainTabController {
         this.vizHighlighted.clear();
     }
 
+    /*
     public void pruneVisibleGraph() {
         HashSet<StateVertex> prunedVertices = this.vizPanelController.pruneVisibleGraph();
         this.hidden.addAll(prunedVertices);
         this.vizHighlighted.removeAll(prunedVertices);
         this.vizPanelController.redrawGraph(this.hidden);
     }
+    */
 
     public void showAllNodes() {
         this.hidden.clear();

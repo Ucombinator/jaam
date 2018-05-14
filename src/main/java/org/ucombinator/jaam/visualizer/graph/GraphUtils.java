@@ -98,9 +98,14 @@ public class GraphUtils {
 
     // The immutable graph for our root has already been set, so now we construct its visible graph of vertices
     // matching our predicate.
-    public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>> T constructVisibleGraph(T self, Predicate<T> isVisible, BiFunction<T, T, S> edgeBuilder) {
+    public static <R extends T, T extends HierarchicalVertex<T, S>, S extends Edge<T>>
+    GraphTransform<R,T> constructVisibleGraph(R self, Predicate<T> isVisible, BiFunction<T, T, S> edgeBuilder) {
         Graph<T, S> immutableGraph = self.getInnerGraph();
-        T visibleRoot = self.copy();
+
+        R visibleRoot = (R) self.copy(); // Have to cast it, is there a less ugly way?
+
+        GraphTransform<R,T> transform = new GraphTransform<>(self, visibleRoot);
+
         Graph<T, S> visibleGraph = visibleRoot.getInnerGraph();
 
         // Add all visible vertices
@@ -120,7 +125,7 @@ public class GraphUtils {
             }
         }
 
-        return visibleRoot;
+        return transform;
     }
 
     private static <T extends HierarchicalVertex<T, S>, S extends Edge<T>> void findVisibleEdges(T self, T v, Graph<T, S> visibleGraph, BiFunction<T, T, S> edgeBuilder) {
