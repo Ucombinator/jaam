@@ -100,20 +100,20 @@ public class GraphUtils {
     // matching our predicate.
     public static <R extends T, T extends HierarchicalVertex<T, S>, S extends Edge<T>>
     GraphTransform<R,T> constructVisibleGraph(R self, Predicate<T> isVisible, BiFunction<T, T, S> edgeBuilder) {
-        Graph<T, S> immutableGraph = self.getInnerGraph();
 
         R visibleRoot = (R) self.copy(); // Have to cast it, is there a less ugly way?
-
         GraphTransform<R,T> transform = new GraphTransform<>(self, visibleRoot);
 
+        Graph<T, S> immutableGraph = self.getInnerGraph();
         Graph<T, S> visibleGraph = visibleRoot.getInnerGraph();
-
         // Add all visible vertices
         for(T v : immutableGraph.getVertices()) {
             if(isVisible.test(v)) {
-                visibleGraph.addVertex(v);
-                v.setOuterGraph(visibleGraph);
-                GraphUtils.constructVisibleGraph(v, isVisible, edgeBuilder);
+                T newV = v;
+                visibleGraph.addVertex(newV);
+                newV.setOuterGraph(visibleGraph);
+                transform.add(v,newV);
+                GraphUtils.constructVisibleGraph(v, isVisible, edgeBuilder, transform);
             }
         }
 
@@ -127,6 +127,34 @@ public class GraphUtils {
 
         return transform;
     }
+
+    private static <R extends T, T extends HierarchicalVertex<T, S>, S extends Edge<T>>
+    void constructVisibleGraph(T self, Predicate<T> isVisible, BiFunction<T, T, S> edgeBuilder, GraphTransform<R,T> transform) {
+
+        T visibleRoot = self.copy(); // Have to cast it, is there a less ugly way?
+
+        // Add all visible vertices
+        Graph<T, S> immutableGraph = self.getInnerGraph();
+        Graph<T, S> visibleGraph = visibleRoot.getInnerGraph();
+        for(T v : immutableGraph.getVertices()) {
+            if(isVisible.test(v)) {
+                T newV = v;
+                visibleGraph.addVertex(newV);
+                newV.setOuterGraph(visibleGraph);
+                transform.add(v, newV);
+                GraphUtils.constructVisibleGraph(v, isVisible, edgeBuilder);
+            }
+        }
+
+        // For each HierarchicalVertex, search for its visible incoming edges
+        for(T v : immutableGraph.getVertices()) {
+            // TODO: This might be an inefficient way to construct the currently visible graph.
+            if(isVisible.test(v)) {
+                GraphUtils.findVisibleEdges(self, v, visibleGraph, edgeBuilder);
+            }
+        }
+    }
+
 
     private static <T extends HierarchicalVertex<T, S>, S extends Edge<T>> void findVisibleEdges(T self, T v, Graph<T, S> visibleGraph, BiFunction<T, T, S> edgeBuilder) {
         Queue<T> queue = new LinkedList<>();
