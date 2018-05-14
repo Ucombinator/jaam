@@ -206,6 +206,8 @@ public class MainTabController {
     }
 
     public void hideUnrelatedToHighlighted() {
+        if (this.vizHighlighted.isEmpty()) { return; }
+
         HashSet<StateVertex> keep = new HashSet<>();
 
         this.vizHighlighted.forEach(v -> keep.addAll(v.getAncestors()));

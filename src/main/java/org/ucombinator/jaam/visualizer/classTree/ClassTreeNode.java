@@ -25,7 +25,6 @@ public abstract class ClassTreeNode
             public void changed(ObservableValue<? extends Boolean> observableValue, Boolean prevVal, Boolean currVal) {
 
                 HashSet<StateVertex> childVertices = item.getValue().getChildVertices();
-                VizPanelController vizPanelController = Main.getSelectedVizPanelController();
 
                 if (currVal) {
                     Main.getSelectedMainTabController().getHidden().removeAll(childVertices);

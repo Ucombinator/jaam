@@ -33,7 +33,11 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         event.consume();
         this.redrawGraph(Main.getSelectedMainTabController().getHidden());
     }
-
+    @Override
+    public void hideUnrelatedAction(ActionEvent event) throws IOException {
+        event.consume();
+        Main.getSelectedMainTabController().hideUnrelatedToHighlighted();
+    }
 
     // Handles select events
     @Override
