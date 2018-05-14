@@ -55,7 +55,7 @@ case class Stmt(sootStmt : SootStmt, sootMethod : SootMethod) extends CachedHash
       case _ : ReturnVoidStmt => List.empty
       case _ : ThrowStmt => List.empty
       case sootStmt : GotoStmt => List(this.copy(sootStmt = sootStmt.getTarget))
-      case sootStmt : SwitchStmt => sootStmt.getTargets.asScala.toList.map(u => this.copy(sootStmt = u))
+      case sootStmt : SwitchStmt => (sootStmt.getDefaultTarget :: sootStmt.getTargets.asScala.toList).map(u => this.copy(sootStmt = u))
       case sootStmt : IfStmt => List(this.nextSyntactic, this.copy(sootStmt = sootStmt.getTarget))
       case _ => List(this.nextSyntactic)
     }
