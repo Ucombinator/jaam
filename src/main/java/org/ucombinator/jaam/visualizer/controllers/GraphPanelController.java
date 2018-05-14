@@ -6,6 +6,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Spinner;
@@ -32,6 +33,9 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
 
     @FXML protected final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML protected final Spinner<Double> zoomSpinner = null; // Initialized by Controllers.loadFXML()
+
+    @FXML protected final Button redrawGraph = null;
+    @FXML protected final Button hideUnrelated = null;
 
     @FXML protected final CheckBox showEdges = null; // Initialized by Controllers.loadFXML()
     @FXML protected final CheckBox showLabels = null; // Initialized by Controllers.loadFXML()
@@ -158,4 +162,14 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
             }
         }
     }
+
+    @FXML public void redrawGraphAction(ActionEvent event) throws IOException {
+        event.consume();
+        System.out.println("Redraw Graph not implemented");
+    }
+    @FXML public void hideUnrelatedAction(ActionEvent event) throws IOException {
+        event.consume();
+        System.out.println("Hide Unrelated not implemented");
+    }
+
 }

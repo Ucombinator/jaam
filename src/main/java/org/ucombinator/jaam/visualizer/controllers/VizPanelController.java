@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
 import javafx.collections.SetChangeListener;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.*;
@@ -16,9 +17,6 @@ import java.util.Set;
 public class VizPanelController extends GraphPanelController<StateVertex, StateEdge>
         implements EventHandler<SelectEvent<StateVertex>>, SetChangeListener<StateVertex> {
 
-    private int batchModeCount = 0;
-    private boolean changedWhileInBatchMode = false;
-
     public VizPanelController(Graph<StateVertex, StateEdge> graph) throws IOException {
         super(StateRootVertex::new);
 
@@ -29,6 +27,13 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         this.immutableRoot = LayerFactory.getLayeredLoopGraph(graph);
         this.drawGraph(new HashSet<>());
     }
+
+    @Override
+    public void redrawGraphAction(ActionEvent event) throws IOException {
+        event.consume();
+        this.redrawGraph(Main.getSelectedMainTabController().getHidden());
+    }
+
 
     // Handles select events
     @Override
@@ -84,7 +89,6 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
 
     @Override
     public void onChanged(Change<? extends StateVertex> change) {
-        System.out.println("JUAN: Hidden changed: " + change);
         if (change.wasAdded()) {
             StateVertex v = change.getElementAdded();
             v.setHighlighted(false);
@@ -93,33 +97,5 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
             StateVertex v = change.getElementRemoved();
             v.setUnhidden();
         }
-
-        if (!inBatchMode()) {
-            this.redrawGraph(Main.getSelectedMainTabController().getHidden());
-        } else {
-            System.out.println("Waiting to redraw batch...");
-            changedWhileInBatchMode = true;
-        }
-    }
-
-    public void startBatchMode() {
-        ++batchModeCount;
-        changedWhileInBatchMode = false;
-    }
-
-    public void endBatchMode() {
-        if (!inBatchMode()) {
-            System.out.println("ERROR: Not in batch mode, but tried to leave anyway");
-        }
-        else {
-            --batchModeCount;
-        }
-        if (!inBatchMode() && changedWhileInBatchMode) {
-            this.redrawGraph(Main.getSelectedMainTabController().getHidden());
-        }
-    }
-
-    private boolean inBatchMode() {
-        return batchModeCount > 0;
     }
 }

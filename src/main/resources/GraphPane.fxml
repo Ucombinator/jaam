@@ -10,7 +10,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 
-<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/9" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1">
    <center>
       <ScrollPane fx:id="scrollPane" hbarPolicy="ALWAYS" vbarPolicy="ALWAYS">
          <content>
@@ -25,6 +25,8 @@
    <top>
       <HBox alignment="CENTER_LEFT" spacing="15.0" BorderPane.alignment="CENTER">
          <children>
+            <Button fx:id="redrawGraph" onAction="#redrawGraphAction" mnemonicParsing="false" text="Redraw Graph" />
+            <Button fx:id="hideUnrelated" onAction="#hideUnrelatedAction" mnemonicParsing="false" text="Hide Unrelated" />
             <CheckBox fx:id="showEdges" onAction="#showEdgesAction" selected="true" text="Edges" />
             <CheckBox fx:id="showLabels" onAction="#showLabelsAction" text="Labels" />
             <Button onAction="#exportImageAction" text="Export PNG" />

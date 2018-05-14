@@ -151,13 +151,12 @@ public class MainTabController {
         HashSet<StateVertex> prunedVertices = this.vizPanelController.pruneVisibleGraph();
         this.hidden.addAll(prunedVertices);
         this.vizHighlighted.removeAll(prunedVertices);
+        this.vizPanelController.redrawGraph(this.hidden);
     }
 
     public void showAllNodes() {
-        System.out.println("Showing all hidden nodes...");
-        vizPanelController.startBatchMode();
         this.hidden.clear();
-        vizPanelController.endBatchMode();
+        vizPanelController.redrawGraph(hidden);
     }
 
     public HashSet<StateVertex> getVizHighlighted() {
@@ -219,11 +218,9 @@ public class MainTabController {
             }
         });
 
-        // The redraw will be triggered only once when we end batch mode.
-        this.vizPanelController.startBatchMode();
         this.hidden.addAll(toHide);
-        this.vizPanelController.endBatchMode();
         this.vizHighlighted.clear();
+        this.vizPanelController.redrawGraph(this.hidden);
     }
 
     // TODO: This should be done using event and event handling using FieldSelectEvent

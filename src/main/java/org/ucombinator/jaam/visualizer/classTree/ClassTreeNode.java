@@ -27,16 +27,11 @@ public abstract class ClassTreeNode
                 HashSet<StateVertex> childVertices = item.getValue().getChildVertices();
                 VizPanelController vizPanelController = Main.getSelectedVizPanelController();
 
-                // TODO: Somehow wrap this so that when we uncheck a parent checkbox,
-                // we ignore these events for its children.
-                // Maybe try using the TreeModificationEvent instead?
-                vizPanelController.startBatchMode();
                 if (currVal) {
                     Main.getSelectedMainTabController().getHidden().removeAll(childVertices);
                 } else {
                     Main.getSelectedMainTabController().getHidden().addAll(childVertices);
                 }
-                vizPanelController.endBatchMode();
             }
         });
         parent.getChildren().add(item);
