@@ -74,6 +74,7 @@ object Main {
   def doClass(name: String): Unit = {
     for (m <- Soot.getSootClass(name).getMethods.asScala) {
       if (!m.isNative && !m.isAbstract) {
+        //println(f"\n\n*******\n*******\nMethod: ${m.getDeclaringClass.getName}.${m.getName}\n\n")
         //    .getMethodByName(mainMethod) //Coverage2.freshenMethod(Soot.getSootClass(mainClass).getMethodByName(mainMethod))
         myLoops(m)
       }
@@ -82,19 +83,8 @@ object Main {
 
   // TEST CMD: (cd ../..; sbt assembly) && jaam loop4 --input DoWhileLoop.app.jaam --output /dev/null
   def myLoops(m: SootMethod): Unit = {
-// TODO: replace set with ordered set?
+    //TODO: replace set with ordered set?
     val (start, graph) = Soot.getBodyGraph(m)
-
-    /*if (true) {
-    println(f"graph:\n")
-    for (v <- graph.vertexSet.asScala.toList.sortBy(_.index)) {
-      println(f"  vertex: ${v.index}: $v")
-      for (p <- Graphs.successorListOf(graph, v).asScala.toList.sortBy(_.index)) {
-        println(f"    ${p.index}: $p")
-      }
-    }
-    println()
-    }*/
 
     val dom = JGraphT.dominators(graph, start, true)
 
@@ -103,27 +93,24 @@ object Main {
 
     val loops = JGraphT.loopNodes(graph, start)
     if (loops.size > 0) {
-      // Print Method's name and Class's name
       println(f"\n\n*******\n*******\nMethod: ${m.getDeclaringClass.getName}.${m.getName}\n\n")
+      println("Loops:")
     }
 
+    // Print Loop Graph
     for ((k, vs) <- loops.toList.sortBy(_._1.index)) {
       try {
-        // Print Loop Graph
-        println(f"Loops:\n")
-        for ((k, vs) <- loops.toList.sortBy(_._1.index)) {
-          println(f"-------\nHeader:\n$k\nVertices:\n")
-          for (v <- vs.toList.sortBy(_.index)) {
-            println(f"    ${v.index}: $v")
-            for (p <- Graphs.successorListOf(graph, v).asScala.toList.sortBy(_.index)) {
-              println(f"    Edge to ${p.index}: $p")
-            }
+        println(f"-------\n\nHeader:\n$k\nVertices:")
+        for (v <- vs.toList.sortBy(_.index)) {
+          println(f"    ${v.index}: $v")
+          for (p <- Graphs.successorListOf(graph, v).asScala.toList.sortBy(_.index)) {
+            println(f"    Edge to ${p.index}: $p")
           }
         }
         println()
 
-        // Remove try-catch {}
-        // Reachable set from first node "k"
+        // Get Reachable Set from "k" (header)
+        // Detect try-catch {}
         var reach = Set[Stmt]()
         var search = Set[Stmt](k)
         while (search.nonEmpty) {
@@ -136,12 +123,14 @@ object Main {
           reach += v
         }
 
-        // Create loopGrph
+        // Create Loop Graph
+        // Removes try-catch {}
         val loopGraph = new AsSubgraph[Stmt, DefaultEdge](graph, reach.asJava)
         //println(f"loop at $k")
 
         // ends = all exit nodes
         // sources = start nodes
+        // ts = all nodes that jump to header (t and contiunes)
         // c = start of condition
         // s = start of body
         // t = end of body
@@ -160,27 +149,28 @@ object Main {
         // Pre-condition: Jumps out of loop + back jump states (t and continues) don't go to exits
         // Post-condition: Jumps out of loop + "there are" back jump states go to exits
         if (ends.size > 1) {
+          println("Loop has multiple exits")
         } else if (k match {
           case k: IdentityStmt => k.getRightOp.isInstanceOf[CaughtExceptionRef]
           case _ => false
         }) {
-          println(f"Loop type: exception (by identity)")
+          println("Loop type: exception (by identity)")
         } else if (k match {
           case k: DefinitionStmt => k.getRightOp.isInstanceOf[CaughtExceptionRef]
           case _ => false
         }) {
-          println(f"Loop type: exception (by definition)")
+          println("Loop type: exception (by definition)")
         } else if (vs.forall(v => v.nextSemantic.forall(vs))) {
           // infinite = no jumps out of loop
-          println(f"Loop type: infinite")
+          println("Loop type: infinite")
         } else if (backEdges.forall(b => b.nextSemantic.forall(vs))) {
           // pre-condition = jumps out of loop - back jump statements go only into the loop
-          println(f"Loop type: pre-condition")
+          println("Loop type: pre-condition")
 
           val c: Stmt = k
 
-          //TODO...
-          // Here (before removing edges): we need to detect continues
+          // Detects "t" and continues
+          val ts = Graphs.predecessorListOf(loopGraph, c).asScala
           // Remove edges going to c
           Graphs.predecessorListOf(loopGraph, c).asScala.foreach(loopGraph.removeEdge(_, c))
 
@@ -188,13 +178,6 @@ object Main {
           // However, the "real" e is the one that has a set of predecessors that all have paths to the predecessors of all the other members of `ends`.
           // Thus we can partially order the predecessors of the members of `ends` and take the first one.
           // This may not be totally ordered but the set of initial statements in the partial order all go to the same e.
-
-          //TODO...
-          // Here: we need to detect if case 1 returns more than one start
-          // If results are different in pre-condition, considering case 1
-          // While (multiple entries to body)
-          // Remove last exit (which is a break)
-          // Since all condition ps have path to all break ps
 
           // Create a topological traversal
           val i = new TopologicalOrderIterator[Stmt, DefaultEdge](loopGraph)
@@ -206,19 +189,15 @@ object Main {
 
           // The member of `ends` that is preceded by `p` is the "real" `e`
           val es = Graphs.successorListOf(graph, p).asScala.filter(!vs(_))
-          //TODO...
-          // Handle this case: p could be a switch
           //assert(es.size == 1) // There should be only one
           if(es.size > 1) {
-            println(f"Error: \nLoop type: infinite (switch with breaks or returns inside...)")
+            println("Error: \nLoop type: infinite (switch with breaks or returns inside...)")
           }
           val e = es.toList.head
           assert(ends(e))
 
           // ps: all states that jump to e
-          val ps = loopGraph.vertexSet().asScala.filter(_.nextSemantic.contains(e))
-          val ps1 = Graphs.predecessorListOf(graph, e).asScala.filter(vs)
-          assert(ps != ps1)
+          var ps = Graphs.predecessorListOf(graph, e).asScala.filter(reach).toSet
 
           // Condition = nodes between c and s
           // (1a) Condition = everything reachable backwards from e but not through edge t->c
@@ -234,20 +213,72 @@ object Main {
           // Compute 1a
           // Everything reachable backwards from e but not through edge t->c
           val cs1 = {
-            var cond = ps.toSet
+            var cond = ps
+            var bs = Set[Stmt]()
+            var breaks = Set[Stmt]()
             var todo = ps.toList
+
+            // Finds Condition
             // Find everything reachable
             while (todo.nonEmpty) {
               val v = todo.head
               todo = todo.tail
               if (v != c) {
-                val predecessor = Graphs.predecessorListOf(graph, v).asScala.filterNot(cond)
+                val predecessor = Graphs.predecessorListOf(loopGraph, v).asScala.filterNot(cond)
                 todo ++= predecessor
                 cond ++= predecessor
               }
             }
 
-            println(f"  (1) condition = ")
+            // If case 1 returns multiple starts: There are breaks (or maybe returns?)
+            // Since all real condition ps have path to all break ps:
+            // Each time remove last p in topological ordering
+
+            // # Start Nodes = # Nodes in body that have edges from condition
+            bs = loopGraph.vertexSet().asScala.filter(v => Graphs.predecessorListOf(loopGraph, v).asScala.exists(cond) && !cond.contains(v)).toSet
+            while (bs.size > 1) {
+
+              /*println(f"  (1) starts = ")
+              for (cb <- bs.toList.sortBy(_.index)) {
+                println(f"    $cb")
+              }*/
+              // Remove last ps from its topological sort
+              val i = new TopologicalOrderIterator[Stmt, DefaultEdge](loopGraph)
+              val filtered = i.asScala.filter(ps)
+              // Add it to breaks
+              var cand = ps.head
+              while (filtered.hasNext) {
+                cand = filtered.next
+              }
+              ps -= cand
+              breaks += cand
+              loopGraph.removeEdge(cand, e)
+
+              println(f"    Loop has break at:\n    ---break: $cand")
+              /*println("  *** ps = ")
+              for (cb <- ps.toList.sortBy(_.index)) {
+                println(f"    $cb")
+              }*/
+
+              // Finds Condition Again
+              cond = ps
+              todo = ps.toList
+              // Find everything reachable
+              while (todo.nonEmpty) {
+                val v = todo.head
+                todo = todo.tail
+                if (v != c) {
+                  val predecessor = Graphs.predecessorListOf(loopGraph, v).asScala.filterNot(cond)
+                  todo ++= predecessor
+                  cond ++= predecessor
+                }
+              }
+
+              bs = loopGraph.vertexSet().asScala.filter(v => Graphs.predecessorListOf(loopGraph, v).asScala.exists(cond) && !cond.contains(v)).toSet
+
+            }
+
+            println("  (1) condition = ")
             for (cb <- cond.toList.sortBy(_.index)) {
               println(f"    $cb")
             }
@@ -279,7 +310,7 @@ object Main {
               visited -= v
             }
 
-            println(f"  (2) condition = ")
+            println("  (2) condition = ")
             for (cb <- visited.toList.sortBy(_.index)) {
               println(f"    $cb")
             }
@@ -289,24 +320,23 @@ object Main {
           // Compute 3
           // Statement after last edge to e
           val cs3 = {
-
-            // Create a topological traversal
             val i = new TopologicalOrderIterator[Stmt, DefaultEdge](loopGraph)
             // Filter i to contain only those that have some successor that is not in the loop
-            val filtered = i.asScala.filter(_.nextSemantic.contains(e))
+            val filtered = i.asScala.filter(Graphs.successorListOf(graph, _).contains(e)).filter(ps)
 
             // Take the last condition.  This jumps to the "real" `s`
             while (ps.size > 1) {
               ps -= filtered.next
             }
-            val lc = ps.head
+            var lc = c
+            if (ps.size > 0) {
+              lc = ps.head
+            }
 
             // Finds 's'
-            // TODO...
-            // Handle this case: s could be a switch
             val ss = lc.nextSemantic.filter(_ != e)
             if(ss.size > 1) {
-              println(f"Error: \nLoop type: infinite (switch with breaks and/or returns inside)")
+              println("Error: \nLoop type: infinite (switch with breaks and/or returns inside)")
             }
             //assert(ss.size == 1)
             val s = ss.head
@@ -325,26 +355,30 @@ object Main {
             }
             cond -= s
 
-            println(f"  (3) condition = ")
+            println("  (3) condition = ")
             for (cb <- cond.toList.sortBy(_.index)) {
               println(f"    $cb")
             }
             cond
           }
 
-          if (cs1 != cs2) {
-            println("!!!!!\n!!!!!\n!!!!!\nCase 1 not equal Case 2")
-          }
-          if (cs1 != cs3) {
-            println("!!!!!\n!!!!!\n!!!!!\nCase 1 not equal Case 3")
-          }
-          if (cs1 == cs2 && cs1 == cs3) {
-            println("Correct")
+          if (ps.size == 0) {
+            println("Infinite Loop\n")
+          } else {
+            if (cs1 != cs2) {
+              println("!!!!!\n!!!!!\n!!!!!\nCase 1 not equal Case 2")
+            }
+            if (cs1 != cs3) {
+              println("!!!!!\n!!!!!\n!!!!!\nCase 1 not equal Case 3")
+            }
+            if (cs1 == cs2 && cs1 == cs3) {
+              println("Correct")
+            }
           }
 
         } else {
           // post-condition = some back jump statements go out of loop
-          println(f"Loop type: post-condition")
+          println("Loop type: post-condition")
 
           val s: Stmt = k
 
@@ -353,27 +387,26 @@ object Main {
           // Thus we can partially order the predecessors of the members of `ends` and take the last one.
           // This may not be totally ordered but the set of final statements in the partial order all go to the same e.
 
-          //TODO...
-          // Here (before removing edges): we need to detect continues
-          // Remove edges going to c
+          // Detects "t" and continues
+          val ts = Graphs.predecessorListOf(loopGraph, s).asScala
           // Remove edges going to s
           Graphs.predecessorListOf(loopGraph, s).asScala.foreach(loopGraph.removeEdge(_, s))
 
           //TODO...
-          // Here: we need to detect multiple exits
+          // What happens here if we have breaks and multiple start nodes?
+          // Like pre-condition case
 
-          // Create a topological traversal
           val i = new TopologicalOrderIterator[Stmt, DefaultEdge](loopGraph)
           // Filter i to contain only those that have some successor that is not in the loop
           val filtered = i.asScala.filter(v => Graphs.successorListOf(graph, v).asScala.exists(!vs(_)))
 
           // Set of nodes that jump to ends
-          var ps = loopGraph.vertexSet().asScala.filter(_.nextSemantic.exists(ends(_)))
+          var all_ps = loopGraph.vertexSet().asScala.filter(_.nextSemantic.exists(ends(_)))
           // Take the last node.  This jumps to the "real" `e`
-          while (ps.size > 1) {
-            ps -= filtered.next
+          while (all_ps.size > 1) {
+            all_ps -= filtered.next
           }
-          val p = ps.head
+          val p = all_ps.head
 
           // The member of `ends` that is preceded by `p` is the "real" `e`
           val es = Graphs.successorListOf(graph, p).asScala.filter(!vs(_))
@@ -398,6 +431,7 @@ object Main {
             var visited = Set[Stmt]() // Stmts that the topological traversal has visited
             // TODO...
             // Do we need to do this in pre-condition case 2? (pps instead of ps)
+
             // All states that jump to e or s
             val pps = loopGraph.vertexSet().asScala.filter(v => v.nextSemantic.contains(e) || v.nextSemantic.contains(s))
 
@@ -416,7 +450,7 @@ object Main {
             val reach = visited.filter(p => ci.pathExists(s, p))
             for (v <- vs) {
               val path = new AllDirectedPaths(loopGraph).getAllPaths(s, v, true, null).asScala.head.getVertexList.asScala.toSet
-              println(f"\n\nHere...:\n")
+              println("\n\nHere...:\n")
               val test = ci.pathExists(s, v)
               println(f"Exist: $test")
               for (p <- path)
@@ -425,7 +459,7 @@ object Main {
 
             val cond = visited
 
-            println(f"  (2) condition = ")
+            println("  (2) condition = ")
             for (cb <- cond.toList.sortBy(_.index)) {
               println(f"    $cb")
             }
@@ -435,10 +469,10 @@ object Main {
           // Compute 3
           // First common ancestor of first nodes (partial order) that go to e or s
           val cs3 = {
-            // Create a topological traversal
             val i = new TopologicalOrderIterator[Stmt, DefaultEdge](loopGraph)
             // TODO...
             // Again do we need to do this in pre-condition case 3? (pps instead of ps)
+
             // Iterator on pps
             // Filter i to contain only those that have some successor that is not in the loop
             val filtered = i.asScala.filter(vs).filter(v => v.nextSemantic.contains(e) || v.nextSemantic.contains(s))
@@ -460,7 +494,6 @@ object Main {
             }
 
             // Any path backward, leads to common ancestor
-            // Create a topological traversal
             val i2 = new TopologicalOrderIterator[Stmt, DefaultEdge](loopGraph)
             // Iterator on ps
             // Filter i to contain only those that have some successor that is not in the loop
@@ -487,7 +520,7 @@ object Main {
             }
             cond -= s
 
-            println(f"  (3) condition = ")
+            println("  (3) condition = ")
             for (cb <- cond.toList.sortBy(_.index)) {
               println(f"    $cb")
             }
@@ -523,6 +556,11 @@ object Main {
 // We cant have any infinite loops!!!
 // TODO...
 // Ignore multiple exits for testing purposes
+//TODO...
+// Change nextSemantics
+
+//TODO...
+// Replaced some graphs with loopGraph
 
 class PseudoStmt(stmt: Stmt) extends Stmt(stmt.sootStmt, stmt.sootMethod) {
   override def toString: String = "PseudoStmt" + super.toString
