@@ -21,6 +21,7 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
 
     private Graph<StateVertex, StateEdge> outerGraph;
     private Graph<StateVertex, StateEdge> innerGraph;
+    public boolean isImmutable = false;
 
     public StateVertex(String label, VertexType type, boolean drawEdges) {
         super(label, type, drawEdges);

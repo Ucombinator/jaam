@@ -18,7 +18,7 @@ import java.util.Set;
 public class VizPanelController extends GraphPanelController<StateVertex, StateEdge>
         implements EventHandler<SelectEvent<StateVertex>>, SetChangeListener<StateVertex> {
 
-    GraphTransform<StateRootVertex, StateVertex> immToVis;
+    GraphTransform<StateRootVertex, StateVertex> immAndVis;
 
     public VizPanelController(Graph<StateVertex, StateEdge> graph) throws IOException {
         super(StateRootVertex::new);
@@ -28,6 +28,7 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
 
         this.visibleRoot = new StateRootVertex();
         this.immutableRoot = LayerFactory.getLayeredLoopGraph(graph);
+        setAllImmutable(this.immutableRoot);
         this.drawGraph(new HashSet<>());
     }
 
@@ -70,10 +71,9 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
     public void drawGraph(Set<StateVertex> hidden) {
         visibleRoot.setVisible(false);
 
+        immAndVis = ((StateRootVertex) this.immutableRoot).constructVisibleGraphExcept(hidden);
 
-        immToVis = ((StateRootVertex) this.immutableRoot).constructVisibleGraphExcept(hidden);
-
-        this.visibleRoot = immToVis.newRoot;
+        this.visibleRoot = immAndVis.newRoot;
 
         LayoutAlgorithm.layout(this.visibleRoot);
         drawNodes(null, visibleRoot);
@@ -102,12 +102,31 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
     @Override
     public void onChanged(Change<? extends StateVertex> change) {
         if (change.wasAdded()) {
-            StateVertex v = change.getElementAdded();
-            v.setHighlighted(false);
-            v.setHidden();
+            StateVertex immV = change.getElementAdded();
+
+            checkImmutable(immV);
+            immV.setHighlighted(false);
+            immV.setHidden();
+
+            immAndVis.getNew(immV).setHighlighted(false);
+            immAndVis.getNew(immV).setHidden();
         } else {
-            StateVertex v = change.getElementRemoved();
-            v.setUnhidden();
+            StateVertex immV = change.getElementRemoved();
+            checkImmutable(immV);
+            immV.setUnhidden();
         }
+    }
+
+    private void setAllImmutable(StateVertex v) {
+        v.isImmutable = true;
+
+        for (StateVertex i : v.getInnerGraph().getVertices()) {
+            setAllImmutable(i);
+        }
+    }
+
+    private void checkImmutable(StateVertex v) {
+        if (!v.isImmutable)
+            throw new Error(v + " is not immutable");
     }
 }

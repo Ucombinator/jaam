@@ -115,6 +115,10 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         HashSet<TaintVertex> verticesToDraw = findConnectedAddresses(addresses);
         System.out.println("Taint vertices to draw: " + verticesToDraw.size());
 
+        for (TaintVertex v : verticesToDraw) {
+            System.out.println("TAINT: " + v.getClassName() + " --> " + v.getMethodName());
+        }
+
         long time2 = System.nanoTime();
         // Redraw graph with only this set of vertices.
         TaintPanelController.this.drawGraph(verticesToDraw);
@@ -136,7 +140,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         // TODO: This code is cleaner, but might take longer?
         for (TaintVertex v : startVertices) {
-            ancestors.addAll(v.getAncestors());
+            //ancestors.addAll(v.getAncestors());
             descendants.addAll(v.getDescendants());
         }
 
