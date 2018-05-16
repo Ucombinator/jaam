@@ -21,6 +21,10 @@ public class StateRootVertex extends StateVertex {
 
     @Override
     public StateRootVertex copy() {
+        StateRootVertex r = new StateRootVertex();
+        r.color = this.color;
+        r.setExpanded(this.isExpanded());
+        r.setEdgeVisible(this.isEdgeVisible());
         return new StateRootVertex();
     }
 

@@ -233,11 +233,6 @@ public class MainTabController {
     }
 
     public void setClassHighlight(HashSet<StateVertex> vertices, boolean value) {
-
-        for (StateVertex v : vertices) {
-            if (!v.isHidden()) {
-                v.setClassHighlight(value);
-            }
-        }
+        vizPanelController.setClassHighlight(vertices, value);
     }
 }

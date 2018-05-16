@@ -29,4 +29,7 @@ public class GraphTransform <R extends T, T extends HierarchicalVertex> {
         return newToOld.get(newV);
     }
 
+    public boolean containsNew(T newV) { return newToOld.containsKey(newV); }
+    public boolean containsOld(T oldV) { return oldToNew.containsKey(oldV); }
+
 }

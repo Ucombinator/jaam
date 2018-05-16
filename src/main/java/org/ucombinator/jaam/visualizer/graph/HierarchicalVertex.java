@@ -13,6 +13,7 @@ public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extend
     Graph<T, S> getOuterGraph(); // Go up the hierarchy (The graph I am part of)
     Graph<T, S> getInnerGraph(); // Go down the the hierarchy (The graph inside of me)
     void setOuterGraph(Graph<T, S> graph);
+    void setInnerGraph(Graph<T, S> graph);
     T copy(); // Copy constructor, used to construct new vertices in visible graph.
 
     default void applyToVerticesRecursive(Consumer<HierarchicalVertex<T, S>> f) {
@@ -85,6 +86,10 @@ public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extend
                 v.getDescendants(descendants);
             });
         }
+    }
+
+    default boolean hasInnerGraph() {
+        return !this.getInnerGraph().getVertices().isEmpty();
     }
 
     default LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {

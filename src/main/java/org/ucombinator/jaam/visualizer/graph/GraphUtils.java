@@ -104,58 +104,67 @@ public class GraphUtils {
         R visibleRoot = (R) self.copy(); // Have to cast it, is there a less ugly way?
         GraphTransform<R,T> transform = new GraphTransform<>(self, visibleRoot);
 
-        Graph<T, S> immutableGraph = self.getInnerGraph();
-        Graph<T, S> visibleGraph = visibleRoot.getInnerGraph();
-        // Add all visible vertices
-        for(T v : immutableGraph.getVertices()) {
-            if(isVisible.test(v)) {
-                T newV = v;
-                visibleGraph.addVertex(newV);
-                newV.setOuterGraph(visibleGraph);
-                transform.add(v,newV);
-                GraphUtils.constructVisibleGraph(v, isVisible, edgeBuilder, transform);
-            }
-        }
-
-        // For each HierarchicalVertex, search for its visible incoming edges
-        for(T v : immutableGraph.getVertices()) {
-            // TODO: This might be an inefficient way to construct the currently visible graph.
-            if(isVisible.test(v)) {
-                GraphUtils.findVisibleEdges(self, v, visibleGraph, edgeBuilder);
-            }
-        }
+        Graph<T,S> visibleGraph = constructVisibleGraph(self, isVisible, edgeBuilder, transform);
+        visibleRoot.setInnerGraph(visibleGraph);
 
         return transform;
     }
 
     private static <R extends T, T extends HierarchicalVertex<T, S>, S extends Edge<T>>
-    void constructVisibleGraph(T self, Predicate<T> isVisible, BiFunction<T, T, S> edgeBuilder, GraphTransform<R,T> transform) {
-
-        T visibleRoot = self.copy(); // Have to cast it, is there a less ugly way?
+    Graph<T,S> constructVisibleGraph(T self, Predicate<T> isVisible, BiFunction<T, T, S> edgeBuilder, GraphTransform<R,T> transform) {
 
         // Add all visible vertices
         Graph<T, S> immutableGraph = self.getInnerGraph();
-        Graph<T, S> visibleGraph = visibleRoot.getInnerGraph();
+        Graph<T, S> visibleGraph = new Graph<>();
         for(T v : immutableGraph.getVertices()) {
             if(isVisible.test(v)) {
-                T newV = v;
+                T newV = v.copy();
+                if (v.hasInnerGraph()) {
+                    Graph<T,S> innerVisibleGraph =  GraphUtils.constructVisibleGraph(v, isVisible, edgeBuilder, transform);
+                    newV.setInnerGraph(innerVisibleGraph);
+                }
                 visibleGraph.addVertex(newV);
                 newV.setOuterGraph(visibleGraph);
                 transform.add(v, newV);
-                GraphUtils.constructVisibleGraph(v, isVisible, edgeBuilder);
             }
         }
+
+        /*
+        System.out.println("Before adding edges");
+        for (T v : visibleGraph.getVertices() ) {
+            System.out.println("\t" + v + " == " + (Object)v );
+        }
+
+        System.out.println("Transform ");
+        for (T v : immutableGraph.getVertices()) {
+            T newV = transform.getNew(v);
+            System.out.println("\t" + v + " || " + transform.getOld(newV) + " --> " + newV
+                    + " ***** " + System.identityHashCode(v)  + " == " + System.identityHashCode(transform.getOld(newV))
+                    + " || " + System.identityHashCode(newV) + " == " + System.identityHashCode(transform.getNew(v)));
+        }
+
+        System.out.println("Transform ");
+        for (T v : visibleGraph.getVertices()) {
+            T oldV = transform.getOld(v);
+            System.out.println("\t" + v + " || " + transform.getNew(oldV) + " --> " + oldV
+                    + " ***** " + System.identityHashCode(v)  + " == " + System.identityHashCode(transform.getNew(oldV))
+                    + " || " + System.identityHashCode(oldV) + " == " + System.identityHashCode(transform.getOld(v)));
+        }
+        */
 
         // For each HierarchicalVertex, search for its visible incoming edges
         for(T v : immutableGraph.getVertices()) {
             // TODO: This might be an inefficient way to construct the currently visible graph.
             if(isVisible.test(v)) {
-                GraphUtils.findVisibleEdges(self, v, visibleGraph, edgeBuilder);
+                GraphUtils.findVisibleEdges(v, immutableGraph, visibleGraph, edgeBuilder, transform);
             }
         }
+
+        return visibleGraph;
     }
 
 
+    /*
     private static <T extends HierarchicalVertex<T, S>, S extends Edge<T>> void findVisibleEdges(T self, T v, Graph<T, S> visibleGraph, BiFunction<T, T, S> edgeBuilder) {
         Queue<T> queue = new LinkedList<>();
         HashSet<T> found = new HashSet<>();
@@ -169,6 +178,32 @@ public class GraphUtils {
                 if (visibleGraph.getVertices().contains(w)) {
                     visibleGraph.addEdge(edgeBuilder.apply(w, v));
                 } else {
+                    queue.addAll(immutableGraph.getInNeighbors(w));
+                }
+            }
+        }
+    }
+    */
+
+    private static <R extends T, T extends HierarchicalVertex<T, S>, S extends Edge<T>>
+    void findVisibleEdges(T v, Graph<T,S> immutableGraph, Graph<T, S> visibleGraph, BiFunction<T, T, S> edgeBuilder,
+                          GraphTransform<R,T> transform) {
+
+        T visV = transform.getNew(v);
+
+        Queue<T> queue = new LinkedList<>();
+        queue.addAll(immutableGraph.getInNeighbors(v));
+
+        HashSet<T> found = new HashSet<>();
+        while (queue.size() > 0) {
+            T w = queue.poll();
+            if (!found.contains(w)) {
+                found.add(w);
+                if (transform.containsOld(w)) {
+                    T visW = transform.getNew(w);
+                    visibleGraph.addEdge(edgeBuilder.apply(visW, visV));
+                }
+                else {
                     queue.addAll(immutableGraph.getInNeighbors(w));
                 }
             }
@@ -305,6 +340,25 @@ public class GraphUtils {
         }
 
         return newRoot;
+    }
+
+    public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>, U>
+    void printGraph(T v, int depth) {
+
+        for (int i = 0; i < depth; ++i) System.out.print("\t");
+
+        System.out.println(v);
+
+        for (Edge e : v.getOuterGraph().getOutEdges(v)) {
+            for (int i = 0; i < depth; ++i) System.out.print("\t");
+            System.out.println("-->" + e.toString() + " vis: " + " to " + e.getDest());
+        }
+
+
+        if (!v.getInnerGraph().getVertices().isEmpty()) {
+            for (T i : v.getInnerGraph().getVertices())
+                printGraph(i, depth+1);
+        }
     }
 
 }

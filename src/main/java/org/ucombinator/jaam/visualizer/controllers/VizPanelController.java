@@ -4,6 +4,7 @@ import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import org.ucombinator.jaam.visualizer.graph.GraphTransform;
+import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -71,9 +72,15 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
     public void drawGraph(Set<StateVertex> hidden) {
         visibleRoot.setVisible(false);
 
-        immAndVis = ((StateRootVertex) this.immutableRoot).constructVisibleGraphExcept(hidden);
+        System.out.println("JUAN: Immutable graph #Edges: " + this.getImmutableRoot().getInnerGraph().getEdges().size());
+        GraphUtils.printGraph(this.getImmutableRoot(), 0);
+
+        this.immAndVis = getImmutableRoot().constructVisibleGraphExcept(hidden);
 
         this.visibleRoot = immAndVis.newRoot;
+
+        System.out.println("JUAN: Print visible graph #Edges: " + this.getImmutableRoot().getInnerGraph().getEdges().size());
+        GraphUtils.printGraph(this.visibleRoot, 0);
 
         LayoutAlgorithm.layout(this.visibleRoot);
         drawNodes(null, visibleRoot);
@@ -105,10 +112,10 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
             StateVertex immV = change.getElementAdded();
 
             checkImmutable(immV);
-            immV.setHighlighted(false);
+            //immV.setHighlighted(false);
             immV.setHidden();
 
-            immAndVis.getNew(immV).setHighlighted(false);
+            //immAndVis.getNew(immV).setHighlighted(false);
             immAndVis.getNew(immV).setHidden();
         } else {
             StateVertex immV = change.getElementRemoved();
@@ -116,6 +123,21 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
             immV.setUnhidden();
         }
     }
+
+    public StateRootVertex getImmutableRoot() {
+        return (StateRootVertex) this.immutableRoot;
+    }
+
+    public void setClassHighlight(HashSet<StateVertex> vertices, boolean value) {
+        for (StateVertex immV : vertices) {
+            checkImmutable(immV);
+            StateVertex v = immAndVis.getNew(immV);
+            if (!v.isHidden()) {
+                v.setClassHighlight(value);
+            }
+        }
+    }
+
 
     private void setAllImmutable(StateVertex v) {
         v.isImmutable = true;
@@ -129,4 +151,5 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         if (!v.isImmutable)
             throw new Error(v + " is not immutable");
     }
+
 }
