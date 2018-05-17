@@ -15,11 +15,12 @@ import org.ucombinator.jaam.visualizer.state.*;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class VizPanelController extends GraphPanelController<StateVertex, StateEdge>
         implements EventHandler<SelectEvent<StateVertex>>, SetChangeListener<StateVertex> {
 
-    GraphTransform<StateRootVertex, StateVertex> immAndVis;
+    public GraphTransform<StateRootVertex, StateVertex> immAndVis;
 
     public VizPanelController(Graph<StateVertex, StateEdge> graph) throws IOException {
         super(StateRootVertex::new);
@@ -138,6 +139,28 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         }
     }
 
+    // Selection are **visible** nodes
+    // Returns the immutable nodes related to the selection of visible nodes
+    public HashSet<StateVertex> getUnrelatedVisible(HashSet<StateVertex> selection) {
+
+        HashSet<StateVertex> keep = new HashSet<>();
+
+        selection.forEach(v -> keep.addAll(v.getAncestors()));
+        selection.forEach(v -> keep.addAll(v.getDescendants()));
+
+        HashSet<StateVertex> toHide = new HashSet<>();
+        getVisibleRoot().getInnerGraph().getVertices().forEach(v -> {
+            if (!keep.contains(v)) {
+                toHide.add(v);
+            }
+        });
+
+        return toHide;
+    }
+
+    public HashSet<StateVertex> getImmutable(HashSet<StateVertex> visible) {
+        return visible.stream().map(v -> { return immAndVis.getOld(v);}).collect(Collectors.toCollection(HashSet::new));
+    }
 
     private void setAllImmutable(StateVertex v) {
         v.isImmutable = true;

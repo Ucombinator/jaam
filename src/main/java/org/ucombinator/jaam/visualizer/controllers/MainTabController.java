@@ -210,19 +210,9 @@ public class MainTabController {
     public void hideUnrelatedToHighlighted() {
         if (this.vizHighlighted.isEmpty()) { return; }
 
-        HashSet<StateVertex> keep = new HashSet<>();
+        HashSet<StateVertex> toHide = vizPanelController.getUnrelatedVisible(this.vizHighlighted);
 
-        this.vizHighlighted.forEach(v -> keep.addAll(v.getAncestors()));
-        this.vizHighlighted.forEach(v -> keep.addAll(v.getDescendants()));
-
-        HashSet<StateVertex> toHide = new HashSet<>();
-        this.vizPanelController.getVisibleRoot().getInnerGraph().getVertices().forEach(v -> {
-            if (!keep.contains(v)) {
-                toHide.add(v);
-            }
-        });
-
-        this.hidden.addAll(toHide);
+        this.hidden.addAll(vizPanelController.getImmutable(toHide));
         this.vizHighlighted.clear();
         this.vizPanelController.redrawGraph(this.hidden);
     }
