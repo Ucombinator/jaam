@@ -211,71 +211,76 @@ public class GraphUtils {
     }
 
     // We assume that only vertices within the same level can be combined.
-    public static <T extends HierarchicalVertex<T, S>, S extends Edge<T>, U>
-    T copyAndCompressGraph(T root, Function<T, U> hash, Function<List<T>, T> componentVertexBuilder,
+    public static <R extends T, T extends HierarchicalVertex<T, S>, S extends Edge<T>, U>
+    GraphTransform<R,T> copyAndCompressGraph(R root, Function<T, U> hash, Function<List<T>, T> componentVertexBuilder,
                            BiFunction<T, T, S> edgeBuilder) {
-        // If we have no child vertices, just copy ourselves.
+
+        R compressedRoot = (R) root.copy();
+
+        GraphTransform<R,T> transform = new GraphTransform<>(root, compressedRoot);
+
+        // If we have no child vertices, just return
         if (root.getInnerGraph().getVertices().size() == 0) {
-            return root.copy();
+            return transform;
         }
 
         // Otherwise, copy all of the inner vertices.
-        Map<T, T> mapVertexToCopy = root.getInnerGraph().getVertices().stream()
-                .collect(Collectors.toMap(v -> v, HierarchicalVertex::copy));
+        for (T v : root.getInnerGraph().getVertices()) {
+            transform.add(v, v.copy());
+        }
 
-        // Then build a map of components based on matching hash values.
+        // Then build a map of components (on the old vertices) based on matching hash values.
         Map<T, U> hashValues = root.getInnerGraph().getVertices().stream()
                 .collect(Collectors.toMap(v -> v, hash));
 
         Map<U, List<T>> components = root.getInnerGraph().getVertices().stream()
                 .collect(Collectors.groupingBy(hashValues::get));
 
-
         // Preserve the singleton vertices, but build component vertices for larger components.
+        // When doing so we need to use the new vertices
         Map<U, T> mapHashToComponentVertex = components.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, new Function<Map.Entry<U, List<T>>, T>() {
                     @Override
                     public T apply(Map.Entry<U, List<T>> entry) {
                         List<T> component = entry.getValue();
                         if(component.size() == 1) {
-                            return mapVertexToCopy.get(component.get(0));
+                            return transform.getNew(component.get(0));
                         } else {
-                            return componentVertexBuilder.apply(component.stream().map(mapVertexToCopy::get)
+                            return componentVertexBuilder.apply(component.stream().map(transform::getNew)
                                     .collect(Collectors.toList()));
                         }
                     }
                 }));
 
-        // Next, make new graph and add component vertices.
-        T newRoot = root.copy();
-        Graph<T, S> newGraph = newRoot.getInnerGraph();
+        Graph<T, S> compressedGraph = compressedRoot.getInnerGraph();
         mapHashToComponentVertex.entrySet().forEach(entry -> {
-            newGraph.addVertex(entry.getValue());
-            entry.getValue().setOuterGraph(newGraph);
+            compressedGraph.addVertex(entry.getValue());
+            entry.getValue().setOuterGraph(compressedGraph);
         });
 
         // Lastly, add edges between the new vertices.
         for (T currVertexOld: root.getInnerGraph().getVertices()) {
             T currComponentVertex = mapHashToComponentVertex.get(hashValues.get(currVertexOld));
+
             for (T nextVertexOld : root.getInnerGraph().getOutNeighbors(currVertexOld)) {
                 T nextComponentVertex = mapHashToComponentVertex.get(hashValues.get(nextVertexOld));
 
                 // Add edge at the top level of the new graph if it's a self-loop, or if the two vertices are
                 // now in different components.
                 if ((currVertexOld == nextVertexOld) || (currComponentVertex != nextComponentVertex)) {
-                    newGraph.addEdge(edgeBuilder.apply(currComponentVertex, nextComponentVertex));
+                    compressedGraph.addEdge(edgeBuilder.apply(currComponentVertex, nextComponentVertex));
                 }
 
                 // Add edge between two different vertices if they are inside the same component.
                 if (currComponentVertex == nextComponentVertex) {
-                    T currInnerVertex = mapVertexToCopy.get(currVertexOld);
-                    T nextInnerVertex = mapVertexToCopy.get(nextVertexOld);
+                    T currInnerVertex = transform.getNew(currVertexOld);
+                    T nextInnerVertex = transform.getNew(nextVertexOld);
                     currComponentVertex.getInnerGraph().addEdge(edgeBuilder.apply(currInnerVertex, nextInnerVertex));
                 }
             }
         }
 
-        return newRoot;
+        return transform;
     }
 
     // We assume that only vertices within the same level can be combined.

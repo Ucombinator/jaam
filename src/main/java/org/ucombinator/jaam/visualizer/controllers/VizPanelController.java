@@ -29,7 +29,8 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         this.graphContentGroup.addEventFilter(SelectEvent.STATE_VERTEX_SELECTED, this);
 
         this.visibleRoot = new StateRootVertex();
-        this.immutableRoot = LayerFactory.getLayeredLoopGraph(graph);
+        this.immutableRoot = new StateRootVertex();
+        this.immutableRoot.setInnerGraph(graph);
         setAllImmutable(this.immutableRoot);
         this.drawGraph(new HashSet<>());
     }
@@ -76,8 +77,15 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         System.out.println("JUAN: Immutable graph #Edges: " + this.getImmutableRoot().getInnerGraph().getEdges().size());
         GraphUtils.printGraph(this.getImmutableRoot(), 0);
 
-        this.immAndVis = getImmutableRoot().constructVisibleGraphExcept(hidden);
+        if (!hidden.isEmpty()) {
+            GraphTransform<StateRootVertex, StateVertex> hiddenTransform = getImmutableRoot().constructVisibleGraphExcept(hidden);
+            GraphTransform<StateRootVertex, StateVertex> compact = LayerFactory.getLayeredLoopGraph(hiddenTransform.newRoot);
 
+            immAndVis = GraphTransform.transfer(hiddenTransform, compact);
+        }
+        else { // Work directly on immutable graph
+            this.immAndVis = LayerFactory.getLayeredLoopGraph(getImmutableRoot());
+        }
         this.visibleRoot = immAndVis.newRoot;
 
         System.out.println("JUAN: Print visible graph #Edges: " + this.getImmutableRoot().getInnerGraph().getEdges().size());

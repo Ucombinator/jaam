@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.function.Function;
 
 import javafx.scene.paint.Color;
+import org.ucombinator.jaam.visualizer.graph.GraphTransform;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.state.*;
@@ -12,20 +13,17 @@ import org.ucombinator.jaam.visualizer.taint.*;
 public class LayerFactory
 {
     // TODO: Template these functions instead of copying them.
-    public static StateRootVertex getLayeredLoopGraph(Graph<StateVertex, StateEdge> graph) {
-        return LayerFactory.getStronglyConnectedComponentsLoopGraph(graph);
+    public static GraphTransform<StateRootVertex, StateVertex> getLayeredLoopGraph(StateRootVertex root) {
+        return LayerFactory.getStronglyConnectedComponentsLoopGraph(root);
     }
 
-    private static StateRootVertex getStronglyConnectedComponentsLoopGraph(Graph<StateVertex, StateEdge> graph)
+    private static GraphTransform<StateRootVertex, StateVertex> getStronglyConnectedComponentsLoopGraph(StateRootVertex root)
     {
-        List<List<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
+        List<List<Integer>> sccs = GraphUtils.StronglyConnectedComponents(root.getInnerGraph());
         HashMap<Integer, Integer> vertexToComponentIndex = getVertexToComponentMap(sccs);
         System.out.println("Strongly connected components in loop graph: " + sccs.size());
 
-        StateRootVertex graphRoot = new StateRootVertex();
-        graphRoot.setInnerGraph(graph);
-
-        return (StateRootVertex) GraphUtils.compressGraph(graphRoot,
+        return GraphUtils.copyAndCompressGraph(root,
                 v -> Integer.toString(vertexToComponentIndex.get(v.getId())),
                 new Function<List<StateVertex>, StateVertex>() {
                     @Override
