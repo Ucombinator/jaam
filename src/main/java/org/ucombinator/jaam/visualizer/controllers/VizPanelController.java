@@ -153,12 +153,14 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
 
         HashSet<StateVertex> keep = new HashSet<>();
 
+        Graph<StateVertex, StateEdge> topLevel = getVisibleRoot().getInnerGraph();
+
         selection.forEach(v -> keep.addAll(v.getAncestors()));
         selection.forEach(v -> keep.addAll(v.getDescendants()));
 
         HashSet<StateVertex> toHide = new HashSet<>();
-        getVisibleRoot().getInnerGraph().getVertices().forEach(v -> {
-            if (!keep.contains(v)) {
+        topLevel.getVertices().forEach(v -> {
+            if (!keep.contains(v) && !keepAnyInterior(v, keep, toHide)) {
                 toHide.add(v);
             }
         });
@@ -166,8 +168,25 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         return toHide;
     }
 
+    private boolean keepAnyInterior(StateVertex root, HashSet<StateVertex> keep, HashSet<StateVertex> toHide) {
+
+        boolean foundAVertexToKeep = false;
+        for (StateVertex v : root.getInnerGraph().getVertices()) {
+            if (keep.contains(v) || keepAnyInterior(v, keep, toHide)) {
+                foundAVertexToKeep = true;
+            }
+            else {
+                toHide.add(v);
+            }
+        }
+
+        return foundAVertexToKeep;
+    }
+
     public HashSet<StateVertex> getImmutable(HashSet<StateVertex> visible) {
-        return visible.stream().map(v -> { return immAndVis.getOld(v);}).collect(Collectors.toCollection(HashSet::new));
+        return visible.stream().
+                filter(immAndVis::containsNew).
+                map(v -> { return immAndVis.getOld(v);}).collect(Collectors.toCollection(HashSet::new));
     }
 
     private void setAllImmutable(StateVertex v) {
