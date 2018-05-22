@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.controllers;
 import javafx.event.EventHandler;
 import javafx.scene.layout.BorderPane;
 import org.ucombinator.jaam.tools.taint3.Address;
+import org.ucombinator.jaam.visualizer.graph.GraphTransform;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.*;
@@ -21,8 +22,11 @@ import java.util.Set;
 public class TaintPanelController extends GraphPanelController<TaintVertex, TaintEdge>
         implements EventHandler<SelectEvent<TaintVertex>> {
 
+    private GraphTransform<TaintRootVertex, TaintVertex> immToVis;
+
     private HashMap<String, TaintAddress> fieldVertices;
 
+    // Graph is the statement graph
     public TaintPanelController(Graph<TaintVertex, TaintEdge> graph) throws IOException {
         super(TaintRootVertex::new);
 
@@ -30,10 +34,10 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         graphContentGroup.addEventFilter(SelectEvent.TAINT_VERTEX_SELECTED, this);
 
         this.visibleRoot = new TaintRootVertex();
-        //this.immutableRoot = LayerFactory.getLayeredTaintGraph(graph);
         this.immutableRoot = new TaintRootVertex();
         this.immutableRoot.setInnerGraph(graph);
         fillFieldDictionary();
+        immToVis = null;
     }
 
     public TaintRootVertex getVisibleRoot() {
@@ -49,13 +53,14 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         visibleRoot.setVisible(false);
         //this.visibleRoot = ((TaintRootVertex) this.immutableRoot).constructVisibleGraph(verticesToDraw);
 
+        GraphTransform<TaintRootVertex, TaintVertex> immToFlatVisible = this.getImmutableRoot().constructVisibleGraph(verticesToDraw);
 
+        System.out.println("JUAN: There are " + immToFlatVisible.newRoot.getInnerGraph().getVertices().size());
 
-        TaintRootVertex tempRoot = ((TaintRootVertex) this.immutableRoot).constructVisibleGraph(verticesToDraw);
+        GraphTransform<TaintRootVertex, TaintVertex> flatToLayerVisible = LayerFactory.getLayeredTaintGraph(immToFlatVisible.newRoot);
 
-        System.out.println("JUAN: There are " + tempRoot.getInnerGraph().getVertices().size());
-
-        this.visibleRoot = LayerFactory.getLayeredTaintGraph(tempRoot.getInnerGraph());
+        immToVis = GraphTransform.transfer(immToFlatVisible, flatToLayerVisible);
+        this.visibleRoot = immToVis.newRoot;
 
         LayoutAlgorithm.layout(visibleRoot);
         drawNodes(null, visibleRoot);

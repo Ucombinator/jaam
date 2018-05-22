@@ -39,20 +39,16 @@ public class LayerFactory
                 StateEdge::new);
     }
 
-    public static TaintRootVertex getLayeredTaintGraph(Graph<TaintVertex, TaintEdge> graph) {
-        return getStronglyConnectedComponentsTaintGraph(graph);
+    public static GraphTransform<TaintRootVertex, TaintVertex> getLayeredTaintGraph(TaintRootVertex root) {
+        return getStronglyConnectedComponentsTaintGraph(root);
     }
 
-    private static TaintRootVertex getStronglyConnectedComponentsTaintGraph(Graph<TaintVertex, TaintEdge> graph)
-    {
-        List<List<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
+    private static GraphTransform<TaintRootVertex, TaintVertex> getStronglyConnectedComponentsTaintGraph(TaintRootVertex root) {
+        List<List<Integer>> sccs = GraphUtils.StronglyConnectedComponents(root.getInnerGraph());
         HashMap<Integer, Integer> vertexToComponentIndex = getVertexToComponentMap(sccs);
         System.out.println("Strongly connected components in taint graph: " + sccs.size());
 
-        TaintRootVertex graphRoot = new TaintRootVertex();
-        graphRoot.setInnerGraph(graph);
-
-        return (TaintRootVertex) GraphUtils.compressGraph(graphRoot,
+        return GraphUtils.copyAndCompressGraph(root,
                 v -> Integer.toString(vertexToComponentIndex.get(v.getId())),
                 new Function<List<TaintVertex>, TaintVertex>() {
                     @Override

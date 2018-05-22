@@ -185,7 +185,7 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
 
     public HashSet<StateVertex> getImmutable(HashSet<StateVertex> visible) {
         return visible.stream().
-                filter(immAndVis::containsNew).
+                filter(immAndVis::containsNew). // Filters out vertices that don't exist in the immutable graph (e.g. scc)
                 map(v -> { return immAndVis.getOld(v);}).collect(Collectors.toCollection(HashSet::new));
     }
 
