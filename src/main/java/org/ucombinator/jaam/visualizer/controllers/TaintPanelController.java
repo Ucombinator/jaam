@@ -53,7 +53,8 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         visibleRoot.setVisible(false);
         //this.visibleRoot = ((TaintRootVertex) this.immutableRoot).constructVisibleGraph(verticesToDraw);
 
-        GraphTransform<TaintRootVertex, TaintVertex> immToFlatVisible = this.getImmutableRoot().constructVisibleGraph(verticesToDraw);
+        GraphTransform<TaintRootVertex, TaintVertex> immToFlatVisible =
+                this.getImmutableRoot().constructVisibleGraph(verticesToDraw);
 
         System.out.println("JUAN: There are " + immToFlatVisible.newRoot.getInnerGraph().getVertices().size());
 
@@ -74,7 +75,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
     @Override
     public void handle(SelectEvent<TaintVertex> event) {
-        TaintVertex vertex = event.getVertex();
+        TaintVertex vertex = event.getVertex(); // A visible vertex
 
         if (vertex.getType() == AbstractLayoutVertex.VertexType.ROOT) {
             System.out.println("Ignoring click on vertex root.");
@@ -85,7 +86,6 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         System.out.println("Received event from vertex " + vertex.toString());
 
         MainTabController currentFrame = Main.getSelectedMainTabController();
-        //currentFrame.resetHighlighted(vertex);
 
         if(vertex instanceof TaintAddress) {
             currentFrame.setRightText((TaintAddress) vertex);
@@ -103,11 +103,10 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         }
     }
 
-    // Draw the graph of taint addresses for the selected node, and addresses connected to them.
+    // Draw the graph of taint addresses for the selected state vertex, and addresses connected to them.
     private EventHandler<SelectEvent<StateVertex>> onVertexSelect = new EventHandler<SelectEvent<StateVertex>>() {
         @Override
         public void handle(SelectEvent<StateVertex> selectEvent) {
-
             StateVertex v = selectEvent.getVertex();
             Set<TaintVertex> methodAddresses = findAddressesByMethods(v.getMethodNames());
             System.out.println("Taint vertices in method: " + methodAddresses.size());
@@ -126,7 +125,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         long time2 = System.nanoTime();
         // Redraw graph with only this set of vertices.
-        TaintPanelController.this.drawGraph(verticesToDraw);
+        this.drawGraph(verticesToDraw);
         long time3 = System.nanoTime();
 
         System.out.println("Time to compute connected vertices: " + (time2 - time1) / 1000000000.0);
@@ -145,7 +144,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         // TODO: This code is cleaner, but might take longer?
         for (TaintVertex v : startVertices) {
-            //ancestors.addAll(v.getAncestors());
+            ancestors.addAll(v.getAncestors());
             descendants.addAll(v.getDescendants());
         }
 
