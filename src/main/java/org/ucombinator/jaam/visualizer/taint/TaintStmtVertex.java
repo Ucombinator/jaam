@@ -50,7 +50,9 @@ public class TaintStmtVertex extends TaintVertex {
     }
 
     public TaintStmtVertex copy() {
-        return new TaintStmtVertex(new ArrayList<>(taintAddresses));
+        TaintStmtVertex newCopy = new TaintStmtVertex(new ArrayList<>(taintAddresses));
+        newCopy.setColor(this.color);
+        return newCopy;
     }
 
     @Override

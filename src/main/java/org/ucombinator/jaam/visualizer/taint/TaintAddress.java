@@ -45,7 +45,9 @@ public class TaintAddress extends TaintVertex {
     }
 
     public TaintAddress copy() {
-        return new TaintAddress(this.address);
+        TaintAddress newCopy =  new TaintAddress(this.address);
+        newCopy.setColor(this.color);
+        return newCopy;
     }
 
     public HashSet<String> getMethodNames() {
