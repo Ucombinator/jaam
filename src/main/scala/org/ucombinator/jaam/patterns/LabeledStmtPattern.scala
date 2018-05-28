@@ -195,6 +195,15 @@ case class AddExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
     }
   }
 }
+case class LengthExpPattern(base: ExpPattern) extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case value: LengthExpr =>
+        base(state, value.getOp)
+      case _ => List()
+    }
+  }
+}
 
 /*
  * LABEL PATTERNS
