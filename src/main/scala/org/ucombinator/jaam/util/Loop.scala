@@ -28,9 +28,19 @@ object Loop {
     statements.asScala.toSet.filter(s => s.isInstanceOf[AssignStmt]).map(s => s.asInstanceOf[AssignStmt].getLeftOp)
   }
 
-  def identifyLoop(method: SootMethod, loop: SootLoop): LoopInfo = {
+  def printStmts(stmts: List[Stmt]): Unit = {
+    for (stmt <- stmts) {
+      println(stmt.index + ": " + stmt.sootStmt)
+    }
+  }
+
+  def identifyLoop(method: SootMethod, loop: SootLoop, showStmts: Boolean = false): LoopInfo = {
     val units = Soot.getBody(method).getUnits.asScala.toList
     val stmts = units.map(u => Stmt(Soot.unitToStmt(u), method))
+
+    if (showStmts) {
+      printStmts(stmts)
+    }
 
     val headIndex = Stmt.getIndex(loop.getHead, method)
     val initialState = State(Map("iteratorHasNext" -> headIndex), Map())
