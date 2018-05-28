@@ -53,6 +53,7 @@ object Loop {
     }
 
     runPattern(LoopPatterns.iteratorLoop).foreach(s => return IteratorLoop(s.locals("arr")))
+    runPattern(LoopPatterns.arrayLoop).foreach(s => return ArrayLoop(s.locals("arr")))
 
     UnidentifiedLoop()
   }
@@ -60,4 +61,5 @@ object Loop {
   sealed trait LoopInfo
   case class UnidentifiedLoop() extends LoopInfo
   case class IteratorLoop(iterable: Local) extends LoopInfo
+  case class ArrayLoop(iterable: Local) extends LoopInfo
 }

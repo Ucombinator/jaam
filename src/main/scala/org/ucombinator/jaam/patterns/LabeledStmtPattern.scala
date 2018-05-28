@@ -116,10 +116,20 @@ case class StaticInvokeExpPattern(method: MethodPattern, args: ArgPattern) exten
     }
   }
 }
-case class EqualsExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
+case class EqExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
   override def apply(state: State, value: Value): List[State] = {
     value match {
       case value: EqExpr =>
+        val states = lhs(state, value.getOp1)
+        states.flatMap(rhs(_, value.getOp2))
+      case _ => List()
+    }
+  }
+}
+case class GeExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case value: GeExpr =>
         val states = lhs(state, value.getOp1)
         states.flatMap(rhs(_, value.getOp2))
       case _ => List()
@@ -201,6 +211,15 @@ case class LengthExpPattern(base: ExpPattern) extends ExpPattern {
       case value: LengthExpr =>
         base(state, value.getOp)
       case _ => List()
+    }
+  }
+}
+case class ArrayRefExpPattern(base: ExpPattern, index: ExpPattern) extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case value: ArrayRef =>
+        val baseStates = base(state, value.getBase)
+        baseStates.flatMap(index(_, value.getIndex))
     }
   }
 }

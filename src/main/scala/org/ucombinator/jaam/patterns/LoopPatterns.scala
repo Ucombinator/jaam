@@ -1,7 +1,6 @@
 package org.ucombinator.jaam.patterns
 
 import org.ucombinator.jaam.patterns.stmt._
-import org.ucombinator.jaam.util.Loop.LoopInfo
 import org.ucombinator.jaam.util.{Soot, Stmt}
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
 import soot.{SootMethod, Type => SootType}
@@ -25,28 +24,16 @@ object LoopPatterns {
   }
 
   /**
-    * TODO: From 2018-04-12
+    * TODO: From 2018-04-23
     *
-    * Write method:
-    *   - takes SootMethod and SootLoop
-    *   - grab statements from method
-    *   - identify loop header/exit with labels
-    *   - attempt to identify the loop contained within the method matching those labels
-    *   - produce LoopInfo object
-    *
-    * Produce more loop-matching patterns
-    */
-
-
-  /**
-    * TODO: From 2018-04-20
-    *
-    * Modify every creation of LoopNode in Loop3 to take a LoopInfo.
-    * Modify serializer.LoopLoopNode to take a LoopInfo.
-    * Pass LoopInfo to LoopLoopNode creation in Loop3.toJaam.
-    * Serialization is automagic at this point.
-    *
-    * -> Don't use any Collection classes in LoopInfo object because serialization problems.
+    * LoopInfo patterns to build:
+    *   - for-each over array
+    *   - k = CONST; k < TOP; ++k
+    *     - start with (k = 0; k < VAR; k++)
+    *     - enumerate comparison operator
+    *     - enumerate modification statement (++k/--k/k += 2/etc)
+    *   - inventory Engagement-5 apps (produce simple statistics)
+    *   - make LoopPatterns into objects/classes with more info (relevant arg names, for example)
     */
 
   def makeLoopInfo(method: SootMethod, loop: SootLoop): Unit = {
@@ -108,8 +95,20 @@ object LoopPatterns {
     mkPatRegExp(
       NamedLabelPattern(label),
       IfStmtPattern(
-        EqualsExpPattern(
+        EqExpPattern(
           VariableExpPattern(lhs), IntegralConstantExpPattern(0)
+        ),
+        NamedLabelPattern(destLabel)
+      )
+    )
+  }
+
+  private def ifGeGoto(label: String, lhs: String, rhs: String, destLabel: String): RegExp = {
+    mkPatRegExp(
+      NamedLabelPattern(label),
+      IfStmtPattern(
+        GeExpPattern(
+          VariableExpPattern(lhs), VariableExpPattern(rhs)
         ),
         NamedLabelPattern(destLabel)
       )
@@ -158,6 +157,56 @@ object LoopPatterns {
     )
   }
 
+  private def assignConst(label: String, varName: String, const: Long): RegExp = {
+    mkPatRegExp(
+      NamedLabelPattern(label),
+      AssignStmtPattern(
+        VariableExpPattern(varName),
+        IntegralConstantExpPattern(const)
+      )
+    )
+  }
+
+  private def assignZero(label: String): RegExp = assignConst(label, "i", 0)
+
+  private def addToVar(label: String, varName: String, amount: Long): RegExp = {
+    mkPatRegExp(
+      NamedLabelPattern(label),
+      AssignStmtPattern(
+        VariableExpPattern(varName),
+        AddExpPattern(
+          VariableExpPattern(varName),
+          IntegralConstantExpPattern(amount)
+        )
+      )
+    )
+  }
+
+  private def incrVar(label: String, varName: String): RegExp = addToVar(label, varName, 1)
+
+  private def lengthOf(label: String, varName: String, arrName: String): RegExp = {
+    mkPatRegExp(
+      NamedLabelPattern(label),
+      AssignStmtPattern(
+        VariableExpPattern(varName),
+        LengthExpPattern(VariableExpPattern(arrName))
+      )
+    )
+  }
+
+  private def getArrayElem(label: String, varName: String, arrName: String, element: String) : RegExp = {
+    mkPatRegExp(
+      NamedLabelPattern(label),
+      AssignStmtPattern(
+        VariableExpPattern(varName),
+        ArrayRefExpPattern(
+          VariableExpPattern(arrName),
+          VariableExpPattern(element)
+        )
+      )
+    )
+  }
+
   // TODO: Realistically, the `wildcardRep` should be able to exclude certain variables.
   // This would allow us to filter out loops where induction variables are manipulated.
   val iteratorLoop = Cat(List(
@@ -168,6 +217,18 @@ object LoopPatterns {
     iteratorNext("iteratorNext", "next", "iter"),
     wildcardRep,
     goto("goto", "iteratorHasNext"),
+    matchLabel("loopEnd"),
+    wildcardRep
+  ))
+  val arrayLoop = Cat(List(
+    wildcardRep,
+    lengthOf("getLength", "length", "arr"),
+    assignZero("iter"),
+    ifGeGoto("test", "iter", "length", "loopEnd"),  // TODO: Change "loopEnd" and it still works; why?
+    getArrayElem("getElem", "elem", "arr", "iter"),
+    wildcardRep,
+    incrVar("incr", "iter"),
+    goto("goto", "test"),
     matchLabel("loopEnd"),
     wildcardRep
   ))
