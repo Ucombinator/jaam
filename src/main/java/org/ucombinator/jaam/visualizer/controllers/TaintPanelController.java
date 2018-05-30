@@ -4,6 +4,7 @@ import javafx.event.EventHandler;
 import javafx.scene.layout.BorderPane;
 import org.ucombinator.jaam.tools.taint3.Address;
 import org.ucombinator.jaam.visualizer.graph.GraphTransform;
+import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.*;
@@ -14,10 +15,8 @@ import soot.Value;
 import soot.jimple.Constant;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class TaintPanelController extends GraphPanelController<TaintVertex, TaintEdge>
         implements EventHandler<SelectEvent<TaintVertex>> {
@@ -35,7 +34,8 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         this.visibleRoot = new TaintRootVertex();
         this.immutableRoot = new TaintRootVertex();
-        this.immutableRoot.setInnerGraph(graph);
+
+        this.immutableRoot.setInnerGraph(this.removeDegree2Addresses(graph));
         fillFieldDictionary();
         immToVis = null;
     }
@@ -210,5 +210,16 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         allFields.forEach(v -> {
             fieldVertices.put(v.getFieldId(), v);
         });
+    }
+
+    private Graph<TaintVertex, TaintEdge> removeDegree2Addresses(Graph<TaintVertex, TaintEdge> graph) {
+
+        TaintRootVertex temp = new TaintRootVertex();
+        temp.setInnerGraph(graph);
+        GraphTransform<TaintRootVertex, TaintVertex> transform = GraphUtils.constructVisibleGraph(temp, v -> {
+            return graph.getOutEdges(v).size() != 1 || graph.getInEdges(v).size() != 1;
+        }, TaintEdge::new);
+
+        return transform.newRoot.getInnerGraph();
     }
 }
