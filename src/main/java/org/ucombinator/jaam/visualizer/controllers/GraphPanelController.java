@@ -96,11 +96,9 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
     }
 
     protected void drawEdges(T v) {
-        System.out.println("Drawing edges of " + v);
         if (v.isExpanded()) {
             Graph<T, S> childGraph = v.getInnerGraph();
             for (S e : childGraph.getEdges()) {
-                System.out.println("Drawing edge " + e + " it is visible? " + v.isEdgeVisible());
 
                 e.setVisible(v.isEdgeVisible());
                 e.draw();
@@ -110,7 +108,6 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
                 drawEdges(child);
             }
         }
-        System.out.println("Finished " + v);
     }
 
     // TODO: Can we avoid the redraw and just set our edges to be visible again here?

@@ -56,8 +56,6 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         GraphTransform<TaintRootVertex, TaintVertex> immToFlatVisible =
                 this.getImmutableRoot().constructVisibleGraph(verticesToDraw);
 
-        System.out.println("JUAN: There are " + immToFlatVisible.newRoot.getInnerGraph().getVertices().size());
-
         GraphTransform<TaintRootVertex, TaintVertex> flatToLayerVisible = LayerFactory.getLayeredTaintGraph(immToFlatVisible.newRoot);
 
         immToVis = GraphTransform.transfer(immToFlatVisible, flatToLayerVisible);
@@ -121,10 +119,6 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         long time1 = System.nanoTime();
         HashSet<TaintVertex> verticesToDraw = findConnectedAddresses(addresses);
         System.out.println("Taint vertices to draw: " + verticesToDraw.size());
-
-        for (TaintVertex v : verticesToDraw) {
-            System.out.println("TAINT: " + v.getClassName() + " --> " + v.getMethodName());
-        }
 
         long time2 = System.nanoTime();
         // Redraw graph with only this set of vertices.
