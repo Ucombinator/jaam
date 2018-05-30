@@ -40,7 +40,8 @@ public class LayerFactory
     }
 
     public static GraphTransform<TaintRootVertex, TaintVertex> getLayeredTaintGraph(TaintRootVertex root) {
-        return getStronglyConnectedComponentsTaintGraph(root);
+        //return getStronglyConnectedComponentsTaintGraph(root);
+        return getMethodGroupingGraph(root);
     }
 
     private static GraphTransform<TaintRootVertex, TaintVertex> getStronglyConnectedComponentsTaintGraph(TaintRootVertex root) {
@@ -74,6 +75,7 @@ public class LayerFactory
         return vertexToComponentIndex;
     }
 
+    /*
     private static TaintRootVertex getClassClusteredTaintGraph(Graph<TaintVertex, TaintEdge> graph) {
 
         TaintRootVertex classGraphRoot = getClassGroupingGraph(graph);
@@ -87,6 +89,7 @@ public class LayerFactory
         });
         return classGraphRoot;
     }
+    */
 
     private static int calcSize(Graph<TaintVertex, TaintEdge> graph) {
         int total = 0;
@@ -147,12 +150,9 @@ public class LayerFactory
                 TaintEdge::new);
     }
 
-    private static TaintRootVertex getMethodGroupingGraph(Graph<TaintVertex, TaintEdge> graph)
-    {
-        TaintRootVertex graphRoot = new TaintRootVertex();
-        graphRoot.setInnerGraph(graph);
+    private static GraphTransform<TaintRootVertex, TaintVertex> getMethodGroupingGraph(TaintRootVertex root) {
 
-        return (TaintRootVertex) GraphUtils.compressGraph(graphRoot,
+        return GraphUtils.copyAndCompressGraph(root,
                 v -> {
                     String methodName = v.getMethodName();
                     if (methodName == null) {
@@ -167,8 +167,7 @@ public class LayerFactory
                         String methodName = stateVertices.stream().findFirst().get().getMethodName();
                         assert methodName != null;
 
-                        TaintSccVertex methodVertex = new TaintSccVertex(methodName, LayoutAlgorithm.LAYOUT_ALGORITHM.DFS);
-                        methodVertex.setColor(Color.HOTPINK);
+                        TaintMethodVertex methodVertex = new TaintMethodVertex(methodName, LayoutAlgorithm.LAYOUT_ALGORITHM.DFS);
                         stateVertices.forEach(v -> {
                             methodVertex.getInnerGraph().addVertex(v);
                             v.setOuterGraph(methodVertex.getInnerGraph());

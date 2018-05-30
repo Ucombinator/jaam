@@ -130,6 +130,10 @@ public class MainTabController {
         this.taintDescriptionArea.setText(text.toString());
     }
 
+    public void setRightText(TaintMethodVertex v) {
+        this.taintDescriptionArea.setText(v.getRightPanelString());
+    }
+
     public void setVizRightText(String text) {
         this.vizDescriptionArea.setText(text);
     }

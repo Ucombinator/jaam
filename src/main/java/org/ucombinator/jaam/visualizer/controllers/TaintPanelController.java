@@ -97,6 +97,9 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         else if(vertex instanceof TaintStmtVertex) {
             currentFrame.setRightText((TaintStmtVertex) vertex);
         }
+        else if(vertex instanceof TaintMethodVertex) {
+            currentFrame.setRightText((TaintMethodVertex) vertex);
+        }
         else {
             //currentFrame.bytecodeArea.setDescription();
             currentFrame.setTaintRightText("Text");
