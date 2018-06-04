@@ -1,4 +1,7 @@
 package org.ucombinator.jaam.visualizer.profiler;
 
-public class ProfilerTree {
+import org.ucombinator.jaam.visualizer.graph.Graph;
+
+public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
+
 }

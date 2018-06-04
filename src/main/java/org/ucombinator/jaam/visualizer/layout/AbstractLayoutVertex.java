@@ -17,7 +17,7 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
 {
     // Types of layout vertices
     public enum VertexType {
-        INSTRUCTION, LOOP, METHOD, CLASS, ROOT, SHRINK, SCC, TAINT_ADDRESS, TAINT_STMT
+        INSTRUCTION, LOOP, METHOD, CLASS, ROOT, SHRINK, SCC, TAINT_ADDRESS, TAINT_STMT, PROFILER
     }
 
     enum VertexStatus

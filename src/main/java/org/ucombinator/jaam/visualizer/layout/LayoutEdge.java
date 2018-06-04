@@ -17,7 +17,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
     private static final double arrowheadAngleWidth = 0.15 * Math.PI;
     private static final double arrowLengthRatio = 0.5;
 
-    private T src, dest;
+    protected T src, dest;
     private Group graphics;
     private Shape edgePath; // This will be either a line for most edges, or a path for self-edges
     private Polygon arrowhead;
