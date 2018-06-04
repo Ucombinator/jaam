@@ -167,7 +167,7 @@ object LoopPatterns {
     )
   }
 
-  private def assignZero(label: String): RegExp = assignConst(label, "i", 0)
+  private def assignZero(label: String, varName: String): RegExp = assignConst(label, varName, 0)
 
   private def addToVar(label: String, varName: String, amount: Long): RegExp = {
     mkPatRegExp(
@@ -212,7 +212,7 @@ object LoopPatterns {
   val iteratorLoop = Cat(List(
     wildcardRep,
     iteratorInvoke("iteratorInvoke", "iter", "arr"),
-    iteratorHasNext("iteratorHasNext", "hasNext", "iter"),
+    iteratorHasNext("head", "hasNext", "iter"),
     ifZeroGoto("test", "hasNext", "loopEnd"),
     iteratorNext("iteratorNext", "next", "iter"),
     wildcardRep,
@@ -223,8 +223,8 @@ object LoopPatterns {
   val arrayLoop = Cat(List(
     wildcardRep,
     lengthOf("getLength", "length", "arr"),
-    assignZero("iter"),
-    ifGeGoto("test", "iter", "length", "loopEnd"),  // TODO: Change "loopEnd" and it still works; why?
+    assignZero("zero", "iter"),
+    ifGeGoto("head", "iter", "length", "loopEnd"),  // TODO: Change "loopEnd" and it still works; why?
     getArrayElem("getElem", "elem", "arr", "iter"),
     wildcardRep,
     incrVar("incr", "iter"),

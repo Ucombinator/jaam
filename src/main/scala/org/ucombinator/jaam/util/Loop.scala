@@ -43,17 +43,19 @@ object Loop {
     }
 
     val headIndex = Stmt.getIndex(loop.getHead, method)
-    val initialState = State(Map("iteratorHasNext" -> headIndex), Map())
+    val initialState = State(Map("head" -> headIndex), Map())
 
     def runPattern(loopPattern: RegExp): Option[State] = {
       deriveAll(loopPattern, initialState, stmts) match {
         case List(s) => Some(s)
-        case _ => None
+        case List() => None
+        case _ => print("multiple matches"); None
       }
     }
 
     runPattern(LoopPatterns.iteratorLoop).foreach(s => return IteratorLoop(s.locals("arr")))
     runPattern(LoopPatterns.arrayLoop).foreach(s => return ArrayLoop(s.locals("arr")))
+    runPattern(LoopPatterns.simpleCountUpForLoop).foreach(s => return SimpleCountUpForLoop())
 
     UnidentifiedLoop()
   }
@@ -62,4 +64,5 @@ object Loop {
   case class UnidentifiedLoop() extends LoopInfo
   case class IteratorLoop(iterable: Local) extends LoopInfo
   case class ArrayLoop(iterable: Local) extends LoopInfo
+  case class SimpleCountUpForLoop() extends LoopInfo
 }
