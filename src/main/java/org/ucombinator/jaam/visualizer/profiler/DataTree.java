@@ -129,6 +129,10 @@ public class DataTree {
         }
     }
 
+    public List<DataNode> getRoots() {
+        return topLevel;
+    }
+
     private Element getAllThreads(Element tree) {
 
         for (int i = 0; i < tree.getChildNodes().getLength(); ++i) {

@@ -11,14 +11,18 @@ public class ProfilerVertex extends AbstractLayoutVertex<ProfilerVertex> {
 
     private double currentWeight;
     private double treeWeight;
-    private ArrayList<ProfilerVertex> children;
+    private ArrayList<ProfilerVertex> children; // Ordered List of children
     private ProfilerVertex parent;
     private ProfilerTree tree;
 
-    public ProfilerVertex(ProfilerVertex parent, int id, String label, double weight) {
+    public DataNode data;
+
+    public ProfilerVertex(ProfilerVertex parent, ProfilerTree tree, int id, String label, double weight, DataNode dataNode) {
         super(id, label, VertexType.PROFILER);
         this.parent = parent;
+        this.tree = tree;
         this.currentWeight = weight;
+        this.data = dataNode;
     }
 
     public double getCurrentWeight() {
@@ -47,14 +51,6 @@ public class ProfilerVertex extends AbstractLayoutVertex<ProfilerVertex> {
             child.computeWeights();
             this.treeWeight += child.treeWeight;
         }
-    }
-
-    // Parses XML snapshot from VisualVM
-    public static ArrayList<ProfilerVertex> parseXML(String filename) {
-        ArrayList<ProfilerVertex> vertices = new ArrayList<>();
-
-
-        return vertices;
     }
 
     @Override
