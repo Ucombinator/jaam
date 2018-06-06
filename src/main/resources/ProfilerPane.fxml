@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.Group?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+
+<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1">
+   <center>
+      <ScrollPane fx:id="scrollPane" hbarPolicy="ALWAYS" vbarPolicy="ALWAYS">
+         <content>
+            <Group>
+               <children>
+                  <Pane fx:id="pane" />
+               </children>
+            </Group>
+         </content>
+      </ScrollPane>
+   </center>
+   <top>
+      <HBox alignment="CENTER_LEFT" spacing="15.0" BorderPane.alignment="CENTER">
+         <children>
+            <Button fx:id="redrawGraph" onAction="#redrawGraphAction" mnemonicParsing="false" text="Redraw Graph" />
+            <Button fx:id="hideUnrelated" onAction="#hideUnrelatedAction" mnemonicParsing="false" text="Hide Unrelated" />
+            <CheckBox fx:id="showEdges" onAction="#showEdgesAction" selected="true" text="Edges" />
+            <CheckBox fx:id="showLabels" onAction="#showLabelsAction" text="Labels" />
+            <Button onAction="#exportImageAction" text="Export PNG" />
+            <Label text="Zoom:" />
+            <Spinner fx:id="zoomSpinner" editable="true" prefWidth="100.0" />
+            <Button fx:id="loadProfile" onAction="#loadProfileAction" mnemonicParsing="false" text="Load Profile" />
+         </children>
+      </HBox>
+   </top>
+</BorderPane>

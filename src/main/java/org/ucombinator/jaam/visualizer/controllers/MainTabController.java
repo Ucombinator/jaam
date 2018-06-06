@@ -26,6 +26,8 @@ public class MainTabController {
     public final Tab tab;
     public final VizPanelController vizPanelController;
     public final TaintPanelController taintPanelController;
+    public final ProfilerPanelController profilerPanelController;
+
     public final CodeViewController codeViewController;
     public final SearchResultsController searchResultsController;
 
@@ -36,6 +38,7 @@ public class MainTabController {
     @FXML private final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML private final BorderPane vizPane = null; // Initialized by Controllers.loadFXML()
     @FXML private final BorderPane taintPane = null; // Initialized by Controllers.loadFXML()
+    @FXML private final BorderPane profilerPane = null; // Initialized by Controllers.loadFXML()
 
     // Right Side Components
     @FXML private final TextArea vizDescriptionArea = null; // Initialized by Controllers.loadFXML()
@@ -56,6 +59,9 @@ public class MainTabController {
 
         this.taintPanelController = new TaintPanelController(taintGraph);
         this.taintPane.setCenter(this.taintPanelController.root);
+
+        this.profilerPanelController = new ProfilerPanelController();
+        this.profilerPane.setCenter((this.profilerPanelController.root));
 
         this.searchResultsController = new SearchResultsController();
         this.searchPane.setCenter(this.searchResultsController.root);

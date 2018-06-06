@@ -7,15 +7,16 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/9" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1">
    <center>
       <SplitPane dividerPositions="0.2, 0.8" BorderPane.alignment="CENTER">
          <items>
             <VBox fx:id="leftPane" SplitPane.resizableWithParent="false" />
-            <SplitPane dividerPositions="0.5" orientation="VERTICAL">
+            <SplitPane dividerPositions="0.5, 0.5" orientation="VERTICAL">
                <items>
                   <BorderPane fx:id="vizPane" />
                   <BorderPane fx:id="taintPane" />
+                  <BorderPane fx:id="profilerPane" />
                </items>
             </SplitPane>
             <SplitPane dividerPositions="0.2, 0.4, 0.5" orientation="VERTICAL" SplitPane.resizableWithParent="false">
