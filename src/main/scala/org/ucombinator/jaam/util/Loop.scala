@@ -49,7 +49,7 @@ object Loop {
       deriveAll(loopPattern, initialState, stmts) match {
         case List(s) => Some(s)
         case List() => None
-        case _ => print("multiple matches"); None
+        case _ => println("multiple matches"); None
       }
     }
 
