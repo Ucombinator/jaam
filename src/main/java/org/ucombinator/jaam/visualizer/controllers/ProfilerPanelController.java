@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.function.Supplier;
 
+// TODO: Use the layout function in ProfileTree to draw the graph.
 public class ProfilerPanelController {
 
     @FXML protected final Node root = null; // Initialized by Controllers.loadFXML()
@@ -167,6 +168,7 @@ public class ProfilerPanelController {
         event.consume();
         System.out.println("Redraw Graph not implemented");
     }
+
     @FXML public void hideUnrelatedAction(ActionEvent event) throws IOException {
         event.consume();
         System.out.println("Hide Unrelated not implemented");
@@ -179,6 +181,8 @@ public class ProfilerPanelController {
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("XML Files", "*.xml"));
         File selectedFile = fileChooser.showOpenDialog(this.root.getScene().getWindow());
+
+        // TODO: Construct DataTree, and use it to build ProfilerTree
 
         System.out.println("Chose " + selectedFile.getAbsolutePath());
     }

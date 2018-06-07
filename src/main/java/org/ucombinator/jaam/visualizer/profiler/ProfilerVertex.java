@@ -14,6 +14,7 @@ public class ProfilerVertex extends AbstractLayoutVertex<ProfilerVertex> {
     private ArrayList<ProfilerVertex> children; // Ordered List of children
     private ProfilerVertex parent;
     private ProfilerTree tree;
+    private int row, leftColumn, edgeColumn, rightColumn;
 
     public DataNode data;
 
@@ -21,12 +22,45 @@ public class ProfilerVertex extends AbstractLayoutVertex<ProfilerVertex> {
         super(id, label, VertexType.PROFILER);
         this.parent = parent;
         this.tree = tree;
+        this.children = new ArrayList<>();
         this.currentWeight = weight;
         this.data = dataNode;
     }
 
     public double getCurrentWeight() {
         return this.currentWeight;
+    }
+
+    public int getEdgeLength() {
+        return (int) ((this.currentWeight / this.tree.getWeightPerUnit()) + 1.5);
+    }
+
+    public int getRow() {
+        return this.row;
+    }
+
+    public int getLeftColumn() {
+        return this.leftColumn;
+    }
+
+    public int getEdgeColumn() {
+        return this.edgeColumn;
+    }
+
+    public int getRightColumn() {
+        return this.rightColumn;
+    }
+
+    public void setLeftColumn(int column) {
+        this.leftColumn = column;
+    }
+
+    public void setIncomingEdgeColumn(int column) {
+        this.edgeColumn = column;
+    }
+
+    public void setRightColumn(int column) {
+        this.rightColumn = column;
     }
 
     public double getTreeWeight() {
@@ -53,6 +87,22 @@ public class ProfilerVertex extends AbstractLayoutVertex<ProfilerVertex> {
         }
     }
 
+    public void computeAllRows() {
+        if (this.parent == null) {
+            this.row = 0;
+        }
+        else {
+            this.row = this.parent.row + this.parent.getEdgeLength();
+        }
+    }
+
+    public void shiftSubtree(double shiftDist) {
+        this.shiftRight(shiftDist);
+        for (ProfilerVertex child : this.children) {
+            child.shiftSubtree(shiftDist);
+        }
+    }
+
     @Override
     public void onMouseClick(MouseEvent event) {
 
@@ -64,5 +114,29 @@ public class ProfilerVertex extends AbstractLayoutVertex<ProfilerVertex> {
         incidentEdges.addAll(this.tree.getInEdges(this));
         incidentEdges.addAll(this.tree.getOutEdges(this));
         return incidentEdges;
+    }
+
+    public void addSubtreeConstraints(ArrayList<ArrayList<ProfilerVertexValue>> constraintRows) {
+        ProfilerVertexValue leftConstraint = new ProfilerVertexValue(this, ProfilerVertexValue.ValueType.LEFT_SIDE);
+        ProfilerVertexValue edgeConstraint = new ProfilerVertexValue(this, ProfilerVertexValue.ValueType.INCOMING_EDGE);
+        ProfilerVertexValue rightConstraint = new ProfilerVertexValue(this, ProfilerVertexValue.ValueType.RIGHT_SIDE);
+
+        // Add incoming edge. Note that we can't add the constraints for our incoming edge on the row for our vertex,
+        // because that would interact with the constraints on the outgoing edges. So these self-adjacencies are not
+        // considered here. Instead they are added when the HashMap is created in ProfilerTree.
+        for (int edgeRow = this.parent.row; edgeRow < this.row; edgeRow++) {
+            constraintRows.get(edgeRow).add(edgeConstraint);
+        }
+
+        // In-order traversal: left side, children, right side
+        constraintRows.get(this.row).add(leftConstraint);
+        for (ProfilerVertex child : this.children) {
+            child.addSubtreeConstraints(constraintRows);
+        }
+        constraintRows.get(this.row).add(rightConstraint);
+    }
+
+    public void computeGreedyLayout() {
+        //TODO
     }
 }

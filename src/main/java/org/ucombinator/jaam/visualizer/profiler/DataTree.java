@@ -15,7 +15,7 @@ public class DataTree {
 
     private ArrayList<DataNode> topLevel;
 
-    DataTree(String fileName) {
+    public DataTree(String fileName) {
         try {
 
             File xmlFile = new File(fileName);
@@ -44,7 +44,6 @@ public class DataTree {
 
                 topLevel.add(topLevelNode);
             }
-
 
         } catch (Exception e) {
             e.printStackTrace();

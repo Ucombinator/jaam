@@ -135,6 +135,10 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         return this.nodeStatus;
     }
 
+    public void shiftRight(double shiftDist) {
+        this.nodeStatus.x += shiftDist;
+    }
+
     public GUINode<T> getGraphics()
     {
         return this.graphics;

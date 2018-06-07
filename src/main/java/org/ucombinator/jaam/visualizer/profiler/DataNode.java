@@ -14,7 +14,7 @@ public class DataNode {
     private double relativeTime;
     private long totalTime;
     private long myTime;
-    private long descendentTime;
+    private long descendantTime;
     private int invocations;
 
     private ArrayList<DataNode> children;
@@ -33,10 +33,10 @@ public class DataNode {
         this.invocations = invocations;
         this.children = new ArrayList<>();
 
-        this.descendentTime = 0;
+        this.descendantTime = 0;
         for (DataNode c : children) {
             this.children.add(c);
-            this.descendentTime += c.getTotalTime();
+            this.descendantTime += c.getTotalTime();
         }
 
         normalizeTime();
@@ -45,7 +45,7 @@ public class DataNode {
     private void setMembers(NodeList innerValues) {
 
         children = new ArrayList<>();
-        descendentTime = 0;
+        descendantTime = 0;
 
         for (int i = 0; i < innerValues.getLength(); ++i) {
             if (innerValues.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
@@ -73,7 +73,7 @@ public class DataNode {
 
                 DataNode child = new DataNode(e);
                 this.children.add(child);
-                this.descendentTime += child.totalTime;
+                this.descendantTime += child.totalTime;
             }
         }
 
@@ -81,9 +81,9 @@ public class DataNode {
     }
 
     private void normalizeTime() {
-        this.myTime = this.totalTime - this.descendentTime;
+        this.myTime = this.totalTime - this.descendantTime;
         if (this.myTime < 0) { // Sometimes the profiler calculation seems to be off...
-            this.totalTime = this.descendentTime;
+            this.totalTime = this.descendantTime;
             this.myTime = 0;
         }
     }
@@ -116,8 +116,8 @@ public class DataNode {
         return myTime;
     }
 
-    public long getDescendentTime() {
-        return descendentTime;
+    public long getDescendantTime() {
+        return descendantTime;
     }
 
     public int getInvocations() {
@@ -132,7 +132,7 @@ public class DataNode {
     @Override
     public String toString() {
         return "Name : " + name + " -- TotalTime : " + totalTime +
-                " -- MyTime : " + myTime + " -- DescendentTime " + descendentTime +
+                " -- MyTime : " + myTime + " -- DescendentTime " + descendantTime +
                 " -- Invocations : " + invocations + " -- NumChildren : " + children.size() +
                 " -- RelativeTime : " + relativeTime;
     }
