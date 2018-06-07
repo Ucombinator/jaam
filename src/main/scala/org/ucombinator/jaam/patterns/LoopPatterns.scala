@@ -247,7 +247,7 @@ object LoopPatterns {
     wildcardRep,
     lengthOf("length", "arr"),
     assignZero("iter"),
-    ifGeGoto("iter", VariableExpPattern("length"), destLabel = end, label = head),  // TODO: Is there a better way?
+    ifGeGoto("iter", VariableExpPattern("length"), destLabel = end, label = head),
     getArrayElem("elem", "arr", "iter"),
     wildcardRep,
     incrVar("iter"),
@@ -258,7 +258,7 @@ object LoopPatterns {
   val simpleCountUpForLoop = Cat(List(
     wildcardRep,
     assignZero("iter"),
-    ifGeGoto("iter", NamedExpPattern("bound", AnyIntegralConstantExpPattern), destLabel = end, label = head),  // TODO: How to save the value?
+    ifGeGoto("iter", NamedExpPattern("bound", AnyIntegralConstantExpPattern), destLabel = end, label = head),
     wildcardRep,
     incrVar("iter"),
     goto(head),
@@ -268,7 +268,7 @@ object LoopPatterns {
   val simpleCountDownForLoop = Cat(List(
     wildcardRep,
     assignSomeConst("iter", "bound"),
-    ifLeGoto("iter", IntegralConstantExpPattern(0), destLabel = end, label = head),  // TODO: How to save the value?
+    ifLeGoto("iter", IntegralConstantExpPattern(0), destLabel = end, label = head),
     wildcardRep,
     decrVar("iter"),
     goto(head),
