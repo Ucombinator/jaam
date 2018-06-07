@@ -7,15 +7,16 @@ import java.util.*;
 
 public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
 
-    private static final int TOTAL_UNITS = 1000;
-    private static final int UNIT_SIZE = 10;
+    private static final int TOTAL_UNITS = 10000;
+    public static final int UNIT_SIZE = 20;
+    public static final int MARGIN_SIZE = 5;
 
     private double weightPerUnit;
     private ArrayList<ProfilerVertex> roots;
 
-    ProfilerTree(DataTree dataTree) {
+    public ProfilerTree(DataTree dataTree) {
         super();
-
+        dataTree.print(-1);
         roots = new ArrayList<>();
 
         for (DataNode d : dataTree.getRoots()) {
@@ -67,11 +68,12 @@ public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
 
     // Computes the location for each ProfilerVertex, assuming that the order of the list of children
     // is their left-to-right order in our drawing.
-    private double computeCurrentLayout() {
+    public double computeCurrentLayout() {
         // First, we compute the DAG of relationships between left and right sides and incoming edges of our vertices.
         // Since we have the ordering of the children, we know what the ordering in each row is.
         // We also require that each parent overlaps with all of its children.
         for (ProfilerVertex v : this.roots) {
+            // System.out.println("Computing rows...");
             v.computeAllRows();
         }
 
@@ -83,7 +85,7 @@ public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
 
         LinkedList<Constraint> constraintQueue = new LinkedList<>();
         for (ProfilerVertex v : this.vertices) {
-            ProfilerVertexValue leftV = new ProfilerVertexValue(v, ProfilerVertexValue.ValueType.LEFT_SIDE);
+            ProfilerVertexValue leftV = v.getLeftValue();
             if (dependencyMap.get(leftV).getValue() == 0) {
                 leftV.assignSolution(0);
                 constraintQueue.add(new Constraint(null, leftV));
@@ -114,17 +116,14 @@ public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
     private HashMap<ProfilerVertexValue, Set<Constraint>> getAllConstraints() {
         HashMap<ProfilerVertexValue, Set<Constraint>> rightConstraints = new HashMap<>();
         for (ProfilerVertex v : this.vertices) {
-            ProfilerVertexValue leftValue = new ProfilerVertexValue(v, ProfilerVertexValue.ValueType.LEFT_SIDE);
-            ProfilerVertexValue edgeValue = new ProfilerVertexValue(v, ProfilerVertexValue.ValueType.INCOMING_EDGE);
-            ProfilerVertexValue rightValue = new ProfilerVertexValue(v, ProfilerVertexValue.ValueType.RIGHT_SIDE);
-            rightConstraints.put(leftValue, new HashSet<>());
-            rightConstraints.put(edgeValue, new HashSet<>());
-            rightConstraints.put(rightValue, new HashSet<>());
+            rightConstraints.put(v.getLeftValue(), new HashSet<>());
+            rightConstraints.put(v.getEdgeValue(), new HashSet<>());
+            rightConstraints.put(v.getRightValue(), new HashSet<>());
 
-            Constraint leftToEdgeConstraint = new Constraint(leftValue, edgeValue);
-            Constraint edgeToRightConstraint = new Constraint(edgeValue, rightValue);
-            rightConstraints.get(leftValue).add(leftToEdgeConstraint);
-            rightConstraints.get(edgeValue).add(edgeToRightConstraint);
+            Constraint leftToEdgeConstraint = new Constraint(v.getLeftValue(), v.getEdgeValue());
+            Constraint edgeToRightConstraint = new Constraint(v.getEdgeValue(), v.getRightValue());
+            rightConstraints.get(v.getLeftValue()).add(leftToEdgeConstraint);
+            rightConstraints.get(v.getEdgeValue()).add(edgeToRightConstraint);
         }
 
         int totalRows = this.getMaxRow() + 1;

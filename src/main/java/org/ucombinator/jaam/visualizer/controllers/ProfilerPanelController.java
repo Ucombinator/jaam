@@ -13,17 +13,15 @@ import javafx.scene.control.Spinner;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
+import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
-import org.ucombinator.jaam.visualizer.graph.Edge;
-import org.ucombinator.jaam.visualizer.graph.Graph;
-import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
-import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.TimelineProperty;
 import org.ucombinator.jaam.visualizer.gui.ZoomSpinnerValueFactory;
-import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.profiler.DataTree;
 import org.ucombinator.jaam.visualizer.profiler.ProfilerTree;
+import org.ucombinator.jaam.visualizer.profiler.ProfilerVertex;
 
 import javax.imageio.ImageIO;
 import java.io.File;
@@ -62,6 +60,34 @@ public class ProfilerPanelController {
         this.scrollPane.addEventFilter(ScrollEvent.SCROLL, this::scrollAction);
 
         currentTree = null;
+    }
+
+    private void drawGraph() {
+        this.drawNodes();
+        this.drawEdges();
+    }
+
+    private void drawNodes() {
+        for (ProfilerVertex v : this.currentTree.getVertices()) {
+            double x = v.getLeftColumn() * ProfilerTree.UNIT_SIZE + ProfilerTree.MARGIN_SIZE;
+            double width = (v.getRightColumn() - v.getLeftColumn()) * ProfilerTree.UNIT_SIZE - 2 * ProfilerTree.MARGIN_SIZE;
+            double y = v.getRow() * ProfilerTree.UNIT_SIZE + ProfilerTree.MARGIN_SIZE;
+            double height = ProfilerTree.UNIT_SIZE - 2 * ProfilerTree.MARGIN_SIZE;
+            Rectangle rect = new Rectangle(x, y, width, height);
+            graphContentGroup.getChildren().add(rect);
+        }
+    }
+
+    private void drawEdges() {
+        for (ProfilerVertex v : this.currentTree.getVertices()) {
+            if (v.getParent() != null) {
+                double x = v.getEdgeColumn() * ProfilerTree.UNIT_SIZE;
+                double y1 = (v.getParent().getRow() + 1) * ProfilerTree.UNIT_SIZE - ProfilerTree.MARGIN_SIZE;
+                double y2 = v.getRow() * ProfilerTree.UNIT_SIZE + ProfilerTree.MARGIN_SIZE;
+                Line line = new Line(x, y1, x, y2);
+                graphContentGroup.getChildren().add(line);
+            }
+        }
     }
 
     /*
@@ -182,9 +208,10 @@ public class ProfilerPanelController {
                 new FileChooser.ExtensionFilter("XML Files", "*.xml"));
         File selectedFile = fileChooser.showOpenDialog(this.root.getScene().getWindow());
 
-        // TODO: Construct DataTree, and use it to build ProfilerTree
-
-        System.out.println("Chose " + selectedFile.getAbsolutePath());
+        DataTree dataTree = new DataTree(selectedFile.getAbsolutePath());
+        this.currentTree = new ProfilerTree(dataTree);
+        this.currentTree.computeCurrentLayout();
+        this.drawGraph();
     }
 
 }

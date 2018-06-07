@@ -4,7 +4,6 @@ import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import org.ucombinator.jaam.visualizer.graph.GraphTransform;
-import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -75,7 +74,7 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         visibleRoot.setVisible(false);
 
         System.out.println("JUAN: Immutable graph #Edges: " + this.getImmutableRoot().getInnerGraph().getEdges().size());
-        GraphUtils.printGraph(this.getImmutableRoot(), 0);
+        // GraphUtils.printGraph(this.getImmutableRoot(), 0);
 
         if (!hidden.isEmpty()) {
             GraphTransform<StateRootVertex, StateVertex> hiddenTransform = getImmutableRoot().constructVisibleGraphExcept(hidden);
@@ -89,7 +88,7 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         this.visibleRoot = immAndVis.newRoot;
 
         System.out.println("JUAN: Print visible graph #Edges: " + this.getImmutableRoot().getInnerGraph().getEdges().size());
-        GraphUtils.printGraph(this.visibleRoot, 0);
+        // GraphUtils.printGraph(this.visibleRoot, 0);
 
         LayoutAlgorithm.layout(this.visibleRoot);
         drawNodes(null, visibleRoot);
