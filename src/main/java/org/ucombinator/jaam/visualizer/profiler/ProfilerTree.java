@@ -7,16 +7,16 @@ import java.util.*;
 
 public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
 
-    private static final int TOTAL_UNITS = 10000;
-    public static final int UNIT_SIZE = 20;
-    public static final int MARGIN_SIZE = 5;
+    private static final int TOTAL_UNITS = 1000;
+    public static final int UNIT_SIZE = 10;
+    public static final int MARGIN_SIZE = 2;
 
     private double weightPerUnit;
     private ArrayList<ProfilerVertex> roots;
 
     public ProfilerTree(DataTree dataTree) {
         super();
-        dataTree.print(-1);
+
         roots = new ArrayList<>();
 
         for (DataNode d : dataTree.getRoots()) {

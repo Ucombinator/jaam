@@ -107,16 +107,11 @@ public class ProfilerVertex extends AbstractLayoutVertex<ProfilerVertex> {
     }
 
     public void computeAllRows() {
-        if (this.parent == null) {
-            this.row = 0;
-        }
-        else {
-            this.row = this.parent.row + this.parent.getEdgeLength();
+        this.row = this.getEdgeLength();
+        if (this.parent != null) {
+            this.row += this.parent.row;
         }
 
-        System.out.println("Weight: " + this.currentWeight);
-        System.out.println("Row: " + this.row);
-        System.out.println("Edge length: " + this.getEdgeLength());
         for (ProfilerVertex child : this.children) {
             child.computeAllRows();
         }

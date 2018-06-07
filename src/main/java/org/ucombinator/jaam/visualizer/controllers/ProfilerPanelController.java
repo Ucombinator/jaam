@@ -80,13 +80,17 @@ public class ProfilerPanelController {
 
     private void drawEdges() {
         for (ProfilerVertex v : this.currentTree.getVertices()) {
-            if (v.getParent() != null) {
-                double x = v.getEdgeColumn() * ProfilerTree.UNIT_SIZE;
-                double y1 = (v.getParent().getRow() + 1) * ProfilerTree.UNIT_SIZE - ProfilerTree.MARGIN_SIZE;
-                double y2 = v.getRow() * ProfilerTree.UNIT_SIZE + ProfilerTree.MARGIN_SIZE;
-                Line line = new Line(x, y1, x, y2);
-                graphContentGroup.getChildren().add(line);
+            double x, y1, y2;
+            x = v.getEdgeColumn() * ProfilerTree.UNIT_SIZE;
+            if (v.getParent() == null) {
+                y1 = ProfilerTree.MARGIN_SIZE;
             }
+            else {
+                y1 = (v.getParent().getRow() + 1) * ProfilerTree.UNIT_SIZE - ProfilerTree.MARGIN_SIZE;
+            }
+            y2 = v.getRow() * ProfilerTree.UNIT_SIZE + ProfilerTree.MARGIN_SIZE;
+            Line line = new Line(x, y1, x, y2);
+            graphContentGroup.getChildren().add(line);
         }
     }
 
