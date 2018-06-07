@@ -29,6 +29,8 @@ public class Constraint {
             for (Constraint constraint : constraints) {
                 ProfilerVertexValue leftValue = constraint.getLeftValue();
                 int leftColumn = leftValue.getColumn();
+                // TODO: Should this if branch also apply if the left value is the parent of our right value?
+                // That way the outgoing edge check will work correctly.
                 if (leftValue.getVertex() == rightValue.getVertex()) {
                     if (leftValue.getValueType() == ProfilerVertexValue.ValueType.LEFT_SIDE) {
                         rightValue.assignSolution(leftColumn);
