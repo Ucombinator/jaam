@@ -53,18 +53,18 @@ object Loop {
       }
     }
 
-    runPattern(LoopPatterns.iteratorLoop).foreach(s => return IteratorLoop(s.locals("arr")))
-    runPattern(LoopPatterns.arrayLoop).foreach(s => return ArrayLoop(s.locals("arr")))
-    runPattern(LoopPatterns.simpleCountUpForLoop).foreach(s => return SimpleCountUpForLoop())
-    runPattern(LoopPatterns.simpleCountDownForLoop).foreach(s => return SimpleCountDownForLoop())
+    runPattern(LoopPatterns.iteratorLoop).foreach(s => return IteratorLoop(s.values("arr")))
+    runPattern(LoopPatterns.arrayLoop).foreach(s => return ArrayLoop(s.values("arr")))
+    runPattern(LoopPatterns.simpleCountUpForLoop).foreach(s => return SimpleCountUpForLoop(s.values("bound")))
+    runPattern(LoopPatterns.simpleCountDownForLoop).foreach(s => return SimpleCountDownForLoop(s.values("bound")))
 
     UnidentifiedLoop()
   }
 
   sealed trait LoopInfo
   case class UnidentifiedLoop() extends LoopInfo
-  case class IteratorLoop(iterable: Local) extends LoopInfo
-  case class ArrayLoop(iterable: Local) extends LoopInfo
-  case class SimpleCountUpForLoop() extends LoopInfo
-  case class SimpleCountDownForLoop() extends LoopInfo
+  case class IteratorLoop(iterable: Value) extends LoopInfo
+  case class ArrayLoop(iterable: Value) extends LoopInfo
+  case class SimpleCountUpForLoop(bound: Value) extends LoopInfo
+  case class SimpleCountDownForLoop(bound: Value) extends LoopInfo
 }

@@ -153,12 +153,12 @@ object LoopPatterns {
     )
   }
 
-  private def assignSomeConst(varName: String, label: Option[String] = None): RegExp = {
+  private def assignSomeConst(varName: String, valName: String, label: Option[String] = None): RegExp = {
     mkPatRegExp(
       label,
       AssignStmtPattern(
         VariableExpPattern(varName),
-        AnyIntegralConstantExpPattern
+        NamedExpPattern(valName, AnyIntegralConstantExpPattern)
       )
     )
   }
@@ -258,7 +258,7 @@ object LoopPatterns {
   val simpleCountUpForLoop = Cat(List(
     wildcardRep,
     assignZero("iter"),
-    ifGeGoto("iter", AnyIntegralConstantExpPattern, destLabel = end, label = head),  // TODO: How to save the value?
+    ifGeGoto("iter", NamedExpPattern("bound", AnyIntegralConstantExpPattern), destLabel = end, label = head),  // TODO: How to save the value?
     wildcardRep,
     incrVar("iter"),
     goto(head),
@@ -267,8 +267,8 @@ object LoopPatterns {
   ))
   val simpleCountDownForLoop = Cat(List(
     wildcardRep,
-    assignSomeConst("iter"),
-    ifLeGoto("iter", AnyIntegralConstantExpPattern, destLabel = end, label = head),  // TODO: How to save the value?
+    assignSomeConst("iter", "bound"),
+    ifLeGoto("iter", IntegralConstantExpPattern(0), destLabel = end, label = head),  // TODO: How to save the value?
     wildcardRep,
     decrVar("iter"),
     goto(head),
