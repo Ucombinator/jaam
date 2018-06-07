@@ -45,8 +45,9 @@ public class MainPaneController {
         Main.getSelectedMainTabController().hideUnrelatedToHighlighted();
     }
 
+
     @FXML private void pruneVisibleGraph(ActionEvent event) {
-        Main.getSelectedMainTabController().pruneVisibleGraph();
+        //Main.getSelectedMainTabController().pruneVisibleGraph();
     }
 
     @FXML private void showAllNodes(ActionEvent event) {

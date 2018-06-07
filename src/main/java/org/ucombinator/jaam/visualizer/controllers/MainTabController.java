@@ -130,6 +130,10 @@ public class MainTabController {
         this.taintDescriptionArea.setText(text.toString());
     }
 
+    public void setRightText(TaintMethodVertex v) {
+        this.taintDescriptionArea.setText(v.getRightPanelString());
+    }
+
     public void setVizRightText(String text) {
         this.vizDescriptionArea.setText(text);
     }
@@ -147,12 +151,14 @@ public class MainTabController {
         this.vizHighlighted.clear();
     }
 
+    /*
     public void pruneVisibleGraph() {
         HashSet<StateVertex> prunedVertices = this.vizPanelController.pruneVisibleGraph();
         this.hidden.addAll(prunedVertices);
         this.vizHighlighted.removeAll(prunedVertices);
         this.vizPanelController.redrawGraph(this.hidden);
     }
+    */
 
     public void showAllNodes() {
         this.hidden.clear();
@@ -208,19 +214,9 @@ public class MainTabController {
     public void hideUnrelatedToHighlighted() {
         if (this.vizHighlighted.isEmpty()) { return; }
 
-        HashSet<StateVertex> keep = new HashSet<>();
+        HashSet<StateVertex> toHide = vizPanelController.getUnrelatedVisible(this.vizHighlighted);
 
-        this.vizHighlighted.forEach(v -> keep.addAll(v.getAncestors()));
-        this.vizHighlighted.forEach(v -> keep.addAll(v.getDescendants()));
-
-        HashSet<StateVertex> toHide = new HashSet<>();
-        this.vizPanelController.getVisibleRoot().getInnerGraph().getVertices().forEach(v -> {
-            if (!keep.contains(v)) {
-                toHide.add(v);
-            }
-        });
-
-        this.hidden.addAll(toHide);
+        this.hidden.addAll(vizPanelController.getImmutable(toHide));
         this.vizHighlighted.clear();
         this.vizPanelController.redrawGraph(this.hidden);
     }
@@ -231,11 +227,6 @@ public class MainTabController {
     }
 
     public void setClassHighlight(HashSet<StateVertex> vertices, boolean value) {
-
-        for (StateVertex v : vertices) {
-            if (!v.isHidden()) {
-                v.setClassHighlight(value);
-            }
-        }
+        vizPanelController.setClassHighlight(vertices, value);
     }
 }

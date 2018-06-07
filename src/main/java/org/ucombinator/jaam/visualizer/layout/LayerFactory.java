@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.function.Function;
 
 import javafx.scene.paint.Color;
+import org.ucombinator.jaam.visualizer.graph.GraphTransform;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.state.*;
@@ -12,20 +13,17 @@ import org.ucombinator.jaam.visualizer.taint.*;
 public class LayerFactory
 {
     // TODO: Template these functions instead of copying them.
-    public static StateRootVertex getLayeredLoopGraph(Graph<StateVertex, StateEdge> graph) {
-        return LayerFactory.getStronglyConnectedComponentsLoopGraph(graph);
+    public static GraphTransform<StateRootVertex, StateVertex> getLayeredLoopGraph(StateRootVertex root) {
+        return LayerFactory.getStronglyConnectedComponentsLoopGraph(root);
     }
 
-    private static StateRootVertex getStronglyConnectedComponentsLoopGraph(Graph<StateVertex, StateEdge> graph)
+    private static GraphTransform<StateRootVertex, StateVertex> getStronglyConnectedComponentsLoopGraph(StateRootVertex root)
     {
-        List<List<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
+        List<List<Integer>> sccs = GraphUtils.StronglyConnectedComponents(root.getInnerGraph());
         HashMap<Integer, Integer> vertexToComponentIndex = getVertexToComponentMap(sccs);
         System.out.println("Strongly connected components in loop graph: " + sccs.size());
 
-        StateRootVertex graphRoot = new StateRootVertex();
-        graphRoot.setInnerGraph(graph);
-
-        return (StateRootVertex) GraphUtils.compressGraph(graphRoot,
+        return GraphUtils.copyAndCompressGraph(root,
                 v -> Integer.toString(vertexToComponentIndex.get(v.getId())),
                 new Function<List<StateVertex>, StateVertex>() {
                     @Override
@@ -41,20 +39,17 @@ public class LayerFactory
                 StateEdge::new);
     }
 
-    public static TaintRootVertex getLayeredTaintGraph(Graph<TaintVertex, TaintEdge> graph) {
-        return getStronglyConnectedComponentsTaintGraph(graph);
+    public static GraphTransform<TaintRootVertex, TaintVertex> getLayeredTaintGraph(TaintRootVertex root) {
+        //return getStronglyConnectedComponentsTaintGraph(root);
+        return getMethodGroupingGraph(root);
     }
 
-    private static TaintRootVertex getStronglyConnectedComponentsTaintGraph(Graph<TaintVertex, TaintEdge> graph)
-    {
-        List<List<Integer>> sccs = GraphUtils.StronglyConnectedComponents(graph);
+    private static GraphTransform<TaintRootVertex, TaintVertex> getStronglyConnectedComponentsTaintGraph(TaintRootVertex root) {
+        List<List<Integer>> sccs = GraphUtils.StronglyConnectedComponents(root.getInnerGraph());
         HashMap<Integer, Integer> vertexToComponentIndex = getVertexToComponentMap(sccs);
         System.out.println("Strongly connected components in taint graph: " + sccs.size());
 
-        TaintRootVertex graphRoot = new TaintRootVertex();
-        graphRoot.setInnerGraph(graph);
-
-        return (TaintRootVertex) GraphUtils.compressGraph(graphRoot,
+        return GraphUtils.copyAndCompressGraph(root,
                 v -> Integer.toString(vertexToComponentIndex.get(v.getId())),
                 new Function<List<TaintVertex>, TaintVertex>() {
                     @Override
@@ -80,6 +75,7 @@ public class LayerFactory
         return vertexToComponentIndex;
     }
 
+    /*
     private static TaintRootVertex getClassClusteredTaintGraph(Graph<TaintVertex, TaintEdge> graph) {
 
         TaintRootVertex classGraphRoot = getClassGroupingGraph(graph);
@@ -93,6 +89,7 @@ public class LayerFactory
         });
         return classGraphRoot;
     }
+    */
 
     private static int calcSize(Graph<TaintVertex, TaintEdge> graph) {
         int total = 0;
@@ -153,12 +150,9 @@ public class LayerFactory
                 TaintEdge::new);
     }
 
-    private static TaintRootVertex getMethodGroupingGraph(Graph<TaintVertex, TaintEdge> graph)
-    {
-        TaintRootVertex graphRoot = new TaintRootVertex();
-        graphRoot.setInnerGraph(graph);
+    private static GraphTransform<TaintRootVertex, TaintVertex> getMethodGroupingGraph(TaintRootVertex root) {
 
-        return (TaintRootVertex) GraphUtils.compressGraph(graphRoot,
+        return GraphUtils.copyAndCompressGraph(root,
                 v -> {
                     String methodName = v.getMethodName();
                     if (methodName == null) {
@@ -173,8 +167,7 @@ public class LayerFactory
                         String methodName = stateVertices.stream().findFirst().get().getMethodName();
                         assert methodName != null;
 
-                        TaintSccVertex methodVertex = new TaintSccVertex(methodName, LayoutAlgorithm.LAYOUT_ALGORITHM.DFS);
-                        methodVertex.setColor(Color.HOTPINK);
+                        TaintMethodVertex methodVertex = new TaintMethodVertex(methodName, LayoutAlgorithm.LAYOUT_ALGORITHM.DFS);
                         stateVertices.forEach(v -> {
                             methodVertex.getInnerGraph().addVertex(v);
                             v.setOuterGraph(methodVertex.getInnerGraph());

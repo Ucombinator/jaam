@@ -29,4 +29,19 @@ public class GraphTransform <R extends T, T extends HierarchicalVertex> {
         return newToOld.get(newV);
     }
 
+    public boolean containsNew(T newV) { return newToOld.containsKey(newV); }
+    public boolean containsOld(T oldV) { return oldToNew.containsKey(oldV); }
+
+    public static <R extends T, T extends HierarchicalVertex>
+    GraphTransform<R,T> transfer(GraphTransform<R,T> aToB, GraphTransform<R,T> bToC) {
+
+        GraphTransform<R,T> aToC = new GraphTransform<>(aToB.oldRoot, bToC.newRoot);
+
+        for (T b : bToC.oldToNew.keySet()) {
+            aToC.add(aToB.getOld(b), bToC.getNew(b));
+        }
+
+        return aToC;
+    }
+
 }

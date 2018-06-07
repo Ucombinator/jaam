@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.taint;
 
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import org.ucombinator.jaam.visualizer.graph.GraphTransform;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 
 import java.util.Collection;
@@ -17,6 +18,7 @@ public class TaintRootVertex extends TaintVertex {
         this.color = defaultColor;
     }
 
+    @Override
     public TaintRootVertex copy() {
         return new TaintRootVertex();
     }
@@ -24,8 +26,8 @@ public class TaintRootVertex extends TaintVertex {
     @Override
     public void onMouseClick(MouseEvent event) {}
 
-    public TaintRootVertex constructVisibleGraph(Set<TaintVertex> verticesToDraw) {
-        return (TaintRootVertex) GraphUtils.constructVisibleGraph(this, verticesToDraw::contains, TaintEdge::new);
+    public GraphTransform<TaintRootVertex, TaintVertex> constructVisibleGraph(Set<TaintVertex> verticesToDraw) {
+        return GraphUtils.constructVisibleGraph(this, verticesToDraw::contains, TaintEdge::new);
     }
 
     public HashSet<String> getMethodNames() {

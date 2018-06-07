@@ -3,6 +3,8 @@ package org.ucombinator.jaam.visualizer.controllers;
 import javafx.event.EventHandler;
 import javafx.scene.layout.BorderPane;
 import org.ucombinator.jaam.tools.taint3.Address;
+import org.ucombinator.jaam.visualizer.graph.GraphTransform;
+import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.*;
@@ -13,16 +15,17 @@ import soot.Value;
 import soot.jimple.Constant;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class TaintPanelController extends GraphPanelController<TaintVertex, TaintEdge>
         implements EventHandler<SelectEvent<TaintVertex>> {
 
+    private GraphTransform<TaintRootVertex, TaintVertex> immToVis;
+
     private HashMap<String, TaintAddress> fieldVertices;
 
+    // Graph is the statement graph
     public TaintPanelController(Graph<TaintVertex, TaintEdge> graph) throws IOException {
         super(TaintRootVertex::new);
 
@@ -30,10 +33,11 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         graphContentGroup.addEventFilter(SelectEvent.TAINT_VERTEX_SELECTED, this);
 
         this.visibleRoot = new TaintRootVertex();
-        //this.immutableRoot = LayerFactory.getLayeredTaintGraph(graph);
         this.immutableRoot = new TaintRootVertex();
-        this.immutableRoot.setInnerGraph(graph);
+
+        this.immutableRoot.setInnerGraph(this.removeDegree2Addresses(graph));
         fillFieldDictionary();
+        immToVis = null;
     }
 
     public TaintRootVertex getVisibleRoot() {
@@ -49,13 +53,13 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         visibleRoot.setVisible(false);
         //this.visibleRoot = ((TaintRootVertex) this.immutableRoot).constructVisibleGraph(verticesToDraw);
 
+        GraphTransform<TaintRootVertex, TaintVertex> immToFlatVisible =
+                this.getImmutableRoot().constructVisibleGraph(verticesToDraw);
 
+        GraphTransform<TaintRootVertex, TaintVertex> flatToLayerVisible = LayerFactory.getLayeredTaintGraph(immToFlatVisible.newRoot);
 
-        TaintRootVertex tempRoot = ((TaintRootVertex) this.immutableRoot).constructVisibleGraph(verticesToDraw);
-
-        System.out.println("JUAN: There are " + tempRoot.getInnerGraph().getVertices().size());
-
-        this.visibleRoot = LayerFactory.getLayeredTaintGraph(tempRoot.getInnerGraph());
+        immToVis = GraphTransform.transfer(immToFlatVisible, flatToLayerVisible);
+        this.visibleRoot = immToVis.newRoot;
 
         LayoutAlgorithm.layout(visibleRoot);
         drawNodes(null, visibleRoot);
@@ -69,7 +73,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
     @Override
     public void handle(SelectEvent<TaintVertex> event) {
-        TaintVertex vertex = event.getVertex();
+        TaintVertex vertex = event.getVertex(); // A visible vertex
 
         if (vertex.getType() == AbstractLayoutVertex.VertexType.ROOT) {
             System.out.println("Ignoring click on vertex root.");
@@ -80,7 +84,6 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         System.out.println("Received event from vertex " + vertex.toString());
 
         MainTabController currentFrame = Main.getSelectedMainTabController();
-        //currentFrame.resetHighlighted(vertex);
 
         if(vertex instanceof TaintAddress) {
             currentFrame.setRightText((TaintAddress) vertex);
@@ -92,17 +95,19 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         else if(vertex instanceof TaintStmtVertex) {
             currentFrame.setRightText((TaintStmtVertex) vertex);
         }
+        else if(vertex instanceof TaintMethodVertex) {
+            currentFrame.setRightText((TaintMethodVertex) vertex);
+        }
         else {
             //currentFrame.bytecodeArea.setDescription();
             currentFrame.setTaintRightText("Text");
         }
     }
 
-    // Draw the graph of taint addresses for the selected node, and addresses connected to them.
+    // Draw the graph of taint addresses for the selected state vertex, and addresses connected to them.
     private EventHandler<SelectEvent<StateVertex>> onVertexSelect = new EventHandler<SelectEvent<StateVertex>>() {
         @Override
         public void handle(SelectEvent<StateVertex> selectEvent) {
-
             StateVertex v = selectEvent.getVertex();
             Set<TaintVertex> methodAddresses = findAddressesByMethods(v.getMethodNames());
             System.out.println("Taint vertices in method: " + methodAddresses.size());
@@ -117,7 +122,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         long time2 = System.nanoTime();
         // Redraw graph with only this set of vertices.
-        TaintPanelController.this.drawGraph(verticesToDraw);
+        this.drawGraph(verticesToDraw);
         long time3 = System.nanoTime();
 
         System.out.println("Time to compute connected vertices: " + (time2 - time1) / 1000000000.0);
@@ -205,5 +210,16 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         allFields.forEach(v -> {
             fieldVertices.put(v.getFieldId(), v);
         });
+    }
+
+    private Graph<TaintVertex, TaintEdge> removeDegree2Addresses(Graph<TaintVertex, TaintEdge> graph) {
+
+        TaintRootVertex temp = new TaintRootVertex();
+        temp.setInnerGraph(graph);
+        GraphTransform<TaintRootVertex, TaintVertex> transform = GraphUtils.constructVisibleGraph(temp, v -> {
+            return graph.getOutEdges(v).size() != 1 || graph.getInEdges(v).size() != 1;
+        }, TaintEdge::new);
+
+        return transform.newRoot.getInnerGraph();
     }
 }

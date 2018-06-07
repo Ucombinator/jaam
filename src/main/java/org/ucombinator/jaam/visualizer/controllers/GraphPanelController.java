@@ -99,6 +99,7 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
         if (v.isExpanded()) {
             Graph<T, S> childGraph = v.getInnerGraph();
             for (S e : childGraph.getEdges()) {
+
                 e.setVisible(v.isEdgeVisible());
                 e.draw();
             }
