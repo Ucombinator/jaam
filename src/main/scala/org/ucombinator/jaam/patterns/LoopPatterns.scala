@@ -36,22 +36,6 @@ object LoopPatterns {
     *   - make LoopPatterns into objects/classes with more info (relevant arg names, for example)
     */
 
-  def makeLoopInfo(method: SootMethod, loop: SootLoop): Unit = {
-    val units = Soot.getBody(method).getUnits.asScala.toList
-    val stmts = units.map(u => Stmt(Soot.unitToStmt(u), method))
-    for (loopPattern <- List(iteratorLoop)) {
-      val headIndex = Stmt.getIndex(loop.getHead, method)
-      val initialState = State(Map("iteratorHasNext" -> headIndex), Map())
-      val states = deriveAll(loopPattern, initialState, stmts)
-      states match {
-        case List(s) =>
-          val x = s.locals.get("arr")
-        case _ => ()
-      }
-      println("  STATES: " + states)
-    }
-  }
-
   abstract case class LoopPattern() extends (SootLoop => LoopPattern)
 
   private val wildcard = mkPatRegExp(None, AnyStmtPattern)
@@ -103,12 +87,24 @@ object LoopPatterns {
     )
   }
 
-  private def ifGeGoto(lhs: String, rhs: String, destLabel: Option[String], label: Option[String] = None): RegExp = {
+  private def ifGeGoto(lhs: String, rhs: ExpPattern, destLabel: Option[String], label: Option[String] = None): RegExp = {
     mkPatRegExp(
       label,
       IfStmtPattern(
         GeExpPattern(
-          VariableExpPattern(lhs), VariableExpPattern(rhs)
+          VariableExpPattern(lhs), rhs
+        ),
+        mkLabel(destLabel)
+      )
+    )
+  }
+
+  private def ifLeGoto(lhs: String, rhs: ExpPattern, destLabel: Option[String], label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      IfStmtPattern(
+        LeExpPattern(
+          VariableExpPattern(lhs), rhs
         ),
         mkLabel(destLabel)
       )
@@ -157,6 +153,16 @@ object LoopPatterns {
     )
   }
 
+  private def assignSomeConst(varName: String, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(varName),
+        AnyIntegralConstantExpPattern
+      )
+    )
+  }
+
   private def assignConst(varName: String, const: Long, label: Option[String] = None): RegExp = {
     mkPatRegExp(
       label,
@@ -184,6 +190,8 @@ object LoopPatterns {
 
   private def incrVar(varName: String, label: Option[String] = None): RegExp = addToVar(varName, 1, label)
 
+  private def decrVar(varName: String, label: Option[String] = None): RegExp = addToVar(varName, -1, label)
+
   private def lengthOf(varName: String, arrName: String, label: Option[String] = None): RegExp = {
     mkPatRegExp(
       label,
@@ -207,6 +215,16 @@ object LoopPatterns {
     )
   }
 
+  /*
+  TODO: From 2018-05-29
+
+  - rewrite mkPatRegExp to support optional labels (use AnyLabelPattern)
+  - supply "head", "end", and "exit" labels for matching
+  - enforce some sort of naming convention for labels (variables start lowercase, labels are uppercase/underscores)
+    - throw error if invalid labels
+  - add warning/handling for multiple matches
+   */
+
   private def Label = Some
   val head = Label("head")
   val end = Label("end")
@@ -229,10 +247,30 @@ object LoopPatterns {
     wildcardRep,
     lengthOf("length", "arr"),
     assignZero("iter"),
-    ifGeGoto("iter", "length", destLabel = end, label = head),  // TODO: Change "loopEnd" and it still works; why?
+    ifGeGoto("iter", VariableExpPattern("length"), destLabel = end, label = head),  // TODO: Is there a better way?
     getArrayElem("elem", "arr", "iter"),
     wildcardRep,
     incrVar("iter"),
+    goto(head),
+    matchLabel(end),
+    wildcardRep
+  ))
+  val simpleCountUpForLoop = Cat(List(
+    wildcardRep,
+    assignZero("iter"),
+    ifGeGoto("iter", AnyIntegralConstantExpPattern, destLabel = end, label = head),  // TODO: How to save the value?
+    wildcardRep,
+    incrVar("iter"),
+    goto(head),
+    matchLabel(end),
+    wildcardRep
+  ))
+  val simpleCountDownForLoop = Cat(List(
+    wildcardRep,
+    assignSomeConst("iter"),
+    ifLeGoto("iter", AnyIntegralConstantExpPattern, destLabel = end, label = head),  // TODO: How to save the value?
+    wildcardRep,
+    decrVar("iter"),
     goto(head),
     matchLabel(end),
     wildcardRep

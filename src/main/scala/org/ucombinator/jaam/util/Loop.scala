@@ -56,6 +56,7 @@ object Loop {
     runPattern(LoopPatterns.iteratorLoop).foreach(s => return IteratorLoop(s.locals("arr")))
     runPattern(LoopPatterns.arrayLoop).foreach(s => return ArrayLoop(s.locals("arr")))
     runPattern(LoopPatterns.simpleCountUpForLoop).foreach(s => return SimpleCountUpForLoop())
+    runPattern(LoopPatterns.simpleCountDownForLoop).foreach(s => return SimpleCountDownForLoop())
 
     UnidentifiedLoop()
   }
@@ -65,4 +66,5 @@ object Loop {
   case class IteratorLoop(iterable: Local) extends LoopInfo
   case class ArrayLoop(iterable: Local) extends LoopInfo
   case class SimpleCountUpForLoop() extends LoopInfo
+  case class SimpleCountDownForLoop() extends LoopInfo
 }
