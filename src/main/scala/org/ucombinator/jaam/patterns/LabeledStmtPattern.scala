@@ -136,6 +136,16 @@ case class GeExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
     }
   }
 }
+case class LeExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case value: LeExpr =>
+        val states = lhs(state, value.getOp1)
+        states.flatMap(rhs(_, value.getOp2))
+      case _ => List()
+    }
+  }
+}
 case class IntegralConstantExpPattern(integral: Long) extends ExpPattern {
   override def apply(state: State, value: Value): List[State] = {
     value match {
@@ -151,6 +161,15 @@ case class IntegralConstantExpPattern(integral: Long) extends ExpPattern {
         } else {
           List()
         }
+      case _ => List()
+    }
+  }
+}
+case object AnyIntegralConstantExpPattern extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case _: IntConstant => List(state)
+      case _: LongConstant => List(state)
       case _ => List()
     }
   }
