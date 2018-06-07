@@ -22,22 +22,28 @@ public class Constraint {
         return this.rightValue;
     }
 
-    public static int applyConstraints(ArrayList<Constraint> constraints) {
+    public static double applyConstraints(ArrayList<Constraint> constraints) {
         // The right value should always be the same.
         if (constraints.size() > 0) {
             ProfilerVertexValue rightValue = constraints.get(0).getRightValue();
             for (Constraint constraint : constraints) {
                 ProfilerVertexValue leftValue = constraint.getLeftValue();
-                int leftColumn = leftValue.getColumn();
-                // TODO: Should this if branch also apply if the left value is the parent of our right value?
-                // That way the outgoing edge check will work correctly.
-                if (leftValue.getVertex() == rightValue.getVertex()) {
-                    if (leftValue.getValueType() == ProfilerVertexValue.ValueType.LEFT_SIDE) {
-                        rightValue.assignSolution(leftColumn);
-                    } else {
-                        rightValue.assignSolution(leftColumn + 1);
-                    }
-                } else {
+                double leftColumn = leftValue.getColumn();
+
+                // If both are vertices or both are edges, we require a distance of 1.
+                // Otherwise, we require a distance of 0.5.
+                int numEdgeTypes = 0;
+                if (leftValue.getValueType() == ProfilerVertexValue.ValueType.INCOMING_EDGE) {
+                    numEdgeTypes++;
+                }
+                if (rightValue.getValueType() == ProfilerVertexValue.ValueType.INCOMING_EDGE) {
+                    numEdgeTypes++;
+                }
+
+                if (numEdgeTypes == 1) {
+                    rightValue.assignSolution(leftColumn + 0.5);
+                }
+                else {
                     rightValue.assignSolution(leftColumn + 1);
                 }
             }

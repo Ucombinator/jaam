@@ -14,7 +14,9 @@ public class ProfilerVertex extends AbstractLayoutVertex<ProfilerVertex> {
     private ArrayList<ProfilerVertex> children; // Ordered List of children
     private ProfilerVertex parent;
     private ProfilerTree tree;
-    private int row, leftColumn, edgeColumn, rightColumn;
+    private int row;
+    // The left and right columns should still be integers, but the edge should lie in the middle of a column.
+    private double leftColumn, edgeColumn, rightColumn;
 
     public DataNode data;
 
@@ -39,27 +41,27 @@ public class ProfilerVertex extends AbstractLayoutVertex<ProfilerVertex> {
         return this.row;
     }
 
-    public int getLeftColumn() {
+    public double getLeftColumn() {
         return this.leftColumn;
     }
 
-    public int getEdgeColumn() {
+    public double getEdgeColumn() {
         return this.edgeColumn;
     }
 
-    public int getRightColumn() {
+    public double getRightColumn() {
         return this.rightColumn;
     }
 
-    public void setLeftColumn(int column) {
+    public void setLeftColumn(double column) {
         this.leftColumn = column;
     }
 
-    public void setIncomingEdgeColumn(int column) {
+    public void setIncomingEdgeColumn(double column) {
         this.edgeColumn = column;
     }
 
-    public void setRightColumn(int column) {
+    public void setRightColumn(double column) {
         this.rightColumn = column;
     }
 

@@ -67,7 +67,7 @@ public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
 
     // Computes the location for each ProfilerVertex, assuming that the order of the list of children
     // is their left-to-right order in our drawing.
-    private int computeCurrentLayout() {
+    private double computeCurrentLayout() {
         // First, we compute the DAG of relationships between left and right sides and incoming edges of our vertices.
         // Since we have the ordering of the children, we know what the ordering in each row is.
         // We also require that each parent overlaps with all of its children.
@@ -90,7 +90,7 @@ public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
             }
         }
 
-        int maxColumn = 0;
+        double maxColumn = 0;
         while (constraintQueue.size() > 0) {
             // When we pop an constraint, its right constraint has just been solved. So we find every constraint for which
             // the newly solved constraint was on the left side. If that is the final constraint for any value,

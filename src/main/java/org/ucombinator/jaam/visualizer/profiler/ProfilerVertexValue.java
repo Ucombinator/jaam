@@ -19,7 +19,7 @@ public class ProfilerVertexValue {
         return this.valueType;
     }
 
-    public int getColumn() {
+    public double getColumn() {
         if (this.valueType == ValueType.LEFT_SIDE) {
             return this.vertex.getLeftColumn();
         }
@@ -34,7 +34,7 @@ public class ProfilerVertexValue {
         }
     }
 
-    public void assignSolution(int value) {
+    public void assignSolution(double value) {
         if (this.valueType == ValueType.LEFT_SIDE && value > this.vertex.getLeftColumn()) {
             this.vertex.setLeftColumn(value);
         }
