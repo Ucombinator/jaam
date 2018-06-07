@@ -3,9 +3,41 @@ import java.util.*;
 class ForLoops {
     public static void main(String[] args) {}
 
-    public static int simpleFor() {
+    public static int simpleCountUpFor() {
         int sum = 0;
         for (int i = 0; i < 100; ++i) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    public static int simpleCountDownFor() {
+        int sum = 0;
+        for (int i = 100; i > 0; --i) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    public static int simpleCountUpByTwoFor() {
+        int sum = 0;
+        for (int i = 0; i < 100; i += 2) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    public static int complexCountUpFor() {
+        int sum = 0;
+        for (int i = 0; i < 100; i += i) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    public static int doubleCountUpFor() {
+        int sum = 0;
+        for (int i = 0; i < 100; i *= 2) {
             sum += i;
         }
         return sum;
