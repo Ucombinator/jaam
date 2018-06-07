@@ -36,7 +36,7 @@ public class Constraint {
                         rightValue.assignSolution(leftColumn + 1);
                     }
                 } else {
-                    rightValue.assignSolution(leftColumn);
+                    rightValue.assignSolution(leftColumn + 1);
                 }
             }
             return rightValue.getColumn();
