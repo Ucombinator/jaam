@@ -54,7 +54,7 @@ object LoopPatterns {
 
   abstract case class LoopPattern() extends (SootLoop => LoopPattern)
 
-  private val wildcard = mkPatRegExp(AnyLabelPattern, AnyStmtPattern)
+  private val wildcard = mkPatRegExp(None, AnyStmtPattern)
   private val wildcardRep = Rep(wildcard)
 
   private val arrayListIteratorMethod = getMethod("java.lang.Iterable", "iterator")
@@ -63,9 +63,9 @@ object LoopPatterns {
 
   private val arrayListAddMethod = getMethod("java.util.ArrayList", "add", Some(List(Soot.getSootType("java.lang.Object"))))
 
-  private def iteratorInvoke(label: String, dest: String, base: String): RegExp = {
+  private def iteratorInvoke(dest: String, base: String, label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
       AssignStmtPattern(
         VariableExpPattern(dest),
         InstanceInvokeExpPattern(
@@ -77,9 +77,9 @@ object LoopPatterns {
     )
   }
 
-  private def iteratorHasNext(label: String, dest: String, base: String): RegExp = {
+  private def iteratorHasNext(dest: String, base: String, label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
       AssignStmtPattern(
         VariableExpPattern(dest),
         InstanceInvokeExpPattern(
@@ -91,33 +91,33 @@ object LoopPatterns {
     )
   }
 
-  private def ifZeroGoto(label: String, lhs: String, destLabel: String): RegExp = {
+  private def ifZeroGoto(lhs: String, destLabel: Option[String], label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
       IfStmtPattern(
         EqExpPattern(
           VariableExpPattern(lhs), IntegralConstantExpPattern(0)
         ),
-        NamedLabelPattern(destLabel)
+        mkLabel(destLabel)
       )
     )
   }
 
-  private def ifGeGoto(label: String, lhs: String, rhs: String, destLabel: String): RegExp = {
+  private def ifGeGoto(lhs: String, rhs: String, destLabel: Option[String], label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
       IfStmtPattern(
         GeExpPattern(
           VariableExpPattern(lhs), VariableExpPattern(rhs)
         ),
-        NamedLabelPattern(destLabel)
+        mkLabel(destLabel)
       )
     )
   }
 
-  private def iteratorNext(label: String, dest: String, base: String): RegExp = {
+  private def iteratorNext(dest: String, base: String, label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
       AssignStmtPattern(
         VariableExpPattern(dest),
         InstanceInvokeExpPattern(
@@ -129,23 +129,23 @@ object LoopPatterns {
     )
   }
 
-  private def goto(label: String, destLabel: String): RegExp = {
+  private def goto(destLabel: Option[String], label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
-      GotoStmtPattern(NamedLabelPattern(destLabel))
+      label,
+      GotoStmtPattern(mkLabel(destLabel))
     )
   }
 
-  private def matchLabel(label: String): RegExp = {
+  private def matchLabel(label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
       AnyStmtPattern
     )
   }
 
-  private def addInvoke(label: String, base: String): RegExp = {
+  private def addInvoke(base: String, label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
       AssignStmtPattern(
         UnusedAssignDestExpPattern,
         InstanceInvokeExpPattern(
@@ -157,9 +157,9 @@ object LoopPatterns {
     )
   }
 
-  private def assignConst(label: String, varName: String, const: Long): RegExp = {
+  private def assignConst(varName: String, const: Long, label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
       AssignStmtPattern(
         VariableExpPattern(varName),
         IntegralConstantExpPattern(const)
@@ -167,11 +167,11 @@ object LoopPatterns {
     )
   }
 
-  private def assignZero(label: String, varName: String): RegExp = assignConst(label, varName, 0)
+  private def assignZero(varName: String, label: Option[String] = None): RegExp = assignConst(varName, 0, label)
 
-  private def addToVar(label: String, varName: String, amount: Long): RegExp = {
+  private def addToVar(varName: String, amount: Long, label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
       AssignStmtPattern(
         VariableExpPattern(varName),
         AddExpPattern(
@@ -182,11 +182,11 @@ object LoopPatterns {
     )
   }
 
-  private def incrVar(label: String, varName: String): RegExp = addToVar(label, varName, 1)
+  private def incrVar(varName: String, label: Option[String] = None): RegExp = addToVar(varName, 1, label)
 
-  private def lengthOf(label: String, varName: String, arrName: String): RegExp = {
+  private def lengthOf(varName: String, arrName: String, label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
       AssignStmtPattern(
         VariableExpPattern(varName),
         LengthExpPattern(VariableExpPattern(arrName))
@@ -194,9 +194,9 @@ object LoopPatterns {
     )
   }
 
-  private def getArrayElem(label: String, varName: String, arrName: String, element: String) : RegExp = {
+  private def getArrayElem(varName: String, arrName: String, element: String, label: Option[String] = None) : RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
       AssignStmtPattern(
         VariableExpPattern(varName),
         ArrayRefExpPattern(
@@ -207,35 +207,47 @@ object LoopPatterns {
     )
   }
 
+  private def Label = Some
+  val head = Label("head")
+  val end = Label("end")
+  val exit = Label("exit")
+
   // TODO: Realistically, the `wildcardRep` should be able to exclude certain variables.
   // This would allow us to filter out loops where induction variables are manipulated.
   val iteratorLoop = Cat(List(
     wildcardRep,
-    iteratorInvoke("iteratorInvoke", "iter", "arr"),
-    iteratorHasNext("head", "hasNext", "iter"),
-    ifZeroGoto("test", "hasNext", "loopEnd"),
-    iteratorNext("iteratorNext", "next", "iter"),
+    iteratorInvoke("iter", "arr"),
+    iteratorHasNext("hasNext", "iter", label = head),
+    ifZeroGoto("hasNext", destLabel = end),
+    iteratorNext("next", "iter"),
     wildcardRep,
-    goto("goto", "iteratorHasNext"),
-    matchLabel("loopEnd"),
+    goto(head),
+    matchLabel(end),
     wildcardRep
   ))
   val arrayLoop = Cat(List(
     wildcardRep,
-    lengthOf("getLength", "length", "arr"),
-    assignZero("zero", "iter"),
-    ifGeGoto("head", "iter", "length", "loopEnd"),  // TODO: Change "loopEnd" and it still works; why?
-    getArrayElem("getElem", "elem", "arr", "iter"),
+    lengthOf("length", "arr"),
+    assignZero("iter"),
+    ifGeGoto("iter", "length", destLabel = end, label = head),  // TODO: Change "loopEnd" and it still works; why?
+    getArrayElem("elem", "arr", "iter"),
     wildcardRep,
-    incrVar("incr", "iter"),
-    goto("goto", "test"),
-    matchLabel("loopEnd"),
+    incrVar("iter"),
+    goto(head),
+    matchLabel(end),
     wildcardRep
   ))
-  private val addInvokes = Cat(List(wildcardRep, addInvoke("addInvoke", "arr"), wildcardRep))
+  private val addInvokes = Cat(List(wildcardRep, addInvoke("arr"), wildcardRep))
 
-  private def mkPatRegExp(labelPattern: LabelPattern, stmtPattern: StmtPattern): RegExp = {
-    Fun(StmtPatternToRegEx(LabeledStmtPattern(labelPattern, stmtPattern)), _ => List())
+  private def mkLabel(label: Option[String] = None): LabelPattern = {
+    label match {
+      case None => AnyLabelPattern
+      case Some(l) => NamedLabelPattern(l)
+    }
+  }
+
+  private def mkPatRegExp(label: Option[String], stmtPattern: StmtPattern): RegExp = {
+    Fun(StmtPatternToRegEx(LabeledStmtPattern(mkLabel(label), stmtPattern)), _ => List())
   }
 
   private def getMethod(className: String, methodName: String, arguments: Option[List[SootType]] = None) = {
