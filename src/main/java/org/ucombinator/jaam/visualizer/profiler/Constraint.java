@@ -1,7 +1,6 @@
 package org.ucombinator.jaam.visualizer.profiler;
 
-import java.util.ArrayList;
-import java.util.Set;
+import java.util.List;
 
 public class Constraint {
 
@@ -23,10 +22,10 @@ public class Constraint {
         return this.rightValue;
     }
 
-    public static double applyConstraintsRight(Set<Constraint> constraints) {
+    public static double applyConstraintsRight(List<Constraint> constraints) {
         // The right value should be the same for every constraint in our set.
         if (constraints.size() > 0) {
-            ProfilerVertexValue rightValue = constraints.iterator().next().getRightValue();
+            ProfilerVertexValue rightValue = constraints.get(0).getRightValue();
             double rightColumn = 0;
             for (Constraint constraint : constraints) {
                 ProfilerVertexValue leftValue = constraint.getLeftValue();
@@ -60,10 +59,10 @@ public class Constraint {
         }
     }
 
-    public static double applyConstraintsLeft(Set<Constraint> constraints) {
+    public static double applyConstraintsLeft(List<Constraint> constraints) {
         if (constraints.size() > 0) {
             // The left value should be the same for every constraint in our set.
-            ProfilerVertexValue leftValue = constraints.iterator().next().getLeftValue();
+            ProfilerVertexValue leftValue = constraints.get(0).getLeftValue();
             double leftColumn = Integer.MAX_VALUE;
             for (Constraint constraint : constraints) {
                 ProfilerVertexValue rightValue = constraint.getRightValue();

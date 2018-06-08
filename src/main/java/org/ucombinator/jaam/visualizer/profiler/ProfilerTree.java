@@ -3,6 +3,7 @@ package org.ucombinator.jaam.visualizer.profiler;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
 
@@ -70,7 +71,7 @@ public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
     public double computeCurrentLayout() {
         // First, we compute the DAG of relationships between left and right sides and incoming edges of our vertices.
         // Since we have the ordering of the children, we know what the ordering in each row is.
-        // We also require that each parent overlaps with all of its children.
+        // We also require that every edge is a vertical segment, so each parent overlaps horizontally with all of its children.
         for (ProfilerVertex v : this.roots) {
             // System.out.println("Computing rows...");
             v.computeAllRows();
@@ -78,10 +79,27 @@ public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
 
         // The ordering of values across each row.
         ArrayList<ArrayList<ProfilerVertexValue>> profilerValueRows = this.getProfilerValueRows();
+        // A set of all constraints for our tree.
+        Set<Constraint> allConstraints = this.getAllConstraints(profilerValueRows);
         // A map that shows, for a given value, what constraints include it on the left side.
-        HashMap<ProfilerVertexValue, Set<Constraint>> leftConstraints = this.getAllConstraints(profilerValueRows,true);
+        Map<ProfilerVertexValue, List<Constraint>> leftConstraints = allConstraints.stream()
+                .collect(Collectors.groupingBy(Constraint::getLeftValue));
         // A map that shows, for a given value, what constraints include it on the right side.
-        HashMap<ProfilerVertexValue, Set<Constraint>> rightConstraints = this.getAllConstraints(profilerValueRows, false);
+        Map<ProfilerVertexValue, List<Constraint>> rightConstraints = allConstraints.stream()
+                .collect(Collectors.groupingBy(Constraint::getRightValue));
+
+        // The right side of a vertex might not be on the left side of any constraints, and vice versa.
+        // So we add empty sets to our maps.
+        for (ProfilerVertex v : this.vertices) {
+            ProfilerVertexValue leftValue = v.getLeftValue();
+            ProfilerVertexValue rightValue = v.getRightValue();
+            if (!leftConstraints.containsKey(rightValue)) {
+                leftConstraints.put(rightValue, new ArrayList<>());
+            }
+            if (!rightConstraints.containsKey(leftValue)) {
+                rightConstraints.put(leftValue, new ArrayList<>());
+            }
+        }
 
         // A count of the dependencies that have already been assigned for a given value.
         HashMap<ProfilerVertexValue, Integer> dependenciesMet = new HashMap<>();
@@ -166,48 +184,27 @@ public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
         return profilerValueRows;
     }
 
-    private HashMap<ProfilerVertexValue, Set<Constraint>> getAllConstraints(
-            ArrayList<ArrayList<ProfilerVertexValue>> constraintRows, boolean leftToRight) {
-        HashMap<ProfilerVertexValue, Set<Constraint>> constraints = new HashMap<>();
+    private Set<Constraint> getAllConstraints(ArrayList<ArrayList<ProfilerVertexValue>> constraintRows) {
+        Set<Constraint> allConstraints = new HashSet<>();
         for (ProfilerVertex v : this.vertices) {
-            constraints.put(v.getLeftValue(), new HashSet<>());
-            constraints.put(v.getEdgeValue(), new HashSet<>());
-            constraints.put(v.getRightValue(), new HashSet<>());
-
             Constraint leftToEdgeConstraint = new Constraint(v.getLeftValue(), v.getEdgeValue());
             Constraint edgeToRightConstraint = new Constraint(v.getEdgeValue(), v.getRightValue());
-            if (leftToRight) {
-                constraints.get(v.getLeftValue()).add(leftToEdgeConstraint);
-                constraints.get(v.getEdgeValue()).add(edgeToRightConstraint);
-            }
-            else {
-                constraints.get(v.getRightValue()).add(edgeToRightConstraint);
-                constraints.get(v.getEdgeValue()).add(leftToEdgeConstraint);
-            }
+            allConstraints.add(leftToEdgeConstraint);
+            allConstraints.add(edgeToRightConstraint);
         }
 
         // Note that the adjacency between two edges can be found on multiple rows. But we use a
         // set so that it doesn't get repeated.
         for (ArrayList<ProfilerVertexValue> constraintRow : constraintRows) {
-            if (leftToRight) {
-                for (int i = 0; i < constraintRow.size() - 1; i++) {
-                    ProfilerVertexValue leftValue = constraintRow.get(i);
-                    ProfilerVertexValue rightValue = constraintRow.get(i + 1);
-                    Constraint constraint = new Constraint(leftValue, rightValue);
-                    constraints.get(leftValue).add(constraint);
-                }
-            }
-            else {
-                for (int i = constraintRow.size() - 1; i > 0; i--) {
-                    ProfilerVertexValue leftValue = constraintRow.get(i - 1);
-                    ProfilerVertexValue rightValue = constraintRow.get(i);
-                    Constraint constraint = new Constraint(leftValue, rightValue);
-                    constraints.get(rightValue).add(constraint);
-                }
+            for (int i = 0; i < constraintRow.size() - 1; i++) {
+                ProfilerVertexValue leftValue = constraintRow.get(i);
+                ProfilerVertexValue rightValue = constraintRow.get(i + 1);
+                Constraint constraint = new Constraint(leftValue, rightValue);
+                allConstraints.add(constraint);
             }
         }
 
-        return constraints;
+        return allConstraints;
     }
 
     private int getMaxRow() {
