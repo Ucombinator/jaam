@@ -22,6 +22,17 @@ public class Constraint {
         return this.rightValue;
     }
 
+    public double getDistance() {
+        int numEdgeTypes = 0;
+        if (leftValue.getValueType() == ProfilerVertexValue.ValueType.INCOMING_EDGE) {
+            numEdgeTypes++;
+        }
+        if (rightValue.getValueType() == ProfilerVertexValue.ValueType.INCOMING_EDGE) {
+            numEdgeTypes++;
+        }
+        return numEdgeTypes * 0.5;
+    }
+
     public static double applyConstraintsRight(List<Constraint> constraints) {
         // The right value should be the same for every constraint in our set.
         if (constraints.size() > 0) {
@@ -30,26 +41,8 @@ public class Constraint {
             for (Constraint constraint : constraints) {
                 ProfilerVertexValue leftValue = constraint.getLeftValue();
                 double leftColumn = leftValue.getColumn();
-
-                // If both are vertices or both are edges, we require a distance of 1.
-                // Otherwise, we require a distance of 0.5.
-                int numEdgeTypes = 0;
-                if (leftValue.getValueType() == ProfilerVertexValue.ValueType.INCOMING_EDGE) {
-                    numEdgeTypes++;
-                }
-                if (rightValue.getValueType() == ProfilerVertexValue.ValueType.INCOMING_EDGE) {
-                    numEdgeTypes++;
-                }
-
-                if (numEdgeTypes == 0) {
-                    rightColumn = Math.max(rightColumn, leftColumn);
-                }
-                else if (numEdgeTypes == 1) {
-                    rightColumn = Math.max(rightColumn, leftColumn + 0.5);
-                }
-                else if (numEdgeTypes == 2) {
-                    rightColumn = Math.max(rightColumn, leftColumn + 1);
-                }
+                double distance = constraint.getDistance();
+                rightColumn = Math.max(rightColumn, leftColumn + distance);
             }
             rightValue.assignSolution(rightColumn);
             return rightColumn;
@@ -67,24 +60,8 @@ public class Constraint {
             for (Constraint constraint : constraints) {
                 ProfilerVertexValue rightValue = constraint.getRightValue();
                 double rightColumn = rightValue.getColumn();
-
-                int numEdgeTypes = 0;
-                if (leftValue.getValueType() == ProfilerVertexValue.ValueType.INCOMING_EDGE) {
-                    numEdgeTypes++;
-                }
-                if (rightValue.getValueType() == ProfilerVertexValue.ValueType.INCOMING_EDGE) {
-                    numEdgeTypes++;
-                }
-
-                if (numEdgeTypes == 0) {
-                    leftColumn = Math.min(leftColumn, rightColumn);
-                }
-                else if (numEdgeTypes == 1) {
-                    leftColumn = Math.min(leftColumn, rightColumn - 0.5);
-                }
-                else if (numEdgeTypes == 2) {
-                    leftColumn = Math.min(leftColumn, rightColumn - 1);
-                }
+                double distance = constraint.getDistance();
+                leftColumn = Math.min(leftColumn, rightColumn - distance);
             }
             leftValue.assignSolution(leftColumn);
             return leftColumn;
