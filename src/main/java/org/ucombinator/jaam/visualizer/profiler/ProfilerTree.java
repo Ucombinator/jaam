@@ -219,7 +219,7 @@ public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
     }
 
     // Since computing the optimal ordering is NP-hard, we use a recursive greedy approximation.
-    // To draw a tree, we first draw each subtree. Then we repeatedly take the subtrees that overlap the most,
+    // To drawEdge a tree, we first drawEdge each subtree. Then we repeatedly take the subtrees that overlap the most,
     // and put them together, until we have an order of all of the subtrees.
     private void computeGreedyLayout() {
         for (ProfilerVertex root : this.roots) {

@@ -21,7 +21,7 @@ import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.TimelineProperty;
 import org.ucombinator.jaam.visualizer.gui.ZoomSpinnerValueFactory;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
-import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
+import org.ucombinator.jaam.visualizer.layout.HierarchicalEdge;
 import org.ucombinator.jaam.visualizer.main.Main;
 
 import javax.imageio.ImageIO;
@@ -29,7 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.function.Supplier;
 
-public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends LayoutEdge<T> & Edge<T>> {
+public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends HierarchicalEdge<T> & Edge<T>> {
 
     @FXML protected final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML protected final Spinner<Double> zoomSpinner = null; // Initialized by Controllers.loadFXML()
@@ -58,7 +58,7 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
         TimelineProperty.bind(this.pane.scaleYProperty(), this.zoomSpinner.valueProperty(), 300);
         this.scrollPane.addEventFilter(ScrollEvent.SCROLL, this::scrollAction);
 
-        // Set up graph, but don't draw the entire thing yet.
+        // Set up graph, but don't drawEdge the entire thing yet.
         this.visibleRoot = rootBuilder.get();
         this.immutableRoot = rootBuilder.get();
     }
@@ -101,7 +101,7 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
             for (S e : childGraph.getEdges()) {
 
                 e.setVisible(v.isEdgeVisible());
-                e.draw();
+                e.drawEdge();
             }
 
             for (T child : childGraph.getVertices()) {

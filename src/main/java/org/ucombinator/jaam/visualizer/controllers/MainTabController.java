@@ -76,7 +76,7 @@ public class MainTabController {
         this.codeViewController.addSelectHandler(vizPane);
         this.taintPanelController.addSelectHandler(vizPane);
 
-        ClassTreeUtils.buildClassTree(this.classTree, this.codeViewController, (StateRootVertex) this.vizPanelController.getImmutableRoot());
+        ClassTreeUtils.buildClassTree(this.classTree, this.codeViewController, this.vizPanelController.getImmutableRoot());
 
         this.vizHighlighted = new LinkedHashSet<>();
         this.taintHighlighted = new LinkedHashSet<>();

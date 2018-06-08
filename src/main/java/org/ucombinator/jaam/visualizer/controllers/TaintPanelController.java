@@ -118,7 +118,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     private void drawConnectedVertices(Set<TaintVertex> addresses) {
         long time1 = System.nanoTime();
         HashSet<TaintVertex> verticesToDraw = findConnectedAddresses(addresses);
-        System.out.println("Taint vertices to draw: " + verticesToDraw.size());
+        System.out.println("Taint vertices to drawEdge: " + verticesToDraw.size());
 
         long time2 = System.nanoTime();
         // Redraw graph with only this set of vertices.
@@ -126,7 +126,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         long time3 = System.nanoTime();
 
         System.out.println("Time to compute connected vertices: " + (time2 - time1) / 1000000000.0);
-        System.out.println("Time to draw graph: " + (time3 - time2) / 1000000000.0);
+        System.out.println("Time to drawEdge graph: " + (time3 - time2) / 1000000000.0);
     }
 
     private HashSet<TaintVertex> findAddressesByMethods(Set<String> methodNames) {

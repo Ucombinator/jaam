@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.profiler;
 
 import javafx.scene.input.MouseEvent;
+import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 
 import java.util.ArrayList;
@@ -28,10 +29,15 @@ public class ProfilerVertex extends AbstractLayoutVertex<ProfilerVertex> {
         this.children = new ArrayList<>();
         this.currentWeight = weight;
         this.data = dataNode;
+        this.color = Color.BLUE;
 
         this.leftValue = new ProfilerVertexValue(this, ProfilerVertexValue.ValueType.LEFT_SIDE);
         this.edgeValue = new ProfilerVertexValue(this, ProfilerVertexValue.ValueType.INCOMING_EDGE);
         this.rightValue = new ProfilerVertexValue(this, ProfilerVertexValue.ValueType.RIGHT_SIDE);
+    }
+
+    public ProfilerTree getTree() {
+        return this.tree;
     }
 
     public double getCurrentWeight() {

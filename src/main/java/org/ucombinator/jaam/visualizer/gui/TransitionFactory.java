@@ -4,7 +4,7 @@ import javafx.animation.*;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 import org.ucombinator.jaam.visualizer.graph.Graph;
-import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
+import org.ucombinator.jaam.visualizer.layout.HierarchicalEdge;
 import org.ucombinator.jaam.visualizer.state.StateEdge;
 import org.ucombinator.jaam.visualizer.state.StateVertex;
 
@@ -49,7 +49,7 @@ public class TransitionFactory {
         return new ParallelTransition(node, ft, tt, widthTimeline, heightTimeline);
     }
 
-    public static FadeTransition buildEdgeTransition(LayoutEdge<StateVertex> e) {
+    public static FadeTransition buildEdgeTransition(HierarchicalEdge<StateVertex> e) {
         System.out.println("Creating transition for edge: " + e.toString());
         FadeTransition ft = new FadeTransition(time, e.getGraphics());
         ft.setToValue(e.getOpacity());

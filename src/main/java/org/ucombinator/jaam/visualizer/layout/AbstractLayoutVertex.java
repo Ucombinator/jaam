@@ -242,11 +242,11 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
     }
 
     public void onMouseEnter() {
-        this.getIncidentEdges().forEach(LayoutEdge::highlightEdgePath);
+        this.getIncidentEdges().forEach(LayoutEdge::setEdgeHighlight);
     }
 
     public void onMouseExit() {
-        this.getIncidentEdges().forEach(LayoutEdge::resetEdgePath);
+        this.getIncidentEdges().forEach(LayoutEdge::setEdgeDefaultStyle);
     }
 
     public abstract Set<? extends LayoutEdge<T>> getIncidentEdges();

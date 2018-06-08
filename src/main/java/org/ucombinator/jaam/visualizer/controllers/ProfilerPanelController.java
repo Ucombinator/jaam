@@ -13,38 +13,33 @@ import javafx.scene.control.Spinner;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
-import javafx.scene.shape.Line;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
+import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.TimelineProperty;
 import org.ucombinator.jaam.visualizer.gui.ZoomSpinnerValueFactory;
 import org.ucombinator.jaam.visualizer.main.Main;
-import org.ucombinator.jaam.visualizer.profiler.DataTree;
-import org.ucombinator.jaam.visualizer.profiler.ProfilerTree;
-import org.ucombinator.jaam.visualizer.profiler.ProfilerVertex;
+import org.ucombinator.jaam.visualizer.profiler.*;
 
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
-import java.util.function.Supplier;
 
-// TODO: Use the layout function in ProfileTree to draw the graph.
+// TODO: Use the layout function in ProfileTree to drawEdge the graph.
 public class ProfilerPanelController {
 
     @FXML protected final Node root = null; // Initialized by Controllers.loadFXML()
-    @FXML protected final Spinner<Double> zoomSpinner = null; // Initialized by Controllers.loadFXML()
+    @FXML private final Spinner<Double> zoomSpinner = null; // Initialized by Controllers.loadFXML()
 
-    @FXML protected final Button redrawGraph = null;
-    @FXML protected final Button hideUnrelated = null;
-    @FXML protected final Button loadProfile = null;
+    @FXML private final Button redrawGraph = null;
+    @FXML private final Button hideUnrelated = null;
+    @FXML private final Button loadProfile = null;
 
-    @FXML protected final CheckBox showEdges = null; // Initialized by Controllers.loadFXML()
-    @FXML protected final CheckBox showLabels = null; // Initialized by Controllers.loadFXML()
-    @FXML protected final ScrollPane scrollPane = null; // Initialized by Controllers.loadFXML()
-    @FXML protected final Pane pane = null; // Initialized by Controllers.loadFXML()
+    @FXML private final CheckBox showLabels = null; // Initialized by Controllers.loadFXML()
+    @FXML private final ScrollPane scrollPane = null; // Initialized by Controllers.loadFXML()
+    @FXML private final Pane pane = null; // Initialized by Controllers.loadFXML()
 
-    protected Group graphContentGroup;
-    protected ProfilerTree currentTree;
+    private Group graphContentGroup;
+    private ProfilerTree currentTree;
 
     public ProfilerPanelController() throws IOException {
         Controllers.loadFXML("/ProfilerPane.fxml", this);
@@ -63,97 +58,32 @@ public class ProfilerPanelController {
     }
 
     private void drawGraph() {
+        graphContentGroup.getChildren().clear();
         this.drawNodes();
         this.drawEdges();
     }
 
     private void drawNodes() {
         for (ProfilerVertex v : this.currentTree.getVertices()) {
+            GUINode<ProfilerVertex> node = new GUINode<ProfilerVertex>(null, v);
             double x = v.getLeftColumn() * ProfilerTree.UNIT_SIZE + ProfilerTree.MARGIN_SIZE;
             double width = (v.getRightColumn() - v.getLeftColumn()) * ProfilerTree.UNIT_SIZE - 2 * ProfilerTree.MARGIN_SIZE;
             double y = v.getRow() * ProfilerTree.UNIT_SIZE + ProfilerTree.MARGIN_SIZE;
             double height = ProfilerTree.UNIT_SIZE - 2 * ProfilerTree.MARGIN_SIZE;
-            Rectangle rect = new Rectangle(x, y, width, height);
-            graphContentGroup.getChildren().add(rect);
+            node.setTranslateLocation(x, y, width, height);
+            graphContentGroup.getChildren().add(node);
         }
     }
 
     private void drawEdges() {
-        for (ProfilerVertex v : this.currentTree.getVertices()) {
-            double x, y1, y2;
-            x = v.getEdgeColumn() * ProfilerTree.UNIT_SIZE;
-            if (v.getParent() == null) {
-                y1 = ProfilerTree.MARGIN_SIZE;
-            }
-            else {
-                y1 = (v.getParent().getRow() + 1) * ProfilerTree.UNIT_SIZE - ProfilerTree.MARGIN_SIZE;
-            }
-            y2 = v.getRow() * ProfilerTree.UNIT_SIZE + ProfilerTree.MARGIN_SIZE;
-            Line line = new Line(x, y1, x, y2);
-            graphContentGroup.getChildren().add(line);
+        for (ProfilerEdge e : currentTree.getEdges()) {
+            e.drawEdge(graphContentGroup);
         }
-    }
-
-    /*
-    protected void drawNodes(GUINode<T> parent, T v) {
-        GUINode<T> node = new GUINode<>(parent, v);
-
-        if (parent == null) {
-            this.graphContentGroup.getChildren().clear();
-            this.graphContentGroup.getChildren().add(node);
-        } else {
-            parent.getChildren().add(node);
-        }
-
-        double translateX = v.getX();
-        double translateY = v.getY();
-        double width = v.getWidth();
-        double height = v.getHeight();
-        node.setTranslateLocation(translateX, translateY, width, height);
-
-        Graph<T, S> childGraph = v.getInnerGraph();
-        for (T child : childGraph.getVertices()) {
-            if (v.isExpanded()) {
-                drawNodes(node, child);
-            }
-        }
-    }
-
-    protected void drawEdges(T v) {
-        if (v.isExpanded()) {
-            Graph<T, S> childGraph = v.getInnerGraph();
-            for (S e : childGraph.getEdges()) {
-
-                e.setVisible(v.isEdgeVisible());
-                e.draw();
-            }
-
-            for (T child : childGraph.getVertices()) {
-                drawEdges(child);
-            }
-        }
-    }
-    */
-
-    // TODO: Can we avoid the redraw and just set our edges to be visible again here?
-    @FXML public void showEdgesAction(ActionEvent event) {
-        /*
-        this.visibleRoot.setVisible(false);
-        this.visibleRoot.applyToEdgesRecursive(
-                (HierarchicalVertex<T, S> w)
-                        -> ((AbstractLayoutVertex<T>) w).setEdgeVisible(this.showEdges.isSelected()),
-                (S e) -> e.redrawAndSetVisible(this.showEdges.isSelected()));
-        this.visibleRoot.setVisible(true);
-        */
     }
 
     @FXML public void showLabelsAction(ActionEvent event) {
-        /*
-        this.visibleRoot.setVisible(false);
-        this.visibleRoot.applyToVerticesRecursive((HierarchicalVertex<T, S> w)
-                -> ((AbstractLayoutVertex<T>) w).setLabelVisible(this.showLabels.isSelected()));
-        this.visibleRoot.setVisible(true);
-        */
+        // TODO
+        System.out.println("Error: labels not implemented.");
     }
 
     @FXML public void exportImageAction(ActionEvent event) throws IOException {
