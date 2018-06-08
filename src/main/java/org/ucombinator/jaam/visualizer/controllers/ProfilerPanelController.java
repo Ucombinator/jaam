@@ -212,10 +212,9 @@ public class ProfilerPanelController {
                 new FileChooser.ExtensionFilter("XML Files", "*.xml"));
         File selectedFile = fileChooser.showOpenDialog(this.root.getScene().getWindow());
 
-        DataTree dataTree = new DataTree(selectedFile.getAbsolutePath());
+        DataTree dataTree = new DataTree(selectedFile.getAbsolutePath()).prune(100000);
         this.currentTree = new ProfilerTree(dataTree);
         this.currentTree.computeCurrentLayout();
         this.drawGraph();
     }
-
 }

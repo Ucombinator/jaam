@@ -35,13 +35,13 @@ public class ProfilerVertexValue {
     }
 
     public void assignSolution(double value) {
-        if (this.valueType == ValueType.LEFT_SIDE && value > this.vertex.getLeftColumn()) {
+        if (this.valueType == ValueType.LEFT_SIDE) {
             this.vertex.setLeftColumn(value);
         }
-        else if (this.valueType == ValueType.INCOMING_EDGE && value > this.vertex.getEdgeColumn()) {
+        else if (this.valueType == ValueType.INCOMING_EDGE) {
             this.vertex.setIncomingEdgeColumn(value);
         }
-        else if (this.valueType == ValueType.RIGHT_SIDE && value > this.vertex.getRightColumn()) {
+        else if (this.valueType == ValueType.RIGHT_SIDE) {
             this.vertex.setRightColumn(value);
         }
     }

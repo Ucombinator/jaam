@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.profiler;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 public class Constraint {
 
@@ -22,10 +23,11 @@ public class Constraint {
         return this.rightValue;
     }
 
-    public static double applyConstraints(ArrayList<Constraint> constraints) {
-        // The right value should always be the same.
+    public static double applyConstraintsRight(Set<Constraint> constraints) {
+        // The right value should be the same for every constraint in our set.
         if (constraints.size() > 0) {
-            ProfilerVertexValue rightValue = constraints.get(0).getRightValue();
+            ProfilerVertexValue rightValue = constraints.iterator().next().getRightValue();
+            double rightColumn = 0;
             for (Constraint constraint : constraints) {
                 ProfilerVertexValue leftValue = constraint.getLeftValue();
                 double leftColumn = leftValue.getColumn();
@@ -40,14 +42,53 @@ public class Constraint {
                     numEdgeTypes++;
                 }
 
-                if (numEdgeTypes == 1) {
-                    rightValue.assignSolution(leftColumn + 0.5);
+                if (numEdgeTypes == 0) {
+                    rightColumn = Math.max(rightColumn, leftColumn);
                 }
-                else {
-                    rightValue.assignSolution(leftColumn + 1);
+                else if (numEdgeTypes == 1) {
+                    rightColumn = Math.max(rightColumn, leftColumn + 0.5);
+                }
+                else if (numEdgeTypes == 2) {
+                    rightColumn = Math.max(rightColumn, leftColumn + 1);
                 }
             }
-            return rightValue.getColumn();
+            rightValue.assignSolution(rightColumn);
+            return rightColumn;
+        }
+        else {
+            return -1;
+        }
+    }
+
+    public static double applyConstraintsLeft(Set<Constraint> constraints) {
+        if (constraints.size() > 0) {
+            // The left value should be the same for every constraint in our set.
+            ProfilerVertexValue leftValue = constraints.iterator().next().getLeftValue();
+            double leftColumn = Integer.MAX_VALUE;
+            for (Constraint constraint : constraints) {
+                ProfilerVertexValue rightValue = constraint.getRightValue();
+                double rightColumn = rightValue.getColumn();
+
+                int numEdgeTypes = 0;
+                if (leftValue.getValueType() == ProfilerVertexValue.ValueType.INCOMING_EDGE) {
+                    numEdgeTypes++;
+                }
+                if (rightValue.getValueType() == ProfilerVertexValue.ValueType.INCOMING_EDGE) {
+                    numEdgeTypes++;
+                }
+
+                if (numEdgeTypes == 0) {
+                    leftColumn = Math.min(leftColumn, rightColumn);
+                }
+                else if (numEdgeTypes == 1) {
+                    leftColumn = Math.min(leftColumn, rightColumn - 0.5);
+                }
+                else if (numEdgeTypes == 2) {
+                    leftColumn = Math.min(leftColumn, rightColumn - 1);
+                }
+            }
+            leftValue.assignSolution(leftColumn);
+            return leftColumn;
         }
         else {
             return -1;
