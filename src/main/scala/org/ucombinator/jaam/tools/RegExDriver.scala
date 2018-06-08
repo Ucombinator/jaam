@@ -15,11 +15,6 @@ import scala.collection.JavaConverters._
   */
 
 object Main {
-  def printStmts(stmts: List[Stmt]) = {
-    for (stmt <- stmts) {
-      println(stmt.index + ": " + stmt.sootStmt)
-    }
-  }
 
   def main(input: List[String], className: String, methodName: Option[String], showStmts: Boolean): Unit = {
     prepFromInput(input)
@@ -33,7 +28,7 @@ object Main {
           println("Looking in method " + c.getName + "." + method.getName + ":")
           val lnt = new LoopNestTree(Soot.getBody(method))
           for (loop <- lnt.asScala.toSet[SootLoop]) {
-            val info = Loop.identifyLoop(method, loop)
+            val info = Loop.identifyLoop(method, loop, showStmts)
             println(info)
           }
         }

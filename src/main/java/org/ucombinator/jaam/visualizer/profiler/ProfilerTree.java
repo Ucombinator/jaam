@@ -1,6 +1,5 @@
 package org.ucombinator.jaam.visualizer.profiler;
 
-import javafx.util.Pair;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 
 import java.util.*;

@@ -13,11 +13,11 @@ object UnusedInvokeResult extends Value {
   override def getType: Type = UnknownType.v()
   override def toString(unitPrinter: UnitPrinter): Unit = ???
   override def equivHashCode(): Int = ???
-  override def equivTo(o: scala.Any): Boolean = ???
+  override def equivTo(o: scala.Any): Boolean = return this.equals(o)
   override def apply(aSwitch: Switch): Unit = ???
 }
 
-case class State(indexes: Map[String, Index], locals: Map[String, Local])
+case class State(indexes: Map[String, Index], values: Map[String, Value])
 
 case class LabeledStmtPattern(label: LabelPattern, stmtPattern: StmtPattern) extends ((State, Stmt) => List[State]) {
   override def apply(state: State, stmt: Stmt): List[State] = {
@@ -116,10 +116,30 @@ case class StaticInvokeExpPattern(method: MethodPattern, args: ArgPattern) exten
     }
   }
 }
-case class EqualsExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
+case class EqExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
   override def apply(state: State, value: Value): List[State] = {
     value match {
       case value: EqExpr =>
+        val states = lhs(state, value.getOp1)
+        states.flatMap(rhs(_, value.getOp2))
+      case _ => List()
+    }
+  }
+}
+case class GeExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case value: GeExpr =>
+        val states = lhs(state, value.getOp1)
+        states.flatMap(rhs(_, value.getOp2))
+      case _ => List()
+    }
+  }
+}
+case class LeExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case value: LeExpr =>
         val states = lhs(state, value.getOp1)
         states.flatMap(rhs(_, value.getOp2))
       case _ => List()
@@ -145,19 +165,28 @@ case class IntegralConstantExpPattern(integral: Long) extends ExpPattern {
     }
   }
 }
+case object AnyIntegralConstantExpPattern extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case _: IntConstant => List(state)
+      case _: LongConstant => List(state)
+      case _ => List()
+    }
+  }
+}
 case class VariableExpPattern(name: Identifier) extends ExpPattern {
   override def apply(state: State, value: Value): List[State] = {
     value match {
       case value: Local =>
-        state.locals.get(name) match {
+        state.values.get(name) match {
           case Some(id) =>
-            if (id == value) {
+            if (id.equivTo(value)) {
               List(state)
             } else {
               List()
             }
           case None =>
-            List(state.copy(locals = state.locals + (name -> value)))
+            List(state.copy(values = state.values + (name -> value)))
         }
       case _ => List()
     }
@@ -165,7 +194,7 @@ case class VariableExpPattern(name: Identifier) extends ExpPattern {
 }
 case object UnusedAssignDestExpPattern extends ExpPattern {
   override def apply(state: State, value: Value): List[State] = {
-    if (value == UnusedInvokeResult) {
+    if (value.equivTo(UnusedInvokeResult)) {
       List(state)
     } else {
       List()
@@ -192,6 +221,38 @@ case class AddExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
         val lhsStates = lhs(state, value.getOp1)
         lhsStates.flatMap(rhs(_, value.getOp2))
       case _ => List()
+    }
+  }
+}
+case class LengthExpPattern(base: ExpPattern) extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case value: LengthExpr =>
+        base(state, value.getOp)
+      case _ => List()
+    }
+  }
+}
+case class ArrayRefExpPattern(base: ExpPattern, index: ExpPattern) extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case value: ArrayRef =>
+        val baseStates = base(state, value.getBase)
+        baseStates.flatMap(index(_, value.getIndex))
+    }
+  }
+}
+case class NamedExpPattern(name: Identifier, pattern: ExpPattern) extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    state.values.get(name) match {
+      case Some(id) =>
+        if (id.equivTo(value)) {
+          List(state)
+        } else {
+          List()
+        }
+      case None =>
+        List(state.copy(values = state.values + (name -> value)))
     }
   }
 }

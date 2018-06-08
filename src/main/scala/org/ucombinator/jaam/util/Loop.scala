@@ -28,26 +28,43 @@ object Loop {
     statements.asScala.toSet.filter(s => s.isInstanceOf[AssignStmt]).map(s => s.asInstanceOf[AssignStmt].getLeftOp)
   }
 
-  def identifyLoop(method: SootMethod, loop: SootLoop): LoopInfo = {
+  def printStmts(stmts: List[Stmt]): Unit = {
+    for (stmt <- stmts) {
+      println(stmt.index + ": " + stmt.sootStmt)
+    }
+  }
+
+  def identifyLoop(method: SootMethod, loop: SootLoop, showStmts: Boolean = false): LoopInfo = {
     val units = Soot.getBody(method).getUnits.asScala.toList
     val stmts = units.map(u => Stmt(Soot.unitToStmt(u), method))
 
+    if (showStmts) {
+      printStmts(stmts)
+    }
+
     val headIndex = Stmt.getIndex(loop.getHead, method)
-    val initialState = State(Map("iteratorHasNext" -> headIndex), Map())
+    val initialState = State(Map("head" -> headIndex), Map())
 
     def runPattern(loopPattern: RegExp): Option[State] = {
       deriveAll(loopPattern, initialState, stmts) match {
         case List(s) => Some(s)
-        case _ => None
+        case List() => None
+        case _ => println("multiple matches"); None
       }
     }
 
-    runPattern(LoopPatterns.iteratorLoop).foreach(s => return IteratorLoop(s.locals("arr")))
+    runPattern(LoopPatterns.iteratorLoop).foreach(s => return IteratorLoop(s.values("arr")))
+    runPattern(LoopPatterns.arrayLoop).foreach(s => return ArrayLoop(s.values("arr")))
+    runPattern(LoopPatterns.simpleCountUpForLoop).foreach(s => return SimpleCountUpForLoop(s.values("bound")))
+    runPattern(LoopPatterns.simpleCountDownForLoop).foreach(s => return SimpleCountDownForLoop(s.values("bound")))
 
     UnidentifiedLoop()
   }
 
   sealed trait LoopInfo
   case class UnidentifiedLoop() extends LoopInfo
-  case class IteratorLoop(iterable: Local) extends LoopInfo
+  case class IteratorLoop(iterable: Value) extends LoopInfo
+  case class ArrayLoop(iterable: Value) extends LoopInfo
+  case class SimpleCountUpForLoop(bound: Value) extends LoopInfo
+  case class SimpleCountDownForLoop(bound: Value) extends LoopInfo
 }

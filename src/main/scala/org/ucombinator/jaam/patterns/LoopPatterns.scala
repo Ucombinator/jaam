@@ -1,7 +1,6 @@
 package org.ucombinator.jaam.patterns
 
 import org.ucombinator.jaam.patterns.stmt._
-import org.ucombinator.jaam.util.Loop.LoopInfo
 import org.ucombinator.jaam.util.{Soot, Stmt}
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
 import soot.{SootMethod, Type => SootType}
@@ -25,49 +24,21 @@ object LoopPatterns {
   }
 
   /**
-    * TODO: From 2018-04-12
+    * TODO: From 2018-04-23
     *
-    * Write method:
-    *   - takes SootMethod and SootLoop
-    *   - grab statements from method
-    *   - identify loop header/exit with labels
-    *   - attempt to identify the loop contained within the method matching those labels
-    *   - produce LoopInfo object
-    *
-    * Produce more loop-matching patterns
+    * LoopInfo patterns to build:
+    *   - for-each over array
+    *   - k = CONST; k < TOP; ++k
+    *     - start with (k = 0; k < VAR; k++)
+    *     - enumerate comparison operator
+    *     - enumerate modification statement (++k/--k/k += 2/etc)
+    *   - inventory Engagement-5 apps (produce simple statistics)
+    *   - make LoopPatterns into objects/classes with more info (relevant arg names, for example)
     */
-
-
-  /**
-    * TODO: From 2018-04-20
-    *
-    * Modify every creation of LoopNode in Loop3 to take a LoopInfo.
-    * Modify serializer.LoopLoopNode to take a LoopInfo.
-    * Pass LoopInfo to LoopLoopNode creation in Loop3.toJaam.
-    * Serialization is automagic at this point.
-    *
-    * -> Don't use any Collection classes in LoopInfo object because serialization problems.
-    */
-
-  def makeLoopInfo(method: SootMethod, loop: SootLoop): Unit = {
-    val units = Soot.getBody(method).getUnits.asScala.toList
-    val stmts = units.map(u => Stmt(Soot.unitToStmt(u), method))
-    for (loopPattern <- List(iteratorLoop)) {
-      val headIndex = Stmt.getIndex(loop.getHead, method)
-      val initialState = State(Map("iteratorHasNext" -> headIndex), Map())
-      val states = deriveAll(loopPattern, initialState, stmts)
-      states match {
-        case List(s) =>
-          val x = s.locals.get("arr")
-        case _ => ()
-      }
-      println("  STATES: " + states)
-    }
-  }
 
   abstract case class LoopPattern() extends (SootLoop => LoopPattern)
 
-  private val wildcard = mkPatRegExp(AnyLabelPattern, AnyStmtPattern)
+  private val wildcard = mkPatRegExp(None, AnyStmtPattern)
   private val wildcardRep = Rep(wildcard)
 
   private val arrayListIteratorMethod = getMethod("java.lang.Iterable", "iterator")
@@ -76,9 +47,9 @@ object LoopPatterns {
 
   private val arrayListAddMethod = getMethod("java.util.ArrayList", "add", Some(List(Soot.getSootType("java.lang.Object"))))
 
-  private def iteratorInvoke(label: String, dest: String, base: String): RegExp = {
+  private def iteratorInvoke(dest: String, base: String, label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
       AssignStmtPattern(
         VariableExpPattern(dest),
         InstanceInvokeExpPattern(
@@ -90,9 +61,9 @@ object LoopPatterns {
     )
   }
 
-  private def iteratorHasNext(label: String, dest: String, base: String): RegExp = {
+  private def iteratorHasNext(dest: String, base: String, label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
       AssignStmtPattern(
         VariableExpPattern(dest),
         InstanceInvokeExpPattern(
@@ -104,21 +75,45 @@ object LoopPatterns {
     )
   }
 
-  private def ifZeroGoto(label: String, lhs: String, destLabel: String): RegExp = {
+  private def ifZeroGoto(lhs: String, destLabel: Option[String], label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
       IfStmtPattern(
-        EqualsExpPattern(
+        EqExpPattern(
           VariableExpPattern(lhs), IntegralConstantExpPattern(0)
         ),
-        NamedLabelPattern(destLabel)
+        mkLabel(destLabel)
       )
     )
   }
 
-  private def iteratorNext(label: String, dest: String, base: String): RegExp = {
+  private def ifGeGoto(lhs: String, rhs: ExpPattern, destLabel: Option[String], label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
+      IfStmtPattern(
+        GeExpPattern(
+          VariableExpPattern(lhs), rhs
+        ),
+        mkLabel(destLabel)
+      )
+    )
+  }
+
+  private def ifLeGoto(lhs: String, rhs: ExpPattern, destLabel: Option[String], label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      IfStmtPattern(
+        LeExpPattern(
+          VariableExpPattern(lhs), rhs
+        ),
+        mkLabel(destLabel)
+      )
+    )
+  }
+
+  private def iteratorNext(dest: String, base: String, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
       AssignStmtPattern(
         VariableExpPattern(dest),
         InstanceInvokeExpPattern(
@@ -130,23 +125,23 @@ object LoopPatterns {
     )
   }
 
-  private def goto(label: String, destLabel: String): RegExp = {
+  private def goto(destLabel: Option[String], label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
-      GotoStmtPattern(NamedLabelPattern(destLabel))
+      label,
+      GotoStmtPattern(mkLabel(destLabel))
     )
   }
 
-  private def matchLabel(label: String): RegExp = {
+  private def matchLabel(label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
       AnyStmtPattern
     )
   }
 
-  private def addInvoke(label: String, base: String): RegExp = {
+  private def addInvoke(base: String, label: Option[String] = None): RegExp = {
     mkPatRegExp(
-      NamedLabelPattern(label),
+      label,
       AssignStmtPattern(
         UnusedAssignDestExpPattern,
         InstanceInvokeExpPattern(
@@ -158,23 +153,139 @@ object LoopPatterns {
     )
   }
 
+  private def assignSomeConst(varName: String, valName: String, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(varName),
+        NamedExpPattern(valName, AnyIntegralConstantExpPattern)
+      )
+    )
+  }
+
+  private def assignConst(varName: String, const: Long, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(varName),
+        IntegralConstantExpPattern(const)
+      )
+    )
+  }
+
+  private def assignZero(varName: String, label: Option[String] = None): RegExp = assignConst(varName, 0, label)
+
+  private def addToVar(varName: String, amount: Long, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(varName),
+        AddExpPattern(
+          VariableExpPattern(varName),
+          IntegralConstantExpPattern(amount)
+        )
+      )
+    )
+  }
+
+  private def incrVar(varName: String, label: Option[String] = None): RegExp = addToVar(varName, 1, label)
+
+  private def decrVar(varName: String, label: Option[String] = None): RegExp = addToVar(varName, -1, label)
+
+  private def lengthOf(varName: String, arrName: String, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(varName),
+        LengthExpPattern(VariableExpPattern(arrName))
+      )
+    )
+  }
+
+  private def getArrayElem(varName: String, arrName: String, element: String, label: Option[String] = None) : RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(varName),
+        ArrayRefExpPattern(
+          VariableExpPattern(arrName),
+          VariableExpPattern(element)
+        )
+      )
+    )
+  }
+
+  /*
+  TODO: From 2018-05-29
+
+  - rewrite mkPatRegExp to support optional labels (use AnyLabelPattern)
+  - supply "head", "end", and "exit" labels for matching
+  - enforce some sort of naming convention for labels (variables start lowercase, labels are uppercase/underscores)
+    - throw error if invalid labels
+  - add warning/handling for multiple matches
+   */
+
+  private def Label = Some
+  val head = Label("head")
+  val end = Label("end")
+  val exit = Label("exit")
+
   // TODO: Realistically, the `wildcardRep` should be able to exclude certain variables.
   // This would allow us to filter out loops where induction variables are manipulated.
   val iteratorLoop = Cat(List(
     wildcardRep,
-    iteratorInvoke("iteratorInvoke", "iter", "arr"),
-    iteratorHasNext("iteratorHasNext", "hasNext", "iter"),
-    ifZeroGoto("test", "hasNext", "loopEnd"),
-    iteratorNext("iteratorNext", "next", "iter"),
+    iteratorInvoke("iter", "arr"),
+    iteratorHasNext("hasNext", "iter", label = head),
+    ifZeroGoto("hasNext", destLabel = end),
+    iteratorNext("next", "iter"),
     wildcardRep,
-    goto("goto", "iteratorHasNext"),
-    matchLabel("loopEnd"),
+    goto(head),
+    matchLabel(end),
     wildcardRep
   ))
-  private val addInvokes = Cat(List(wildcardRep, addInvoke("addInvoke", "arr"), wildcardRep))
+  val arrayLoop = Cat(List(
+    wildcardRep,
+    lengthOf("length", "arr"),
+    assignZero("iter"),
+    ifGeGoto("iter", VariableExpPattern("length"), destLabel = end, label = head),
+    getArrayElem("elem", "arr", "iter"),
+    wildcardRep,
+    incrVar("iter"),
+    goto(head),
+    matchLabel(end),
+    wildcardRep
+  ))
+  val simpleCountUpForLoop = Cat(List(
+    wildcardRep,
+    assignZero("iter"),
+    ifGeGoto("iter", NamedExpPattern("bound", AnyIntegralConstantExpPattern), destLabel = end, label = head),
+    wildcardRep,
+    incrVar("iter"),
+    goto(head),
+    matchLabel(end),
+    wildcardRep
+  ))
+  val simpleCountDownForLoop = Cat(List(
+    wildcardRep,
+    assignSomeConst("iter", "bound"),
+    ifLeGoto("iter", IntegralConstantExpPattern(0), destLabel = end, label = head),
+    wildcardRep,
+    decrVar("iter"),
+    goto(head),
+    matchLabel(end),
+    wildcardRep
+  ))
+  private val addInvokes = Cat(List(wildcardRep, addInvoke("arr"), wildcardRep))
 
-  private def mkPatRegExp(labelPattern: LabelPattern, stmtPattern: StmtPattern): RegExp = {
-    Fun(StmtPatternToRegEx(LabeledStmtPattern(labelPattern, stmtPattern)), _ => List())
+  private def mkLabel(label: Option[String] = None): LabelPattern = {
+    label match {
+      case None => AnyLabelPattern
+      case Some(l) => NamedLabelPattern(l)
+    }
+  }
+
+  private def mkPatRegExp(label: Option[String], stmtPattern: StmtPattern): RegExp = {
+    Fun(StmtPatternToRegEx(LabeledStmtPattern(mkLabel(label), stmtPattern)), _ => List())
   }
 
   private def getMethod(className: String, methodName: String, arguments: Option[List[SootType]] = None) = {
