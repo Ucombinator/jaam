@@ -19,8 +19,8 @@ import org.ucombinator.jaam.visualizer.taint.TaintRootVertex;
 
 public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
 {
-    private static final double TEXT_VERTICAL_PADDING = 15;
-    private static final double TEXT_HORIZONTAL_PADDING = 15;
+    private static final double TEXT_VERTICAL_PADDING = 5;
+    private static final double TEXT_HORIZONTAL_PADDING = 5;
 
     private final Rectangle rect;
     private final Text rectLabel;

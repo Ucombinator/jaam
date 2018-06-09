@@ -1,5 +1,8 @@
 package org.ucombinator.jaam.visualizer.profiler;
 
+import com.joptimizer.optimizers.LPOptimizationRequest;
+import com.joptimizer.optimizers.LPPrimalDualMethod;
+import com.joptimizer.optimizers.NewtonUnconstrained;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 
 import java.util.*;
@@ -9,7 +12,7 @@ public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
 
     private static final int TOTAL_UNITS = 1000;
     public static final int UNIT_SIZE = 20;
-    public static final int MARGIN_SIZE = 5;
+    public static final int MARGIN_SIZE = 4;
 
     private double weightPerUnit;
     private ArrayList<ProfilerVertex> roots;
@@ -64,6 +67,111 @@ public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
         }
 
         return newVertex;
+    }
+
+    public double computeCurrentLayoutLP() {
+        // Call our DAG layout to get an starting point
+        double totalWidth = this.computeCurrentLayout();
+
+        // Construct list of values for our tree.
+        ArrayList<ProfilerVertexValue> vertexValues = new ArrayList<>();
+        for (ProfilerVertex v : this.vertices) {
+            vertexValues.add(v.getLeftValue());
+            vertexValues.add(v.getEdgeValue());
+            vertexValues.add(v.getRightValue());
+        }
+        ProfilerVertexValue maxWidth = new ProfilerVertexValue(
+                null, ProfilerVertexValue.ValueType.LEFT_SIDE, this.vertices.size() * 3);
+        vertexValues.add(maxWidth);
+
+        for (ProfilerVertex v : this.roots) {
+            v.computeAllRows();
+        }
+
+        // The ordering of values across each row.
+        ArrayList<ArrayList<ProfilerVertexValue>> profilerValueRows = this.getProfilerValueRows();
+        // A map that shows, for a given value, what constraints include it on the left side.
+        Set<Constraint> allConstraints = this.getAllConstraints(profilerValueRows);
+
+        for (ProfilerVertex v : this.vertices) {
+            System.out.println("Vertex id: " + v.getId());
+            System.out.println("Value ids: " + v.getLeftValue().getId() + ", " + v.getEdgeValue().getId() + ", " + v.getRightValue().getId());
+        }
+
+        for (ArrayList<ProfilerVertexValue> valueRow : profilerValueRows) {
+            System.out.print("Value row: ");
+            for (ProfilerVertexValue value : valueRow) {
+                System.out.print(value.getId() + " ");
+            }
+            System.out.println();
+            if (valueRow.size() > 0) {
+                ProfilerVertexValue rightmost = valueRow.get(valueRow.size() - 1);
+                Constraint rightmostConstraint = new Constraint(rightmost, maxWidth);
+                allConstraints.add(rightmostConstraint);
+            }
+        }
+
+        try {
+            // Each constraint gives one equation.
+            int numEqs = allConstraints.size();
+            // Each vertex has three values, and we also need the maxWidth value.
+            int numVars = this.vertices.size() * 3 + 1;
+
+            double[][] matrix = new double[numEqs][numVars];
+            double[] constants = new double[numEqs];
+            double[] lb = new double[numVars];
+            int rowIndex = 0;
+            for (Constraint constraint : allConstraints) {
+                int leftIndex = constraint.getLeftValue().getId();
+                int rightIndex = constraint.getRightValue().getId();
+                matrix[rowIndex][leftIndex] = 1;
+                matrix[rowIndex][rightIndex] = -1;
+                // Decrease required distance slightly so our previous solution is strictly feasible.
+                constants[rowIndex] = -0.9999999999 * constraint.getDistance();
+                rowIndex++;
+
+                System.out.println("New constraint: x" + rightIndex + " - x" + leftIndex + " > " + constraint.getDistance());
+            }
+
+            double[] objective = new double[numVars];
+            for (int i = 0; i < this.vertices.size(); i++) {
+                // Add (right - left) for each vertex, so that we minimize each width.
+                objective[3 * i] = -1;
+                objective[3 * i + 2] = 1;
+            }
+            objective[3 * this.vertices.size()] = 1; // Minimize total width.
+
+            double[] initial = new double[numVars];
+            for (int i = 0; i < numVars - 1; i++) {
+                initial[i] = vertexValues.get(i).getColumn();
+            }
+            initial[numVars - 1] = totalWidth;
+
+            // Solve!
+            System.out.println("Solving LP with " + numVars + " variables and " + numEqs + " equations...");
+            LPOptimizationRequest or = new LPOptimizationRequest();
+            or.setC(objective);
+            or.setG(matrix);
+            or.setH(constants);
+            or.setLb(lb);
+            or.setInitialPoint(initial);
+            LPPrimalDualMethod opt = new LPPrimalDualMethod();
+            opt.setOptimizationRequest(or);
+            opt.optimize();
+
+            // Assign solutions to our values, but ignore the extra maxWidth value.
+            double[] results = opt.getOptimizationResponse().getSolution();
+            for (int i = 0; i < numVars - 1; i++) {
+                System.out.println("x" + i + " = " + results[i]);
+                vertexValues.get(i).assignSolution(results[i]);
+            }
+
+            return results[3 * this.vertices.size()];
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return -1;
+        }
     }
 
     // Computes the location for each ProfilerVertex, assuming that the order of the list of children
@@ -223,5 +331,40 @@ public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
             root.computeGreedyLayout();
         }
         //TODO
+    }
+
+    private void JOptimizerTest() {
+        //Objective function
+        double[] c = new double[] { -1., -1. };
+
+        //Inequalities constraints
+        double[][] G = new double[][] {{4./3., -1}, {-1./2., 1.}, {-2., -1.}, {1./3., 1.}};
+        double[] h = new double[] {2., 1./2., 2., 1./2.};
+
+        //Bounds on variables
+        double[] lb = new double[] {0 , 0};
+        double[] ub = new double[] {10, 10};
+
+        //optimization problem
+        LPOptimizationRequest or = new LPOptimizationRequest();
+        or.setC(c);
+        or.setG(G);
+        or.setH(h);
+        or.setLb(lb);
+        or.setUb(ub);
+        or.setDumpProblem(true);
+
+        //optimization
+        LPPrimalDualMethod opt = new LPPrimalDualMethod();
+
+        opt.setLPOptimizationRequest(or);
+        try {
+            opt.optimize();
+            double[] sol = opt.getOptimizationResponse().getSolution();
+            System.out.println(sol[0] + ", " + sol[1]);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

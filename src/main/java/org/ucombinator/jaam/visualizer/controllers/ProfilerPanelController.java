@@ -65,12 +65,14 @@ public class ProfilerPanelController {
 
     private void drawNodes() {
         for (ProfilerVertex v : this.currentTree.getVertices()) {
-            GUINode<ProfilerVertex> node = new GUINode<ProfilerVertex>(null, v);
+            GUINode<ProfilerVertex> node = new GUINode<>(null, v);
+            v.setLabelVisible(true);
             double x = v.getLeftColumn() * ProfilerTree.UNIT_SIZE + ProfilerTree.MARGIN_SIZE;
             double width = (v.getRightColumn() - v.getLeftColumn()) * ProfilerTree.UNIT_SIZE - 2 * ProfilerTree.MARGIN_SIZE;
             double y = v.getRow() * ProfilerTree.UNIT_SIZE + ProfilerTree.MARGIN_SIZE;
             double height = ProfilerTree.UNIT_SIZE - 2 * ProfilerTree.MARGIN_SIZE;
             node.setTranslateLocation(x, y, width, height);
+            System.out.println("Drawing node " + v.getId() + " between rows " + v.getLeftColumn() + " and " + v.getRightColumn());
             graphContentGroup.getChildren().add(node);
         }
     }
@@ -144,7 +146,7 @@ public class ProfilerPanelController {
 
         DataTree dataTree = new DataTree(selectedFile.getAbsolutePath()).prune(100000);
         this.currentTree = new ProfilerTree(dataTree);
-        this.currentTree.computeCurrentLayout();
+        this.currentTree.computeCurrentLayoutLP();
         this.drawGraph();
     }
 }

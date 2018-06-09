@@ -12,6 +12,7 @@ resolvers += "Ucombinator maven repository on github" at "https://ucombinator.gi
 
 libraryDependencies ++= Seq(
   "com.esotericsoftware" % "minlog" % "1.3.0",
+	"com.joptimizer" % "joptimizer" % "4.0.0",
   "com.novocode" % "junit-interface" % "0.11" % "test",
   "com.twitter" %% "chill" % "0.8.0",
   "de.javakaffee" % "kryo-serializers" % "0.38",
@@ -93,7 +94,7 @@ lazy val quietDiscard = new sbtassembly.MergeStrategy {
 assemblyMergeStrategy in assembly := {
   case PathList("META-INF", "services", xs @ _*) => MergeStrategy.singleOrError
   case PathList("META-INF", xs @ _*) => quietDiscard
-  case x => MergeStrategy.deduplicate
+  case x => MergeStrategy.first
 }
 
 // Use shading to avoid file conflicts in some problematic dependencies

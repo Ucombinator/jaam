@@ -6,14 +6,14 @@ import java.util.stream.Collectors;
 
 public class Graph<T extends Vertex, S extends Edge<T>> {
 
-    protected HashSet<T> vertices;
+    protected LinkedHashSet<T> vertices;
     protected HashSet<S> edges;
     protected HashMap<T, HashMap<T, S>> outEdges;
     protected HashMap<T, HashMap<T, S>> inEdges;
     private HashMap<Integer, T> idToVertexMap;
 
     public Graph() {
-        this.vertices = new HashSet<>();
+        this.vertices = new LinkedHashSet<>();
         this.edges = new HashSet<>();
         this.outEdges = new HashMap<>();
         this.inEdges = new HashMap<>();

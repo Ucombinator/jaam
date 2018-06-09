@@ -29,11 +29,11 @@ public class ProfilerVertex extends AbstractLayoutVertex<ProfilerVertex> {
         this.children = new ArrayList<>();
         this.currentWeight = weight;
         this.data = dataNode;
-        this.color = Color.BLUE;
+        this.color = Color.LIGHTBLUE;
 
-        this.leftValue = new ProfilerVertexValue(this, ProfilerVertexValue.ValueType.LEFT_SIDE);
-        this.edgeValue = new ProfilerVertexValue(this, ProfilerVertexValue.ValueType.INCOMING_EDGE);
-        this.rightValue = new ProfilerVertexValue(this, ProfilerVertexValue.ValueType.RIGHT_SIDE);
+        this.leftValue = new ProfilerVertexValue(this, ProfilerVertexValue.ValueType.LEFT_SIDE, id * 3);
+        this.edgeValue = new ProfilerVertexValue(this, ProfilerVertexValue.ValueType.INCOMING_EDGE, id * 3 + 1);
+        this.rightValue = new ProfilerVertexValue(this, ProfilerVertexValue.ValueType.RIGHT_SIDE, id * 3 + 2);
     }
 
     public ProfilerTree getTree() {

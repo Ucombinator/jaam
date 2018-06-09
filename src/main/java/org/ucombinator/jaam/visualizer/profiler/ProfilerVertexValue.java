@@ -5,10 +5,16 @@ public class ProfilerVertexValue {
     public enum ValueType {LEFT_SIDE, INCOMING_EDGE, RIGHT_SIDE};
     private ProfilerVertex vertex;
     private ValueType valueType;
+    private int id;
 
-    public ProfilerVertexValue(ProfilerVertex vertex, ValueType constraint) {
+    public ProfilerVertexValue(ProfilerVertex vertex, ValueType constraint, int id) {
+        this.id = id;
         this.vertex = vertex;
         this.valueType = constraint;
+    }
+
+    public int getId() {
+        return this.id;
     }
 
     public ProfilerVertex getVertex() {
