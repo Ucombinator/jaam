@@ -77,7 +77,7 @@ public class DataTree {
         return prunedTree;
     }
 
-    public DataNode prune(DataNode node, long threshold ) {
+    public DataNode prune(DataNode node, long threshold) {
 
         ArrayList<DataNode> survivingChildren = new ArrayList<>();
         ArrayList<DataNode> toMerge = new ArrayList<>();

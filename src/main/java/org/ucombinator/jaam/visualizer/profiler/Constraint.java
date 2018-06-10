@@ -70,4 +70,17 @@ public class Constraint {
             return -1;
         }
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other instanceof Constraint) {
+            return (this.leftValue == ((Constraint) other).leftValue) && (this.rightValue == ((Constraint) other).rightValue);
+        }
+        else return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return (this.leftValue.hashCode() ^ this.rightValue.hashCode());
+    }
 }

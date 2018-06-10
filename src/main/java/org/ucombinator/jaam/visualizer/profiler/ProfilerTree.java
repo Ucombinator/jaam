@@ -2,7 +2,6 @@ package org.ucombinator.jaam.visualizer.profiler;
 
 import com.joptimizer.optimizers.LPOptimizationRequest;
 import com.joptimizer.optimizers.LPPrimalDualMethod;
-import com.joptimizer.optimizers.NewtonUnconstrained;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 
 import java.util.*;
@@ -80,9 +79,23 @@ public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
             vertexValues.add(v.getEdgeValue());
             vertexValues.add(v.getRightValue());
         }
-        ProfilerVertexValue maxWidth = new ProfilerVertexValue(
-                null, ProfilerVertexValue.ValueType.LEFT_SIDE, this.vertices.size() * 3);
-        vertexValues.add(maxWidth);
+
+        ProfilerVertex dummyVertex = new ProfilerVertex(null, null, -1, null, -1, null);
+        ProfilerVertexValue rightBoundary = new ProfilerVertexValue(
+                dummyVertex, ProfilerVertexValue.ValueType.LEFT_SIDE, this.vertices.size() * 3);
+        vertexValues.add(rightBoundary);
+        rightBoundary.assignSolution(totalWidth);
+
+        vertexValues.sort(new Comparator<ProfilerVertexValue>() {
+            @Override
+            public int compare(ProfilerVertexValue o1, ProfilerVertexValue o2) {
+                return Double.compare(o1.getColumn(), o2.getColumn());
+            }
+        });
+        HashMap<ProfilerVertexValue, Integer> valuePositions = new HashMap<>();
+        for (int i = 0; i < vertexValues.size(); i++) {
+            valuePositions.put(vertexValues.get(i), i);
+        }
 
         for (ProfilerVertex v : this.roots) {
             v.computeAllRows();
@@ -93,20 +106,10 @@ public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
         // A map that shows, for a given value, what constraints include it on the left side.
         Set<Constraint> allConstraints = this.getAllConstraints(profilerValueRows);
 
-        for (ProfilerVertex v : this.vertices) {
-            System.out.println("Vertex id: " + v.getId());
-            System.out.println("Value ids: " + v.getLeftValue().getId() + ", " + v.getEdgeValue().getId() + ", " + v.getRightValue().getId());
-        }
-
         for (ArrayList<ProfilerVertexValue> valueRow : profilerValueRows) {
-            System.out.print("Value row: ");
-            for (ProfilerVertexValue value : valueRow) {
-                System.out.print(value.getId() + " ");
-            }
-            System.out.println();
             if (valueRow.size() > 0) {
                 ProfilerVertexValue rightmost = valueRow.get(valueRow.size() - 1);
-                Constraint rightmostConstraint = new Constraint(rightmost, maxWidth);
+                Constraint rightmostConstraint = new Constraint(rightmost, rightBoundary);
                 allConstraints.add(rightmostConstraint);
             }
         }
@@ -120,49 +123,63 @@ public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
             double[][] matrix = new double[numEqs][numVars];
             double[] constants = new double[numEqs];
             double[] lb = new double[numVars];
+            for(int i = 0; i < numEqs; i++) {
+                constants[i] = 0;
+                for(int j = 0; j < numVars; j++) {
+                    matrix[i][j] = 0;
+                }
+            }
+            for (int i = 0; i < numVars; i++) {
+                lb[i] = 0;
+            }
+
             int rowIndex = 0;
             for (Constraint constraint : allConstraints) {
-                int leftIndex = constraint.getLeftValue().getId();
-                int rightIndex = constraint.getRightValue().getId();
+                int leftIndex = valuePositions.get(constraint.getLeftValue());
+                int rightIndex = valuePositions.get(constraint.getRightValue());
                 matrix[rowIndex][leftIndex] = 1;
                 matrix[rowIndex][rightIndex] = -1;
-                // Decrease required distance slightly so our previous solution is strictly feasible.
-                constants[rowIndex] = -0.9999999999 * constraint.getDistance();
+                constants[rowIndex] = -1 * constraint.getDistance();
+                /*System.out.println("New constraint: x" + rightIndex + " - x" + leftIndex + " > " + constraint.getDistance());
+                    System.out.println("Actual distance: " + (constraint.getRightValue().getColumn() - constraint.getLeftValue().getColumn()));*/
                 rowIndex++;
-
-                System.out.println("New constraint: x" + rightIndex + " - x" + leftIndex + " > " + constraint.getDistance());
             }
 
             double[] objective = new double[numVars];
-            for (int i = 0; i < this.vertices.size(); i++) {
+            for(int i = 0; i < numVars; i++) {
+                objective[i] = 0;
+            }
+            for (ProfilerVertex v : this.vertices) {
                 // Add (right - left) for each vertex, so that we minimize each width.
-                objective[3 * i] = -1;
-                objective[3 * i + 2] = 1;
+                objective[valuePositions.get(v.getLeftValue())] = -1;
+                objective[valuePositions.get(v.getRightValue())] = 1;
             }
-            objective[3 * this.vertices.size()] = 1; // Minimize total width.
+            objective[valuePositions.get(rightBoundary)] = 1; // Minimize total width.
 
+            double tolerance = 0.000000001;
             double[] initial = new double[numVars];
-            for (int i = 0; i < numVars - 1; i++) {
-                initial[i] = vertexValues.get(i).getColumn();
+            for (int i = 0; i < numVars; i++) {
+                // Increase spacing so our previous solution is strictly feasible.
+                initial[i] = vertexValues.get(i).getColumn() + ((i + 1) * tolerance);
             }
-            initial[numVars - 1] = totalWidth;
 
             // Solve!
             System.out.println("Solving LP with " + numVars + " variables and " + numEqs + " equations...");
+            // BasicConfigurator.configure();
             LPOptimizationRequest or = new LPOptimizationRequest();
             or.setC(objective);
             or.setG(matrix);
             or.setH(constants);
             or.setLb(lb);
-            or.setInitialPoint(initial);
+            // or.setInitialPoint(initial);
             LPPrimalDualMethod opt = new LPPrimalDualMethod();
             opt.setOptimizationRequest(or);
             opt.optimize();
 
             // Assign solutions to our values, but ignore the extra maxWidth value.
             double[] results = opt.getOptimizationResponse().getSolution();
-            for (int i = 0; i < numVars - 1; i++) {
-                System.out.println("x" + i + " = " + results[i]);
+            for (int i = 0; i < numVars; i++) {
+                System.out.println("x" + i + " moved from " + initial[i] + " to " + results[i]);
                 vertexValues.get(i).assignSolution(results[i]);
             }
 
@@ -286,7 +303,7 @@ public class ProfilerTree extends Graph<ProfilerVertex, ProfilerEdge> {
         }
 
         for (ProfilerVertex v : this.roots) {
-            v.addSubtreeConstraints(profilerValueRows);
+            v.buildSubtreeRows(profilerValueRows);
         }
 
         return profilerValueRows;

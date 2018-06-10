@@ -136,22 +136,27 @@ public class ProfilerVertex extends AbstractLayoutVertex<ProfilerVertex> {
         return incidentEdges;
     }
 
-    public void addSubtreeConstraints(ArrayList<ArrayList<ProfilerVertexValue>> constraintRows) {
+    public void buildSubtreeRows(ArrayList<ArrayList<ProfilerVertexValue>> valueRows) {
         // Add incoming edge. Note that we can't add the constraints for our incoming edge on the row for our vertex,
         // because that would interact with the constraints on the outgoing edges. So these self-adjacencies are not
         // considered here. Instead they are added when the HashMap is created in ProfilerTree.
         if (this.parent != null) {
             for (int edgeRow = this.parent.row; edgeRow < this.row; edgeRow++) {
-                constraintRows.get(edgeRow).add(this.edgeValue);
+                valueRows.get(edgeRow).add(this.edgeValue);
+            }
+        }
+        else {
+            for (int edgeRow = 0; edgeRow < this.row; edgeRow++) {
+                valueRows.get(edgeRow).add(this.edgeValue);
             }
         }
 
         // In-order traversal: left side, children, right side
-        constraintRows.get(this.row).add(this.leftValue);
+        valueRows.get(this.row).add(this.leftValue);
         for (ProfilerVertex child : this.children) {
-            child.addSubtreeConstraints(constraintRows);
+            child.buildSubtreeRows(valueRows);
         }
-        constraintRows.get(this.row).add(this.rightValue);
+        valueRows.get(this.row).add(this.rightValue);
     }
 
     public void computeGreedyLayout() {

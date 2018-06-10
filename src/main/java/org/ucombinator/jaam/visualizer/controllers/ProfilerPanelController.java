@@ -72,7 +72,7 @@ public class ProfilerPanelController {
             double y = v.getRow() * ProfilerTree.UNIT_SIZE + ProfilerTree.MARGIN_SIZE;
             double height = ProfilerTree.UNIT_SIZE - 2 * ProfilerTree.MARGIN_SIZE;
             node.setTranslateLocation(x, y, width, height);
-            System.out.println("Drawing node " + v.getId() + " between rows " + v.getLeftColumn() + " and " + v.getRightColumn());
+            // System.out.println("Drawing node " + v.getId() + " between rows " + v.getLeftColumn() + " and " + v.getRightColumn());
             graphContentGroup.getChildren().add(node);
         }
     }
@@ -144,9 +144,12 @@ public class ProfilerPanelController {
                 new FileChooser.ExtensionFilter("XML Files", "*.xml"));
         File selectedFile = fileChooser.showOpenDialog(this.root.getScene().getWindow());
 
-        DataTree dataTree = new DataTree(selectedFile.getAbsolutePath()).prune(100000);
+        DataTree dataTree = new DataTree(selectedFile.getAbsolutePath()).prune(1000000);
         this.currentTree = new ProfilerTree(dataTree);
+        long time1 = System.nanoTime();
         this.currentTree.computeCurrentLayoutLP();
+        long time2 = System.nanoTime();
+        System.out.println("Time to solve LP: " + (time2 - time1) / 1000000000.0);
         this.drawGraph();
     }
 }

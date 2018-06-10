@@ -42,7 +42,7 @@ public class ProfilerEdge implements LayoutEdge<ProfilerVertex>, Edge<ProfilerVe
 
         double x, y1, y2;
         x = child.getEdgeColumn() * ProfilerTree.UNIT_SIZE;
-        System.out.println("Drawing edge for vertex: " + this.child.getId() + " at column " + child.getEdgeColumn());
+        // System.out.println("Drawing edge for vertex: " + this.child.getId() + " at column " + child.getEdgeColumn());
         if (parent == null) {
             y1 = ProfilerTree.MARGIN_SIZE;
         }
