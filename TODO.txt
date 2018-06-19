@@ -1,10 +1,7 @@
 
-- Fix crash
 - Filter graph by multiple requirements
 - Mark exceptions and locking behavior
-- Refactoring
 - Return to previous view
 - Profile memory usage
-- Monitor packet sizes, batch HTTPS requests - master's students
 
-- Add methods to class tree on right side, and sync hidden and unhidden nodes
+- Try orthogonal drawing for spanning tree of taint graph

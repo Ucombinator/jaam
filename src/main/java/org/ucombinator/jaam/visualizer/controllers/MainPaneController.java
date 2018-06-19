@@ -68,6 +68,14 @@ public class MainPaneController {
         }
     }
 
+    @FXML private void incrementHidden(ActionEvent event) {
+        Main.getSelectedMainTabController().getHidden().increment();
+    }
+
+    @FXML private void decrementHidden(ActionEvent event) {
+        Main.getSelectedMainTabController().getHidden().decrement();
+    }
+
     public void loadLoopGraphFile(File file) throws IOException {
         // Make "Open" dialog remember where we last loaded a file
         fileChooser.setInitialDirectory(file.getParentFile());

@@ -37,6 +37,8 @@
                         <KeyCodeCombination alt="UP" code="MINUS" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator>
                   </MenuItem>
+                  <MenuItem mnemonicParsing="false" onAction="#incrementHidden" text="Redo" />
+                  <MenuItem mnemonicParsing="false" onAction="#decrementHidden" text="Undo" />
               </items>
             </Menu>
         </menus>

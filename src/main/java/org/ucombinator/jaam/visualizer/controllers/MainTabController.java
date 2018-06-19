@@ -1,10 +1,8 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
 import com.strobel.decompiler.languages.java.ast.CompilationUnit;
-import javafx.beans.property.SetProperty;
 import javafx.beans.property.SimpleSetProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableSet;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -45,7 +43,7 @@ public class MainTabController {
 
     private HashSet<StateVertex> vizHighlighted; // TODO: Make this an observable set
     private HashSet<TaintVertex> taintHighlighted;
-    private SetProperty<StateVertex> hidden;
+    private SetHistoryProperty<StateVertex> hidden;
 
     public MainTabController(File file, Graph<StateVertex, StateEdge> graph, List<CompilationUnit> compilationUnits,
                              Graph<TaintVertex, TaintEdge> taintGraph, Set<SootClass> sootClasses) throws IOException {
@@ -70,12 +68,11 @@ public class MainTabController {
         this.codeViewController.addSelectHandler(vizPane);
         this.taintPanelController.addSelectHandler(vizPane);
 
-        ClassTreeUtils.buildClassTree(this.classTree, this.codeViewController, (StateRootVertex) this.vizPanelController.getImmutableRoot());
+        ClassTreeUtils.buildClassTree(this.classTree, this.codeViewController, this.vizPanelController.getImmutableRoot());
 
         this.vizHighlighted = new LinkedHashSet<>();
         this.taintHighlighted = new LinkedHashSet<>();
-        this.hidden = new SimpleSetProperty<>(FXCollections.observableSet());
-
+        this.hidden = new SetHistoryProperty<>(new SimpleSetProperty<>(FXCollections.observableSet()));
         this.hidden.addListener(this.vizPanelController);
     }
 
@@ -142,8 +139,8 @@ public class MainTabController {
         this.taintDescriptionArea.setText(text);
     }
 
-    public ObservableSet<StateVertex> getHidden() {
-        return hidden.get();
+    public SetHistoryProperty<StateVertex> getHidden() {
+        return this.hidden;
     }
 
     public void hideSelectedNodes() {
@@ -162,7 +159,7 @@ public class MainTabController {
 
     public void showAllNodes() {
         this.hidden.clear();
-        vizPanelController.redrawGraph(hidden);
+        this.vizPanelController.redrawGraph(this.hidden);
     }
 
     public HashSet<StateVertex> getVizHighlighted() {

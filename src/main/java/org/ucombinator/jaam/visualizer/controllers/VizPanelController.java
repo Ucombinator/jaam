@@ -13,6 +13,7 @@ import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.state.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,7 +33,7 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         this.immutableRoot = new StateRootVertex();
         this.immutableRoot.setInnerGraph(graph);
         setAllImmutable(this.immutableRoot);
-        this.drawGraph(new HashSet<>());
+        this.drawGraph(new HashSet<>(), true);
     }
 
     @Override
@@ -71,7 +72,7 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         }
     }
 
-    public void drawGraph(Set<StateVertex> hidden) {
+    public void drawGraph(Set<StateVertex> hidden, boolean newAction) {
         visibleRoot.setVisible(false);
 
         System.out.println("JUAN: Immutable graph #Edges: " + this.getImmutableRoot().getInnerGraph().getEdges().size());
@@ -82,8 +83,7 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
             GraphTransform<StateRootVertex, StateVertex> compact = LayerFactory.getLayeredLoopGraph(hiddenTransform.newRoot);
 
             immAndVis = GraphTransform.transfer(hiddenTransform, compact);
-        }
-        else { // Work directly on immutable graph
+        } else { // Work directly on immutable graph
             this.immAndVis = LayerFactory.getLayeredLoopGraph(getImmutableRoot());
         }
         this.visibleRoot = immAndVis.newRoot;
@@ -101,7 +101,7 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
     public void redrawGraph(Set<StateVertex> hidden) {
         System.out.println("Redrawing loop graph...");
         this.graphContentGroup.getChildren().remove(this.visibleRoot.getGraphics());
-        this.drawGraph(hidden);
+        this.drawGraph(hidden, false);
     }
 
     public void resetStrokeWidth() {
@@ -117,19 +117,19 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
     // Changes to the hidden set
     @Override
     public void onChanged(Change<? extends StateVertex> change) {
+        System.out.println("VizPanel responding to change in hidden set...");
         if (change.wasAdded()) {
             StateVertex immV = change.getElementAdded();
-
             checkImmutable(immV);
-            //immV.setHighlighted(false);
             immV.setHidden();
-
-            //immAndVis.getNew(immV).setHighlighted(false);
             immAndVis.getNew(immV).setHidden();
         } else {
             StateVertex immV = change.getElementRemoved();
             checkImmutable(immV);
             immV.setUnhidden();
+            if (immAndVis.getNew(immV) != null) {
+                immAndVis.getNew(immV).setUnhidden();
+            }
         }
     }
 
