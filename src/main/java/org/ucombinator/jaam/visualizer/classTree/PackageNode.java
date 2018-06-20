@@ -81,7 +81,7 @@ public class PackageNode extends ClassTreeNode implements Comparable<PackageNode
             f.compress();
     }
 
-    public void build(TreeItem<ClassTreeNode> parent) {
+    public void build(CheckBoxTreeItem<ClassTreeNode> parent) {
         CheckBoxTreeItem<ClassTreeNode> item = buildTreeItem(parent);
 
         item.setGraphic(this.getGraphic());

@@ -21,7 +21,7 @@ public class FieldNode extends ClassTreeNode implements Comparable<FieldNode>{
        this.fieldName = name;
     }
 
-    public void build(TreeItem<ClassTreeNode> parent) {
+    public void build(CheckBoxTreeItem<ClassTreeNode> parent) {
         CheckBoxTreeItem<ClassTreeNode> item = buildTreeItem(parent);
         item.setGraphic(this.getGraphic());
     }

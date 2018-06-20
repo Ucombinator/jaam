@@ -74,7 +74,7 @@ public class ClassNode extends ClassTreeNode implements Comparable<ClassNode>{
 
     }
 
-    public void build(TreeItem<ClassTreeNode> parent) {
+    public void build(CheckBoxTreeItem<ClassTreeNode> parent) {
         CheckBoxTreeItem<ClassTreeNode> item = buildTreeItem(parent);
 
         item.setGraphic(this.getGraphic());

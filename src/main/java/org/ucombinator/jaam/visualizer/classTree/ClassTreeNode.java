@@ -14,7 +14,9 @@ import java.util.HashSet;
 
 public abstract class ClassTreeNode
 {
-    protected CheckBoxTreeItem<ClassTreeNode> buildTreeItem(TreeItem<ClassTreeNode> parent) {
+    private CheckBoxTreeItem<ClassTreeNode> parent;
+
+    protected CheckBoxTreeItem<ClassTreeNode> buildTreeItem(CheckBoxTreeItem<ClassTreeNode> parent) {
         CheckBoxTreeItem<ClassTreeNode> item = new CheckBoxTreeItem<>();
         item.setSelected(true);
         item.setValue(this);
@@ -24,16 +26,20 @@ public abstract class ClassTreeNode
             @Override
             public void changed(ObservableValue<? extends Boolean> observableValue, Boolean prevVal, Boolean currVal) {
 
-                HashSet<StateVertex> childVertices = item.getValue().getChildVertices();
+                // Remove duplicate events if a node is not at the top level, and is equal to its parent.
+                if ((currVal != ClassTreeNode.this.parent.isSelected()) || (ClassTreeNode.this.isTopLevel())) {
+                    HashSet<StateVertex> childVertices = item.getValue().getChildVertices();
 
-                if (currVal) {
-                    Main.getSelectedMainTabController().getHidden().removeAll(childVertices);
-                } else {
-                    Main.getSelectedMainTabController().getHidden().addAll(childVertices);
+                    if (currVal) {
+                        Main.getSelectedMainTabController().getHidden().removeAll(childVertices);
+                    } else {
+                        Main.getSelectedMainTabController().getHidden().addAll(childVertices);
+                    }
                 }
             }
         });
         parent.getChildren().add(item);
+        this.parent = parent;
 
         return item;
     }
@@ -45,4 +51,8 @@ public abstract class ClassTreeNode
     public abstract String getName();
 
     public abstract Node getGraphic();
+
+    public boolean isTopLevel() {
+        return this.parent.getParent() == null;
+    }
 }
