@@ -46,7 +46,7 @@ object Loop {
     val initialState = State(Map("head" -> headIndex), Map())
 
     def runPattern(loopPattern: RegExp): Option[State] = {
-      deriveAll(loopPattern, initialState, stmts) match {
+      deriveAll(loopPattern, initialState, stmts, endAnywhere = false) match {
         case List(s) => Some(s)
         case List() => None
         case _ => println("multiple matches"); None

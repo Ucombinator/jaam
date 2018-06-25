@@ -53,7 +53,7 @@ case class RegEx[State, AtomType]() {
         (List(state), cs.map({ case (e, s) => (Cat(List(e, exp)), s) }))
       case Fun(fd) => fd(state, remaining)
       case Not(x) =>
-        if (stepAll(x, state, remaining, endAnywhere = true).isEmpty) {
+        if (deriveAll(x, state, remaining, endAnywhere = true).isEmpty) {
           (List(state), List())
         } else {
           (List(), List())
@@ -61,7 +61,9 @@ case class RegEx[State, AtomType]() {
     }
   }
 
-  def stepAll(exp: RegExp, state: State, atoms: List[AtomType], endAnywhere: Boolean): List[State] = {
+  // TODO: parseNull is actually a special case of deriveAll.
+  // TODO: It should have a symmetrical beginAnywhere parameter.
+  def deriveAll(exp: RegExp, state: State, atoms: List[AtomType], endAnywhere: Boolean): List[State] = {
     def step(oldTup: (List[State], List[(RegExp, State)]), remaining: List[AtomType]): List[State] = {
       val result = remaining match {
         case List() =>
@@ -79,9 +81,5 @@ case class RegEx[State, AtomType]() {
     }
 
     step((List[State](), List((exp, state))), atoms)
-  }
-
-  def deriveAll(exp: RegExp, state: State, atoms: List[AtomType]): List[State] = {
-    stepAll(exp, state, atoms, endAnywhere = false)
   }
 }
