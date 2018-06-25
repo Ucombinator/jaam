@@ -126,10 +126,30 @@ case class EqExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
     }
   }
 }
+case class GtExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case value: GtExpr =>
+        val states = lhs(state, value.getOp1)
+        states.flatMap(rhs(_, value.getOp2))
+      case _ => List()
+    }
+  }
+}
 case class GeExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
   override def apply(state: State, value: Value): List[State] = {
     value match {
       case value: GeExpr =>
+        val states = lhs(state, value.getOp1)
+        states.flatMap(rhs(_, value.getOp2))
+      case _ => List()
+    }
+  }
+}
+case class LtExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case value: LtExpr =>
         val states = lhs(state, value.getOp1)
         states.flatMap(rhs(_, value.getOp2))
       case _ => List()

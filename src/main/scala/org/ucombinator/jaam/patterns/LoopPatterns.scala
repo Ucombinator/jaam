@@ -8,20 +8,6 @@ import soot.{SootMethod, Type => SootType}
 import scala.collection.JavaConverters._
 
 object LoopPatterns {
-  def findLoops(stmts: List[Stmt]): Unit = {
-    runRule(iteratorLoop, stmts)
-  }
-
-  def findAddInvokes(stmts: List[Stmt]): Unit = {
-    runRule(addInvokes, stmts)
-  }
-
-  private def runRule(rule: RegExp, stmts: List[Stmt]): Unit = {
-    val states = deriveAll(rule, State(Map(), Map()), stmts)
-    println("  " + rule)
-    println("  STATES: " + states)
-    println()
-  }
 
   /**
     * TODO: From 2018-04-23
@@ -40,6 +26,8 @@ object LoopPatterns {
 
   private val wildcard = mkPatRegExp(None, AnyStmtPattern)
   private val wildcardRep = Rep(wildcard)
+
+  private def wildcardRepExclude(exclude: RegExp): RegExp = Rep(Cat(List(Not(exclude), wildcard)))
 
   private val arrayListIteratorMethod = getMethod("java.lang.Iterable", "iterator")
   private val iteratorHasNextMethod = getMethod("java.util.Iterator", "hasNext")
@@ -87,11 +75,42 @@ object LoopPatterns {
     )
   }
 
+  private def ifGtGoto(lhs: String, rhs: ExpPattern, destLabel: Option[String], label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      IfStmtPattern(
+        GtExpPattern(
+          VariableExpPattern(lhs), rhs
+        ),
+        mkLabel(destLabel)
+      )
+    )
+  }
+
   private def ifGeGoto(lhs: String, rhs: ExpPattern, destLabel: Option[String], label: Option[String] = None): RegExp = {
     mkPatRegExp(
       label,
       IfStmtPattern(
         GeExpPattern(
+          VariableExpPattern(lhs), rhs
+        ),
+        mkLabel(destLabel)
+      )
+    )
+  }
+
+  private def ifGtOrGeGoto(lhs: String, rhs: ExpPattern, destLabel: Option[String], label: Option[String] = None): RegExp = {
+    Alt(List(
+      ifGtGoto(lhs, rhs, destLabel, label),
+      ifGeGoto(lhs, rhs, destLabel, label)
+    ))
+  }
+
+  private def ifLtGoto(lhs: String, rhs: ExpPattern, destLabel: Option[String], label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      IfStmtPattern(
+        LtExpPattern(
           VariableExpPattern(lhs), rhs
         ),
         mkLabel(destLabel)
@@ -106,6 +125,23 @@ object LoopPatterns {
         LeExpPattern(
           VariableExpPattern(lhs), rhs
         ),
+        mkLabel(destLabel)
+      )
+    )
+  }
+
+  private def ifLtOrLeGoto(lhs: String, rhs: ExpPattern, destLabel: Option[String], label: Option[String] = None): RegExp = {
+    Alt(List(
+      ifLtGoto(lhs, rhs, destLabel, label),
+      ifLeGoto(lhs, rhs, destLabel, label)
+    ))
+  }
+
+  private def anyIf(destLabel: Option[String], label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      IfStmtPattern(
+        AnyExpPattern,
         mkLabel(destLabel)
       )
     )
@@ -153,12 +189,12 @@ object LoopPatterns {
     )
   }
 
-  private def assignSomeConst(varName: String, valName: String, label: Option[String] = None): RegExp = {
+  private def assignSomeValue(varName: String, valName: String, label: Option[String] = None): RegExp = {
     mkPatRegExp(
       label,
       AssignStmtPattern(
         VariableExpPattern(varName),
-        NamedExpPattern(valName, AnyIntegralConstantExpPattern)
+        NamedExpPattern(valName, AnyExpPattern)
       )
     )
   }
@@ -199,7 +235,7 @@ object LoopPatterns {
         VariableExpPattern(varName),
         AddExpPattern(
           VariableExpPattern(varName),
-          NamedExpPattern(amountName, AnyIntegralConstantExpPattern)
+          NamedExpPattern(amountName, AnyExpPattern)
         )
       )
     )
@@ -270,9 +306,9 @@ object LoopPatterns {
   ))
   val simpleCountUpForLoop = Cat(List(
     wildcardRep,
-    assignZero("iter"),
-    ifGeGoto("iter", NamedExpPattern("bound", AnyIntegralConstantExpPattern), destLabel = end, label = head),
-    wildcardRep,
+    assignSomeValue("iter", "lowerBound"),
+    ifGtOrGeGoto("iter", NamedExpPattern("upperBound", AnyExpPattern), destLabel = end, label = head),
+    wildcardRepExclude(Alt(List(anyIf(end), goto(end)))),
     anyAddToVar("iter", "incr"),
     goto(head),
     matchLabel(end),
@@ -280,10 +316,10 @@ object LoopPatterns {
   ))
   val simpleCountDownForLoop = Cat(List(
     wildcardRep,
-    assignSomeConst("iter", "bound"),
-    ifLeGoto("iter", IntegralConstantExpPattern(0), destLabel = end, label = head),
-    wildcardRep,
-    decrVar("iter"),
+    assignSomeValue("iter", "upperBound"),
+    ifLtOrLeGoto("iter", NamedExpPattern("lowerBound", AnyExpPattern), destLabel = end, label = head),
+    wildcardRepExclude(Alt(List(anyIf(end), goto(end)))),
+    anyAddToVar("iter", "incr"),
     goto(head),
     matchLabel(end),
     wildcardRep
