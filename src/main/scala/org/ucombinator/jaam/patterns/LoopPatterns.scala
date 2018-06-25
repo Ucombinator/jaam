@@ -335,7 +335,13 @@ object LoopPatterns {
   }
 
   private def mkPatRegExp(label: Option[String], stmtPattern: StmtPattern): RegExp = {
-    Fun(StmtPatternToRegEx(LabeledStmtPattern(mkLabel(label), stmtPattern)), _ => List())
+    def derive(state: State, atom: Option[Stmt]): (List[State], List[(RegExp, State)]) = {
+      atom match {
+        case None => (List(), List())
+        case Some(a) => StmtPatternToRegEx(LabeledStmtPattern(mkLabel(label), stmtPattern))(state, a)
+      }
+    }
+    Fun(derive)
   }
 
   private def getMethod(className: String, methodName: String, arguments: Option[List[SootType]] = None) = {

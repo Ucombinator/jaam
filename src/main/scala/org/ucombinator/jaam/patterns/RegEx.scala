@@ -9,7 +9,7 @@ case class RegEx[State, AtomType]() {
   abstract case class Cat(es: List[RegExp]) extends RegExp
   case class Alt(es: List[RegExp]) extends RegExp
   case class Rep(e: RegExp) extends RegExp
-  case class Fun(derive: (State, AtomType) => (List[State], List[(RegExp, State)]), parseNull: (State) => (List[State])) extends RegExp
+  case class Fun(derive: (State, Option[AtomType]) => (List[State], List[(RegExp, State)])) extends RegExp
   case class Not(e: RegExp) extends RegExp
 
   object Cat {
@@ -31,7 +31,7 @@ case class RegEx[State, AtomType]() {
     }
   }
 
-  def derive(exp: RegExp, state: State, atom: AtomType, remaining: List[AtomType]): (List[State], List[(RegExp, State)]) = {
+  def derive(exp: RegExp, state: State, atom: Option[AtomType], remaining: List[AtomType]): (List[State], List[(RegExp, State)]) = {
     /*
      * List[State]:
      *   atom is not consumed
@@ -51,9 +51,9 @@ case class RegEx[State, AtomType]() {
       case Rep(x) =>
         val (_, cs) = derive(x, state, atom, remaining)
         (List(state), cs.map({ case (e, s) => (Cat(List(e, exp)), s) }))
-      case Fun(fd, _) => fd(state, atom)
+      case Fun(fd) => fd(state, atom)
       case Not(x) =>
-        if (notStepAll(x, state, atom :: remaining).isEmpty) {
+        if (stepAll(x, state, remaining, endAnywhere = true).isEmpty) {
           (List(state), List())
         } else {
           (List(), List())
@@ -61,50 +61,27 @@ case class RegEx[State, AtomType]() {
     }
   }
 
-  def parseNull(exp: RegExp, state: State): List[State] = {
-    exp match {
-      case Cat(es) => es.foldLeft(List(state))((s, e) => s.flatMap(parseNull(e, _)))
-      case Alt(es) => es.flatMap(parseNull(_, state))
-      case Rep(e) => List(state)
-      case Fun(_, fpn) => fpn(state)
-      case Not(e) =>
-        if (parseNull(e, state).isEmpty) {
-          List(state)
-        } else {
-          List()
-        }
-    }
-  }
-
-  def notStepAll(exp: RegExp, state: State, atoms: List[AtomType]): List[State] = {
+  def stepAll(exp: RegExp, state: State, atoms: List[AtomType], endAnywhere: Boolean): List[State] = {
     def step(oldTup: (List[State], List[(RegExp, State)]), remaining: List[AtomType]): List[State] = {
-      oldTup._1 ++ (
-        remaining match {
-          case List() =>
-            oldTup._2.flatMap({ case (e, s) => parseNull(e, s) })
-          case a :: as =>
-            val newTup = flatMap2[(RegExp, State), State, (RegExp, State)](oldTup._2, { case (e, s) => derive(e, s, a, as) })
-            step(newTup, as)
-        })
+      val result = remaining match {
+        case List() =>
+          oldTup._2.flatMap({ case (e, s) => derive(e, s, None, List())._1 })
+        case a :: as =>
+          val newTup = flatMap2[(RegExp, State), State, (RegExp, State)](oldTup._2, { case (e, s) => derive(e, s, Some(a), a :: as) })
+          step(newTup, as)
+      }
+
+      if (endAnywhere) {
+        oldTup._1 ++ result
+      } else {
+        result
+      }
     }
 
     step((List[State](), List((exp, state))), atoms)
   }
 
-  def stepAll(exp: RegExp, state: State, atoms: List[AtomType]): List[(RegExp, State)] = {
-    def step(oldTup: (List[State], List[(RegExp, State)]), remaining: List[AtomType]): (List[State], List[(RegExp, State)]) = {
-      remaining match {
-        case List() => oldTup
-        case a :: as =>
-          val newTup = flatMap2[(RegExp, State), State, (RegExp, State)](oldTup._2, { case (e, s) => derive(e, s, a, as) })
-          step(newTup, as)
-      }
-    }
-
-    step((List[State](), List((exp, state))), atoms)._2
-  }
-
   def deriveAll(exp: RegExp, state: State, atoms: List[AtomType]): List[State] = {
-    stepAll(exp, state, atoms).flatMap({ case (e, s) => parseNull(e, s) })
+    stepAll(exp, state, atoms, endAnywhere = false)
   }
 }
