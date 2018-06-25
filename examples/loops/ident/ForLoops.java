@@ -20,6 +20,14 @@ class ForLoops {
         return sum;
     }
 
+    public static int simpleCountUpEqualFor() {
+        int sum = 0;
+        for (int i = 0; i <= 100; ++i) {
+            sum += i;
+        }
+        return sum;
+    }
+
     public static int simpleCountUpByTwoFor() {
         int sum = 0;
         for (int i = 0; i < 100; i += 2) {
@@ -47,6 +55,60 @@ class ForLoops {
         return sum;
     }
 
+    private static int square(int x) {
+        return x * x;
+    }
+
+    public static int functionCallBoundCountUpFor() {
+        int sum = 0;
+        int n = 2;
+        for (int i = 0; i < square(n); ++i) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    public static int squareBoundCountUpFor() {
+        int sum = 0;
+        int n = 2;
+        for (int i = 0; i < n * n; ++i) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    public static int andCountUpFor() {
+        int sum = 0;
+        for (int i = 0; i < 100 && i > -1; ++i) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    public static int orCountUpFor() {
+        int sum = 0;
+        for (int i = 0; i < 100 || i > 200; ++i) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    public static int twoOrCountUpFor() {
+        int sum = 0;
+        for (int i = 0; i < 100 || i > 200 || i == 50; ++i) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    public static int negatedCountUpFor() {
+        int sum = 0;
+        for (int i = 0; !(i > 100); ++i) {
+            sum += i;
+        }
+        return sum;
+    }
+
     public static int doubleCountUpFor() {
         int sum = 0;
         for (int i = 0; i < 100; i *= 2) {
@@ -67,6 +129,14 @@ class ForLoops {
         int sum = 0;
         int n = 0;
         for (int i = 100; i > n; --i) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    public static int simpleCountDownEqualFor() {
+        int sum = 0;
+        for (int i = 100; i >= 0; --i) {
             sum += i;
         }
         return sum;
