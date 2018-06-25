@@ -9,7 +9,7 @@ case class RegEx[State, AtomType]() {
   abstract case class Cat(es: List[RegExp]) extends RegExp
   case class Alt(es: List[RegExp]) extends RegExp
   case class Rep(e: RegExp) extends RegExp
-  case class Fun(derive: (State, Option[AtomType]) => (List[State], List[(RegExp, State)])) extends RegExp
+  case class Fun(derive: (State, List[AtomType]) => (List[State], List[(RegExp, State)])) extends RegExp
   case class Not(e: RegExp) extends RegExp
 
   object Cat {
@@ -31,7 +31,7 @@ case class RegEx[State, AtomType]() {
     }
   }
 
-  def derive(exp: RegExp, state: State, atom: Option[AtomType], remaining: List[AtomType]): (List[State], List[(RegExp, State)]) = {
+  def derive(exp: RegExp, state: State, remaining: List[AtomType]): (List[State], List[(RegExp, State)]) = {
     /*
      * List[State]:
      *   atom is not consumed
@@ -42,16 +42,16 @@ case class RegEx[State, AtomType]() {
     exp match {
       case Cat(List()) => (List(state), List())
       case Cat(x :: xs) =>
-        val (bs, cs) = derive(x, state, atom, remaining)
-        val derivedBs = flatMap2(bs, derive(Cat(xs), _: State, atom, remaining))
+        val (bs, cs) = derive(x, state, remaining)
+        val derivedBs = flatMap2(bs, derive(Cat(xs), _: State, remaining))
         val derivedCs = cs.map({ case (e, s) => (Cat(e :: xs), s) })
         (derivedBs._1, derivedBs._2 ++ derivedCs)
       case Alt(List()) => (List(), List())
-      case Alt(xs) => flatMap2(xs, derive(_: RegExp, state, atom, remaining))
+      case Alt(xs) => flatMap2(xs, derive(_: RegExp, state, remaining))
       case Rep(x) =>
-        val (_, cs) = derive(x, state, atom, remaining)
+        val (_, cs) = derive(x, state, remaining)
         (List(state), cs.map({ case (e, s) => (Cat(List(e, exp)), s) }))
-      case Fun(fd) => fd(state, atom)
+      case Fun(fd) => fd(state, remaining)
       case Not(x) =>
         if (stepAll(x, state, remaining, endAnywhere = true).isEmpty) {
           (List(state), List())
@@ -65,9 +65,9 @@ case class RegEx[State, AtomType]() {
     def step(oldTup: (List[State], List[(RegExp, State)]), remaining: List[AtomType]): List[State] = {
       val result = remaining match {
         case List() =>
-          oldTup._2.flatMap({ case (e, s) => derive(e, s, None, List())._1 })
+          oldTup._2.flatMap({ case (e, s) => derive(e, s, List())._1 })
         case a :: as =>
-          val newTup = flatMap2[(RegExp, State), State, (RegExp, State)](oldTup._2, { case (e, s) => derive(e, s, Some(a), a :: as) })
+          val newTup = flatMap2[(RegExp, State), State, (RegExp, State)](oldTup._2, { case (e, s) => derive(e, s, a :: as) })
           step(newTup, as)
       }
 

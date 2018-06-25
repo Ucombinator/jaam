@@ -335,10 +335,10 @@ object LoopPatterns {
   }
 
   private def mkPatRegExp(label: Option[String], stmtPattern: StmtPattern): RegExp = {
-    def derive(state: State, atom: Option[Stmt]): (List[State], List[(RegExp, State)]) = {
-      atom match {
-        case None => (List(), List())
-        case Some(a) => StmtPatternToRegEx(LabeledStmtPattern(mkLabel(label), stmtPattern))(state, a)
+    def derive(state: State, remaining: List[Stmt]): (List[State], List[(RegExp, State)]) = {
+      remaining match {
+        case List() => (List(), List())
+        case a::_ => StmtPatternToRegEx(LabeledStmtPattern(mkLabel(label), stmtPattern))(state, a)
       }
     }
     Fun(derive)
