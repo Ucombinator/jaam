@@ -192,6 +192,19 @@ object LoopPatterns {
 
   private def decrVar(varName: String, label: Option[String] = None): RegExp = addToVar(varName, -1, label)
 
+  private def anyAddToVar(varName: String, amountName: String, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(varName),
+        AddExpPattern(
+          VariableExpPattern(varName),
+          NamedExpPattern(amountName, AnyIntegralConstantExpPattern)
+        )
+      )
+    )
+  }
+
   private def lengthOf(varName: String, arrName: String, label: Option[String] = None): RegExp = {
     mkPatRegExp(
       label,
@@ -260,7 +273,7 @@ object LoopPatterns {
     assignZero("iter"),
     ifGeGoto("iter", NamedExpPattern("bound", AnyIntegralConstantExpPattern), destLabel = end, label = head),
     wildcardRep,
-    incrVar("iter"),
+    anyAddToVar("iter", "incr"),
     goto(head),
     matchLabel(end),
     wildcardRep
@@ -275,6 +288,7 @@ object LoopPatterns {
     matchLabel(end),
     wildcardRep
   ))
+
   private val addInvokes = Cat(List(wildcardRep, addInvoke("arr"), wildcardRep))
 
   private def mkLabel(label: Option[String] = None): LabelPattern = {

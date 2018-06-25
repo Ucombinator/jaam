@@ -55,7 +55,7 @@ object Loop {
 
     runPattern(LoopPatterns.iteratorLoop).foreach(s => return IteratorLoop(s.values("arr")))
     runPattern(LoopPatterns.arrayLoop).foreach(s => return ArrayLoop(s.values("arr")))
-    runPattern(LoopPatterns.simpleCountUpForLoop).foreach(s => return SimpleCountUpForLoop(s.values("bound")))
+    runPattern(LoopPatterns.simpleCountUpForLoop).foreach(s => return SimpleCountUpForLoop(s.values("bound"), s.values("incr")))
     runPattern(LoopPatterns.simpleCountDownForLoop).foreach(s => return SimpleCountDownForLoop(s.values("bound")))
 
     UnidentifiedLoop()
@@ -65,6 +65,6 @@ object Loop {
   case class UnidentifiedLoop() extends LoopInfo
   case class IteratorLoop(iterable: Value) extends LoopInfo
   case class ArrayLoop(iterable: Value) extends LoopInfo
-  case class SimpleCountUpForLoop(bound: Value) extends LoopInfo
+  case class SimpleCountUpForLoop(bound: Value, increment: Value) extends LoopInfo
   case class SimpleCountDownForLoop(bound: Value) extends LoopInfo
 }
