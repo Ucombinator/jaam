@@ -11,9 +11,10 @@ class ForLoops {
         return sum;
     }
 
-    public static int simpleCountDownFor() {
+    public static int simpleCountUpFor2() {
         int sum = 0;
-        for (int i = 100; i > 0; --i) {
+        int n = 100;
+        for (int i = 0; i < n; ++i) {
             sum += i;
         }
         return sum;
@@ -29,8 +30,19 @@ class ForLoops {
 
     public static int complexCountUpFor() {
         int sum = 0;
-        for (int i = 0; i < 100; i += i) {
+        int x = 3;
+        for (int i = 0; i < 100; i += x) {
             sum += i;
+        }
+        return sum;
+    }
+
+    public static int variableCountUpFor() {
+        int sum = 0;
+        int n = 100;
+        for (int i = 0; i < n; ++i) {
+            sum += i;
+            n -= 1;
         }
         return sum;
     }
@@ -39,6 +51,50 @@ class ForLoops {
         int sum = 0;
         for (int i = 0; i < 100; i *= 2) {
             sum += i;
+        }
+        return sum;
+    }
+
+    public static int simpleCountDownFor() {
+        int sum = 0;
+        for (int i = 100; i > 0; --i) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    public static int simpleCountDownFor2() {
+        int sum = 0;
+        int n = 0;
+        for (int i = 100; i > n; --i) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    public static int simpleCountDownByTwoFor() {
+        int sum = 0;
+        for (int i = 100; i > 0; i -= 2) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    public static int complexCountDownFor() {
+        int sum = 0;
+        int x = 3;
+        for (int i = 100; i > 0; i -= x) {
+            sum += i;
+        }
+        return sum;
+    }
+
+    public static int variableCountDownFor() {
+        int sum = 0;
+        int n = 0;
+        for (int i = 100; i > n; --i) {
+            sum += i;
+            n += 1;
         }
         return sum;
     }
