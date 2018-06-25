@@ -247,12 +247,12 @@ case class NamedExpPattern(name: Identifier, pattern: ExpPattern) extends ExpPat
     state.values.get(name) match {
       case Some(id) =>
         if (id.equivTo(value)) {
-          List(state)
+          pattern(state, value)
         } else {
           List()
         }
       case None =>
-        List(state.copy(values = state.values + (name -> value)))
+        pattern(state.copy(values = state.values + (name -> value)), value)
     }
   }
 }
