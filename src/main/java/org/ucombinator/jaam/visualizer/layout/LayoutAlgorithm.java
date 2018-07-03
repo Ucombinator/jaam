@@ -311,6 +311,7 @@ public class LayoutAlgorithm
     private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
     Point2D treeLayout(List<T> roots, HashMap<T, ArrayList<T>> childrenMap, Comparator<T> childrenSortOrder)
     {
+        setSpanningEdges(childrenMap);
         if(childrenSortOrder != null) {
             roots.sort(childrenSortOrder);
             childrenMap.values().forEach(l -> l.sort(childrenSortOrder));
@@ -331,6 +332,8 @@ public class LayoutAlgorithm
             parentWidth += root.getBboxWidth();
             parentHeight  = Math.max(parentHeight, root.getBboxHeight() + 2 * MARGIN_PADDING);
         }
+
+
 
         return new Point2D(parentWidth, parentHeight);
     }
@@ -389,5 +392,16 @@ public class LayoutAlgorithm
         }
 
         root.setY(top); //top-most corner y
+    }
+
+    private static <T extends AbstractLayoutVertex<T>> void setSpanningEdges(HashMap<T, ArrayList<T>> childrenMap) {
+
+        // Mark which edges are in our spanning tree, and which are not.
+        for (T parent : childrenMap.keySet()) {
+            Set<T> childrenSet = new HashSet<>(childrenMap.get(parent));
+            for (LayoutEdge<T> edge : parent.getIncidentEdges()) {
+                edge.setSpanningEdge(childrenSet.contains(edge.getDest()));
+            }
+        }
     }
 }
