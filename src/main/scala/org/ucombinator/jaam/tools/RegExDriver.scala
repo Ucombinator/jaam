@@ -18,19 +18,22 @@ import scala.collection.mutable
 
 object Main {
 
-  def main(input: List[String], className: String, methodName: Option[String], showStmts: Boolean): Unit = {
+  def main(input: List[String], className: Option[String], methodName: Option[String], showStmts: Boolean): Unit = {
     prepFromInput(input)
 
     val loopTypeToLoop = mutable.Map[Class[_ <: LoopInfo], Set[IdentifiedLoop]]()  // Maps types of LoopInfo to identified loops
     val sootLoopToLoopInfo = mutable.LinkedHashMap[SootLoop, LoopInfo]()           // LinkedHashMap preserves insertion order
 
-    val classNames = Soot.loadedClasses.keys
-    val classes = classNames.map(Soot.getSootClass).filter(_.getName == className)
+    val sootClasses = Soot.loadedClasses.keys.map(Soot.getSootClass)
+    val classes = className match {
+      case Some(cn) => sootClasses.filter(_.getName == className)
+      case None => sootClasses
+    }
+
     for (c <- classes) {
       if (Soot.loadedClasses(c.getName).origin == Origin.APP) {
         // Search through only concrete methods.
         for (method <- c.getMethods.asScala.filter(m => m.isConcrete && (methodName match { case None => true; case Some(mn) => m.getName == mn }))) {
-          println("Looking in method " + c.getName + "." + method.getName + ":")
           val lnt = new LoopNestTree(Soot.getBody(method))
           for (loop <- lnt.asScala.toSet[SootLoop]) {
             val info = Loop.identifyLoop(method, loop, showStmts)
@@ -52,7 +55,7 @@ object Main {
     println("Total number of loops: " + totalNumberOfLoops)
     for ((loopType, loops) <- loopTypeToLoop) {
       val percentage = loops.size.toFloat / totalNumberOfLoops.toFloat * 100.0
-      println("  " + loopType.getSimpleName + ": " + loops.size + " / " + f"$percentage%1.2f" + "%")
+      println("  " + loopType.getSimpleName + ": " + loops.size + " / " + totalNumberOfLoops + " = " + f"$percentage%1.2f" + "%")
     }
   }
 
