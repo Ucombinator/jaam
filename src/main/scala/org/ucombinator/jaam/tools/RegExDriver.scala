@@ -2,9 +2,9 @@ package org.ucombinator.jaam.tools.regex_driver
 
 import org.ucombinator.jaam.serializer.Serializer
 import org.ucombinator.jaam.tools.app.{App, Origin}
-import org.ucombinator.jaam.util.Loop.LoopInfo
-import org.ucombinator.jaam.util.{Loop, Soot}
-import soot.{PackManager, Scene}
+import org.ucombinator.jaam.util.Loop.{LoopInfo, UnidentifiedLoop}
+import org.ucombinator.jaam.util.{Loop, Soot, Stmt}
+import soot.{PackManager, Scene, SootMethod}
 import soot.options.Options
 import soot.toolkits.graph.LoopNestTree
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
@@ -18,7 +18,7 @@ import scala.collection.mutable
 
 object Main {
 
-  def main(input: List[String], className: Option[String], methodName: Option[String], showStmts: Boolean): Unit = {
+  def main(input: List[String], className: Option[String], methodName: Option[String], showStmts: Boolean, showUnidentified: Boolean): Unit = {
     prepFromInput(input)
 
     val loopTypeToLoop = mutable.Map[Class[_ <: LoopInfo], Set[IdentifiedLoop]]()  // Maps types of LoopInfo to identified loops
@@ -37,7 +37,7 @@ object Main {
           val lnt = new LoopNestTree(Soot.getBody(method))
           for (loop <- lnt.asScala.toSet[SootLoop]) {
             val info = Loop.identifyLoop(method, loop, showStmts)
-            val identifiedLoop = new IdentifiedLoop(loop, info)
+            val identifiedLoop = new IdentifiedLoop(method, loop, info)
 
             // Update map of LoopInfo types to identified loops.
             val identifiedLoops = loopTypeToLoop.getOrElse(info.getClass, Set())
@@ -51,15 +51,29 @@ object Main {
     }
 
     val totalNumberOfLoops = loopTypeToLoop.foldLeft(0)({ case (a, (_, v)) => a + v.size })
-    println("STATISTICS")
+    println("LOOP STATISTICS")
     println("Total number of loops: " + totalNumberOfLoops)
     for ((loopType, loops) <- loopTypeToLoop) {
       val percentage = loops.size.toFloat / totalNumberOfLoops.toFloat * 100.0
       println("  " + loopType.getSimpleName + ": " + loops.size + " / " + totalNumberOfLoops + " = " + f"$percentage%1.2f" + "%")
     }
+
+    if (showUnidentified) {
+      println()
+      println("UNIDENTIFIED LOOPS")
+      for (loop <- loopTypeToLoop(classOf[UnidentifiedLoop])) {
+        println("  " + loop.sootMethod)
+        if (Loop.isExceptionLoop(loop.sootLoop, loop.sootMethod)) {
+          println("  EXCEPTION LOOP")
+        }
+        for (stmt <- loop.sootLoop.getLoopStatements.asScala.map(Stmt(_, loop.sootMethod))) {
+          println("    " + stmt)
+        }
+      }
+    }
   }
 
-  sealed class IdentifiedLoop(loop: SootLoop, loopInfo: LoopInfo)
+  sealed case class IdentifiedLoop(sootMethod: SootMethod, sootLoop: SootLoop, loopInfo: LoopInfo)
 
   def prepFromInput(input: List[String]): Unit = {
     Options.v().set_verbose(false)
@@ -76,7 +90,12 @@ object Main {
 
     val inputPackets = input.flatMap(Serializer.readAll(_).asScala)
 
-    inputPackets.foreach(a => Soot.addClasses(a.asInstanceOf[App]))
+    for (packet <- inputPackets) {
+      packet match {
+        case p: App => Soot.addClasses(p)
+        case _ => ()
+      }
+    }
 
     Scene.v.loadBasicClasses()
     PackManager.v.runPacks()
