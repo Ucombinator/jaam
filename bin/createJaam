@@ -42,6 +42,7 @@ done
   --input "$file".loop3.jaam \
   --input "$file".taint3.jaam \
   --output "$file".all.jaam
+"$JAAM_exec" driver --input "$file".app.jaam
 
 # Cleanup
 rm "$file".app.jaam
