@@ -188,6 +188,13 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
                 map(v -> { return immAndVis.getOld(v);}).collect(Collectors.toCollection(HashSet::new));
     }
 
+    public StateVertex getImmutable(StateVertex visible) {
+        if (immAndVis.containsNew(visible)) {
+            return immAndVis.getOld(visible);
+        }
+        return null;
+    }
+
     private void setAllImmutable(StateVertex v) {
         v.isImmutable = true;
 

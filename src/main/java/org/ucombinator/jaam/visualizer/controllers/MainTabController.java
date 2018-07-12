@@ -115,8 +115,7 @@ public class MainTabController {
     public void setRightText(TaintSccVertex v) {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        Graph<TaintVertex, TaintEdge> childGraph = v.getInnerGraph();
-        for(AbstractLayoutVertex<TaintVertex> i : childGraph.getVertices()) {
+        for(AbstractLayoutVertex<TaintVertex> i : v.getLineSortedChildren()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
         this.taintDescriptionArea.setText(text.toString());
