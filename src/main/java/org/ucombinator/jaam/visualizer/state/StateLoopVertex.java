@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.state;
 
 import javafx.scene.paint.Color;
+import org.ucombinator.jaam.util.Loop;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.serializer.LoopLoopNode;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
@@ -13,6 +14,7 @@ import java.util.LinkedHashSet;
 public class StateLoopVertex extends StateVertex implements Cloneable, MethodEntity {
 
     private static final Color defaultColor = Color.LIGHTYELLOW;
+    private static final Color unknownLoopColor = Color.RED;
 
     private final int statementIndex;
 
@@ -20,10 +22,10 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
 
     public StateLoopVertex(int id, String label, int statementIndex, LoopLoopNode compilationUnit){
     	super(id, label, AbstractLayoutVertex.VertexType.LOOP);
-    	this.setDefaultColor();
 
     	this.statementIndex = statementIndex;
     	this.compilationUnit = compilationUnit;
+        this.setColor();
     }
 
     public StateLoopVertex copy() {
@@ -103,8 +105,13 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
         return methodNames;
     }
 
-    public void setDefaultColor(){
-        this.color = defaultColor;
+    public void setColor(){
+        if (this.compilationUnit.loopInfo() instanceof Loop.UnidentifiedLoop) {
+            this.color = unknownLoopColor;
+        }
+        else {
+            this.color = defaultColor;
+        }
     }
 
     public String toString()

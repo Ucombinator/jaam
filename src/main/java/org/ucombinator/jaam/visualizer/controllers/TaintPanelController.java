@@ -3,20 +3,24 @@ package org.ucombinator.jaam.visualizer.controllers;
 import javafx.event.EventHandler;
 import javafx.scene.layout.BorderPane;
 import org.ucombinator.jaam.tools.taint3.Address;
+import org.ucombinator.jaam.util.Loop;
 import org.ucombinator.jaam.visualizer.graph.GraphTransform;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.state.StateLoopVertex;
+import org.ucombinator.jaam.visualizer.state.StateMethodVertex;
 import org.ucombinator.jaam.visualizer.state.StateVertex;
 import org.ucombinator.jaam.visualizer.taint.*;
+import soot.SootMethod;
 import soot.Value;
 import soot.jimple.Constant;
+import soot.jimple.internal.JimpleLocal;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class TaintPanelController extends GraphPanelController<TaintVertex, TaintEdge>
         implements EventHandler<SelectEvent<TaintVertex>> {
@@ -109,11 +113,109 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         @Override
         public void handle(SelectEvent<StateVertex> selectEvent) {
             StateVertex v = selectEvent.getVertex();
-            Set<TaintVertex> methodAddresses = findAddressesByMethods(v.getMethodNames());
-            System.out.println("Taint vertices in method: " + methodAddresses.size());
-            drawConnectedVertices(methodAddresses);
+            Set<TaintVertex> startVertices = new HashSet<>();
+            if (v instanceof StateMethodVertex) {
+                // If we click on a method vertex, we should get all taint addresses for that method.
+                startVertices = findAddressesByMethods(v.getMethodNames());
+            }
+            else if (v instanceof StateLoopVertex) {
+                // Otherwise, if we click on a loop, we just want the addresses controlling the loop.
+                Loop.LoopInfo loopInfo = ((StateLoopVertex) v).getCompilationUnit().loopInfo();
+                SootMethod method = ((StateLoopVertex) v).getCompilationUnit().method();
+                if (loopInfo instanceof Loop.UnidentifiedLoop) {
+                    // Default to drawing methods
+                    startVertices = findAddressesByMethods(v.getMethodNames());
+                }
+                else if (loopInfo instanceof Loop.IteratorLoop) {
+                    Value value = ((Loop.IteratorLoop) loopInfo).iterable();
+                    addTaintVertex(startVertices, value, method);
+                }
+                else if (loopInfo instanceof Loop.ArrayLoop) {
+                    Value value = ((Loop.ArrayLoop) loopInfo).iterable();
+                    addTaintVertex(startVertices, value, method);
+                }
+                else if (loopInfo instanceof Loop.SimpleCountUpForLoop) {
+                    Value valueLower = ((Loop.SimpleCountUpForLoop) loopInfo).lowerBound();
+                    Value valueUpper = ((Loop.SimpleCountUpForLoop) loopInfo).upperBound();
+                    Value valueIncrement = ((Loop.SimpleCountUpForLoop) loopInfo).increment();
+
+                    addTaintVertex(startVertices, valueLower, method);
+                    addTaintVertex(startVertices, valueUpper, method);
+                    addTaintVertex(startVertices, valueIncrement, method);
+                }
+                else if (loopInfo instanceof Loop.SimpleCountDownForLoop) {
+                    Value valueLower = ((Loop.SimpleCountDownForLoop) loopInfo).lowerBound();
+                    Value valueUpper = ((Loop.SimpleCountDownForLoop) loopInfo).upperBound();
+                    Value valueIncrement = ((Loop.SimpleCountDownForLoop) loopInfo).increment();
+
+                    addTaintVertex(startVertices, valueLower, method);
+                    addTaintVertex(startVertices, valueUpper, method);
+                    addTaintVertex(startVertices, valueIncrement, method);
+                }
+            }
+            System.out.println("Start vertices: " + startVertices.size());
+            drawConnectedVertices(startVertices);
         }
     };
+
+    private void addTaintVertex(Set<TaintVertex> taintVertices, Value value, SootMethod method) {
+        TaintVertex v = getTaintVertexRec(this.immutableRoot, value, method);
+        if (v != null) {
+            taintVertices.add(v);
+        }
+    }
+
+    private TaintVertex getTaintVertexRec(TaintVertex v, Value value, SootMethod method) {
+        if(v instanceof TaintAddress) {
+            TaintAddress vAddr = (TaintAddress) v;
+            Address addr = vAddr.getAddress();
+            if (addr instanceof Address.Value) {
+                Value taintValue = ((Address.Value) addr).sootValue();
+                System.out.println("Comparing values: " + taintValue.equivTo(value) + ", " + taintValue + ", " + value);
+                System.out.println("Method: " + addr.sootMethod().toString());
+                System.out.println("Classes: " + taintValue.getClass() + ", " + value.getClass());
+                if (compareValues(taintValue, value, vAddr.getSootMethod(), method)) {
+                    System.out.println("Found match!");
+                    return v;
+                }
+            }
+        }
+
+        for (TaintVertex w : v.getInnerGraph().getVertices()) {
+            TaintVertex result = getTaintVertexRec(w, value, method);
+            if (result != null) {
+                return result;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean compareValues(Value taintValue, Value value, SootMethod taintMethod, SootMethod method) {
+        if (taintValue.equals(value)) {
+            System.out.println("Equal taint values!");
+            return true;
+        }
+        else if (taintValue.equivTo(value)) {
+            System.out.println("Equivalent taint values!");
+            return true;
+        }
+        else if (value instanceof JimpleLocal) {
+            System.out.println("One JimpleLocal!");
+            if (taintValue instanceof JimpleLocal) {
+                System.out.println("Both JimpleLocal!");
+                if (taintMethod.getSubSignature().equals(method.getSubSignature())) {
+                    System.out.println("Equal methods!");
+                    System.out.println("SubSignature: " + taintMethod.getSubSignature());
+                    if (((JimpleLocal) taintValue).getName().equals(((JimpleLocal) value).getName())) {
+                        System.out.println("Equal names!");
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
     private void drawConnectedVertices(Set<TaintVertex> addresses) {
         long time1 = System.nanoTime();

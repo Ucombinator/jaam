@@ -110,14 +110,14 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
             } else {
                 drawStraightEdge();
             }
+
+            this.graphics.getChildren().removeAll(this.graphics.getChildren());
+            this.graphics.getChildren().add(edgePath);
+            this.graphics.getChildren().add(arrowhead);
+
+            this.getSrcParent().getChildren().add(graphics);
+            graphics.setVisible(this.isDisplayed());
         }
-
-        this.graphics.getChildren().removeAll(this.graphics.getChildren());
-        this.graphics.getChildren().add(edgePath);
-        this.graphics.getChildren().add(arrowhead);
-
-        this.getSrcParent().getChildren().add(graphics);
-        graphics.setVisible(this.isDisplayed());
     }
 
     public void drawOrthogonalEdge() {
@@ -127,6 +127,9 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
         MoveTo moveTo = new MoveTo();
         if (destCenter < src.getX()) {
             moveTo.setX(src.getX());
+        }
+        else if (destCenter < src.getX() + src.getWidth()) {
+            moveTo.setX(destCenter);
         }
         else {
             moveTo.setX(src.getX() + src.getWidth());
@@ -141,14 +144,13 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
         path.getElements().addAll(moveTo, hLine, vLine);
 
         this.edgePath = path;
-        this.graphics.getChildren().removeAll(this.graphics.getChildren());
-        this.graphics.getChildren().add(edgePath);
 
-        this.getSrcParent().getChildren().add(graphics);
-        this.graphics.setVisible(this.isDisplayed());
+        double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getRect().getWidth());
+        this.arrowhead = GUINode.computeArrowhead(destCenter, dest.getY(), arrowLength, 3 * Math.PI / 2, arrowheadAngleWidth);
     }
 
     public void drawStraightEdge() {
+        System.out.println("Drawing straight edge: " + src + " --> " + dest);
         GUINode<T> srcNode = src.getGraphics();
         GUINode<T> destNode   = dest.getGraphics();
 

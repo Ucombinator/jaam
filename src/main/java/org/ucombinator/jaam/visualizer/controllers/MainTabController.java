@@ -85,7 +85,8 @@ public class MainTabController {
         this.vizDescriptionArea.setText("Loop:\n  Class: "
                 + v.getClassDeclaration() + "\n  Method: "
                 + v.getMethodName()       + "\n  Index: "
-                + v.getStatementIndex()   + "\n  Signature: " + v.getLabel());
+                + v.getStatementIndex()   + "\n  Signature: " + v.getLabel()
+                + "\n  Loop info: " + v.getCompilationUnit().loopInfo() + "\n");
     }
 
 
