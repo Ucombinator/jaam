@@ -13,8 +13,14 @@ import java.util.LinkedHashSet;
 
 public class StateLoopVertex extends StateVertex implements Cloneable, MethodEntity {
 
+    enum TYPE { ITERATOR, ARRAY, SIMPLE_COUNT_UP, SIMPLE_COUNT_DOWN, UNKNOWN}
+
     private static final Color defaultColor = Color.LIGHTYELLOW;
     private static final Color unknownLoopColor = Color.RED;
+    private static final Color iteratorLoopColor = Color.LIGHTGOLDENRODYELLOW;
+    private static final Color arrayLoopColor = Color.GOLD;
+    private static final Color simpleCountUpLoopColor = Color.PERU;
+    private static final Color simpleCountDownLoopColor = Color.ORANGE;
 
     private final int statementIndex;
 
@@ -106,8 +112,22 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
     }
 
     public void setColor(){
+
+
         if (this.compilationUnit.loopInfo() instanceof Loop.UnidentifiedLoop) {
             this.color = unknownLoopColor;
+        }
+        else if (this.compilationUnit.loopInfo() instanceof Loop.IteratorLoop) {
+            this.color = iteratorLoopColor;
+        }
+        else if(this.compilationUnit.loopInfo() instanceof Loop.ArrayLoop) {
+            this.color = arrayLoopColor;
+        }
+        else if(this.compilationUnit.loopInfo() instanceof Loop.SimpleCountUpForLoop) {
+            this.color = simpleCountUpLoopColor;
+        }
+        else if(this.compilationUnit.loopInfo() instanceof Loop.SimpleCountDownForLoop) {
+            this.color = simpleCountDownLoopColor;
         }
         else {
             this.color = defaultColor;
