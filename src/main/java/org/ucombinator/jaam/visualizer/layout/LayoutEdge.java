@@ -143,7 +143,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
         vLine.setY(dest.getY());
         path.getElements().addAll(moveTo, hLine, vLine);
 
-        this.edgePath = path;
+        this.setEdgePath(path);
 
         double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getRect().getWidth());
         this.arrowhead = GUINode.computeArrowhead(destCenter, dest.getY(), arrowLength, 3 * Math.PI / 2, arrowheadAngleWidth);
@@ -159,7 +159,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
             Line line = GUINode.getLine(srcNode, destNode);
             line.setStroke(this.color);
             line.setStrokeWidth(defaultStrokeWidth);
-            this.edgePath = line;
+            this.setEdgePath(line);
 
             if (this.getType() == EDGE_TYPE.EDGE_DUMMY) {
                 line.getStrokeDashArray().addAll(5D, 4D);
@@ -178,7 +178,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
             curve.setStroke(this.color);
             curve.setFill(Color.TRANSPARENT);
             curve.setStrokeWidth(defaultStrokeWidth);
-            this.edgePath = curve;
+            this.setEdgePath(curve);
 
             if (this.getType() == EDGE_TYPE.EDGE_DUMMY) {
                 curve.getStrokeDashArray().addAll(5D, 4D);
@@ -238,7 +238,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
         vLine3.setY(bounds.getMinY());
 
         path.getElements().addAll(moveTo, vLine1, hLine1, vLine2, hLine2, vLine3);
-        this.edgePath = path;
+        this.setEdgePath(path);
         this.graphics.getChildren().removeAll(this.graphics.getChildren());
         this.graphics.getChildren().add(edgePath);
 
@@ -304,5 +304,10 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
     private GUINode<T> getSrcParent()
     {
         return this.getSrc().getGraphics().getParentNode();
+    }
+
+    private void setEdgePath(Shape newShape) {
+        this.edgePath = newShape;
+        this.edgePath.setMouseTransparent(false);
     }
 }
