@@ -140,7 +140,7 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         for (StateVertex immV : vertices) {
             checkImmutable(immV);
             StateVertex v = immAndVis.getNew(immV);
-            if (!v.isHidden()) {
+            if (v != null && !v.isHidden()) {
                 v.setClassHighlight(value);
             }
         }
