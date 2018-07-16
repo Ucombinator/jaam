@@ -20,9 +20,9 @@ public class CodeViewController {
     @FXML public final VBox root = null; // Initialized by Controllers.loadFXML()
     @FXML public final TabPane codeTabs = null; // Initialized by Controllers.loadFXML()
 
-    HashMap<String, ClassCode> codeMap;
-    HashMap<String, CodeTab> tabMap;
-    HashSet<String> classNames;
+    HashMap<String, ClassCode> codeMap; // Full Class Name to Code
+    HashMap<String, CodeTab> tabMap;    // Full Class Name to Tab
+    HashSet<String> classNames;         // Full Class Names
 
     public CodeViewController(List<CompilationUnit> compilationUnits, Set<SootClass> sootClasses) throws IOException {
         Controllers.loadFXML("/CodeView.fxml", this);
@@ -128,6 +128,10 @@ public class CodeViewController {
         }
 
         return c.getFields();
+    }
+
+    public boolean haveCode(String fullClassName) {
+        return this.classNames.contains(fullClassName);
     }
 
     private boolean isDisplayed(CodeTab t)
