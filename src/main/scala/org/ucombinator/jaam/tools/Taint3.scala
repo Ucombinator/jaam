@@ -246,7 +246,7 @@ object Taint3 {
     output2JaamFile(outSerializer)
     outSerializer.close()
 
-    printToGraphvizFile(output, graph, appClasses)
+    //printToGraphvizFile(output, graph, appClasses)
   }
 
   def loadInput(input: List[String]): (Set[SootClass], Set[SootClass]) = {
