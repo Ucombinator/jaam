@@ -49,10 +49,13 @@ public class MainTabController {
                              Graph<TaintVertex, TaintEdge> taintGraph, Set<SootClass> sootClasses) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
 
+        this.codeViewController = new CodeViewController(compilationUnits, sootClasses);
+        this.leftPane.getChildren().add(this.codeViewController.codeTabs);
+
         this.vizPanelController = new VizPanelController(graph);
         this.vizPane.setCenter(this.vizPanelController.root);
 
-        this.taintPanelController = new TaintPanelController(taintGraph);
+        this.taintPanelController = new TaintPanelController(taintGraph, this.codeViewController);
         this.taintPane.setCenter(this.taintPanelController.root);
 
         this.searchResultsController = new SearchResultsController();
@@ -61,9 +64,6 @@ public class MainTabController {
         this.tab = new Tab(file.getName(), this.root);
         this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));
         Controllers.put(this.tab, this);
-
-        this.codeViewController = new CodeViewController(compilationUnits, sootClasses);
-        this.leftPane.getChildren().add(this.codeViewController.codeTabs);
 
         this.codeViewController.addSelectHandler(vizPane);
         this.taintPanelController.addSelectHandler(vizPane);
