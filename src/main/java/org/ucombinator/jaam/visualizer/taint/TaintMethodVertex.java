@@ -83,10 +83,9 @@ public class TaintMethodVertex extends TaintVertex {
 
         Set<TaintVertex> vertices = this.getInnerGraph().getVertices();
 
-        String className  = vertices.iterator().next().getClassName();
-        String methodName = vertices.iterator().next().getMethodName();
-
         StringBuilder builder = new StringBuilder(className + "\n" + methodName + "\n");
+
+
 
         for(TaintVertex v : vertices) {
             if (v.getStmtString() == null) continue;
