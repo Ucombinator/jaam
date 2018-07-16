@@ -13,12 +13,10 @@
 
 ### Compilation results
 *.class
-jars/*.jar
-!jars/sbt-launch.jar
+jars/jaam.jar
 target
 project/target
 project/project/target
-project/build.properties
 
 ### Soot/jaam generated files
 *.jaam

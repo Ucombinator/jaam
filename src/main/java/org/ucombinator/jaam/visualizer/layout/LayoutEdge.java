@@ -19,18 +19,20 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
 
     private T src, dest;
     private Group graphics;
-    private Shape edgePath; // This will be either a line for most edges, or a path for self-edges
+    private Shape edgePath; // A path for self-edges and spanning tree edges, and a straight line for all the rest.
     private Polygon arrowhead;
 
     public enum EDGE_TYPE {EDGE_REGULAR, EDGE_DUMMY};
     private EDGE_TYPE type;
     private Color color;
     private double opacity;
+    private boolean isSpanningEdge;
 
     public LayoutEdge(T src, T dest, EDGE_TYPE edgeType) {
         this.src = src;
         this.dest = dest;
         this.type = edgeType;
+        this.isSpanningEdge = false;
         graphics = new Group();
         arrowhead = new Polygon();
         this.opacity = 1.0;
@@ -72,6 +74,10 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
         return dest;
     }
 
+    public void setSpanningEdge(boolean isSpanningEdge) {
+        this.isSpanningEdge = isSpanningEdge;
+    }
+
     public void draw()
     {
         if(!src.getDrawEdges() || !dest.getDrawEdges()) {
@@ -95,7 +101,56 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
             System.out.println(this.getType());
             return;
         }
+        else {
+            double destCenter = dest.getX() + (dest.getWidth() / 2);
+            double srcLeft = src.getX();
+            double srcRight = src.getX() + src.getWidth();
+            if (this.isSpanningEdge && (destCenter > srcLeft) && (destCenter < srcRight)) {
+                drawOrthogonalEdge();
+            } else {
+                drawStraightEdge();
+            }
 
+            this.graphics.getChildren().removeAll(this.graphics.getChildren());
+            this.graphics.getChildren().add(edgePath);
+            this.graphics.getChildren().add(arrowhead);
+
+            this.getSrcParent().getChildren().add(graphics);
+            graphics.setVisible(this.isDisplayed());
+        }
+    }
+
+    public void drawOrthogonalEdge() {
+        System.out.println("Drawing orthogonal edge: " + src + " --> " + dest);
+        double destCenter = dest.getX() + (dest.getWidth() / 2);
+        Path path = new Path();
+        MoveTo moveTo = new MoveTo();
+        if (destCenter < src.getX()) {
+            moveTo.setX(src.getX());
+        }
+        else if (destCenter < src.getX() + src.getWidth()) {
+            moveTo.setX(destCenter);
+        }
+        else {
+            moveTo.setX(src.getX() + src.getWidth());
+        }
+        moveTo.setY(src.getY() + (src.getHeight() / 2));
+
+        HLineTo hLine = new HLineTo();
+        hLine.setX(destCenter);
+
+        VLineTo vLine = new VLineTo();
+        vLine.setY(dest.getY());
+        path.getElements().addAll(moveTo, hLine, vLine);
+
+        this.setEdgePath(path);
+
+        double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getRect().getWidth());
+        this.arrowhead = GUINode.computeArrowhead(destCenter, dest.getY(), arrowLength, 3 * Math.PI / 2, arrowheadAngleWidth);
+    }
+
+    public void drawStraightEdge() {
+        System.out.println("Drawing straight edge: " + src + " --> " + dest);
         GUINode<T> srcNode = src.getGraphics();
         GUINode<T> destNode   = dest.getGraphics();
 
@@ -104,7 +159,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
             Line line = GUINode.getLine(srcNode, destNode);
             line.setStroke(this.color);
             line.setStrokeWidth(defaultStrokeWidth);
-            this.edgePath = line;
+            this.setEdgePath(line);
 
             if (this.getType() == EDGE_TYPE.EDGE_DUMMY) {
                 line.getStrokeDashArray().addAll(5D, 4D);
@@ -123,7 +178,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
             curve.setStroke(this.color);
             curve.setFill(Color.TRANSPARENT);
             curve.setStrokeWidth(defaultStrokeWidth);
-            this.edgePath = curve;
+            this.setEdgePath(curve);
 
             if (this.getType() == EDGE_TYPE.EDGE_DUMMY) {
                 curve.getStrokeDashArray().addAll(5D, 4D);
@@ -134,13 +189,6 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
             this.arrowhead = GUINode.computeArrowhead(curve.getEndX(), curve.getEndY(), arrowLength, orientAngle, arrowheadAngleWidth);
             this.arrowhead.setFill(this.color);
         }
-
-        this.graphics.getChildren().removeAll(this.graphics.getChildren());
-        this.graphics.getChildren().add(edgePath);
-        this.graphics.getChildren().add(arrowhead);
-
-        this.getSrcParent().getChildren().add(graphics);
-        graphics.setVisible(this.isDisplayed());
     }
 
     public void highlightEdgePath()
@@ -190,7 +238,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
         vLine3.setY(bounds.getMinY());
 
         path.getElements().addAll(moveTo, vLine1, hLine1, vLine2, hLine2, vLine3);
-        this.edgePath = path;
+        this.setEdgePath(path);
         this.graphics.getChildren().removeAll(this.graphics.getChildren());
         this.graphics.getChildren().add(edgePath);
 
@@ -256,5 +304,10 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
     private GUINode<T> getSrcParent()
     {
         return this.getSrc().getGraphics().getParentNode();
+    }
+
+    private void setEdgePath(Shape newShape) {
+        this.edgePath = newShape;
+        this.edgePath.setMouseTransparent(false);
     }
 }

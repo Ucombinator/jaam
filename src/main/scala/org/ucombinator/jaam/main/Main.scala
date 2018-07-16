@@ -378,9 +378,10 @@ object RegExDriver extends Subcommand("driver") {
   val className = opt[String](descr = "")
   val methodName = opt[String](descr = "")
   val showStmts = opt[Boolean](descr = "")
+  val showUnidentified = opt[Boolean](descr = "")
 
   def run(): Unit = {
-    org.ucombinator.jaam.tools.regex_driver.Main.main(input(), className(), methodName.toOption, showStmts())
+    org.ucombinator.jaam.tools.regex_driver.Main.main(input(), className.toOption, methodName.toOption, showStmts(), showUnidentified())
   }
 }
 

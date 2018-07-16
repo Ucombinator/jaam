@@ -85,7 +85,8 @@ public class MainTabController {
         this.vizDescriptionArea.setText("Loop:\n  Class: "
                 + v.getClassDeclaration() + "\n  Method: "
                 + v.getMethodName()       + "\n  Index: "
-                + v.getStatementIndex()   + "\n  Signature: " + v.getLabel());
+                + v.getStatementIndex()   + "\n  Signature: " + v.getLabel()
+                + "\n  Loop info: " + v.getCompilationUnit().loopInfo() + "\n");
     }
 
 
@@ -114,8 +115,7 @@ public class MainTabController {
     public void setRightText(TaintSccVertex v) {
         StringBuilder text = new StringBuilder("SCC contains:\n");
         int k = 0;
-        Graph<TaintVertex, TaintEdge> childGraph = v.getInnerGraph();
-        for(AbstractLayoutVertex<TaintVertex> i : childGraph.getVertices()) {
+        for(AbstractLayoutVertex<TaintVertex> i : v.getLineSortedChildren()) {
             text.append(k++ + "  " + i.getLabel() + "\n");
         }
         this.taintDescriptionArea.setText(text.toString());

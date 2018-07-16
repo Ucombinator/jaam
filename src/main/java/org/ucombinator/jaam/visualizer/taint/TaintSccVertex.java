@@ -3,8 +3,7 @@ package org.ucombinator.jaam.visualizer.taint;
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.*;
 
 public class TaintSccVertex extends TaintVertex {
 
@@ -58,5 +57,14 @@ public class TaintSccVertex extends TaintVertex {
     @Override
     public LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
         return innerLayout;
+    }
+
+    public ArrayList<TaintVertex> getLineSortedChildren() {
+
+        ArrayList<TaintVertex> vertices = new ArrayList<>(this.getInnerGraph().getVertices());
+
+        vertices.sort(Comparator.comparing(TaintVertex::getLabel));
+
+        return vertices;
     }
 }

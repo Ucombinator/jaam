@@ -10,7 +10,7 @@ import org.jgrapht.traverse.TopologicalOrderIterator
 import org.ucombinator.jaam.serializer.Serializer
 import org.ucombinator.jaam.tools
 import org.ucombinator.jaam.tools.app.{App, Origin}
-import org.ucombinator.jaam.util.{JGraphT, Soot, Stmt}
+import org.ucombinator.jaam.util.{JGraphT, Log, Soot, Stmt}
 import soot.jimple.{Stmt => SootStmt, _}
 import soot.options.Options
 import soot.{Main => SootMain, Unit => SootUnit, Value => SootValue, _}
@@ -51,7 +51,6 @@ object Main {
     val mainClass = mainClasses.head.get // TODO: fix
     val mainMethod = mainMethods.head.get // TODO: fix
     */
-
     Scene.v.loadBasicClasses()
     PackManager.v.runPacks()
 
@@ -74,14 +73,15 @@ object Main {
   def doClass(name: String): Unit = {
     for (m <- Soot.getSootClass(name).getMethods.asScala) {
       if (!m.isNative && !m.isAbstract) {
+        //TODO: Log.debug(f"\n\n*******\n*******\nMethod: ${m.getDeclaringClass.getName}.${m.getName}\n\n")
         //    .getMethodByName(mainMethod) //Coverage2.freshenMethod(Soot.getSootClass(mainClass).getMethodByName(mainMethod))
-        myLoops(m)
+        doMethod(m)
       }
     }
   }
 
   // TEST CMD: (cd ../..; sbt assembly) && jaam loop4 --input DoWhileLoop.app.jaam --output /dev/null
-  def myLoops(m: SootMethod): Unit = {
+  def doMethod(m: SootMethod): Unit = {
     //TODO: replace set with ordered set?
     val (start, graph) = Soot.getBodyGraph(m)
 
@@ -96,7 +96,6 @@ object Main {
       println("Loops:")
     }
 
-    // Print Loop Graph
     for ((k, vs) <- loops.toList.sortBy(_._1.index)) {
       try {
         println(f"-------\n\nHeader:\n$k\nVertices:")
@@ -109,34 +108,34 @@ object Main {
         println()
 
         // Get Reachable Set from "k" (header)
-        // Detect try-catch {}
+        // Used to filter out `catch` blocks
         var reach = Set[Stmt]()
         var search = Set[Stmt](k)
         while (search.nonEmpty) {
           val v = search.head
           search = search.tail
-          if(!reach(v)) {
-            val succ = Graphs.successorListOf(graph, v).asScala.filter(vs)
-            search ++= succ
+          if (!reach(v)) {
+            search ++= Graphs.successorListOf(graph, v).asScala.filter(vs)
           }
           reach += v
         }
 
         // Create Loop Graph
-        // Removes try-catch {}
         val loopGraph = new AsSubgraph[Stmt, DefaultEdge](graph, reach.asJava)
         //println(f"loop at $k")
 
         // ends = all exit nodes
         // sources = start nodes
-        // ts = all nodes that jump to header (t and contiunes)
+        // ts = all nodes that jump to header (t and continues)
         // c = start of condition
         // s = start of body
         // t = end of body
         // e = first statement after loop
         // ps = states that jump to e
-        val ends = reach.flatMap(v => Graphs.successorListOf(graph, v).asScala.filter(s => !reach.contains(s)))
-        //val sources = loopGraph.vertexSet().asScala.filter(v => Graphs.predecessorListOf(graph, v).isEmpty)
+        val ends = vs.flatMap(v => Graphs.successorListOf(graph, v).asScala.filter(s => !vs.contains(s)))
+        //? vs or loopGraph.vertexSet (i.e., reach)
+        //? val ends = reach.flatMap(v => Graphs.successorListOf(graph, v).asScala.filter(s => !vs.contains(s)))
+        // unused: val sources = loopGraph.vertexSet().asScala.filter(v => Graphs.predecessorListOf(graph, v).isEmpty)
         val backEdges = headers(k)
         /*val singlebreak = loopGraph.vertexSet().asScala.filter(v => Graphs.successorListOf(graph, v).asScala.exists(!reach(_)) && Graphs.successorListOf(graph, v).size == 1)
         for (v <- singlebreak) {
@@ -151,7 +150,7 @@ object Main {
           case k: IdentityStmt => k.getRightOp.isInstanceOf[CaughtExceptionRef]
           case _ => false
         }) {
-          println("Loop type: exception (by identity)")
+          println("Loop type: exception (with identity statement)")
         } else if (k match {
           case k: DefinitionStmt => k.getRightOp.isInstanceOf[CaughtExceptionRef]
           case _ => false

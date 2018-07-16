@@ -42,7 +42,7 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
     public static final double DEFAULT_HEIGHT = 10.0;
 
     protected Color color;
-    private static final Color highlightColor = Color.ORANGE;
+    private static final Color highlightColor = Color.VIOLET;
     private static final DropShadow highlightShadow = new DropShadow(10, Color.BLUE);
     private static final DropShadow classHighlightShadow = new DropShadow(BlurType.ONE_PASS_BOX, Color.GREEN, 20,
             0.5, 0, 0);

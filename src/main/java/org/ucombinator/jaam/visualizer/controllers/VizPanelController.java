@@ -13,7 +13,6 @@ import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.state.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -187,6 +186,13 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         return visible.stream().
                 filter(immAndVis::containsNew). // Filters out vertices that don't exist in the immutable graph (e.g. scc)
                 map(v -> { return immAndVis.getOld(v);}).collect(Collectors.toCollection(HashSet::new));
+    }
+
+    public StateVertex getImmutable(StateVertex visible) {
+        if (immAndVis.containsNew(visible)) {
+            return immAndVis.getOld(visible);
+        }
+        return null;
     }
 
     private void setAllImmutable(StateVertex v) {
