@@ -24,8 +24,10 @@ fi
 
 while test -n "$*"; do
   case "$1" in
-    (--no-prune) loop3_flags=--no-prune ;;
-    (--app-package) app_flags+=" --app-package $2"; shift;;
+    (--no-prune) loop3_flags+=" $1" ;;
+    (--app-package) app_flags+=" $1 $2"; shift;;
+    (--main-class) app_flags+=" $1 $2"; shift;;
+    (--main-method) app_flags+=" $1 $2"; shift;;
     (*) echo "ERROR: unknown argument(s): $*"; exit 1 ;;
   esac
   shift
