@@ -7,7 +7,9 @@ import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.MethodEntity;
 import soot.SootClass;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class StateMethodVertex extends StateVertex implements MethodEntity {
@@ -78,7 +80,7 @@ public class StateMethodVertex extends StateVertex implements MethodEntity {
         if(found) {
             System.out.println("Found " + this);
             this.setHighlighted(found);
-            mainTab.getVizHighlighted().add(this);
+            mainTab.getStateHighlighted().add(this);
         }
 
         for(StateVertex v : this.getInnerGraph().getVertices()) {
@@ -106,5 +108,11 @@ public class StateMethodVertex extends StateVertex implements MethodEntity {
     public String toString()
     {
         return "Method " + this.getClassName() + ":" + getMethodName();
+    }
+
+    public List<StateVertex> expand() {
+        List<StateVertex> expandedVertices = new ArrayList<>();
+        expandedVertices.add(this);
+        return expandedVertices;
     }
 }

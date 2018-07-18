@@ -67,4 +67,13 @@ public class TaintSccVertex extends TaintVertex {
 
         return vertices;
     }
+
+    @Override
+    public List<TaintVertex> expand() {
+        List<TaintVertex> expandedVertices = new ArrayList<>();
+        for (TaintVertex v : this.getInnerGraph().getVertices()) {
+            expandedVertices.addAll(v.expand());
+        }
+        return expandedVertices;
+    }
 }

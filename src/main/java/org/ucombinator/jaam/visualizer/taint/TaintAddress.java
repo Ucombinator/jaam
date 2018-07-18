@@ -8,8 +8,10 @@ import soot.SootClass;
 import soot.SootField;
 import soot.SootMethod;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 
 public class TaintAddress extends TaintVertex {
 
@@ -104,7 +106,6 @@ public class TaintAddress extends TaintVertex {
         else {
             return sootClass.getName();
         }
-
     }
 
     @Override
@@ -115,5 +116,12 @@ public class TaintAddress extends TaintVertex {
         else {
             return null;
         }
+    }
+
+    @Override
+    public List<TaintVertex> expand() {
+        List<TaintVertex> expandedVertices = new ArrayList<>();
+        expandedVertices.add(this);
+        return expandedVertices;
     }
 }

@@ -41,21 +41,29 @@ public class MainTabController {
     @FXML private TreeView<ClassTreeNode> classTree = null; // Initialized by Controllers.loadFXML()
     @FXML private final BorderPane searchPane = null; // Initialized by Controllers.loadFXML()
 
-    private HashSet<StateVertex> vizHighlighted; // TODO: Make this an observable set
-    private HashSet<TaintVertex> taintHighlighted;
-    private SetHistoryProperty<StateVertex> hidden;
+    private HashSet<StateVertex> stateHighlighted; // Visible nodes
+    private HashSet<TaintVertex> taintHighlighted; // Visible nodes
+    private SetHistoryProperty<StateVertex> immutableStateHidden; // Immutable nodes
+    private SetHistoryProperty<TaintVertex> immutableTaintShown; // Immutable nodes
 
     public MainTabController(File file, Graph<StateVertex, StateEdge> graph, List<CompilationUnit> compilationUnits,
                              Graph<TaintVertex, TaintEdge> taintGraph, Set<SootClass> sootClasses) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
 
+        // Initialize sets
+        this.stateHighlighted = new LinkedHashSet<>();
+        this.taintHighlighted = new LinkedHashSet<>();
+        this.immutableStateHidden = new SetHistoryProperty<>(new SimpleSetProperty<>(FXCollections.observableSet()));
+        this.immutableTaintShown = new SetHistoryProperty<>(new SimpleSetProperty<>(FXCollections.observableSet()));
+
+        // Initialize controllers
         this.codeViewController = new CodeViewController(compilationUnits, sootClasses);
         this.leftPane.getChildren().add(this.codeViewController.codeTabs);
 
-        this.vizPanelController = new VizPanelController(graph);
+        this.vizPanelController = new VizPanelController(graph, this);
         this.vizPane.setCenter(this.vizPanelController.root);
 
-        this.taintPanelController = new TaintPanelController(taintGraph, this.codeViewController);
+        this.taintPanelController = new TaintPanelController(taintGraph, this.codeViewController, this);
         this.taintPane.setCenter(this.taintPanelController.root);
 
         this.searchResultsController = new SearchResultsController();
@@ -70,10 +78,9 @@ public class MainTabController {
 
         ClassTreeUtils.buildClassTree(this.classTree, this.codeViewController, this.vizPanelController.getImmutableRoot());
 
-        this.vizHighlighted = new LinkedHashSet<>();
-        this.taintHighlighted = new LinkedHashSet<>();
-        this.hidden = new SetHistoryProperty<>(new SimpleSetProperty<>(FXCollections.observableSet()));
-        this.hidden.addListener(this.vizPanelController);
+        // Add listeners
+        this.immutableStateHidden.addListener(this.vizPanelController);
+        this.immutableTaintShown.addListener(this.taintPanelController);
     }
 
     public TreeView<ClassTreeNode> getClassTree() {
@@ -139,31 +146,37 @@ public class MainTabController {
         this.taintDescriptionArea.setText(text);
     }
 
-    public SetHistoryProperty<StateVertex> getHidden() {
-        return this.hidden;
+    public SetHistoryProperty<StateVertex> getImmutableStateHidden() {
+        return this.immutableStateHidden;
     }
 
-    public void hideSelectedNodes() {
-        this.hidden.addAll(this.getVizHighlighted());
-        this.vizHighlighted.clear();
+    public SetHistoryProperty<TaintVertex> getImmutableTaintShown() {
+        return immutableTaintShown;
     }
 
-    /*
-    public void pruneVisibleGraph() {
-        HashSet<StateVertex> prunedVertices = this.vizPanelController.pruneVisibleGraph();
-        this.hidden.addAll(prunedVertices);
-        this.vizHighlighted.removeAll(prunedVertices);
-        this.vizPanelController.redrawGraph(this.hidden);
-    }
-    */
+    public void hideSelectedStateNodes() {
+        if (this.stateHighlighted.isEmpty()) { return; }
 
-    public void showAllNodes() {
-        this.hidden.clear();
-        this.vizPanelController.redrawGraph(this.hidden);
+        this.immutableStateHidden.addAll(this.vizPanelController.getImmutable(this.stateHighlighted));
+        this.stateHighlighted.clear();
+        this.vizPanelController.redrawGraph();
     }
 
-    public HashSet<StateVertex> getVizHighlighted() {
-        return this.vizHighlighted;
+    public void hideSelectedTaintNodes() {
+        if (this.taintHighlighted.isEmpty()) { return; }
+
+        this.immutableTaintShown.removeAll(this.taintPanelController.getImmutable(this.taintHighlighted));
+        this.taintHighlighted.clear();
+        this.taintPanelController.redrawGraph();
+    }
+
+    public void showAllStateNodes() {
+        this.immutableStateHidden.clear();
+        this.vizPanelController.redrawGraph();
+    }
+
+    public HashSet<StateVertex> getStateHighlighted() {
+        return this.stateHighlighted;
     }
 
     public HashSet<TaintVertex> getTaintHighlighted() {
@@ -172,16 +185,16 @@ public class MainTabController {
 
     public void addToHighlighted(StateVertex v) {
         if(v != null) {
-            vizHighlighted.add(v);
+            stateHighlighted.add(v);
             v.setHighlighted(true);
         }
     }
 
     public void resetVizHighlighted() {
-        for(StateVertex currHighlighted : vizHighlighted) {
+        for(StateVertex currHighlighted : stateHighlighted) {
             currHighlighted.setHighlighted(false);
         }
-        vizHighlighted.clear();
+        stateHighlighted.clear();
     }
 
     public void resetHighlighted(StateVertex newHighlighted) {
@@ -208,14 +221,26 @@ public class MainTabController {
         addToHighlighted(newHighlighted);
     }
 
-    public void hideUnrelatedToHighlighted() {
-        if (this.vizHighlighted.isEmpty()) { return; }
+    public void hideUnrelatedToHighlightedState() {
+        if (this.stateHighlighted.isEmpty()) {
+            return;
+        }
 
-        HashSet<StateVertex> toHide = vizPanelController.getUnrelatedVisible(this.vizHighlighted);
+        HashSet<StateVertex> toHideVis = vizPanelController.getUnrelatedVisible(this.stateHighlighted);
+        this.immutableStateHidden.addAll(this.vizPanelController.getImmutable(toHideVis));
+        this.stateHighlighted.clear();
+        this.vizPanelController.redrawGraph();
+    }
 
-        this.hidden.addAll(vizPanelController.getImmutable(toHide));
-        this.vizHighlighted.clear();
-        this.vizPanelController.redrawGraph(this.hidden);
+    public void hideUnrelatedToHighlightedTaint() {
+        if (this.taintHighlighted.isEmpty()) {
+            return;
+        }
+
+        HashSet<TaintVertex> toHideVis = taintPanelController.getUnrelatedVisible(this.taintHighlighted);
+        this.immutableTaintShown.removeAll(this.taintPanelController.getImmutable(toHideVis));
+        this.taintHighlighted.clear();
+        this.taintPanelController.redrawGraph();
     }
 
     // TODO: This should be done using event and event handling using FieldSelectEvent
