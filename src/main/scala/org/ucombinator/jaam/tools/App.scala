@@ -50,10 +50,10 @@ object Main {
   var mains: List[String] = List.empty // TODO: set class and method name from mains (error if multiple)
 
   // relative to root
-  def read(root: Path, path: Path, origin: Option[Origin]): List[PathElement] = {
+  def read(root: Path, path: Path, origin: Option[Origin], mainClass: Option[String]): List[PathElement] = {
     if (path.toFile.isDirectory) {
       return Files.newDirectoryStream(path).asScala.toList.flatMap { p =>
-        try read(root, p, origin)
+        try read(root, p, origin, mainClass)
         catch {
           case e: Exception =>
             println("Ignoring " + root + " and " + p + " because " + e)
@@ -78,11 +78,17 @@ object Main {
       def getMains: List[String] = {
         val main = jar.getManifest.getMainAttributes.getValue("Main-Class")
 
+        // TODO: inspect class data for a main method
         if (main != null) List(main)
-        else
+        else {
+          val endingString = mainClass match {
+            case Some(s) => f"${s.replace('.', '/')}.class"
+            case None => "/StacMain.class"
+          }
           Jar.entries(jar).map(_._1.getName)
-            .filter(_.endsWith("StacMain.class"))
+            .filter(_.endsWith(endingString))
             .map(_.stripSuffix(".class").replace('/', '.'))
+        }
       }
 
       val detectedOrigin = origin match {
@@ -115,7 +121,7 @@ object Main {
            mainMethod: Option[String],
            jaam: String) {
     def readList(list: List[String], origin: Option[Origin]) =
-      list.flatMap(x => read(Paths.get(x), Paths.get(x), origin)).toArray
+      list.flatMap(x => read(Paths.get(x), Paths.get(x), origin, mainClass)).toArray
 
     val appConfig = App()
     appConfig.classpath ++= readList(input, None)
