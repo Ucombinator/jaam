@@ -267,13 +267,15 @@ object Decompile extends Subcommand("decompile") {
   val app = toggle(
     descrYes = "wait for user to press enter before starting (default: true)",
     noshort = true, prefix = "no-", default = Some(true))
+  val ignoreOverflow = toggle(
+    noshort = true, prefix = "no-", default = Some(false))
 
   val exclude = opt[List[String]](descr = "Class names to omit", default = Some(List()))
   val input = inputOpt()
   val output = outputOpt()
 
   def run() {
-    org.ucombinator.jaam.tools.decompile.Main.main(input(), output(), exclude(), jvm(), lib(), app())
+    org.ucombinator.jaam.tools.decompile.Main.main(input(), output(), exclude(), jvm(), lib(), app(), ignoreOverflow())
   }
 }
 
