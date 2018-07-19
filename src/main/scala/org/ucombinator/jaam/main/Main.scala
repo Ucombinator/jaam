@@ -61,9 +61,9 @@ abstract class Subcommand(name: String) extends org.rogach.scallop.Subcommand(na
   val waitForUser: ScallopOption[Boolean] = toggle(
     // TODO: note: `descrYes` is useful for debugging and profiling
     descrYes = "wait for user to press enter before starting (default: off)",
-    noshort = true, prefix = "no-", default = Some(false))
+    noshort = true, default = Some(false))
 
-  val color: ScallopOption[Boolean] = toggle(prefix = "no-", default = Some(true))
+  val color: ScallopOption[Boolean] = toggle(default = Some(true))
 
   val logLevel: ScallopOption[Log.Level] = enum(
     descr = "the level of logging verbosity",
@@ -97,13 +97,13 @@ object Interpreter extends Subcommand("interpreter") {
   val mainClass   = opt[String](required = true, short = 'c', descr = "the main class")
   val method      = opt[String](required = true, short = 'm', descr = "the main method", default = Some("main"))
   val libClasses  = opt[String](short = 'L', descr = "app's library classes")
-  val _outfile     = opt[String](name = "outfile", short = 'o', descr = "the output file for the serialized data")
+  val _outfile    = opt[String](name = "outfile", short = 'o', descr = "the output file for the serialized data")
 
   def outfile() = _outfile.getOrElse(mainClass() + ".jaam") // TODO: extend scallop to do this for us
 
   val globalSnowflakeAddrLast = toggle(
     descrYes = "process states that read from the `GlobalSnowflakeAddr` last (default: on)",
-    noshort = true, prefix = "no-", default = Some(true))
+    noshort = true, default = Some(true))
 
   val stateOrdering = enum[Boolean => Ordering[AbstractState]](
     default = Some("max"),
@@ -116,11 +116,11 @@ object Interpreter extends Subcommand("interpreter") {
 
   val maxSteps = opt[Int](descr = "maximum number of interpretation steps")
 
-  val stringTop = toggle(prefix = "no-", default = Some(true))
+  val stringTop = toggle(default = Some(true))
 
-  val snowflakeLibrary = toggle(prefix = "no-", default = Some(true))
+  val snowflakeLibrary = toggle(default = Some(true))
 
-  val exceptions = toggle(prefix = "no-", default = Some(true))
+  val exceptions = toggle(default = Some(true))
 
   val initialStore = opt[java.io.File]()
 
@@ -205,7 +205,7 @@ object App extends Subcommand("app") {
 
   val appPackage = opt[List[String]](short = 'p', descr = "package prefixes contain application code (the empty list allows all)", default = Some(List()))
 
-  val defaultJvm = toggle(prefix = "no-", default = Some(true))
+  val defaultJvm = toggle(default = Some(true))
 
   val detectMain = toggle(default = Some(true))
   val mainClass = opt[String](short = 'c', descr = "the main class")
@@ -260,15 +260,15 @@ object Decompile extends Subcommand("decompile") {
 
   val jvm = toggle(
     descrYes = "wait for user to press enter before starting (default: off)",
-    noshort = true, prefix = "no-", default = Some(false))
+    noshort = true, default = Some(false))
   val lib = toggle(
     descrYes = "wait for user to press enter before starting (default: off)",
-    noshort = true, prefix = "no-", default = Some(false))
+    noshort = true, default = Some(false))
   val app = toggle(
     descrYes = "wait for user to press enter before starting (default: true)",
-    noshort = true, prefix = "no-", default = Some(true))
+    noshort = true, default = Some(true))
   val ignoreOverflow = toggle(
-    noshort = true, prefix = "no-", default = Some(false))
+    noshort = true, default = Some(false))
 
   val exclude = opt[List[String]](descr = "Class names to omit", default = Some(List()))
   val input = inputOpt()
