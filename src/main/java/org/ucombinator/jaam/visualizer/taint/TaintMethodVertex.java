@@ -4,9 +4,7 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 import org.ucombinator.jaam.visualizer.main.Main;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class TaintMethodVertex extends TaintVertex {
 
@@ -94,5 +92,14 @@ public class TaintMethodVertex extends TaintVertex {
         }
 
         return builder.toString();
+    }
+
+    @Override
+    public List<TaintVertex> expand() {
+        List<TaintVertex> expandedVertices = new ArrayList<>();
+        for (TaintVertex v : this.getInnerGraph().getVertices()) {
+            expandedVertices.addAll(v.expand());
+        }
+        return expandedVertices;
     }
 }

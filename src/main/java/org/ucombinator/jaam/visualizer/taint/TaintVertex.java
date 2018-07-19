@@ -109,13 +109,10 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
     }
 
     public abstract HashSet<String> getMethodNames();
-
     public abstract boolean hasField();
-
-    // This should probably less specific
     public abstract void getFields(Collection<TaintAddress> store);
-
     public abstract String getStmtString();
+    public abstract List<TaintVertex> expand();
 
     public String getClassName() {
         return null;

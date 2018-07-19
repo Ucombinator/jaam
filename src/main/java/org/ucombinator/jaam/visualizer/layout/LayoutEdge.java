@@ -121,7 +121,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
     }
 
     public void drawOrthogonalEdge() {
-        System.out.println("Drawing orthogonal edge: " + src + " --> " + dest);
+        // System.out.println("Drawing orthogonal edge: " + src + " --> " + dest);
         double destCenter = dest.getX() + (dest.getWidth() / 2);
         Path path = new Path();
         MoveTo moveTo = new MoveTo();
@@ -150,7 +150,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
     }
 
     public void drawStraightEdge() {
-        System.out.println("Drawing straight edge: " + src + " --> " + dest);
+        // System.out.println("Drawing straight edge: " + src + " --> " + dest);
         GUINode<T> srcNode = src.getGraphics();
         GUINode<T> destNode   = dest.getGraphics();
 

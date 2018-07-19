@@ -29,9 +29,9 @@ public abstract class ClassTreeNode
                     HashSet<StateVertex> childVertices = item.getValue().getChildVertices();
 
                     if (currVal) {
-                        Main.getSelectedMainTabController().getHidden().removeAll(childVertices);
+                        Main.getSelectedMainTabController().getImmutableStateHidden().removeAll(childVertices);
                     } else {
-                        Main.getSelectedMainTabController().getHidden().addAll(childVertices);
+                        Main.getSelectedMainTabController().getImmutableStateHidden().addAll(childVertices);
                     }
                 }
             }

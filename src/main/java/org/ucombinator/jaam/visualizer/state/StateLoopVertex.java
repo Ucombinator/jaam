@@ -8,8 +8,10 @@ import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.MethodEntity;
 import soot.SootClass;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 
 public class StateLoopVertex extends StateVertex implements Cloneable, MethodEntity {
 
@@ -93,7 +95,7 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
         if(found) {
             System.out.println("\t\t\tFound " + this);
             this.setHighlighted(found);
-            mainTab.getVizHighlighted().add(this);
+            mainTab.getStateHighlighted().add(this);
         }
 
         return found;
@@ -142,4 +144,10 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
     public int getStatementIndex() {
 		return statementIndex;
 	}
+
+    public List<StateVertex> expand() {
+        List<StateVertex> expandedVertices = new ArrayList<>();
+        expandedVertices.add(this);
+        return expandedVertices;
+    }
 }

@@ -8,6 +8,8 @@ import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class StateRootVertex extends StateVertex {
@@ -47,7 +49,7 @@ public class StateRootVertex extends StateVertex {
 
         if(found) {
             this.setHighlighted(true);
-            mainTab.getVizHighlighted().add(this);
+            mainTab.getStateHighlighted().add(this);
         }
 
         return found;
@@ -56,5 +58,13 @@ public class StateRootVertex extends StateVertex {
     @Override
     public LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
         return LayoutAlgorithm.LAYOUT_ALGORITHM.BFS;
+    }
+
+    public List<StateVertex> expand() {
+        List<StateVertex> expandedVertices = new ArrayList<>();
+        for (StateVertex v : this.getInnerGraph().getVertices()) {
+            expandedVertices.addAll(v.expand());
+        }
+        return expandedVertices;
     }
 }

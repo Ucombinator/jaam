@@ -1,7 +1,2 @@
-
-- Filter graph by multiple requirements
-- Mark exceptions and locking behavior
-- Return to previous view
-- Profile memory usage
-
-- Try orthogonal drawing for spanning tree of taint graph
+- Fix orthogonal drawing for spanning tree of taint graph
+- Allow undo/redo for taint graph

@@ -4,6 +4,9 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class StateSccVertex extends StateVertex {
 
     private Color defaultColor = Color.DARKGREY;
@@ -26,7 +29,7 @@ public class StateSccVertex extends StateVertex {
 
         if (found) {
             this.setHighlighted(true);
-            mainTab.getVizHighlighted().add(this);
+            mainTab.getStateHighlighted().add(this);
         }
 
         return found;
@@ -34,5 +37,13 @@ public class StateSccVertex extends StateVertex {
 
     public String getRightPanelContent() {
         return "SCC vertex: " + this.getId();
+    }
+
+    public List<StateVertex> expand() {
+        List<StateVertex> expandedVertices = new ArrayList<>();
+        for (StateVertex v : this.getInnerGraph().getVertices()) {
+            expandedVertices.addAll(v.expand());
+        }
+        return expandedVertices;
     }
 }

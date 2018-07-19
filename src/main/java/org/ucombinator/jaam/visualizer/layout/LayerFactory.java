@@ -40,7 +40,6 @@ public class LayerFactory
     }
 
     public static GraphTransform<TaintRootVertex, TaintVertex> getLayeredTaintGraph(TaintRootVertex root) {
-        //return getStronglyConnectedComponentsTaintGraph(root);
         return getMethodGroupingGraph(root);
     }
 

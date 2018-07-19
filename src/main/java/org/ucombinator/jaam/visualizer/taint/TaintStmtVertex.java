@@ -96,4 +96,11 @@ public class TaintStmtVertex extends TaintVertex {
     public String getMethodName() {
         return sootMethod.getName();
     }
+
+    @Override
+    public List<TaintVertex> expand() {
+        List<TaintVertex> expandedVertices = new ArrayList<>();
+        expandedVertices.add(this);
+        return expandedVertices;
+    }
 }

@@ -37,21 +37,8 @@ public class MainPaneController {
     @FXML private void zoomInAction(ActionEvent event) { Main.getSelectedVizPanelController().zoomSpinner.increment(); }
     @FXML private void zoomOutAction(ActionEvent event) { Main.getSelectedVizPanelController().zoomSpinner.decrement(); }
 
-    @FXML private void hideSelectedNodes(ActionEvent event) {
-        Main.getSelectedMainTabController().hideSelectedNodes();
-    }
-
-    @FXML private void hideUnrelatedNodes(ActionEvent event) {
-        Main.getSelectedMainTabController().hideUnrelatedToHighlighted();
-    }
-
-
-    @FXML private void pruneVisibleGraph(ActionEvent event) {
-        //Main.getSelectedMainTabController().pruneVisibleGraph();
-    }
-
     @FXML private void showAllNodes(ActionEvent event) {
-        Main.getSelectedMainTabController().showAllNodes();
+        Main.getSelectedMainTabController().showAllStateNodes();
     }
 
     private final FileChooser fileChooser = new FileChooser();
@@ -69,11 +56,13 @@ public class MainPaneController {
     }
 
     @FXML private void incrementHidden(ActionEvent event) {
-        Main.getSelectedMainTabController().getHidden().increment();
+        Main.getSelectedMainTabController().getImmutableStateHidden().increment();
+        //Main.getSelectedVizPanelController().redrawGraph();
     }
 
     @FXML private void decrementHidden(ActionEvent event) {
-        Main.getSelectedMainTabController().getHidden().decrement();
+        Main.getSelectedMainTabController().getImmutableStateHidden().decrement();
+        //Main.getSelectedVizPanelController().redrawGraph();
     }
 
     public void loadLoopGraphFile(File file) throws IOException {
