@@ -11,6 +11,7 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.state.*;
+import org.ucombinator.jaam.visualizer.taint.TaintVertex;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -91,7 +92,17 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         } else { // Work directly on immutable graph
             this.immAndVis = LayerFactory.getLayeredLoopGraph(getImmutableRoot());
         }
+
         this.visibleRoot = immAndVis.newRoot;
+
+        for (StateVertex v : visibleRoot.getInnerGraph().getVertices()) {
+
+            if (v instanceof StateMethodVertex) {
+                if (visibleRoot.getInnerGraph().getOutNeighbors(v).contains(v)) {
+                    ((StateMethodVertex) v).setRecursiveColor();
+                }
+            }
+        }
 
         // System.out.println("JUAN: Print visible graph #Edges: " + this.getImmutableRoot().getInnerGraph().getEdges().size());
         // GraphUtils.printGraph(this.visibleRoot, 0);

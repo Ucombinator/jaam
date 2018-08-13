@@ -15,6 +15,7 @@ import java.util.Set;
 public class StateMethodVertex extends StateVertex implements MethodEntity {
 
     private static final Color defaultColor = Color.DEEPSKYBLUE;
+    private static final Color recursiveColor = Color.DARKGRAY;
 
     private final LoopMethodNode compilationUnit;
 
@@ -114,5 +115,9 @@ public class StateMethodVertex extends StateVertex implements MethodEntity {
         List<StateVertex> expandedVertices = new ArrayList<>();
         expandedVertices.add(this);
         return expandedVertices;
+    }
+
+    public void setRecursiveColor() {
+        this.color = recursiveColor;
     }
 }
