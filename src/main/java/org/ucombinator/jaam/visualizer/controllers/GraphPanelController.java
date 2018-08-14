@@ -37,6 +37,8 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
     @FXML protected final Button redrawGraph = null;
     @FXML protected final Button hideSelected = null;
     @FXML protected final Button hideUnrelated = null;
+    @FXML protected final Button expandAllButton = null;
+    @FXML protected final Button collapseAllButton = null;
 
     @FXML protected final CheckBox showEdges = null; // Initialized by Controllers.loadFXML()
     @FXML protected final CheckBox showLabels = null; // Initialized by Controllers.loadFXML()
@@ -180,6 +182,16 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
     @FXML public void hideUnrelatedAction(ActionEvent event) throws IOException {
         event.consume();
         System.out.println("Hide Unrelated not implemented");
+    }
+
+    @FXML public void expandAll(ActionEvent event) throws IOException {
+        event.consume();
+        System.out.println(" Expand All not implemented");
+    }
+
+    @FXML public void collapseAll(ActionEvent event) throws IOException {
+        event.consume();
+        System.out.println("Collapse All Unrelated not implemented");
     }
 
 }

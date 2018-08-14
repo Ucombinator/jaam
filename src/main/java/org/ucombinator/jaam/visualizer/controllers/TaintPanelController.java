@@ -31,6 +31,8 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     private GraphTransform<TaintRootVertex, TaintVertex> immAndVis;
     private HashMap<String, TaintAddress> fieldVertices;
 
+    private boolean collapseAll = false, expandAll = false;
+
     // Graph is the statement graph
     public TaintPanelController(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController, MainTabController tabController) throws IOException {
         super(TaintRootVertex::new, tabController);
@@ -64,6 +66,23 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         immAndVis = GraphTransform.transfer(immToFlatVisible, flatToLayerVisible);
         this.visibleRoot = immAndVis.newRoot;
 
+        if (expandAll) {
+            for (TaintVertex v : visibleRoot.getInnerGraph().getVertices()) {
+                if (v instanceof TaintMethodVertex) {
+                    v.setExpanded(true);
+                }
+            }
+            expandAll = false;
+        }
+        if (collapseAll) {
+            for (TaintVertex v : visibleRoot.getInnerGraph().getVertices()) {
+                if (v instanceof TaintMethodVertex) {
+                    v.setExpanded(false);
+                }
+            }
+            collapseAll = false;
+        }
+
         LayoutAlgorithm.layout(visibleRoot);
         drawNodes(null, visibleRoot);
         drawEdges(visibleRoot);
@@ -96,6 +115,19 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     public void hideUnrelatedAction(ActionEvent event) throws IOException {
         event.consume();
         this.tabController.hideUnrelatedToHighlightedTaint();
+    }
+
+    @Override
+    public void expandAll(ActionEvent event) throws IOException {
+        event.consume();
+        expandAll = true;
+        this.redrawGraph();
+    }
+    @Override
+    public void collapseAll(ActionEvent event) throws IOException {
+        event.consume();
+        collapseAll = true;
+        this.redrawGraph();
     }
 
     // Changes to the visible set
