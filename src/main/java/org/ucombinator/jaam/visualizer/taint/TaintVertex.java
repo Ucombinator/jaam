@@ -79,13 +79,27 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
     }
 
     public void onMouseClick(MouseEvent event) {
-        if (event.isShiftDown()) {
-            System.out.println("Shift is down!\n");
-            Main.getSelectedMainTabController().addToHighlighted(this);
-        } else {
-            Main.getSelectedMainTabController().resetHighlighted(this);
+
+        switch (event.getClickCount()) {
+            case 1:
+                if (event.isShiftDown()) {
+                    System.out.println("Shift is down!\n");
+                    Main.getSelectedMainTabController().addToHighlighted(this);
+                } else {
+                    Main.getSelectedMainTabController().resetHighlighted(this);
+                }
+                this.getGraphics().fireEvent(new SelectEvent<TaintVertex>(MouseButton.PRIMARY, this.getGraphics(), this));
+                break;
+            case 2:
+                if (this instanceof TaintMethodVertex) {
+                    ((TaintMethodVertex)this).handleDoubleClick();
+                }
+
+                break;
+            default:
+                // Do nothing
+                break;
         }
-        this.getGraphics().fireEvent(new SelectEvent<TaintVertex>(MouseButton.PRIMARY, this.getGraphics(), this));
     }
 
     public void searchByMethodNames(Set<String> searchMethodNames, Set<TaintVertex> results) {

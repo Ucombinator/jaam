@@ -1,10 +1,15 @@
 package org.ucombinator.jaam.visualizer.taint;
 
+import javafx.animation.ParallelTransition;
 import javafx.scene.paint.Color;
+import org.ucombinator.jaam.visualizer.graph.Graph;
+import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
+import org.ucombinator.jaam.visualizer.gui.TransitionFactory;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 import org.ucombinator.jaam.visualizer.main.Main;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class TaintMethodVertex extends TaintVertex {
 
@@ -101,5 +106,59 @@ public class TaintMethodVertex extends TaintVertex {
             expandedVertices.addAll(v.expand());
         }
         return expandedVertices;
+    }
+
+    public void handleDoubleClick() {
+        TaintRootVertex root = Main.getSelectedTaintPanelController().getVisibleRoot();
+        Graph<TaintVertex, TaintEdge> innerGraph = this.getInnerGraph();
+        boolean isExpanded = this.isExpanded();
+
+        double newOpacity = isExpanded ? 0.0 : 1.0;
+        boolean newVisible = !isExpanded;
+
+        // First we want the content of the clicked node to appear/disappear.
+        System.out.println("Changing opacity of child graph...");
+
+        for(TaintVertex v: innerGraph.getVertices()) {
+            v.setOpacity(newOpacity);
+        }
+
+        for(TaintEdge e: innerGraph.getEdges()){
+            e.setOpacity(newOpacity);
+        }
+
+        ParallelTransition pt = TransitionFactory.buildRecursiveTransition(root);
+        pt.setOnFinished(
+                event1 -> {
+                    // Then we want the vertices to move to their final positions and the clicked vertex
+                    // to change its size.
+                    this.setExpanded(!isExpanded);
+
+                    for (TaintVertex v: innerGraph.getVertices()) {
+                        v.setVisible(newVisible);
+                    }
+
+                    for (TaintEdge e: innerGraph.getEdges()) {
+                        e.redrawAndSetVisible(newVisible);
+                    }
+
+                    LayoutAlgorithm.layout(root);
+                    ParallelTransition pt1 = TransitionFactory.buildRecursiveTransition(root);
+
+                    // Lastly we redraw the edges that may have been moved.
+                    // We don't need to do anything to the vertices, so we pass an empty function.
+                    // TODO: Eliminate the need for this by adding a new apply function that only takes the second function.
+                    pt1.setOnFinished(event2 -> root.applyToEdgesRecursive(
+                            new Consumer<HierarchicalVertex<TaintVertex, TaintEdge>>() {
+                                @Override
+                                public void accept(HierarchicalVertex<TaintVertex, TaintEdge> stateVertexStateEdgeHierarchicalVertex) {}
+                            },
+                            (TaintEdge e) -> e.redrawEdge()));
+                    pt1.play();
+                }
+        );
+
+        pt.play();
+
     }
 }

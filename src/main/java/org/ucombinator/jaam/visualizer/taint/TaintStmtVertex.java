@@ -43,8 +43,6 @@ public class TaintStmtVertex extends TaintVertex {
                 assert this.sootMethod == a.getSootMethod();
             }
         });
-
-
         assert this.sootClass != null;
         assert this.sootMethod != null;
     }

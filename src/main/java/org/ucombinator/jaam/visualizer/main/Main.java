@@ -9,10 +9,7 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.controlsfx.glyphfont.GlyphFont;
 import org.controlsfx.glyphfont.GlyphFontRegistry;
-import org.ucombinator.jaam.visualizer.controllers.Controllers;
-import org.ucombinator.jaam.visualizer.controllers.MainPaneController;
-import org.ucombinator.jaam.visualizer.controllers.MainTabController;
-import org.ucombinator.jaam.visualizer.controllers.VizPanelController;
+import org.ucombinator.jaam.visualizer.controllers.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +27,10 @@ public class Main extends Application {
 
     public static VizPanelController getSelectedVizPanelController() {
         return getSelectedMainTabController().vizPanelController;
+    }
+
+    public static TaintPanelController getSelectedTaintPanelController() {
+        return getSelectedMainTabController().taintPanelController;
     }
 
     public static GlyphFont getIconFont() {

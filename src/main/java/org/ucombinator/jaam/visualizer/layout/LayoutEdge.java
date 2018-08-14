@@ -258,7 +258,9 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
         // Remove current graphics and redraw.
         this.graphics.getChildren().remove(this.edgePath);
         this.graphics.getChildren().remove(this.arrowhead);
-        this.getSrcParent().getChildren().remove(this.graphics);
+        if (this.getSrcParent() != null) {
+            this.getSrcParent().getChildren().remove(this.graphics);
+        }
         this.draw();
     }
 
@@ -303,7 +305,9 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
 
     private GUINode<T> getSrcParent()
     {
-        return this.getSrc().getGraphics().getParentNode();
+        if (this.getSrc().getGraphics() != null)
+            return this.getSrc().getGraphics().getParentNode();
+        return null;
     }
 
     private void setEdgePath(Shape newShape) {
