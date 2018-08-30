@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.state;
 
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
+import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 
 import java.util.ArrayList;
@@ -35,8 +36,15 @@ public class StateSccVertex extends StateVertex {
         return found;
     }
 
-    public String getRightPanelContent() {
-        return "SCC vertex: " + this.getId();
+    @Override
+    public String getLongText() {
+        StringBuilder text = new StringBuilder("SCC contains:\n");
+        int k = 0;
+        for (StateVertex i : getInnerGraph().getVertices()) {
+            text.append(k++ + "  " + i.getLabel() + "\n");
+        }
+
+        return text.toString();
     }
 
     public List<StateVertex> expand() {

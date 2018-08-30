@@ -87,63 +87,11 @@ public class MainTabController {
         return this.classTree;
     }
 
-    public void setRightText(StateLoopVertex v)
-    {
-        this.vizDescriptionArea.setText("Loop:\n  Class: "
-                + v.getClassDeclaration() + "\n  Method: "
-                + v.getMethodName()       + "\n  Index: "
-                + v.getStatementIndex()   + "\n  Signature: " + v.getLabel()
-                + "\n  Loop info: " + v.getCompilationUnit().loopInfo() + "\n");
+    public void setVizRightText(StateVertex v) {
+        this.vizDescriptionArea.setText(v.getLongText());
     }
-
-
-    public void setRightText(StateMethodVertex v)
-    {
-        this.vizDescriptionArea.setText("Method:\n  Class: "
-                + v.getClassDeclaration() + "\n  Method: "
-                + v.getMethodName()       + "\n  Signature: " + v.getLabel());
-    }
-
-    public void setRightText(StateSccVertex v)
-    {
-        StringBuilder text = new StringBuilder("SCC contains:\n");
-        int k = 0;
-        Graph<StateVertex, StateEdge> childGraph = v.getInnerGraph();
-        for (StateVertex i : childGraph.getVertices()) {
-            text.append(k++ + "  " + i.getLabel() + "\n");
-        }
-        this.vizDescriptionArea.setText(text.toString());
-    }
-
-    public void setRightText(TaintAddress v) {
-        this.taintDescriptionArea.setText("Taint address:\n" + v.toString());
-    }
-
-    public void setRightText(TaintSccVertex v) {
-        StringBuilder text = new StringBuilder("SCC contains:\n");
-        int k = 0;
-        for(AbstractLayoutVertex<TaintVertex> i : v.getLineSortedChildren()) {
-            text.append(k++ + "  " + i.getLabel() + "\n");
-        }
-        this.taintDescriptionArea.setText(text.toString());
-    }
-
-    public void setRightText(TaintStmtVertex v) {
-        StringBuilder text = new StringBuilder("Statement: " + v.getStmt());
-        text.append("\nAddresses: " + v.getAddresses().size());
-        this.taintDescriptionArea.setText(text.toString());
-    }
-
-    public void setRightText(TaintMethodVertex v) {
-        this.taintDescriptionArea.setText(v.getRightPanelString());
-    }
-
-    public void setVizRightText(String text) {
-        this.vizDescriptionArea.setText(text);
-    }
-
-    public void setTaintRightText(String text) {
-        this.taintDescriptionArea.setText(text);
+    public void setTaintRightText(TaintVertex v) {
+        this.taintDescriptionArea.setText(v.getLongText());
     }
 
     public SetHistoryProperty<StateVertex> getImmutableStateHidden() {

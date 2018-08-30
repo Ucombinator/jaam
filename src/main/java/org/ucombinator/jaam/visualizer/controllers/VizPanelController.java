@@ -66,16 +66,7 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
 
         System.out.println("Received event from vertex " + vertex.toString());
 
-        if(vertex instanceof StateLoopVertex) {
-            this.tabController.setRightText((StateLoopVertex) vertex);
-        } else if(vertex instanceof StateMethodVertex) {
-            this.tabController.setRightText((StateMethodVertex) vertex);
-        } else if(vertex instanceof StateSccVertex) {
-            this.tabController.setRightText((StateSccVertex) vertex);
-        }
-        else {
-            this.tabController.setVizRightText("Text");
-        }
+        this.tabController.setVizRightText(vertex);
     }
 
     public void drawGraph() {

@@ -70,18 +70,9 @@ public class TaintMethodVertex extends TaintVertex {
         this.getInnerGraph().getVertices().forEach(v -> v.getFields(store));
     }
 
-    @Override
-    public String getStmtString() {
-        return null;
-    }
 
     @Override
-    public LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
-        return innerLayout;
-    }
-
-    public String getRightPanelString() {
-
+    public String getLongText() {
         if(getInnerGraph().isEmpty()) return "Empty method vertex\n";
 
         Set<TaintVertex> vertices = this.getInnerGraph().getVertices();
@@ -97,6 +88,16 @@ public class TaintMethodVertex extends TaintVertex {
         }
 
         return builder.toString();
+    }
+
+    @Override
+    public String getStmtString() {
+        return null;
+    }
+
+    @Override
+    public LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
+        return innerLayout;
     }
 
     @Override

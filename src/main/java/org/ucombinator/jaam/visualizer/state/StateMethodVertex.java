@@ -43,6 +43,13 @@ public class StateMethodVertex extends StateVertex implements MethodEntity {
         return set;
     }
 
+    @Override
+    public String getLongText() {
+        return "Method:\n  Class: "
+                + getClassDeclaration() + "\n  Method: "
+                + getMethodName()       + "\n  Signature: " + getLabel();
+    }
+
     public String getClassDeclaration() {
         StringBuilder classDecl = new StringBuilder("class");
 

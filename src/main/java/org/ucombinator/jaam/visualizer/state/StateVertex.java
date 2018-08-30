@@ -159,10 +159,6 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
         return methodNames;
     }
 
-    // Subclasses must implement these so that we have descriptions for each of them,
-    // and so that our generic collapsing can work for all of them
-    public abstract String getRightPanelContent();
-
     // These searches may be different for different subclasses, so we implement them there.
     public abstract boolean searchByMethod(String query, MainTabController mainTab);
 

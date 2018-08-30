@@ -76,6 +76,11 @@ public class TaintAddress extends TaintVertex {
     }
 
     @Override
+    public String getLongText() {
+        return "Taint address:\n" + toString();
+    }
+
+    @Override
     public String toString() {
         return this.address.toString();
     }

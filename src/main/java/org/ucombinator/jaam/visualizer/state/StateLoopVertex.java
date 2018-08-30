@@ -84,8 +84,13 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
         return compilationUnit;
     }
 
-    public String getRightPanelContent() {
-        return "Loop vertex: " + this.getMethodName();
+    @Override
+    public String getLongText() {
+        return "Loop:\n  Class: "
+                + getClassDeclaration() + "\n  Method: "
+                + getMethodName()       + "\n  Index: "
+                + getStatementIndex()   + "\n  Signature: " + getLabel()
+                + "\n  Loop info: " + getCompilationUnit().loopInfo() + "\n";
     }
 
     @Override

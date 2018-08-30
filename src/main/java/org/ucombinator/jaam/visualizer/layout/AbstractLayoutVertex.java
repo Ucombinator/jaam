@@ -80,6 +80,10 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         return this.label;
     }
 
+    public String getLongText() {
+        return this.label;
+    }
+
     public VertexStatus getVertexStatus() {
         return vertexStatus;
     }

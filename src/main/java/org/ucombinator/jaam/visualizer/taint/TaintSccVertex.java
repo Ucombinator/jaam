@@ -55,6 +55,16 @@ public class TaintSccVertex extends TaintVertex {
     }
 
     @Override
+    public String getLongText() {
+        StringBuilder text = new StringBuilder("SCC contains:\n");
+        int k = 0;
+        for(TaintVertex i : getLineSortedChildren()) {
+            text.append(k++ + "  " + i.getLabel() + "\n");
+        }
+        return text.toString();
+    }
+
+    @Override
     public LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
         return innerLayout;
     }

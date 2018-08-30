@@ -76,6 +76,13 @@ public class TaintStmtVertex extends TaintVertex {
     }
 
     @Override
+    public String getLongText() {
+        StringBuilder text = new StringBuilder("Statement: " + getStmt());
+        text.append("\nAddresses: " + getAddresses().size());
+        return text.toString();
+    }
+
+    @Override
     public void getFields(Collection<TaintAddress> store) {
         taintAddresses.forEach(a -> a.getFields(store));
     }

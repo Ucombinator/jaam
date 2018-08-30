@@ -160,22 +160,8 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         }
 
         System.out.println("Received event from vertex " + vertex.toString());
-        if(vertex instanceof TaintAddress) {
-            this.tabController.setRightText((TaintAddress) vertex);
-        }
-        else if(vertex instanceof TaintSccVertex)
-        {
-            this.tabController.setRightText((TaintSccVertex) vertex);
-        }
-        else if(vertex instanceof TaintStmtVertex) {
-            this.tabController.setRightText((TaintStmtVertex) vertex);
-        }
-        else if(vertex instanceof TaintMethodVertex) {
-            this.tabController.setRightText((TaintMethodVertex) vertex);
-        }
-        else {
-            this.tabController.setTaintRightText("Text");
-        }
+
+        this.tabController.setTaintRightText(vertex);
     }
 
     // Draw the graph of taint addresses for the selected state vertex, and addresses connected to them.
