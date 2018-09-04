@@ -60,6 +60,15 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         visibleRoot.setVisible(false);
 
         Set<TaintVertex> verticesToDraw = this.tabController.getImmutableTaintShown();
+
+        /*
+        verticesToDraw.removeIf(v -> {
+
+            if ()
+
+        })
+        */
+
         // System.out.println("Vertices to draw: " + verticesToDraw.size());
         GraphTransform<TaintRootVertex, TaintVertex> immToFlatVisible = this.getImmutableRoot().constructVisibleGraph(verticesToDraw);
         GraphTransform<TaintRootVertex, TaintVertex> flatToLayerVisible = LayerFactory.getLayeredTaintGraph(immToFlatVisible.newRoot);
@@ -412,19 +421,39 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     }
 
     private Graph<TaintVertex, TaintEdge> cleanTaintGraph(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController) {
-        return removeDegree2Addresses(removeNonCodeRootAddresses(graph, codeController));
+
+        int initialSize = graph.getVertices().size();
+        graph = removeNonCodeRootAddresses(graph, codeController);
+        graph = removeNonCodePaths(graph, codeController);
+        graph = removeDegree2Addresses(graph);
+
+        int numRemoved = initialSize-graph.getVertices().size();
+
+        System.out.println("Removed " + numRemoved + "(" + (((double)numRemoved)/initialSize)*100 + ") final taint size " + graph.getVertices().size());
+
+        return graph;
     }
 
     private Graph<TaintVertex, TaintEdge> removeNonCodeRootAddresses(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController) {
 
-        HashSet<TaintVertex> toRemove = graph.getSources().stream()
-                .filter(v -> v instanceof TaintAddress && !codeController.haveCode(v.getClassName()))
-                .collect(Collectors.toCollection(HashSet::new));
 
-        for (TaintVertex v : toRemove) {
-            graph.getEdges().removeAll(graph.getOutEdges(v));
-            graph.getVertices().remove(v);
-        }
+
+
+        HashSet<TaintVertex> toRemove;
+        do {
+            toRemove = graph.getSources().stream()
+                    .filter(v -> v instanceof TaintAddress && !codeController.haveCode(v.getClassName()))
+                    .collect(Collectors.toCollection(HashSet::new));
+
+            System.out.println("JUAN: Removing " + toRemove.size() + " Non Code Roots of " + graph.getVertices().size()
+                    + "(" + ((double)graph.getVertices().size())/toRemove.size() + ")");
+
+            for (TaintVertex v : toRemove) {
+                graph.cutVertex(v);
+            }
+
+        }while (!toRemove.isEmpty());
+
 
         return graph;
 
@@ -432,13 +461,44 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
     private Graph<TaintVertex, TaintEdge> removeDegree2Addresses(Graph<TaintVertex, TaintEdge> graph) {
 
+        int initialSize = graph.getVertices().size();
+
         TaintRootVertex temp = new TaintRootVertex();
         temp.setInnerGraph(graph);
         GraphTransform<TaintRootVertex, TaintVertex> transform = GraphUtils.constructVisibleGraph(temp, v -> {
             return graph.getOutEdges(v).size() != 1 || graph.getInEdges(v).size() != 1;
         }, TaintEdge::new);
 
+        int numRemoved = initialSize - transform.newRoot.getInnerGraph().getVertices().size();
+
+        System.out.println("JUAN: Removing " + numRemoved + " Degree 2 addresses " + transform.newRoot.getInnerGraph().getVertices().size()
+                + "(" + ((double)graph.getVertices().size())/numRemoved + ")");
+
         return transform.newRoot.getInnerGraph();
+    }
+
+    private Graph<TaintVertex, TaintEdge> removeNonCodePaths(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController) {
+
+        HashSet<TaintVertex> toRemove = new HashSet<>();
+
+        List<TaintVertex> nonCodeLeafs = graph.getVertices().stream()
+                .filter(v -> graph.getOutNeighbors(v).isEmpty() && !codeController.haveCode(v.getClassName()))
+                .collect(Collectors.toList());
+
+        while (!nonCodeLeafs.isEmpty()) {
+            System.out.println("JUAN: Removing " + nonCodeLeafs.size() + " Non Code Leafs of " + graph.getVertices().size()
+                    + "(" + ((double)graph.getVertices().size())/nonCodeLeafs.size() + ")");
+
+            for (TaintVertex v : nonCodeLeafs) {
+                graph.cutVertex(v);
+            }
+
+             nonCodeLeafs = graph.getVertices().stream()
+                    .filter(v -> graph.getOutNeighbors(v).isEmpty() && !codeController.haveCode(v.getClassName()))
+                    .collect(Collectors.toList());
+        }
+
+        return graph;
     }
 
     public HashSet<TaintVertex> getImmutable(HashSet<TaintVertex> visible) {

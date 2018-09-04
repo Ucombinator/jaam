@@ -51,7 +51,7 @@ public class Graph<T extends Vertex, S extends Edge<T>> {
         return this.vertices;
     }
 
-    public Set<S> getEdges() {
+    public final Set<S> getEdges() {
         return this.edges;
     }
 
@@ -108,6 +108,25 @@ public class Graph<T extends Vertex, S extends Edge<T>> {
         }
 
         return roots;
+    }
+
+    public void cutVertex(T v) {
+
+        for (S e : getInEdges(v)) {
+            T n = e.getSrc();
+            outEdges.get(n).remove(v);
+            edges.remove(e);
+        }
+        inEdges.remove(v);
+
+        for (S e : getOutEdges(v)) {
+            T n = e.getDest();
+            inEdges.get(n).remove(v);
+            edges.remove(e);
+        }
+        outEdges.remove(v);
+
+        vertices.remove(v);
     }
 
     // A node is a source if it has no incoming edges from anything other than itself
