@@ -33,16 +33,20 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
     private boolean collapseAll = false, expandAll = false;
 
+    private CodeViewController codeController;
+
     // Graph is the statement graph
     public TaintPanelController(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController, MainTabController tabController) throws IOException {
         super(TaintRootVertex::new, tabController);
 
+        this.codeController = codeController;
+
         for (TaintVertex v : graph.getVertices()) {
             if (v.getClassName() == null && v.getMethodName() == null) {
-                System.out.println("MICHAEL Don't have class or method for " + v.toString());
+                System.out.println("Don't have class or method for " + v.toString());
             }
             else if (v.getClassName() == null) {
-                System.out.println("MICHAEL Don't have class for " + v.toString());
+                System.out.println("Don't have class for " + v.toString());
             }
         }
 
@@ -52,20 +56,9 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         this.visibleRoot = new TaintRootVertex();
         this.immutableRoot = new TaintRootVertex();
 
-        this.immutableRoot.setInnerGraph(this.cleanTaintGraph(graph, codeController));
+        this.immutableRoot.setInnerGraph(this.cleanTaintGraph(graph));
         fillFieldDictionary();
         immAndVis = null;
-
-
-        System.out.println("Second round");
-        for (TaintVertex v : graph.getVertices()) {
-            if (v.getClassName() == null && v.getMethodName() == null) {
-                System.out.println("MICHAEL Don't have class or method for " + v.toString());
-            }
-            else if (v.getClassName() == null) {
-                System.out.println("MICHAEL Don't have class for " + v.toString());
-            }
-        }
     }
 
     public TaintRootVertex getVisibleRoot() {
@@ -320,22 +313,22 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
     private boolean compareValues(Value taintValue, Value value, SootMethod taintMethod, SootMethod method) {
         if (taintValue.equals(value)) {
-            System.out.println("Equal taint values!");
+            //System.out.println("Equal taint values!");
             return true;
         }
         else if (taintValue.equivTo(value)) {
-            System.out.println("Equivalent taint values!");
+            //System.out.println("Equivalent taint values!");
             return true;
         }
         else if (value instanceof JimpleLocal) {
-            System.out.println("One JimpleLocal!");
+            //System.out.println("One JimpleLocal!");
             if (taintValue instanceof JimpleLocal) {
-                System.out.println("Both JimpleLocal!");
+                //System.out.println("Both JimpleLocal!");
                 if (taintMethod.getSubSignature().equals(method.getSubSignature())) {
-                    System.out.println("Equal methods!");
-                    System.out.println("SubSignature: " + taintMethod.getSubSignature());
+                    //System.out.println("Equal methods!");
+                    //System.out.println("SubSignature: " + taintMethod.getSubSignature());
                     if (((JimpleLocal) taintValue).getName().equals(((JimpleLocal) value).getName())) {
-                        System.out.println("Equal names!");
+                        //System.out.println("Equal names!");
                         return true;
                     }
                 }
@@ -438,11 +431,11 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         });
     }
 
-    private Graph<TaintVertex, TaintEdge> cleanTaintGraph(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController) {
+    private Graph<TaintVertex, TaintEdge> cleanTaintGraph(Graph<TaintVertex, TaintEdge> graph) {
 
         int initialSize = graph.getVertices().size();
-        graph = removeNonCodeRootAddresses(graph, codeController);
-        graph = removeNonCodePaths(graph, codeController);
+        graph = removeNonCodeRootAddresses(graph);
+        graph = removeNonCodePaths(graph);
         graph = removeDegree2Addresses(graph);
 
         int numRemoved = initialSize-graph.getVertices().size();
@@ -452,12 +445,12 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         return graph;
     }
 
-    private Graph<TaintVertex, TaintEdge> removeNonCodeRootAddresses(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController) {
+    private Graph<TaintVertex, TaintEdge> removeNonCodeRootAddresses(Graph<TaintVertex, TaintEdge> graph) {
 
         HashSet<TaintVertex> toRemove;
         do {
             toRemove = graph.getSources().stream()
-                    .filter(v -> v instanceof TaintAddress && !codeController.haveCode(v.getClassName()))
+                    .filter(v -> v instanceof TaintAddress && isLibrary(v))
                     .collect(Collectors.toCollection(HashSet::new));
 
             System.out.println("JUAN: Removing " + toRemove.size() + " Non Code Roots of " + graph.getVertices().size()
@@ -472,6 +465,15 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         return graph;
 
+    }
+
+    private boolean isLibrary(TaintVertex v) {
+
+        if (v instanceof TaintAddress && ((TaintAddress)v).isArrayRef()) {
+            return false;
+        }
+
+        return !codeController.haveCode(v.getClassName());
     }
 
     private Graph<TaintVertex, TaintEdge> removeDegree2Addresses(Graph<TaintVertex, TaintEdge> graph) {
@@ -492,15 +494,15 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         return transform.newRoot.getInnerGraph();
     }
 
-    private Graph<TaintVertex, TaintEdge> removeNonCodePaths(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController) {
+    private Graph<TaintVertex, TaintEdge> removeNonCodePaths(Graph<TaintVertex, TaintEdge> graph) {
 
-        HashSet<TaintVertex> toRemove = new HashSet<>();
+        List<TaintVertex> nonCodeLeafs;
 
-        List<TaintVertex> nonCodeLeafs = graph.getVertices().stream()
-                .filter(v -> graph.getOutNeighbors(v).isEmpty() && !codeController.haveCode(v.getClassName()))
-                .collect(Collectors.toList());
+        do {
+            nonCodeLeafs = graph.getVertices().stream()
+                    .filter(v -> graph.getOutNeighbors(v).isEmpty() && isLibrary(v))
+                    .collect(Collectors.toList());
 
-        while (!nonCodeLeafs.isEmpty()) {
             System.out.println("JUAN: Removing " + nonCodeLeafs.size() + " Non Code Leafs of " + graph.getVertices().size()
                     + "(" + ((double)graph.getVertices().size())/nonCodeLeafs.size() + ")");
 
@@ -508,10 +510,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
                 graph.cutVertex(v);
             }
 
-             nonCodeLeafs = graph.getVertices().stream()
-                    .filter(v -> graph.getOutNeighbors(v).isEmpty() && !codeController.haveCode(v.getClassName()))
-                    .collect(Collectors.toList());
-        }
+        } while (!nonCodeLeafs.isEmpty());
 
         return graph;
     }

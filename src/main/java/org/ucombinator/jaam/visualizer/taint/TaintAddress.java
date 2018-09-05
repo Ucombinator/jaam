@@ -4,9 +4,11 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.tools.taint3.Address;
 import org.ucombinator.jaam.tools.taint3.Address.StaticField;
 import org.ucombinator.jaam.tools.taint3.Address.InstanceField;
+import org.ucombinator.jaam.tools.taint3.Address.ArrayRef;
 import soot.SootClass;
 import soot.SootField;
 import soot.SootMethod;
+import soot.Type;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,6 +18,8 @@ import java.util.List;
 public class TaintAddress extends TaintVertex {
 
     private static final Color defaultColor = Color.LIGHTGREEN;
+    private static final Color primArrayRefColor = Color.SEAGREEN;
+    private static final Color classArrayRefColor = Color.DARKGREEN;
 
     private Address address;
     private final boolean isField;
@@ -40,6 +44,16 @@ public class TaintAddress extends TaintVertex {
         }
         else {
            fieldId = null;
+        }
+
+        if (address instanceof ArrayRef) {
+            soot.Type a = ((ArrayRef)address).typ();
+            if (a instanceof soot.PrimType) {
+                this.color = primArrayRefColor;
+            }
+            else {
+                this.color = classArrayRefColor;
+            }
         }
 
         sootClass = address.sootClass(); // Might be null
@@ -73,6 +87,10 @@ public class TaintAddress extends TaintVertex {
 
     public SootMethod getSootMethod() {
         return sootMethod;
+    }
+
+    public boolean isArrayRef() {
+        return address instanceof ArrayRef;
     }
 
     @Override
