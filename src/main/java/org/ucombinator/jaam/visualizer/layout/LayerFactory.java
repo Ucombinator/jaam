@@ -43,6 +43,10 @@ public class LayerFactory
         return getMethodGroupingGraph(root);
     }
 
+    public static GraphTransform<TaintRootVertex, TaintVertex> getTaintClassGrouping(TaintRootVertex root) {
+        return getClassGroupingGraph(root);
+    }
+
     private static GraphTransform<TaintRootVertex, TaintVertex> getStronglyConnectedComponentsTaintGraph(TaintRootVertex root) {
         List<List<Integer>> sccs = GraphUtils.StronglyConnectedComponents(root.getInnerGraph());
         HashMap<Integer, Integer> vertexToComponentIndex = getVertexToComponentMap(sccs);
@@ -73,6 +77,8 @@ public class LayerFactory
         }
         return vertexToComponentIndex;
     }
+
+
 
     /*
     private static TaintRootVertex getClassClusteredTaintGraph(Graph<TaintVertex, TaintEdge> graph) {
@@ -113,12 +119,9 @@ public class LayerFactory
         return h;
     }
 
-    private static TaintRootVertex getClassGroupingGraph(Graph<TaintVertex, TaintEdge> graph)
+    private static GraphTransform<TaintRootVertex, TaintVertex> getClassGroupingGraph(TaintRootVertex root)
     {
-        TaintRootVertex graphRoot = new TaintRootVertex();
-        graphRoot.setInnerGraph(graph);
-
-        return (TaintRootVertex) GraphUtils.compressGraph(graphRoot,
+        return GraphUtils.copyAndCompressGraph(root,
                 v -> {
                     String className = v.getClassName();
 

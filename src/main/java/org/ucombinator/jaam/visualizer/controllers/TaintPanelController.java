@@ -37,6 +37,15 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     public TaintPanelController(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController, MainTabController tabController) throws IOException {
         super(TaintRootVertex::new, tabController);
 
+        for (TaintVertex v : graph.getVertices()) {
+            if (v.getClassName() == null && v.getMethodName() == null) {
+                System.out.println("MICHAEL Don't have class or method for " + v.toString());
+            }
+            else if (v.getClassName() == null) {
+                System.out.println("MICHAEL Don't have class for " + v.toString());
+            }
+        }
+
         // Custom event handlers
         graphContentGroup.addEventFilter(SelectEvent.TAINT_VERTEX_SELECTED, this);
 
@@ -46,6 +55,17 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         this.immutableRoot.setInnerGraph(this.cleanTaintGraph(graph, codeController));
         fillFieldDictionary();
         immAndVis = null;
+
+
+        System.out.println("Second round");
+        for (TaintVertex v : graph.getVertices()) {
+            if (v.getClassName() == null && v.getMethodName() == null) {
+                System.out.println("MICHAEL Don't have class or method for " + v.toString());
+            }
+            else if (v.getClassName() == null) {
+                System.out.println("MICHAEL Don't have class for " + v.toString());
+            }
+        }
     }
 
     public TaintRootVertex getVisibleRoot() {
@@ -61,17 +81,15 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         Set<TaintVertex> verticesToDraw = this.tabController.getImmutableTaintShown();
 
-        /*
-        verticesToDraw.removeIf(v -> {
-
-            if ()
-
-        })
-        */
-
-        // System.out.println("Vertices to draw: " + verticesToDraw.size());
+        System.out.println("Taint Vertices to draw: " + verticesToDraw.size());
         GraphTransform<TaintRootVertex, TaintVertex> immToFlatVisible = this.getImmutableRoot().constructVisibleGraph(verticesToDraw);
+
+
+        // Groups by method
         GraphTransform<TaintRootVertex, TaintVertex> flatToLayerVisible = LayerFactory.getLayeredTaintGraph(immToFlatVisible.newRoot);
+        // Groups by Class
+        //GraphTransform<TaintRootVertex, TaintVertex> flatToLayerVisible = LayerFactory.getTaintClassGrouping(immToFlatVisible.newRoot);
+
         immAndVis = GraphTransform.transfer(immToFlatVisible, flatToLayerVisible);
         this.visibleRoot = immAndVis.newRoot;
 
@@ -435,9 +453,6 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     }
 
     private Graph<TaintVertex, TaintEdge> removeNonCodeRootAddresses(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController) {
-
-
-
 
         HashSet<TaintVertex> toRemove;
         do {
