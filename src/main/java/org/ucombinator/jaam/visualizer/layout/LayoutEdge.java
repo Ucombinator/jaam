@@ -117,6 +117,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
 
             this.getSrcParent().getChildren().add(graphics);
             graphics.setVisible(this.isDisplayed());
+            graphics.setMouseTransparent(true);
         }
     }
 
