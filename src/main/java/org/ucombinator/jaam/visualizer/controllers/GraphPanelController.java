@@ -18,18 +18,20 @@ import org.ucombinator.jaam.visualizer.graph.Edge;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
+import org.ucombinator.jaam.visualizer.gui.GUITaintMethodNode;
 import org.ucombinator.jaam.visualizer.gui.TimelineProperty;
 import org.ucombinator.jaam.visualizer.gui.ZoomSpinnerValueFactory;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.main.Main;
+import org.ucombinator.jaam.visualizer.taint.TaintMethodVertex;
 
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 import java.util.function.Supplier;
 
-public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends LayoutEdge<T> & Edge<T>> {
+public abstract class GraphPanelController<T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends LayoutEdge<T> & Edge<T>> {
 
     @FXML protected final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML protected final Spinner<Double> zoomSpinner = null; // Initialized by Controllers.loadFXML()
@@ -76,8 +78,9 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
         return this.immutableRoot;
     }
 
-    protected void drawNodes(GUINode<T> parent, T v) {
-        GUINode<T> node = new GUINode<>(parent, v);
+    protected void drawNodes(GUINode parent, T v) {
+
+        GUINode node = new GUINode(parent, v);
 
         if (parent == null) {
             this.graphContentGroup.getChildren().clear();
@@ -120,7 +123,7 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
         this.visibleRoot.setVisible(false);
         this.visibleRoot.applyToEdgesRecursive(
                 (HierarchicalVertex<T, S> w)
-                        -> ((AbstractLayoutVertex<T>) w).setEdgeVisible(this.showEdges.isSelected()),
+                        -> ((AbstractLayoutVertex) w).setEdgeVisible(this.showEdges.isSelected()),
                 (S e) -> e.redrawAndSetVisible(this.showEdges.isSelected()));
         this.visibleRoot.setVisible(true);
     }
@@ -128,7 +131,7 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
     @FXML public void showLabelsAction(ActionEvent event) {
         this.visibleRoot.setVisible(false);
         this.visibleRoot.applyToVerticesRecursive((HierarchicalVertex<T, S> w)
-                -> ((AbstractLayoutVertex<T>) w).setLabelVisible(this.showLabels.isSelected()));
+                -> ((AbstractLayoutVertex) w).setLabelVisible(this.showLabels.isSelected()));
         this.visibleRoot.setVisible(true);
     }
 

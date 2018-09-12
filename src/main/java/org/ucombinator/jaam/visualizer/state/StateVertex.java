@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
+public abstract class StateVertex extends AbstractLayoutVertex
         implements HierarchicalVertex<StateVertex, StateEdge> {
 
     private Graph<StateVertex, StateEdge> outerGraph;
@@ -61,7 +61,8 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
                     Main.getSelectedMainTabController().resetHighlighted(this);
                 }
 
-                this.getGraphics().fireEvent(new SelectEvent<StateVertex>(MouseButton.PRIMARY, this.getGraphics(), this));
+                this.getGraphics().fireEvent(new SelectEvent<StateVertex>(MouseButton.PRIMARY, this.getGraphics()
+                        , this, SelectEvent.VERTEX_TYPE.STATE));
                 break;
             case 2:
                 handleDoubleClick(event);

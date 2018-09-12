@@ -22,14 +22,14 @@ public class LayoutAlgorithm
         DFS, BFS
     }
 
-    public static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
+    public static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     void layout(T parentVertex) {
         initializeSizes(parentVertex);
         doLayout(parentVertex.getPreferredLayout(), parentVertex);
         parentVertex.setY(parentVertex.getY() + ROOT_V_OFFSET);
     }
 
-    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
+    private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     void initializeSizes(T parentVertex) {
         parentVertex.setWidth(AbstractLayoutVertex.DEFAULT_WIDTH);
         parentVertex.setHeight(AbstractLayoutVertex.DEFAULT_HEIGHT);
@@ -41,7 +41,7 @@ public class LayoutAlgorithm
         }
     }
 
-    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
+    private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     void expandSubGraphs(T parentVertex) {
         Graph<T, S> parentChildGraph = parentVertex.getInnerGraph();
         for(T v: parentChildGraph.getVertices()) {
@@ -57,7 +57,7 @@ public class LayoutAlgorithm
         }
     }
 
-    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
+    private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     void doLayout(LAYOUT_ALGORITHM alg, T parentVertex) {
         if (alg == LAYOUT_ALGORITHM.DFS) {
             dfsLayout(parentVertex);
@@ -67,7 +67,7 @@ public class LayoutAlgorithm
         }
     }
 
-    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
+    private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     void dfsLayout(T parentVertex) {
         Graph<T, S> graph = parentVertex.getInnerGraph();
 
@@ -82,7 +82,7 @@ public class LayoutAlgorithm
         parentVertex.setHeight(dimensions.getY());
     }
 
-    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
+    private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     Pair<List<T>, HashMap<T, ArrayList<T>>> getDFSChildMap(Graph<T,S> graph) {
         graph.getVertices().forEach(v -> v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE));
 
@@ -110,7 +110,7 @@ public class LayoutAlgorithm
         return new Pair<>(roots, childMap);
     }
 
-    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
+    private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     void addDescendants(T v, Graph<T, S> graph, HashMap<T, ArrayList<T>> childMap) {
 
         ArrayList<T> subVertices = new ArrayList<>();
@@ -126,7 +126,7 @@ public class LayoutAlgorithm
         v.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
     }
 
-    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
+    private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     void bfsLayout(T parentVertex) {
         Graph<T, S> graph = parentVertex.getInnerGraph();
 
@@ -163,7 +163,7 @@ public class LayoutAlgorithm
      * cannot be hidden.
      * Every node appears as a child as deep as possible in the tree (ties broken arbitrarily)
      */
-    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
+    private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     HashMap<T, ArrayList<T>> maxDepthChildren(Graph<T, S> graph)
     {
         HashMap<T, ArrayList<T>> childrenMap = new HashMap<>();
@@ -256,7 +256,7 @@ public class LayoutAlgorithm
         return childrenMap;
     }
 
-    private static class ClassComp<T extends AbstractLayoutVertex<T>> implements Comparator<T> {
+    private static class ClassComp<T extends AbstractLayoutVertex> implements Comparator<T> {
         @Override
         public int compare(T o1, T o2) {
             if(o1 instanceof StateSccVertex || o1 instanceof TaintSccVertex)
@@ -303,12 +303,12 @@ public class LayoutAlgorithm
      *     either as a root or in the child list of a different node
      * Note that if a childrenSort order is provided the roots and child lists will be sorted
      * */
-    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
+    private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     Point2D treeLayout(List<T> roots, HashMap<T, ArrayList<T>> childrenMap) {
         return treeLayout(roots, childrenMap, null);
     }
 
-    private static <T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends Edge<T>>
+    private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     Point2D treeLayout(List<T> roots, HashMap<T, ArrayList<T>> childrenMap, Comparator<T> childrenSortOrder)
     {
         setSpanningEdges(childrenMap);
@@ -345,7 +345,7 @@ public class LayoutAlgorithm
      * Changes of Status: assigns X and Y to the child vertices of the graph
      * Output: returns the W and H to be assign to the parent node
      * */
-    private static <T extends AbstractLayoutVertex<T>> void storeBBoxWidthAndHeight(
+    private static <T extends AbstractLayoutVertex> void storeBBoxWidthAndHeight(
             T root, HashMap<T, ArrayList<T>> childrenMap) {
 
         ArrayList<T> children = childrenMap.get(root);
@@ -363,7 +363,7 @@ public class LayoutAlgorithm
      * Input: graph and left/top offset
      * State changes: assigns X and Y coordinates to the child vertices of the graph
      * */
-    private static <T extends AbstractLayoutVertex<T>> void assignChildCoordinates (T root, double left, double top,
+    private static <T extends AbstractLayoutVertex> void assignChildCoordinates (T root, double left, double top,
             HashMap<T, ArrayList<T>> childrenMap)
     {
         ArrayList<T> children = childrenMap.get(root);
@@ -394,12 +394,12 @@ public class LayoutAlgorithm
         root.setY(top); //top-most corner y
     }
 
-    private static <T extends AbstractLayoutVertex<T>> void setSpanningEdges(HashMap<T, ArrayList<T>> childrenMap) {
+    private static <T extends AbstractLayoutVertex> void setSpanningEdges(HashMap<T, ArrayList<T>> childrenMap) {
 
         // Mark which edges are in our spanning tree, and which are not.
         for (T parent : childrenMap.keySet()) {
             Set<T> childrenSet = new HashSet<>(childrenMap.get(parent));
-            for (LayoutEdge<T> edge : parent.getIncidentEdges()) {
+            for (LayoutEdge<?> edge : parent.getIncidentEdges()) {
                 edge.setSpanningEdge(childrenSet.contains(edge.getDest()));
             }
         }

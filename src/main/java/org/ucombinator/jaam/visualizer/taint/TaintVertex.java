@@ -14,7 +14,7 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
+public abstract class TaintVertex extends AbstractLayoutVertex
         implements HierarchicalVertex<TaintVertex, TaintEdge> {
 
     public static Color defaultColor = Color.LIGHTGREEN;
@@ -88,7 +88,8 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
                 } else {
                     Main.getSelectedMainTabController().resetHighlighted(this);
                 }
-                this.getGraphics().fireEvent(new SelectEvent<TaintVertex>(MouseButton.PRIMARY, this.getGraphics(), this));
+                this.getGraphics().fireEvent(new SelectEvent<TaintVertex>(MouseButton.PRIMARY, this.getGraphics()
+                        , this, SelectEvent.VERTEX_TYPE.TAINT));
                 break;
             case 2:
                 if (this instanceof TaintMethodVertex) {

@@ -113,7 +113,7 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
 
     public void resetStrokeWidth() {
         this.visibleRoot.applyToVerticesRecursive(
-                (HierarchicalVertex<StateVertex, StateEdge> w) -> ((AbstractLayoutVertex<StateVertex>) w)
+                (HierarchicalVertex<StateVertex, StateEdge> w) -> ((AbstractLayoutVertex) w)
                         .resetStrokeWidth(1.0 / this.zoomSpinner.getValue()));
     }
 

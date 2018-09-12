@@ -30,7 +30,7 @@ public class GraphUtils {
         public int lowlink; // minIndex of a vertex reachable from my subtree that is not already part of a SCC
     }
 
-    private static <T extends AbstractLayoutVertex<T>, S extends Edge<T>> void visit(
+    private static <T extends AbstractLayoutVertex, S extends Edge<T>> void visit(
             Graph<T, S> graph, T v, HashMap<Integer, SCCVertex> visitedVertices, Stack<Integer> stack,
             List<List<Integer>> components)
     {
@@ -72,7 +72,7 @@ public class GraphUtils {
         }
     }
 
-    public static <T extends AbstractLayoutVertex<T>, S extends Edge<T>> List<List<Integer>>
+    public static <T extends AbstractLayoutVertex, S extends Edge<T>> List<List<Integer>>
     StronglyConnectedComponents(final Graph<T, S> graph) {
         System.out.println("Finding strongly connected components...");
         List<List<Integer>> components = new ArrayList<>();

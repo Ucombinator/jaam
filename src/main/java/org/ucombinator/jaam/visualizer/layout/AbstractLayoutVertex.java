@@ -12,7 +12,7 @@ import org.ucombinator.jaam.visualizer.gui.GUINodeStatus;
 
 import java.util.Set;
 
-public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
+public abstract class AbstractLayoutVertex
         implements Vertex
 {
     // Types of layout vertices
@@ -35,7 +35,7 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
     private VertexStatus vertexStatus;
 
     // Graphic related fields
-    private GUINode<T> graphics;
+    private GUINode graphics;
     private GUINodeStatus nodeStatus = new GUINodeStatus();
 
     public static final double DEFAULT_WIDTH = 10.0;
@@ -139,11 +139,11 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         return this.nodeStatus;
     }
 
-    public GUINode<T> getGraphics()
+    public GUINode getGraphics()
     {
         return this.graphics;
     }
-    public void setGraphics(GUINode<T> graphics)
+    public void setGraphics(GUINode graphics)
     {
         this.graphics = graphics;
     }
@@ -249,6 +249,6 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         this.getIncidentEdges().forEach(LayoutEdge::resetEdgePath);
     }
 
-    public abstract Set<? extends LayoutEdge<T>> getIncidentEdges();
+    public abstract Set<? extends LayoutEdge<? extends AbstractLayoutVertex>> getIncidentEdges();
     public abstract void onMouseClick(MouseEvent event);
 }

@@ -6,7 +6,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
 
-public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements Comparable<LayoutEdge<T>>
+public abstract class LayoutEdge<T extends AbstractLayoutVertex> implements Comparable<LayoutEdge<T>>
 {
     private static final Color highlightColor = Color.ORANGERED;
     private static final Color downwardColor = Color.BLACK;
@@ -152,8 +152,8 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
 
     public void drawStraightEdge() {
         // System.out.println("Drawing straight edge: " + src + " --> " + dest);
-        GUINode<T> srcNode = src.getGraphics();
-        GUINode<T> destNode   = dest.getGraphics();
+        GUINode srcNode = src.getGraphics();
+        GUINode destNode   = dest.getGraphics();
 
         if (dest.getY() >= src.getY()) {
             this.color = downwardColor;
@@ -304,7 +304,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex<T>> implements C
         return this.graphics.isVisible();
     }
 
-    private GUINode<T> getSrcParent()
+    private GUINode getSrcParent()
     {
         if (this.getSrc().getGraphics() != null)
             return this.getSrc().getGraphics().getParentNode();

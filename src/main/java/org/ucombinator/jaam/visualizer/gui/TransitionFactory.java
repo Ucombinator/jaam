@@ -54,7 +54,7 @@ public class TransitionFactory {
     public static ParallelTransition buildVertexTransition(StateVertex v) {
         System.out.println("Creating transition for vertex: " + v.toString());
         GUINodeStatus status = v.getNodeStatus();
-        GUINode<StateVertex> node = v.getGraphics();
+        GUINode node = v.getGraphics();
         Rectangle rect = node.getRect();
 
         FadeTransition ft = new FadeTransition(time);
@@ -73,7 +73,7 @@ public class TransitionFactory {
     public static ParallelTransition buildVertexTransition(TaintVertex v) {
         System.out.println("Creating transition for vertex: " + v.toString());
         GUINodeStatus status = v.getNodeStatus();
-        GUINode<TaintVertex> node = v.getGraphics();
+        GUINode node = v.getGraphics();
         if (node == null) {
             System.out.println("Node is null");
         }

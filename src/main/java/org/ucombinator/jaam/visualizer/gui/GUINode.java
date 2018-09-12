@@ -17,19 +17,19 @@ import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.state.StateRootVertex;
 import org.ucombinator.jaam.visualizer.taint.TaintRootVertex;
 
-public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
+public class GUINode extends Group
 {
-    private static final double TEXT_VERTICAL_PADDING = 15;
-    private static final double TEXT_HORIZONTAL_PADDING = 15;
+    protected static final double TEXT_VERTICAL_PADDING = 15;
+    protected static final double TEXT_HORIZONTAL_PADDING = 15;
 
-    private final Rectangle rect;
-    private final Text rectLabel;
-    private final T vertex;
-    private final GUINode<T> parent;
+    protected final Rectangle rect;
+    protected final Text rectLabel;
+    protected final AbstractLayoutVertex vertex;
+    protected final GUINode parent;
 
     private Point2D dragStart;
 
-    public GUINode(GUINode<T> parent, T v)
+    public GUINode(GUINode parent, AbstractLayoutVertex v)
     {
         super();
         this.parent = parent;
@@ -111,7 +111,7 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
         this.vertex.onMouseClick(event);
     }
 
-    public T getVertex() {
+    public AbstractLayoutVertex getVertex() {
         return vertex;
     }
 
@@ -158,7 +158,7 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
         System.out.println("Node y = " + bounds.getMinY() + ", " + bounds.getMaxY());
     }
 
-    public static <T extends AbstractLayoutVertex<T>> Line getLine(GUINode<T> sourceNode, GUINode<T> destNode) {
+    public static <T extends AbstractLayoutVertex> Line getLine(GUINode sourceNode, GUINode destNode) {
         if(sourceNode == null || destNode == null) {
             System.out.println("This should never happen!");
             return new Line(0, 0, 0, 0);
@@ -172,7 +172,7 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
         }
     }
 
-    public static <T extends AbstractLayoutVertex<T>> QuadCurve getCurve(GUINode<T> sourceNode, GUINode<T> destNode) {
+    public static <T extends AbstractLayoutVertex> QuadCurve getCurve(GUINode sourceNode, GUINode destNode) {
         if(sourceNode == null || destNode == null) {
             System.out.println("This should never happen!");
             return new QuadCurve(0, 0, 0, 0, 0, 0);
@@ -192,7 +192,7 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
                 frac * p1.getY() + (1 - frac) * p2.getY());
     }
 
-    private Point2D getLineIntersection(GUINode<T> otherNode) {
+    private Point2D getLineIntersection(GUINode otherNode) {
         Bounds sourceBounds = this.getRectBoundsInParent();
         Bounds destBounds = otherNode.getRectBoundsInParent();
 
@@ -259,7 +259,7 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
         return arrowhead;
     }
 
-    public GUINode<T> getParentNode() {
+    public GUINode getParentNode() {
         return this.parent;
     }
 

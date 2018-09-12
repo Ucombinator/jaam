@@ -8,6 +8,7 @@ import org.ucombinator.jaam.tools.taint3.Address;
 import org.ucombinator.jaam.util.Loop;
 import org.ucombinator.jaam.visualizer.graph.GraphTransform;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
+import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.*;
@@ -107,6 +108,11 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         drawNodes(null, visibleRoot);
         drawEdges(visibleRoot);
         visibleRoot.setVisible(true);
+    }
+
+    public void drawNodes(GUINode parent, TaintMethodVertex v) {
+        System.out.println("Drawing the taint vertex...");
+        super.drawNodes(parent, v);
     }
 
     public void redrawGraph() {
