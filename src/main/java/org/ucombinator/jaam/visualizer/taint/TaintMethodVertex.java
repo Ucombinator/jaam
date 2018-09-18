@@ -19,6 +19,8 @@ public class TaintMethodVertex extends TaintVertex {
     private String className;
     private String methodName;
 
+    private ArrayList<TaintVertex> inputs, inner, outputs;
+
     public TaintMethodVertex(String label)
     {
         super(label, VertexType.SCC, true);
@@ -41,8 +43,28 @@ public class TaintMethodVertex extends TaintVertex {
             this.setExpanded(false);
         }
 
+        inputs = new ArrayList<>();
+        inner = new ArrayList<>();
+        outputs = new ArrayList<>();
     }
 
+    public TaintMethodVertex(String className, String methodName, LayoutAlgorithm.LAYOUT_ALGORITHM preferredLayout,
+                             ArrayList<TaintVertex> inputs, ArrayList<TaintVertex> inner, ArrayList<TaintVertex> outputs) {
+        this(className, methodName, preferredLayout);
+
+        this.inputs = inputs;
+        this.inner = inner;
+        this.outputs = outputs;
+
+        inputs.forEach(this::addVertex);
+        inner.forEach(this::addVertex);
+        outputs.forEach(this::addVertex);
+    }
+
+    private void addVertex(TaintVertex v) {
+       this.getInnerGraph().addVertex(v);
+       v.setOuterGraph(this.getInnerGraph());
+    }
     public TaintMethodVertex copy() {
         return new TaintMethodVertex(this.getLabel());
     }

@@ -164,18 +164,36 @@ public class LayerFactory
                 },
                 new Function<List<TaintVertex>, TaintVertex>() {
                     @Override
-                    public TaintVertex apply(List<TaintVertex> stateVertices) {
+                    public TaintVertex apply(List<TaintVertex> taintVertices) {
 
-                        TaintVertex representative = stateVertices.stream().findFirst().get();
+                        TaintVertex representative = taintVertices.stream().findFirst().get();
                         String className  = representative.getClassName();
                         String methodName = representative.getMethodName();
                         assert methodName != null;
 
-                        TaintMethodVertex methodVertex = new TaintMethodVertex(className, methodName, LayoutAlgorithm.LAYOUT_ALGORITHM.DFS);
-                        stateVertices.forEach(v -> {
-                            methodVertex.getInnerGraph().addVertex(v);
-                            v.setOuterGraph(methodVertex.getInnerGraph());
-                        });
+                        ArrayList<TaintVertex> inputs = new ArrayList<>(), inner = new ArrayList<>(), outputs = new ArrayList<>();
+
+                        for (TaintVertex v : taintVertices) {
+
+                            boolean isInput  = v.getOuterGraph().getInNeighbors(v).stream().anyMatch(n -> !taintVertices.contains(n));
+                            boolean isOutput = v.getOuterGraph().getOutNeighbors(v).stream().anyMatch(n -> !taintVertices.contains(n));
+
+                            if (isInput && isOutput) {
+                                System.out.println("JUAN Error both input and output");
+                            }
+                            if (isInput) {
+                                inputs.add(v);
+                            }
+                            else if (isOutput) {
+                                outputs.add(v);
+                            }
+                            else {
+                                inner.add(v);
+                            }
+                        }
+
+                        TaintMethodVertex methodVertex = new TaintMethodVertex(className, methodName, LayoutAlgorithm.LAYOUT_ALGORITHM.DFS,
+                                inputs, inner, outputs);
                         return methodVertex;
                     }
                 },
