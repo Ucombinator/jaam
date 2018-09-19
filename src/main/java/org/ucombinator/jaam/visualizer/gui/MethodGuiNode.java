@@ -14,9 +14,6 @@ public class MethodGuiNode extends GUINode{
     HBox inputPane, outPane;
     Label centerLabel;
 
-    ArrayList<TaintVertex> inputs;
-    ArrayList<TaintVertex> outputs;
-
     public MethodGuiNode(GUINode parent, TaintMethodVertex v) {
         super(parent, v);
 
@@ -28,10 +25,10 @@ public class MethodGuiNode extends GUINode{
     }
 
     private void fillTopAndBottom() {
-        for (TaintVertex v : inputs) {
+        for (TaintVertex v : getV().getInputs()) {
             inputPane.getChildren().add(v.getGraphics());
         }
-        for (TaintVertex v : outputs) {
+        for (TaintVertex v : getV().getOutputs()) {
             outPane.getChildren().add(v.getGraphics());
         }
     }

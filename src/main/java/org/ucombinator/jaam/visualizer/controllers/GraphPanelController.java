@@ -18,13 +18,11 @@ import org.ucombinator.jaam.visualizer.graph.Edge;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
-import org.ucombinator.jaam.visualizer.gui.GUITaintMethodNode;
 import org.ucombinator.jaam.visualizer.gui.TimelineProperty;
 import org.ucombinator.jaam.visualizer.gui.ZoomSpinnerValueFactory;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.LayoutEdge;
 import org.ucombinator.jaam.visualizer.main.Main;
-import org.ucombinator.jaam.visualizer.taint.TaintMethodVertex;
 
 import javax.imageio.ImageIO;
 import java.io.File;
@@ -80,7 +78,7 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex & Hier
 
     protected void drawNodes(GUINode parent, T v) {
 
-        GUINode node = new GUINode(parent, v);
+        GUINode node = v.setGraphics(parent);
 
         if (parent == null) {
             this.graphContentGroup.getChildren().clear();

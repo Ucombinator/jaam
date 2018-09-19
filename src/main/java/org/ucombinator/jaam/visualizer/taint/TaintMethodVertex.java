@@ -4,6 +4,8 @@ import javafx.animation.ParallelTransition;
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
+import org.ucombinator.jaam.visualizer.gui.GUINode;
+import org.ucombinator.jaam.visualizer.gui.MethodGuiNode;
 import org.ucombinator.jaam.visualizer.gui.TransitionFactory;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 import org.ucombinator.jaam.visualizer.main.Main;
@@ -20,6 +22,7 @@ public class TaintMethodVertex extends TaintVertex {
     private String methodName;
 
     private ArrayList<TaintVertex> inputs, inner, outputs;
+    private MethodGuiNode methodGraphic;
 
     public TaintMethodVertex(String label)
     {
@@ -67,6 +70,16 @@ public class TaintMethodVertex extends TaintVertex {
     }
     public TaintMethodVertex copy() {
         return new TaintMethodVertex(this.getLabel());
+    }
+
+    @Override
+    public MethodGuiNode getGraphics() {
+        return methodGraphic;
+    }
+    @Override
+    public MethodGuiNode setGraphics(GUINode parent) {
+        this.methodGraphic = new MethodGuiNode(parent, this);
+        return this.methodGraphic;
     }
 
     public HashSet<String> getMethodNames() {
@@ -183,5 +196,13 @@ public class TaintMethodVertex extends TaintVertex {
 
         pt.play();
 
+    }
+
+    public ArrayList<TaintVertex> getInputs() {
+        return inputs;
+    }
+
+    public ArrayList<TaintVertex> getOutputs() {
+        return outputs;
     }
 }

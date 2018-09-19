@@ -143,9 +143,10 @@ public abstract class AbstractLayoutVertex
     {
         return this.graphics;
     }
-    public void setGraphics(GUINode graphics)
-    {
-        this.graphics = graphics;
+
+    public GUINode setGraphics(GUINode parent) {
+        this.graphics = new GUINode(parent, this);
+        return this.graphics;
     }
 
     public void setColor(Color c) {

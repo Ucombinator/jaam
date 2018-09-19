@@ -169,7 +169,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex> implements Comp
             // Compute arrowhead
             double orientAngle = Math.PI + Math.atan2(line.getEndY() - line.getStartY(), line.getEndX() - line.getStartX());
             // TODO: Adjust arrowLength by scale
-            double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getRect().getWidth());
+            double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getWidth());
             this.arrowhead = GUINode.computeArrowhead(line.getEndX(), line.getEndY(), arrowLength, orientAngle, arrowheadAngleWidth);
             this.arrowhead.setFill(this.color);
         }
@@ -186,7 +186,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex> implements Comp
             }
 
             double orientAngle = Math.PI + Math.atan2(curve.getEndY() - curve.getControlY(), curve.getEndX() - curve.getControlX());
-            double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getRect().getWidth());
+            double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getWidth());
             this.arrowhead = GUINode.computeArrowhead(curve.getEndX(), curve.getEndY(), arrowLength, orientAngle, arrowheadAngleWidth);
             this.arrowhead.setFill(this.color);
         }

@@ -34,7 +34,6 @@ public class GUINode extends Group
         super();
         this.parent = parent;
         this.vertex = v;
-        this.vertex.setGraphics(this);
 
         this.rect = new Rectangle();
 
@@ -94,6 +93,10 @@ public class GUINode extends Group
         this.vertex.setY(newY);
 
         this.vertex.getIncidentEdges().forEach(LayoutEdge::redrawEdge);
+    }
+
+    public double getWidth() {
+        return rect.getWidth();
     }
 
     private void handleOnMouseEntered(MouseEvent event) {
