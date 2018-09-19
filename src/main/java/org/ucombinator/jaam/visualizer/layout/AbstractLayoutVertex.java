@@ -195,9 +195,9 @@ public abstract class AbstractLayoutVertex
         }
 
         if (isHighlighted) {
-            this.getGraphics().getRect().setEffect(highlightShadow);
+            this.getGraphics().setEffect(highlightShadow);
         } else {
-            this.getGraphics().getRect().setEffect(null);
+            this.getGraphics().setEffect(null);
         }
     }
 
@@ -238,7 +238,7 @@ public abstract class AbstractLayoutVertex
     public void setClassHighlight(boolean isHighlighted)
     {
         if(!isSelected) {
-            this.getGraphics().getRect().setEffect(isHighlighted ? classHighlightShadow : null);
+            this.getGraphics().setEffect(isHighlighted ? classHighlightShadow : null);
         }
     }
 

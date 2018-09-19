@@ -146,7 +146,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex> implements Comp
 
         this.setEdgePath(path);
 
-        double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getRect().getWidth());
+        double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getWidth());
         this.arrowhead = GUINode.computeArrowhead(destCenter, dest.getY(), arrowLength, 3 * Math.PI / 2, arrowheadAngleWidth);
     }
 

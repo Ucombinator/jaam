@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.gui;
 
 import javafx.animation.*;
+import javafx.beans.property.DoubleProperty;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 import org.ucombinator.jaam.visualizer.graph.Graph;
@@ -55,7 +56,6 @@ public class TransitionFactory {
         System.out.println("Creating transition for vertex: " + v.toString());
         GUINodeStatus status = v.getNodeStatus();
         GUINode node = v.getGraphics();
-        Rectangle rect = node.getRect();
 
         FadeTransition ft = new FadeTransition(time);
         ft.setToValue(status.opacity);
@@ -64,8 +64,8 @@ public class TransitionFactory {
         tt.setToX(status.x);
         tt.setToY(status.y);
 
-        Timeline widthTimeline = new Timeline(new KeyFrame(time, new KeyValue(rect.widthProperty(), status.width)));
-        Timeline heightTimeline = new Timeline(new KeyFrame(time, new KeyValue(rect.heightProperty(), status.height)));
+        Timeline widthTimeline = new Timeline(new KeyFrame(time, new KeyValue(node.getWidthProperty(), status.width)));
+        Timeline heightTimeline = new Timeline(new KeyFrame(time, new KeyValue(node.getWidthProperty(), status.height)));
 
         return new ParallelTransition(node, ft, tt, widthTimeline, heightTimeline);
     }
@@ -77,8 +77,6 @@ public class TransitionFactory {
         if (node == null) {
             System.out.println("Node is null");
         }
-        Rectangle rect = node.getRect();
-
         FadeTransition ft = new FadeTransition(time);
         ft.setToValue(status.opacity);
 
@@ -86,8 +84,8 @@ public class TransitionFactory {
         tt.setToX(status.x);
         tt.setToY(status.y);
 
-        Timeline widthTimeline = new Timeline(new KeyFrame(time, new KeyValue(rect.widthProperty(), status.width)));
-        Timeline heightTimeline = new Timeline(new KeyFrame(time, new KeyValue(rect.heightProperty(), status.height)));
+        Timeline widthTimeline = new Timeline(new KeyFrame(time, new KeyValue(node.getWidthProperty(), status.width)));
+        Timeline heightTimeline = new Timeline(new KeyFrame(time, new KeyValue(node.getWidthProperty(), status.height)));
 
         return new ParallelTransition(node, ft, tt, widthTimeline, heightTimeline);
     }

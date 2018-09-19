@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.visualizer.gui;
 
+import javafx.beans.property.DoubleProperty;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -96,7 +97,11 @@ public class GUINode extends Group
     }
 
     public double getWidth() {
-        return rect.getWidth();
+        return getWidthProperty().get();
+    }
+
+    public DoubleProperty getWidthProperty() {
+        return rect.widthProperty();
     }
 
     private void handleOnMouseEntered(MouseEvent event) {
@@ -268,10 +273,6 @@ public class GUINode extends Group
 
     public void setLabelVisible(boolean isLabelVisible) {
         this.rectLabel.setVisible(isLabelVisible);
-    }
-
-    public Rectangle getRect() {
-        return this.rect;
     }
 
     public Bounds getRectBoundsInLocal() {
