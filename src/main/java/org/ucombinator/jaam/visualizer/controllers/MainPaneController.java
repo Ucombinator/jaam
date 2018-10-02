@@ -179,7 +179,7 @@ public class MainPaneController {
         System.out.println("Taint edge packets: " + taintEdgePackets);
         System.out.println("Ignored edges: " + ignoredEdges);
 
-        TaintRootVertex taintStmtRoot = (TaintRootVertex) taintRoot.groupByStatement();
-        return Pair.of(loopGraphRoot, taintStmtRoot);
+        //TaintRootVertex taintStmtRoot = (TaintRootVertex) taintRoot.groupByStatement();
+        return Pair.of(loopGraphRoot, taintRoot);
     }
 }

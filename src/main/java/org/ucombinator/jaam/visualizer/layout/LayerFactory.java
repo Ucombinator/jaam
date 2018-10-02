@@ -173,18 +173,24 @@ public class LayerFactory
 
                         ArrayList<TaintVertex> inputs = new ArrayList<>(), inner = new ArrayList<>(), outputs = new ArrayList<>();
 
+                        System.out.println("Processing " + className + "." + methodName);
                         for (TaintVertex v : taintVertices) {
 
-                            boolean isInput  = v.getOuterGraph().getInNeighbors(v).stream().anyMatch(n -> !taintVertices.contains(n));
-                            boolean isOutput = v.getOuterGraph().getOutNeighbors(v).stream().anyMatch(n -> !taintVertices.contains(n));
-
-                            if (isInput && isOutput) {
-                                System.out.println("JUAN Error both input and output");
+                            if (!(v instanceof TaintAddress)) {
+                                inner.add(v);
+                                System.out.println("\t" + v + " is not an address");
+                                continue;
                             }
-                            if (isInput) {
+
+
+
+                            TaintAddress a = (TaintAddress)v;
+                            System.out.println("\t" + a.toString() + " is a " + a.type);
+
+                            if (a.type == TaintAddress.Type.Parameter) {
                                 inputs.add(v);
                             }
-                            else if (isOutput) {
+                            else if (a.type == TaintAddress.Type.Return) {
                                 outputs.add(v);
                             }
                             else {

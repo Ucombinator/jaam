@@ -185,4 +185,9 @@ public abstract class StateVertex extends AbstractLayoutVertex
                     return x;
                 });
     }
+
+    @Override
+    public LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
+        return LayoutAlgorithm.LAYOUT_ALGORITHM.DFS;
+    }
 }

@@ -6,7 +6,9 @@ import org.ucombinator.jaam.visualizer.graph.Edge;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.state.StateSccVertex;
+import org.ucombinator.jaam.visualizer.taint.TaintMethodVertex;
 import org.ucombinator.jaam.visualizer.taint.TaintSccVertex;
+import org.ucombinator.jaam.visualizer.taint.TaintVertex;
 
 import java.util.*;
 
@@ -19,13 +21,13 @@ public class LayoutAlgorithm
     private static final double ROOT_V_OFFSET = 10;
 
     public enum LAYOUT_ALGORITHM {
-        DFS, BFS
+        DFS, BFS, SUMMARY
     }
 
     public static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     void layout(T parentVertex) {
         initializeSizes(parentVertex);
-        doLayout(parentVertex.getPreferredLayout(), parentVertex);
+        doLayout(parentVertex);
         parentVertex.setY(parentVertex.getY() + ROOT_V_OFFSET);
     }
 
@@ -51,20 +53,54 @@ public class LayoutAlgorithm
                 // Layout the child graphs of each node and assign width W and height H to each node
                 // X and Y coordinates are RELATIVE to the parent
                 if (v.isExpanded()) {
-                    doLayout(v.getPreferredLayout(), v);
+                    doLayout(v);
                 }
             }
         }
     }
 
     private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
+    void doLayout(T parentVertex) {
+        doLayout(parentVertex.getPreferredLayout(), parentVertex);
+    }
+
+
+    private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     void doLayout(LAYOUT_ALGORITHM alg, T parentVertex) {
+        System.out.println("JUAN: DO LAYOUT " + alg);
         if (alg == LAYOUT_ALGORITHM.DFS) {
             dfsLayout(parentVertex);
         }
-        else {
+        else if (alg == LAYOUT_ALGORITHM.BFS) {
             bfsLayout(parentVertex);
         }
+        else if (alg == LAYOUT_ALGORITHM.SUMMARY) {
+            if (! (parentVertex instanceof TaintMethodVertex) ) {
+                throw new IllegalArgumentException("SUMMARY Layout requested but " + parentVertex + " not TaintMethodVertex");
+            }
+            summaryLayout((TaintMethodVertex)parentVertex);
+        }
+    }
+
+    private static void summaryLayout(TaintMethodVertex parentVertex) {
+        // Set width of
+        for (TaintVertex v : parentVertex.getInputs()) {
+            v.setWidth(TaintMethodVertex.ELEM_WIDTH);
+            v.setHeight(TaintMethodVertex.ELEM_HEIGHT);
+        }
+        for (TaintVertex v : parentVertex.getOutputs()) {
+            v.setWidth(TaintMethodVertex.ELEM_WIDTH);
+            v.setHeight(TaintMethodVertex.ELEM_HEIGHT);
+        }
+
+        int max = Math.max(parentVertex.getInputs().size(), parentVertex.getOutputs().size());
+
+        System.out.println("JUAN Summary layout of " + parentVertex + " --> " + max + " --> " +
+                max * TaintMethodVertex.ELEM_WIDTH + "," + 2*TaintMethodVertex.ELEM_HEIGHT + TaintMethodVertex.LABEL_HEIGHT);
+
+
+        parentVertex.setWidth(max * TaintMethodVertex.ELEM_WIDTH);
+        parentVertex.setHeight(2*TaintMethodVertex.ELEM_HEIGHT + TaintMethodVertex.LABEL_HEIGHT);
     }
 
     private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>

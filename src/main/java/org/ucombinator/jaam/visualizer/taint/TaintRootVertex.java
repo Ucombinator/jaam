@@ -4,6 +4,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.graph.GraphTransform;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
+import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 
 import java.util.*;
 
@@ -58,5 +59,10 @@ public class TaintRootVertex extends TaintVertex {
             expandedVertices.addAll(v.expand());
         }
         return expandedVertices;
+    }
+
+    @Override
+    public LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
+        return LayoutAlgorithm.LAYOUT_ALGORITHM.BFS;
     }
 }

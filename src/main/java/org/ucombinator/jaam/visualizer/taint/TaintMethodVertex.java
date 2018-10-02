@@ -15,8 +15,12 @@ import java.util.function.Consumer;
 
 public class TaintMethodVertex extends TaintVertex {
 
+    public static final double ELEM_WIDTH = 10.0;
+    public static final double ELEM_HEIGHT = 10.0;
+    public static final double LABEL_HEIGHT = 10.0;
+
     private Color defaultColor = Color.DEEPSKYBLUE;
-    private LayoutAlgorithm.LAYOUT_ALGORITHM innerLayout = LayoutAlgorithm.LAYOUT_ALGORITHM.DFS;
+    private LayoutAlgorithm.LAYOUT_ALGORITHM innerLayout = LayoutAlgorithm.LAYOUT_ALGORITHM.SUMMARY;
 
     private String className;
     private String methodName;
@@ -24,17 +28,9 @@ public class TaintMethodVertex extends TaintVertex {
     private ArrayList<TaintVertex> inputs, inner, outputs;
     private MethodGuiNode methodGraphic;
 
-    public TaintMethodVertex(String label)
-    {
-        super(label, VertexType.SCC, true);
-        this.color = defaultColor;
-
-        this.className = null;
-        this.methodName = null;
-    }
-
-    public TaintMethodVertex(String className, String methodName, LayoutAlgorithm.LAYOUT_ALGORITHM preferredLayout) {
-        this(className + "." + methodName);
+    public TaintMethodVertex(String className, String methodName, LayoutAlgorithm.LAYOUT_ALGORITHM preferredLayout,
+                             ArrayList<TaintVertex> inputs, ArrayList<TaintVertex> inner, ArrayList<TaintVertex> outputs) {
+        super(className + "." + methodName, VertexType.SCC, true);
 
         innerLayout = preferredLayout;
 
@@ -46,14 +42,7 @@ public class TaintMethodVertex extends TaintVertex {
             this.setExpanded(false);
         }
 
-        inputs = new ArrayList<>();
-        inner = new ArrayList<>();
-        outputs = new ArrayList<>();
-    }
-
-    public TaintMethodVertex(String className, String methodName, LayoutAlgorithm.LAYOUT_ALGORITHM preferredLayout,
-                             ArrayList<TaintVertex> inputs, ArrayList<TaintVertex> inner, ArrayList<TaintVertex> outputs) {
-        this(className, methodName, preferredLayout);
+        System.out.println("Creating a taint method vertex Sizes (in, inner, out)" + inputs.size() + " " + inner.size() + " " + outputs.size());
 
         this.inputs = inputs;
         this.inner = inner;
@@ -69,7 +58,7 @@ public class TaintMethodVertex extends TaintVertex {
        v.setOuterGraph(this.getInnerGraph());
     }
     public TaintMethodVertex copy() {
-        return new TaintMethodVertex(this.getLabel());
+        return new TaintMethodVertex(className, methodName, getPreferredLayout(), inputs, inner, outputs);
     }
 
     @Override
@@ -78,6 +67,7 @@ public class TaintMethodVertex extends TaintVertex {
     }
     @Override
     public MethodGuiNode setGraphics(GUINode parent) {
+        System.out.println("Calling taintMethod setGraphics");
         this.methodGraphic = new MethodGuiNode(parent, this);
         return this.methodGraphic;
     }
@@ -132,7 +122,7 @@ public class TaintMethodVertex extends TaintVertex {
 
     @Override
     public LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
-        return innerLayout;
+        return LayoutAlgorithm.LAYOUT_ALGORITHM.SUMMARY;
     }
 
     @Override

@@ -92,7 +92,5 @@ public interface HierarchicalVertex<T extends HierarchicalVertex<T, S>, S extend
         return !this.getInnerGraph().getVertices().isEmpty();
     }
 
-    default LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
-        return LayoutAlgorithm.LAYOUT_ALGORITHM.DFS;
-    }
+    LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout();
 }

@@ -57,7 +57,8 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         this.visibleRoot = new TaintRootVertex();
         this.immutableRoot = new TaintRootVertex();
 
-        this.immutableRoot.setInnerGraph(this.cleanTaintGraph(graph));
+        //this.immutableRoot.setInnerGraph(this.cleanTaintGraph(graph));
+        this.immutableRoot.setInnerGraph(graph);
         fillFieldDictionary();
         immAndVis = null;
     }

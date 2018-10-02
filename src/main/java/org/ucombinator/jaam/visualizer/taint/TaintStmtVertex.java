@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.taint;
 
 import javafx.scene.paint.Color;
+import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 import soot.SootClass;
 import soot.SootMethod;
 
@@ -107,5 +108,10 @@ public class TaintStmtVertex extends TaintVertex {
         List<TaintVertex> expandedVertices = new ArrayList<>();
         expandedVertices.add(this);
         return expandedVertices;
+    }
+
+    @Override
+    public LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
+        return LayoutAlgorithm.LAYOUT_ALGORITHM.DFS;
     }
 }

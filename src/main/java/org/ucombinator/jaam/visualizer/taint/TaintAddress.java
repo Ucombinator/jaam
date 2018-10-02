@@ -38,7 +38,7 @@ public class TaintAddress extends TaintVertex {
     private final String fieldId;
     private final SootClass sootClass;
     private final SootMethod sootMethod;
-    private final Type type;
+    public final Type type;
 
     public TaintAddress(Address address) {
         super(address.toString(), VertexType.TAINT_ADDRESS, true);
@@ -153,10 +153,10 @@ public class TaintAddress extends TaintVertex {
     private Type extractType() {
 
         if (address instanceof Return) { return Type.Return; }
-        if (address instanceof Parameter) { return Type.Return; }
-        if (address instanceof Throws) { return Type.Return; }
-        if (address instanceof This) { return Type.Return; }
-        if (address instanceof Lambda) { return Type.Return; }
+        if (address instanceof Parameter) { return Type.Parameter; }
+        if (address instanceof Throws) { return Type.Throws; }
+        if (address instanceof This) { return Type.This; }
+        if (address instanceof Lambda) { return Type.Lambda; }
         if (address instanceof StaticField) { return Type.StaticField; }
         if (address instanceof InstanceField) { return Type.InstanceField; }
         if (address instanceof ArrayRef) {

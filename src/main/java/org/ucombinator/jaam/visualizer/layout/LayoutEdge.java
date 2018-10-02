@@ -96,9 +96,11 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex> implements Comp
         else if (src.getX() == dest.getX() && src.getY() == dest.getY())
         {
             System.out.println("Error in Edge.drawGraph(): The two vertices are at the same location.");
+            /*
             System.out.println(this.src.getId() + " --- " + this.dest.getId());
             System.out.println(this.src.getLabel() + " --- " + this.dest.getLabel());
             System.out.println(this.getType());
+            */
             return;
         }
         else {
