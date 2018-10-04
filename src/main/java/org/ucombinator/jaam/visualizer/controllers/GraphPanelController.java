@@ -92,9 +92,6 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex & Hier
         double width = v.getWidth();
         double height = v.getHeight();
 
-        System.out.println("Setting position of " + v.getLabel() + " to position (" + translateX + "," + translateY
-            + ") its size is " + width + "," + height);
-
         node.setTranslateLocation(translateX, translateY, width, height);
 
         Graph<T, S> childGraph = v.getInnerGraph();

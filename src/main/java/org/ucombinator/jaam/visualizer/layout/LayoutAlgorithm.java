@@ -67,7 +67,6 @@ public class LayoutAlgorithm
 
     private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     void doLayout(LAYOUT_ALGORITHM alg, T parentVertex) {
-        System.out.println("JUAN: DO LAYOUT " + alg);
         if (alg == LAYOUT_ALGORITHM.DFS) {
             dfsLayout(parentVertex);
         }
@@ -94,10 +93,6 @@ public class LayoutAlgorithm
         }
 
         int max = Math.max(parentVertex.getInputs().size(), parentVertex.getOutputs().size());
-
-        System.out.println("JUAN Summary layout of " + parentVertex + " --> " + max + " --> " +
-                max * TaintMethodVertex.ELEM_WIDTH + "," + 2*TaintMethodVertex.ELEM_HEIGHT + TaintMethodVertex.LABEL_HEIGHT);
-
 
         parentVertex.setWidth(max * TaintMethodVertex.ELEM_WIDTH);
         parentVertex.setHeight(2*TaintMethodVertex.ELEM_HEIGHT + TaintMethodVertex.LABEL_HEIGHT);

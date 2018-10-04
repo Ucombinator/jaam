@@ -85,12 +85,6 @@ public class MethodGuiNode extends GUINode{
 
         //pane.setTranslateX(x);
         //pane.setTranslateY(y);
-
-        System.out.println("Translating MethodGuiNode "
-                + this.getTranslateX() + "," + this.getTranslateY()
-                + " --> Local " + pane.getBoundsInLocal()
-                + " --> Parent " + pane.getBoundsInParent()
-                + " to " + x + "," + y + ":" + width + "," + height);
     }
 
     private TaintMethodVertex getV() {

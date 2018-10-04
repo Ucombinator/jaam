@@ -127,7 +127,7 @@ public class LayerFactory
 
                     if (className == null) { className = v.toString(); }
 
-                    System.out.println("JUAN: Called hash function on class" + className );
+                    //System.out.println("JUAN: Called hash function on class" + className );
 
                     return longHash((className));
                 },

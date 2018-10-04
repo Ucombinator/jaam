@@ -42,8 +42,6 @@ public class TaintMethodVertex extends TaintVertex {
             this.setExpanded(false);
         }
 
-        System.out.println("Creating a taint method vertex Sizes (in, inner, out)" + inputs.size() + " " + inner.size() + " " + outputs.size());
-
         this.inputs = inputs;
         this.inner = inner;
         this.outputs = outputs;
@@ -69,7 +67,6 @@ public class TaintMethodVertex extends TaintVertex {
     }
     @Override
     public MethodGuiNode setGraphics(GUINode parent) {
-        System.out.println("Calling taintMethod setGraphics");
         this.methodGraphic = new MethodGuiNode(parent, this);
 
         this.setHeight(this.methodGraphic.getHeight());
@@ -164,8 +161,6 @@ public class TaintMethodVertex extends TaintVertex {
         boolean newVisible = !isExpanded;
 
         // First we want the content of the clicked node to appear/disappear.
-        System.out.println("Changing opacity of child graph...");
-
         for(TaintVertex v: innerGraph.getVertices()) {
             v.setOpacity(newOpacity);
         }
