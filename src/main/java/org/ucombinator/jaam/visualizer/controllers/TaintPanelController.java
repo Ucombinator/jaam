@@ -58,6 +58,11 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         this.immutableRoot = new TaintRootVertex();
 
         //this.immutableRoot.setInnerGraph(this.cleanTaintGraph(graph));
+
+        for (TaintVertex v : graph.getVertices()) {
+            v.setOuterGraph(graph);
+        }
+
         this.immutableRoot.setInnerGraph(graph);
         fillFieldDictionary();
         immAndVis = null;
@@ -109,11 +114,6 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         drawNodes(null, visibleRoot);
         drawEdges(visibleRoot);
         visibleRoot.setVisible(true);
-    }
-
-    public void drawNodes(GUINode parent, TaintMethodVertex v) {
-        System.out.println("Drawing the taint vertex...");
-        super.drawNodes(parent, v);
     }
 
     public void redrawGraph() {

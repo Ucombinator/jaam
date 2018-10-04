@@ -63,6 +63,6 @@ public class TaintRootVertex extends TaintVertex {
 
     @Override
     public LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
-        return LayoutAlgorithm.LAYOUT_ALGORITHM.BFS;
+        return LayoutAlgorithm.LAYOUT_ALGORITHM.DFS;
     }
 }

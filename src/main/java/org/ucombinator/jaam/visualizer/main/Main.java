@@ -65,6 +65,7 @@ public class Main extends Application {
         Scene scene = new Scene(Main.mainPane.root);
         stage.setScene(scene);
         stage.show();
+        scene.getStylesheets().add("Nodes.css");
 
         for (String arg : this.getParameters().getRaw()) {
             Main.mainPane.loadLoopGraphFile(new File(arg));

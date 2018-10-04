@@ -51,11 +51,13 @@ public class TaintMethodVertex extends TaintVertex {
         inputs.forEach(this::addVertex);
         inner.forEach(this::addVertex);
         outputs.forEach(this::addVertex);
+
+        this.setExpanded(false);
     }
 
     private void addVertex(TaintVertex v) {
-       this.getInnerGraph().addVertex(v);
-       v.setOuterGraph(this.getInnerGraph());
+       //this.getInnerGraph().addVertex(v);
+       //v.setOuterGraph(this.getInnerGraph());
     }
     public TaintMethodVertex copy() {
         return new TaintMethodVertex(className, methodName, getPreferredLayout(), inputs, inner, outputs);
@@ -69,6 +71,10 @@ public class TaintMethodVertex extends TaintVertex {
     public MethodGuiNode setGraphics(GUINode parent) {
         System.out.println("Calling taintMethod setGraphics");
         this.methodGraphic = new MethodGuiNode(parent, this);
+
+        this.setHeight(this.methodGraphic.getHeight());
+        this.setWidth(this.methodGraphic.getWidth());
+
         return this.methodGraphic;
     }
 
@@ -98,20 +104,35 @@ public class TaintMethodVertex extends TaintVertex {
 
     @Override
     public String getLongText() {
-        if(getInnerGraph().isEmpty()) return "Empty method vertex\n";
-
-        Set<TaintVertex> vertices = this.getInnerGraph().getVertices();
-
         StringBuilder builder = new StringBuilder(className + "\n" + methodName + "\n");
 
-
-
-        for(TaintVertex v : vertices) {
-            if (v.getStmtString() == null) continue;
-
-            builder.append("\t" + v.getStmtString() + "\n");
+        builder.append("Parameters:\n");
+        if (inputs.isEmpty()) {
+            builder.append("\tNone\n");
         }
-
+        else {
+            for (TaintVertex v : inputs) {
+                builder.append("\t" + v.toString() + "\n");
+            }
+        }
+        builder.append("Returns:\n");
+        if (outputs.isEmpty()) {
+            builder.append("\tNone\n");
+        }
+        else {
+            for (TaintVertex v : outputs) {
+                builder.append("\t" + v.toString() + "\n");
+            }
+        }
+        builder.append("Inner:\n");
+        if (inner.isEmpty()) {
+            builder.append("\tNone\n");
+        }
+        else {
+            for (TaintVertex v : inner) {
+                builder.append("\t" + v.toString() + "\n");
+            }
+        }
         return builder.toString();
     }
 
