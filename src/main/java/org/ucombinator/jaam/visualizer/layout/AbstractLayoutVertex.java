@@ -49,7 +49,6 @@ public abstract class AbstractLayoutVertex
 
     private boolean isExpanded = true;
     private boolean isHidden = false;
-    private boolean isLabelVisible = false;
     private boolean isEdgeVisible = true;
     private boolean drawEdges;
     private boolean isSelected = false;
@@ -209,22 +208,12 @@ public abstract class AbstractLayoutVertex
         this.isExpanded = expanded;
     }
 
-    public boolean isLabelVisible() {
-        return isLabelVisible;
-    }
-
     public boolean isEdgeVisible() {
         return isEdgeVisible;
     }
 
     public void setEdgeVisible(boolean isEdgeVisible) {
         this.isEdgeVisible = isEdgeVisible;
-    }
-
-    public void setLabelVisible(boolean isLabelVisible)
-    {
-        this.isLabelVisible = isLabelVisible;
-        this.getGraphics().setLabelVisible(isLabelVisible);
     }
 
     public void resetStrokeWidth(double factor) {

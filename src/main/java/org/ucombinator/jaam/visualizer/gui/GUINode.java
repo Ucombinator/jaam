@@ -1,5 +1,7 @@
 package org.ucombinator.jaam.visualizer.gui;
 
+import com.sun.org.apache.regexp.internal.RE;
+import javafx.beans.WeakInvalidationListener;
 import javafx.beans.property.DoubleProperty;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
@@ -18,13 +20,9 @@ import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.state.StateRootVertex;
 import org.ucombinator.jaam.visualizer.taint.TaintRootVertex;
 
-public class GUINode extends Group
-{
-    protected static final double TEXT_VERTICAL_PADDING = 15;
-    protected static final double TEXT_HORIZONTAL_PADDING = 15;
+public class GUINode extends Group {
 
     protected final Rectangle rect;
-    protected final Text rectLabel;
     protected final AbstractLayoutVertex vertex;
     protected final GUINode parent;
 
@@ -38,17 +36,7 @@ public class GUINode extends Group
 
         this.rect = new Rectangle();
 
-        this.rectLabel = new Text(v.getId() + "");
-        this.rectLabel.setVisible(v.isLabelVisible());
-
-        if (v instanceof StateRootVertex || v instanceof TaintRootVertex) {
-            this.getChildren().add(this.rect);
-        } else {
-            this.getChildren().addAll(this.rect, this.rectLabel);
-        }
-
-        this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
-        this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
+        this.getChildren().add(this.rect);
 
         this.rect.setArcWidth(5);
         this.rect.setArcHeight(5);
@@ -124,11 +112,7 @@ public class GUINode extends Group
     }
 
     public String toString() {
-        return rectLabel.getText();
-    }
-
-    public void setLabel(String text) {
-        this.rectLabel.setText(text);
+        return "GUI_NODE(" + vertex + ")";
     }
 
     public void setFill(Paint c) {
@@ -145,19 +129,39 @@ public class GUINode extends Group
 
         this.rect.setWidth(width);
         this.rect.setHeight(height);
-
-        this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
-        this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
     }
 
     // Returns the bounding box for just the rectangle in the coordinate system for the parent of our node.
     public Bounds getRectBoundsInParent() {
-        Bounds nodeBounds = this.getBoundsInParent();
+        return this.getUnaffectedBoundsInParent();
+        /*
+        Bounds nodeBounds = this.getUnaffectedBoundsInParent();
         Bounds nodeBoundsLocal = this.getBoundsInLocal();
         Bounds rectBounds = this.getUnaffectedRectBoundsInParent();
-        return new BoundingBox(nodeBounds.getMinX() + rectBounds.getMinX() - nodeBoundsLocal.getMinX(),
+
+        Bounds result = new BoundingBox(nodeBounds.getMinX() + rectBounds.getMinX() - nodeBoundsLocal.getMinX(),
                 nodeBounds.getMinY() + rectBounds.getMinY() - nodeBoundsLocal.getMinY(),
                 rectBounds.getWidth(), rectBounds.getHeight());
+
+        System.out.println("Getting bounds\n\tnode" + nodeBounds + "\n\trect " + rectBounds + "\n\tres " + result);
+
+        return result;
+        */
+    }
+
+    private Bounds getUnaffectedBoundsInParent() {
+
+        if (this.getEffect() == null) {
+            return this.getBoundsInParent();
+        }
+
+        Effect effect = this.getEffect();
+        this.setEffect(null);
+
+        Bounds result = this.getBoundsInParent();
+        this.setEffect(effect);
+
+        return result;
     }
 
     public void printLocation() {
@@ -269,10 +273,6 @@ public class GUINode extends Group
 
     public GUINode getParentNode() {
         return this.parent;
-    }
-
-    public void setLabelVisible(boolean isLabelVisible) {
-        this.rectLabel.setVisible(isLabelVisible);
     }
 
     public Bounds getRectBoundsInLocal() {

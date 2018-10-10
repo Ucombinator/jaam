@@ -127,13 +127,6 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex & Hier
         this.visibleRoot.setVisible(true);
     }
 
-    @FXML public void showLabelsAction(ActionEvent event) {
-        this.visibleRoot.setVisible(false);
-        this.visibleRoot.applyToVerticesRecursive((HierarchicalVertex<T, S> w)
-                -> ((AbstractLayoutVertex) w).setLabelVisible(this.showLabels.isSelected()));
-        this.visibleRoot.setVisible(true);
-    }
-
     @FXML public void exportImageAction(ActionEvent event) throws IOException {
         event.consume();
         String extension = "png";
