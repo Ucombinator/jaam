@@ -7,6 +7,7 @@ import org.ucombinator.jaam.serializer.LoopLoopNode;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.MethodEntity;
 import soot.SootClass;
+import soot.Value;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -79,6 +80,58 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
         return classDecl.toString();
     }
 
+    public ArrayList<Value> getLoopValues() {
+
+        ArrayList<Value> result = new ArrayList<>();
+
+        if (this.isUnidentifiedLoop()) {
+            return result;
+        }
+
+        Loop.LoopInfo loopInfo = getCompilationUnit().loopInfo();
+
+        if (loopInfo instanceof Loop.IteratorLoop) {
+            Value value = ((Loop.IteratorLoop) loopInfo).iterable();
+            result.add(value);
+        }
+        else if (loopInfo instanceof Loop.ArrayLoop) {
+            Value value = ((Loop.ArrayLoop) loopInfo).iterable();
+            result.add(value);
+        }
+        else if (loopInfo instanceof Loop.SimpleCountUpForLoop) {
+            Value valueLower = ((Loop.SimpleCountUpForLoop) loopInfo).lowerBound();
+            Value valueUpper = ((Loop.SimpleCountUpForLoop) loopInfo).upperBound();
+            Value valueIncrement = ((Loop.SimpleCountUpForLoop) loopInfo).increment();
+            result.add(valueLower);
+            result.add(valueUpper);
+            result.add(valueIncrement);
+        }
+        else if (loopInfo instanceof Loop.SimpleCountDownForLoop) {
+            Value valueLower = ((Loop.SimpleCountDownForLoop) loopInfo).lowerBound();
+            Value valueUpper = ((Loop.SimpleCountDownForLoop) loopInfo).upperBound();
+            Value valueIncrement = ((Loop.SimpleCountDownForLoop) loopInfo).increment();
+            result.add(valueLower);
+            result.add(valueUpper);
+            result.add(valueIncrement);
+        }
+
+        return result;
+    }
+
+    public boolean isUnidentifiedLoop() {
+
+        Loop.LoopInfo loopInfo = getCompilationUnit().loopInfo();
+        if (loopInfo instanceof Loop.UnidentifiedLoop) return true;
+
+        if (       loopInfo instanceof Loop.IteratorLoop
+                || loopInfo instanceof Loop.ArrayLoop
+                || loopInfo instanceof Loop.SimpleCountUpForLoop
+                || loopInfo instanceof Loop.SimpleCountUpForLoop
+        ) {
+            return false;
+        }
+        return true;
+    }
 
     public LoopLoopNode getCompilationUnit() {
         return compilationUnit;

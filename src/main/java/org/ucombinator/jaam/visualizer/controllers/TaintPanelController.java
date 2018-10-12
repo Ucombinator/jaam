@@ -205,38 +205,17 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
             }
             else if (v instanceof StateLoopVertex) {
                 // Otherwise, if we click on a loop, we just want the addresses controlling the loop.
-                StateVertex immV = vizController.getImmutable(v);
-                Loop.LoopInfo loopInfo = ((StateLoopVertex) immV).getCompilationUnit().loopInfo();
-                SootMethod method = ((StateLoopVertex) immV).getCompilationUnit().method();
-                if (loopInfo instanceof Loop.UnidentifiedLoop) {
+                StateLoopVertex immV = (StateLoopVertex)vizController.getImmutable(v);
+                SootMethod method =  immV.getCompilationUnit().method();
+                if (immV.isUnidentifiedLoop()) {
                     // Default to drawing methods
                     startVertices = findAddressesByMethods(immV.getMethodNames());
                 }
-                else if (loopInfo instanceof Loop.IteratorLoop) {
-                    Value value = ((Loop.IteratorLoop) loopInfo).iterable();
-                    addTaintVertex(startVertices, value, method);
-                }
-                else if (loopInfo instanceof Loop.ArrayLoop) {
-                    Value value = ((Loop.ArrayLoop) loopInfo).iterable();
-                    addTaintVertex(startVertices, value, method);
-                }
-                else if (loopInfo instanceof Loop.SimpleCountUpForLoop) {
-                    Value valueLower = ((Loop.SimpleCountUpForLoop) loopInfo).lowerBound();
-                    Value valueUpper = ((Loop.SimpleCountUpForLoop) loopInfo).upperBound();
-                    Value valueIncrement = ((Loop.SimpleCountUpForLoop) loopInfo).increment();
-
-                    addTaintVertex(startVertices, valueLower, method);
-                    addTaintVertex(startVertices, valueUpper, method);
-                    addTaintVertex(startVertices, valueIncrement, method);
-                }
-                else if (loopInfo instanceof Loop.SimpleCountDownForLoop) {
-                    Value valueLower = ((Loop.SimpleCountDownForLoop) loopInfo).lowerBound();
-                    Value valueUpper = ((Loop.SimpleCountDownForLoop) loopInfo).upperBound();
-                    Value valueIncrement = ((Loop.SimpleCountDownForLoop) loopInfo).increment();
-
-                    addTaintVertex(startVertices, valueLower, method);
-                    addTaintVertex(startVertices, valueUpper, method);
-                    addTaintVertex(startVertices, valueIncrement, method);
+                else {
+                    ArrayList<Value> loopValues = immV.getLoopValues();
+                    for (Value value : loopValues) {
+                        addTaintVertex(startVertices, value, method);
+                    }
                 }
             }
             System.out.println("Start vertices: " + startVertices.size());
