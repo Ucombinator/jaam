@@ -16,6 +16,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex> implements Comp
     private static final double highlightStrokeWidthMultiplier = 4;
     private static final double arrowheadAngleWidth = 0.15 * Math.PI;
     private static final double arrowLengthRatio = 0.5;
+    private static final double arrowLength = 5;
 
     private T src, dest;
     private Group graphics;
@@ -148,7 +149,9 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex> implements Comp
 
         this.setEdgePath(path);
 
-        double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getWidth());
+        //double arrowLength = Math.min(5, arrowLengthRatio * dest.getGraphics().getWidth());
+        //double arrowLength = arrowLengthRatio * dest.getGraphics().getWidth();
+        //double arrowLength = 50;
         this.arrowhead = GUINode.computeArrowhead(destCenter, dest.getY(), arrowLength, 3 * Math.PI / 2, arrowheadAngleWidth);
     }
 
@@ -171,7 +174,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex> implements Comp
             // Compute arrowhead
             double orientAngle = Math.PI + Math.atan2(line.getEndY() - line.getStartY(), line.getEndX() - line.getStartX());
             // TODO: Adjust arrowLength by scale
-            double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getWidth());
+            //double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getWidth());
             this.arrowhead = GUINode.computeArrowhead(line.getEndX(), line.getEndY(), arrowLength, orientAngle, arrowheadAngleWidth);
             this.arrowhead.setFill(this.color);
         }
@@ -188,7 +191,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex> implements Comp
             }
 
             double orientAngle = Math.PI + Math.atan2(curve.getEndY() - curve.getControlY(), curve.getEndX() - curve.getControlX());
-            double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getWidth());
+            //double arrowLength = Math.min(10, arrowLengthRatio * dest.getGraphics().getWidth());
             this.arrowhead = GUINode.computeArrowhead(curve.getEndX(), curve.getEndY(), arrowLength, orientAngle, arrowheadAngleWidth);
             this.arrowhead.setFill(this.color);
         }
