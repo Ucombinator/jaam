@@ -25,7 +25,7 @@ public class TaintAddress extends TaintVertex {
     // Taken from Taint3, we summarixe only the one we care about
     public enum Type {
         Return, Parameter, Throws,
-        Inner, // Any of: Stmt, Value, Local, New, NewArray, NewMultiArray,
+        Inner, // Any of: Stmt, Value, Local, These need arrows New, NewArray, NewMultiArray,
         This, Lambda,
         StaticField, InstanceField,
         // The next two we split between primitive and class types

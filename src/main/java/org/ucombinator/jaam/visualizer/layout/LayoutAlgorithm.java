@@ -364,17 +364,14 @@ public class LayoutAlgorithm
             parentHeight  = Math.max(parentHeight, root.getBboxHeight() + 2 * MARGIN_PADDING);
         }
 
-
-
         return new Point2D(parentWidth, parentHeight);
     }
 
 
-    /**
+    /*
      * Preconditions: Height and Width of the child nodes of the graph is (recursively known)
      * input: graph and left/top offset
-     * Changes of Status: assigns X and Y to the child vertices of the graph
-     * Output: returns the W and H to be assign to the parent node
+     * Changes of Status: assigns width and height of BBOX to root and all children in the same graph (no inner recursion)
      * */
     private static <T extends AbstractLayoutVertex> void storeBBoxWidthAndHeight(
             T root, HashMap<T, ArrayList<T>> childrenMap) {
