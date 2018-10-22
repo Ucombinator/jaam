@@ -84,13 +84,16 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         System.out.println("Taint Vertices to draw: " + verticesToDraw.size());
         GraphTransform<TaintRootVertex, TaintVertex> immToFlatVisible = this.getImmutableRoot().constructVisibleGraph(verticesToDraw);
 
+        GraphTransform<TaintRootVertex, TaintVertex> visibleToNonInner = this.compressInnerNodes(immToFlatVisible.newRoot);
+
+        GraphTransform<TaintRootVertex, TaintVertex> immToNonInner = GraphTransform.transfer(immToFlatVisible, visibleToNonInner);
 
         // Groups by method
-        GraphTransform<TaintRootVertex, TaintVertex> flatToLayerVisible = LayerFactory.getLayeredTaintGraph(immToFlatVisible.newRoot);
+        GraphTransform<TaintRootVertex, TaintVertex> nonInnerToLayerVisible = LayerFactory.getLayeredTaintGraph(visibleToNonInner.newRoot);
         // Groups by Class
         //GraphTransform<TaintRootVertex, TaintVertex> flatToLayerVisible = LayerFactory.getTaintClassGrouping(immToFlatVisible.newRoot);
 
-        immAndVis = GraphTransform.transfer(immToFlatVisible, flatToLayerVisible);
+        immAndVis = GraphTransform.transfer(immToNonInner, nonInnerToLayerVisible);
         this.visibleRoot = immAndVis.newRoot;
 
         if (expandAll) {
@@ -415,6 +418,22 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         allFields.forEach(v -> {
             fieldVertices.put(v.getFieldId(), v);
         });
+    }
+
+    private GraphTransform<TaintRootVertex, TaintVertex> compressInnerNodes(TaintRootVertex root) {
+        return GraphUtils.constructVisibleGraph(root,
+                (TaintVertex superV) ->
+                {
+                    if (! (superV instanceof TaintAddress)){
+                        throw new IllegalArgumentException("Non address immutable vertex");
+                    }
+
+                    TaintAddress v = (TaintAddress)superV;
+
+                    return v.type != TaintAddress.Type.Inner;
+
+                },
+                TaintEdge::new);
     }
 
     private Graph<TaintVertex, TaintEdge> cleanTaintGraph(Graph<TaintVertex, TaintEdge> graph) {
