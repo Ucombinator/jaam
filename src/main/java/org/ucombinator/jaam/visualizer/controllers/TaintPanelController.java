@@ -4,6 +4,7 @@ import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.layout.BorderPane;
+import javafx.util.Pair;
 import org.ucombinator.jaam.tools.taint3.Address;
 import org.ucombinator.jaam.util.Loop;
 import org.ucombinator.jaam.visualizer.graph.GraphTransform;
@@ -27,7 +28,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class TaintPanelController extends GraphPanelController<TaintVertex, TaintEdge>
-        implements EventHandler<SelectEvent<TaintVertex>>, SetChangeListener<TaintVertex> {
+        implements EventHandler<SelectEvent<TaintVertex>> {
 
     private GraphTransform<TaintRootVertex, TaintVertex> immAndVis;
     private HashMap<String, TaintAddress> fieldVertices;
@@ -35,6 +36,9 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     private boolean collapseAll = false, expandAll = false;
 
     private CodeViewController codeController;
+
+    HashSet<TaintVertex> visibleAncestors;
+    HashSet<TaintVertex> visibleDescendants;
 
     // Graph is the statement graph
     public TaintPanelController(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController, MainTabController tabController) throws IOException {
@@ -79,7 +83,10 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     public void drawGraph() {
         visibleRoot.setVisible(false);
 
-        Set<TaintVertex> verticesToDraw = this.tabController.getImmutableTaintShown();
+        Set<TaintVertex> verticesToDraw;
+
+        verticesToDraw = visibleAncestors;
+        verticesToDraw.addAll(visibleDescendants);
 
         System.out.println("Taint Vertices to draw: " + verticesToDraw.size());
         GraphTransform<TaintRootVertex, TaintVertex> immToFlatVisible = this.getImmutableRoot().constructVisibleGraph(verticesToDraw);
@@ -160,6 +167,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         this.redrawGraph();
     }
 
+    /*
     // Changes to the visible set
     @Override
     public void onChanged(Change<? extends TaintVertex> change) {
@@ -178,6 +186,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
             }
         }
     }
+    */
 
     @Override
     public void handle(SelectEvent<TaintVertex> event) {
@@ -328,9 +337,11 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
     private void drawConnectedVertices(Set<TaintVertex> addresses) {
         long time1 = System.nanoTime();
-        HashSet<TaintVertex> verticesToDraw = findConnectedAddresses(addresses);
-        this.tabController.getImmutableTaintShown().clear();
-        this.tabController.getImmutableTaintShown().addAll(verticesToDraw);
+        Pair<HashSet<TaintVertex>, HashSet<TaintVertex>> verticesToDraw = findConnectedAddresses(addresses);
+
+        visibleAncestors = verticesToDraw.getKey();
+        visibleDescendants = verticesToDraw.getValue();
+
         long time2 = System.nanoTime();
         this.drawGraph();
         long time3 = System.nanoTime();
@@ -345,7 +356,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         return results;
     }
 
-    private HashSet<TaintVertex> findConnectedAddresses(Set<TaintVertex> startVertices) {
+    private Pair<HashSet<TaintVertex>, HashSet<TaintVertex> > findConnectedAddresses(Set<TaintVertex> startVertices) {
         HashSet<TaintVertex> ancestors = new HashSet<>();
         HashSet<TaintVertex> descendants = new HashSet<>();
 
@@ -355,42 +366,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
             descendants.addAll(v.getDescendants());
         }
 
-        HashSet<TaintVertex> allResults = new HashSet<>();
-        allResults.addAll(startVertices);
-        allResults.addAll(ancestors);
-        allResults.addAll(descendants);
-
-        for (TaintVertex v : allResults) {
-            v.setColor(TaintVertex.defaultColor);
-            if(v instanceof TaintAddress) {
-                TaintAddress vAddr = (TaintAddress) v;
-                Address addr = vAddr.getAddress();
-                if (addr instanceof Address.Value) {
-                    Value value = ((Address.Value) addr).sootValue();
-                    if(value instanceof Constant) {
-                        v.setColor(TaintVertex.constColor);
-                    }
-                }
-            }
-            else if (v instanceof TaintSccVertex) {
-                v.setColor(TaintVertex.sccColor);
-            }
-            else if (startVertices.contains(v)) {
-                v.setColor(TaintVertex.currMethodColor);
-            } else if (ancestors.contains(v)) {
-                if (descendants.contains(v)) {
-                    v.setColor(TaintVertex.bothColor);
-                }
-                else {
-                    v.setColor(TaintVertex.upColor);
-                }
-            }
-            else if (descendants.contains(v)) {
-                v.setColor(TaintVertex.downColor);
-            }
-        }
-
-        return allResults;
+        return new Pair<>(ancestors, descendants);
     }
 
     public void showFieldTaintGraph(String fullClassName, String fieldName) {
@@ -566,5 +542,12 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         }
 
         return foundAVertexToKeep;
+    }
+
+    public void hideVisibleVertices(HashSet<TaintVertex> taintHighlighted) {
+
+        visibleAncestors.removeAll(taintHighlighted);
+        visibleDescendants.removeAll(taintHighlighted);
+        redrawGraph();
     }
 }
