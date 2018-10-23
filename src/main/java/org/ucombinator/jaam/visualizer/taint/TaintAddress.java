@@ -5,6 +5,9 @@ import org.ucombinator.jaam.tools.taint3.Address;
 import org.ucombinator.jaam.tools.taint3.Address.Return;
 import org.ucombinator.jaam.tools.taint3.Address.Parameter;
 import org.ucombinator.jaam.tools.taint3.Address.Throws;
+import org.ucombinator.jaam.tools.taint3.Address.New;
+import org.ucombinator.jaam.tools.taint3.Address.NewArray;
+import org.ucombinator.jaam.tools.taint3.Address.NewMultiArray;
 import org.ucombinator.jaam.tools.taint3.Address.This;
 import org.ucombinator.jaam.tools.taint3.Address.Lambda;
 import org.ucombinator.jaam.tools.taint3.Address.StaticField;
@@ -25,7 +28,8 @@ public class TaintAddress extends TaintVertex {
     // Taken from Taint3, we summarixe only the one we care about
     public enum Type {
         Return, Parameter, Throws,
-        Inner, // Any of: Stmt, Value, Local, These need arrows New, NewArray, NewMultiArray,
+        Inner, // Any of: Stmt, Value, Local,
+        New, // Any of New, NewArray, NewMultiArray,
         This, Lambda,
         StaticField, InstanceField,
         // The next two we split between primitive and class types
@@ -155,6 +159,7 @@ public class TaintAddress extends TaintVertex {
         if (address instanceof Return) { return Type.Return; }
         if (address instanceof Parameter) { return Type.Parameter; }
         if (address instanceof Throws) { return Type.Throws; }
+        if (address instanceof New || address instanceof NewArray || address instanceof NewMultiArray) { return Type.New;}
         if (address instanceof This) { return Type.This; }
         if (address instanceof Lambda) { return Type.Lambda; }
         if (address instanceof StaticField) { return Type.StaticField; }
@@ -190,6 +195,7 @@ public class TaintAddress extends TaintVertex {
             case InstanceField: return Color.SADDLEBROWN;
             case ArrayRefPrim: return Color.LIGHTGRAY;
             case ArrayRefClass: return Color.DARKGRAY;
+            case New: return Color.DARKVIOLET;
         }
         // Shouldn't happen
         return Color.BLACK;
