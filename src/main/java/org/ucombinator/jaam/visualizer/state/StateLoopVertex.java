@@ -117,6 +117,33 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
             result.add(valueUpper);
             result.add(valueIncrement);
         }
+        else if (loopInfo instanceof Loop.DynamicCountUpForLoop) {
+            Value valueLower = ((Loop.DynamicCountUpForLoop) loopInfo).lowerBound();
+            Value valueUpper = ((Loop.DynamicCountUpForLoop) loopInfo).upperBound();
+            Value valueIncrement = ((Loop.DynamicCountUpForLoop) loopInfo).increment();
+            result.add(valueLower);
+            result.add(valueUpper);
+            result.add(valueIncrement);
+        }
+        else if (loopInfo instanceof Loop.DynamicCountUpForLoopWithOffset) {
+            Value valueLower = ((Loop.DynamicCountUpForLoopWithOffset) loopInfo).lowerBound();
+            Value valueUpper = ((Loop.DynamicCountUpForLoopWithOffset) loopInfo).upperBound();
+            Value valueIncrement = ((Loop.DynamicCountUpForLoopWithOffset) loopInfo).increment();
+            Value valueOffset = ((Loop.DynamicCountUpForLoopWithOffset) loopInfo).offset();
+            result.add(valueLower);
+            result.add(valueUpper);
+            result.add(valueIncrement);
+            result.add(valueOffset);
+        }
+        else if (loopInfo instanceof Loop.CharacterForLoop) {
+            Value valueLower = ((Loop.CharacterForLoop) loopInfo).lowerBound();
+            Value valueUpper = ((Loop.CharacterForLoop) loopInfo).upperBound();
+            Value valueIncrement = ((Loop.CharacterForLoop) loopInfo).increment();
+            result.add(valueLower);
+            result.add(valueUpper);
+            result.add(valueIncrement);
+        }
+
 
         return result;
     }
