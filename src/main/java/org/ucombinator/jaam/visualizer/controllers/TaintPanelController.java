@@ -30,16 +30,16 @@ import java.util.stream.Collectors;
 public class TaintPanelController extends GraphPanelController<TaintVertex, TaintEdge>
         implements EventHandler<SelectEvent<TaintVertex>> {
 
-    private GraphTransform<TaintRootVertex, TaintVertex> immAndVis;
     private HashMap<String, TaintAddress> fieldVertices;
 
     private boolean collapseAll = false, expandAll = false;
 
     private CodeViewController codeController;
 
-    HashSet<TaintVertex> visibleAncestors;
-    HashSet<TaintVertex> visibleDescendants;
-
+    private HashSet<TaintVertex> visibleAncestors;
+    private GraphTransform<TaintRootVertex, TaintVertex> immAndVisAncestors;
+    private HashSet<TaintVertex> visibleDescendants;
+    private GraphTransform<TaintRootVertex, TaintVertex> immAndVisDescendants;
     // Graph is the statement graph
     public TaintPanelController(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController, MainTabController tabController) throws IOException {
         super(TaintRootVertex::new, tabController);
@@ -69,7 +69,8 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         this.immutableRoot.setInnerGraph(graph);
         fillFieldDictionary();
-        immAndVis = null;
+        immAndVisAncestors = null;
+        immAndVisDescendants = null;
     }
 
     public TaintRootVertex getVisibleRoot() {
@@ -89,7 +90,23 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         verticesToDraw.addAll(visibleDescendants);
 
         System.out.println("Taint Vertices to draw: " + verticesToDraw.size());
+
         GraphTransform<TaintRootVertex, TaintVertex> immToFlatVisible = this.getImmutableRoot().constructVisibleGraph(verticesToDraw);
+
+        /*
+        System.out.println("---------------END-------------------------");
+        System.out.println("Flat Graph");
+        for (TaintVertex V : immToFlatVisible.newRoot.getInnerGraph().getVertices()) {
+            System.out.println("\t"
+                    + V.getOuterGraph().getInNeighbors(V).stream()
+                    .count()
+                    + ","
+                    + V.getOuterGraph().getOutNeighbors(V).stream()
+                    .count()
+                    + "\t" + V);
+
+        }
+        */
 
         GraphTransform<TaintRootVertex, TaintVertex> visibleToNonInner = this.compressInnerNodes(immToFlatVisible.newRoot);
 
@@ -100,8 +117,8 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         // Groups by Class
         //GraphTransform<TaintRootVertex, TaintVertex> flatToLayerVisible = LayerFactory.getTaintClassGrouping(immToFlatVisible.newRoot);
 
-        immAndVis = GraphTransform.transfer(immToNonInner, nonInnerToLayerVisible);
-        this.visibleRoot = immAndVis.newRoot;
+        immAndVisAncestors = GraphTransform.transfer(immToNonInner, nonInnerToLayerVisible);
+        this.visibleRoot = immAndVisAncestors.newRoot;
 
         if (expandAll) {
             for (TaintVertex v : visibleRoot.getInnerGraph().getVertices()) {
@@ -119,6 +136,20 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
             }
             collapseAll = false;
         }
+
+        /*
+        System.out.println("Final Graph to Draw");
+        for (TaintVertex V : visibleRoot.getInnerGraph().getVertices()) {
+            System.out.println("\t"
+                    + V.getOuterGraph().getInNeighbors(V).stream()
+                    .count()
+                    + ","
+                    + V.getOuterGraph().getOutNeighbors(V).stream()
+                    .count()
+                    + "\t" + V);
+
+        }
+        */
 
         LayoutAlgorithm.layout(visibleRoot);
         drawNodes(null, visibleRoot);
@@ -230,7 +261,13 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
                     }
                 }
             }
+            /*
             System.out.println("Start vertices: " + startVertices.size());
+            for (TaintVertex V : startVertices)  {
+                System.out.println("\t" + V);
+            }
+            */
+
             drawConnectedVertices(startVertices);
         }
     };
@@ -341,6 +378,29 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         visibleAncestors = verticesToDraw.getKey();
         visibleDescendants = verticesToDraw.getValue();
+
+        /*
+        System.out.println("---------------END-------------------------");
+        System.out.println("Connected Addresses " + visibleDescendants.size());
+        for (TaintVertex v : visibleDescendants) {
+            System.out.println("\t"
+                    + v.getOuterGraph().getInNeighbors(v).stream()
+                    .filter(visibleDescendants::contains)
+                    .count()
+                    + ","
+                    + v.getOuterGraph().getOutNeighbors(v).stream()
+                    .filter(visibleDescendants::contains)
+                    .count()
+                    + "\t" + v);
+
+            v.getOuterGraph().getInNeighbors(v).stream()
+            .filter(visibleDescendants::contains)
+            .forEach(n -> System.out.println("\t\t<--" + n));
+            v.getOuterGraph().getOutNeighbors(v).stream()
+                    .filter(visibleDescendants::contains)
+                    .forEach(n -> System.out.println("\t\t-->" + n));
+        }
+        */
 
         long time2 = System.nanoTime();
         this.drawGraph();
@@ -498,13 +558,17 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
     public HashSet<TaintVertex> getImmutable(HashSet<TaintVertex> visible) {
         return visible.stream()
-                .flatMap(v -> v.expand().stream())
-                .map(v -> immAndVis.getOld(v)).collect(Collectors.toCollection(HashSet::new));
+            .flatMap(v -> v.expand().stream())
+            .map(v -> immAndVisAncestors.containsNew(v) ? immAndVisAncestors.getOld(v) : immAndVisDescendants.getOld(v))
+            .collect(Collectors.toCollection(HashSet::new));
     }
 
     public TaintVertex getImmutable(TaintVertex visible) {
-        if (immAndVis.containsNew(visible)) {
-            return immAndVis.getOld(visible);
+        if (immAndVisAncestors.containsNew(visible)) {
+            return immAndVisAncestors.getOld(visible);
+        }
+        if (immAndVisDescendants.containsNew(visible)) {
+            return immAndVisDescendants.getOld(visible);
         }
         return null;
     }
