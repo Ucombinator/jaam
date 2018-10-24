@@ -193,8 +193,8 @@ public class TaintAddress extends TaintVertex {
             case Lambda: return Color.ORCHID;
             case StaticField: return Color.BROWN;
             case InstanceField: return Color.SADDLEBROWN;
-            case ArrayRefPrim: return Color.LIGHTGRAY;
-            case ArrayRefClass: return Color.DARKGRAY;
+            case ArrayRefPrim: return Color.MEDIUMAQUAMARINE;
+            case ArrayRefClass: return Color.MEDIUMSPRINGGREEN;
             case New: return Color.DARKVIOLET;
         }
         // Shouldn't happen

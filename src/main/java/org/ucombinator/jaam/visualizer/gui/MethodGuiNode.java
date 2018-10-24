@@ -48,7 +48,6 @@ public class MethodGuiNode extends GUINode{
         inputPane.getChildren().add(tempRect);
         outPane.getChildren().add(tempRect);
 
-
     }
 
     private void fillTopAndBottom() {
