@@ -16,7 +16,7 @@ import java.util.List;
 
 public class StateLoopVertex extends StateVertex implements Cloneable, MethodEntity {
 
-    enum TYPE { ITERATOR, ARRAY, SIMPLE_COUNT_UP, SIMPLE_COUNT_DOWN, UNKNOWN}
+    enum TYPE { ITERATOR, ARRAY, SIMPLE_COUNT_UP, SIMPLE_COUNT_DOWN, DYNAMIC_COUNT_UP, UNKNOWN}
 
     private static final Color defaultColor = Color.LIGHTYELLOW;
     private static final Color unknownLoopColor = Color.RED;
@@ -24,6 +24,9 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
     private static final Color arrayLoopColor = Color.GOLD;
     private static final Color simpleCountUpLoopColor = Color.PERU;
     private static final Color simpleCountDownLoopColor = Color.ORANGE;
+    private static final Color dynamicCountUpLoopColor = Color.LIGHTGRAY;
+    private static final Color dynamicCountUpWithOffsetLoopColor = Color.DARKGRAY;
+    private static final Color characterForLoopColor = Color.DARKGREEN;
 
     private final int statementIndex;
 
@@ -188,6 +191,15 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
         }
         else if(this.compilationUnit.loopInfo() instanceof Loop.SimpleCountDownForLoop) {
             this.color = simpleCountDownLoopColor;
+        }
+        else if(this.compilationUnit.loopInfo() instanceof Loop.DynamicCountUpForLoop) {
+            this.color = dynamicCountUpLoopColor;
+        }
+        else if(this.compilationUnit.loopInfo() instanceof Loop.DynamicCountUpForLoopWithOffset) {
+            this.color = dynamicCountUpWithOffsetLoopColor;
+        }
+        else if(this.compilationUnit.loopInfo() instanceof Loop.CharacterForLoop) {
+            this.color = characterForLoopColor;
         }
         else {
             this.color = defaultColor;

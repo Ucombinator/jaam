@@ -217,6 +217,36 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
                         addTaintVertex(startVertices, value, method);
                     }
                 }
+                else if (loopInfo instanceof Loop.DynamicCountUpForLoop) {
+                    Value valueLower = ((Loop.DynamicCountUpForLoop) loopInfo).lowerBound();
+                    Value valueUpper = ((Loop.DynamicCountUpForLoop) loopInfo).upperBound();
+                    Value valueIncrement = ((Loop.DynamicCountUpForLoop) loopInfo).increment();
+
+                    addTaintVertex(startVertices, valueLower, method);
+                    addTaintVertex(startVertices, valueUpper, method);
+                    addTaintVertex(startVertices, valueIncrement, method);
+                }
+                else if (loopInfo instanceof Loop.DynamicCountUpForLoopWithOffset) {
+                    Value valueLower = ((Loop.DynamicCountUpForLoopWithOffset) loopInfo).lowerBound();
+                    Value valueUpper = ((Loop.DynamicCountUpForLoopWithOffset) loopInfo).upperBound();
+                    Value valueIncrement = ((Loop.DynamicCountUpForLoopWithOffset) loopInfo).increment();
+                    Value valueOffset = ((Loop.DynamicCountUpForLoopWithOffset) loopInfo).offset();
+
+                    addTaintVertex(startVertices, valueLower, method);
+                    addTaintVertex(startVertices, valueUpper, method);
+                    addTaintVertex(startVertices, valueIncrement, method);
+                    addTaintVertex(startVertices, valueOffset, method);
+                }
+                else if (loopInfo instanceof Loop.CharacterForLoop) {
+                    Value valueLower = ((Loop.CharacterForLoop) loopInfo).lowerBound();
+                    Value valueUpper = ((Loop.CharacterForLoop) loopInfo).upperBound();
+                    Value valueIncrement = ((Loop.CharacterForLoop) loopInfo).increment();
+
+                    addTaintVertex(startVertices, valueLower, method);
+                    addTaintVertex(startVertices, valueUpper, method);
+                    addTaintVertex(startVertices, valueIncrement, method);
+                }
+
             }
             System.out.println("Start vertices: " + startVertices.size());
             drawConnectedVertices(startVertices);

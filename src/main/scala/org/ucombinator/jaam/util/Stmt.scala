@@ -33,18 +33,19 @@ case class Stmt(sootStmt : SootStmt, sootMethod : SootMethod) extends CachedHash
   val index: Int = Stmt.getIndex(sootStmt, sootMethod)
   val line: Int = sootStmt.getJavaSourceStartLineNumber
   val column: Int = sootStmt.getJavaSourceStartColumnNumber
-  val sourceFile: String =
-    sootMethod.getDeclaringClass.getTag("SourceFileTag") match {
-      case null => "<unknown>"
-      case tag =>
-        val sourceTag = tag.asInstanceOf[SourceFileTag]
-        val absolutePath =
-          sourceTag.getAbsolutePath match {
-            case null => ""
-            case absPath => absPath + "/"
-          }
-        absolutePath + sourceTag.getSourceFile
-    }
+
+//  val sourceFile: String =
+//    sootMethod.getDeclaringClass.getTag("SourceFileTag") match {
+//      case null => "<unknown>"
+//      case tag =>
+//        val sourceTag = tag.asInstanceOf[SourceFileTag]
+//        val absolutePath =
+//          sourceTag.getAbsolutePath match {
+//            case null => ""
+//            case absPath => absPath + "/"
+//          }
+//        absolutePath + sourceTag.getSourceFile
+//    }
 
   def toPacket: serializer.Stmt = serializer.Stmt(sootMethod, index, sootStmt)
   def prevSyntactic: Stmt = this.copy(sootStmt = Soot.getBody(sootMethod).getUnits.getPredOf(sootStmt))

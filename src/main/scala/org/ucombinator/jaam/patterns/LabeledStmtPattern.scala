@@ -277,6 +277,17 @@ case class NamedExpPattern(name: Identifier, pattern: ExpPattern) extends ExpPat
   }
 }
 
+case class SubExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case value: SubExpr =>
+        val lhsStates = lhs(state, value.getOp1)
+        lhsStates.flatMap(rhs(_, value.getOp2))
+      case _ => List()
+    }
+  }
+}
+
 /*
  * LABEL PATTERNS
  */

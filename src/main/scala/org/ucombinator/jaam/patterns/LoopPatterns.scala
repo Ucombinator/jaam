@@ -1,5 +1,6 @@
 package org.ucombinator.jaam.patterns
 
+import org.ucombinator.jaam.patterns.LoopPatterns.ifGeGoto
 import org.ucombinator.jaam.patterns.stmt._
 import org.ucombinator.jaam.util.{Soot, Stmt}
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
@@ -34,6 +35,9 @@ object LoopPatterns {
   private val iteratorNextMethod = getMethod("java.util.Iterator", "next")
 
   private val arrayListAddMethod = getMethod("java.util.ArrayList", "add", Some(List(Soot.getSootType("java.lang.Object"))))
+  private val vectorSizeMethod = getMethod("java.util.Vector", "size")
+  private val vectorElementAtMethod = getMethod("java.util.Vector", "elementAt", Some(List(Soot.getSootType("int"))))
+  private val stringLengthMethod = getMethod(className = "java.lang.String", "length")
 
   private def iteratorInvoke(dest: String, base: String, label: Option[String] = None): RegExp = {
     mkPatRegExp(
@@ -251,7 +255,7 @@ object LoopPatterns {
     )
   }
 
-  private def getArrayElem(varName: String, arrName: String, element: String, label: Option[String] = None) : RegExp = {
+  private def getArrayElem(varName: String, arrName: String, element: String, label: Option[String] = None): RegExp = {
     mkPatRegExp(
       label,
       AssignStmtPattern(
@@ -259,6 +263,101 @@ object LoopPatterns {
         ArrayRefExpPattern(
           VariableExpPattern(arrName),
           VariableExpPattern(element)
+        )
+      )
+    )
+  }
+
+  private def vectorSize(dest: String, base: String, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(dest),
+        InstanceInvokeExpPattern(
+          VariableExpPattern(base),
+          ConstantMethodPattern(vectorSizeMethod),
+          ListArgPattern(List())
+        )
+      )
+    )
+  }
+
+  private def vectorElementAt(varName: String, arrName: String, element: String, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(varName),
+        InstanceInvokeExpPattern(
+          VariableExpPattern(arrName),
+          ConstantMethodPattern(vectorElementAtMethod),
+          ListArgPattern(List(AnyExpPattern))
+        )
+      )
+    )
+  }
+
+  private def stringLength(dest: String, base: String, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(dest),
+        InstanceInvokeExpPattern(
+          VariableExpPattern(base),
+          ConstantMethodPattern(stringLengthMethod),
+          ListArgPattern(List())
+        )
+      )
+    )
+  }
+
+  private def getAnyDynamicUpperBound(dest: String, base: String, label: Option[String] = None): RegExp = {
+    Alt(List(
+      vectorSize(dest, base, label),
+      stringLength(dest, base, label)
+    ))
+  }
+
+  private def addOffsetAndAssignToNewVar(newVarName: String, varName: String, offsetName: String, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(newVarName),
+        AddExpPattern(
+          VariableExpPattern(varName),
+          NamedExpPattern(offsetName, AnyExpPattern)
+        )
+      )
+    )
+  }
+
+  private def subOffsetAndAssignToNewVar(newVarName: String, varName: String, offsetName: String, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(newVarName),
+        SubExpPattern(
+          VariableExpPattern(varName),
+          NamedExpPattern(offsetName, AnyExpPattern)
+        )
+      )
+    )
+  }
+
+  private def offsetAndAssignToNewVar(newVarName: String, varName: String, offsetName: String, label: Option[String] = None): RegExp = {
+    Alt(List(
+      addOffsetAndAssignToNewVar(newVarName, varName, offsetName, label),
+      subOffsetAndAssignToNewVar(newVarName, varName, offsetName, label)
+    ))
+  }
+
+  private def castAndAssignToVar(varName: String, valName: String, castType: SootType, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(varName),
+        CastExpPattern(
+          castType,
+          VariableExpPattern(valName)
         )
       )
     )
@@ -275,6 +374,7 @@ object LoopPatterns {
    */
 
   private def Label = Some
+
   val head = Label("head")
   val end = Label("end")
   val exit = Label("exit")
@@ -325,6 +425,43 @@ object LoopPatterns {
     wildcardRep
   ))
 
+  val dynamicCountUpForLoop = Cat(List(
+    wildcardRep,
+    assignSomeValue("iter", "lowerBound"),
+    getAnyDynamicUpperBound("upperBound", "dataStruct", label = head),
+    ifGtOrGeGoto("iter", VariableExpPattern("upperBound"), destLabel = end),
+    wildcardRep,
+    anyAddToVar("iter", "incr"),
+    goto(head),
+    matchLabel(end),
+    wildcardRep
+  ))
+
+  val dynamicCountUpForLoopWithOffset = Cat(List(
+    wildcardRep,
+    assignSomeValue("iter", "lowerBound"),
+    getAnyDynamicUpperBound("initalUpperBound", "dataStruct", label = head),
+    offsetAndAssignToNewVar("upperBound", "initalUpperBound", "offset"),
+    ifGtOrGeGoto("iter", VariableExpPattern("upperBound"), destLabel = end),
+    wildcardRep,
+    anyAddToVar("iter", "incr"),
+    goto(head),
+    matchLabel(end),
+    wildcardRep
+  ))
+
+  val characterForLoop = Cat(List(
+    wildcardRep,
+    assignSomeValue("iter", "lowerBound"),
+    ifGtOrGeGoto("iter", NamedExpPattern("upperBound", AnyExpPattern), destLabel = end, label = head),
+    wildcardRepExclude(Alt(List(anyIf(end), goto(end)))),
+    addOffsetAndAssignToNewVar("tempVar","iter","offset"),
+    castAndAssignToVar("iter","tempVar", Soot.getSootType("char")),
+    goto(head),
+    matchLabel(end),
+    wildcardRep
+  ))
+
   private val addInvokes = Cat(List(wildcardRep, addInvoke("arr"), wildcardRep))
 
   private def mkLabel(label: Option[String] = None): LabelPattern = {
@@ -338,9 +475,10 @@ object LoopPatterns {
     def derive(state: State, remaining: List[Stmt]): (List[State], List[(RegExp, State)]) = {
       remaining match {
         case List() => (List(), List())
-        case a::_ => StmtPatternToRegEx(LabeledStmtPattern(mkLabel(label), stmtPattern))(state, a)
+        case a :: _ => StmtPatternToRegEx(LabeledStmtPattern(mkLabel(label), stmtPattern))(state, a)
       }
     }
+
     Fun(derive)
   }
 
