@@ -6,6 +6,7 @@ import org.ucombinator.jaam.visualizer.graph.Edge;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.state.StateSccVertex;
+import org.ucombinator.jaam.visualizer.taint.TaintEdge;
 import org.ucombinator.jaam.visualizer.taint.TaintMethodVertex;
 import org.ucombinator.jaam.visualizer.taint.TaintSccVertex;
 import org.ucombinator.jaam.visualizer.taint.TaintVertex;
@@ -432,4 +433,30 @@ public class LayoutAlgorithm
             }
         }
     }
+
+    // Recieves the two graph and the source vertex. The two graphs should have different vertices on each
+    // Every vertex is expected to be (roughly) the same size (10x10)
+    // Sets the coordinates of every vertex
+    // Does no recursion or anything like that
+    // Returns the dimensions of the resulting bounding box
+    public static void layoutSplitGraph(Graph<TaintVertex, TaintEdge> ancestors, TaintVertex source, Graph<TaintVertex, TaintEdge> descendants) {
+
+        int currentX = 0, currentY = 0;
+
+        for (TaintVertex v : ancestors.getVertices())
+        {
+            v.setX(currentX); v.setY(currentY);
+            currentX += 20; currentY += 20;
+        }
+        source.setX(currentX); source.setY(currentY);
+        currentX += 20; currentY += 20;
+        for (TaintVertex v : descendants.getVertices())
+        {
+            v.setX(currentX); v.setY(currentY);
+            currentX += 20; currentY += 20;
+        }
+
+    }
+
+
 }

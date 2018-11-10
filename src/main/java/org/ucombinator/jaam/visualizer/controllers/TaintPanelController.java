@@ -1,30 +1,26 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
-import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.layout.BorderPane;
 import javafx.util.Pair;
 import org.ucombinator.jaam.tools.taint3.Address;
-import org.ucombinator.jaam.util.Loop;
 import org.ucombinator.jaam.visualizer.graph.GraphTransform;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
-import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.*;
-import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.state.StateLoopVertex;
 import org.ucombinator.jaam.visualizer.state.StateMethodVertex;
 import org.ucombinator.jaam.visualizer.state.StateVertex;
 import org.ucombinator.jaam.visualizer.taint.*;
 import soot.SootMethod;
 import soot.Value;
-import soot.jimple.Constant;
 import soot.jimple.internal.JimpleLocal;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class TaintPanelController extends GraphPanelController<TaintVertex, TaintEdge>
@@ -36,10 +32,12 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
     private CodeViewController codeController;
 
-    private HashSet<TaintVertex> visibleAncestors;
+    private HashSet<TaintVertex> immAncestors;
     private GraphTransform<TaintRootVertex, TaintVertex> immAndVisAncestors;
-    private HashSet<TaintVertex> visibleDescendants;
+    private HashSet<TaintVertex> immDescendants;
     private GraphTransform<TaintRootVertex, TaintVertex> immAndVisDescendants;
+    private Set<TaintVertex> immsplitVertices; // Nodes that split the visible graph
+    private Set<TaintVertex> visibleSplitVertices;
     // Graph is the statement graph
     public TaintPanelController(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController, MainTabController tabController) throws IOException {
         super(TaintRootVertex::new, tabController);
@@ -84,13 +82,41 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     public void drawGraph() {
         visibleRoot.setVisible(false);
 
-        Set<TaintVertex> verticesToDraw;
+        immAndVisAncestors = prepareGraph(immAncestors);
+        immAndVisDescendants = prepareGraph(immDescendants);
 
-        verticesToDraw = visibleAncestors;
-        verticesToDraw.addAll(visibleDescendants);
+        // Merge ascendants and descendants into special split graph
+        createSplitGraph();
+
+        this.visibleRoot = immAndVisAncestors.newRoot;
+
+        if (expandAll) {
+            for (TaintVertex v : visibleRoot.getInnerGraph().getVertices()) {
+                if (v instanceof TaintMethodVertex) {
+                    v.setExpanded(true);
+                }
+            }
+            expandAll = false;
+        }
+        if (collapseAll) {
+            for (TaintVertex v : visibleRoot.getInnerGraph().getVertices()) {
+                if (v instanceof TaintMethodVertex) {
+                    v.setExpanded(false);
+                }
+            }
+            collapseAll = false;
+        }
+
+        LayoutAlgorithm.layout(visibleRoot);
+        drawNodes(null, visibleRoot);
+        drawEdges(visibleRoot);
+        visibleRoot.setVisible(true);
+    }
+
+    // Recieves a set of immutable vertices to draw
+    private GraphTransform<TaintRootVertex, TaintVertex> prepareGraph(Set<TaintVertex> verticesToDraw) {
 
         System.out.println("Taint Vertices to draw: " + verticesToDraw.size());
-
         GraphTransform<TaintRootVertex, TaintVertex> immToFlatVisible = this.getImmutableRoot().constructVisibleGraph(verticesToDraw);
 
         /*
@@ -117,50 +143,84 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         // Groups by Class
         //GraphTransform<TaintRootVertex, TaintVertex> flatToLayerVisible = LayerFactory.getTaintClassGrouping(immToFlatVisible.newRoot);
 
-        immAndVisAncestors = GraphTransform.transfer(immToNonInner, nonInnerToLayerVisible);
-        this.visibleRoot = immAndVisAncestors.newRoot;
+        return GraphTransform.transfer(immToNonInner, nonInnerToLayerVisible);
+    }
 
-        if (expandAll) {
-            for (TaintVertex v : visibleRoot.getInnerGraph().getVertices()) {
-                if (v instanceof TaintMethodVertex) {
-                    v.setExpanded(true);
-                }
+    // "Merges" ancestors and descendants into a single graph. To maintain connectivity the special
+    // node of the ascendants replaces the descendant version.
+    private void createSplitGraph() {
+
+        HashSet<TaintVertex> ascSplit = new HashSet<>(), desSplit = new HashSet<>();
+        HashMap<TaintVertex, TaintVertex> desToSplit = new HashMap<>();
+
+        for (TaintVertex imm : immsplitVertices) {
+            TaintVertex splitA = getSplit(immAndVisAncestors.getNew(imm), ascSplit, immAndVisAncestors.newRoot);
+            ascSplit.add(splitA);
+            TaintVertex splitD = getSplit(immAndVisDescendants.getNew(imm), desSplit, immAndVisDescendants.newRoot);
+            desSplit.add(splitD);
+            desToSplit.putIfAbsent(splitD, splitA);
+        }
+
+        // Seed with the ascendant graph
+        Graph<TaintVertex, TaintEdge> splitGraph = immAndVisAncestors.newRoot.getInnerGraph();
+
+        // Add descendantVertices
+        immAndVisDescendants.newRoot.getInnerGraph().getVertices().stream()
+                .filter(d -> !desSplit.contains(d))
+                .forEach(d -> {
+                    splitGraph.addVertex(d);
+                    d.setOuterGraph(splitGraph);
+                });
+
+        //m Now add the edges, only the outgoing to do the edges once
+        for (TaintVertex d : immAndVisDescendants.newRoot.getInnerGraph().getVertices()) {
+            for (TaintEdge e : d.getOuterGraph().getOutEdges(d)) {
+                TaintVertex src = desSplit.contains(e.getSrc()) ? desToSplit.get(e.getSrc()) : e.getSrc();
+                TaintVertex dest = desSplit.contains(e.getDest()) ? desToSplit.get(e.getDest()) : e.getDest();
+
+                splitGraph.addEdge(new TaintEdge(src, dest));
             }
-            expandAll = false;
         }
-        if (collapseAll) {
-            for (TaintVertex v : visibleRoot.getInnerGraph().getVertices()) {
-                if (v instanceof TaintMethodVertex) {
-                    v.setExpanded(false);
-                }
+
+        immAndVisDescendants.newRoot = immAndVisAncestors.newRoot;
+    }
+
+    private TaintVertex getSplit(TaintVertex vis, HashSet<TaintVertex> alreadyFound, TaintRootVertex root ) {
+
+        System.out.println(vis + " HOLA " + root);
+
+        if (vis.getOuterGraph() == root.getInnerGraph()) {
+            return vis;
+        }
+        // Find which method node I am part of
+        // This is a horrible piece of code but there isn't anyway of going up the hierarchy
+        // Adding that (which should have always been there) would improve this code a lot...
+
+        // Have we seen your method before?
+        Optional<TaintVertex> alreadyAdded = alreadyFound.stream()
+                .filter(v -> v.getInnerGraph() == vis.getOuterGraph())
+                .findAny();
+
+        if (alreadyAdded.isPresent()) {
+            return alreadyAdded.get();
+        }
+        else {
+            // So slow...
+            Optional<TaintVertex> any = root.getInnerGraph().getVertices().stream()
+                    .filter(v -> v.getInnerGraph() == vis.getOuterGraph())
+                    .findAny();
+
+            if (!any.isPresent()) {
+                throw new IllegalArgumentException("Found a wrong method vertex while splitting");
             }
-            collapseAll = false;
+            return any.get();
         }
-
-        /*
-        System.out.println("Final Graph to Draw");
-        for (TaintVertex V : visibleRoot.getInnerGraph().getVertices()) {
-            System.out.println("\t"
-                    + V.getOuterGraph().getInNeighbors(V).stream()
-                    .count()
-                    + ","
-                    + V.getOuterGraph().getOutNeighbors(V).stream()
-                    .count()
-                    + "\t" + V);
-
-        }
-        */
-
-        LayoutAlgorithm.layout(visibleRoot);
-        drawNodes(null, visibleRoot);
-        drawEdges(visibleRoot);
-        visibleRoot.setVisible(true);
     }
 
     public void redrawGraph() {
         // System.out.println("Redrawing loop graph...");
-        this.graphContentGroup.getChildren().remove(this.visibleRoot.getGraphics());
-        this.drawGraph();
+        //this.graphContentGroup.getChildren().remove(this.visibleRoot.getGraphics());
+        //this.drawGraph();
     }
 
     public void addSelectHandler(BorderPane centerPane) {
@@ -374,33 +434,11 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
     private void drawConnectedVertices(Set<TaintVertex> addresses) {
         long time1 = System.nanoTime();
+        immsplitVertices = addresses;
         Pair<HashSet<TaintVertex>, HashSet<TaintVertex>> verticesToDraw = findConnectedAddresses(addresses);
 
-        visibleAncestors = verticesToDraw.getKey();
-        visibleDescendants = verticesToDraw.getValue();
-
-        /*
-        System.out.println("---------------END-------------------------");
-        System.out.println("Connected Addresses " + visibleDescendants.size());
-        for (TaintVertex v : visibleDescendants) {
-            System.out.println("\t"
-                    + v.getOuterGraph().getInNeighbors(v).stream()
-                    .filter(visibleDescendants::contains)
-                    .count()
-                    + ","
-                    + v.getOuterGraph().getOutNeighbors(v).stream()
-                    .filter(visibleDescendants::contains)
-                    .count()
-                    + "\t" + v);
-
-            v.getOuterGraph().getInNeighbors(v).stream()
-            .filter(visibleDescendants::contains)
-            .forEach(n -> System.out.println("\t\t<--" + n));
-            v.getOuterGraph().getOutNeighbors(v).stream()
-                    .filter(visibleDescendants::contains)
-                    .forEach(n -> System.out.println("\t\t-->" + n));
-        }
-        */
+        immAncestors = verticesToDraw.getKey();
+        immDescendants = verticesToDraw.getValue();
 
         long time2 = System.nanoTime();
         this.drawGraph();
@@ -610,8 +648,8 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
     public void hideVisibleVertices(HashSet<TaintVertex> taintHighlighted) {
 
-        visibleAncestors.removeAll(taintHighlighted);
-        visibleDescendants.removeAll(taintHighlighted);
+        immAncestors.removeAll(taintHighlighted);
+        immDescendants.removeAll(taintHighlighted);
         redrawGraph();
     }
 }
