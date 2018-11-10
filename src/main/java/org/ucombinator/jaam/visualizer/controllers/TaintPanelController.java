@@ -84,6 +84,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         immAndVisAncestors = prepareGraph(immAncestors);
         immAndVisDescendants = prepareGraph(immDescendants);
+        immsplitVertices.removeIf(v -> ((TaintAddress)v).type == TaintAddress.Type.Inner);
 
         // Merge ascendants and descendants into special split graph
         createSplitGraph();
