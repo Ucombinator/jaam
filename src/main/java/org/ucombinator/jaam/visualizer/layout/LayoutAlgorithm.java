@@ -434,7 +434,7 @@ public class LayoutAlgorithm
         }
     }
 
-    // Recieves the two graph and the source vertex. The two graphs should have different vertices on each
+    // Receives the two graph and the source vertex. The two graphs should have different vertices on each
     // Every vertex is expected to be (roughly) the same size (10x10)
     // Sets the coordinates of every vertex
     // Does no recursion or anything like that

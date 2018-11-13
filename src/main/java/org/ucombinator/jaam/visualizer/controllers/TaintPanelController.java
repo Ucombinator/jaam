@@ -91,6 +91,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         this.visibleRoot = immAndVisAncestors.newRoot;
 
+        /*
         if (expandAll) {
             for (TaintVertex v : visibleRoot.getInnerGraph().getVertices()) {
                 if (v instanceof TaintMethodVertex) {
@@ -107,6 +108,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
             }
             collapseAll = false;
         }
+        */
 
         LayoutAlgorithm.layout(visibleRoot);
         drawNodes(null, visibleRoot);
@@ -154,6 +156,11 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         HashSet<TaintVertex> ascSplit = new HashSet<>(), desSplit = new HashSet<>();
         HashMap<TaintVertex, TaintVertex> desToSplit = new HashMap<>();
 
+        System.out.println("Imm Split vertices");
+        for (TaintVertex imm : immsplitVertices) {
+            System.out.println("\t" + imm);
+        }
+
         for (TaintVertex imm : immsplitVertices) {
             TaintVertex splitA = getSplit(immAndVisAncestors.getNew(imm), ascSplit, immAndVisAncestors.newRoot);
             ascSplit.add(splitA);
@@ -173,24 +180,31 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
                     d.setOuterGraph(splitGraph);
                 });
 
-        //m Now add the edges, only the outgoing to do the edges once
-        for (TaintVertex d : immAndVisDescendants.newRoot.getInnerGraph().getVertices()) {
-            for (TaintEdge e : d.getOuterGraph().getOutEdges(d)) {
-                TaintVertex src = desSplit.contains(e.getSrc()) ? desToSplit.get(e.getSrc()) : e.getSrc();
-                TaintVertex dest = desSplit.contains(e.getDest()) ? desToSplit.get(e.getDest()) : e.getDest();
 
-                splitGraph.addEdge(new TaintEdge(src, dest));
-            }
+        System.out.println("Now adding edges: "
+                + "\n\tA : " + immAndVisAncestors.newRoot.getInnerGraph().getEdges().size()
+                + "\n\tD : " + immAndVisDescendants.newRoot.getInnerGraph().getEdges().size()
+        );
+
+        // Now add the edges, only the outgoing to do the edges once
+        for (TaintEdge e : immAndVisDescendants.newRoot.getInnerGraph().getEdges()) {
+            TaintVertex src = desSplit.contains(e.getSrc()) ? desToSplit.get(e.getSrc()) : e.getSrc();
+            TaintVertex dest = desSplit.contains(e.getDest()) ? desToSplit.get(e.getDest()) : e.getDest();
+
+            splitGraph.addEdge(new TaintEdge(src, dest));
         }
+
+        System.out.println("\tF: " + splitGraph.getEdges().size());
 
         immAndVisDescendants.newRoot = immAndVisAncestors.newRoot;
     }
 
     private TaintVertex getSplit(TaintVertex vis, HashSet<TaintVertex> alreadyFound, TaintRootVertex root ) {
 
-        System.out.println(vis + " HOLA " + root);
+        System.out.print("Checking " + vis);
 
         if (vis.getOuterGraph() == root.getInnerGraph()) {
+            System.out.println(" Was not part of a method");
             return vis;
         }
         // Find which method node I am part of
@@ -203,6 +217,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
                 .findAny();
 
         if (alreadyAdded.isPresent()) {
+            System.out.println(" my method was already added");
             return alreadyAdded.get();
         }
         else {
@@ -214,6 +229,9 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
             if (!any.isPresent()) {
                 throw new IllegalArgumentException("Found a wrong method vertex while splitting");
             }
+
+            System.out.println("Found method " + any.get());
+
             return any.get();
         }
     }

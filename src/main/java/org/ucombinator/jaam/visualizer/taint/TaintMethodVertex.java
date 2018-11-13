@@ -61,8 +61,8 @@ public class TaintMethodVertex extends TaintVertex {
     }
 
     private void addVertex(TaintVertex v) {
-       //this.getInnerGraph().addVertex(v);
-       //v.setOuterGraph(this.getInnerGraph());
+       this.getInnerGraph().addVertex(v);
+       v.setOuterGraph(this.getInnerGraph());
     }
     public TaintMethodVertex copy() {
         return new TaintMethodVertex(className, methodName, getPreferredLayout(), inputs, inner, outputs);
