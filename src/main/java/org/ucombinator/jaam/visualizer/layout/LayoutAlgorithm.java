@@ -431,14 +431,12 @@ public class LayoutAlgorithm
         }
     }
 
-    // Receives the two graph and the source vertex. The two graphs should have different vertices on each
-    // Every vertex is expected to be (roughly) the same size (10x10)
-    // Sets the coordinates of every vertex
-    // Does no recursion or anything like that
-    // Returns the dimensions of the resulting bounding box
+    // Receives the root vertex and the split vertices.
+    // Sets the coordinates and sizes of every vertex
+    // Note: I think the getWidth is not working... I'll work on it
     public static void layoutSplitGraph(TaintRootVertex root, Set<TaintVertex> splitVertices) {
 
-        initializeSizes(root);
+        initializeSizes(root); // Set the default sizes (don't worry about the method vertices, they have their size set already)
 
         HashSet<TaintVertex> ancestors = new HashSet<>();
         HashSet<TaintVertex> descendants = new HashSet<>();
@@ -454,7 +452,7 @@ public class LayoutAlgorithm
         int currentX = 0, currentY = 0;
         for (TaintVertex v : ancestors) {
             v.setX(currentX); v.setY(currentY);
-            currentX += 20; currentY += 20;
+            currentX += v.getWidth(); currentY += 20;
         }
 
         for (TaintVertex v : splitVertices) {
@@ -464,7 +462,7 @@ public class LayoutAlgorithm
 
         for (TaintVertex v : descendants) {
             v.setX(currentX); v.setY(currentY);
-            currentX += 20; currentY += 20;
+            currentX += v.getWidth(); currentY += 20;
         }
     }
 
