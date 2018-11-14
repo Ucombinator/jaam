@@ -445,24 +445,57 @@ public class LayoutAlgorithm
             ancestors.addAll(v.getAncestors());
             descendants.addAll(v.getDescendants());
         }
-
         ancestors.removeAll(splitVertices);
         descendants.removeAll(splitVertices);
 
         int currentX = 0, currentY = 0;
-        for (TaintVertex v : ancestors) {
-            v.setX(currentX); v.setY(currentY);
-            currentX += v.getWidth(); currentY += 20;
-        }
 
+        //Should these be re-ordered?
         for (TaintVertex v : splitVertices) {
-            v.setX(0); v.setY(currentY);
-            currentY += 40;
-        }
-
-        for (TaintVertex v : descendants) {
             v.setX(currentX); v.setY(currentY);
-            currentX += v.getWidth(); currentY += 20;
+            currentX += 40;
+        }
+        //Find ancestors by layer
+        HashSet<TaintVertex> layer = new HashSet<>();
+        layer.addAll(splitVertices);
+        while(!descendants.isEmpty()){
+            HashSet<TaintVertex> newLayer = new HashSet<>();
+            for(TaintVertex v:layer){
+                Graph<TaintVertex,TaintEdge> G = v.getOuterGraph();
+                newLayer.addAll(G.getOutNeighbors(v));
+            }
+            currentX=0; currentY+= 40;
+            for(TaintVertex v:newLayer){
+                if(descendants.contains(v)) {
+                    v.setX(currentX);
+                    v.setY(currentY);
+                    currentX += 40;
+                }
+            }
+            descendants.removeAll(newLayer);
+            layer=newLayer;
+        }
+        //Find descendants by layer
+        layer = new HashSet<>();
+        layer.addAll(splitVertices);
+        currentY=0;
+        currentX=0;
+        while(!ancestors.isEmpty()){
+            HashSet<TaintVertex> newLayer = new HashSet<>();
+            for(TaintVertex v:layer){
+                Graph<TaintVertex,TaintEdge> G = v.getOuterGraph();
+                newLayer.addAll(G.getInNeighbors(v));
+            }
+            currentX=0; currentY-= 40;
+            for(TaintVertex v:newLayer){
+                if(ancestors.contains(v)) {
+                    v.setX(currentX);
+                    v.setY(currentY);
+                    currentX += 40;
+                }
+            }
+            ancestors.removeAll(newLayer);
+            layer=newLayer;
         }
     }
 
