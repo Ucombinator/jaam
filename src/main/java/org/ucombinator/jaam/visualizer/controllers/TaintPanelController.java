@@ -110,7 +110,8 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         }
         */
 
-        LayoutAlgorithm.layout(visibleRoot);
+        LayoutAlgorithm.layoutSplitGraph(getVisibleRoot(), visibleSplitVertices);
+        //LayoutAlgorithm.layout(visibleRoot);
         drawNodes(null, visibleRoot);
         drawEdges(visibleRoot);
         visibleRoot.setVisible(true);
@@ -171,6 +172,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         // Seed with the ascendant graph
         Graph<TaintVertex, TaintEdge> splitGraph = immAndVisAncestors.newRoot.getInnerGraph();
+        visibleSplitVertices = ascSplit;
 
         // Add descendantVertices
         immAndVisDescendants.newRoot.getInnerGraph().getVertices().stream()

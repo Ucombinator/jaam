@@ -6,10 +6,7 @@ import org.ucombinator.jaam.visualizer.graph.Edge;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.state.StateSccVertex;
-import org.ucombinator.jaam.visualizer.taint.TaintEdge;
-import org.ucombinator.jaam.visualizer.taint.TaintMethodVertex;
-import org.ucombinator.jaam.visualizer.taint.TaintSccVertex;
-import org.ucombinator.jaam.visualizer.taint.TaintVertex;
+import org.ucombinator.jaam.visualizer.taint.*;
 
 import java.util.*;
 
@@ -22,7 +19,7 @@ public class LayoutAlgorithm
     private static final double ROOT_V_OFFSET = 10;
 
     public enum LAYOUT_ALGORITHM {
-        DFS, BFS, SUMMARY
+        DFS, BFS, SUMMARY, SPLIT
     }
 
     public static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
@@ -439,23 +436,36 @@ public class LayoutAlgorithm
     // Sets the coordinates of every vertex
     // Does no recursion or anything like that
     // Returns the dimensions of the resulting bounding box
-    public static void layoutSplitGraph(Graph<TaintVertex, TaintEdge> ancestors, TaintVertex source, Graph<TaintVertex, TaintEdge> descendants) {
+    public static void layoutSplitGraph(TaintRootVertex root, Set<TaintVertex> splitVertices) {
+
+        initializeSizes(root);
+
+        HashSet<TaintVertex> ancestors = new HashSet<>();
+        HashSet<TaintVertex> descendants = new HashSet<>();
+
+        for (TaintVertex v : splitVertices) {
+            ancestors.addAll(v.getAncestors());
+            descendants.addAll(v.getDescendants());
+        }
+
+        ancestors.removeAll(splitVertices);
+        descendants.removeAll(splitVertices);
 
         int currentX = 0, currentY = 0;
-
-        for (TaintVertex v : ancestors.getVertices())
-        {
-            v.setX(currentX); v.setY(currentY);
-            currentX += 20; currentY += 20;
-        }
-        source.setX(currentX); source.setY(currentY);
-        currentX += 20; currentY += 20;
-        for (TaintVertex v : descendants.getVertices())
-        {
+        for (TaintVertex v : ancestors) {
             v.setX(currentX); v.setY(currentY);
             currentX += 20; currentY += 20;
         }
 
+        for (TaintVertex v : splitVertices) {
+            v.setX(0); v.setY(currentY);
+            currentY += 40;
+        }
+
+        for (TaintVertex v : descendants) {
+            v.setX(currentX); v.setY(currentY);
+            currentX += 20; currentY += 20;
+        }
     }
 
 
