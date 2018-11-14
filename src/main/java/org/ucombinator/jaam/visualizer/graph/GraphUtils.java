@@ -213,7 +213,12 @@ public class GraphUtils {
     // We assume that only vertices within the same level can be combined.
     public static <R extends T, T extends HierarchicalVertex<T, S>, S extends Edge<T>, U>
     GraphTransform<R,T> copyAndCompressGraph(R root, Function<T, U> hash, Function<List<T>, T> componentVertexBuilder,
-                           BiFunction<T, T, S> edgeBuilder) {
+                                             BiFunction<T, T, S> edgeBuilder) {
+       return copyAndCompressGraph(root, hash, componentVertexBuilder, edgeBuilder, false);
+    }
+    public static <R extends T, T extends HierarchicalVertex<T, S>, S extends Edge<T>, U>
+    GraphTransform<R,T> copyAndCompressGraph(R root, Function<T, U> hash, Function<List<T>, T> componentVertexBuilder,
+                           BiFunction<T, T, S> edgeBuilder, boolean applyToSingle) {
 
         R compressedRoot = (R) root.copy();
 
@@ -243,7 +248,8 @@ public class GraphUtils {
                     @Override
                     public T apply(Map.Entry<U, List<T>> entry) {
                         List<T> component = entry.getValue();
-                        if(component.size() == 1) {
+                        if(!applyToSingle && component.size() == 1) {
+                            System.out.println("Applying to single");
                             return transform.getNew(component.get(0));
                         } else {
                             return componentVertexBuilder.apply(component.stream().map(transform::getNew)

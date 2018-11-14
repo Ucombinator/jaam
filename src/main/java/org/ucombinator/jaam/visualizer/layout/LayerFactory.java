@@ -65,7 +65,7 @@ public class LayerFactory
                         return sccVertex;
                     }
                 },
-                TaintEdge::new);
+                TaintEdge::new, true);
     }
 
     private static HashMap<Integer, Integer> getVertexToComponentMap(List<List<Integer>> components) {
@@ -77,24 +77,6 @@ public class LayerFactory
         }
         return vertexToComponentIndex;
     }
-
-
-
-    /*
-    private static TaintRootVertex getClassClusteredTaintGraph(Graph<TaintVertex, TaintEdge> graph) {
-
-        TaintRootVertex classGraphRoot = getClassGroupingGraph(graph);
-
-        classGraphRoot.getInnerGraph().getVertices().forEach(classVertex -> {
-            if (classVertex.getInnerGraph().getVertices().size() > 1) {
-                TaintRootVertex methodRootVertex = getMethodGroupingGraph(classVertex.getInnerGraph());
-                Graph<TaintVertex, TaintEdge> groupedMethodGraph = methodRootVertex.getInnerGraph();
-                classVertex.setInnerGraph(groupedMethodGraph);
-            }
-        });
-        return classGraphRoot;
-    }
-    */
 
     private static int calcSize(Graph<TaintVertex, TaintEdge> graph) {
         int total = 0;
@@ -167,6 +149,11 @@ public class LayerFactory
                     public TaintVertex apply(List<TaintVertex> taintVertices) {
 
                         TaintVertex representative = taintVertices.stream().findFirst().get();
+
+                        if (representative.getMethodName() == null) {
+                            return representative;
+                        }
+
                         String className  = representative.getClassName();
                         String methodName = representative.getMethodName();
                         assert methodName != null;
@@ -203,7 +190,8 @@ public class LayerFactory
                         return methodVertex;
                     }
                 },
-                TaintEdge::new);
+                TaintEdge::new,
+                true);
     }
 
 }
