@@ -436,7 +436,7 @@ public class LayoutAlgorithm
     // Note: I think the getWidth is not working... I'll work on it
     public static void layoutSplitGraph(TaintRootVertex root, Set<TaintVertex> splitVertices) {
 
-        initializeSizes(root); // Set the default sizes (don't worry about the method vertices, they have their size set already)
+        initializeSizes(root);
 
         HashSet<TaintVertex> ancestors = new HashSet<>();
         HashSet<TaintVertex> descendants = new HashSet<>();
@@ -455,6 +455,7 @@ public class LayoutAlgorithm
             v.setX(currentX); v.setY(currentY);
             currentX += 40;
         }
+        //keep track of graph size
         int heightAnc=0;
         int heightDes=0;
         int maxW=0;
@@ -508,15 +509,17 @@ public class LayoutAlgorithm
         root.setWidth(maxW);
         root.setHeight(heightAnc-heightDes+40);
 
+        //collect all drawn nodes again
         HashSet<TaintVertex> drawn = new HashSet<>();
         drawn.addAll(splitVertices);
         for (TaintVertex v : splitVertices) {
             drawn.addAll(v.getAncestors());
             drawn.addAll(v.getDescendants());
         }
-        System.out.println("Height: "+(heightAnc-heightDes+40));
+        //Make Y-coordinates positive and center
         for(TaintVertex v: drawn){
-            v.setY(v.getY()-heightDes);
+            v.setX(v.getX()+20);
+            v.setY(v.getY()-heightDes+20);
         }
     }
 
