@@ -455,6 +455,9 @@ public class LayoutAlgorithm
             v.setX(currentX); v.setY(currentY);
             currentX += 40;
         }
+        int heightAnc=0;
+        int heightDes=0;
+        int maxW=0;
         //Find ancestors by layer
         HashSet<TaintVertex> layer = new HashSet<>();
         layer.addAll(splitVertices);
@@ -472,9 +475,11 @@ public class LayoutAlgorithm
                     currentX += 40;
                 }
             }
+            if(currentX>maxW){maxW=currentX;}
             descendants.removeAll(newLayer);
             layer=newLayer;
         }
+        heightAnc=currentY;
         //Find descendants by layer
         layer = new HashSet<>();
         layer.addAll(splitVertices);
@@ -494,8 +499,24 @@ public class LayoutAlgorithm
                     currentX += 40;
                 }
             }
+            if(currentX>maxW){maxW=currentX;}
             ancestors.removeAll(newLayer);
             layer=newLayer;
+        }
+        heightDes=currentY;
+        //fix root size
+        root.setWidth(maxW);
+        root.setHeight(heightAnc-heightDes+40);
+
+        HashSet<TaintVertex> drawn = new HashSet<>();
+        drawn.addAll(splitVertices);
+        for (TaintVertex v : splitVertices) {
+            drawn.addAll(v.getAncestors());
+            drawn.addAll(v.getDescendants());
+        }
+        System.out.println("Height: "+(heightAnc-heightDes+40));
+        for(TaintVertex v: drawn){
+            v.setY(v.getY()-heightDes);
         }
     }
 
