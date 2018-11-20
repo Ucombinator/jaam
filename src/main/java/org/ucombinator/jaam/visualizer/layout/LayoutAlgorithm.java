@@ -434,6 +434,19 @@ public class LayoutAlgorithm
     // Receives the root vertex and the split vertices.
     // Sets the coordinates and sizes of every vertex
     // Note: I think the getWidth is not working... I'll work on it
+    public static double layoutFindTempX(TaintVertex v){
+        HashSet<TaintVertex>check=(HashSet<TaintVertex>)v.getOuterGraph().getInNeighbors(v);
+        check.addAll(v.getOuterGraph().getOutNeighbors(v));
+        int tempX = 0; int count = 0;
+        for(TaintVertex u:check){
+            //if already placed
+            if(u.getVertexStatus()==AbstractLayoutVertex.VertexStatus.GRAY){
+                tempX+=u.getX();
+                count++;
+            }
+        }
+        return tempX/count;
+    }
     public static void layoutSplitGraph(TaintRootVertex root, Set<TaintVertex> splitVertices) {
 
         initializeSizes(root);
@@ -448,67 +461,99 @@ public class LayoutAlgorithm
         ancestors.removeAll(splitVertices);
         descendants.removeAll(splitVertices);
 
-        int currentX = 0, currentY = 0;
+        int currentX = 20, currentY = 0;
 
         //Should these be re-ordered?
         for (TaintVertex v : splitVertices) {
-            v.setX(currentX); v.setY(currentY);
+            v.setX(currentX); v.setY(currentY); v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
             currentX += 40;
         }
         //keep track of graph size
         int heightAnc=0;
         int heightDes=0;
         int maxW=0;
+        //Comparator to sort layers later
+        Comparator<TaintVertex> compare=new Comparator<TaintVertex>() {
+            @Override
+            public int compare(TaintVertex o1, TaintVertex o2) {
+                return Double.compare(o1.getX(),o2.getX());
+            }
+        };
         //Find ancestors by layer
         HashSet<TaintVertex> layer = new HashSet<>();
         layer.addAll(splitVertices);
         while(!descendants.isEmpty()){
+            currentY+= 40; int w=0;
+
             HashSet<TaintVertex> newLayer = new HashSet<>();
-            for(TaintVertex v:layer){
-                Graph<TaintVertex,TaintEdge> G = v.getOuterGraph();
-                newLayer.addAll(G.getOutNeighbors(v));
-            }
-            currentX=0; currentY+= 40;
+            //make newlayer
+            for(TaintVertex v:layer){ newLayer.addAll(v.getOuterGraph().getOutNeighbors(v)); }
+            //find order based on edges
+            ArrayList<TaintVertex> ordering= new ArrayList<>();
             for(TaintVertex v:newLayer){
                 if(descendants.contains(v)) {
-                    v.setX(currentX);
+                    v.setX(layoutFindTempX(v));
                     v.setY(currentY);
-                    currentX += 40;
+                    v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
+                    ordering.add(v);
+                    w++;
                 }
             }
-            if(currentX>maxW){maxW=currentX;}
+            //re-order
+            ordering.sort(compare);
+            int stepX=currentX/w;
+            int curr=stepX/2;
+            for(TaintVertex v: ordering){
+                v.setX(curr);
+                v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
+                curr+=stepX;
+            }
+            if(w>maxW){ maxW=w;}
+            //remove already in layer
             descendants.removeAll(newLayer);
             layer=newLayer;
         }
         heightAnc=currentY;
         //Find descendants by layer
-        layer = new HashSet<>();
-        layer.addAll(splitVertices);
+        layer = new HashSet<>(); layer.addAll(splitVertices);
+
         currentY=0;
-        currentX=0;
         while(!ancestors.isEmpty()){
+            currentY-= 40; int w=0;
+
             HashSet<TaintVertex> newLayer = new HashSet<>();
-            for(TaintVertex v:layer){
-                Graph<TaintVertex,TaintEdge> G = v.getOuterGraph();
-                newLayer.addAll(G.getInNeighbors(v));
-            }
-            currentX=0; currentY-= 40;
+            //make newlayer
+            for(TaintVertex v:layer){ newLayer.addAll(v.getOuterGraph().getInNeighbors(v)); }
+            //find order based on edges
+            ArrayList<TaintVertex> ordering= new ArrayList<>();
             for(TaintVertex v:newLayer){
                 if(ancestors.contains(v)) {
-                    v.setX(currentX);
+                    v.setX(layoutFindTempX(v));
                     v.setY(currentY);
-                    currentX += 40;
+                    v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
+                    ordering.add(v);
+                    w++;
                 }
             }
-            if(currentX>maxW){maxW=currentX;}
-            ancestors.removeAll(newLayer);
+            //re-order
+            ordering.sort(compare);
+            int stepX=currentX/w;
+            int curr=stepX/2;
+            for(TaintVertex v: ordering){
+                v.setX(curr);
+                v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
+                curr+=stepX;
+            }
+            if(w>maxW){ maxW=w;}
+            //remove already in layer
+            descendants.removeAll(newLayer);
             layer=newLayer;
         }
         heightDes=currentY;
         //fix root size
-        root.setWidth(maxW);
+        root.setWidth(maxW*40+40);
         root.setHeight(heightAnc-heightDes+40);
-
+        int width=maxW*40+40;
         //collect all drawn nodes again
         HashSet<TaintVertex> drawn = new HashSet<>();
         drawn.addAll(splitVertices);
@@ -518,7 +563,7 @@ public class LayoutAlgorithm
         }
         //Make Y-coordinates positive and center
         for(TaintVertex v: drawn){
-            v.setX(v.getX()+20);
+            v.setX(v.getX()*width/currentX);
             v.setY(v.getY()-heightDes+20);
         }
     }
