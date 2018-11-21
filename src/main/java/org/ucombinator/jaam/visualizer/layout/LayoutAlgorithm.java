@@ -435,11 +435,10 @@ public class LayoutAlgorithm
     // Sets the coordinates and sizes of every vertex
     // Note: I think the getWidth is not working... I'll work on it
     public static double layoutFindTempX(TaintVertex v){
-        HashSet<TaintVertex>check=(HashSet<TaintVertex>)v.getOuterGraph().getInNeighbors(v);
-        check.addAll(v.getOuterGraph().getOutNeighbors(v));
+        HashSet<TaintVertex>adjacent=(HashSet<TaintVertex>)v.getOuterGraph().getInNeighbors(v);
+        adjacent.addAll(v.getOuterGraph().getOutNeighbors(v));
         int tempX = 0; int count = 0;
-        for(TaintVertex u:check){
-            //if already placed
+        for(TaintVertex u:adjacent){
             if(u.getVertexStatus()==AbstractLayoutVertex.VertexStatus.GRAY){
                 tempX+=u.getX();
                 count++;
@@ -460,6 +459,10 @@ public class LayoutAlgorithm
         }
         ancestors.removeAll(splitVertices);
         descendants.removeAll(splitVertices);
+
+        ancestors.forEach(v -> v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE));
+        descendants.forEach(v -> v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE));
+
 
         int currentX = 20, currentY = 0;
 
@@ -491,7 +494,7 @@ public class LayoutAlgorithm
             //find order based on edges
             ArrayList<TaintVertex> ordering= new ArrayList<>();
             for(TaintVertex v:newLayer){
-                if(descendants.contains(v)) {
+                if(v.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
                     v.setX(layoutFindTempX(v));
                     v.setY(currentY);
                     v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
@@ -501,6 +504,7 @@ public class LayoutAlgorithm
             }
             //re-order
             ordering.sort(compare);
+            if(ordering.size()==0){ w=1; }
             int stepX=currentX/w;
             int curr=stepX/2;
             for(TaintVertex v: ordering){
@@ -527,7 +531,7 @@ public class LayoutAlgorithm
             //find order based on edges
             ArrayList<TaintVertex> ordering= new ArrayList<>();
             for(TaintVertex v:newLayer){
-                if(ancestors.contains(v)) {
+                if(v.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
                     v.setX(layoutFindTempX(v));
                     v.setY(currentY);
                     v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
@@ -537,6 +541,7 @@ public class LayoutAlgorithm
             }
             //re-order
             ordering.sort(compare);
+            if(ordering.size()==0){ w=1; }
             int stepX=currentX/w;
             int curr=stepX/2;
             for(TaintVertex v: ordering){
@@ -546,7 +551,7 @@ public class LayoutAlgorithm
             }
             if(w>maxW){ maxW=w;}
             //remove already in layer
-            descendants.removeAll(newLayer);
+            ancestors.removeAll(newLayer);
             layer=newLayer;
         }
         heightDes=currentY;
