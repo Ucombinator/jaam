@@ -13,10 +13,11 @@ import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 import org.ucombinator.jaam.visualizer.main.Main;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
+public abstract class StateVertex extends AbstractLayoutVertex
         implements HierarchicalVertex<StateVertex, StateEdge> {
 
     private Graph<StateVertex, StateEdge> outerGraph;
@@ -60,7 +61,8 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
                     Main.getSelectedMainTabController().resetHighlighted(this);
                 }
 
-                this.getGraphics().fireEvent(new SelectEvent<StateVertex>(MouseButton.PRIMARY, this.getGraphics(), this));
+                this.getGraphics().fireEvent(new SelectEvent<StateVertex>(MouseButton.PRIMARY, this.getGraphics()
+                        , this, SelectEvent.VERTEX_TYPE.STATE));
                 break;
             case 2:
                 handleDoubleClick(event);
@@ -133,7 +135,7 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
     {
         if(this.getId() >= id1 && this.getId() <= id2) {
             this.setHighlighted(true);
-            mainTab.getVizHighlighted().add(this);
+            mainTab.getStateHighlighted().add(this);
             System.out.println("Search successful: " + this.getId());
         }
 
@@ -158,12 +160,10 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
         return methodNames;
     }
 
-    // Subclasses must implement these so that we have descriptions for each of them,
-    // and so that our generic collapsing can work for all of them
-    public abstract String getRightPanelContent();
-
     // These searches may be different for different subclasses, so we implement them there.
     public abstract boolean searchByMethod(String query, MainTabController mainTab);
+
+    public abstract List<StateVertex> expand();
 
     // This is needed so that we can show the code for the methods that correspond to selected vertices
     public Set<StateMethodVertex> getMethodVertices() {
@@ -184,5 +184,10 @@ public abstract class StateVertex extends AbstractLayoutVertex<StateVertex>
                     x.addAll(y);
                     return x;
                 });
+    }
+
+    @Override
+    public LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
+        return LayoutAlgorithm.LAYOUT_ALGORITHM.DFS;
     }
 }

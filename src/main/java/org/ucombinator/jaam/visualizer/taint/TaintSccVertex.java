@@ -55,6 +55,16 @@ public class TaintSccVertex extends TaintVertex {
     }
 
     @Override
+    public String getLongText() {
+        StringBuilder text = new StringBuilder("SCC contains:\n");
+        int k = 0;
+        for(TaintVertex i : getLineSortedChildren()) {
+            text.append(k++ + "  " + i.getLabel() + "\n");
+        }
+        return text.toString();
+    }
+
+    @Override
     public LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
         return innerLayout;
     }
@@ -66,5 +76,14 @@ public class TaintSccVertex extends TaintVertex {
         vertices.sort(Comparator.comparing(TaintVertex::getLabel));
 
         return vertices;
+    }
+
+    @Override
+    public List<TaintVertex> expand() {
+        List<TaintVertex> expandedVertices = new ArrayList<>();
+        for (TaintVertex v : this.getInnerGraph().getVertices()) {
+            expandedVertices.addAll(v.expand());
+        }
+        return expandedVertices;
     }
 }

@@ -2,6 +2,7 @@ package org.ucombinator.jaam.util
 
 import org.ucombinator.jaam.patterns.stmt._
 import org.ucombinator.jaam.patterns.{LoopPatterns, State}
+import org.ucombinator.jaam.util.Loop.DynamicCountUpForLoop
 import soot.{Local, SootMethod, Value}
 import soot.jimple.{Stmt => SootStmt, _}
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
@@ -57,6 +58,9 @@ object Loop {
     runPattern(LoopPatterns.arrayLoop).foreach(s => return ArrayLoop(s.values("arr")))
     runPattern(LoopPatterns.simpleCountUpForLoop).foreach(s => return SimpleCountUpForLoop(s.values("lowerBound"), s.values("upperBound"), s.values("incr")))
     runPattern(LoopPatterns.simpleCountDownForLoop).foreach(s => return SimpleCountDownForLoop(s.values("upperBound"), s.values("lowerBound"), s.values("incr")))
+    runPattern(LoopPatterns.dynamicCountUpForLoop).foreach(s => return DynamicCountUpForLoop(s.values("lowerBound"), s.values("upperBound"), s.values("incr")))
+    runPattern(LoopPatterns.dynamicCountUpForLoopWithOffset).foreach(s => return DynamicCountUpForLoopWithOffset(s.values("lowerBound"), s.values("upperBound"), s.values("incr"), s.values("offset")))
+    runPattern(LoopPatterns.characterForLoop).foreach(s => return CharacterForLoop(s.values("lowerBound"), s.values("upperBound"), s.values("offset")))
 
     UnidentifiedLoop()
   }
@@ -67,4 +71,8 @@ object Loop {
   case class ArrayLoop(iterable: Value) extends LoopInfo
   case class SimpleCountUpForLoop(lowerBound: Value, upperBound: Value, increment: Value) extends LoopInfo
   case class SimpleCountDownForLoop(upperBound: Value, lowerBound: Value, increment: Value) extends LoopInfo
+  case class DynamicCountUpForLoop(lowerBound: Value, upperBound: Value, increment: Value) extends LoopInfo
+  case class DynamicCountUpForLoopWithOffset(lowerBound: Value, upperBound: Value, increment: Value, offset:Value) extends LoopInfo
+  case class CharacterForLoop(lowerBound: Value, upperBound: Value, increment: Value) extends LoopInfo
+
 }

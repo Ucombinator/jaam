@@ -41,18 +41,29 @@ public class MainTabController {
     @FXML private TreeView<ClassTreeNode> classTree = null; // Initialized by Controllers.loadFXML()
     @FXML private final BorderPane searchPane = null; // Initialized by Controllers.loadFXML()
 
-    private HashSet<StateVertex> vizHighlighted; // TODO: Make this an observable set
-    private HashSet<TaintVertex> taintHighlighted;
-    private SetHistoryProperty<StateVertex> hidden;
+    private HashSet<StateVertex> stateHighlighted; // Visible nodes
+    private HashSet<TaintVertex> taintHighlighted; // Visible nodes
+    private SetHistoryProperty<StateVertex> immutableStateHidden; // Immutable nodes
+    private SetHistoryProperty<TaintVertex> immutableTaintShown; // Immutable nodes
 
     public MainTabController(File file, Graph<StateVertex, StateEdge> graph, List<CompilationUnit> compilationUnits,
                              Graph<TaintVertex, TaintEdge> taintGraph, Set<SootClass> sootClasses) throws IOException {
         Controllers.loadFXML("/MainTabContent.fxml", this);
 
-        this.vizPanelController = new VizPanelController(graph);
+        // Initialize sets
+        this.stateHighlighted = new LinkedHashSet<>();
+        this.taintHighlighted = new LinkedHashSet<>();
+        this.immutableStateHidden = new SetHistoryProperty<>(new SimpleSetProperty<>(FXCollections.observableSet()));
+        this.immutableTaintShown = new SetHistoryProperty<>(new SimpleSetProperty<>(FXCollections.observableSet()));
+
+        // Initialize controllers
+        this.codeViewController = new CodeViewController(compilationUnits, sootClasses);
+        this.leftPane.getChildren().add(this.codeViewController.codeTabs);
+
+        this.vizPanelController = new VizPanelController(graph, this);
         this.vizPane.setCenter(this.vizPanelController.root);
 
-        this.taintPanelController = new TaintPanelController(taintGraph);
+        this.taintPanelController = new TaintPanelController(taintGraph, this.codeViewController, this);
         this.taintPane.setCenter(this.taintPanelController.root);
 
         this.searchResultsController = new SearchResultsController();
@@ -62,108 +73,58 @@ public class MainTabController {
         this.tab.tooltipProperty().set(new Tooltip(file.getAbsolutePath()));
         Controllers.put(this.tab, this);
 
-        this.codeViewController = new CodeViewController(compilationUnits, sootClasses);
-        this.leftPane.getChildren().add(this.codeViewController.codeTabs);
-
         this.codeViewController.addSelectHandler(vizPane);
         this.taintPanelController.addSelectHandler(vizPane);
 
         ClassTreeUtils.buildClassTree(this.classTree, this.codeViewController, this.vizPanelController.getImmutableRoot());
 
-        this.vizHighlighted = new LinkedHashSet<>();
-        this.taintHighlighted = new LinkedHashSet<>();
-        this.hidden = new SetHistoryProperty<>(new SimpleSetProperty<>(FXCollections.observableSet()));
-        this.hidden.addListener(this.vizPanelController);
+        // Add listeners
+        this.immutableStateHidden.addListener(this.vizPanelController);
+        this.immutableTaintShown.addListener(this.taintPanelController);
     }
 
     public TreeView<ClassTreeNode> getClassTree() {
         return this.classTree;
     }
 
-    public void setRightText(StateLoopVertex v)
-    {
-        this.vizDescriptionArea.setText("Loop:\n  Class: "
-                + v.getClassDeclaration() + "\n  Method: "
-                + v.getMethodName()       + "\n  Index: "
-                + v.getStatementIndex()   + "\n  Signature: " + v.getLabel()
-                + "\n  Loop info: " + v.getCompilationUnit().loopInfo() + "\n");
+    public void setVizRightText(StateVertex v) {
+        this.vizDescriptionArea.setText(v.getLongText());
+    }
+    public void setTaintRightText(TaintVertex v) {
+        this.taintDescriptionArea.setText(v.getLongText());
     }
 
-
-    public void setRightText(StateMethodVertex v)
-    {
-        this.vizDescriptionArea.setText("Method:\n  Class: "
-                + v.getClassDeclaration() + "\n  Method: "
-                + v.getMethodName()       + "\n  Signature: " + v.getLabel());
+    public SetHistoryProperty<StateVertex> getImmutableStateHidden() {
+        return this.immutableStateHidden;
     }
 
-    public void setRightText(StateSccVertex v)
-    {
-        StringBuilder text = new StringBuilder("SCC contains:\n");
-        int k = 0;
-        Graph<StateVertex, StateEdge> childGraph = v.getInnerGraph();
-        for (StateVertex i : childGraph.getVertices()) {
-            text.append(k++ + "  " + i.getLabel() + "\n");
-        }
-        this.vizDescriptionArea.setText(text.toString());
+    public SetHistoryProperty<TaintVertex> getImmutableTaintShown() {
+        return immutableTaintShown;
     }
 
-    public void setRightText(TaintAddress v) {
-        this.taintDescriptionArea.setText("Taint address:\n" + v.toString());
+    public void hideSelectedStateNodes() {
+        if (this.stateHighlighted.isEmpty()) { return; }
+
+        this.immutableStateHidden.addAll(this.vizPanelController.getImmutable(this.stateHighlighted));
+        this.stateHighlighted.clear();
+        this.vizPanelController.redrawGraph();
     }
 
-    public void setRightText(TaintSccVertex v) {
-        StringBuilder text = new StringBuilder("SCC contains:\n");
-        int k = 0;
-        for(AbstractLayoutVertex<TaintVertex> i : v.getLineSortedChildren()) {
-            text.append(k++ + "  " + i.getLabel() + "\n");
-        }
-        this.taintDescriptionArea.setText(text.toString());
+    public void hideSelectedTaintNodes() {
+        if (this.taintHighlighted.isEmpty()) { return; }
+
+        this.immutableTaintShown.removeAll(this.taintPanelController.getImmutable(this.taintHighlighted));
+        this.taintHighlighted.clear();
+        this.taintPanelController.redrawGraph();
     }
 
-    public void setRightText(TaintStmtVertex v) {
-        StringBuilder text = new StringBuilder("Statement: " + v.getStmt());
-        text.append("\nAddresses: " + v.getAddresses().size());
-        this.taintDescriptionArea.setText(text.toString());
+    public void showAllStateNodes() {
+        this.immutableStateHidden.clear();
+        this.vizPanelController.redrawGraph();
     }
 
-    public void setRightText(TaintMethodVertex v) {
-        this.taintDescriptionArea.setText(v.getRightPanelString());
-    }
-
-    public void setVizRightText(String text) {
-        this.vizDescriptionArea.setText(text);
-    }
-
-    public void setTaintRightText(String text) {
-        this.taintDescriptionArea.setText(text);
-    }
-
-    public SetHistoryProperty<StateVertex> getHidden() {
-        return this.hidden;
-    }
-
-    public void hideSelectedNodes() {
-        this.hidden.addAll(this.getVizHighlighted());
-        this.vizHighlighted.clear();
-    }
-
-    /*
-    public void pruneVisibleGraph() {
-        HashSet<StateVertex> prunedVertices = this.vizPanelController.pruneVisibleGraph();
-        this.hidden.addAll(prunedVertices);
-        this.vizHighlighted.removeAll(prunedVertices);
-        this.vizPanelController.redrawGraph(this.hidden);
-    }
-    */
-
-    public void showAllNodes() {
-        this.hidden.clear();
-        this.vizPanelController.redrawGraph(this.hidden);
-    }
-
-    public HashSet<StateVertex> getVizHighlighted() {
-        return this.vizHighlighted;
+    public HashSet<StateVertex> getStateHighlighted() {
+        return this.stateHighlighted;
     }
 
     public HashSet<TaintVertex> getTaintHighlighted() {
@@ -172,16 +133,16 @@ public class MainTabController {
 
     public void addToHighlighted(StateVertex v) {
         if(v != null) {
-            vizHighlighted.add(v);
+            stateHighlighted.add(v);
             v.setHighlighted(true);
         }
     }
 
     public void resetVizHighlighted() {
-        for(StateVertex currHighlighted : vizHighlighted) {
+        for(StateVertex currHighlighted : stateHighlighted) {
             currHighlighted.setHighlighted(false);
         }
-        vizHighlighted.clear();
+        stateHighlighted.clear();
     }
 
     public void resetHighlighted(StateVertex newHighlighted) {
@@ -208,14 +169,26 @@ public class MainTabController {
         addToHighlighted(newHighlighted);
     }
 
-    public void hideUnrelatedToHighlighted() {
-        if (this.vizHighlighted.isEmpty()) { return; }
+    public void hideUnrelatedToHighlightedState() {
+        if (this.stateHighlighted.isEmpty()) {
+            return;
+        }
 
-        HashSet<StateVertex> toHide = vizPanelController.getUnrelatedVisible(this.vizHighlighted);
+        HashSet<StateVertex> toHideVis = vizPanelController.getUnrelatedVisible(this.stateHighlighted);
+        this.immutableStateHidden.addAll(this.vizPanelController.getImmutable(toHideVis));
+        this.stateHighlighted.clear();
+        this.vizPanelController.redrawGraph();
+    }
 
-        this.hidden.addAll(vizPanelController.getImmutable(toHide));
-        this.vizHighlighted.clear();
-        this.vizPanelController.redrawGraph(this.hidden);
+    public void hideUnrelatedToHighlightedTaint() {
+        if (this.taintHighlighted.isEmpty()) {
+            return;
+        }
+
+        HashSet<TaintVertex> toHideVis = taintPanelController.getUnrelatedVisible(this.taintHighlighted);
+        this.immutableTaintShown.removeAll(this.taintPanelController.getImmutable(toHideVis));
+        this.taintHighlighted.clear();
+        this.taintPanelController.redrawGraph();
     }
 
     // TODO: This should be done using event and event handling using FieldSelectEvent

@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.taint;
 
 import javafx.scene.paint.Color;
+import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 import soot.SootClass;
 import soot.SootMethod;
 
@@ -43,8 +44,6 @@ public class TaintStmtVertex extends TaintVertex {
                 assert this.sootMethod == a.getSootMethod();
             }
         });
-
-
         assert this.sootClass != null;
         assert this.sootMethod != null;
     }
@@ -78,6 +77,13 @@ public class TaintStmtVertex extends TaintVertex {
     }
 
     @Override
+    public String getLongText() {
+        StringBuilder text = new StringBuilder("Statement: " + getStmt());
+        text.append("\nAddresses: " + getAddresses().size());
+        return text.toString();
+    }
+
+    @Override
     public void getFields(Collection<TaintAddress> store) {
         taintAddresses.forEach(a -> a.getFields(store));
     }
@@ -95,5 +101,17 @@ public class TaintStmtVertex extends TaintVertex {
     @Override
     public String getMethodName() {
         return sootMethod.getName();
+    }
+
+    @Override
+    public List<TaintVertex> expand() {
+        List<TaintVertex> expandedVertices = new ArrayList<>();
+        expandedVertices.add(this);
+        return expandedVertices;
+    }
+
+    @Override
+    public LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
+        return LayoutAlgorithm.LAYOUT_ALGORITHM.DFS;
     }
 }

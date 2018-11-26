@@ -19,13 +19,18 @@ public class SetHistoryProperty<T> extends SetPropertyBase<T> {
     }
 
     @Override
+    public ObservableSet<T> getValue() {
+        return this.bean.get(currentIndex);
+    }
+
+    @Override
     public String getName() {
         return "set_history";
     }
 
     @Override
     public boolean add(T item) {
-        System.out.println("Intercepting add event for SetHistoryProperty...");
+        // System.out.println("Intercepting add event for SetHistoryProperty...");
         ObservableSet<T> newSet = this.copyCurrent();
         boolean modified = newSet.add(item);
 
@@ -38,7 +43,7 @@ public class SetHistoryProperty<T> extends SetPropertyBase<T> {
 
     @Override
     public boolean addAll(Collection<? extends T> c) {
-        System.out.println("Intercepting addAll event for SetHistoryProperty...");
+        // System.out.println("Intercepting addAll event for SetHistoryProperty...");
         ObservableSet<T> newSet = this.copyCurrent();
         boolean modified = newSet.addAll(c);
 
@@ -49,8 +54,9 @@ public class SetHistoryProperty<T> extends SetPropertyBase<T> {
         return modified;
     }
 
+    @Override
     public boolean remove(Object obj) {
-        System.out.println("Intercepting remove event for SetHistoryProperty...");
+        // System.out.println("Intercepting remove event for SetHistoryProperty...");
         ObservableSet<T> newSet = this.copyCurrent();
         boolean modified = newSet.remove(obj);
 
@@ -61,8 +67,9 @@ public class SetHistoryProperty<T> extends SetPropertyBase<T> {
         return modified;
     }
 
+    @Override
     public boolean removeAll(Collection<?> c) {
-        System.out.println("Intercepting removeAll event for SetHistoryProperty...");
+        // System.out.println("Intercepting removeAll event for SetHistoryProperty...");
         ObservableSet<T> newSet = this.copyCurrent();
         boolean modified = newSet.removeAll(c);
 
@@ -73,15 +80,12 @@ public class SetHistoryProperty<T> extends SetPropertyBase<T> {
         return modified;
     }
 
-
     @Override
     public void clear() {
-        System.out.println("Intercepting clear event for SetHistoryProperty...");
-        this.trimAfterCurrent();
-        ObservableSet<T> newSet = FXCollections.observableSet();
-        bean.add(newSet);
-        currentIndex++;
-        this.fireValueChangedEvent();
+        // System.out.println("Intercepting clear event for SetHistoryProperty...");
+        if (this.getBean().size() > 0) {
+            this.update(FXCollections.observableSet());
+        }
     }
 
     public SetHistoryProperty(ObservableSet<T> initialValue) {

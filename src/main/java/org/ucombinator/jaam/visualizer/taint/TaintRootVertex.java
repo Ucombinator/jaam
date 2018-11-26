@@ -4,10 +4,9 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.graph.GraphTransform;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
+import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class TaintRootVertex extends TaintVertex {
 
@@ -30,6 +29,10 @@ public class TaintRootVertex extends TaintVertex {
         return GraphUtils.constructVisibleGraph(this, verticesToDraw::contains, TaintEdge::new);
     }
 
+    public GraphTransform<TaintRootVertex, TaintVertex> constructVisibleGraphExcept(Set<TaintVertex> verticesToHide) {
+        return GraphUtils.constructVisibleGraph(this, (TaintVertex v) -> !verticesToHide.contains(v), TaintEdge::new);
+    }
+
     public HashSet<String> getMethodNames() {
         return new HashSet<>();
     }
@@ -47,5 +50,19 @@ public class TaintRootVertex extends TaintVertex {
     @Override
     public String getStmtString() {
         return null;
+    }
+
+    @Override
+    public List<TaintVertex> expand() {
+        List<TaintVertex> expandedVertices = new ArrayList<>();
+        for (TaintVertex v : this.getInnerGraph().getVertices()) {
+            expandedVertices.addAll(v.expand());
+        }
+        return expandedVertices;
+    }
+
+    @Override
+    public LayoutAlgorithm.LAYOUT_ALGORITHM getPreferredLayout() {
+        return LayoutAlgorithm.LAYOUT_ALGORITHM.DFS;
     }
 }

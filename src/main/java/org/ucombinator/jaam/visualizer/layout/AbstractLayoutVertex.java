@@ -12,7 +12,7 @@ import org.ucombinator.jaam.visualizer.gui.GUINodeStatus;
 
 import java.util.Set;
 
-public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
+public abstract class AbstractLayoutVertex
         implements Vertex
 {
     // Types of layout vertices
@@ -35,7 +35,7 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
     private VertexStatus vertexStatus;
 
     // Graphic related fields
-    private GUINode<T> graphics;
+    private GUINode graphics;
     private GUINodeStatus nodeStatus = new GUINodeStatus();
 
     public static final double DEFAULT_WIDTH = 10.0;
@@ -49,7 +49,6 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
 
     private boolean isExpanded = true;
     private boolean isHidden = false;
-    private boolean isLabelVisible = false;
     private boolean isEdgeVisible = true;
     private boolean drawEdges;
     private boolean isSelected = false;
@@ -77,6 +76,10 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
     }
 
     public String getLabel() {
+        return this.label;
+    }
+
+    public String getLongText() {
         return this.label;
     }
 
@@ -135,13 +138,14 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         return this.nodeStatus;
     }
 
-    public GUINode<T> getGraphics()
+    public GUINode getGraphics()
     {
         return this.graphics;
     }
-    public void setGraphics(GUINode<T> graphics)
-    {
-        this.graphics = graphics;
+
+    public GUINode setGraphics(GUINode parent) {
+        this.graphics = new GUINode(parent, this);
+        return this.graphics;
     }
 
     public void setColor(Color c) {
@@ -190,9 +194,9 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         }
 
         if (isHighlighted) {
-            this.getGraphics().getRect().setEffect(highlightShadow);
+            this.getGraphics().setEffect(highlightShadow);
         } else {
-            this.getGraphics().getRect().setEffect(null);
+            this.getGraphics().setEffect(null);
         }
     }
 
@@ -204,22 +208,12 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         this.isExpanded = expanded;
     }
 
-    public boolean isLabelVisible() {
-        return isLabelVisible;
-    }
-
     public boolean isEdgeVisible() {
         return isEdgeVisible;
     }
 
     public void setEdgeVisible(boolean isEdgeVisible) {
         this.isEdgeVisible = isEdgeVisible;
-    }
-
-    public void setLabelVisible(boolean isLabelVisible)
-    {
-        this.isLabelVisible = isLabelVisible;
-        this.getGraphics().setLabelVisible(isLabelVisible);
     }
 
     public void resetStrokeWidth(double factor) {
@@ -233,7 +227,7 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
     public void setClassHighlight(boolean isHighlighted)
     {
         if(!isSelected) {
-            this.getGraphics().getRect().setEffect(isHighlighted ? classHighlightShadow : null);
+            this.getGraphics().setEffect(isHighlighted ? classHighlightShadow : null);
         }
     }
 
@@ -245,6 +239,6 @@ public abstract class AbstractLayoutVertex<T extends AbstractLayoutVertex<T>>
         this.getIncidentEdges().forEach(LayoutEdge::resetEdgePath);
     }
 
-    public abstract Set<? extends LayoutEdge<T>> getIncidentEdges();
+    public abstract Set<? extends LayoutEdge<? extends AbstractLayoutVertex>> getIncidentEdges();
     public abstract void onMouseClick(MouseEvent event);
 }

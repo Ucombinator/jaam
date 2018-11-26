@@ -7,13 +7,16 @@ import org.ucombinator.jaam.serializer.LoopLoopNode;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.layout.MethodEntity;
 import soot.SootClass;
+import soot.Value;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 
 public class StateLoopVertex extends StateVertex implements Cloneable, MethodEntity {
 
-    enum TYPE { ITERATOR, ARRAY, SIMPLE_COUNT_UP, SIMPLE_COUNT_DOWN, UNKNOWN}
+    enum TYPE { ITERATOR, ARRAY, SIMPLE_COUNT_UP, SIMPLE_COUNT_DOWN, DYNAMIC_COUNT_UP, UNKNOWN}
 
     private static final Color defaultColor = Color.LIGHTYELLOW;
     private static final Color unknownLoopColor = Color.RED;
@@ -21,6 +24,9 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
     private static final Color arrayLoopColor = Color.GOLD;
     private static final Color simpleCountUpLoopColor = Color.PERU;
     private static final Color simpleCountDownLoopColor = Color.ORANGE;
+    private static final Color dynamicCountUpLoopColor = Color.LIGHTGRAY;
+    private static final Color dynamicCountUpWithOffsetLoopColor = Color.DARKGRAY;
+    private static final Color characterForLoopColor = Color.DARKGREEN;
 
     private final int statementIndex;
 
@@ -77,13 +83,97 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
         return classDecl.toString();
     }
 
+    public ArrayList<Value> getLoopValues() {
+
+        ArrayList<Value> result = new ArrayList<>();
+
+        if (this.isUnidentifiedLoop()) {
+            return result;
+        }
+
+        Loop.LoopInfo loopInfo = getCompilationUnit().loopInfo();
+
+        if (loopInfo instanceof Loop.IteratorLoop) {
+            Value value = ((Loop.IteratorLoop) loopInfo).iterable();
+            result.add(value);
+        }
+        else if (loopInfo instanceof Loop.ArrayLoop) {
+            Value value = ((Loop.ArrayLoop) loopInfo).iterable();
+            result.add(value);
+        }
+        else if (loopInfo instanceof Loop.SimpleCountUpForLoop) {
+            Value valueLower = ((Loop.SimpleCountUpForLoop) loopInfo).lowerBound();
+            Value valueUpper = ((Loop.SimpleCountUpForLoop) loopInfo).upperBound();
+            Value valueIncrement = ((Loop.SimpleCountUpForLoop) loopInfo).increment();
+            result.add(valueLower);
+            result.add(valueUpper);
+            result.add(valueIncrement);
+        }
+        else if (loopInfo instanceof Loop.SimpleCountDownForLoop) {
+            Value valueLower = ((Loop.SimpleCountDownForLoop) loopInfo).lowerBound();
+            Value valueUpper = ((Loop.SimpleCountDownForLoop) loopInfo).upperBound();
+            Value valueIncrement = ((Loop.SimpleCountDownForLoop) loopInfo).increment();
+            result.add(valueLower);
+            result.add(valueUpper);
+            result.add(valueIncrement);
+        }
+        else if (loopInfo instanceof Loop.DynamicCountUpForLoop) {
+            Value valueLower = ((Loop.DynamicCountUpForLoop) loopInfo).lowerBound();
+            Value valueUpper = ((Loop.DynamicCountUpForLoop) loopInfo).upperBound();
+            Value valueIncrement = ((Loop.DynamicCountUpForLoop) loopInfo).increment();
+            result.add(valueLower);
+            result.add(valueUpper);
+            result.add(valueIncrement);
+        }
+        else if (loopInfo instanceof Loop.DynamicCountUpForLoopWithOffset) {
+            Value valueLower = ((Loop.DynamicCountUpForLoopWithOffset) loopInfo).lowerBound();
+            Value valueUpper = ((Loop.DynamicCountUpForLoopWithOffset) loopInfo).upperBound();
+            Value valueIncrement = ((Loop.DynamicCountUpForLoopWithOffset) loopInfo).increment();
+            Value valueOffset = ((Loop.DynamicCountUpForLoopWithOffset) loopInfo).offset();
+            result.add(valueLower);
+            result.add(valueUpper);
+            result.add(valueIncrement);
+            result.add(valueOffset);
+        }
+        else if (loopInfo instanceof Loop.CharacterForLoop) {
+            Value valueLower = ((Loop.CharacterForLoop) loopInfo).lowerBound();
+            Value valueUpper = ((Loop.CharacterForLoop) loopInfo).upperBound();
+            Value valueIncrement = ((Loop.CharacterForLoop) loopInfo).increment();
+            result.add(valueLower);
+            result.add(valueUpper);
+            result.add(valueIncrement);
+        }
+
+
+        return result;
+    }
+
+    public boolean isUnidentifiedLoop() {
+
+        Loop.LoopInfo loopInfo = getCompilationUnit().loopInfo();
+        if (loopInfo instanceof Loop.UnidentifiedLoop) return true;
+
+        if (       loopInfo instanceof Loop.IteratorLoop
+                || loopInfo instanceof Loop.ArrayLoop
+                || loopInfo instanceof Loop.SimpleCountUpForLoop
+                || loopInfo instanceof Loop.SimpleCountUpForLoop
+        ) {
+            return false;
+        }
+        return true;
+    }
 
     public LoopLoopNode getCompilationUnit() {
         return compilationUnit;
     }
 
-    public String getRightPanelContent() {
-        return "Loop vertex: " + this.getMethodName();
+    @Override
+    public String getLongText() {
+        return "Loop:\n  Class: "
+                + getClassDeclaration() + "\n  Method: "
+                + getMethodName()       + "\n  Index: "
+                + getStatementIndex()   + "\n  Signature: " + getLabel()
+                + "\n  Loop info: " + getCompilationUnit().loopInfo() + "\n";
     }
 
     @Override
@@ -93,7 +183,7 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
         if(found) {
             System.out.println("\t\t\tFound " + this);
             this.setHighlighted(found);
-            mainTab.getVizHighlighted().add(this);
+            mainTab.getStateHighlighted().add(this);
         }
 
         return found;
@@ -129,6 +219,15 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
         else if(this.compilationUnit.loopInfo() instanceof Loop.SimpleCountDownForLoop) {
             this.color = simpleCountDownLoopColor;
         }
+        else if(this.compilationUnit.loopInfo() instanceof Loop.DynamicCountUpForLoop) {
+            this.color = dynamicCountUpLoopColor;
+        }
+        else if(this.compilationUnit.loopInfo() instanceof Loop.DynamicCountUpForLoopWithOffset) {
+            this.color = dynamicCountUpWithOffsetLoopColor;
+        }
+        else if(this.compilationUnit.loopInfo() instanceof Loop.CharacterForLoop) {
+            this.color = characterForLoopColor;
+        }
         else {
             this.color = defaultColor;
         }
@@ -142,4 +241,10 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
     public int getStatementIndex() {
 		return statementIndex;
 	}
+
+    public List<StateVertex> expand() {
+        List<StateVertex> expandedVertices = new ArrayList<>();
+        expandedVertices.add(this);
+        return expandedVertices;
+    }
 }

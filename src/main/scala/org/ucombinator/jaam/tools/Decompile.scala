@@ -96,7 +96,7 @@ object Main {
     }
   }
 
-  def main(input: List[String], output: String, exclude: List[String], jvm: Boolean, lib: Boolean, app: Boolean) {
+  def main(input: List[String], output: String, exclude: List[String], jvm: Boolean, lib: Boolean, app: Boolean, ignoreOverflow: Boolean) {
     val typeLoader = new HashMapTypeLoader()
     Main.setTypeLoader(typeLoader)
 
@@ -169,6 +169,9 @@ object Main {
           }
         } catch {
           case e: java.lang.OutOfMemoryError => println(f"Out of memory, skipping")
+          case e: java.lang.StackOverflowError =>
+            if (ignoreOverflow) { e.printStackTrace(); println(f"Stack overflow, skipping") }
+            else { throw e }
         }
       }
       index += 1

@@ -24,8 +24,11 @@ fi
 
 while test -n "$*"; do
   case "$1" in
-    (--no-prune) loop3_flags=--no-prune ;;
-    (--app-package) app_flags+=" --app-package $2"; shift;;
+    (--no-prune) loop3_flags+=" $1" ;;
+    (--ignore-overflow) decompile_flags+=" $1" ;;
+    (--app-package) app_flags+=" $1 $2"; shift;;
+    (--main-class) app_flags+=" $1 $2"; shift;;
+    (--main-method) app_flags+=" $1 $2"; shift;;
     (*) echo "ERROR: unknown argument(s): $*"; exit 1 ;;
   esac
   shift
@@ -33,7 +36,7 @@ done
 
 # Run Jaam
 "$JAAM_exec" app $app_flags --input "$file" --output "$file".app.jaam
-"$JAAM_exec" decompile --input "$file".app.jaam --output "$file".decompile.jaam
+"$JAAM_exec" decompile $decompile_flags --input "$file".app.jaam --output "$file".decompile.jaam
 "$JAAM_exec" loop3 $loop3_flags --input "$file".app.jaam --output "$file".loop3.jaam
 "$JAAM_exec" taint3 --input "$file".app.jaam --output "$file".taint3.jaam
 "$JAAM_exec" cat \

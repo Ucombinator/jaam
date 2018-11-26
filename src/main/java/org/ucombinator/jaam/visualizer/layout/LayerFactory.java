@@ -40,8 +40,11 @@ public class LayerFactory
     }
 
     public static GraphTransform<TaintRootVertex, TaintVertex> getLayeredTaintGraph(TaintRootVertex root) {
-        //return getStronglyConnectedComponentsTaintGraph(root);
         return getMethodGroupingGraph(root);
+    }
+
+    public static GraphTransform<TaintRootVertex, TaintVertex> getTaintClassGrouping(TaintRootVertex root) {
+        return getClassGroupingGraph(root);
     }
 
     private static GraphTransform<TaintRootVertex, TaintVertex> getStronglyConnectedComponentsTaintGraph(TaintRootVertex root) {
@@ -74,6 +77,8 @@ public class LayerFactory
         }
         return vertexToComponentIndex;
     }
+
+
 
     /*
     private static TaintRootVertex getClassClusteredTaintGraph(Graph<TaintVertex, TaintEdge> graph) {
@@ -114,18 +119,15 @@ public class LayerFactory
         return h;
     }
 
-    private static TaintRootVertex getClassGroupingGraph(Graph<TaintVertex, TaintEdge> graph)
+    private static GraphTransform<TaintRootVertex, TaintVertex> getClassGroupingGraph(TaintRootVertex root)
     {
-        TaintRootVertex graphRoot = new TaintRootVertex();
-        graphRoot.setInnerGraph(graph);
-
-        return (TaintRootVertex) GraphUtils.compressGraph(graphRoot,
+        return GraphUtils.copyAndCompressGraph(root,
                 v -> {
                     String className = v.getClassName();
 
                     if (className == null) { className = v.toString(); }
 
-                    System.out.println("JUAN: Called hash function on class" + className );
+                    //System.out.println("JUAN: Called hash function on class" + className );
 
                     return longHash((className));
                 },
@@ -162,16 +164,42 @@ public class LayerFactory
                 },
                 new Function<List<TaintVertex>, TaintVertex>() {
                     @Override
-                    public TaintVertex apply(List<TaintVertex> stateVertices) {
+                    public TaintVertex apply(List<TaintVertex> taintVertices) {
 
-                        String methodName = stateVertices.stream().findFirst().get().getMethodName();
+                        TaintVertex representative = taintVertices.stream().findFirst().get();
+                        String className  = representative.getClassName();
+                        String methodName = representative.getMethodName();
                         assert methodName != null;
 
-                        TaintMethodVertex methodVertex = new TaintMethodVertex(methodName, LayoutAlgorithm.LAYOUT_ALGORITHM.DFS);
-                        stateVertices.forEach(v -> {
-                            methodVertex.getInnerGraph().addVertex(v);
-                            v.setOuterGraph(methodVertex.getInnerGraph());
-                        });
+                        ArrayList<TaintVertex> inputs = new ArrayList<>(), inner = new ArrayList<>(), outputs = new ArrayList<>();
+
+                        //System.out.println("Processing " + className + "." + methodName);
+                        for (TaintVertex v : taintVertices) {
+
+                            if (!(v instanceof TaintAddress)) {
+                                inner.add(v);
+                                System.out.println("\t" + v + " is not an address");
+                                continue;
+                            }
+
+
+
+                            TaintAddress a = (TaintAddress)v;
+                            //System.out.println("\t" + a.toString() + " is a " + a.type);
+
+                            if (a.type == TaintAddress.Type.Parameter) {
+                                inputs.add(v);
+                            }
+                            else if (a.type == TaintAddress.Type.Return) {
+                                outputs.add(v);
+                            }
+                            else {
+                                inner.add(v);
+                            }
+                        }
+
+                        TaintMethodVertex methodVertex = new TaintMethodVertex(className, methodName, LayoutAlgorithm.LAYOUT_ALGORITHM.DFS,
+                                inputs, inner, outputs);
                         return methodVertex;
                     }
                 },

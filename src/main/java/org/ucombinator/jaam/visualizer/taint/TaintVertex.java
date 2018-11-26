@@ -14,7 +14,7 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
+public abstract class TaintVertex extends AbstractLayoutVertex
         implements HierarchicalVertex<TaintVertex, TaintEdge> {
 
     public static Color defaultColor = Color.LIGHTGREEN;
@@ -79,13 +79,28 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
     }
 
     public void onMouseClick(MouseEvent event) {
-        if (event.isShiftDown()) {
-            System.out.println("Shift is down!\n");
-            Main.getSelectedMainTabController().addToHighlighted(this);
-        } else {
-            Main.getSelectedMainTabController().resetHighlighted(this);
+
+        switch (event.getClickCount()) {
+            case 1:
+                if (event.isShiftDown()) {
+                    System.out.println("Shift is down!\n");
+                    Main.getSelectedMainTabController().addToHighlighted(this);
+                } else {
+                    Main.getSelectedMainTabController().resetHighlighted(this);
+                }
+                this.getGraphics().fireEvent(new SelectEvent<TaintVertex>(MouseButton.PRIMARY, this.getGraphics()
+                        , this, SelectEvent.VERTEX_TYPE.TAINT));
+                break;
+            case 2:
+                if (this instanceof TaintMethodVertex) {
+                    ((TaintMethodVertex)this).handleDoubleClick();
+                }
+
+                break;
+            default:
+                // Do nothing
+                break;
         }
-        this.getGraphics().fireEvent(new SelectEvent<TaintVertex>(MouseButton.PRIMARY, this.getGraphics(), this));
     }
 
     public void searchByMethodNames(Set<String> searchMethodNames, Set<TaintVertex> results) {
@@ -109,13 +124,10 @@ public abstract class TaintVertex extends AbstractLayoutVertex<TaintVertex>
     }
 
     public abstract HashSet<String> getMethodNames();
-
     public abstract boolean hasField();
-
-    // This should probably less specific
     public abstract void getFields(Collection<TaintAddress> store);
-
     public abstract String getStmtString();
+    public abstract List<TaintVertex> expand();
 
     public String getClassName() {
         return null;

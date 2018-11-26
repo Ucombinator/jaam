@@ -11,6 +11,7 @@ import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.state.*;
+import org.ucombinator.jaam.visualizer.taint.TaintVertex;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -22,8 +23,8 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
 
     public GraphTransform<StateRootVertex, StateVertex> immAndVis;
 
-    public VizPanelController(Graph<StateVertex, StateEdge> graph) throws IOException {
-        super(StateRootVertex::new);
+    public VizPanelController(Graph<StateVertex, StateEdge> graph, MainTabController tabController) throws IOException {
+        super(StateRootVertex::new, tabController);
 
         // Custom event handlers
         this.graphContentGroup.addEventFilter(SelectEvent.STATE_VERTEX_SELECTED, this);
@@ -32,18 +33,25 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         this.immutableRoot = new StateRootVertex();
         this.immutableRoot.setInnerGraph(graph);
         setAllImmutable(this.immutableRoot);
-        this.drawGraph(new HashSet<>(), true);
+        this.drawGraph();
     }
 
     @Override
     public void redrawGraphAction(ActionEvent event) throws IOException {
         event.consume();
-        this.redrawGraph(Main.getSelectedMainTabController().getHidden());
+        this.redrawGraph();
     }
+
+    @Override
+    public void hideSelectedAction(ActionEvent event) throws IOException {
+        event.consume();
+        this.tabController.hideSelectedStateNodes();
+    }
+
     @Override
     public void hideUnrelatedAction(ActionEvent event) throws IOException {
         event.consume();
-        Main.getSelectedMainTabController().hideUnrelatedToHighlighted();
+        this.tabController.hideUnrelatedToHighlightedState();
     }
 
     // Handles select events
@@ -58,25 +66,15 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
 
         System.out.println("Received event from vertex " + vertex.toString());
 
-        MainTabController currentFrame = Main.getSelectedMainTabController();
-        if(vertex instanceof StateLoopVertex) {
-            currentFrame.setRightText((StateLoopVertex) vertex);
-        } else if(vertex instanceof StateMethodVertex) {
-            currentFrame.setRightText((StateMethodVertex) vertex);
-        } else if(vertex instanceof StateSccVertex) {
-            currentFrame.setRightText((StateSccVertex) vertex);
-        }
-        else {
-            currentFrame.setVizRightText("Text");
-        }
+        this.tabController.setVizRightText(vertex);
     }
 
-    public void drawGraph(Set<StateVertex> hidden, boolean newAction) {
+    public void drawGraph() {
         visibleRoot.setVisible(false);
+        // System.out.println("JUAN: Immutable graph #Edges: " + this.getImmutableRoot().getInnerGraph().getEdges().size());
+        // GraphUtils.printGraph(this.getImmutableRoot(), 0);
 
-        System.out.println("JUAN: Immutable graph #Edges: " + this.getImmutableRoot().getInnerGraph().getEdges().size());
-        GraphUtils.printGraph(this.getImmutableRoot(), 0);
-
+        Set<StateVertex> hidden = this.tabController.getImmutableStateHidden();
         if (!hidden.isEmpty()) {
             GraphTransform<StateRootVertex, StateVertex> hiddenTransform = getImmutableRoot().constructVisibleGraphExcept(hidden);
             GraphTransform<StateRootVertex, StateVertex> compact = LayerFactory.getLayeredLoopGraph(hiddenTransform.newRoot);
@@ -85,10 +83,20 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         } else { // Work directly on immutable graph
             this.immAndVis = LayerFactory.getLayeredLoopGraph(getImmutableRoot());
         }
+
         this.visibleRoot = immAndVis.newRoot;
 
-        System.out.println("JUAN: Print visible graph #Edges: " + this.getImmutableRoot().getInnerGraph().getEdges().size());
-        GraphUtils.printGraph(this.visibleRoot, 0);
+        for (StateVertex v : visibleRoot.getInnerGraph().getVertices()) {
+
+            if (v instanceof StateMethodVertex) {
+                if (visibleRoot.getInnerGraph().getOutNeighbors(v).contains(v)) {
+                    ((StateMethodVertex) v).setRecursiveColor();
+                }
+            }
+        }
+
+        // System.out.println("JUAN: Print visible graph #Edges: " + this.getImmutableRoot().getInnerGraph().getEdges().size());
+        // GraphUtils.printGraph(this.visibleRoot, 0);
 
         LayoutAlgorithm.layout(this.visibleRoot);
         drawNodes(null, visibleRoot);
@@ -97,15 +105,15 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         visibleRoot.setVisible(true);
     }
 
-    public void redrawGraph(Set<StateVertex> hidden) {
-        System.out.println("Redrawing loop graph...");
+    public void redrawGraph() {
+        // System.out.println("Redrawing loop graph...");
         this.graphContentGroup.getChildren().remove(this.visibleRoot.getGraphics());
-        this.drawGraph(hidden, false);
+        this.drawGraph();
     }
 
     public void resetStrokeWidth() {
         this.visibleRoot.applyToVerticesRecursive(
-                (HierarchicalVertex<StateVertex, StateEdge> w) -> ((AbstractLayoutVertex<StateVertex>) w)
+                (HierarchicalVertex<StateVertex, StateEdge> w) -> ((AbstractLayoutVertex) w)
                         .resetStrokeWidth(1.0 / this.zoomSpinner.getValue()));
     }
 
@@ -116,7 +124,7 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
     // Changes to the hidden set
     @Override
     public void onChanged(Change<? extends StateVertex> change) {
-        System.out.println("VizPanel responding to change in hidden set...");
+        // System.out.println("VizPanel responding to change in hidden set...");
         if (change.wasAdded()) {
             StateVertex immV = change.getElementAdded();
             checkImmutable(immV);
@@ -140,18 +148,17 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         for (StateVertex immV : vertices) {
             checkImmutable(immV);
             StateVertex v = immAndVis.getNew(immV);
-            if (!v.isHidden()) {
+            if (v != null && !v.isHidden()) {
                 v.setClassHighlight(value);
             }
         }
     }
 
     // Selection are **visible** nodes
-    // Returns the immutable nodes related to the selection of visible nodes
+    // Returns the visible nodes unrelated to the current selection of visible nodes
     public HashSet<StateVertex> getUnrelatedVisible(HashSet<StateVertex> selection) {
 
         HashSet<StateVertex> keep = new HashSet<>();
-
         Graph<StateVertex, StateEdge> topLevel = getVisibleRoot().getInnerGraph();
 
         selection.forEach(v -> keep.addAll(v.getAncestors()));
@@ -183,9 +190,9 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
     }
 
     public HashSet<StateVertex> getImmutable(HashSet<StateVertex> visible) {
-        return visible.stream().
-                filter(immAndVis::containsNew). // Filters out vertices that don't exist in the immutable graph (e.g. scc)
-                map(v -> { return immAndVis.getOld(v);}).collect(Collectors.toCollection(HashSet::new));
+        return visible.stream()
+                .flatMap(v -> v.expand().stream())
+                .map(v -> immAndVis.getOld(v)).collect(Collectors.toCollection(HashSet::new));
     }
 
     public StateVertex getImmutable(StateVertex visible) {

@@ -246,7 +246,7 @@ object Taint3 {
     output2JaamFile(outSerializer)
     outSerializer.close()
 
-    printToGraphvizFile(output, graph, appClasses)
+    //printToGraphvizFile(output, graph, appClasses)
   }
 
   def loadInput(input: List[String]): (Set[SootClass], Set[SootClass]) = {
@@ -304,6 +304,18 @@ object Taint3 {
 
   def handleDynamicInvoke(a0: Address, stmt: Stmt, rhs: DynamicInvokeExpr): Unit = {
     val lambda@Soot.DecodedLambda(_, interfaceMethod, implementationMethod, captures) = Soot.decodeLambda(rhs)
+
+    // TODO: breaking taint flow when an interfaceMethod or implementationMethod comes back as null
+    if (interfaceMethod == null) {
+      // TODO: this was specifically introduced to accommodate the `effectshero` app from Engagement 6
+      System.err.println("skipping null interfaceMethod in Stmt: " + stmt)
+      return
+    }
+    if (implementationMethod == null) {
+      // TODO: this was specifically introduced to accommodate the `simplevote_3` app from Engagement 6
+      System.err.println("skipping null implementationMethod in Stmt: " + stmt)
+      return
+    }
 
     val aCaptures = captures.asScala.map(eval(stmt, _))
     val aIfaceParams = for (i <- 0 until interfaceMethod.getParameterCount)

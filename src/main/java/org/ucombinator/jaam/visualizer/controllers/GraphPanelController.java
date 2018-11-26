@@ -29,13 +29,16 @@ import java.io.File;
 import java.io.IOException;
 import java.util.function.Supplier;
 
-public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & HierarchicalVertex<T, S>, S extends LayoutEdge<T> & Edge<T>> {
+public abstract class GraphPanelController<T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends LayoutEdge<T> & Edge<T>> {
 
     @FXML protected final Node root = null; // Initialized by Controllers.loadFXML()
     @FXML protected final Spinner<Double> zoomSpinner = null; // Initialized by Controllers.loadFXML()
 
     @FXML protected final Button redrawGraph = null;
+    @FXML protected final Button hideSelected = null;
     @FXML protected final Button hideUnrelated = null;
+    @FXML protected final Button expandAllButton = null;
+    @FXML protected final Button collapseAllButton = null;
 
     @FXML protected final CheckBox showEdges = null; // Initialized by Controllers.loadFXML()
     @FXML protected final CheckBox showLabels = null; // Initialized by Controllers.loadFXML()
@@ -44,9 +47,11 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
 
     protected Group graphContentGroup;
     protected T visibleRoot, immutableRoot;
+    MainTabController tabController;
 
-    public GraphPanelController(Supplier<T> rootBuilder) throws IOException {
+    public GraphPanelController(Supplier<T> rootBuilder, MainTabController tabController) throws IOException {
         Controllers.loadFXML("/GraphPane.fxml", this);
+        this.tabController = tabController;
 
         this.graphContentGroup = new Group();
         this.graphContentGroup.setVisible(true);
@@ -71,8 +76,9 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
         return this.immutableRoot;
     }
 
-    protected void drawNodes(GUINode<T> parent, T v) {
-        GUINode<T> node = new GUINode<>(parent, v);
+    protected void drawNodes(GUINode parent, T v) {
+
+        GUINode node = v.setGraphics(parent);
 
         if (parent == null) {
             this.graphContentGroup.getChildren().clear();
@@ -85,6 +91,7 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
         double translateY = v.getY();
         double width = v.getWidth();
         double height = v.getHeight();
+
         node.setTranslateLocation(translateX, translateY, width, height);
 
         Graph<T, S> childGraph = v.getInnerGraph();
@@ -115,15 +122,8 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
         this.visibleRoot.setVisible(false);
         this.visibleRoot.applyToEdgesRecursive(
                 (HierarchicalVertex<T, S> w)
-                        -> ((AbstractLayoutVertex<T>) w).setEdgeVisible(this.showEdges.isSelected()),
+                        -> ((AbstractLayoutVertex) w).setEdgeVisible(this.showEdges.isSelected()),
                 (S e) -> e.redrawAndSetVisible(this.showEdges.isSelected()));
-        this.visibleRoot.setVisible(true);
-    }
-
-    @FXML public void showLabelsAction(ActionEvent event) {
-        this.visibleRoot.setVisible(false);
-        this.visibleRoot.applyToVerticesRecursive((HierarchicalVertex<T, S> w)
-                -> ((AbstractLayoutVertex<T>) w).setLabelVisible(this.showLabels.isSelected()));
         this.visibleRoot.setVisible(true);
     }
 
@@ -168,9 +168,25 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex<T> & H
         event.consume();
         System.out.println("Redraw Graph not implemented");
     }
+
+    @FXML public void hideSelectedAction(ActionEvent event) throws IOException {
+        event.consume();
+        System.out.println("Hide Selected not implemented");
+    }
+
     @FXML public void hideUnrelatedAction(ActionEvent event) throws IOException {
         event.consume();
         System.out.println("Hide Unrelated not implemented");
+    }
+
+    @FXML public void expandAll(ActionEvent event) throws IOException {
+        event.consume();
+        System.out.println(" Expand All not implemented");
+    }
+
+    @FXML public void collapseAll(ActionEvent event) throws IOException {
+        event.consume();
+        System.out.println("Collapse All Unrelated not implemented");
     }
 
 }

@@ -33,6 +33,7 @@ case class Stmt(sootStmt : SootStmt, sootMethod : SootMethod) extends CachedHash
   val index: Int = Stmt.getIndex(sootStmt, sootMethod)
   val line: Int = sootStmt.getJavaSourceStartLineNumber
   val column: Int = sootStmt.getJavaSourceStartColumnNumber
+
   val sourceFile: String =
     sootMethod.getDeclaringClass.getTag("SourceFileTag") match {
       case null => "<unknown>"

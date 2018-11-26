@@ -1,5 +1,8 @@
 package org.ucombinator.jaam.visualizer.gui;
 
+import com.sun.org.apache.regexp.internal.RE;
+import javafx.beans.WeakInvalidationListener;
+import javafx.beans.property.DoubleProperty;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -17,38 +20,23 @@ import org.ucombinator.jaam.visualizer.layout.*;
 import org.ucombinator.jaam.visualizer.state.StateRootVertex;
 import org.ucombinator.jaam.visualizer.taint.TaintRootVertex;
 
-public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
-{
-    private static final double TEXT_VERTICAL_PADDING = 15;
-    private static final double TEXT_HORIZONTAL_PADDING = 15;
+public class GUINode extends Group {
 
-    private final Rectangle rect;
-    private final Text rectLabel;
-    private final T vertex;
-    private final GUINode<T> parent;
+    protected final Rectangle rect;
+    protected final AbstractLayoutVertex vertex;
+    protected final GUINode parent;
 
     private Point2D dragStart;
 
-    public GUINode(GUINode<T> parent, T v)
+    public GUINode(GUINode parent, AbstractLayoutVertex v)
     {
         super();
         this.parent = parent;
         this.vertex = v;
-        this.vertex.setGraphics(this);
 
         this.rect = new Rectangle();
 
-        this.rectLabel = new Text(v.getId() + "");
-        this.rectLabel.setVisible(v.isLabelVisible());
-
-        if (v instanceof StateRootVertex || v instanceof TaintRootVertex) {
-            this.getChildren().add(this.rect);
-        } else {
-            this.getChildren().addAll(this.rect, this.rectLabel);
-        }
-
-        this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
-        this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
+        this.getChildren().add(this.rect);
 
         this.rect.setArcWidth(5);
         this.rect.setArcHeight(5);
@@ -96,6 +84,14 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
         this.vertex.getIncidentEdges().forEach(LayoutEdge::redrawEdge);
     }
 
+    public double getWidth() {
+        return getWidthProperty().get();
+    }
+
+    public DoubleProperty getWidthProperty() {
+        return rect.widthProperty();
+    }
+
     private void handleOnMouseEntered(MouseEvent event) {
         event.consume();
         this.vertex.onMouseEnter();
@@ -111,16 +107,12 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
         this.vertex.onMouseClick(event);
     }
 
-    public T getVertex() {
+    public AbstractLayoutVertex getVertex() {
         return vertex;
     }
 
     public String toString() {
-        return rectLabel.getText();
-    }
-
-    public void setLabel(String text) {
-        this.rectLabel.setText(text);
+        return "GUI_NODE(" + vertex + ")";
     }
 
     public void setFill(Paint c) {
@@ -137,19 +129,39 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
 
         this.rect.setWidth(width);
         this.rect.setHeight(height);
-
-        this.rectLabel.setTranslateX(TEXT_HORIZONTAL_PADDING);
-        this.rectLabel.setTranslateY(TEXT_VERTICAL_PADDING);
     }
 
     // Returns the bounding box for just the rectangle in the coordinate system for the parent of our node.
     public Bounds getRectBoundsInParent() {
-        Bounds nodeBounds = this.getBoundsInParent();
+        return this.getUnaffectedBoundsInParent();
+        /*
+        Bounds nodeBounds = this.getUnaffectedBoundsInParent();
         Bounds nodeBoundsLocal = this.getBoundsInLocal();
         Bounds rectBounds = this.getUnaffectedRectBoundsInParent();
-        return new BoundingBox(nodeBounds.getMinX() + rectBounds.getMinX() - nodeBoundsLocal.getMinX(),
+
+        Bounds result = new BoundingBox(nodeBounds.getMinX() + rectBounds.getMinX() - nodeBoundsLocal.getMinX(),
                 nodeBounds.getMinY() + rectBounds.getMinY() - nodeBoundsLocal.getMinY(),
                 rectBounds.getWidth(), rectBounds.getHeight());
+
+        System.out.println("Getting bounds\n\tnode" + nodeBounds + "\n\trect " + rectBounds + "\n\tres " + result);
+
+        return result;
+        */
+    }
+
+    private Bounds getUnaffectedBoundsInParent() {
+
+        if (this.getEffect() == null) {
+            return this.getBoundsInParent();
+        }
+
+        Effect effect = this.getEffect();
+        this.setEffect(null);
+
+        Bounds result = this.getBoundsInParent();
+        this.setEffect(effect);
+
+        return result;
     }
 
     public void printLocation() {
@@ -158,7 +170,7 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
         System.out.println("Node y = " + bounds.getMinY() + ", " + bounds.getMaxY());
     }
 
-    public static <T extends AbstractLayoutVertex<T>> Line getLine(GUINode<T> sourceNode, GUINode<T> destNode) {
+    public static <T extends AbstractLayoutVertex> Line getLine(GUINode sourceNode, GUINode destNode) {
         if(sourceNode == null || destNode == null) {
             System.out.println("This should never happen!");
             return new Line(0, 0, 0, 0);
@@ -172,7 +184,7 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
         }
     }
 
-    public static <T extends AbstractLayoutVertex<T>> QuadCurve getCurve(GUINode<T> sourceNode, GUINode<T> destNode) {
+    public static <T extends AbstractLayoutVertex> QuadCurve getCurve(GUINode sourceNode, GUINode destNode) {
         if(sourceNode == null || destNode == null) {
             System.out.println("This should never happen!");
             return new QuadCurve(0, 0, 0, 0, 0, 0);
@@ -192,7 +204,7 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
                 frac * p1.getY() + (1 - frac) * p2.getY());
     }
 
-    private Point2D getLineIntersection(GUINode<T> otherNode) {
+    private Point2D getLineIntersection(GUINode otherNode) {
         Bounds sourceBounds = this.getRectBoundsInParent();
         Bounds destBounds = otherNode.getRectBoundsInParent();
 
@@ -259,16 +271,8 @@ public class GUINode<T extends AbstractLayoutVertex<T>> extends Group
         return arrowhead;
     }
 
-    public GUINode<T> getParentNode() {
+    public GUINode getParentNode() {
         return this.parent;
-    }
-
-    public void setLabelVisible(boolean isLabelVisible) {
-        this.rectLabel.setVisible(isLabelVisible);
-    }
-
-    public Rectangle getRect() {
-        return this.rect;
     }
 
     public Bounds getRectBoundsInLocal() {

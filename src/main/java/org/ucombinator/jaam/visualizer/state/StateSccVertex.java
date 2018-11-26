@@ -2,7 +2,11 @@ package org.ucombinator.jaam.visualizer.state;
 
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
+import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class StateSccVertex extends StateVertex {
 
@@ -26,13 +30,28 @@ public class StateSccVertex extends StateVertex {
 
         if (found) {
             this.setHighlighted(true);
-            mainTab.getVizHighlighted().add(this);
+            mainTab.getStateHighlighted().add(this);
         }
 
         return found;
     }
 
-    public String getRightPanelContent() {
-        return "SCC vertex: " + this.getId();
+    @Override
+    public String getLongText() {
+        StringBuilder text = new StringBuilder("SCC contains:\n");
+        int k = 0;
+        for (StateVertex i : getInnerGraph().getVertices()) {
+            text.append(k++ + "  " + i.getLabel() + "\n");
+        }
+
+        return text.toString();
+    }
+
+    public List<StateVertex> expand() {
+        List<StateVertex> expandedVertices = new ArrayList<>();
+        for (StateVertex v : this.getInnerGraph().getVertices()) {
+            expandedVertices.addAll(v.expand());
+        }
+        return expandedVertices;
     }
 }

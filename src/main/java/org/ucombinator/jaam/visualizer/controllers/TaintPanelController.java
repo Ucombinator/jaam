@@ -1,11 +1,14 @@
 package org.ucombinator.jaam.visualizer.controllers;
 
+import javafx.collections.SetChangeListener;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.layout.BorderPane;
 import org.ucombinator.jaam.tools.taint3.Address;
 import org.ucombinator.jaam.util.Loop;
 import org.ucombinator.jaam.visualizer.graph.GraphTransform;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
+import org.ucombinator.jaam.visualizer.gui.GUINode;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.*;
@@ -21,17 +24,32 @@ import soot.jimple.internal.JimpleLocal;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class TaintPanelController extends GraphPanelController<TaintVertex, TaintEdge>
-        implements EventHandler<SelectEvent<TaintVertex>> {
+        implements EventHandler<SelectEvent<TaintVertex>>, SetChangeListener<TaintVertex> {
 
-    private GraphTransform<TaintRootVertex, TaintVertex> immToVis;
-
+    private GraphTransform<TaintRootVertex, TaintVertex> immAndVis;
     private HashMap<String, TaintAddress> fieldVertices;
 
+    private boolean collapseAll = false, expandAll = false;
+
+    private CodeViewController codeController;
+
     // Graph is the statement graph
-    public TaintPanelController(Graph<TaintVertex, TaintEdge> graph) throws IOException {
-        super(TaintRootVertex::new);
+    public TaintPanelController(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController, MainTabController tabController) throws IOException {
+        super(TaintRootVertex::new, tabController);
+
+        this.codeController = codeController;
+
+        for (TaintVertex v : graph.getVertices()) {
+            if (v.getClassName() == null && v.getMethodName() == null) {
+                System.out.println("Don't have class or method for " + v.toString());
+            }
+            else if (v.getClassName() == null) {
+                System.out.println("Don't have class for " + v.toString());
+            }
+        }
 
         // Custom event handlers
         graphContentGroup.addEventFilter(SelectEvent.TAINT_VERTEX_SELECTED, this);
@@ -39,10 +57,15 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         this.visibleRoot = new TaintRootVertex();
         this.immutableRoot = new TaintRootVertex();
 
-        //this.immutableRoot.setInnerGraph(this.removeDegree2Addresses(graph));
+        //this.immutableRoot.setInnerGraph(this.cleanTaintGraph(graph));
+
+        for (TaintVertex v : graph.getVertices()) {
+            v.setOuterGraph(graph);
+        }
+
         this.immutableRoot.setInnerGraph(graph);
         fillFieldDictionary();
-        immToVis = null;
+        immAndVis = null;
     }
 
     public TaintRootVertex getVisibleRoot() {
@@ -53,30 +76,39 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         return (TaintRootVertex) this.immutableRoot;
     }
 
-    public void drawGraph(HashSet<TaintVertex> verticesToDraw) {
-        System.out.println("Drawing taint graph... initial set has " + verticesToDraw.size() + " vertices");
-
-        for(TaintVertex v : verticesToDraw) {
-            System.out.println("Checking " + v + " is it immutable? " + (v.getOuterGraph() == immutableRoot.getInnerGraph()) );
-            System.out.println("v --> " + " --> " + v.getOuterGraph().getVertices().size() +
-                " r --> " + " --> " + immutableRoot.getInnerGraph().getVertices().size());
-        }
-
+    public void drawGraph() {
         visibleRoot.setVisible(false);
 
-        GraphTransform<TaintRootVertex, TaintVertex> immToFlatVisible =
-                this.getImmutableRoot().constructVisibleGraph(verticesToDraw);
+        Set<TaintVertex> verticesToDraw = this.tabController.getImmutableTaintShown();
+
+        System.out.println("Taint Vertices to draw: " + verticesToDraw.size());
+        GraphTransform<TaintRootVertex, TaintVertex> immToFlatVisible = this.getImmutableRoot().constructVisibleGraph(verticesToDraw);
 
 
-
+        // Groups by method
         GraphTransform<TaintRootVertex, TaintVertex> flatToLayerVisible = LayerFactory.getLayeredTaintGraph(immToFlatVisible.newRoot);
+        // Groups by Class
+        //GraphTransform<TaintRootVertex, TaintVertex> flatToLayerVisible = LayerFactory.getTaintClassGrouping(immToFlatVisible.newRoot);
 
-        immToVis = GraphTransform.transfer(immToFlatVisible, flatToLayerVisible);
+        immAndVis = GraphTransform.transfer(immToFlatVisible, flatToLayerVisible);
+        this.visibleRoot = immAndVis.newRoot;
 
-        //immToVis = immToFlatVisible;
-        this.visibleRoot = immToVis.newRoot;
-
-        System.out.println("VISIBLE HAS " + this.visibleRoot.getInnerGraph().getVertices().size());
+        if (expandAll) {
+            for (TaintVertex v : visibleRoot.getInnerGraph().getVertices()) {
+                if (v instanceof TaintMethodVertex) {
+                    v.setExpanded(true);
+                }
+            }
+            expandAll = false;
+        }
+        if (collapseAll) {
+            for (TaintVertex v : visibleRoot.getInnerGraph().getVertices()) {
+                if (v instanceof TaintMethodVertex) {
+                    v.setExpanded(false);
+                }
+            }
+            collapseAll = false;
+        }
 
         LayoutAlgorithm.layout(visibleRoot);
         drawNodes(null, visibleRoot);
@@ -84,8 +116,64 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         visibleRoot.setVisible(true);
     }
 
+    public void redrawGraph() {
+        // System.out.println("Redrawing loop graph...");
+        this.graphContentGroup.getChildren().remove(this.visibleRoot.getGraphics());
+        this.drawGraph();
+    }
+
     public void addSelectHandler(BorderPane centerPane) {
         centerPane.addEventHandler(SelectEvent.STATE_VERTEX_SELECTED, onVertexSelect);
+    }
+
+    @Override
+    public void redrawGraphAction(ActionEvent event) throws IOException {
+        event.consume();
+        this.redrawGraph();
+    }
+
+    @Override
+    public void hideSelectedAction(ActionEvent event) throws IOException {
+        event.consume();
+        this.tabController.hideSelectedTaintNodes();
+    }
+
+    @Override
+    public void hideUnrelatedAction(ActionEvent event) throws IOException {
+        event.consume();
+        this.tabController.hideUnrelatedToHighlightedTaint();
+    }
+
+    @Override
+    public void expandAll(ActionEvent event) throws IOException {
+        event.consume();
+        expandAll = true;
+        this.redrawGraph();
+    }
+    @Override
+    public void collapseAll(ActionEvent event) throws IOException {
+        event.consume();
+        collapseAll = true;
+        this.redrawGraph();
+    }
+
+    // Changes to the visible set
+    @Override
+    public void onChanged(Change<? extends TaintVertex> change) {
+        // System.out.println("TaintPanel responding to change in visible set...");
+        if (change.wasAdded()) {
+            TaintVertex immV = change.getElementAdded();
+            immV.setHidden();
+            if (immAndVis != null && immAndVis.getNew(immV) != null) {
+                immAndVis.getNew(immV).setHidden();
+            }
+        } else {
+            TaintVertex immV = change.getElementRemoved();
+            immV.setUnhidden();
+            if (immAndVis != null && immAndVis.getNew(immV) != null) {
+                immAndVis.getNew(immV).setUnhidden();
+            }
+        }
     }
 
     @Override
@@ -100,25 +188,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         System.out.println("Received event from vertex " + vertex.toString());
 
-        MainTabController currentFrame = Main.getSelectedMainTabController();
-
-        if(vertex instanceof TaintAddress) {
-            currentFrame.setRightText((TaintAddress) vertex);
-        }
-        else if(vertex instanceof TaintSccVertex)
-        {
-            currentFrame.setRightText((TaintSccVertex) vertex);
-        }
-        else if(vertex instanceof TaintStmtVertex) {
-            currentFrame.setRightText((TaintStmtVertex) vertex);
-        }
-        else if(vertex instanceof TaintMethodVertex) {
-            currentFrame.setRightText((TaintMethodVertex) vertex);
-        }
-        else {
-            //currentFrame.bytecodeArea.setDescription();
-            currentFrame.setTaintRightText("Text");
-        }
+        this.tabController.setTaintRightText(vertex);
     }
 
     // Draw the graph of taint addresses for the selected state vertex, and addresses connected to them.
@@ -127,45 +197,25 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         public void handle(SelectEvent<StateVertex> selectEvent) {
             StateVertex v = selectEvent.getVertex();
             Set<TaintVertex> startVertices = new HashSet<>();
+            VizPanelController vizController = TaintPanelController.this.tabController.vizPanelController;
             if (v instanceof StateMethodVertex) {
-                v = Main.getSelectedVizPanelController().getImmutable(v);
+                StateVertex immV = vizController.getImmutable(v);
                 // If we click on a method vertex, we should get all taint addresses for that method.
-                startVertices = findAddressesByMethods(v.getMethodNames());
+                startVertices = findAddressesByMethods(immV.getMethodNames());
             }
             else if (v instanceof StateLoopVertex) {
                 // Otherwise, if we click on a loop, we just want the addresses controlling the loop.
-                v = Main.getSelectedVizPanelController().getImmutable(v);
-                Loop.LoopInfo loopInfo = ((StateLoopVertex) v).getCompilationUnit().loopInfo();
-                SootMethod method = ((StateLoopVertex) v).getCompilationUnit().method();
-                if (loopInfo instanceof Loop.UnidentifiedLoop) {
+                StateLoopVertex immV = (StateLoopVertex)vizController.getImmutable(v);
+                SootMethod method =  immV.getCompilationUnit().method();
+                if (immV.isUnidentifiedLoop()) {
                     // Default to drawing methods
-                    startVertices = findAddressesByMethods(v.getMethodNames());
+                    startVertices = findAddressesByMethods(immV.getMethodNames());
                 }
-                else if (loopInfo instanceof Loop.IteratorLoop) {
-                    Value value = ((Loop.IteratorLoop) loopInfo).iterable();
-                    addTaintVertex(startVertices, value, method);
-                }
-                else if (loopInfo instanceof Loop.ArrayLoop) {
-                    Value value = ((Loop.ArrayLoop) loopInfo).iterable();
-                    addTaintVertex(startVertices, value, method);
-                }
-                else if (loopInfo instanceof Loop.SimpleCountUpForLoop) {
-                    Value valueLower = ((Loop.SimpleCountUpForLoop) loopInfo).lowerBound();
-                    Value valueUpper = ((Loop.SimpleCountUpForLoop) loopInfo).upperBound();
-                    Value valueIncrement = ((Loop.SimpleCountUpForLoop) loopInfo).increment();
-
-                    addTaintVertex(startVertices, valueLower, method);
-                    addTaintVertex(startVertices, valueUpper, method);
-                    addTaintVertex(startVertices, valueIncrement, method);
-                }
-                else if (loopInfo instanceof Loop.SimpleCountDownForLoop) {
-                    Value valueLower = ((Loop.SimpleCountDownForLoop) loopInfo).lowerBound();
-                    Value valueUpper = ((Loop.SimpleCountDownForLoop) loopInfo).upperBound();
-                    Value valueIncrement = ((Loop.SimpleCountDownForLoop) loopInfo).increment();
-
-                    addTaintVertex(startVertices, valueLower, method);
-                    addTaintVertex(startVertices, valueUpper, method);
-                    addTaintVertex(startVertices, valueIncrement, method);
+                else {
+                    ArrayList<Value> loopValues = immV.getLoopValues();
+                    for (Value value : loopValues) {
+                        addTaintVertex(startVertices, value, method);
+                    }
                 }
             }
             System.out.println("Start vertices: " + startVertices.size());
@@ -249,22 +299,22 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
     private boolean compareValues(Value taintValue, Value value, SootMethod taintMethod, SootMethod method) {
         if (taintValue.equals(value)) {
-            System.out.println("Equal taint values!");
+            //System.out.println("Equal taint values!");
             return true;
         }
         else if (taintValue.equivTo(value)) {
-            System.out.println("Equivalent taint values!");
+            //System.out.println("Equivalent taint values!");
             return true;
         }
         else if (value instanceof JimpleLocal) {
-            System.out.println("One JimpleLocal!");
+            //System.out.println("One JimpleLocal!");
             if (taintValue instanceof JimpleLocal) {
-                System.out.println("Both JimpleLocal!");
+                //System.out.println("Both JimpleLocal!");
                 if (taintMethod.getSubSignature().equals(method.getSubSignature())) {
-                    System.out.println("Equal methods!");
-                    System.out.println("SubSignature: " + taintMethod.getSubSignature());
+                    //System.out.println("Equal methods!");
+                    //System.out.println("SubSignature: " + taintMethod.getSubSignature());
                     if (((JimpleLocal) taintValue).getName().equals(((JimpleLocal) value).getName())) {
-                        System.out.println("Equal names!");
+                        //System.out.println("Equal names!");
                         return true;
                     }
                 }
@@ -276,11 +326,10 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     private void drawConnectedVertices(Set<TaintVertex> addresses) {
         long time1 = System.nanoTime();
         HashSet<TaintVertex> verticesToDraw = findConnectedAddresses(addresses);
-        System.out.println("Taint vertices to draw: " + verticesToDraw.size());
-
+        this.tabController.getImmutableTaintShown().clear();
+        this.tabController.getImmutableTaintShown().addAll(verticesToDraw);
         long time2 = System.nanoTime();
-        // Redraw graph with only this set of vertices.
-        this.drawGraph(verticesToDraw);
+        this.drawGraph();
         long time3 = System.nanoTime();
 
         System.out.println("Time to compute connected vertices: " + (time2 - time1) / 1000000000.0);
@@ -344,7 +393,6 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     public void showFieldTaintGraph(String fullClassName, String fieldName) {
 
         String fieldId = fullClassName + ":" + fieldName;
-
         TaintAddress a = fieldVertices.get(fieldId);
 
         if (a != null) {
@@ -352,8 +400,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
             vertices.add(a);
             drawConnectedVertices(vertices);
         }
-        else
-        {
+        else {
             System.out.println("\tWarning: Did not find taint vertex " + fieldId);
         }
     }
@@ -370,7 +417,54 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         });
     }
 
+    private Graph<TaintVertex, TaintEdge> cleanTaintGraph(Graph<TaintVertex, TaintEdge> graph) {
+
+        int initialSize = graph.getVertices().size();
+        graph = removeNonCodeRootAddresses(graph);
+        graph = removeNonCodePaths(graph);
+        graph = removeDegree2Addresses(graph);
+
+        int numRemoved = initialSize-graph.getVertices().size();
+
+        System.out.println("Removed " + numRemoved + "(" + (((double)numRemoved)/initialSize)*100 + ") final taint size " + graph.getVertices().size());
+
+        return graph;
+    }
+
+    private Graph<TaintVertex, TaintEdge> removeNonCodeRootAddresses(Graph<TaintVertex, TaintEdge> graph) {
+
+        HashSet<TaintVertex> toRemove;
+        do {
+            toRemove = graph.getSources().stream()
+                    .filter(v -> v instanceof TaintAddress && isLibrary(v))
+                    .collect(Collectors.toCollection(HashSet::new));
+
+            System.out.println("JUAN: Removing " + toRemove.size() + " Non Code Roots of " + graph.getVertices().size()
+                    + "(" + ((double)graph.getVertices().size())/toRemove.size() + ")");
+
+            for (TaintVertex v : toRemove) {
+                graph.cutVertex(v);
+            }
+
+        }while (!toRemove.isEmpty());
+
+
+        return graph;
+
+    }
+
+    private boolean isLibrary(TaintVertex v) {
+
+        if (v instanceof TaintAddress && ((TaintAddress)v).isArrayRef()) {
+            return false;
+        }
+
+        return !codeController.haveCode(v.getClassName());
+    }
+
     private Graph<TaintVertex, TaintEdge> removeDegree2Addresses(Graph<TaintVertex, TaintEdge> graph) {
+
+        int initialSize = graph.getVertices().size();
 
         TaintRootVertex temp = new TaintRootVertex();
         temp.setInnerGraph(graph);
@@ -378,6 +472,80 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
             return graph.getOutEdges(v).size() != 1 || graph.getInEdges(v).size() != 1;
         }, TaintEdge::new);
 
+        int numRemoved = initialSize - transform.newRoot.getInnerGraph().getVertices().size();
+
+        System.out.println("JUAN: Removing " + numRemoved + " Degree 2 addresses " + transform.newRoot.getInnerGraph().getVertices().size()
+                + "(" + ((double)graph.getVertices().size())/numRemoved + ")");
+
         return transform.newRoot.getInnerGraph();
+    }
+
+    private Graph<TaintVertex, TaintEdge> removeNonCodePaths(Graph<TaintVertex, TaintEdge> graph) {
+
+        List<TaintVertex> nonCodeLeafs;
+
+        do {
+            nonCodeLeafs = graph.getVertices().stream()
+                    .filter(v -> graph.getOutNeighbors(v).isEmpty() && isLibrary(v))
+                    .collect(Collectors.toList());
+
+            System.out.println("JUAN: Removing " + nonCodeLeafs.size() + " Non Code Leafs of " + graph.getVertices().size()
+                    + "(" + ((double)graph.getVertices().size())/nonCodeLeafs.size() + ")");
+
+            for (TaintVertex v : nonCodeLeafs) {
+                graph.cutVertex(v);
+            }
+
+        } while (!nonCodeLeafs.isEmpty());
+
+        return graph;
+    }
+
+    public HashSet<TaintVertex> getImmutable(HashSet<TaintVertex> visible) {
+        return visible.stream()
+                .flatMap(v -> v.expand().stream())
+                .map(v -> immAndVis.getOld(v)).collect(Collectors.toCollection(HashSet::new));
+    }
+
+    public TaintVertex getImmutable(TaintVertex visible) {
+        if (immAndVis.containsNew(visible)) {
+            return immAndVis.getOld(visible);
+        }
+        return null;
+    }
+
+    // Selection are **visible** nodes
+    // Returns the immutable nodes related to the selection of visible nodes
+    public HashSet<TaintVertex> getUnrelatedVisible(HashSet<TaintVertex> selection) {
+
+        HashSet<TaintVertex> keep = new HashSet<>();
+        Graph<TaintVertex, TaintEdge> topLevel = getVisibleRoot().getInnerGraph();
+
+        selection.forEach(v -> keep.addAll(v.getAncestors()));
+        selection.forEach(v -> keep.addAll(v.getDescendants()));
+
+        HashSet<TaintVertex> toHide = new HashSet<>();
+        topLevel.getVertices().forEach(v -> {
+            if (!keep.contains(v) && !keepAnyInterior(v, keep, toHide)) {
+                toHide.add(v);
+            }
+        });
+
+        return toHide;
+    }
+
+    private boolean keepAnyInterior(TaintVertex root, HashSet<TaintVertex> keep, HashSet<TaintVertex> toHide) {
+
+        boolean foundAVertexToKeep = false;
+        for (TaintVertex v : root.getInnerGraph().getVertices()) {
+            if (keep.contains(v) || keepAnyInterior(v, keep, toHide)) {
+                foundAVertexToKeep = true;
+            }
+            else {
+                toHide.add(v);
+            }
+        }
+
+        return foundAVertexToKeep;
     }
 }

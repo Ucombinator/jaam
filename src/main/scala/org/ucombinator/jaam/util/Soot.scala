@@ -274,7 +274,7 @@ object Soot {
       //   we look for the method manually.
       assert(e.getBootstrapArg(1).isInstanceOf[soot.jimple.MethodHandle])
       val implementationMethodRef = e.getBootstrapArg(1).asInstanceOf[soot.jimple.MethodHandle].getMethodRef
-      val implementationMethod = implementationMethodRef.declaringClass().getMethod(implementationMethodRef.getSubSignature)
+      val implementationMethod = implementationMethodRef.declaringClass().getMethodUnsafe(implementationMethodRef.getSubSignature)
 
       // Step 4: Find the `captures` which are values that should be saved and passed
       //   to `implementationMethod` before any other arguments
