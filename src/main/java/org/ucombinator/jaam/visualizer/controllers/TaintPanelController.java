@@ -21,7 +21,6 @@ import soot.jimple.internal.JimpleLocal;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class TaintPanelController extends GraphPanelController<TaintVertex, TaintEdge>
         implements EventHandler<SelectEvent<TaintVertex>> {
@@ -31,7 +30,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     private HashMap<String, TaintAddress> fieldVertices;
 
     // Graph is the statement graph
-    public TaintPanelController(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController) throws IOException {
+    public TaintPanelController(Graph<TaintVertex, TaintEdge> graph) throws IOException {
         super(TaintRootVertex::new);
 
         // Custom event handlers
@@ -40,7 +39,8 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         this.visibleRoot = new TaintRootVertex();
         this.immutableRoot = new TaintRootVertex();
 
-        this.immutableRoot.setInnerGraph(this.cleanTaintGraph(graph, codeController));
+        //this.immutableRoot.setInnerGraph(this.removeDegree2Addresses(graph));
+        this.immutableRoot.setInnerGraph(graph);
         fillFieldDictionary();
         immToVis = null;
     }
@@ -368,25 +368,6 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         allFields.forEach(v -> {
             fieldVertices.put(v.getFieldId(), v);
         });
-    }
-
-    private Graph<TaintVertex, TaintEdge> cleanTaintGraph(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController) {
-        return removeDegree2Addresses(removeNonCodeRootAddresses(graph, codeController));
-    }
-
-    private Graph<TaintVertex, TaintEdge> removeNonCodeRootAddresses(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController) {
-
-        HashSet<TaintVertex> toRemove = graph.getSources().stream()
-                .filter(v -> v instanceof TaintAddress && !codeController.haveCode(v.getClassName()))
-                .collect(Collectors.toCollection(HashSet::new));
-
-        for (TaintVertex v : toRemove) {
-            graph.getEdges().removeAll(graph.getOutEdges(v));
-            graph.getVertices().remove(v);
-        }
-
-        return graph;
-
     }
 
     private Graph<TaintVertex, TaintEdge> removeDegree2Addresses(Graph<TaintVertex, TaintEdge> graph) {

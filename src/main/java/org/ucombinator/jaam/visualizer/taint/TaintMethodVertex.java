@@ -2,7 +2,6 @@ package org.ucombinator.jaam.visualizer.taint;
 
 import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.layout.LayoutAlgorithm;
-import org.ucombinator.jaam.visualizer.main.Main;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -13,31 +12,16 @@ public class TaintMethodVertex extends TaintVertex {
     private Color defaultColor = Color.DEEPSKYBLUE;
     private LayoutAlgorithm.LAYOUT_ALGORITHM innerLayout = LayoutAlgorithm.LAYOUT_ALGORITHM.DFS;
 
-    private String className;
-    private String methodName;
-
     public TaintMethodVertex(String label)
     {
         super(label, VertexType.SCC, true);
         this.color = defaultColor;
-
-        this.className = null;
-        this.methodName = null;
     }
 
-    public TaintMethodVertex(String className, String methodName, LayoutAlgorithm.LAYOUT_ALGORITHM preferredLayout) {
-        this(className + "." + methodName);
+    public TaintMethodVertex(String label, LayoutAlgorithm.LAYOUT_ALGORITHM preferredLayout) {
+        this(label);
 
         innerLayout = preferredLayout;
-
-        this.className = className;
-        this.methodName = methodName;
-
-        if (!Main.getSelectedMainTabController().codeViewController.haveCode(className)) {
-            this.color = Color.DARKGRAY;
-            this.setExpanded(false);
-        }
-
     }
 
     public TaintMethodVertex copy() {
@@ -83,9 +67,10 @@ public class TaintMethodVertex extends TaintVertex {
 
         Set<TaintVertex> vertices = this.getInnerGraph().getVertices();
 
+        String className  = vertices.iterator().next().getClassName();
+        String methodName = vertices.iterator().next().getMethodName();
+
         StringBuilder builder = new StringBuilder(className + "\n" + methodName + "\n");
-
-
 
         for(TaintVertex v : vertices) {
             if (v.getStmtString() == null) continue;

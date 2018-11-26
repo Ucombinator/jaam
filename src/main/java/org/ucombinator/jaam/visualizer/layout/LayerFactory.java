@@ -164,12 +164,10 @@ public class LayerFactory
                     @Override
                     public TaintVertex apply(List<TaintVertex> stateVertices) {
 
-                        TaintVertex representative = stateVertices.stream().findFirst().get();
-                        String className  = representative.getClassName();
-                        String methodName = representative.getMethodName();
+                        String methodName = stateVertices.stream().findFirst().get().getMethodName();
                         assert methodName != null;
 
-                        TaintMethodVertex methodVertex = new TaintMethodVertex(className, methodName, LayoutAlgorithm.LAYOUT_ALGORITHM.DFS);
+                        TaintMethodVertex methodVertex = new TaintMethodVertex(methodName, LayoutAlgorithm.LAYOUT_ALGORITHM.DFS);
                         stateVertices.forEach(v -> {
                             methodVertex.getInnerGraph().addVertex(v);
                             v.setOuterGraph(methodVertex.getInnerGraph());
