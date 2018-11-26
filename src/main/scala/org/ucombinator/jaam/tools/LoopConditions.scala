@@ -221,7 +221,7 @@ object Main {
           // (1b) Condition = every node on every path between c and e but not through t
           // Note: 1a is the same as 1b
           // (2) s = first choke point after e
-          // (3) s = statement after last edge to e
+          // (3) s = statement after last edge to e (backward from it) (see entry points)
           // (4a) s = first node such that t dominates e (relative to s)
           // (4b) s = first node that is post-dominated by t (relative to e)
           // Note: 1a is the same as 1b
