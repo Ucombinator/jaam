@@ -38,6 +38,10 @@ object LoopPatterns {
   private val vectorSizeMethod = getMethod("java.util.Vector", "size")
   private val vectorElementAtMethod = getMethod("java.util.Vector", "elementAt", Some(List(Soot.getSootType("int"))))
   private val stringLengthMethod = getMethod(className = "java.lang.String", "length")
+  private val arrayListSizeMethod = getMethod("java.util.ArrayList", "size")
+  private val listSizeMethod = getMethod("java.util.List", "size")
+  private val bigIntBitLengthMethod = getMethod("java.math.BigInteger", "bitLength", Some(List()))
+  private val randomMethod = getMethod("java.lang.Math", "random")
 
   private def iteratorInvoke(dest: String, base: String, label: Option[String] = None): RegExp = {
     mkPatRegExp(
@@ -73,6 +77,42 @@ object LoopPatterns {
       IfStmtPattern(
         EqExpPattern(
           VariableExpPattern(lhs), IntegralConstantExpPattern(0)
+        ),
+        mkLabel(destLabel)
+      )
+    )
+  }
+
+  private def ifNotZeroGoto(lhs: String, destLabel: Option[String], label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      IfStmtPattern(
+        NotEqExpPattern(
+          VariableExpPattern(lhs), IntegralConstantExpPattern(0)
+        ),
+        mkLabel(destLabel)
+      )
+    )
+  }
+
+  private def ifEqValueGoto(lhs: String, rhs: ExpPattern, destLabel: Option[String], label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      IfStmtPattern(
+        EqExpPattern(
+          VariableExpPattern(lhs), rhs
+        ),
+        mkLabel(destLabel)
+      )
+    )
+  }
+
+  private def ifNotEqValueGoto(lhs: String, rhs: ExpPattern, destLabel: Option[String], label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      IfStmtPattern(
+        NotEqExpPattern(
+          VariableExpPattern(lhs), rhs
         ),
         mkLabel(destLabel)
       )
@@ -147,6 +187,16 @@ object LoopPatterns {
       IfStmtPattern(
         AnyExpPattern,
         mkLabel(destLabel)
+      )
+    )
+  }
+
+  private def cmpg(dest: String, lhs: ExpPattern, rhs: ExpPattern, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(dest),
+        CmpgExpPattern(lhs, rhs)
       )
     )
   }
@@ -310,10 +360,68 @@ object LoopPatterns {
     )
   }
 
+  private def arrayListSize(dest: String, base: String, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(dest),
+        InstanceInvokeExpPattern(
+          VariableExpPattern(base),
+          ConstantMethodPattern(arrayListSizeMethod),
+          ListArgPattern(List())
+        )
+      )
+    )
+  }
+
+  private def listSize(dest: String, base: String, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(dest),
+        InstanceInvokeExpPattern(
+          VariableExpPattern(base),
+          ConstantMethodPattern(listSizeMethod),
+          ListArgPattern(List())
+        )
+      )
+    )
+  }
+
+  private def random(dest: String, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(dest),
+        StaticInvokeExpPattern(
+          ConstantMethodPattern(randomMethod),
+          ListArgPattern(List())
+        )
+      )
+    )
+  }
+
+  private def bigIntBitLength(dest: String, base: String, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(dest),
+        InstanceInvokeExpPattern(
+          VariableExpPattern(base),
+          OverriddenMethodPattern(bigIntBitLengthMethod),
+          ListArgPattern(List())
+        )
+      )
+    )
+  }
+
   private def getAnyDynamicUpperBound(dest: String, base: String, label: Option[String] = None): RegExp = {
     Alt(List(
       vectorSize(dest, base, label),
-      stringLength(dest, base, label)
+      stringLength(dest, base, label),
+      arrayListSize(dest, base, label),
+      listSize(dest, base, label),
+      bigIntBitLength(dest, base, label)
     ))
   }
 
@@ -363,6 +471,43 @@ object LoopPatterns {
     )
   }
 
+  private def invokeAny(dest: String, base: String, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(dest),
+        InstanceInvokeExpPattern(
+          VariableExpPattern(base),
+          AnyMethodPattern,
+          ListArgPattern(List())
+        )
+      )
+    )
+  }
+
+  private def negate(varName: String, valName: String, label: Option[String] = None): RegExp = {
+    mkPatRegExp(
+      label,
+      AssignStmtPattern(
+        VariableExpPattern(varName),
+        NegExpPattern(VariableExpPattern(valName))
+      )
+    )
+  }
+
+  private def anyRelationalIf(lhs: String, rhs: ExpPattern, destLabel: Option[String], label: Option[String] = None): RegExp = {
+    Alt(
+      List(
+        ifLtOrLeGoto(lhs, rhs, destLabel, label),
+        ifGtOrGeGoto(lhs, rhs, destLabel, label),
+        //        ifEqValueGoto(lhs,rhs,destLabel,label),
+        //        ifNotEqValueGoto(lhs,rhs,destLabel,label)
+        ifZeroGoto(lhs, destLabel),
+        ifNotZeroGoto(lhs, destLabel)
+      ))
+  }
+
+
   /*
   TODO: From 2018-05-29
 
@@ -392,11 +537,24 @@ object LoopPatterns {
     matchLabel(end),
     wildcardRep
   ))
-  val arrayLoop = Cat(List(
+  val arrayForEachLoop = Cat(List(
     wildcardRep,
-    lengthOf("length", "arr"),
-    assignZero("iter"),
+    Alt(List(lengthOf("length", "arr"), assignZero("iter"))),
+    Alt(List(assignZero("iter"), lengthOf("length", "arr"))),
     ifGeGoto("iter", VariableExpPattern("length"), destLabel = end, label = head),
+    getArrayElem("elem", "arr", "iter"),
+    wildcardRep,
+    incrVar("iter"),
+    goto(head),
+    matchLabel(end),
+    wildcardRep
+  ))
+  val arrayForLoop = Cat(List(
+    wildcardRep,
+    assignZero("iter"),
+    lengthOf("length", "arr", label = head),
+    ifGeGoto("iter", VariableExpPattern("length"), destLabel = end),
+    wildcardRep,
     getArrayElem("elem", "arr", "iter"),
     wildcardRep,
     incrVar("iter"),
@@ -425,7 +583,7 @@ object LoopPatterns {
     wildcardRep
   ))
 
-  val dynamicCountUpForLoop = Cat(List(
+  val countUpForLoopWithSizedBound = Cat(List(
     wildcardRep,
     assignSomeValue("iter", "lowerBound"),
     getAnyDynamicUpperBound("upperBound", "dataStruct", label = head),
@@ -437,7 +595,7 @@ object LoopPatterns {
     wildcardRep
   ))
 
-  val dynamicCountUpForLoopWithOffset = Cat(List(
+  val countUpForLoopWithSizedBoundAndOffset = Cat(List(
     wildcardRep,
     assignSomeValue("iter", "lowerBound"),
     getAnyDynamicUpperBound("initalUpperBound", "dataStruct", label = head),
@@ -455,9 +613,70 @@ object LoopPatterns {
     assignSomeValue("iter", "lowerBound"),
     ifGtOrGeGoto("iter", NamedExpPattern("upperBound", AnyExpPattern), destLabel = end, label = head),
     wildcardRepExclude(Alt(List(anyIf(end), goto(end)))),
-    addOffsetAndAssignToNewVar("tempVar","iter","offset"),
-    castAndAssignToVar("iter","tempVar", Soot.getSootType("char")),
+    addOffsetAndAssignToNewVar("tempVar", "iter", "offset"),
+    castAndAssignToVar("iter", "tempVar", Soot.getSootType("char")),
     goto(head),
+    matchLabel(end),
+    wildcardRep
+  ))
+
+  val countUpForLoopWithVarBounds = Cat(List(
+    wildcardRep,
+    assignSomeValue("iter", "lowerBound"),
+    assignSomeValue("limit", "upperBound", label = head),
+    ifGtOrGeGoto("iter", VariableExpPattern("limit"), destLabel = end),
+    wildcardRepExclude(Alt(List(anyIf(end), goto(end)))),
+    anyAddToVar("iter", "incr"),
+    goto(head),
+    matchLabel(end),
+    wildcardRep
+  ))
+
+  val countDownForLoopWithVarBounds = Cat(List(
+    wildcardRep,
+    assignSomeValue("iter", "lowerBound"),
+    assignSomeValue("limit", "upperBound", label = head),
+    ifLtOrLeGoto("iter", VariableExpPattern("limit"), destLabel = end),
+    wildcardRepExclude(Alt(List(anyIf(end), goto(end)))),
+    anyAddToVar("iter", "incr"),
+    goto(head),
+    matchLabel(end),
+    wildcardRep
+  ))
+
+  val simpleWhileLoop = Cat(List(
+    wildcardRep,
+    assignSomeValue("iter", "initValue"),
+    wildcardRep,
+    anyRelationalIf("iter", NamedExpPattern("bound", AnyExpPattern), destLabel = end, label = head),
+    wildcardRep,
+    anyAddToVar("iter", "incr"),
+    wildcardRep,
+    goto(head),
+    matchLabel(end),
+    wildcardRep
+  ))
+
+  val randomizedWhileLoop = Cat(List(
+    wildcardRep,
+    assignSomeValue("limit", "upperBound"),
+    anyRelationalIf("iter", VariableExpPattern("limit"), destLabel = head),
+    random("randomValue"),
+    cmpg("randomCond", VariableExpPattern("randomValue"), NamedExpPattern("bound", AnyExpPattern)),
+    ifGtOrGeGoto("randomCond", IntegralConstantExpPattern(0), destLabel = head),
+    matchLabel(end),
+    wildcardRep
+  ))
+
+  val doWhileLoop = Cat(List(
+    wildcardRep,
+    assignSomeValue("iter", "lowerBound"),
+    wildcardRep,
+    matchLabel(head),
+    wildcardRep,
+    anyAddToVar("iter", "incr"),
+    wildcardRep,
+    anyRelationalIf("iter", NamedExpPattern("limit", AnyExpPattern), destLabel = head),
     matchLabel(end),
     wildcardRep
   ))

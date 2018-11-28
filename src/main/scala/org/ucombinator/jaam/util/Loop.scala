@@ -2,7 +2,6 @@ package org.ucombinator.jaam.util
 
 import org.ucombinator.jaam.patterns.stmt._
 import org.ucombinator.jaam.patterns.{LoopPatterns, State}
-import org.ucombinator.jaam.util.Loop.DynamicCountUpForLoop
 import soot.{Local, SootMethod, Value}
 import soot.jimple.{Stmt => SootStmt, _}
 import soot.jimple.toolkits.annotation.logic.{Loop => SootLoop}
@@ -55,12 +54,18 @@ object Loop {
     }
 
     runPattern(LoopPatterns.iteratorLoop).foreach(s => return IteratorLoop(s.values("arr")))
-    runPattern(LoopPatterns.arrayLoop).foreach(s => return ArrayLoop(s.values("arr")))
+    runPattern(LoopPatterns.arrayForEachLoop).foreach(s => return ArrayForEachLoop(s.values("arr")))
+    runPattern(LoopPatterns.arrayForLoop).foreach(s => return ArrayForLoop(s.values("arr")))
     runPattern(LoopPatterns.simpleCountUpForLoop).foreach(s => return SimpleCountUpForLoop(s.values("lowerBound"), s.values("upperBound"), s.values("incr")))
     runPattern(LoopPatterns.simpleCountDownForLoop).foreach(s => return SimpleCountDownForLoop(s.values("upperBound"), s.values("lowerBound"), s.values("incr")))
-    runPattern(LoopPatterns.dynamicCountUpForLoop).foreach(s => return DynamicCountUpForLoop(s.values("lowerBound"), s.values("upperBound"), s.values("incr")))
-    runPattern(LoopPatterns.dynamicCountUpForLoopWithOffset).foreach(s => return DynamicCountUpForLoopWithOffset(s.values("lowerBound"), s.values("upperBound"), s.values("incr"), s.values("offset")))
+    runPattern(LoopPatterns.countUpForLoopWithSizedBound).foreach(s => return CountUpForLoopWithSizedBound(s.values("lowerBound"), s.values("upperBound"), s.values("incr")))
+    runPattern(LoopPatterns.countUpForLoopWithSizedBoundAndOffset).foreach(s => return CountUpForLoopWithSizedBoundAndOffset(s.values("lowerBound"), s.values("upperBound"), s.values("incr"), s.values("offset")))
     runPattern(LoopPatterns.characterForLoop).foreach(s => return CharacterForLoop(s.values("lowerBound"), s.values("upperBound"), s.values("offset")))
+    runPattern(LoopPatterns.simpleWhileLoop).foreach(s => return SimpleWhileLoop(s.values("iter")))
+    runPattern(LoopPatterns.countUpForLoopWithVarBounds).foreach(s => return CountUpForLoopWithVarBounds(s.values("lowerBound"), s.values("upperBound"), s.values("incr")))
+    runPattern(LoopPatterns.countDownForLoopWithVarBounds).foreach(s => return CountDownForLoopWithVarBounds(s.values("upperBound"), s.values("lowerBound"), s.values("incr")))
+    runPattern(LoopPatterns.randomizedWhileLoop).foreach(s => return RandomizedWhileLoop(s.values("iter")))
+    runPattern(LoopPatterns.doWhileLoop).foreach(s => return DoWhileLoop(s.values("iter")))
 
     UnidentifiedLoop()
   }
@@ -68,11 +73,18 @@ object Loop {
   sealed trait LoopInfo
   case class UnidentifiedLoop() extends LoopInfo
   case class IteratorLoop(iterable: Value) extends LoopInfo
-  case class ArrayLoop(iterable: Value) extends LoopInfo
+  case class ArrayForEachLoop(iterable: Value) extends LoopInfo
+  case class ArrayForLoop(iterable: Value) extends LoopInfo
   case class SimpleCountUpForLoop(lowerBound: Value, upperBound: Value, increment: Value) extends LoopInfo
   case class SimpleCountDownForLoop(upperBound: Value, lowerBound: Value, increment: Value) extends LoopInfo
-  case class DynamicCountUpForLoop(lowerBound: Value, upperBound: Value, increment: Value) extends LoopInfo
-  case class DynamicCountUpForLoopWithOffset(lowerBound: Value, upperBound: Value, increment: Value, offset:Value) extends LoopInfo
+  case class CountUpForLoopWithSizedBound(lowerBound: Value, upperBound: Value, increment: Value) extends LoopInfo
+  case class CountUpForLoopWithSizedBoundAndOffset(lowerBound: Value, upperBound: Value, increment: Value, offset:Value) extends LoopInfo
   case class CharacterForLoop(lowerBound: Value, upperBound: Value, increment: Value) extends LoopInfo
+  case class SimpleWhileLoop(iterable: Value) extends LoopInfo
+  case class IteratorWhileLoop(iterable: Value) extends LoopInfo
+  case class CountUpForLoopWithVarBounds(lowerBound: Value, upperBound: Value, increment: Value) extends LoopInfo
+  case class CountDownForLoopWithVarBounds(upperBound: Value, lowerBound: Value, increment: Value) extends LoopInfo
+  case class RandomizedWhileLoop(iterable: Value) extends LoopInfo
+  case class DoWhileLoop(iterable: Value) extends LoopInfo
 
 }

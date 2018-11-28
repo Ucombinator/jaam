@@ -126,6 +126,16 @@ case class EqExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
     }
   }
 }
+case class NotEqExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case value: NeExpr =>
+        val states = lhs(state, value.getOp1)
+        states.flatMap(rhs(_, value.getOp2))
+      case _ => List()
+    }
+  }
+}
 case class GtExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
   override def apply(state: State, value: Value): List[State] = {
     value match {
@@ -160,6 +170,25 @@ case class LeExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
   override def apply(state: State, value: Value): List[State] = {
     value match {
       case value: LeExpr =>
+        val states = lhs(state, value.getOp1)
+        states.flatMap(rhs(_, value.getOp2))
+      case _ => List()
+    }
+  }
+}
+case class NegExpPattern(base: ExpPattern) extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case value: NegExpr =>
+        base(state, value.getOp)
+      case _ => List()
+    }
+  }
+}
+case class CmpgExpPattern(lhs: ExpPattern, rhs: ExpPattern) extends ExpPattern {
+  override def apply(state: State, value: Value): List[State] = {
+    value match {
+      case value: CmpgExpr =>
         val states = lhs(state, value.getOp1)
         states.flatMap(rhs(_, value.getOp2))
       case _ => List()
@@ -259,6 +288,7 @@ case class ArrayRefExpPattern(base: ExpPattern, index: ExpPattern) extends ExpPa
       case value: ArrayRef =>
         val baseStates = base(state, value.getBase)
         baseStates.flatMap(index(_, value.getIndex))
+      case _ => List()
     }
   }
 }
