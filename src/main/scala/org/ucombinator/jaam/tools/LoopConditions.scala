@@ -126,10 +126,10 @@ object Main {
 
         // ends = all exit nodes
         // sources = start nodes
-        // ts = all nodes that jump to header (t and continues)
         // c = start of condition
         // s = start of body
         // t = end of body
+        // ts = all nodes that jump to header (t and continues)
         // e = first statement after loop
         // ps = states that jump to e
         val ends = vs.flatMap(v => Graphs.successorListOf(graph, v).asScala.filter(s => !vs.contains(s)))
@@ -221,10 +221,10 @@ object Main {
           // (1b) Condition = every node on every path between c and e but not through t
           // Note: 1a is the same as 1b
           // (2) s = first choke point after e
-          // (3) s = statement after last edge to e
+          // (3) s = statement after last edge to e TODO: first common ancestor after last edges to e
           // (4a) s = first node such that t dominates e (relative to s)
           // (4b) s = first node that is post-dominated by t (relative to e)
-          // Note: 1a is the same as 1b
+          // Note: 4a is the same as 4b
           // Note: (1) is the same as (4)
 
           // Compute 1a
@@ -247,6 +247,7 @@ object Main {
               }
             }
 
+            /*
             // If case 1 returns multiple starts: There are breaks (or maybe returns?)
             // Since all real condition ps have path to all break ps:
             // Each time remove last p in topological ordering
@@ -294,7 +295,7 @@ object Main {
 
               bs = reach.filter(v => Graphs.predecessorListOf(loopGraph, v).asScala.exists(cond) && !cond.contains(v))
 
-            }
+            }*/
 
             println("  (1) condition = ")
             for (cb <- cond.toList.sortBy(_.index)) {
