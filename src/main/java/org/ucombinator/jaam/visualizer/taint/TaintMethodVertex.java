@@ -149,6 +149,11 @@ public class TaintMethodVertex extends TaintVertex {
     }
 
     @Override
+    public String toString() {
+        return className + "." + methodName;
+    }
+
+    @Override
     public String getStmtString() {
         return null;
     }

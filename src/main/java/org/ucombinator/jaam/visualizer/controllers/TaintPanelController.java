@@ -113,6 +113,9 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         LayoutAlgorithm.layoutSplitGraph(getVisibleRoot(), visibleSplitVertices);
         //LayoutAlgorithm.layout(visibleRoot);
         drawNodes(null, visibleRoot);
+
+        visibleRoot.getGraphics().requestLayout();
+
         drawEdges(visibleRoot);
         visibleRoot.setVisible(true);
     }

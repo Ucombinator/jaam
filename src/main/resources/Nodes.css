@@ -2,19 +2,22 @@
 .taint-method-hbox {
     -fx-border-color: #DCDCDC;
     -fx-border-width: 0px;
-    -fx-padding: -0.5;
-    -fx-spacing: 0;
+    -fx-padding: 0 0 0 0;
+    -fx-spacing: 1;
     -fx-alignment: center;
-    -fx-min-width: 9;
+    -fx-min-width: 5;
     -fx-min-height: 5;
+    /*-fx-margin: 0 0 0 0 */
 }
 
 .taint-method-vbox {
     -fx-border-color: #000000;
     -fx-border-width: 0.5px;
-    -fx-spacing: -0.5px;
-    -fx-padding: -1;
-    -fx-alignment: center;
-    -fx-min-width: 10;
+    -fx-spacing: 0.5;
+    -fx-padding: 0 0 0 0; /* top right bottom left */
+    /*-fx-alignment: center; */
+    /*-fx-margin: 0 1 0 1 */
+    /*-fx-min-width: 10;
     -fx-min-height:10;
+    */
 }

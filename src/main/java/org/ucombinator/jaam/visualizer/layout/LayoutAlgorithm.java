@@ -340,7 +340,7 @@ public class LayoutAlgorithm
     private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     Point2D treeLayout(List<T> roots, HashMap<T, ArrayList<T>> childrenMap, Comparator<T> childrenSortOrder)
     {
-        setSpanningEdges(childrenMap);
+        //setSpanningEdges(childrenMap);
         if(childrenSortOrder != null) {
             roots.sort(childrenSortOrder);
             childrenMap.values().forEach(l -> l.sort(childrenSortOrder));
@@ -420,7 +420,9 @@ public class LayoutAlgorithm
         root.setY(top); //top-most corner y
     }
 
+    /*
     private static <T extends AbstractLayoutVertex> void setSpanningEdges(HashMap<T, ArrayList<T>> childrenMap) {
+
 
         // Mark which edges are in our spanning tree, and which are not.
         for (T parent : childrenMap.keySet()) {
@@ -430,6 +432,7 @@ public class LayoutAlgorithm
             }
         }
     }
+    */
 
     // Receives the root vertex and the split vertices.
     // Sets the coordinates and sizes of every vertex
