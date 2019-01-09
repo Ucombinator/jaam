@@ -2,6 +2,8 @@ package org.ucombinator.jaam.visualizer.graph;
 
 import org.ucombinator.jaam.visualizer.layout.*;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -113,6 +115,8 @@ public class GraphUtils {
     private static <R extends T, T extends HierarchicalVertex<T, S>, S extends Edge<T>>
     Graph<T,S> constructVisibleGraph(T self, Predicate<T> isVisible, BiFunction<T, T, S> edgeBuilder, GraphTransform<R,T> transform) {
 
+        Instant startConstruct = Instant.now();
+
         // Add all visible vertices
         Graph<T, S> immutableGraph = self.getInnerGraph();
         Graph<T, S> visibleGraph = new Graph<>();
@@ -128,6 +132,8 @@ public class GraphUtils {
                 transform.add(v, newV);
             }
         }
+
+        Instant afterNodeCheck = Instant.now();
 
         /*
         System.out.println("Before adding edges");
@@ -158,6 +164,18 @@ public class GraphUtils {
             if(isVisible.test(v)) {
                 GraphUtils.findVisibleEdges(v, immutableGraph, visibleGraph, edgeBuilder, transform);
             }
+        }
+
+        Instant endConstruct = Instant.now();
+
+        {
+            long totalConstruct = Duration.between(startConstruct,endConstruct).toMillis();
+            long nodeCheck = Duration.between(startConstruct,afterNodeCheck).toMillis();
+            long edgeStep = Duration.between(afterNodeCheck,endConstruct).toMillis();
+
+            System.out.println("TIME\t\t\t\tConstruct Visible Graph took: " + totalConstruct);
+            System.out.println("TIME\t\t\t\t\tNode Check:\t" + nodeCheck);
+            System.out.println("TIME\t\t\t\t\tEdge Step: \t" + edgeStep);
         }
 
         return visibleGraph;

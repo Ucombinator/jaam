@@ -85,12 +85,18 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     public void drawGraph() {
         visibleRoot.setVisible(false);
 
+        Instant startDraw = Instant.now();
+
         immAndVisAncestors = prepareGraph(immAncestors);
         immAndVisDescendants = prepareGraph(immDescendants);
         immsplitVertices.removeIf(v -> ((TaintAddress)v).type == TaintAddress.Type.Inner);
 
+        Instant afterPrepare = Instant.now();
+
         // Merge ascendants and descendants into special split graph
         createSplitGraph();
+
+        Instant afterSplitGraph = Instant.now();
 
         this.visibleRoot = immAndVisAncestors.newRoot;
 
@@ -114,20 +120,49 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         */
 
         LayoutAlgorithm.layoutSplitGraph(getVisibleRoot(), visibleSplitVertices);
+
+        Instant afterLayout = Instant.now();
+
         //LayoutAlgorithm.layout(visibleRoot);
         drawNodes(null, visibleRoot);
+
+        Instant afterNodeDraw = Instant.now();
 
         visibleRoot.getGraphics().requestLayout();
 
         drawEdges(visibleRoot);
+
+        Instant endDraw = Instant.now();
+
+        {
+
+            long totalDraw = Duration.between(startDraw, endDraw).toMillis();
+            long prepare = Duration.between(startDraw,afterPrepare).toMillis();
+            long createSplit = Duration.between(afterPrepare,afterSplitGraph).toMillis();
+            long layout = Duration.between(afterSplitGraph, afterLayout).toMillis();
+            long nodeDraw = Duration.between(afterLayout, afterNodeDraw).toMillis();
+            long edgeDraw = Duration.between(afterNodeDraw, endDraw).toMillis();
+
+            System.out.println("TIME\tDraw Taint Graph took: " + totalDraw);
+            System.out.println("TIME\t\tPrepare:\t" + prepare);
+            System.out.println("TIME\t\tCreateSplit:\t" + createSplit);
+            System.out.println("TIME\t\tLayout:\t" + layout);
+            System.out.println("TIME\t\tNodeDraw:\t" + nodeDraw);
+            System.out.println("TIME\t\tEdgeDraw:\t" + edgeDraw);
+        }
+
         visibleRoot.setVisible(true);
     }
 
     // Recieves a set of immutable vertices to draw
     private GraphTransform<TaintRootVertex, TaintVertex> prepareGraph(Set<TaintVertex> verticesToDraw) {
 
+        Instant startPrepare = Instant.now();
+
         System.out.println("Taint Vertices to draw: " + verticesToDraw.size());
         GraphTransform<TaintRootVertex, TaintVertex> immToFlatVisible = this.getImmutableRoot().constructVisibleGraph(verticesToDraw);
+
+        Instant afterFlatVisible = Instant.now();
 
         /*
         System.out.println("---------------END-------------------------");
@@ -146,10 +181,31 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         GraphTransform<TaintRootVertex, TaintVertex> visibleToNonInner = this.compressInnerNodes(immToFlatVisible.newRoot);
 
+        Instant afterNonInner = Instant.now();
+
         GraphTransform<TaintRootVertex, TaintVertex> immToNonInner = GraphTransform.transfer(immToFlatVisible, visibleToNonInner);
+
+        Instant afterNonInnerTransf = Instant.now();
 
         // Groups by method
         GraphTransform<TaintRootVertex, TaintVertex> nonInnerToLayerVisible = LayerFactory.getLayeredTaintGraph(visibleToNonInner.newRoot);
+
+        Instant endPrepare = Instant.now();
+
+        {
+            long totalPrepare = Duration.between(startPrepare,endPrepare).toMillis();
+            long flatVisible = Duration.between(startPrepare,afterFlatVisible).toMillis();
+            long nonInner = Duration.between(afterFlatVisible,afterNonInner).toMillis();
+            long nonInnerTranf = Duration.between(afterNonInner,afterNonInnerTransf).toMillis();
+            long layerVisible = Duration.between(afterNonInnerTransf,endPrepare).toMillis();
+
+            System.out.println("TIME\t\t\tPrepare took: " + totalPrepare);
+            System.out.println("TIME\t\t\t\tFlatVisible:\t" + flatVisible);
+            System.out.println("TIME\t\t\t\tNonInner:\t" + nonInner);
+            System.out.println("TIME\t\t\t\tTransfer:\t" + nonInnerTranf);
+            System.out.println("TIME\t\t\t\tLayerVisible:\t" + layerVisible);
+        }
+
         // Groups by Class
         //GraphTransform<TaintRootVertex, TaintVertex> flatToLayerVisible = LayerFactory.getTaintClassGrouping(immToFlatVisible.newRoot);
 
