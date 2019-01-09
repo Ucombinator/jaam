@@ -3,10 +3,12 @@ package org.ucombinator.jaam.visualizer.controllers;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.Color;
 import javafx.util.Pair;
 import org.ucombinator.jaam.tools.taint3.Address;
 import org.ucombinator.jaam.visualizer.graph.GraphTransform;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
+import org.ucombinator.jaam.visualizer.gui.MethodGuiNode;
 import org.ucombinator.jaam.visualizer.gui.SelectEvent;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.*;
@@ -110,11 +112,17 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         }
         */
 
+
         LayoutAlgorithm.layoutSplitGraph(getVisibleRoot(), visibleSplitVertices);
         //LayoutAlgorithm.layout(visibleRoot);
         drawNodes(null, visibleRoot);
 
-        visibleRoot.getGraphics().requestLayout();
+        for (TaintVertex v : visibleSplitVertices) {
+            if (v instanceof TaintMethodVertex) {
+                ((MethodGuiNode)v.getGraphics()).setBackgroundFill(Color.GREEN);
+            }
+            //v.getGraphics().setFill(Color.GREEN);
+        }
 
         drawEdges(visibleRoot);
         visibleRoot.setVisible(true);

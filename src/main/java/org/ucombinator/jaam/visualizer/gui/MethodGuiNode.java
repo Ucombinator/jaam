@@ -33,7 +33,8 @@ public class MethodGuiNode extends GUINode{
 
         pane = new VBox();
         pane.getStyleClass().add("taint-method-vbox");
-        pane.setBackground(new Background(new BackgroundFill(Color.DEEPSKYBLUE, null, null)));
+        setBackgroundFill(Color.DEEPSKYBLUE);
+        //this.pane.setBackground(new Background(new BackgroundFill(Color.DEEPSKYBLUE, null, null)));
 
         inputPane = new HBox();
         inputPane.getStyleClass().add("taint-method-hbox");
@@ -157,6 +158,10 @@ public class MethodGuiNode extends GUINode{
 
     public double getHeight() {
         return pane.getHeight();
+    }
+
+    public void setBackgroundFill(Color c) {
+        this.pane.setBackground(new Background(new BackgroundFill(c, null, null)));
     }
 
     @Override
