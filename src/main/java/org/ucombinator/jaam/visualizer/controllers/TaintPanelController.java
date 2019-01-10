@@ -21,6 +21,8 @@ import soot.Value;
 import soot.jimple.internal.JimpleLocal;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -40,6 +42,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     private GraphTransform<TaintRootVertex, TaintVertex> immAndVisDescendants;
     private Set<TaintVertex> immsplitVertices; // Nodes that split the visible graph
     private Set<TaintVertex> visibleSplitVertices;
+
     // Graph is the statement graph
     public TaintPanelController(Graph<TaintVertex, TaintEdge> graph, CodeViewController codeController, MainTabController tabController) throws IOException {
         super(TaintRootVertex::new, tabController);
@@ -84,12 +87,18 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     public void drawGraph() {
         visibleRoot.setVisible(false);
 
+        Instant startDraw = Instant.now();
+
         immAndVisAncestors = prepareGraph(immAncestors);
         immAndVisDescendants = prepareGraph(immDescendants);
         immsplitVertices.removeIf(v -> ((TaintAddress)v).type == TaintAddress.Type.Inner);
 
+        Instant afterPrepare = Instant.now();
+
         // Merge ascendants and descendants into special split graph
         createSplitGraph();
+
+        Instant afterSplitGraph = Instant.now();
 
         this.visibleRoot = immAndVisAncestors.newRoot;
 
@@ -114,6 +123,9 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
 
         LayoutAlgorithm.layoutSplitGraph(getVisibleRoot(), visibleSplitVertices);
+
+        Instant afterLayout = Instant.now();
+
         //LayoutAlgorithm.layout(visibleRoot);
         drawNodes(null, visibleRoot);
 
@@ -123,16 +135,43 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
             }
             //v.getGraphics().setFill(Color.GREEN);
         }
+        Instant afterNodeDraw = Instant.now();
+
+        visibleRoot.getGraphics().requestLayout();
 
         drawEdges(visibleRoot);
+
+        Instant endDraw = Instant.now();
+
+        {
+
+            long totalDraw = Duration.between(startDraw, endDraw).toMillis();
+            long prepare = Duration.between(startDraw,afterPrepare).toMillis();
+            long createSplit = Duration.between(afterPrepare,afterSplitGraph).toMillis();
+            long layout = Duration.between(afterSplitGraph, afterLayout).toMillis();
+            long nodeDraw = Duration.between(afterLayout, afterNodeDraw).toMillis();
+            long edgeDraw = Duration.between(afterNodeDraw, endDraw).toMillis();
+
+            System.out.println("TIME\tDraw Taint Graph took: " + totalDraw);
+            System.out.println("TIME\t\tPrepare:\t" + prepare);
+            System.out.println("TIME\t\tCreateSplit:\t" + createSplit);
+            System.out.println("TIME\t\tLayout:\t" + layout);
+            System.out.println("TIME\t\tNodeDraw:\t" + nodeDraw);
+            System.out.println("TIME\t\tEdgeDraw:\t" + edgeDraw);
+        }
+
         visibleRoot.setVisible(true);
     }
 
     // Recieves a set of immutable vertices to draw
     private GraphTransform<TaintRootVertex, TaintVertex> prepareGraph(Set<TaintVertex> verticesToDraw) {
 
+        Instant startPrepare = Instant.now();
+
         System.out.println("Taint Vertices to draw: " + verticesToDraw.size());
         GraphTransform<TaintRootVertex, TaintVertex> immToFlatVisible = this.getImmutableRoot().constructVisibleGraph(verticesToDraw);
+
+        Instant afterFlatVisible = Instant.now();
 
         /*
         System.out.println("---------------END-------------------------");
@@ -151,10 +190,31 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         GraphTransform<TaintRootVertex, TaintVertex> visibleToNonInner = this.compressInnerNodes(immToFlatVisible.newRoot);
 
+        Instant afterNonInner = Instant.now();
+
         GraphTransform<TaintRootVertex, TaintVertex> immToNonInner = GraphTransform.transfer(immToFlatVisible, visibleToNonInner);
+
+        Instant afterNonInnerTransf = Instant.now();
 
         // Groups by method
         GraphTransform<TaintRootVertex, TaintVertex> nonInnerToLayerVisible = LayerFactory.getLayeredTaintGraph(visibleToNonInner.newRoot);
+
+        Instant endPrepare = Instant.now();
+
+        {
+            long totalPrepare = Duration.between(startPrepare,endPrepare).toMillis();
+            long flatVisible = Duration.between(startPrepare,afterFlatVisible).toMillis();
+            long nonInner = Duration.between(afterFlatVisible,afterNonInner).toMillis();
+            long nonInnerTranf = Duration.between(afterNonInner,afterNonInnerTransf).toMillis();
+            long layerVisible = Duration.between(afterNonInnerTransf,endPrepare).toMillis();
+
+            System.out.println("TIME\t\t\tPrepare took: " + totalPrepare);
+            System.out.println("TIME\t\t\t\tFlatVisible:\t" + flatVisible);
+            System.out.println("TIME\t\t\t\tNonInner:\t" + nonInner);
+            System.out.println("TIME\t\t\t\tTransfer:\t" + nonInnerTranf);
+            System.out.println("TIME\t\t\t\tLayerVisible:\t" + layerVisible);
+        }
+
         // Groups by Class
         //GraphTransform<TaintRootVertex, TaintVertex> flatToLayerVisible = LayerFactory.getTaintClassGrouping(immToFlatVisible.newRoot);
 
@@ -330,6 +390,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     private EventHandler<SelectEvent<StateVertex>> onVertexSelect = new EventHandler<SelectEvent<StateVertex>>() {
         @Override
         public void handle(SelectEvent<StateVertex> selectEvent) {
+            Instant handleStart = Instant.now();
             StateVertex v = selectEvent.getVertex();
             Set<TaintVertex> startVertices = new HashSet<>();
             VizPanelController vizController = TaintPanelController.this.tabController.vizPanelController;
@@ -353,6 +414,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
                     }
                 }
             }
+            Instant afterGetting = Instant.now();
             /*
             System.out.println("Start vertices: " + startVertices.size());
             for (TaintVertex V : startVertices)  {
@@ -361,6 +423,14 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
             */
 
             drawConnectedVertices(startVertices);
+            Instant handleEnd = Instant.now();
+
+            long totalHandle = Duration.between(handleStart, handleEnd).toMillis();
+            long gettingTook = Duration.between(handleStart, afterGetting).toMillis();
+            long drawingTook = Duration.between(afterGetting, handleEnd).toMillis();
+            System.out.println("TIME Handle took " + totalHandle);
+            System.out.println("TIME \tGetting took " + gettingTook + "\nTIME \tDrawing took " + drawingTook);
+
         }
     };
 
@@ -465,19 +535,19 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
     }
 
     private void drawConnectedVertices(Set<TaintVertex> addresses) {
-        long time1 = System.nanoTime();
+        Instant startDraw = Instant.now();
         immsplitVertices = addresses;
         Pair<HashSet<TaintVertex>, HashSet<TaintVertex>> verticesToDraw = findConnectedAddresses(addresses);
 
         immAncestors = verticesToDraw.getKey();
         immDescendants = verticesToDraw.getValue();
 
-        long time2 = System.nanoTime();
+        Instant afterFind = Instant.now();
         this.drawGraph();
-        long time3 = System.nanoTime();
+        Instant afterDraw = Instant.now();
 
-        System.out.println("Time to compute connected vertices: " + (time2 - time1) / 1000000000.0);
-        System.out.println("Time to draw graph: " + (time3 - time2) / 1000000000.0);
+        System.out.println("TIME\t\t Time to compute connected vertices: " + Duration.between(startDraw,afterFind).toMillis());
+        System.out.println("TIME\t\t Time to draw graph: " + Duration.between(afterFind,afterDraw).toMillis());
     }
 
     private HashSet<TaintVertex> findAddressesByMethods(Set<String> methodNames) {
@@ -490,10 +560,9 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         HashSet<TaintVertex> ancestors = new HashSet<>();
         HashSet<TaintVertex> descendants = new HashSet<>();
 
-        // TODO: This code is cleaner, but might take longer?
         for (TaintVertex v : startVertices) {
-            ancestors.addAll(v.getAncestors());
-            descendants.addAll(v.getDescendants());
+            v.getAncestors(ancestors);
+            v.getDescendants(descendants);
         }
 
         return new Pair<>(ancestors, descendants);
