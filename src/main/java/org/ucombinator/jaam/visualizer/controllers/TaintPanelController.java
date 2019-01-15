@@ -128,7 +128,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
 
         Instant afterNodeDraw = Instant.now();
 
-        visibleRoot.getGraphics().requestLayout();
+        //visibleRoot.getGraphics().requestLayout();
 
         drawEdges(visibleRoot);
 
