@@ -33,7 +33,8 @@ public class MethodGuiNode extends GUINode{
 
         pane = new VBox();
         pane.getStyleClass().add("taint-method-vbox");
-        pane.setBackground(new Background(new BackgroundFill(Color.DEEPSKYBLUE, null, null)));
+        setBackgroundFill(Color.DEEPSKYBLUE);
+        //this.pane.setBackground(new Background(new BackgroundFill(Color.DEEPSKYBLUE, null, null)));
 
         inputPane = new HBox();
         inputPane.getStyleClass().add("taint-method-hbox");
@@ -41,12 +42,14 @@ public class MethodGuiNode extends GUINode{
         outPane.getStyleClass().add("taint-method-hbox");
 
 
+        /*
         System.out.println("START " + v
                 + "\nT\t---> " + this.getBoundsInParent()
                 + "\nI\t---> " + inputPane.getBoundsInParent()
                 + "\nO\t---> " + outPane.getBoundsInParent()
                 + "\nP\t---> " + pane.getBoundsInParent()
         );
+        */
 
 
         fillTopAndBottom();
@@ -65,13 +68,14 @@ public class MethodGuiNode extends GUINode{
         inputPane.getChildren().add(tempRect);
         outPane.getChildren().add(tempRect);
         */
+        /*
         System.out.println("END " + v
                 + "\nT\t--> " + this.getBoundsInParent()
                 + "\nI\t---> " + inputPane.getBoundsInParent()
                 + "\nO\t---> " + outPane.getBoundsInParent()
                 + "\nP\t---> " + pane.getBoundsInParent()
         );
-
+        */
     }
 
     private void fillTopAndBottom() {
@@ -84,7 +88,7 @@ public class MethodGuiNode extends GUINode{
             guiNode.rect.setStroke(null);
 
             inputPane.getChildren().add(guiNode);
-            System.out.println("\t\tI\t " + this.getRectBoundsInParent() + " ?? " + (guiNode == v.getGraphics()));
+            //System.out.println("\t\tI\t " + this.getRectBoundsInParent() + " ?? " + (guiNode == v.getGraphics()));
         }
 
 
@@ -95,7 +99,7 @@ public class MethodGuiNode extends GUINode{
             guiNode.rect.setStroke(null);
 
             outPane.getChildren().add(guiNode);
-            System.out.println("\t\tO\t " +this.getRectBoundsInParent() + " ?? " + (guiNode == v.getGraphics()));
+            //System.out.println("\t\tO\t " +this.getRectBoundsInParent() + " ?? " + (guiNode == v.getGraphics()));
         }
 
         // Calculate the size
@@ -104,10 +108,12 @@ public class MethodGuiNode extends GUINode{
 
         if (numElements == 0) numElements = 1; // We will use 1 as minimal size of a method node
 
+        /*
         System.out.println("Width Elements:\n\t#\t" + numElements
                 + "\n\th\n\t\tPad\t" + inputPane.getPadding() + "\n\t\tSpa\t" + inputPane.getSpacing()
                 + "\n\tv\n\t\tPad\t" + pane.getPadding() + "\n\t\tSpa\t" + pane.getSpacing()
         );
+        */
 
         double width = inputPane.getPadding().getLeft() // Left Padding
                 + numElements * ELEMENT_WIDTH +  (numElements - 1) * inputPane.getSpacing() // Elements
@@ -118,6 +124,7 @@ public class MethodGuiNode extends GUINode{
                 + 2 * ELEMENT_HEIGHT + pane.getSpacing()
                 + outPane.getPadding().getTop() + outPane.getPadding().getBottom()
                 + 1.0
+                + 2.0 // Not sure where this comes from...
                 ;
 
         width = Math.max(width, height); // Always at least a square
@@ -151,6 +158,10 @@ public class MethodGuiNode extends GUINode{
 
     public double getHeight() {
         return pane.getHeight();
+    }
+
+    public void setBackgroundFill(Color c) {
+        this.pane.setBackground(new Background(new BackgroundFill(c, null, null)));
     }
 
     @Override
