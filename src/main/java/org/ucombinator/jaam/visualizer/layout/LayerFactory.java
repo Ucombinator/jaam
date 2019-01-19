@@ -7,6 +7,7 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.graph.GraphTransform;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.graph.Graph;
+import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.state.*;
 import org.ucombinator.jaam.visualizer.taint.*;
 
@@ -142,6 +143,12 @@ public class LayerFactory
                     if (methodName == null) {
                         methodName = v.toString() + v.getLabel(); // Should be unique
                     }
+                    else {
+                        // We want to group only library nodes now...
+                        if (Main.getSelectedMainTabController().codeViewController.haveCode(v.getClassName())) {
+                           methodName = v.getLongText();
+                        }
+                    }
                     return longHash(methodName);
                 },
                 new Function<List<TaintVertex>, TaintVertex>() {
@@ -152,6 +159,12 @@ public class LayerFactory
 
                         if (representative.getMethodName() == null) {
                             return representative;
+                        }
+
+                        if (taintVertices.size() == 1) {
+                            if (Main.getSelectedMainTabController().codeViewController.haveCode(representative.getClassName())) {
+                                return representative;
+                            }
                         }
 
                         String className  = representative.getClassName();
@@ -168,8 +181,6 @@ public class LayerFactory
                                 System.out.println("\t" + v + " is not an address");
                                 continue;
                             }
-
-
 
                             TaintAddress a = (TaintAddress)v;
                             //System.out.println("\t" + a.toString() + " is a " + a.type);

@@ -187,9 +187,11 @@ public class TaintAddress extends TaintVertex {
 
     private Color defaultColor() {
         switch (type) {
-            case Return: case Parameter: case Throws: return Color.LIGHTGREEN;
+            case Return: return Color.DARKGREEN;
+            case Parameter: return Color.RED;
+            case Throws: return Color.HOTPINK;
             case Inner: return Color.BLUE;
-            case This: return Color.HOTPINK;
+            case This: return Color.LIGHTGREEN;
             case Lambda: return Color.ORCHID;
             case StaticField: return Color.BROWN;
             case InstanceField: return Color.SADDLEBROWN;
