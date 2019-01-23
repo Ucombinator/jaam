@@ -288,9 +288,18 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
         ArrayList<Pair<Color, String>> legend = new ArrayList<>();
 
         legend.add(new Pair(iteratorLoopColor, "Iterator Loop"));
-        legend.add(new Pair(arrayLoopColor, "Array Loop"));
+        legend.add(new Pair(arrayForEachLoopColor, "Array ForEach Loop"));
+        legend.add(new Pair(arrayForLoopColor, "Array Loop"));
         legend.add(new Pair(simpleCountUpLoopColor, "Simple Count Up Loop"));
         legend.add(new Pair(simpleCountDownLoopColor, "Simple Count Down Loop"));
+        legend.add(new Pair(countUpForLoopWithSizedBoundColor, "Count Up For Loop with sized bound"));
+        legend.add(new Pair(countUpForLoopWithSizedBoundAndOffsetColor, "Count Up For Loop with sized bound and offset Loop"));
+        legend.add(new Pair(countUpForLoopWithVarBoundsColor, "Count Up For Loop with Vars"));
+        legend.add(new Pair(characterForLoopColor, "Character For Loop"));
+        legend.add(new Pair(simpleWhileLoopColor, "Simple While Loop"));
+        legend.add(new Pair(countDownForLoopWithVarBoundsColor, "Count Down For Loop with Vars"));
+        legend.add(new Pair(randomizedWhileLoopColor, "Randomized While Loop"));
+        legend.add(new Pair(doWhileLoopColor, "Do While Loop"));
         legend.add(new Pair(unknownLoopColor, "Unknown Loop"));
 
         return legend;
