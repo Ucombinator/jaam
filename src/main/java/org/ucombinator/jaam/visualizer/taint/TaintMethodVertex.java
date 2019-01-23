@@ -22,6 +22,7 @@ public class TaintMethodVertex extends TaintVertex {
 
     public final boolean isCodeAvailable;
 
+    public  static final Color libraryMethodColor = Color.LIGHTGRAY;
     private Color defaultColor = Color.DEEPSKYBLUE;
     private LayoutAlgorithm.LAYOUT_ALGORITHM innerLayout = LayoutAlgorithm.LAYOUT_ALGORITHM.SUMMARY;
 
@@ -41,7 +42,7 @@ public class TaintMethodVertex extends TaintVertex {
         this.methodName = methodName;
 
         if (!Main.getSelectedMainTabController().codeViewController.haveCode(className)) {
-            this.color = Color.LIGHTGRAY;
+            this.color = libraryMethodColor;
             this.setExpanded(false);
             this.isCodeAvailable = false;
         }

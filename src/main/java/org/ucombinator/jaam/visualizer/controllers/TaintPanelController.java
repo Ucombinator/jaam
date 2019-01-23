@@ -2,8 +2,12 @@ package org.ucombinator.jaam.visualizer.controllers;
 
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.util.Pair;
 import org.ucombinator.jaam.tools.taint3.Address;
 import org.ucombinator.jaam.visualizer.graph.GraphTransform;
@@ -24,7 +28,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class TaintPanelController extends GraphPanelController<TaintVertex, TaintEdge>
@@ -48,6 +51,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         super(TaintRootVertex::new, tabController);
 
         this.codeController = codeController;
+        fillLegend();
 
         for (TaintVertex v : graph.getVertices()) {
             if (v.getClassName() == null && v.getMethodName() == null) {
@@ -74,6 +78,39 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         fillFieldDictionary();
         immAndVisAncestors = null;
         immAndVisDescendants = null;
+    }
+
+    private void fillLegend() {
+
+        {
+            ArrayList<Pair<Color, String>> colorLegend = TaintAddress.getColorLegend();
+
+            for(Pair<Color,String> legend : colorLegend) {
+                MenuItem theLegend = new MenuItem();
+                HBox loopRow = new HBox();
+                loopRow.setSpacing(legendInnerRowSpacing);
+
+                Rectangle loopColor = new Rectangle(legendSquareSize, legendSquareSize);
+                loopColor.setFill(legend.getKey());
+                loopRow.getChildren().addAll(loopColor, new Label(legend.getValue()));
+
+                theLegend.setGraphic(loopRow);
+                this.legend.getItems().add(theLegend);
+
+            }
+        }
+        {
+            MenuItem theLegend = new MenuItem();
+            HBox libRow = new HBox();
+            libRow.setSpacing(legendInnerRowSpacing);
+
+            Rectangle sccColor = new Rectangle(legendSquareSize, legendSquareSize);
+            sccColor.setFill(TaintMethodVertex.libraryMethodColor);
+            libRow.getChildren().addAll(sccColor, new Label("Library Method"));
+
+            theLegend.setGraphic(libRow);
+            this.legend.getItems().add(theLegend);
+        }
     }
 
     public TaintRootVertex getVisibleRoot() {
@@ -137,7 +174,7 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         }
         Instant afterNodeDraw = Instant.now();
 
-        visibleRoot.getGraphics().requestLayout();
+        //visibleRoot.getGraphics().requestLayout();
 
         drawEdges(visibleRoot);
 
