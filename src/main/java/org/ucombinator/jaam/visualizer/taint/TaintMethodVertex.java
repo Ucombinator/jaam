@@ -2,6 +2,7 @@ package org.ucombinator.jaam.visualizer.taint;
 
 import javafx.animation.ParallelTransition;
 import javafx.scene.paint.Color;
+import org.ucombinator.jaam.visualizer.classTree.PackageNode;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.GUINode;
@@ -19,6 +20,9 @@ public class TaintMethodVertex extends TaintVertex {
     public static final double ELEM_HEIGHT = 10.0;
     public static final double LABEL_HEIGHT = 10.0;
 
+    public final boolean isCodeAvailable;
+
+    public  static final Color libraryMethodColor = Color.LIGHTGRAY;
     private Color defaultColor = Color.DEEPSKYBLUE;
     private LayoutAlgorithm.LAYOUT_ALGORITHM innerLayout = LayoutAlgorithm.LAYOUT_ALGORITHM.SUMMARY;
 
@@ -38,8 +42,12 @@ public class TaintMethodVertex extends TaintVertex {
         this.methodName = methodName;
 
         if (!Main.getSelectedMainTabController().codeViewController.haveCode(className)) {
-            this.color = Color.DARKGRAY;
+            this.color = libraryMethodColor;
             this.setExpanded(false);
+            this.isCodeAvailable = false;
+        }
+        else {
+            isCodeAvailable = true;
         }
 
         this.inputs = inputs;
@@ -54,25 +62,33 @@ public class TaintMethodVertex extends TaintVertex {
     }
 
     private void addVertex(TaintVertex v) {
-       //this.getInnerGraph().addVertex(v);
-       //v.setOuterGraph(this.getInnerGraph());
+       this.getInnerGraph().addVertex(v);
+       v.setOuterGraph(this.getInnerGraph());
     }
     public TaintMethodVertex copy() {
         return new TaintMethodVertex(className, methodName, getPreferredLayout(), inputs, inner, outputs);
     }
 
     @Override
-    public MethodGuiNode getGraphics() {
-        return methodGraphic;
+    public GUINode getGraphics() {
+        if (isCodeAvailable)
+            return methodGraphic;
+        else
+            return super.getGraphics();
     }
     @Override
-    public MethodGuiNode setGraphics(GUINode parent) {
-        this.methodGraphic = new MethodGuiNode(parent, this);
+    public GUINode setGraphics(GUINode parent) {
+        if (isCodeAvailable) {
+            this.methodGraphic = new MethodGuiNode(parent, this);
 
-        this.setHeight(this.methodGraphic.getHeight());
-        this.setWidth(this.methodGraphic.getWidth());
+            this.setHeight(this.methodGraphic.getHeight());
+            this.setWidth(this.methodGraphic.getWidth());
 
-        return this.methodGraphic;
+            return this.methodGraphic;
+        }
+        else {
+            return super.setGraphics(parent);
+        }
     }
 
     public HashSet<String> getMethodNames() {
@@ -131,6 +147,11 @@ public class TaintMethodVertex extends TaintVertex {
             }
         }
         return builder.toString();
+    }
+
+    @Override
+    public String toString() {
+        return className + "." + methodName;
     }
 
     @Override

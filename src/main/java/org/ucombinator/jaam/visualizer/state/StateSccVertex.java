@@ -10,7 +10,7 @@ import java.util.List;
 
 public class StateSccVertex extends StateVertex {
 
-    private Color defaultColor = Color.DARKGREY;
+    public static final Color defaultColor = Color.DARKGREY;
 
     public StateSccVertex(String label)
     {

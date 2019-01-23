@@ -7,6 +7,7 @@ import javafx.scene.paint.Color;
 import org.ucombinator.jaam.visualizer.graph.GraphTransform;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.graph.Graph;
+import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.state.*;
 import org.ucombinator.jaam.visualizer.taint.*;
 
@@ -65,7 +66,7 @@ public class LayerFactory
                         return sccVertex;
                     }
                 },
-                TaintEdge::new);
+                TaintEdge::new, true);
     }
 
     private static HashMap<Integer, Integer> getVertexToComponentMap(List<List<Integer>> components) {
@@ -77,24 +78,6 @@ public class LayerFactory
         }
         return vertexToComponentIndex;
     }
-
-
-
-    /*
-    private static TaintRootVertex getClassClusteredTaintGraph(Graph<TaintVertex, TaintEdge> graph) {
-
-        TaintRootVertex classGraphRoot = getClassGroupingGraph(graph);
-
-        classGraphRoot.getInnerGraph().getVertices().forEach(classVertex -> {
-            if (classVertex.getInnerGraph().getVertices().size() > 1) {
-                TaintRootVertex methodRootVertex = getMethodGroupingGraph(classVertex.getInnerGraph());
-                Graph<TaintVertex, TaintEdge> groupedMethodGraph = methodRootVertex.getInnerGraph();
-                classVertex.setInnerGraph(groupedMethodGraph);
-            }
-        });
-        return classGraphRoot;
-    }
-    */
 
     private static int calcSize(Graph<TaintVertex, TaintEdge> graph) {
         int total = 0;
@@ -160,6 +143,12 @@ public class LayerFactory
                     if (methodName == null) {
                         methodName = v.toString() + v.getLabel(); // Should be unique
                     }
+                    else {
+                        // We want to group only library nodes now...
+                        if (Main.getSelectedMainTabController().codeViewController.haveCode(v.getClassName())) {
+                           methodName = v.getLongText();
+                        }
+                    }
                     return longHash(methodName);
                 },
                 new Function<List<TaintVertex>, TaintVertex>() {
@@ -167,6 +156,17 @@ public class LayerFactory
                     public TaintVertex apply(List<TaintVertex> taintVertices) {
 
                         TaintVertex representative = taintVertices.stream().findFirst().get();
+
+                        if (representative.getMethodName() == null) {
+                            return representative;
+                        }
+
+                        if (taintVertices.size() == 1) {
+                            if (Main.getSelectedMainTabController().codeViewController.haveCode(representative.getClassName())) {
+                                return representative;
+                            }
+                        }
+
                         String className  = representative.getClassName();
                         String methodName = representative.getMethodName();
                         assert methodName != null;
@@ -181,8 +181,6 @@ public class LayerFactory
                                 System.out.println("\t" + v + " is not an address");
                                 continue;
                             }
-
-
 
                             TaintAddress a = (TaintAddress)v;
                             //System.out.println("\t" + a.toString() + " is a " + a.type);
@@ -203,7 +201,8 @@ public class LayerFactory
                         return methodVertex;
                     }
                 },
-                TaintEdge::new);
+                TaintEdge::new,
+                true);
     }
 
 }

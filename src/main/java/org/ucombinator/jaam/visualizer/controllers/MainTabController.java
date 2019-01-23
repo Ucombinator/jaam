@@ -11,7 +11,6 @@ import javafx.scene.layout.VBox;
 import org.ucombinator.jaam.visualizer.classTree.ClassTreeNode;
 import org.ucombinator.jaam.visualizer.classTree.ClassTreeUtils;
 import org.ucombinator.jaam.visualizer.graph.Graph;
-import org.ucombinator.jaam.visualizer.layout.AbstractLayoutVertex;
 import org.ucombinator.jaam.visualizer.state.*;
 import org.ucombinator.jaam.visualizer.taint.*;
 import soot.SootClass;
@@ -44,7 +43,6 @@ public class MainTabController {
     private HashSet<StateVertex> stateHighlighted; // Visible nodes
     private HashSet<TaintVertex> taintHighlighted; // Visible nodes
     private SetHistoryProperty<StateVertex> immutableStateHidden; // Immutable nodes
-    private SetHistoryProperty<TaintVertex> immutableTaintShown; // Immutable nodes
 
     public MainTabController(File file, Graph<StateVertex, StateEdge> graph, List<CompilationUnit> compilationUnits,
                              Graph<TaintVertex, TaintEdge> taintGraph, Set<SootClass> sootClasses) throws IOException {
@@ -54,7 +52,6 @@ public class MainTabController {
         this.stateHighlighted = new LinkedHashSet<>();
         this.taintHighlighted = new LinkedHashSet<>();
         this.immutableStateHidden = new SetHistoryProperty<>(new SimpleSetProperty<>(FXCollections.observableSet()));
-        this.immutableTaintShown = new SetHistoryProperty<>(new SimpleSetProperty<>(FXCollections.observableSet()));
 
         // Initialize controllers
         this.codeViewController = new CodeViewController(compilationUnits, sootClasses);
@@ -80,7 +77,7 @@ public class MainTabController {
 
         // Add listeners
         this.immutableStateHidden.addListener(this.vizPanelController);
-        this.immutableTaintShown.addListener(this.taintPanelController);
+        //this.immutableTaintShown.addListener(this.taintPanelController);
     }
 
     public TreeView<ClassTreeNode> getClassTree() {
@@ -98,10 +95,6 @@ public class MainTabController {
         return this.immutableStateHidden;
     }
 
-    public SetHistoryProperty<TaintVertex> getImmutableTaintShown() {
-        return immutableTaintShown;
-    }
-
     public void hideSelectedStateNodes() {
         if (this.stateHighlighted.isEmpty()) { return; }
 
@@ -113,9 +106,8 @@ public class MainTabController {
     public void hideSelectedTaintNodes() {
         if (this.taintHighlighted.isEmpty()) { return; }
 
-        this.immutableTaintShown.removeAll(this.taintPanelController.getImmutable(this.taintHighlighted));
+        taintPanelController.hideVisibleVertices(this.taintHighlighted);
         this.taintHighlighted.clear();
-        this.taintPanelController.redrawGraph();
     }
 
     public void showAllStateNodes() {
@@ -186,9 +178,8 @@ public class MainTabController {
         }
 
         HashSet<TaintVertex> toHideVis = taintPanelController.getUnrelatedVisible(this.taintHighlighted);
-        this.immutableTaintShown.removeAll(this.taintPanelController.getImmutable(toHideVis));
         this.taintHighlighted.clear();
-        this.taintPanelController.redrawGraph();
+        this.taintPanelController.hideVisibleVertices(toHideVis);
     }
 
     // TODO: This should be done using event and event handling using FieldSelectEvent
