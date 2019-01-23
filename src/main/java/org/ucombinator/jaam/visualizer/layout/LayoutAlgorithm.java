@@ -2,22 +2,26 @@ package org.ucombinator.jaam.visualizer.layout;
 
 import javafx.geometry.Point2D;
 import javafx.util.Pair;
+import java.lang.Math;
 import org.ucombinator.jaam.visualizer.graph.Edge;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.state.StateSccVertex;
 import org.ucombinator.jaam.visualizer.taint.*;
 
+import java.lang.reflect.Array;
 import java.util.*;
 
 // The vertices in this layout must extend both AbstractLayoutVertex and Vertex
-public class LayoutAlgorithm
-{
+public class LayoutAlgorithm {
     // This works on a graph whose vertices have been assigned a bounding box
     private static final double MARGIN_PADDING = 10;
     private static final double NODES_PADDING = 10;
     private static final double ROOT_V_OFFSET = 10;
-
+    private static final double NODE_WIDTH = 40;
+    private enum LAYERS_TO_CONSIDER{
+        TOP,BOTTOM,BOTH,ALL
+    }
     public enum LAYOUT_ALGORITHM {
         DFS, BFS, SUMMARY, SPLIT
     }
@@ -44,10 +48,9 @@ public class LayoutAlgorithm
     private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     void expandSubGraphs(T parentVertex) {
         Graph<T, S> parentChildGraph = parentVertex.getInnerGraph();
-        for(T v: parentChildGraph.getVertices()) {
+        for (T v : parentChildGraph.getVertices()) {
             Graph<T, S> childGraph = v.getInnerGraph();
-            if (childGraph.getVertices().size() != 0)
-            {
+            if (childGraph.getVertices().size() != 0) {
                 // Layout the child graphs of each node and assign width W and height H to each node
                 // X and Y coordinates are RELATIVE to the parent
                 if (v.isExpanded()) {
@@ -67,15 +70,13 @@ public class LayoutAlgorithm
     void doLayout(LAYOUT_ALGORITHM alg, T parentVertex) {
         if (alg == LAYOUT_ALGORITHM.DFS) {
             dfsLayout(parentVertex);
-        }
-        else if (alg == LAYOUT_ALGORITHM.BFS) {
+        } else if (alg == LAYOUT_ALGORITHM.BFS) {
             bfsLayout(parentVertex);
-        }
-        else if (alg == LAYOUT_ALGORITHM.SUMMARY) {
-            if (! (parentVertex instanceof TaintMethodVertex) ) {
+        } else if (alg == LAYOUT_ALGORITHM.SUMMARY) {
+            if (!(parentVertex instanceof TaintMethodVertex)) {
                 throw new IllegalArgumentException("SUMMARY Layout requested but " + parentVertex + " not TaintMethodVertex");
             }
-            summaryLayout((TaintMethodVertex)parentVertex);
+            summaryLayout((TaintMethodVertex) parentVertex);
         }
     }
 
@@ -93,7 +94,7 @@ public class LayoutAlgorithm
         int max = Math.max(parentVertex.getInputs().size(), parentVertex.getOutputs().size());
 
         parentVertex.setWidth(max * TaintMethodVertex.ELEM_WIDTH);
-        parentVertex.setHeight(2*TaintMethodVertex.ELEM_HEIGHT + TaintMethodVertex.LABEL_HEIGHT);
+        parentVertex.setHeight(2 * TaintMethodVertex.ELEM_HEIGHT + TaintMethodVertex.LABEL_HEIGHT);
     }
 
     private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
@@ -104,7 +105,7 @@ public class LayoutAlgorithm
 
         graph.getVertices().forEach(v -> v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE));
 
-        Pair<List<T>, HashMap<T, ArrayList<T>> > rootsAndchildrenMap = getDFSChildMap(graph);
+        Pair<List<T>, HashMap<T, ArrayList<T>>> rootsAndchildrenMap = getDFSChildMap(graph);
 
         Point2D dimensions = treeLayout(rootsAndchildrenMap.getKey(), rootsAndchildrenMap.getValue());
         parentVertex.setWidth(dimensions.getX());
@@ -112,7 +113,7 @@ public class LayoutAlgorithm
     }
 
     private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
-    Pair<List<T>, HashMap<T, ArrayList<T>>> getDFSChildMap(Graph<T,S> graph) {
+    Pair<List<T>, HashMap<T, ArrayList<T>>> getDFSChildMap(Graph<T, S> graph) {
         graph.getVertices().forEach(v -> v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE));
 
         HashMap<T, ArrayList<T>> childMap = new HashMap<>();
@@ -163,7 +164,7 @@ public class LayoutAlgorithm
         expandSubGraphs(parentVertex);
 
         // Initialize all the nodes to be WHITE
-        for(T v: graph.getVertices()) {
+        for (T v : graph.getVertices()) {
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
         }
 
@@ -193,36 +194,33 @@ public class LayoutAlgorithm
      * Every node appears as a child as deep as possible in the tree (ties broken arbitrarily)
      */
     private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
-    HashMap<T, ArrayList<T>> maxDepthChildren(Graph<T, S> graph)
-    {
+    HashMap<T, ArrayList<T>> maxDepthChildren(Graph<T, S> graph) {
         HashMap<T, ArrayList<T>> childrenMap = new HashMap<>();
         HashMap<T, Integer> vertexCounters = new HashMap<>();
         Queue<T> vertexQueue = new ArrayDeque<>();
         HashSet<T> seen = new HashSet<>();
 
         List<T> roots = graph.getSources();
-        if(roots.isEmpty()) {
+        if (roots.isEmpty()) {
             System.out.println("Error! Could not build children map.");
             return childrenMap; // No vertices!
         }
 
-        for(T root : roots) {
+        for (T root : roots) {
             vertexQueue.add(root);
             seen.add(root);
         }
 
-        while(!vertexQueue.isEmpty())
-        {
+        while (!vertexQueue.isEmpty()) {
             T v = vertexQueue.remove();
             childrenMap.put(v, new ArrayList<>());
 
-            for(T child : graph.getOutNeighbors(v))
-            {
-                if(child == null) {
+            for (T child : graph.getOutNeighbors(v)) {
+                if (child == null) {
                     System.out.println("Error! Null child found.");
                 }
 
-                if(child.equals(v)) {
+                if (child.equals(v)) {
                     continue; // Skip recursive edge
                 }
 
@@ -241,9 +239,8 @@ public class LayoutAlgorithm
                     } else if (numberOfIncomingEdges == 0) {
                         childrenMap.get(v).add(child);
                         vertexQueue.add(child);
-                    }
-                    else {
-                        for(T inNeighbor : graph.getInNeighbors(child)) {
+                    } else {
+                        for (T inNeighbor : graph.getInNeighbors(child)) {
                             System.out.print(inNeighbor.getId() + " ");
                         }
                         System.out.println();
@@ -253,8 +250,7 @@ public class LayoutAlgorithm
 
                     if (numberOfIncomingEdges == null) {
                         System.out.println("Error Map\n\t " + vertexCounters);
-                    }
-                    else {
+                    } else {
                         numberOfIncomingEdges -= 1;  // v --> child
                         vertexCounters.put(child, numberOfIncomingEdges);
 
@@ -269,14 +265,13 @@ public class LayoutAlgorithm
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
         }
 
-        if(vertexCounters.size() > 0) {
+        if (vertexCounters.size() > 0) {
             System.out.println("BFS uncounted vertices, what happened to the incoming?!!! " + vertexCounters);
             for (Map.Entry<T, Integer> entry : vertexCounters.entrySet()) {
 
                 System.out.println("\t\t" + entry + " --> " + entry.getKey().getId() + " "
                         + entry.getKey().getVertexStatus() /*+ " " +  entry.getKey().getMethodVertices()*/);
-                for(T n : graph.getInNeighbors(entry.getKey()))
-                {
+                for (T n : graph.getInNeighbors(entry.getKey())) {
                     System.out.println("\t\t\t" + n + " --> " + n.getId() + " " + n.getVertexStatus());
                 }
             }
@@ -288,35 +283,31 @@ public class LayoutAlgorithm
     private static class ClassComp<T extends AbstractLayoutVertex> implements Comparator<T> {
         @Override
         public int compare(T o1, T o2) {
-            if(o1 instanceof StateSccVertex || o1 instanceof TaintSccVertex)
-            {
-                if(o2 instanceof StateSccVertex || o2 instanceof TaintSccVertex)
+            if (o1 instanceof StateSccVertex || o1 instanceof TaintSccVertex) {
+                if (o2 instanceof StateSccVertex || o2 instanceof TaintSccVertex)
                     return Integer.compare(o1.getId(), o2.getId());
                 else
                     return -1;
-            }
-            else if(o2 instanceof StateSccVertex || o2 instanceof TaintSccVertex)
-            {
+            } else if (o2 instanceof StateSccVertex || o2 instanceof TaintSccVertex) {
                 return 1;
             }
-            if(o1 instanceof MethodEntity && o2 instanceof MethodEntity)
-            {
-                MethodEntity c1 = (MethodEntity)o1;
-                MethodEntity c2 = (MethodEntity)o2;
+            if (o1 instanceof MethodEntity && o2 instanceof MethodEntity) {
+                MethodEntity c1 = (MethodEntity) o1;
+                MethodEntity c2 = (MethodEntity) o2;
 
                 int shortClassComp = c1.getShortClassName().compareTo(c2.getShortClassName());
 
-                if(shortClassComp != 0)
+                if (shortClassComp != 0)
                     return shortClassComp;
 
                 int fullClassComp = c1.getClassName().compareTo(c2.getClassName());
 
-                if(fullClassComp != 0)
+                if (fullClassComp != 0)
                     return fullClassComp;
 
                 int methodComp = c1.getMethodName().compareTo(c2.getMethodName());
 
-                if(methodComp != 0)
+                if (methodComp != 0)
                     return methodComp;
             }
 
@@ -328,20 +319,19 @@ public class LayoutAlgorithm
      * Does a tree layout of the graph (defined by the roots and the childmap)
      * Returns: the size of bounding box of the whole graph
      * ChildMap/Roots condition: Every node appears twice:
-     *     once as a key in the childrenMap, and
-     *     either as a root or in the child list of a different node
+     * once as a key in the childrenMap, and
+     * either as a root or in the child list of a different node
      * Note that if a childrenSort order is provided the roots and child lists will be sorted
-     * */
+     */
     private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
     Point2D treeLayout(List<T> roots, HashMap<T, ArrayList<T>> childrenMap) {
         return treeLayout(roots, childrenMap, null);
     }
 
     private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
-    Point2D treeLayout(List<T> roots, HashMap<T, ArrayList<T>> childrenMap, Comparator<T> childrenSortOrder)
-    {
+    Point2D treeLayout(List<T> roots, HashMap<T, ArrayList<T>> childrenMap, Comparator<T> childrenSortOrder) {
         //setSpanningEdges(childrenMap);
-        if(childrenSortOrder != null) {
+        if (childrenSortOrder != null) {
             roots.sort(childrenSortOrder);
             childrenMap.values().forEach(l -> l.sort(childrenSortOrder));
         }
@@ -352,20 +342,45 @@ public class LayoutAlgorithm
         double parentHeight = AbstractLayoutVertex.DEFAULT_HEIGHT + 2 * MARGIN_PADDING;
 
         double currentWidth = MARGIN_PADDING;
-        for(T root : roots) {
+        for (T root : roots) {
             storeBBoxWidthAndHeight(root, childrenMap);
 
             assignChildCoordinates(root, currentWidth, MARGIN_PADDING, childrenMap);
             currentWidth += root.getBboxWidth() + MARGIN_PADDING;
 
             parentWidth += root.getBboxWidth();
-            parentHeight  = Math.max(parentHeight, root.getBboxHeight() + 2 * MARGIN_PADDING);
+            parentHeight = Math.max(parentHeight, root.getBboxHeight() + 2 * MARGIN_PADDING);
         }
 
         return new Point2D(parentWidth, parentHeight);
     }
 
+    private static <T extends AbstractLayoutVertex & HierarchicalVertex<T, S>, S extends Edge<T>>
+    Point2D modifiedTreeLayout(List<T> roots, HashMap<T, ArrayList<T>> childrenMap, Comparator<T> childrenSortOrder) {
+        //setSpanningEdges(childrenMap);
+        if (childrenSortOrder != null) {
+            roots.sort(childrenSortOrder);
+            childrenMap.values().forEach(l -> l.sort(childrenSortOrder));
+        }
 
+        assert !roots.isEmpty();
+
+        double parentWidth = AbstractLayoutVertex.DEFAULT_WIDTH + (roots.size() + 1) * MARGIN_PADDING;
+        double parentHeight = AbstractLayoutVertex.DEFAULT_HEIGHT + 2 * MARGIN_PADDING;
+
+        double currentWidth = MARGIN_PADDING;
+        for (T root : roots) {
+            storeBBoxWidthAndHeight(root, childrenMap);
+
+            assignChildCoordinates(root, currentWidth, MARGIN_PADDING, childrenMap);
+            currentWidth += root.getBboxWidth() + MARGIN_PADDING;
+
+            parentWidth += root.getBboxWidth();
+            parentHeight = Math.max(parentHeight, root.getBboxHeight() + 2 * MARGIN_PADDING);
+        }
+
+        return new Point2D(parentWidth, parentHeight);
+    }
     /*
      * Preconditions: Height and Width of the child nodes of the graph is (recursively known)
      * input: graph and left/top offset
@@ -381,38 +396,36 @@ public class LayoutAlgorithm
         double subtreeHeight = children.stream().mapToDouble(T::getBboxHeight).max().orElse(0);
 
         root.setBboxWidth(Math.max(root.getWidth(), subtreeWidth));
-        root.setBboxHeight(root.getHeight() + (children.isEmpty() ? 0 : (NODES_PADDING + subtreeHeight)) );
+        root.setBboxHeight(root.getHeight() + (children.isEmpty() ? 0 : (NODES_PADDING + subtreeHeight)));
     }
 
     /**
      * Preconditions: Height and width of the child nodes of the graph is known (recursively)
      * Input: graph and left/top offset
      * State changes: assigns X and Y coordinates to the child vertices of the graph
-     * */
-    private static <T extends AbstractLayoutVertex> void assignChildCoordinates (T root, double left, double top,
-            HashMap<T, ArrayList<T>> childrenMap)
-    {
+     */
+    private static <T extends AbstractLayoutVertex> void assignChildCoordinates(T root, double left, double top,
+                                                                                HashMap<T, ArrayList<T>> childrenMap) {
         ArrayList<T> children = childrenMap.get(root);
 
         // We want the root to be centered on top of its subtree, if the subtree is wider. Or the subtree
         // centered on the root if the root is wider
         double totalChildWidth = children.stream().mapToDouble(T::getBboxWidth).sum()
-                + (NODES_PADDING * (children.size()-1) );
+                + (NODES_PADDING * (children.size() - 1));
 
         double leftOffset = Math.abs(totalChildWidth - root.getWidth()) / 2;
 
 
         double currentChildLeft = left;
         if (root.getWidth() > totalChildWidth) {
-           currentChildLeft += leftOffset; // Offset the children to center
-           root.setX(left);
-        }
-        else {
+            currentChildLeft += leftOffset; // Offset the children to center
+            root.setX(left);
+        } else {
             root.setX(left + leftOffset); // Offset the root to center
         }
 
         final double childTop = top + root.getHeight() + NODES_PADDING;
-        for (T curVer: children) {
+        for (T curVer : children) {
             assignChildCoordinates(curVer, currentChildLeft, childTop, childrenMap);
             currentChildLeft += curVer.getBboxWidth() + NODES_PADDING;
         }
@@ -437,143 +450,442 @@ public class LayoutAlgorithm
     // Receives the root vertex and the split vertices.
     // Sets the coordinates and sizes of every vertex
     // Note: I think the getWidth is not working... I'll work on it
-    public static double layoutFindTempX(TaintVertex v){
-        HashSet<TaintVertex>adjacent=(HashSet<TaintVertex>)v.getOuterGraph().getInNeighbors(v);
+    public static double layoutFindTempX(TaintVertex v) {
+        HashSet<TaintVertex> adjacent = (HashSet<TaintVertex>) v.getOuterGraph().getInNeighbors(v);
         adjacent.addAll(v.getOuterGraph().getOutNeighbors(v));
-        int tempX = 0; int count = 0;
-        for(TaintVertex u:adjacent){
-            if(u.getVertexStatus()==AbstractLayoutVertex.VertexStatus.GRAY){
-                tempX+=u.getX();
+        int tempX = 0;
+        int count = 0;
+        for (TaintVertex u : adjacent) {
+            if (u.getVertexStatus() == AbstractLayoutVertex.VertexStatus.GRAY) {
+                tempX += u.getX();
                 count++;
             }
         }
-        return tempX/count;
+        return tempX / count;
     }
-    public static void layoutSplitGraph(TaintRootVertex root, Set<TaintVertex> splitVertices) {
 
-        initializeSizes(root);
-
-        HashSet<TaintVertex> ancestors = new HashSet<>();
-        HashSet<TaintVertex> descendants = new HashSet<>();
-
-        for (TaintVertex v : splitVertices) {
-            ancestors.addAll(v.getAncestors());
-            descendants.addAll(v.getDescendants());
+    public static ArrayList<TaintVertex> findDirectAncestors(ArrayList<TaintVertex> prev) {
+        System.out.println("findingAncestors...");
+        ArrayList<TaintVertex> curr = new ArrayList<>();
+        for (TaintVertex v : prev) {
+            for (TaintVertex n : v.getOuterGraph().getInNeighbors(v)) {
+                if (n.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
+                    curr.add(n);
+                    n.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
+                }
+            }
         }
-        ancestors.removeAll(splitVertices);
-        descendants.removeAll(splitVertices);
+        System.out.println("found Ancestors.");
+        return curr;
+    }
 
-        ancestors.forEach(v -> v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE));
-        descendants.forEach(v -> v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE));
-
-
-        int currentX = 20, currentY = 0;
-
-        //Should these be re-ordered?
-        for (TaintVertex v : splitVertices) {
-            v.setX(currentX); v.setY(currentY); v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-            currentX += 40;
+    private static ArrayList<TaintVertex> findDirectDescendants(ArrayList<TaintVertex> prev) {
+        ArrayList<TaintVertex> curr = new ArrayList<>();
+        for (TaintVertex v : prev) {
+            for (TaintVertex n : v.getOuterGraph().getOutNeighbors(v)) {
+                if (n.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
+                    curr.add(n);
+                    n.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
+                }
+            }
         }
-        //keep track of graph size
-        int heightAnc=0;
-        int heightDes=0;
-        int maxW=0;
-        //Comparator to sort layers later
-        Comparator<TaintVertex> compare=new Comparator<TaintVertex>() {
+        return curr;
+    }
+
+    private static void sortSemiTopo(ArrayList<TaintVertex> curr) {
+        final HashMap<TaintVertex, Integer> helper = new HashMap<>();
+        Comparator<TaintVertex> topo = new Comparator<TaintVertex>() {
             @Override
             public int compare(TaintVertex o1, TaintVertex o2) {
-                return Double.compare(o1.getX(),o2.getX());
+                if (helper.get(o1) < helper.get(o2)) {
+                    return -1;
+                }
+                if (helper.get(o1) > helper.get(o2)) {
+                    return 1;
+                }
+                return 0;
             }
         };
-        //Find ancestors by layer
-        HashSet<TaintVertex> layer = new HashSet<>();
-        layer.addAll(splitVertices);
-        while(!descendants.isEmpty()){
-            currentY+= 40; int w=0;
-
-            HashSet<TaintVertex> newLayer = new HashSet<>();
-            //make newlayer
-            for(TaintVertex v:layer){ newLayer.addAll(v.getOuterGraph().getOutNeighbors(v)); }
-            //find order based on edges
-            ArrayList<TaintVertex> ordering= new ArrayList<>();
-            for(TaintVertex v:newLayer){
-                if(v.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
-                    v.setX(layoutFindTempX(v));
-                    v.setY(currentY);
-                    v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-                    ordering.add(v);
-                    w++;
+        HashSet<TaintVertex> temp = new HashSet<>();
+        for (TaintVertex v : curr) {
+            temp = new HashSet(v.getOuterGraph().getOutNeighbors(v));
+            temp.addAll(v.getOuterGraph().getInNeighbors(v));
+            temp.retainAll(curr);
+            helper.put(v, temp.size());
+        }
+        curr.sort(topo);
+    }
+    private static void weightedPlaceLayer(ArrayList<TaintVertex> layer, Collection<TaintVertex> adj) {
+        Comparator<TaintVertex> byX = new Comparator<TaintVertex>() {
+            @Override
+            public int compare(TaintVertex o1, TaintVertex o2) {
+                int compare = Double.compare(o1.getX(), o2.getX());
+                if(compare==0){
+                    compare=o1.toString().compareTo(o2.toString());
+                }
+                return compare;
+            }
+        };
+        for (TaintVertex v : layer) {
+            HashSet<TaintVertex> neighbors = new HashSet<TaintVertex>(v.getOuterGraph().getOutNeighbors(v));
+            neighbors.addAll(v.getOuterGraph().getInNeighbors(v));
+            neighbors.retainAll(adj);
+            double x = 0;
+            double count = 0;
+            double weight;
+            for (TaintVertex n : neighbors) {
+                if (n.getVertexStatus() == AbstractLayoutVertex.VertexStatus.BLACK) {
+                    weight = Math.abs(n.getY()-v.getY())/NODE_WIDTH;
+                    x += n.getX()/weight;
+                    count += weight;
                 }
             }
-            //re-order
-            ordering.sort(compare);
-            if(ordering.size()==0){ w=1; }
-            int stepX=currentX/w;
-            int curr=stepX/2;
-            for(TaintVertex v: ordering){
-                v.setX(curr);
-                v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-                curr+=stepX;
+            if (count != 0) {
+                v.setX(x*1./ count);
             }
-            if(w>maxW){ maxW=w;}
-            //remove already in layer
-            descendants.removeAll(newLayer);
-            layer=newLayer;
+            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
         }
-        heightAnc=currentY;
-        //Find descendants by layer
-        layer = new HashSet<>(); layer.addAll(splitVertices);
-
-        currentY=0;
-        while(!ancestors.isEmpty()){
-            currentY-= 40; int w=0;
-
-            HashSet<TaintVertex> newLayer = new HashSet<>();
-            //make newlayer
-            for(TaintVertex v:layer){ newLayer.addAll(v.getOuterGraph().getInNeighbors(v)); }
-            //find order based on edges
-            ArrayList<TaintVertex> ordering= new ArrayList<>();
-            for(TaintVertex v:newLayer){
-                if(v.getVertexStatus() == AbstractLayoutVertex.VertexStatus.WHITE) {
-                    v.setX(layoutFindTempX(v));
-                    v.setY(currentY);
-                    v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-                    ordering.add(v);
-                    w++;
+        layer.sort(byX);
+        System.out.print("Placed: ");
+        for(TaintVertex v:layer){
+            System.out.print(v.getX()+", ");
+        }
+        System.out.print("\n");
+    }
+    private static void partialWeightedPlaceLayer(ArrayList<TaintVertex> layer, Collection<TaintVertex> adj) {
+        Comparator<TaintVertex> byX = new Comparator<TaintVertex>() {
+            @Override
+            public int compare(TaintVertex o1, TaintVertex o2) {
+                int compare = Double.compare(o1.getX(), o2.getX());
+                if(compare==0){
+                    compare=o1.toString().compareTo(o2.toString());
+                }
+                return compare;
+            }
+        };
+        for (TaintVertex v : layer) {
+            HashSet<TaintVertex> neighbors = new HashSet<TaintVertex>(v.getOuterGraph().getOutNeighbors(v));
+            neighbors.addAll(v.getOuterGraph().getInNeighbors(v));
+            neighbors.retainAll(adj);
+            double x = 0;
+            double count = 0;
+            double weight;
+            for (TaintVertex n : neighbors) {
+                if (n.getVertexStatus() == AbstractLayoutVertex.VertexStatus.BLACK) {
+                    weight = Math.abs(n.getY()-v.getY())/NODE_WIDTH;
+                    x += n.getX()/weight;
+                    count += weight;
                 }
             }
-            //re-order
-            ordering.sort(compare);
-            if(ordering.size()==0){ w=1; }
-            int stepX=currentX/w;
-            int curr=stepX/2;
-            for(TaintVertex v: ordering){
-                v.setX(curr);
-                v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
-                curr+=stepX;
+            if (count != 0) {
+                v.setX(x / count);
             }
-            if(w>maxW){ maxW=w;}
-            //remove already in layer
-            ancestors.removeAll(newLayer);
-            layer=newLayer;
+            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
         }
-        heightDes=currentY;
-        //fix root size
-        root.setWidth(maxW*40+40);
-        root.setHeight(heightAnc-heightDes+40);
-        int width=maxW*40+40;
-        //collect all drawn nodes again
-        HashSet<TaintVertex> drawn = new HashSet<>();
-        drawn.addAll(splitVertices);
+        layer.sort(byX);
+        System.out.print("Placed: ");
+        for(TaintVertex v:layer){
+            System.out.print(v.getX()+", ");
+        }
+        System.out.print("\n");
+    }
+    private static void indexPlaceLayer(ArrayList<TaintVertex> layer, Collection<TaintVertex> adj){
+        Comparator<TaintVertex> byX = new Comparator<TaintVertex>() {
+            @Override
+            public int compare(TaintVertex o1, TaintVertex o2) {
+                int compare = Double.compare(o1.getX(), o2.getX());
+                if(compare==0){
+                    compare=o1.toString().compareTo(o2.toString());
+                }
+                return compare;
+            }
+        };
+        for (TaintVertex v : layer) {
+            double x = 0;
+            double count = 0;
+            double weight;
+            HashSet<TaintVertex> neighbors = new HashSet<TaintVertex>(v.getOuterGraph().getOutNeighbors(v));
+            neighbors.addAll(v.getOuterGraph().getInNeighbors(v));
+            for (TaintVertex n : neighbors) {
+                if (n.getVertexStatus() == AbstractLayoutVertex.VertexStatus.BLACK) {
+                    weight = Math.abs(n.getY()-v.getY())/NODE_WIDTH;
+                    x += n.getX()/weight;
+                    count += weight;
+                }
+            }
+            neighbors.retainAll(adj);
+            if (count != 0) {
+                v.setX(x *1./ count);
+            }
+            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
+        }
+        layer.sort(byX);
+        System.out.print("Placed: ");
+        for(TaintVertex v:layer){
+            System.out.print(v.getX()+", ");
+        }
+        System.out.print("\n");
+    }
+    private static void placeLayer(ArrayList<TaintVertex> layer, LAYERS_TO_CONSIDER adj) {
+        Comparator<TaintVertex> byX = new Comparator<TaintVertex>() {
+            @Override
+            public int compare(TaintVertex o1, TaintVertex o2) {
+                int compare = Double.compare(o1.getX(), o2.getX());
+                if(compare==0){
+                    compare=o1.toString().compareTo(o2.toString());
+                }
+                return compare;
+            }
+        };
+        for (TaintVertex v : layer) {
+            placeVertex(v, adj);
+        }
+        layer.sort(byX);
+    }
+
+    private static void placeVertex(TaintVertex v, LAYERS_TO_CONSIDER adj) {
+        HashSet<TaintVertex> neighbors = new HashSet<TaintVertex>(v.getOuterGraph().getOutNeighbors(v));
+        neighbors.addAll(v.getOuterGraph().getInNeighbors(v));
+        switch(adj){
+            case BOTH: neighbors.removeIf(u -> (Math.abs(u.getY() - v.getY()) > NODE_WIDTH)); break;
+            case TOP: neighbors.removeIf(u -> ((Math.abs(u.getY()-v.getY())>NODE_WIDTH)&&(u.getY()<=v.getY()))); break;
+            case BOTTOM: neighbors.removeIf(u -> ((Math.abs(u.getY()-v.getY())>NODE_WIDTH)&&(u.getY()>=v.getY()))); break;
+        }
+        double x = 0;
+        int count = 0;
+        for (TaintVertex n : neighbors) {
+            if (n.getVertexStatus() != AbstractLayoutVertex.VertexStatus.WHITE) {
+                x += n.getX(); count++;
+            }
+        }
+        if (count != 0) { v.setX(x*1./ count); }else{
+            System.out.println("crap"+neighbors.size());
+        }
+        v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
+    }
+
+    private static void evenlySpace(ArrayList<TaintVertex> layer, int i) {
+        if (i < layer.size()) {
+            if(i==0){
+                layer.get(i).setX(NODE_WIDTH/2.);
+            }else{
+                layer.get(i).setX(layer.get(i-1).getX()+NODE_WIDTH);
+            }
+            evenlySpace(layer,i+1);
+        }
+    }
+    private static void spaceOutLayer(ArrayList<TaintVertex> layer, int i) {
+        if (i < layer.size()) {
+            TaintVertex curr = layer.get(i);
+            TaintVertex prev = null;
+            TaintVertex next = null;
+            if (i > 1) {
+                prev = layer.get(i - 1);
+            }
+            if (i < layer.size() - 1) {
+                next = layer.get(i + 1);
+            }
+
+            //if space to next isn't enough
+            if ((next != null) && (next.getX() - curr.getX() < NODE_WIDTH)) {
+                // if no previous
+                if (prev == null) {
+                    if ((curr.getX() < NODE_WIDTH / 2.)) {
+                        curr.setX(NODE_WIDTH / 2.);
+                    }
+                    if ((next.getX() - curr.getX() < NODE_WIDTH)) {
+                        next.setX(curr.getX() + NODE_WIDTH);
+                    }
+                    // if not enough room
+                } else if (next.getX() - prev.getX() < 2 * NODE_WIDTH) {
+                    curr.setX(prev.getX() + NODE_WIDTH);
+                    next.setX(curr.getX() + NODE_WIDTH);
+                } else {
+                    curr.setX(next.getX() - NODE_WIDTH);
+                }
+            }
+            curr.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);
+            spaceOutLayer(layer, i + 1);
+        }
+    }
+    private static ArrayList<ArrayList<TaintVertex>> findLayers(Set<TaintVertex> splitVertices) {
+        ArrayList<ArrayList<TaintVertex>> layers = new ArrayList<>();
+        layers.add(new ArrayList<TaintVertex>(splitVertices));
         for (TaintVertex v : splitVertices) {
-            drawn.addAll(v.getAncestors());
-            drawn.addAll(v.getDescendants());
+            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
         }
-        //Make Y-coordinates positive and center
-        for(TaintVertex v: drawn){
-            v.setX(v.getX()*width/currentX);
-            v.setY(v.getY()-heightDes+20);
+        while (!layers.get(0).isEmpty()) {
+            layers.add(0, findDirectAncestors(layers.get(0)));
         }
+        ArrayList<TaintVertex> last = layers.get(layers.size() - 1);
+        while (!last.isEmpty()) {
+            layers.add(findDirectDescendants(last));
+            last = layers.get(layers.size() - 1);
+        }
+        return layers;
+    }
+//    public static void layoutSplitGraph(TaintRootVertex root, Set<TaintVertex> splitVertices) {
+//        initializeSizes(root);
+//        for (TaintVertex v : root.getInnerGraph().getVertices()) {
+//            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
+//            v.setX(NODE_WIDTH);
+//        }
+//        ArrayList<ArrayList<TaintVertex>> layers = findLayers(splitVertices);
+//        final double[] H = {NODE_WIDTH / 2.};
+//        for (ArrayList<TaintVertex> layer : layers) {
+//            System.out.println("Layer " + H[0]);
+//            layer.forEach(v -> v.setY(H[0]));
+//            sortSemiTopo(layer);
+//            H[0] += NODE_WIDTH;
+//        }
+//        HashSet<TaintVertex> neighbors = new HashSet<>(layers.get(0));
+//        int i = 0;
+//        int j = 0;
+//        double W = 0;
+//        // first
+//        double avg_disp=100000000;
+//        HashSet<TaintVertex> layer = new HashSet<TaintVertex>(splitVertices);
+//        HashSet<TaintVertex> newLayer = new HashSet<TaintVertex>();
+//        double change = 1e20;
+//        double old;
+//        while(change>1){
+//            newLayer= new HashSet<>();
+//            change=0;
+//            for(TaintVertex v:layer){
+//                newLayer.addAll(v.getOuterGraph().getInNeighbors(v));
+//                newLayer.addAll(v.getOuterGraph().getInNeighbors(v));
+//                old = v.getX();
+//                placeVertex(v,LAYERS_TO_CONSIDER.BOTH);
+//                change+=old-v.getX();
+//            }
+//        }
+//        // peek at tree
+//        System.out.println("Tree: ");
+//        for (ArrayList<TaintVertex> laye : layers) {
+//            for (TaintVertex v : laye) {
+//                System.out.print(v.getId() + ": (" + v.getX() + ", " + v.getY() + ")\t");
+//            }
+//            System.out.print("\n");
+//        }
+//        // find loners
+//        HashSet<TaintVertex> loners = new HashSet<TaintVertex>(root.getInnerGraph().getVertices());
+//        loners.removeIf(v->(v.getVertexStatus()!=AbstractLayoutVertex.VertexStatus.WHITE));
+//        System.out.println(loners.size()+" Loners");
+//        System.out.println("Done.");
+//        root.setWidth(W + NODE_WIDTH / 2);
+//        root.setHeight(H[0]);
+//    }
+    public static void layoutSplitGraph(TaintRootVertex root, Set<TaintVertex> splitVertices) {
+        initializeSizes(root);
+        for (TaintVertex v : root.getInnerGraph().getVertices()) {
+            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
+            v.setX(NODE_WIDTH);
+        }
+        ArrayList<ArrayList<TaintVertex>> layers = findLayers(splitVertices);
+        final double[] H = {NODE_WIDTH / 2.};
+        for (ArrayList<TaintVertex> layer : layers) {
+            System.out.println("Layer " + H[0]);
+            layer.forEach(v -> v.setY(H[0]));
+            sortSemiTopo(layer);
+            H[0] += NODE_WIDTH;
+        }
+        HashSet<TaintVertex> neighbors = new HashSet<>(layers.get(0));
+        int i = 0;
+        int j = 0;
+        double[] W = {0};
+        // first
+        neighbors.addAll(layers.get(1));
+        for (ArrayList<TaintVertex> layer : layers) {
+            if (i + 1 < layers.size()) { neighbors.addAll(layers.get(i + 1)); }
+            if (i - 2 >= 0) { neighbors.removeAll(layers.get(i - 2)); }
+            placeLayer(layer, LAYERS_TO_CONSIDER.TOP);
+            System.out.print("Placed: ");
+            for(TaintVertex v:layer){
+                System.out.print(v.getX()+", ");
+            }
+            System.out.print("\n");
+            spaceOutLayer(layer, 0);
+            System.out.print("Spaced: ");
+            for(TaintVertex v:layer){
+                System.out.print(v.getX()+", ");
+            }
+            System.out.print("\n");
+            double lastX;
+            try {
+                lastX = layer.get(layer.size() - 1).getX();
+            } catch (Exception e) {
+                lastX = NODE_WIDTH * 2;
+            }
+            if (W[0] < lastX) { W[0] = lastX; j=i; }
+            i++;
+        }
+//        // upwards
+//        for (i=j-1;i>=0;i--){
+//            placeLayer(layers.get(i),LAYERS_TO_CONSIDER.BOTH);
+//            spaceOutLayer(layers.get(i),0);
+//        }
+//        //downwards
+//        for (i=j+1;i<layers.size();i++){
+//            placeLayer(layers.get(i),LAYERS_TO_CONSIDER.BOTH);
+//            spaceOutLayer(layers.get(i),0);
+//        }
+        // peek at tree
+        System.out.println("Tree: ");
+        for (ArrayList<TaintVertex> layer:layers){
+            double lastX;
+            try {
+                lastX = layer.get(layer.size() - 1).getX();
+            } catch (Exception e) {
+                lastX = NODE_WIDTH * 2;
+            }
+            if(lastX>W[0]){W[0]=lastX;}
+        }
+        for (ArrayList<TaintVertex> layer : layers) {
+            for (TaintVertex v : layer) {
+                System.out.print(v.getId() + ": (" + v.getX() + ", " + v.getY() + ")\t");
+            }
+            System.out.print("\n");
+        }
+        // find loners
+        HashSet<TaintVertex> loners = new HashSet<TaintVertex>(root.getInnerGraph().getVertices());
+        loners.removeIf(v->(v.getVertexStatus()!=AbstractLayoutVertex.VertexStatus.WHITE));
+        System.out.println("Drawing "+loners.size()+" Loners");
+        TaintVertex loner;
+        HashSet<TaintVertex>temp;
+        double height=H[0];
+        while(!loners.isEmpty()){
+            loner=loners.iterator().next();
+            temp =   new HashSet<TaintVertex>();
+            temp.add(loner);
+            layers = findLayers(temp);
+            H[0]= NODE_WIDTH / 2.;
+            for (ArrayList<TaintVertex> layer : layers) {
+                System.out.println("Loner Layer " + H[0]);
+                layer.forEach(v -> v.setY(H[0]));
+                H[0] += NODE_WIDTH;
+            }
+            for(ArrayList<TaintVertex>layer:layers){
+                placeLayer(layer,LAYERS_TO_CONSIDER.TOP);
+                spaceOutLayer(layer,0);
+                layer.forEach(v->{
+                    v.setX(v.getX()+W[0]);
+                    v.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);});
+                double lastX;
+                try{
+                    lastX=layer.get(layer.size()-1).getX();
+                } catch(Exception e){
+                    lastX=0;
+                }
+                if(lastX>W[0]){W[0]=lastX;}
+            }
+            loners.removeIf(v->(v.getVertexStatus()!=AbstractLayoutVertex.VertexStatus.WHITE));
+            if(H[0]>height){
+                height=H[0];
+            }
+        }
+        System.out.println("Done.");
+        root.setWidth(W[0] + NODE_WIDTH / 2);
+        root.setHeight(height);
     }
 
 
