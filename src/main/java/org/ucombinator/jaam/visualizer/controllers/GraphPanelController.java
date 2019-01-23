@@ -37,6 +37,8 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex & Hier
     @FXML protected final Button expandAllButton = null;
     @FXML protected final Button collapseAllButton = null;
     @FXML protected final MenuButton legend = null;
+    final int legendSquareSize = 20;
+    final double legendInnerRowSpacing = 5.0;
 
     @FXML protected final CheckBox showEdges = null; // Initialized by Controllers.loadFXML()
     @FXML protected final CheckBox showLabels = null; // Initialized by Controllers.loadFXML()

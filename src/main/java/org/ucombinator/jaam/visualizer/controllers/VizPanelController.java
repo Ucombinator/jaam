@@ -6,21 +6,16 @@ import javafx.event.EventHandler;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Pair;
 import org.ucombinator.jaam.visualizer.graph.GraphTransform;
-import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
 import org.ucombinator.jaam.visualizer.gui.*;
 import org.ucombinator.jaam.visualizer.graph.Graph;
 import org.ucombinator.jaam.visualizer.layout.*;
-import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.state.*;
-import org.ucombinator.jaam.visualizer.taint.TaintVertex;
 
-import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -49,15 +44,12 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
 
     private void fillLegend() {
 
-        final int squareSize = 20;
-        final double rowSpacing = 5.0;
-
         {
             MenuItem theLegend = new MenuItem();
             HBox methodRow = new HBox();
-            methodRow.setSpacing(rowSpacing);
+            methodRow.setSpacing(legendInnerRowSpacing);
 
-            Rectangle methodColor = new Rectangle(squareSize, squareSize);
+            Rectangle methodColor = new Rectangle(legendSquareSize, legendSquareSize);
             methodColor.setFill(StateMethodVertex.defaultColor);
             methodRow.getChildren().addAll(methodColor, new Label("Method"));
 
@@ -67,9 +59,9 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         {
             MenuItem theLegend = new MenuItem();
             HBox sccRow = new HBox();
-            sccRow.setSpacing(rowSpacing);
+            sccRow.setSpacing(legendInnerRowSpacing);
 
-            Rectangle sccColor = new Rectangle(squareSize, squareSize);
+            Rectangle sccColor = new Rectangle(legendSquareSize, legendSquareSize);
             sccColor.setFill(StateSccVertex.defaultColor);
             sccRow.getChildren().addAll(sccColor, new Label("Strongly connected component"));
 
@@ -82,9 +74,9 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
             for(Pair<Color,String> legend : colorLegend) {
                 MenuItem theLegend = new MenuItem();
                 HBox loopRow = new HBox();
-                loopRow.setSpacing(rowSpacing);
+                loopRow.setSpacing(legendInnerRowSpacing);
 
-                Rectangle loopColor = new Rectangle(squareSize, squareSize);
+                Rectangle loopColor = new Rectangle(legendSquareSize, legendSquareSize);
                 loopColor.setFill(legend.getKey());
                 loopRow.getChildren().addAll(loopColor, new Label(legend.getValue()));
 
@@ -94,9 +86,6 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
             }
 
         }
-
-
-
     }
 
     @Override
