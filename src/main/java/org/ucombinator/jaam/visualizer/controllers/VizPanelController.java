@@ -3,6 +3,13 @@ package org.ucombinator.jaam.visualizer.controllers;
 import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.util.Pair;
 import org.ucombinator.jaam.visualizer.graph.GraphTransform;
 import org.ucombinator.jaam.visualizer.graph.GraphUtils;
 import org.ucombinator.jaam.visualizer.graph.HierarchicalVertex;
@@ -13,7 +20,9 @@ import org.ucombinator.jaam.visualizer.main.Main;
 import org.ucombinator.jaam.visualizer.state.*;
 import org.ucombinator.jaam.visualizer.taint.TaintVertex;
 
+import java.awt.*;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,12 +37,66 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
 
         // Custom event handlers
         this.graphContentGroup.addEventFilter(SelectEvent.STATE_VERTEX_SELECTED, this);
+        fillLegend();
 
         this.visibleRoot = new StateRootVertex();
         this.immutableRoot = new StateRootVertex();
         this.immutableRoot.setInnerGraph(graph);
         setAllImmutable(this.immutableRoot);
         this.drawGraph();
+
+    }
+
+    private void fillLegend() {
+
+        final int squareSize = 20;
+        final double rowSpacing = 5.0;
+
+        {
+            MenuItem theLegend = new MenuItem();
+            HBox methodRow = new HBox();
+            methodRow.setSpacing(rowSpacing);
+
+            Rectangle methodColor = new Rectangle(squareSize, squareSize);
+            methodColor.setFill(StateMethodVertex.defaultColor);
+            methodRow.getChildren().addAll(methodColor, new Label("Method"));
+
+            theLegend.setGraphic(methodRow);
+            this.legend.getItems().add(theLegend);
+        }
+        {
+            MenuItem theLegend = new MenuItem();
+            HBox sccRow = new HBox();
+            sccRow.setSpacing(rowSpacing);
+
+            Rectangle sccColor = new Rectangle(squareSize, squareSize);
+            sccColor.setFill(StateSccVertex.defaultColor);
+            sccRow.getChildren().addAll(sccColor, new Label("Strongly connected component"));
+
+            theLegend.setGraphic(sccRow);
+            this.legend.getItems().add(theLegend);
+        }
+        {
+            ArrayList<Pair<Color, String>> colorLegend = StateLoopVertex.getColorLegend();
+
+            for(Pair<Color,String> legend : colorLegend) {
+                MenuItem theLegend = new MenuItem();
+                HBox loopRow = new HBox();
+                loopRow.setSpacing(rowSpacing);
+
+                Rectangle loopColor = new Rectangle(squareSize, squareSize);
+                loopColor.setFill(legend.getKey());
+                loopRow.getChildren().addAll(loopColor, new Label(legend.getValue()));
+
+                theLegend.setGraphic(loopRow);
+                this.legend.getItems().add(theLegend);
+
+            }
+
+        }
+
+
+
     }
 
     @Override
@@ -214,5 +277,7 @@ public class VizPanelController extends GraphPanelController<StateVertex, StateE
         if (!v.isImmutable)
             throw new Error(v + " is not immutable");
     }
+
+
 
 }

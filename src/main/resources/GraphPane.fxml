@@ -9,8 +9,9 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
+<?import javafx.scene.control.MenuButton?>
 
-<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1">
    <center>
       <ScrollPane fx:id="scrollPane" hbarPolicy="ALWAYS" vbarPolicy="ALWAYS">
          <content>
@@ -34,6 +35,7 @@
             <Button fx:id="collapseAllButton" mnemonicParsing="false" onAction="#collapseAll" text="Collapse All" />
             <Label text="Zoom:" />
             <Spinner fx:id="zoomSpinner" editable="true" prefWidth="100.0" />
+            <MenuButton fx:id="legend" mnemonicParsing="false" text="Legend" />
          </children>
       </HBox>
    </top>

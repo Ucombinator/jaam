@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.state;
 
 import javafx.scene.paint.Color;
+import javafx.util.Pair;
 import org.ucombinator.jaam.util.Loop;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.serializer.LoopLoopNode;
@@ -194,6 +195,19 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
         }
     }
 
+    public static ArrayList<Pair<Color, String>> getColorLegend() {
+
+        ArrayList<Pair<Color, String>> legend = new ArrayList<>();
+
+        legend.add(new Pair(iteratorLoopColor, "Iterator Loop"));
+        legend.add(new Pair(arrayLoopColor, "Array Loop"));
+        legend.add(new Pair(simpleCountUpLoopColor, "Simple Count Up Loop"));
+        legend.add(new Pair(simpleCountDownLoopColor, "Simple Count Down Loop"));
+        legend.add(new Pair(unknownLoopColor, "Unknown Loop"));
+
+        return legend;
+    }
+
     public String toString()
     {
         return "Loop " + getClassName() + ":" + getMethodName();
@@ -208,4 +222,7 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
         expandedVertices.add(this);
         return expandedVertices;
     }
+
+
+
 }

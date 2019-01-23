@@ -6,10 +6,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Spinner;
+import javafx.scene.control.*;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
@@ -39,6 +36,7 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex & Hier
     @FXML protected final Button hideUnrelated = null;
     @FXML protected final Button expandAllButton = null;
     @FXML protected final Button collapseAllButton = null;
+    @FXML protected final MenuButton legend = null;
 
     @FXML protected final CheckBox showEdges = null; // Initialized by Controllers.loadFXML()
     @FXML protected final CheckBox showLabels = null; // Initialized by Controllers.loadFXML()
@@ -66,6 +64,7 @@ public abstract class GraphPanelController<T extends AbstractLayoutVertex & Hier
         // Set up graph, but don't draw the entire thing yet.
         this.visibleRoot = rootBuilder.get();
         this.immutableRoot = rootBuilder.get();
+
     }
 
     public T getVisibleRoot() {
