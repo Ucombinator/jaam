@@ -27,13 +27,13 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex> implements Comp
     private EDGE_TYPE type;
     private Color color;
     private double opacity;
-    private boolean isSpanningEdge;
+    // private boolean isSpanningEdge;
 
     public LayoutEdge(T src, T dest, EDGE_TYPE edgeType) {
         this.src = src;
         this.dest = dest;
         this.type = edgeType;
-        this.isSpanningEdge = false;
+        // this.isSpanningEdge = false;
         graphics = new Group();
         arrowhead = new Polygon();
         this.opacity = 1.0;
@@ -75,9 +75,11 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex> implements Comp
         return dest;
     }
 
+    /*
     public void setSpanningEdge(boolean isSpanningEdge) {
         this.isSpanningEdge = isSpanningEdge;
     }
+    */
 
     public void draw()
     {
@@ -108,11 +110,8 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex> implements Comp
             double destCenter = dest.getX() + (dest.getWidth() / 2);
             double srcLeft = src.getX();
             double srcRight = src.getX() + src.getWidth();
-            if (this.isSpanningEdge && (destCenter > srcLeft) && (destCenter < srcRight)) {
-                drawOrthogonalEdge();
-            } else {
-                drawStraightEdge();
-            }
+
+            drawStraightEdge();
 
             this.graphics.getChildren().removeAll(this.graphics.getChildren());
             this.graphics.getChildren().add(edgePath);
@@ -124,6 +123,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex> implements Comp
         }
     }
 
+    /*
     public void drawOrthogonalEdge() {
         // System.out.println("Drawing orthogonal edge: " + src + " --> " + dest);
         double destCenter = dest.getX() + (dest.getWidth() / 2);
@@ -154,6 +154,7 @@ public abstract class LayoutEdge<T extends AbstractLayoutVertex> implements Comp
         //double arrowLength = 50;
         this.arrowhead = GUINode.computeArrowhead(destCenter, dest.getY(), arrowLength, 3 * Math.PI / 2, arrowheadAngleWidth);
     }
+    */
 
     public void drawStraightEdge() {
         // System.out.println("Drawing straight edge: " + src + " --> " + dest);

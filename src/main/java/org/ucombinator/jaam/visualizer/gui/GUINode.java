@@ -176,6 +176,12 @@ public class GUINode extends Group {
             return new Line(0, 0, 0, 0);
         }
         else {
+            /*
+            System.out.println("Get line: " + sourceNode.getVertex() + " --> " + destNode.getVertex());
+            System.out.println("\tBounds:\n\tS:\t" + sourceNode.getBoundsInParent() + "\n\tD:\t" + destNode.getBoundsInParent());
+            System.out.println("\tIntersections\n\tS:\t" + sourceNode.getLineIntersection(destNode) + "\n\tD:\t" + destNode.getLineIntersection(sourceNode));
+            */
+
             Point2D sourceIntersect = sourceNode.getLineIntersection(destNode);
             Point2D destIntersect = destNode.getLineIntersection(sourceNode);
 

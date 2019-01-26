@@ -1,6 +1,7 @@
 package org.ucombinator.jaam.visualizer.state;
 
 import javafx.scene.paint.Color;
+import javafx.util.Pair;
 import org.ucombinator.jaam.util.Loop;
 import org.ucombinator.jaam.visualizer.controllers.MainTabController;
 import org.ucombinator.jaam.serializer.LoopLoopNode;
@@ -290,6 +291,28 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
         }
     }
 
+    public static ArrayList<Pair<Color, String>> getColorLegend() {
+
+        ArrayList<Pair<Color, String>> legend = new ArrayList<>();
+
+        legend.add(new Pair(iteratorLoopColor, "Iterator Loop"));
+        legend.add(new Pair(arrayForEachLoopColor, "Array ForEach Loop"));
+        legend.add(new Pair(arrayForLoopColor, "Array Loop"));
+        legend.add(new Pair(simpleCountUpLoopColor, "Simple Count Up Loop"));
+        legend.add(new Pair(simpleCountDownLoopColor, "Simple Count Down Loop"));
+        legend.add(new Pair(countUpForLoopWithSizedBoundColor, "Count Up For Loop with sized bound"));
+        legend.add(new Pair(countUpForLoopWithSizedBoundAndOffsetColor, "Count Up For Loop with sized bound and offset Loop"));
+        legend.add(new Pair(countUpForLoopWithVarBoundsColor, "Count Up For Loop with Vars"));
+        legend.add(new Pair(characterForLoopColor, "Character For Loop"));
+        legend.add(new Pair(simpleWhileLoopColor, "Simple While Loop"));
+        legend.add(new Pair(countDownForLoopWithVarBoundsColor, "Count Down For Loop with Vars"));
+        legend.add(new Pair(randomizedWhileLoopColor, "Randomized While Loop"));
+        legend.add(new Pair(doWhileLoopColor, "Do While Loop"));
+        legend.add(new Pair(unknownLoopColor, "Unknown Loop"));
+
+        return legend;
+    }
+
     public String toString()
     {
         return "Loop " + getClassName() + ":" + getMethodName();
@@ -304,4 +327,7 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
         expandedVertices.add(this);
         return expandedVertices;
     }
+
+
+
 }

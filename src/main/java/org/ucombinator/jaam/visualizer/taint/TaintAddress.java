@@ -1,10 +1,14 @@
 package org.ucombinator.jaam.visualizer.taint;
 
 import javafx.scene.paint.Color;
+import javafx.util.Pair;
 import org.ucombinator.jaam.tools.taint3.Address;
 import org.ucombinator.jaam.tools.taint3.Address.Return;
 import org.ucombinator.jaam.tools.taint3.Address.Parameter;
 import org.ucombinator.jaam.tools.taint3.Address.Throws;
+import org.ucombinator.jaam.tools.taint3.Address.New;
+import org.ucombinator.jaam.tools.taint3.Address.NewArray;
+import org.ucombinator.jaam.tools.taint3.Address.NewMultiArray;
 import org.ucombinator.jaam.tools.taint3.Address.This;
 import org.ucombinator.jaam.tools.taint3.Address.Lambda;
 import org.ucombinator.jaam.tools.taint3.Address.StaticField;
@@ -25,12 +29,25 @@ public class TaintAddress extends TaintVertex {
     // Taken from Taint3, we summarixe only the one we care about
     public enum Type {
         Return, Parameter, Throws,
-        Inner, // Any of: Stmt, Value, Local, These need arrows New, NewArray, NewMultiArray,
+        Inner, // Any of: Stmt, Value, Local,
+        New, // Any of New, NewArray, NewMultiArray,
         This, Lambda,
         StaticField, InstanceField,
         // The next two we split between primitive and class types
         ArrayRefPrim, ArrayRefClass
     }
+
+    final public static Color returnColor = Color.DARKGREEN;
+    final public static Color parameterColor = Color.RED;
+    final public static Color throwsColor = Color.HOTPINK;
+    final public static Color innerColor = Color.BLUE;
+    final public static Color thisColor = Color.LIGHTGREEN;
+    final public static Color lambdaColor = Color.ORCHID;
+    final public static Color staticFieldColor = Color.BROWN;
+    final public static Color instanceFieldColor = Color.SADDLEBROWN;
+    final public static Color arrayRefPrimColor = Color.MEDIUMAQUAMARINE;
+    final public static Color arrayRefClassColor = Color.MEDIUMSPRINGGREEN;
+    final public static Color newColor = Color.DARKVIOLET;
 
     private Address address;
     // This is for the click on a field and see its graph functionality. It should probably
@@ -155,6 +172,7 @@ public class TaintAddress extends TaintVertex {
         if (address instanceof Return) { return Type.Return; }
         if (address instanceof Parameter) { return Type.Parameter; }
         if (address instanceof Throws) { return Type.Throws; }
+        if (address instanceof New || address instanceof NewArray || address instanceof NewMultiArray) { return Type.New;}
         if (address instanceof This) { return Type.This; }
         if (address instanceof Lambda) { return Type.Lambda; }
         if (address instanceof StaticField) { return Type.StaticField; }
@@ -182,17 +200,39 @@ public class TaintAddress extends TaintVertex {
 
     private Color defaultColor() {
         switch (type) {
-            case Return: case Parameter: case Throws: return Color.LIGHTGREEN;
-            case Inner: return Color.BLUE;
-            case This: return Color.HOTPINK;
-            case Lambda: return Color.ORCHID;
-            case StaticField: return Color.BROWN;
-            case InstanceField: return Color.SADDLEBROWN;
-            case ArrayRefPrim: return Color.LIGHTGRAY;
-            case ArrayRefClass: return Color.DARKGRAY;
+            case Return: return returnColor;
+            case Parameter: return parameterColor;
+            case Throws: return throwsColor;
+            case Inner: return innerColor;
+            case This: return thisColor;
+            case Lambda: return lambdaColor;
+            case StaticField: return staticFieldColor;
+            case InstanceField: return instanceFieldColor;
+            case ArrayRefPrim: return arrayRefPrimColor;
+            case ArrayRefClass: return arrayRefClassColor;
+            case New: return newColor;
         }
         // Shouldn't happen
         return Color.BLACK;
+    }
+
+    public static ArrayList<Pair<Color, String>> getColorLegend() {
+
+        ArrayList<Pair<Color, String>> legend = new ArrayList<>();
+
+        legend.add(new Pair<>(returnColor, "Return"));
+        legend.add(new Pair<>(parameterColor, "Parameter"));
+        legend.add(new Pair<>(throwsColor, "Throws"));
+        //legend.add(new Pair<>(innerColor, "Inner")); For now we don't show inner
+        legend.add(new Pair<>(thisColor, "This"));
+        legend.add(new Pair<>(lambdaColor, "Lambda"));
+        legend.add(new Pair<>(staticFieldColor, "Static Field"));
+        legend.add(new Pair<>(instanceFieldColor, "Instance Field"));
+        legend.add(new Pair<>(arrayRefPrimColor, "Array Ref Primative"));
+        legend.add(new Pair<>(arrayRefClassColor, "Array Ref Class"));
+        legend.add(new Pair<>(newColor, "New"));
+
+        return legend;
     }
 
 }
