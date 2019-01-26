@@ -29,7 +29,8 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-nop" % "1.7.22",
   "org.ucombinator.dockfx" % "DockFX" % "0.1.12",
   "de.jensd" % "fontawesomefx" % "8.9",
-  "org.ucombinator.soot" % "soot" % "nightly.20161021"
+  "org.ucombinator.soot" % "soot" % "nightly.20161021",
+  "org.sosy-lab" % "javasmt-solver-z3" % "z3-4.4.1-1558-gf96cfea"
 )
 
 // Silence warning about multiple main classes

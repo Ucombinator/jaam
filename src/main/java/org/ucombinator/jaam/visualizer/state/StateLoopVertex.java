@@ -33,6 +33,7 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
     private static final Color countDownForLoopWithVarBoundsColor = Color.LIGHTCYAN;
     private static final Color randomizedWhileLoopColor = Color.YELLOW;
     private static final Color doWhileLoopColor = Color.DARKRED;
+    private static final Color branchIdentifiedLoopColor = Color.DARKBLUE;
 
     private final int statementIndex;
 
@@ -165,7 +166,10 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
             Value value = ((Loop.DoWhileLoop) loopInfo).iterable();
             result.add(value);
         }
-
+        else if (loopInfo instanceof Loop.BranchIdentifiedLoop) {
+            List<Value> values = ((Loop.BranchIdentifiedLoop) loopInfo).vitalBranches();
+            result.addAll(values);
+        }
 
         return result;
     }
@@ -188,6 +192,7 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
                 || loopInfo instanceof Loop.CountDownForLoopWithVarBounds
                 || loopInfo instanceof Loop.RandomizedWhileLoop
                 || loopInfo instanceof Loop.DoWhileLoop
+                || loopInfo instanceof Loop.BranchIdentifiedLoop
         ) {
             return false;
         }
@@ -276,6 +281,9 @@ public class StateLoopVertex extends StateVertex implements Cloneable, MethodEnt
         }
         else if(this.compilationUnit.loopInfo() instanceof Loop.DoWhileLoop) {
             this.color = doWhileLoopColor;
+        }
+        else if(this.compilationUnit.loopInfo() instanceof Loop.BranchIdentifiedLoop) {
+            this.color = branchIdentifiedLoopColor;
         }
         else {
             this.color = defaultColor;
