@@ -166,12 +166,14 @@ public class TaintPanelController extends GraphPanelController<TaintVertex, Tain
         //LayoutAlgorithm.layout(visibleRoot);
         drawNodes(null, visibleRoot);
 
+        /*
         for (TaintVertex v : visibleSplitVertices) {
             if (v instanceof TaintMethodVertex) {
                 ((MethodGuiNode)v.getGraphics()).setBackgroundFill(Color.GREEN);
             }
             //v.getGraphics().setFill(Color.GREEN);
         }
+        */
         Instant afterNodeDraw = Instant.now();
 
         //visibleRoot.getGraphics().requestLayout();
