@@ -465,7 +465,6 @@ public class LayoutAlgorithm {
     }
 
     public static ArrayList<TaintVertex> findDirectAncestors(ArrayList<TaintVertex> prev) {
-        System.out.println("findingAncestors...");
         ArrayList<TaintVertex> curr = new ArrayList<>();
         for (TaintVertex v : prev) {
             for (TaintVertex n : v.getOuterGraph().getInNeighbors(v)) {
@@ -475,7 +474,6 @@ public class LayoutAlgorithm {
                 }
             }
         }
-        System.out.println("found Ancestors.");
         return curr;
     }
 
@@ -503,12 +501,12 @@ public class LayoutAlgorithm {
                 if (helper.get(o1) > helper.get(o2)) {
                     return 1;
                 }
-                return 0;
+                return o1.toString().compareTo(o2.toString());
             }
         };
         HashSet<TaintVertex> temp = new HashSet<>();
         for (TaintVertex v : curr) {
-            temp = new HashSet(v.getOuterGraph().getOutNeighbors(v));
+            temp = new HashSet<TaintVertex>(v.getOuterGraph().getOutNeighbors(v));
             temp.addAll(v.getOuterGraph().getInNeighbors(v));
             temp.retainAll(curr);
             helper.put(v, temp.size());
@@ -658,8 +656,7 @@ public class LayoutAlgorithm {
                 x += n.getX(); count++;
             }
         }
-        if (count != 0) { v.setX(x*1./ count); }else{
-            System.out.println("crap"+neighbors.size());
+        if (count != 0) { v.setX(x*1./ count);
         }
         v.setVertexStatus(AbstractLayoutVertex.VertexStatus.GRAY);
     }
@@ -724,64 +721,52 @@ public class LayoutAlgorithm {
         }
         return layers;
     }
-//    public static void layoutSplitGraph(TaintRootVertex root, Set<TaintVertex> splitVertices) {
-//        initializeSizes(root);
-//        for (TaintVertex v : root.getInnerGraph().getVertices()) {
-//            v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
-//            v.setX(NODE_WIDTH);
-//        }
-//        ArrayList<ArrayList<TaintVertex>> layers = findLayers(splitVertices);
-//        final double[] H = {NODE_WIDTH / 2.};
-//        for (ArrayList<TaintVertex> layer : layers) {
-//            System.out.println("Layer " + H[0]);
-//            layer.forEach(v -> v.setY(H[0]));
-//            sortSemiTopo(layer);
-//            H[0] += NODE_WIDTH;
-//        }
-//        HashSet<TaintVertex> neighbors = new HashSet<>(layers.get(0));
-//        int i = 0;
-//        int j = 0;
-//        double W = 0;
-//        // first
-//        double avg_disp=100000000;
-//        HashSet<TaintVertex> layer = new HashSet<TaintVertex>(splitVertices);
-//        HashSet<TaintVertex> newLayer = new HashSet<TaintVertex>();
-//        double change = 1e20;
-//        double old;
-//        while(change>1){
-//            newLayer= new HashSet<>();
-//            change=0;
-//            for(TaintVertex v:layer){
-//                newLayer.addAll(v.getOuterGraph().getInNeighbors(v));
-//                newLayer.addAll(v.getOuterGraph().getInNeighbors(v));
-//                old = v.getX();
-//                placeVertex(v,LAYERS_TO_CONSIDER.BOTH);
-//                change+=old-v.getX();
-//            }
-//        }
-//        // peek at tree
-//        System.out.println("Tree: ");
-//        for (ArrayList<TaintVertex> laye : layers) {
-//            for (TaintVertex v : laye) {
-//                System.out.print(v.getId() + ": (" + v.getX() + ", " + v.getY() + ")\t");
-//            }
-//            System.out.print("\n");
-//        }
-//        // find loners
-//        HashSet<TaintVertex> loners = new HashSet<TaintVertex>(root.getInnerGraph().getVertices());
-//        loners.removeIf(v->(v.getVertexStatus()!=AbstractLayoutVertex.VertexStatus.WHITE));
-//        System.out.println(loners.size()+" Loners");
-//        System.out.println("Done.");
-//        root.setWidth(W + NODE_WIDTH / 2);
-//        root.setHeight(H[0]);
-//    }
+    private static HashSet<TaintVertex> addSemiLoners(ArrayList<ArrayList<TaintVertex>> layers,HashSet<TaintVertex> drawn){
+        HashSet<TaintVertex> out = new HashSet<>();
+        out.addAll(drawn);
+        for (ArrayList<TaintVertex> layer : layers) { out.addAll(layer); }
+        ArrayList<TaintVertex> temp;
+        int i=0;
+        int changes=0;
+        while(changes!=0) {
+            changes=0;
+            i=0;
+            for (ArrayList<TaintVertex> layer : layers) {
+                temp=new ArrayList<TaintVertex>();
+                for(TaintVertex v:layer){
+                    temp.addAll(v.getOuterGraph().getInNeighbors(v));
+                    temp.removeAll(out);
+                    if(temp.size()>0){
+                        layers.get(i-1).addAll(temp);
+                        temp=new ArrayList<>();
+                        out.addAll(temp);
+                    }
+                }
+
+                temp=new ArrayList<TaintVertex>();
+                for(TaintVertex v:layer){
+                    temp.addAll(v.getOuterGraph().getOutNeighbors(v));
+                    temp.removeAll(out);
+                    if(temp.size()>0){
+                        layers.get(i+1).addAll(temp);
+                        temp=new ArrayList<>();
+                        out.addAll(temp);
+                    }
+                }
+                i++;
+            }
+        }
+        return out;
+    }
     public static void layoutSplitGraph(TaintRootVertex root, Set<TaintVertex> splitVertices) {
         initializeSizes(root);
         for (TaintVertex v : root.getInnerGraph().getVertices()) {
             v.setVertexStatus(AbstractLayoutVertex.VertexStatus.WHITE);
+            v.setY(NODE_WIDTH);
             v.setX(NODE_WIDTH);
         }
         ArrayList<ArrayList<TaintVertex>> layers = findLayers(splitVertices);
+        HashSet<TaintVertex> drawn = addSemiLoners(layers, new HashSet<>());
         final double[] H = {NODE_WIDTH / 2.};
         for (ArrayList<TaintVertex> layer : layers) {
             System.out.println("Layer " + H[0]);
@@ -789,25 +774,21 @@ public class LayoutAlgorithm {
             sortSemiTopo(layer);
             H[0] += NODE_WIDTH;
         }
-        HashSet<TaintVertex> neighbors = new HashSet<>(layers.get(0));
         int i = 0;
         int j = 0;
         double[] W = {0};
         // first
-        neighbors.addAll(layers.get(1));
         for (ArrayList<TaintVertex> layer : layers) {
-            if (i + 1 < layers.size()) { neighbors.addAll(layers.get(i + 1)); }
-            if (i - 2 >= 0) { neighbors.removeAll(layers.get(i - 2)); }
             placeLayer(layer, LAYERS_TO_CONSIDER.TOP);
             System.out.print("Placed: ");
-            for(TaintVertex v:layer){
-                System.out.print(v.getX()+", ");
+            for (TaintVertex v : layer) {
+                System.out.print(v.getX() + ", ");
             }
             System.out.print("\n");
             spaceOutLayer(layer, 0);
             System.out.print("Spaced: ");
-            for(TaintVertex v:layer){
-                System.out.print(v.getX()+", ");
+            for (TaintVertex v : layer) {
+                System.out.print(v.getX() + ", ");
             }
             System.out.print("\n");
             double lastX;
@@ -816,77 +797,112 @@ public class LayoutAlgorithm {
             } catch (Exception e) {
                 lastX = NODE_WIDTH * 2;
             }
-            if (W[0] < lastX) { W[0] = lastX; j=i; }
+            if (W[0] < lastX) {
+                W[0] = lastX;
+                j = i;
+            }
             i++;
         }
-//        // upwards
-//        for (i=j-1;i>=0;i--){
-//            placeLayer(layers.get(i),LAYERS_TO_CONSIDER.BOTH);
-//            spaceOutLayer(layers.get(i),0);
-//        }
-//        //downwards
-//        for (i=j+1;i<layers.size();i++){
-//            placeLayer(layers.get(i),LAYERS_TO_CONSIDER.BOTH);
-//            spaceOutLayer(layers.get(i),0);
-//        }
+        if (layers.size() > 1) {
+            // upwards
+            for (i = j - 1; i >= 0; i--) {
+                placeLayer(layers.get(i), LAYERS_TO_CONSIDER.BOTTOM);
+                spaceOutLayer(layers.get(i), 0);
+            }
+            //downwards
+            for (i = j + 1; i < layers.size(); i++) {
+                placeLayer(layers.get(i), LAYERS_TO_CONSIDER.TOP);
+                spaceOutLayer(layers.get(i), 0);
+            }
+        }
         // peek at tree
-        System.out.println("Tree: ");
-        for (ArrayList<TaintVertex> layer:layers){
+//        System.out.println("Tree: ");
+//        for (ArrayList<TaintVertex> layer : layers) {
+//            double lastX;
+//            try {
+//                lastX = layer.get(layer.size() - 1).getX();
+//            } catch (Exception e) {
+//                lastX = NODE_WIDTH * 2;
+//            }
+//            if (lastX > W[0]) {
+//                W[0] = lastX;
+//            }
+//        }
+//        for (ArrayList<TaintVertex> layer : layers) {
+//            for (TaintVertex v : layer) {
+//                System.out.print(v.getId() + ": (" + v.getX() + ", " + v.getY() + ")\t");
+//            }
+//            System.out.print("\n");
+//        }
+        // find loners
+        ArrayList<TaintVertex> loners = new ArrayList<>(root.getInnerGraph().getVertices());
+        loners.removeIf(v -> (drawn.contains(v) || (v.getVertexStatus() != AbstractLayoutVertex.VertexStatus.WHITE)));
+        System.out.println("Drawing " + loners.size() + " Loners");
+        HashSet<TaintVertex> temp;
+        double height = H[0];
+        double width = W[0] + NODE_WIDTH / 2.;
+        int numLoners = loners.size();
+        ArrayList<ArrayList<TaintVertex>> lonerLayers = new ArrayList<>();
+        lonerLayers.add(new ArrayList<>());
+        lonerLayers.add(loners);
+        lonerLayers.add(new ArrayList<>());
+        i = 0;
+        TaintVertex loner;
+        HashSet<TaintVertex> toMove = new HashSet<>();
+        while (i < loners.size()) {
+            loner = loners.get(i);
+            //move up
+            toMove = new HashSet<>();
+            toMove.addAll(loner.getOuterGraph().getInNeighbors(loner));
+            toMove.retainAll(loners);
+            lonerLayers.get(0).addAll(toMove);
+            loners.removeAll(toMove);
+            //move down
+            toMove = new HashSet<>();
+            toMove.addAll(loner.getOuterGraph().getOutNeighbors(loner));
+            toMove.retainAll(loners);
+            lonerLayers.get(2).addAll(toMove);
+            loners.removeAll(toMove);
+            i++;
+        }
+        H[0] = NODE_WIDTH / 2.;
+        lonerLayers.add(0, new ArrayList<>());
+        for (ArrayList<TaintVertex> layer : lonerLayers) {
+            layer.forEach(v -> v.setY(H[0]));
+            H[0] += NODE_WIDTH;
+        }
+        for (ArrayList<TaintVertex> layer : lonerLayers) {
+            placeLayer(layer, LAYERS_TO_CONSIDER.TOP);
+            System.out.print("Placed: ");
+            for (TaintVertex v : layer) {
+                System.out.print(v.getX() + ", ");
+            }
+            System.out.print("\n");
+            spaceOutLayer(layer, 0);
+            System.out.print("Spaced: ");
+            for (TaintVertex v : layer) {
+                System.out.print(v.getX() + ", ");
+            }
+            System.out.print("\n");
             double lastX;
             try {
                 lastX = layer.get(layer.size() - 1).getX();
             } catch (Exception e) {
                 lastX = NODE_WIDTH * 2;
             }
-            if(lastX>W[0]){W[0]=lastX;}
-        }
-        for (ArrayList<TaintVertex> layer : layers) {
-            for (TaintVertex v : layer) {
-                System.out.print(v.getId() + ": (" + v.getX() + ", " + v.getY() + ")\t");
-            }
-            System.out.print("\n");
-        }
-        // find loners
-        HashSet<TaintVertex> loners = new HashSet<TaintVertex>(root.getInnerGraph().getVertices());
-        loners.removeIf(v->(v.getVertexStatus()!=AbstractLayoutVertex.VertexStatus.WHITE));
-        System.out.println("Drawing "+loners.size()+" Loners");
-        TaintVertex loner;
-        HashSet<TaintVertex>temp;
-        double height=H[0];
-        while(!loners.isEmpty()){
-            loner=loners.iterator().next();
-            temp =   new HashSet<TaintVertex>();
-            temp.add(loner);
-            layers = findLayers(temp);
-            H[0]= NODE_WIDTH / 2.;
-            for (ArrayList<TaintVertex> layer : layers) {
-                System.out.println("Loner Layer " + H[0]);
-                layer.forEach(v -> v.setY(H[0]));
-                H[0] += NODE_WIDTH;
-            }
-            for(ArrayList<TaintVertex>layer:layers){
-                placeLayer(layer,LAYERS_TO_CONSIDER.TOP);
-                spaceOutLayer(layer,0);
-                layer.forEach(v->{
-                    v.setX(v.getX()+W[0]);
-                    v.setVertexStatus(AbstractLayoutVertex.VertexStatus.BLACK);});
-                double lastX;
-                try{
-                    lastX=layer.get(layer.size()-1).getX();
-                } catch(Exception e){
-                    lastX=0;
-                }
-                if(lastX>W[0]){W[0]=lastX;}
-            }
-            loners.removeIf(v->(v.getVertexStatus()!=AbstractLayoutVertex.VertexStatus.WHITE));
-            if(H[0]>height){
-                height=H[0];
+            if (width < lastX + W[0]) {
+                width = lastX + W[0];
             }
         }
+        W[0] = W[0] + NODE_WIDTH;
+        for (ArrayList<TaintVertex> layer : lonerLayers) {
+            layer.forEach(v -> v.setX(v.getX() + W[0]));
+        }
+        W[0] = width + NODE_WIDTH;
         System.out.println("Done.");
+        System.out.println("Total Vertex In: " + root.getInnerGraph().getVertices().size());
+        System.out.println("Loners:" + numLoners);
         root.setWidth(W[0] + NODE_WIDTH / 2);
         root.setHeight(height);
     }
-
-
 }
